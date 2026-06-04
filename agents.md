@@ -11,8 +11,8 @@
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 30 |
-| Categories | 1 |
+| Total Examples | 60 |
+| Categories | 2 |
 | Last Updated | 2026-06-04 |
 
 ## Pipeline
@@ -30,6 +30,7 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 | Category | Examples | Pass Rate | Details |
 |----------|----------|-----------|---------|
 | [Basic Operations](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/basic-operations/agents.md) |
+| [Convert Visio Document](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/convert-visio-document/agents.md) |
 
 ## Validation
 

@@ -1,0 +1,331 @@
+{
+  "category": "basic-operations",
+  "display_name": "Basic Operations",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 30,
+  "pass_rate": 100.0,
+  "generated": "2026-06-04",
+  "examples": [
+    {
+      "slug": "add-a-second-page-to-the-diagram-and-set-its-size-to-a4-dimensions",
+      "file": "add-a-second-page-to-the-diagram-and-set-its-size-to-a4-dimensions.cs",
+      "task": "Add a second page to the diagram and set its size to a4 dimensions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "add-a-text-block-to-the-shape-and-set-its-font-to-arial-size-twelve",
+      "file": "add-a-text-block-to-the-shape-and-set-its-font-to-arial-size-twelve.cs",
+      "task": "Add a text block to the shape and set its font to arial size twelve",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "adjust-svg-save-options-to-preserve-original-viewbox-and-enable-css-styling-for-shapes",
+      "file": "adjust-svg-save-options-to-preserve-original-viewbox-and-enable-css-styling-for-shapes.cs",
+      "task": "Adjust svg save options to preserve original viewbox and enable css styling for shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "apply-a-custom-fill-color-to-the-inserted-shape-using-rgb-values-for-teal-shade",
+      "file": "apply-a-custom-fill-color-to-the-inserted-shape-using-rgb-values-for-teal-shade.cs",
+      "task": "Apply a custom fill color to the inserted shape using rgb values for teal shade",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ]
+    },
+    {
+      "slug": "batch-convert-a-folder-of-vdx-files-to-pdf-using-a-loop-and-custom-pdf-options",
+      "file": "batch-convert-a-folder-of-vdx-files-to-pdf-using-a-loop-and-custom-pdf-options.cs",
+      "task": "Batch convert a folder of vdx files to pdf using a loop and custom pdf options",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "configure-pdf-save-options-to-embed-all-fonts-and-use-pdf-a-1b-conformance-level",
+      "file": "configure-pdf-save-options-to-embed-all-fonts-and-use-pdf-a-1b-conformance-level.cs",
+      "task": "Configure pdf save options to embed all fonts and use pdf a 1b conformance level",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "convert-a-visio-file-to-swf-format-and-confirm-playback-works-in-a-web-browser",
+      "file": "convert-a-visio-file-to-swf-format-and-confirm-playback-works-in-a-web-browser.cs",
+      "task": "Convert a visio file to swf format and confirm playback works in a web browser",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Diagnostics",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "create-a-connector-between-two-shapes-and-configure-its-line-style-to-dashed-pattern",
+      "file": "create-a-connector-between-two-shapes-and-configure-its-line-style-to-dashed-pattern.cs",
+      "task": "Create a connector between two shapes and configure its line style to dashed pattern",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "create-a-new-diagram-instance-and-verify-it-contains-a-single-empty-page",
+      "file": "create-a-new-diagram-instance-and-verify-it-contains-a-single-empty-page.cs",
+      "task": "Create a new diagram instance and verify it contains a single empty page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "create-an-svg-file-from-the-diagram-and-test-that-hyperlinks-on-shapes-remain-functional",
+      "file": "create-an-svg-file-from-the-diagram-and-test-that-hyperlinks-on-shapes-remain-functional.cs",
+      "task": "Create an svg file from the diagram and test that hyperlinks on shapes remain functional",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Linq",
+        "System.Xml.Linq"
+      ]
+    },
+    {
+      "slug": "define-image-save-options-with-300-dpi-resolution-and-png-format-for-high-quality-output",
+      "file": "define-image-save-options-with-300-dpi-resolution-and-png-format-for-high-quality-output.cs",
+      "task": "Define image save options with 300 dpi resolution and png format for high quality output",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "duplicate-an-existing-shape-change-its-position-and-connect-it-to-the-original-using-a-connector",
+      "file": "duplicate-an-existing-shape-change-its-position-and-connect-it-to-the-original-using-a-connector.cs",
+      "task": "Duplicate an existing shape change its position and connect it to the original using a connector",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "export-the-diagram-as-a-pdf-document-and-ensure-all-shapes-retain-their-original-colors",
+      "file": "export-the-diagram-as-a-pdf-document-and-ensure-all-shapes-retain-their-original-colors.cs",
+      "task": "Export the diagram as a pdf document and ensure all shapes retain their original colors",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "generate-a-jpeg-image-of-the-diagram-with-150-dpi-and-embed-a-watermark-text-overlay",
+      "file": "generate-a-jpeg-image-of-the-diagram-with-150-dpi-and-embed-a-watermark-text-overlay.cs",
+      "task": "Generate a jpeg image of the diagram with 150 dpi and embed a watermark text overlay",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "import-a-stencil-collection-from-a-vsx-file-and-list-all-available-master-shapes",
+      "file": "import-a-stencil-collection-from-a-vsx-file-and-list-all-available-master-shapes.cs",
+      "task": "Import a stencil collection from a vsx file and list all available master shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "insert-a-rectangle-shape-onto-the-first-page-at-coordinates-2-2-with-width-3-centimeters",
+      "file": "insert-a-rectangle-shape-onto-the-first-page-at-coordinates-2-2-with-width-3-centimeters.cs",
+      "task": "Insert a rectangle shape onto the first page at coordinates 2 2 with width 3 centimeters",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "iterate-through-multiple-vsdx-files-extract-page-counts-and-write-results-to-a-csv-report",
+      "file": "iterate-through-multiple-vsdx-files-extract-page-counts-and-write-results-to-a-csv-report.cs",
+      "task": "Iterate through multiple vsdx files extract page counts and write results to a csv report",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Linq"
+      ]
+    },
+    {
+      "slug": "load-a-single-stencil-from-a-vss-file-and-add-a-master-shape-to-the-diagram",
+      "file": "load-a-single-stencil-from-a-vss-file-and-add-a-master-shape-to-the-diagram.cs",
+      "task": "Load a single stencil from a vss file and add a master shape to the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "load-an-existing-vdx-file-from-disk-using-the-diagram-constructor-and-validate-page-count",
+      "file": "load-an-existing-vdx-file-from-disk-using-the-diagram-constructor-and-validate-page-count.cs",
+      "task": "Load an existing vdx file from disk using the diagram constructor and validate page count",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "open-a-vsd-file-through-a-filestream-then-enumerate-all-shapes-on-the-first-page",
+      "file": "open-a-vsd-file-through-a-filestream-then-enumerate-all-shapes-on-the-first-page.cs",
+      "task": "Open a vsd file through a filestream then enumerate all shapes on the first page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "parse-an-mmd-file-into-a-diagram-object-and-convert-its-flowchart-to-visio-format",
+      "file": "parse-an-mmd-file-into-a-diagram-object-and-convert-its-flowchart-to-visio-format.cs",
+      "task": "Parse an mmd file into a diagram object and convert its flowchart to visio format",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "produce-an-html-representation-of-the-diagram-with-embedded-css-for-interactive-navigation",
+      "file": "produce-an-html-representation-of-the-diagram-with-embedded-css-for-interactive-navigation.cs",
+      "task": "Produce an html representation of the diagram with embedded css for interactive navigation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "read-a-vsdx-diagram-from-a-memory-stream-and-extract-its-document-title-property",
+      "file": "read-a-vsdx-diagram-from-a-memory-stream-and-extract-its-document-title-property.cs",
+      "task": "Read a vsdx diagram from a memory stream and extract its document title property",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "remove-a-specific-shape-by-its-id-from-the-diagram-and-re-save-the-updated-file",
+      "file": "remove-a-specific-shape-by-its-id-from-the-diagram-and-re-save-the-updated-file.cs",
+      "task": "Remove a specific shape by its id from the diagram and re save the updated file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "save-the-current-diagram-to-vsdx-format-and-verify-the-file-size-does-not-exceed-limit",
+      "file": "save-the-current-diagram-to-vsdx-format-and-verify-the-file-size-does-not-exceed-limit.cs",
+      "task": "Save the current diagram to vsdx format and verify the file size does not exceed limit",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "set-the-default-font-for-the-entire-diagram-to-times-new-roman-before-adding-shapes",
+      "file": "set-the-default-font-for-the-entire-diagram-to-times-new-roman-before-adding-shapes.cs",
+      "task": "Set the default font for the entire diagram to times new roman before adding shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "set-the-page-background-color-to-light-gray-for-better-contrast-when-exporting-to-image",
+      "file": "set-the-page-background-color-to-light-gray-for-better-contrast-when-exporting-to-image.cs",
+      "task": "Set the page background color to light gray for better contrast when exporting to image",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "specify-a-custom-page-range-in-html-save-options-to-export-only-pages-two-through-four",
+      "file": "specify-a-custom-page-range-in-html-save-options-to-export-only-pages-two-through-four.cs",
+      "task": "Specify a custom page range in html save options to export only pages two through four",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "specify-html-save-options-to-include-page-numbers-and-generate-separate-files-for-each-page",
+      "file": "specify-html-save-options-to-include-page-numbers-and-generate-separate-files-for-each-page.cs",
+      "task": "Specify html save options to include page numbers and generate separate files for each page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "validate-that-each-loaded-diagram-contains-at-least-one-shape-before-proceeding-with-processing",
+      "file": "validate-that-each-loaded-diagram-contains-at-least-one-shape-before-proceeding-with-processing.cs",
+      "task": "Validate that each loaded diagram contains at least one shape before proceeding with processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    }
+  ]
+}

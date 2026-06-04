@@ -1,0 +1,542 @@
+{
+  "category": "diagram-vba",
+  "display_name": "Diagram Vba",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 35,
+  "pass_rate": 100.0,
+  "generated": "2026-06-04",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-new-vba-module-containing-custom-macro-code-to-the-existing-diagram",
+      "file": "add-a-new-vba-module-containing-custom-macro-code-to-the-existing-diagram.cs",
+      "task": "Add a new vba module containing custom macro code to the existing diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-password-protection-to-the-vba-project-to-restrict-unauthorized-macro-editing",
+      "file": "apply-password-protection-to-the-vba-project-to-restrict-unauthorized-macro-editing.cs",
+      "task": "Apply password protection to the vba project to restrict unauthorized macro editing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-process-a-folder-of-visio-files-to-extract-each-vba-module-into-separate-bas-files",
+      "file": "batch-process-a-folder-of-visio-files-to-extract-each-vba-module-into-separate-bas-files.cs",
+      "task": "Batch process a folder of visio files to extract each vba module into separate bas files",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "batch-sign-vba-projects-in-multiple-diagrams-using-a-common-certificate-for-consistency",
+      "file": "batch-sign-vba-projects-in-multiple-diagrams-using-a-common-certificate-for-consistency.cs",
+      "task": "Batch sign vba projects in multiple diagrams using a common certificate for consistency",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "check-whether-the-vba-project-in-the-diagram-is-digitally-signed-with-a-certificate",
+      "file": "check-whether-the-vba-project-in-the-diagram-is-digitally-signed-with-a-certificate.cs",
+      "task": "Check whether the vba project in the diagram is digitally signed with a certificate",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "clone-the-vba-project-from-one-diagram-and-attach-it-to-another-diagram",
+      "file": "clone-the-vba-project-from-one-diagram-and-attach-it-to-another-diagram.cs",
+      "task": "Clone the vba project from one diagram and attach it to another diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "compare-vba-code-between-two-diagrams-and-highlight-differences-in-a-diff-report",
+      "file": "compare-vba-code-between-two-diagrams-and-highlight-differences-in-a-diff-report.cs",
+      "task": "Compare vba code between two diagrams and highlight differences in a diff report",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "compress-the-vba-project-within-a-diagram-to-minimize-overall-storage-footprint",
+      "file": "compress-the-vba-project-within-a-diagram-to-minimize-overall-storage-footprint.cs",
+      "task": "Compress the vba project within a diagram to minimize overall storage footprint",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.IO.Compression"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-the-diagram-to-pdf-while-embedding-vba-macros-for-interactive-documents",
+      "file": "convert-the-diagram-to-pdf-while-embedding-vba-macros-for-interactive-documents.cs",
+      "task": "Convert the diagram to pdf while embedding vba macros for interactive documents",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "count-total-lines-of-code-in-each-vba-module-and-summarize-results-in-a-report",
+      "file": "count-total-lines-of-code-in-each-vba-module-and-summarize-results-in-a-report.cs",
+      "task": "Count total lines of code in each vba module and summarize results in a report",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "delete-a-vba-module-identified-by-name-from-the-diagram-s-vba-project",
+      "file": "delete-a-vba-module-identified-by-name-from-the-diagram-s-vba-project.cs",
+      "task": "Delete a vba module identified by name from the diagram s vba project",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "enumerate-all-vba-modules-in-the-loaded-diagram-and-list-each-module-name",
+      "file": "enumerate-all-vba-modules-in-the-loaded-diagram-and-list-each-module-name.cs",
+      "task": "Enumerate all vba modules in the loaded diagram and list each module name",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "execute-a-specific-macro-programmatically-and-capture-its-output-for-verification",
+      "file": "execute-a-specific-macro-programmatically-and-capture-its-output-for-verification.cs",
+      "task": "Execute a specific macro programmatically and capture its output for verification",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.Diagnostics",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "export-the-entire-vba-project-to-an-external-vba-file-for-backup-purposes",
+      "file": "export-the-entire-vba-project-to-an-external-vba-file-for-backup-purposes.cs",
+      "task": "Export the entire vba project to an external vba file for backup purposes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "extract-the-source-code-of-a-specified-vba-module-and-save-it-to-a-bas-file",
+      "file": "extract-the-source-code-of-a-specified-vba-module-and-save-it-to-a-bas-file.cs",
+      "task": "Extract the source code of a specified vba module and save it to a bas file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-consolidated-csv-report-summarizing-vba-module-counts-across-all-processed-diagrams",
+      "file": "generate-a-consolidated-csv-report-summarizing-vba-module-counts-across-all-processed-diagrams.cs",
+      "task": "Generate a consolidated csv report summarizing vba module counts across all processed diagrams",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "import-a-previously-exported-vba-project-file-into-a-diagram-to-restore-macros",
+      "file": "import-a-previously-exported-vba-project-file-into-a-diagram-to-restore-macros.cs",
+      "task": "Import a previously exported vba project file into a diagram to restore macros",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "list-all-macro-names-defined-in-the-vba-project-together-with-their-containing-modules",
+      "file": "list-all-macro-names-defined-in-the-vba-project-together-with-their-containing-modules.cs",
+      "task": "List all macro names defined in the vba project together with their containing modules",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO",
+        "System.Text.RegularExpressions"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-a-memory-stream-and-access-its-vba-project-without-disk-i-o",
+      "file": "load-a-visio-diagram-from-a-memory-stream-and-access-its-vba-project-without-disk-i-o.cs",
+      "task": "Load a visio diagram from a memory stream and access its vba project without disk i o",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-file-and-access-its-vba-project-for-manipulation",
+      "file": "load-a-visio-diagram-from-file-and-access-its-vba-project-for-manipulation.cs",
+      "task": "Load a visio diagram from file and access its vba project for manipulation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "log-detailed-vba-project-metadata-to-a-json-file-for-auditing-purposes",
+      "file": "log-detailed-vba-project-metadata-to-a-json-file-for-auditing-purposes.cs",
+      "task": "Log detailed vba project metadata to a json file for auditing purposes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "perform-asynchronous-loading-of-a-diagram-and-retrieve-its-vba-project-once-loading-completes",
+      "file": "perform-asynchronous-loading-of-a-diagram-and-retrieve-its-vba-project-once-loading-completes.cs",
+      "task": "Perform asynchronous loading of a diagram and retrieve its vba project once loading completes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "remove-password-protection-from-a-vba-project-after-verifying-user-credentials-successfully",
+      "file": "remove-password-protection-from-a-vba-project-after-verifying-user-credentials-successfully.cs",
+      "task": "Remove password protection from a vba project after verifying user credentials successfully",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "remove-the-existing-digital-signature-from-the-vba-project-to-allow-unsigned-deployment",
+      "file": "remove-the-existing-digital-signature-from-the-vba-project-to-allow-unsigned-deployment.cs",
+      "task": "Remove the existing digital signature from the vba project to allow unsigned deployment",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "rename-a-vba-module-to-a-more-descriptive-identifier-within-the-same-diagram",
+      "file": "rename-a-vba-module-to-a-more-descriptive-identifier-within-the-same-diagram.cs",
+      "task": "Rename a vba module to a more descriptive identifier within the same diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "replace-all-instances-of-a-deprecated-function-name-with-the-updated-version-in-vba-modules",
+      "file": "replace-all-instances-of-a-deprecated-function-name-with-the-updated-version-in-vba-modules.cs",
+      "task": "Replace all instances of a deprecated function name with the updated version in vba modules",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-detailed-information-about-the-vba-project-s-digital-signature-including-signer-name",
+      "file": "retrieve-detailed-information-about-the-vba-project-s-digital-signature-including-signer-name.cs",
+      "task": "Retrieve detailed information about the vba project s digital signature including signer name",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "save-a-diagram-containing-vba-macros-to-a-memory-stream-for-network-transmission",
+      "file": "save-a-diagram-containing-vba-macros-to-a-memory-stream-for-network-transmission.cs",
+      "task": "Save a diagram containing vba macros to a memory stream for network transmission",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "save-the-diagram-preserving-its-vba-project-to-a-new-visio-file-format",
+      "file": "save-the-diagram-preserving-its-vba-project-to-a-new-visio-file-format.cs",
+      "task": "Save the diagram preserving its vba project to a new visio file format",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "save-the-diagram-without-including-the-vba-project-to-reduce-file-size",
+      "file": "save-the-diagram-without-including-the-vba-project-to-reduce-file-size.cs",
+      "task": "Save the diagram without including the vba project to reduce file size",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "search-vba-code-for-a-specific-keyword-and-return-module-locations-where-it-appears",
+      "file": "search-vba-code-for-a-specific-keyword-and-return-module-locations-where-it-appears.cs",
+      "task": "Search vba code for a specific keyword and return module locations where it appears",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "serialize-the-vba-project-structure-to-xml-for-integration-with-external-analysis-tools",
+      "file": "serialize-the-vba-project-structure-to-xml-for-integration-with-external-analysis-tools.cs",
+      "task": "Serialize the vba project structure to xml for integration with external analysis tools",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "sign-the-vba-project-using-a-provided-x509-certificate-to-ensure-authenticity",
+      "file": "sign-the-vba-project-using-a-provided-x509-certificate-to-ensure-authenticity.cs",
+      "task": "Sign the vba project using a provided x509 certificate to ensure authenticity",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO",
+        "System.Security.Cryptography.X509Certificates"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-an-existing-vba-module-by-replacing-its-content-with-new-macro-statements",
+      "file": "update-an-existing-vba-module-by-replacing-its-content-with-new-macro-statements.cs",
+      "task": "Update an existing vba module by replacing its content with new macro statements",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-vba-code-syntax-across-all-modules-and-report-any-compilation-errors",
+      "file": "validate-vba-code-syntax-across-all-modules-and-report-any-compilation-errors.cs",
+      "task": "Validate vba code syntax across all modules and report any compilation errors",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    }
+  ]
+}

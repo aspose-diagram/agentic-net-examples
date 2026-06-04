@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-04",
-  "total_examples": 191,
-  "total_categories": 4,
+  "total_examples": 225,
+  "total_categories": 5,
   "categories": [
     {
       "slug": "basic-operations",
@@ -28,6 +28,12 @@
       "slug": "diagram-vba",
       "display_name": "Diagram Vba",
       "total": 35,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "document-properties",
+      "display_name": "Document Properties",
+      "total": 34,
       "pass_rate": 100.0
     }
   ]

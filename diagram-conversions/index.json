@@ -1,0 +1,1683 @@
+{
+  "category": "diagram-conversions",
+  "display_name": "Diagram Conversions",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 96,
+  "pass_rate": 100.0,
+  "generated": "2026-06-04",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-configuration-to-enable-or-disable-progress-logging-via-appsettings-json-without-code-changes",
+      "file": "add-configuration-to-enable-or-disable-progress-logging-via-appsettings-json-without-code-changes.cs",
+      "task": "Add configuration to enable or disable progress logging via appsettings json without code changes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "add-support-for-custom-page-naming-by-modifying-page-titles-during-the-onpagesaving-callback",
+      "file": "add-support-for-custom-page-naming-by-modifying-page-titles-during-the-onpagesaving-callback.cs",
+      "task": "Add support for custom page naming by modifying page titles during the onpagesaving callback",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-filter-to-exclude-hidden-layers-from-the-html-conversion-using-diagram-saveoptions",
+      "file": "apply-a-filter-to-exclude-hidden-layers-from-the-html-conversion-using-diagram-saveoptions.cs",
+      "task": "Apply a filter to exclude hidden layers from the html conversion using diagram saveoptions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-transformation-to-replace-all-absolute-file-paths-in-html-with-relative-paths-using-a-post-process-step",
+      "file": "apply-a-transformation-to-replace-all-absolute-file-paths-in-html-with-relative-paths-using-a-post-process-step.cs",
+      "task": "Apply a transformation to replace all absolute file paths in html with relative paths using a post process step",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Text.RegularExpressions"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "assign-the-custom-ipagesavingcallback-instance-to-diagramsavingoptions-before-invoking-save",
+      "file": "assign-the-custom-ipagesavingcallback-instance-to-diagramsavingoptions-before-invoking-save.cs",
+      "task": "Assign the custom ipagesavingcallback instance to diagramsavingoptions before invoking save",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "combine-page-progress-callbacks-with-image-extraction-to-save-each-page-as-separate-png-files",
+      "file": "combine-page-progress-callbacks-with-image-extraction-to-save-each-page-as-separate-png-files.cs",
+      "task": "Combine page progress callbacks with image extraction to save each page as separate png files",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "configure-diagramsavingoptions-to-embed-metadata-indicating-conversion-timestamp-and-source-file-name",
+      "file": "configure-diagramsavingoptions-to-embed-metadata-indicating-conversion-timestamp-and-source-file-name.cs",
+      "task": "Configure diagramsavingoptions to embed metadata indicating conversion timestamp and source file name",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "configure-htmlsaveoptions-to-embed-css-styles-directly-within-the-generated-html-output",
+      "file": "configure-htmlsaveoptions-to-embed-css-styles-directly-within-the-generated-html-output.cs",
+      "task": "Configure htmlsaveoptions to embed css styles directly within the generated html output",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "configure-htmlsaveoptions-to-generate-separate-html-files-for-each-page-of-a-multi-page-visio-diagram",
+      "file": "configure-htmlsaveoptions-to-generate-separate-html-files-for-each-page-of-a-multi-page-visio-diagram.cs",
+      "task": "Configure htmlsaveoptions to generate separate html files for each page of a multi page visio diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "configure-htmlsaveoptions-to-limit-the-maximum-image-dimensions-in-the-generated-html",
+      "file": "configure-htmlsaveoptions-to-limit-the-maximum-image-dimensions-in-the-generated-html.cs",
+      "task": "Configure htmlsaveoptions to limit the maximum image dimensions in the generated html",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "configure-htmlsaveoptions-to-set-a-custom-css-class-prefix-for-all-generated-html-elements",
+      "file": "configure-htmlsaveoptions-to-set-a-custom-css-class-prefix-for-all-generated-html-elements.cs",
+      "task": "Configure htmlsaveoptions to set a custom css class prefix for all generated html elements",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "configure-htmlsaveoptions-to-set-a-custom-image-format-such-as-png-for-all-exported-diagram-images",
+      "file": "configure-htmlsaveoptions-to-set-a-custom-image-format-such-as-png-for-all-exported-diagram-images.cs",
+      "task": "Configure htmlsaveoptions to set a custom image format such as png for all exported diagram images",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "configure-htmlsaveoptions-to-set-a-custom-page-title-derived-from-the-visio-diagram-s-document-properties",
+      "file": "configure-htmlsaveoptions-to-set-a-custom-page-title-derived-from-the-visio-diagram-s-document-properties.cs",
+      "task": "Configure htmlsaveoptions to set a custom page title derived from the visio diagram s document properties",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-diagram-to-html-and-then-compress-the-entire-output-folder-into-a-zip-archive-programmatically",
+      "file": "convert-a-diagram-to-html-and-then-compress-the-entire-output-folder-into-a-zip-archive-programmatically.cs",
+      "task": "Convert a diagram to html and then compress the entire output folder into a zip archive programmatically",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.IO.Compression"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-diagram-to-html-and-then-embed-the-html-into-a-sharepoint-page-via-rest-api",
+      "file": "convert-a-diagram-to-html-and-then-embed-the-html-into-a-sharepoint-page-via-rest-api.cs",
+      "task": "Convert a diagram to html and then embed the html into a sharepoint page via rest api",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Net.Http",
+        "System.Net.Http.Headers",
+        "System.Text",
+        "System.Text.Json",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-diagram-to-html-and-then-embed-the-resulting-html-into-an-email-body-using-mime-multipart-format",
+      "file": "convert-a-diagram-to-html-and-then-embed-the-resulting-html-into-an-email-body-using-mime-multipart-format.cs",
+      "task": "Convert a diagram to html and then embed the resulting html into an email body using mime multipart format",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Net.Mail",
+        "System.Net.Mime",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-diagram-to-html-and-then-generate-a-pdf-snapshot-of-the-html-using-a-headless-browser-library",
+      "file": "convert-a-diagram-to-html-and-then-generate-a-pdf-snapshot-of-the-html-using-a-headless-browser-library.cs",
+      "task": "Convert a diagram to html and then generate a pdf snapshot of the html using a headless browser library",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-diagram-to-html-and-then-generate-a-sitemap-xml-file-listing-all-generated-html-pages-for-crawling",
+      "file": "convert-a-diagram-to-html-and-then-generate-a-sitemap-xml-file-listing-all-generated-html-pages-for-crawling.cs",
+      "task": "Convert a diagram to html and then generate a sitemap xml file listing all generated html pages for crawling",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Linq",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-diagram-to-html-and-then-programmatically-replace-placeholder-urls-with-cdn-links-using-string-manipulation",
+      "file": "convert-a-diagram-to-html-and-then-programmatically-replace-placeholder-urls-with-cdn-links-using-string-manipulation.cs",
+      "task": "Convert a diagram to html and then programmatically replace placeholder urls with cdn links using string manipulation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-diagram-to-html-and-then-validate-the-resulting-markup-against-an-html5-schema",
+      "file": "convert-a-diagram-to-html-and-then-validate-the-resulting-markup-against-an-html5-schema.cs",
+      "task": "Convert a diagram to html and then validate the resulting markup against an html5 schema",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Xml",
+        "System.Xml.Schema"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Pages",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-visio-diagram-to-html-and-embed-svg-representations-of-shapes-instead-of-raster-images",
+      "file": "convert-a-visio-diagram-to-html-and-embed-svg-representations-of-shapes-instead-of-raster-images.cs",
+      "task": "Convert a visio diagram to html and embed svg representations of shapes instead of raster images",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-visio-diagram-to-html-while-compressing-embedded-images-using-a-jpeg-encoder",
+      "file": "convert-a-visio-diagram-to-html-while-compressing-embedded-images-using-a-jpeg-encoder.cs",
+      "task": "Convert a visio diagram to html while compressing embedded images using a jpeg encoder",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Imaging",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "convert-a-visio-diagram-to-html-while-preserving-original-page-layout-by-setting-appropriate-htmlsaveoptions-flags",
+      "file": "convert-a-visio-diagram-to-html-while-preserving-original-page-layout-by-setting-appropriate-htmlsaveoptions-flags.cs",
+      "task": "Convert a visio diagram to html while preserving original page layout by setting appropriate htmlsaveoptions flags",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-diagrams-in-parallel-threads-each-with-its-own-istreamprovider-to-improve-batch-processing-throughput",
+      "file": "convert-diagrams-in-parallel-threads-each-with-its-own-istreamprovider-to-improve-batch-processing-throughput.cs",
+      "task": "Convert diagrams in parallel threads each with its own istreamprovider to improve batch processing throughput",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-batch-process-converting-multiple-visio-files-to-html-using-a-shared-istreamprovider-instance",
+      "file": "create-a-batch-process-converting-multiple-visio-files-to-html-using-a-shared-istreamprovider-instance.cs",
+      "task": "Create a batch process converting multiple visio files to html using a shared istreamprovider instance",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-batch-processing-loop-that-loads-multiple-visio-files-and-tracks-progress-for-each-conversion",
+      "file": "create-a-batch-processing-loop-that-loads-multiple-visio-files-and-tracks-progress-for-each-conversion.cs",
+      "task": "Create a batch processing loop that loads multiple visio files and tracks progress for each conversion",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-console-app-that-accepts-a-directory-path-and-converts-all-visio-files-to-html-using-streams",
+      "file": "create-a-console-app-that-accepts-a-directory-path-and-converts-all-visio-files-to-html-using-streams.cs",
+      "task": "Create a console app that accepts a directory path and converts all visio files to html using streams",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-diagnostic-report-listing-all-resources-created-by-istreamprovider-during-a-conversion-session",
+      "file": "create-a-diagnostic-report-listing-all-resources-created-by-istreamprovider-during-a-conversion-session.cs",
+      "task": "Create a diagnostic report listing all resources created by istreamprovider during a conversion session",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-powershell-script-that-invokes-a-net-assembly-to-perform-html-conversion-with-a-custom-stream-provider",
+      "file": "create-a-powershell-script-that-invokes-a-net-assembly-to-perform-html-conversion-with-a-custom-stream-provider.cs",
+      "task": "Create a powershell script that invokes a net assembly to perform html conversion with a custom stream provider",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-unit-test-verifying-onpagesaving-is-called-for-each-page-in-a-multi-page-diagram",
+      "file": "create-a-unit-test-verifying-onpagesaving-is-called-for-each-page-in-a-multi-page-diagram.cs",
+      "task": "Create a unit test verifying onpagesaving is called for each page in a multi page diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Pages",
+        "PdfSaveOptions",
+        "Save"
+      ]
+    },
+    {
+      "slug": "create-a-wpf-application-that-visualizes-conversion-progress-using-animated-progress-circles-per-page",
+      "file": "create-a-wpf-application-that-visualizes-conversion-progress-using-animated-progress-circles-per-page.cs",
+      "task": "Create a wpf application that visualizes conversion progress using animated progress circles per page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Threading"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-an-event-driven-architecture-where-onpagesaved-triggers-downstream-processing-of-saved-page-files",
+      "file": "create-an-event-driven-architecture-where-onpagesaved-triggers-downstream-processing-of-saved-page-files.cs",
+      "task": "Create an event driven architecture where onpagesaved triggers downstream processing of saved page files",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "customize-htmlsaveoptions-to-generate-a-single-html-file-with-base64-encoded-resources-embedded",
+      "file": "customize-htmlsaveoptions-to-generate-a-single-html-file-with-base64-encoded-resources-embedded.cs",
+      "task": "Customize htmlsaveoptions to generate a single html file with base64 encoded resources embedded",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "develop-a-console-application-that-accepts-input-and-output-paths-and-displays-real-time-conversion-progress",
+      "file": "develop-a-console-application-that-accepts-input-and-output-paths-and-displays-real-time-conversion-progress.cs",
+      "task": "Develop a console application that accepts input and output paths and displays real time conversion progress",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "develop-a-powershell-script-that-invokes-the-net-conversion-library-and-outputs-progress-messages-to-the-console",
+      "file": "develop-a-powershell-script-that-invokes-the-net-conversion-library-and-outputs-progress-messages-to-the-console.cs",
+      "task": "Develop a powershell script that invokes the net conversion library and outputs progress messages to the console",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "dispose-of-all-streams-returned-by-istreamprovider-correctly-to-prevent-memory-leaks-during-batch-conversion",
+      "file": "dispose-of-all-streams-returned-by-istreamprovider-correctly-to-prevent-memory-leaks-during-batch-conversion.cs",
+      "task": "Dispose of all streams returned by istreamprovider correctly to prevent memory leaks during batch conversion",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Pages",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "dispose-the-diagram-object-after-conversion-completes-to-promptly-release-unmanaged-resources",
+      "file": "dispose-the-diagram-object-after-conversion-completes-to-promptly-release-unmanaged-resources.cs",
+      "task": "Dispose the diagram object after conversion completes to promptly release unmanaged resources",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "expose-conversion-progress-through-a-rest-api-endpoint-by-invoking-the-callback-and-returning-json-status",
+      "file": "expose-conversion-progress-through-a-rest-api-endpoint-by-invoking-the-callback-and-returning-json-status.cs",
+      "task": "Expose conversion progress through a rest api endpoint by invoking the callback and returning json status",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Concurrent",
+        "System.IO",
+        "System.Net",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "extend-the-callback-to-capture-timestamps-for-each-page-save-and-calculate-average-processing-time",
+      "file": "extend-the-callback-to-capture-timestamps-for-each-page-save-and-calculate-average-processing-time.cs",
+      "task": "Extend the callback to capture timestamps for each page save and calculate average processing time",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.Diagnostics",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "extract-all-shape-ids-from-a-diagram-before-conversion-and-write-them-to-a-json-file",
+      "file": "extract-all-shape-ids-from-a-diagram-before-conversion-and-write-them-to-a-json-file.cs",
+      "task": "Extract all shape ids from a diagram before conversion and write them to a json file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "generate-html-from-a-diagram-and-capture-warning-messages-using-the-diagram-get-warnings-collection",
+      "file": "generate-html-from-a-diagram-and-capture-warning-messages-using-the-diagram-get-warnings-collection.cs",
+      "task": "Generate html from a diagram and capture warning messages using the diagram get warnings collection",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-html-output-then-extract-all-hyperlink-urls-from-the-generated-markup-for-analysis",
+      "file": "generate-html-output-then-extract-all-hyperlink-urls-from-the-generated-markup-for-analysis.cs",
+      "task": "Generate html output then extract all hyperlink urls from the generated markup for analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.RegularExpressions"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "handle-exceptions-during-diagram-save-by-wrapping-the-call-in-try-catch-and-logging-errors",
+      "file": "handle-exceptions-during-diagram-save-by-wrapping-the-call-in-try-catch-and-logging-errors.cs",
+      "task": "Handle exceptions during diagram save by wrapping the call in try catch and logging errors",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-cancellation-token-in-the-callback-to-abort-conversion-when-the-user-requests-stop",
+      "file": "implement-a-cancellation-token-in-the-callback-to-abort-conversion-when-the-user-requests-stop.cs",
+      "task": "Implement a cancellation token in the callback to abort conversion when the user requests stop",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Threading",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-custom-class-inheriting-ipagesavingcallback-to-receive-page-level-conversion-notifications",
+      "file": "implement-a-custom-class-inheriting-ipagesavingcallback-to-receive-page-level-conversion-notifications.cs",
+      "task": "Implement a custom class inheriting ipagesavingcallback to receive page level conversion notifications",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-custom-ipagesavingcallback-that-throttles-conversion-speed-to-limit-cpu-usage-on-low-end-devices",
+      "file": "implement-a-custom-ipagesavingcallback-that-throttles-conversion-speed-to-limit-cpu-usage-on-low-end-devices.cs",
+      "task": "Implement a custom ipagesavingcallback that throttles conversion speed to limit cpu usage on low end devices",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Concurrent",
+        "System.Diagnostics",
+        "System.Threading"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-custom-istreamprovider-that-caches-streams-in-memory-to-avoid-repeated-disk-writes-for-identical-resources",
+      "file": "implement-a-custom-istreamprovider-that-caches-streams-in-memory-to-avoid-repeated-disk-writes-for-identical-resources.cs",
+      "task": "Implement a custom istreamprovider that caches streams in memory to avoid repeated disk writes for identical resources",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-custom-istreamprovider-that-returns-a-read-only-stream-for-existing-resources-to-avoid-duplication",
+      "file": "implement-a-custom-istreamprovider-that-returns-a-read-only-stream-for-existing-resources-to-avoid-duplication.cs",
+      "task": "Implement a custom istreamprovider that returns a read only stream for existing resources to avoid duplication",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-custom-istreamprovider-that-streams-resources-directly-to-an-http-response-for-web-api-delivery",
+      "file": "implement-a-custom-istreamprovider-that-streams-resources-directly-to-an-http-response-for-web-api-delivery.cs",
+      "task": "Implement a custom istreamprovider that streams resources directly to an http response for web api delivery",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-custom-istreamprovider-that-writes-image-resources-to-a-memory-stream-for-later-processing",
+      "file": "implement-a-custom-istreamprovider-that-writes-image-resources-to-a-memory-stream-for-later-processing.cs",
+      "task": "Implement a custom istreamprovider that writes image resources to a memory stream for later processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": []
+    },
+    {
+      "slug": "implement-a-logging-mechanism-inside-istreamprovider-getstream-to-record-each-resource-creation-event",
+      "file": "implement-a-logging-mechanism-inside-istreamprovider-getstream-to-record-each-resource-creation-event.cs",
+      "task": "Implement a logging mechanism inside istreamprovider getstream to record each resource creation event",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-progress-reporter-updating-a-console-progress-bar-each-time-istreamprovider-getstream-is-called",
+      "file": "implement-a-progress-reporter-updating-a-console-progress-bar-each-time-istreamprovider-getstream-is-called.cs",
+      "task": "Implement a progress reporter updating a console progress bar each time istreamprovider getstream is called",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-retry-mechanism-for-transient-i-o-errors-when-writing-resource-streams-in-istreamprovider",
+      "file": "implement-a-retry-mechanism-for-transient-i-o-errors-when-writing-resource-streams-in-istreamprovider.cs",
+      "task": "Implement a retry mechanism for transient i o errors when writing resource streams in istreamprovider",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Threading"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-retry-mechanism-that-re-attempts-saving-a-page-if-onpagesaved-reports-failure",
+      "file": "implement-a-retry-mechanism-that-re-attempts-saving-a-page-if-onpagesaved-reports-failure.cs",
+      "task": "Implement a retry mechanism that re attempts saving a page if onpagesaved reports failure",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-unit-test-verifying-istreamprovider-receives-correct-resource-type-identifiers-for-images-and-shapes",
+      "file": "implement-a-unit-test-verifying-istreamprovider-receives-correct-resource-type-identifiers-for-images-and-shapes.cs",
+      "task": "Implement a unit test verifying istreamprovider receives correct resource type identifiers for images and shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "HTMLSaveOptions",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "implement-a-unit-test-verifying-the-custom-istreamprovider-receives-correct-resource-names-during-conversion",
+      "file": "implement-a-unit-test-verifying-the-custom-istreamprovider-receives-correct-resource-names-during-conversion.cs",
+      "task": "Implement a unit test verifying the custom istreamprovider receives correct resource names during conversion",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "HTMLSaveOptions",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-for-missing-resource-streams-when-istreamprovider-returns-null-for-a-requested-name",
+      "file": "implement-error-handling-for-missing-resource-streams-when-istreamprovider-returns-null-for-a-requested-name.cs",
+      "task": "Implement error handling for missing resource streams when istreamprovider returns null for a requested name",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-istreamprovider-getstream-to-route-shape-resources-to-separate-subfolders-based-on-shape-type",
+      "file": "implement-istreamprovider-getstream-to-route-shape-resources-to-separate-subfolders-based-on-shape-type.cs",
+      "task": "Implement istreamprovider getstream to route shape resources to separate subfolders based on shape type",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-istreamprovider-to-log-the-size-of-each-resource-stream-after-it-is-closed-for-auditing-purposes",
+      "file": "implement-istreamprovider-to-log-the-size-of-each-resource-stream-after-it-is-closed-for-auditing-purposes.cs",
+      "task": "Implement istreamprovider to log the size of each resource stream after it is closed for auditing purposes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-istreamprovider-to-store-resources-in-a-compressed-gzip-stream-before-writing-to-disk",
+      "file": "implement-istreamprovider-to-store-resources-in-a-compressed-gzip-stream-before-writing-to-disk.cs",
+      "task": "Implement istreamprovider to store resources in a compressed gzip stream before writing to disk",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.IO.Compression"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-istreamprovider-to-store-resources-in-azure-blob-storage-and-reference-them-via-public-urls",
+      "file": "implement-istreamprovider-to-store-resources-in-azure-blob-storage-and-reference-them-via-public-urls.cs",
+      "task": "Implement istreamprovider to store resources in azure blob storage and reference them via public urls",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-istreamprovider-to-store-shape-resources-in-a-database-blob-field-instead-of-file-system",
+      "file": "implement-istreamprovider-to-store-shape-resources-in-a-database-blob-field-instead-of-file-system.cs",
+      "task": "Implement istreamprovider to store shape resources in a database blob field instead of file system",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.Data",
+        "System.Data.SqlClient",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-istreamprovider-to-write-resource-streams-to-a-temporary-folder-that-is-automatically-cleaned-up-after-convers",
+      "file": "implement-istreamprovider-to-write-resource-streams-to-a-temporary-folder-that-is-automatically-cleaned-up-after-convers.cs",
+      "task": "Implement istreamprovider to write resource streams to a temporary folder that is automatically cleaned up after convers",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-localization-in-progress-messages-to-support-multiple-languages-during-conversion-ui-display",
+      "file": "implement-localization-in-progress-messages-to-support-multiple-languages-during-conversion-ui-display.cs",
+      "task": "Implement localization in progress messages to support multiple languages during conversion ui display",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "integrate-page-progress-messages-into-a-windows-forms-progress-bar-to-reflect-conversion-status",
+      "file": "integrate-page-progress-messages-into-a-windows-forms-progress-bar-to-reflect-conversion-status.cs",
+      "task": "Integrate page progress messages into a windows forms progress bar to reflect conversion status",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-a-file-path-and-initialize-a-diagram-object",
+      "file": "load-a-visio-diagram-from-a-file-path-and-initialize-a-diagram-object.cs",
+      "task": "Load a visio diagram from a file path and initialize a diagram object",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-a-file-path-and-validate-its-structure-before-conversion",
+      "file": "load-a-visio-diagram-from-a-file-path-and-validate-its-structure-before-conversion.cs",
+      "task": "Load a visio diagram from a file path and validate its structure before conversion",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "log-page-index-and-total-page-count-to-a-database-table-for-audit-trail-purposes",
+      "file": "log-page-index-and-total-page-count-to-a-database-table-for-audit-trail-purposes.cs",
+      "task": "Log page index and total page count to a database table for audit trail purposes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Data.SqlClient"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "measure-performance-of-html-conversion-with-and-without-a-custom-istreamprovider-to-compare-speed",
+      "file": "measure-performance-of-html-conversion-with-and-without-a-custom-istreamprovider-to-compare-speed.cs",
+      "task": "Measure performance of html conversion with and without a custom istreamprovider to compare speed",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Diagnostics",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "measure-total-conversion-time-by-recording-timestamps-before-and-after-diagram-save-and-logging-duration",
+      "file": "measure-total-conversion-time-by-recording-timestamps-before-and-after-diagram-save-and-logging-duration.cs",
+      "task": "Measure total conversion time by recording timestamps before and after diagram save and logging duration",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Diagnostics",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "mock-ipagesavingcallback-in-integration-tests-to-simulate-progress-events-without-performing-actual-file-saves",
+      "file": "mock-ipagesavingcallback-in-integration-tests-to-simulate-progress-events-without-performing-actual-file-saves.cs",
+      "task": "Mock ipagesavingcallback in integration tests to simulate progress events without performing actual file saves",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "override-onpagesaved-to-log-completion-of-each-page-save-and-total-pages-processed",
+      "file": "override-onpagesaved-to-log-completion-of-each-page-save-and-total-pages-processed.cs",
+      "task": "Override onpagesaved to log completion of each page save and total pages processed",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "override-onpagesaving-to-log-the-start-of-each-page-save-operation-with-its-index",
+      "file": "override-onpagesaving-to-log-the-start-of-each-page-save-operation-with-its-index.cs",
+      "task": "Override onpagesaving to log the start of each page save operation with its index",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "profile-memory-usage-during-large-diagram-conversion-to-ensure-callback-implementation-does-not-cause-leaks",
+      "file": "profile-memory-usage-during-large-diagram-conversion-to-ensure-callback-implementation-does-not-cause-leaks.cs",
+      "task": "Profile memory usage during large diagram conversion to ensure callback implementation does not cause leaks",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "save-html-conversion-output-to-a-network-share-by-providing-a-stream-that-writes-to-a-unc-path",
+      "file": "save-html-conversion-output-to-a-network-share-by-providing-a-stream-that-writes-to-a-unc-path.cs",
+      "task": "Save html conversion output to a network share by providing a stream that writes to a unc path",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "save-the-loaded-diagram-to-pdf-format-while-receiving-progress-callbacks-for-each-page",
+      "file": "save-the-loaded-diagram-to-pdf-format-while-receiving-progress-callbacks-for-each-page.cs",
+      "task": "Save the loaded diagram to pdf format while receiving progress callbacks for each page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "serialize-progress-callback-data-to-json-and-write-to-a-cloud-storage-bucket-for-remote-monitoring",
+      "file": "serialize-progress-callback-data-to-json-and-write-to-a-cloud-storage-bucket-for-remote-monitoring.cs",
+      "task": "Serialize progress callback data to json and write to a cloud storage bucket for remote monitoring",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Net.Http",
+        "System.Text.Json",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-a-custom-istreamprovider-that-prefixes-each-resource-file-name-with-a-timestamp-to-ensure-uniqueness",
+      "file": "use-a-custom-istreamprovider-that-prefixes-each-resource-file-name-with-a-timestamp-to-ensure-uniqueness.cs",
+      "task": "Use a custom istreamprovider that prefixes each resource file name with a timestamp to ensure uniqueness",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-a-custom-istreamprovider-that-writes-resource-streams-to-a-networked-file-system-with-retry-logic",
+      "file": "use-a-custom-istreamprovider-that-writes-resource-streams-to-a-networked-file-system-with-retry-logic.cs",
+      "task": "Use a custom istreamprovider that writes resource streams to a networked file system with retry logic",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Threading"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-a-custom-istreamprovider-to-encrypt-image-streams-before-writing-them-to-disk",
+      "file": "use-a-custom-istreamprovider-to-encrypt-image-streams-before-writing-them-to-disk.cs",
+      "task": "Use a custom istreamprovider to encrypt image streams before writing them to disk",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Security.Cryptography"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-a-custom-istreamprovider-to-generate-thumbnail-images-for-each-page-and-embed-them-in-the-html-index",
+      "file": "use-a-custom-istreamprovider-to-generate-thumbnail-images-for-each-page-and-embed-them-in-the-html-index.cs",
+      "task": "Use a custom istreamprovider to generate thumbnail images for each page and embed them in the html index",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Text.RegularExpressions"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "ImageSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-dependency-injection-to-provide-the-ipagesavingcallback-implementation-to-the-conversion-service",
+      "file": "use-dependency-injection-to-provide-the-ipagesavingcallback-implementation-to-the-conversion-service.cs",
+      "task": "Use dependency injection to provide the ipagesavingcallback implementation to the conversion service",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-diagram-load-with-a-stream-containing-a-visio-file-encrypted-with-a-password-and-then-convert",
+      "file": "use-diagram-load-with-a-stream-containing-a-visio-file-encrypted-with-a-password-and-then-convert.cs",
+      "task": "Use diagram load with a stream containing a visio file encrypted with a password and then convert",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-diagram-loadoptions-to-specify-password-for-encrypted-visio-files-before-tracking-conversion-progress",
+      "file": "use-diagram-loadoptions-to-specify-password-for-encrypted-visio-files-before-tracking-conversion-progress.cs",
+      "task": "Use diagram loadoptions to specify password for encrypted visio files before tracking conversion progress",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-diagram-save-with-a-filestream-and-htmlsaveoptions-to-write-html-directly-to-a-pre-created-file",
+      "file": "use-diagram-save-with-a-filestream-and-htmlsaveoptions-to-write-html-directly-to-a-pre-created-file.cs",
+      "task": "Use diagram save with a filestream and htmlsaveoptions to write html directly to a pre created file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-diagram-save-with-a-memorystream-and-htmlsaveoptions-to-generate-html-without-touching-the-file-system",
+      "file": "use-diagram-save-with-a-memorystream-and-htmlsaveoptions-to-generate-html-without-touching-the-file-system.cs",
+      "task": "Use diagram save with a memorystream and htmlsaveoptions to generate html without touching the file system",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-htmlsaveoptions-to-control-whether-shape-tooltips-are-included-in-the-generated-html-output",
+      "file": "use-htmlsaveoptions-to-control-whether-shape-tooltips-are-included-in-the-generated-html-output.cs",
+      "task": "Use htmlsaveoptions to control whether shape tooltips are included in the generated html output",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-htmlsaveoptions-to-disable-generation-of-external-css-files-and-produce-inline-style-definitions",
+      "file": "use-htmlsaveoptions-to-disable-generation-of-external-css-files-and-produce-inline-style-definitions.cs",
+      "task": "Use htmlsaveoptions to disable generation of external css files and produce inline style definitions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-htmlsaveoptions-to-enable-or-disable-inclusion-of-comments-from-the-original-visio-file-in-html-output",
+      "file": "use-htmlsaveoptions-to-enable-or-disable-inclusion-of-comments-from-the-original-visio-file-in-html-output.cs",
+      "task": "Use htmlsaveoptions to enable or disable inclusion of comments from the original visio file in html output",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-htmlsaveoptions-to-set-a-custom-base-url-for-all-linked-resources-in-the-html-file",
+      "file": "use-htmlsaveoptions-to-set-a-custom-base-url-for-all-linked-resources-in-the-html-file.cs",
+      "task": "Use htmlsaveoptions to set a custom base url for all linked resources in the html file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-parallel-foreach-to-convert-visio-diagrams-concurrently-while-ensuring-thread-safe-progress-logging",
+      "file": "use-parallel-foreach-to-convert-visio-diagrams-concurrently-while-ensuring-thread-safe-progress-logging.cs",
+      "task": "Use parallel foreach to convert visio diagrams concurrently while ensuring thread safe progress logging",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-all-external-resource-references-in-generated-html-point-to-existing-files-after-conversion",
+      "file": "validate-all-external-resource-references-in-generated-html-point-to-existing-files-after-conversion.cs",
+      "task": "Validate all external resource references in generated html point to existing files after conversion",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Text.RegularExpressions"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-no-duplicate-resource-names-are-produced-when-converting-diagrams-containing-identical-shapes",
+      "file": "validate-no-duplicate-resource-names-are-produced-when-converting-diagrams-containing-identical-shapes.cs",
+      "task": "Validate no duplicate resource names are produced when converting diagrams containing identical shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "validate-that-total-page-count-reported-in-callbacks-matches-diagram-pages-collection-size-after-loading",
+      "file": "validate-that-total-page-count-reported-in-callbacks-matches-diagram-pages-collection-size-after-loading.cs",
+      "task": "Validate that total page count reported in callbacks matches diagram pages collection size after loading",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-the-number-of-generated-image-streams-matches-the-number-of-pages-in-the-source-diagram",
+      "file": "validate-the-number-of-generated-image-streams-matches-the-number-of-pages-in-the-source-diagram.cs",
+      "task": "Validate the number of generated image streams matches the number of pages in the source diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "write-page-start-and-end-notifications-to-a-text-file-using-a-custom-logger-implementation",
+      "file": "write-page-start-and-end-notifications-to-a-text-file-using-a-custom-logger-implementation.cs",
+      "task": "Write page start and end notifications to a text file using a custom logger implementation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "product": "Aspose.Diagram for .NET",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "generated": "2026-06-04",
+  "total_examples": 30,
+  "total_categories": 1,
+  "categories": [
+    {
+      "slug": "basic-operations",
+      "display_name": "Basic Operations",
+      "total": 30,
+      "pass_rate": 100.0
+    }
+  ]
+}

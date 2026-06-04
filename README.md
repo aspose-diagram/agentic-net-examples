@@ -6,8 +6,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Examples | 156 |
-| Categories | 3 |
+| Total Examples | 191 |
+| Categories | 4 |
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.5.0 |
 | Target Framework | net8.0 |
@@ -35,6 +35,10 @@ diagram-conversions/
   agents.md    ← Category AI instructions
   index.json   ← Category catalogue
   *.cs         ← Example files
+diagram-vba/
+  agents.md    ← Category AI instructions
+  index.json   ← Category catalogue
+  *.cs         ← Example files
 ```
 
 ## Categories
@@ -44,6 +48,7 @@ diagram-conversions/
 | [Basic Operations](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/basic-operations/agents.md) |
 | [Convert Visio Document](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/convert-visio-document/agents.md) |
 | [Diagram Conversions](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-conversions) | 96 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/diagram-conversions/agents.md) |
+| [Diagram Vba](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/diagram-vba/agents.md) |
 
 ## How to Use
 

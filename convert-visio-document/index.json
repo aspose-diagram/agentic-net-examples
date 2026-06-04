@@ -1,0 +1,327 @@
+{
+  "category": "convert-visio-document",
+  "display_name": "Convert Visio Document",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 30,
+  "pass_rate": 100.0,
+  "generated": "2026-06-04",
+  "examples": [
+    {
+      "slug": "add-custom-shape-properties-as-additional-columns-when-exporting-vsd-diagram-to-csv",
+      "file": "add-custom-shape-properties-as-additional-columns-when-exporting-vsd-diagram-to-csv.cs",
+      "task": "Add custom shape properties as additional columns when exporting vsd diagram to csv",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "after-conversion-read-the-csv-content-and-verify-that-the-first-row-contains-expected-column-headers",
+      "file": "after-conversion-read-the-csv-content-and-verify-that-the-first-row-contains-expected-column-headers.cs",
+      "task": "After conversion read the csv content and verify that the first row contains expected column headers",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "catch-library-specific-exceptions-and-rethrow-them-with-additional-useful-context-information",
+      "file": "catch-library-specific-exceptions-and-rethrow-them-with-additional-useful-context-information.cs",
+      "task": "Catch library specific exceptions and rethrow them with additional useful context information",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "check-that-the-application-field-in-the-generated-csv-matches-the-library-s-default-value",
+      "file": "check-that-the-application-field-in-the-generated-csv-matches-the-library-s-default-value.cs",
+      "task": "Check that the application field in the generated csv matches the library s default value",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "configure-pdf-export-to-embed-fonts-by-setting-appropriate-options-in-saveoptions",
+      "file": "configure-pdf-export-to-embed-fonts-by-setting-appropriate-options-in-saveoptions.cs",
+      "task": "Configure pdf export to embed fonts by setting appropriate options in saveoptions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "convert-a-vsd-file-to-html-format-using-diagram-save-with-saveformat-html",
+      "file": "convert-a-vsd-file-to-html-format-using-diagram-save-with-saveformat-html.cs",
+      "task": "Convert a vsd file to html format using diagram save with saveformat html",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "convert-a-vsd-file-to-pdf-by-calling-diagram-save-with-saveformat-pdf",
+      "file": "convert-a-vsd-file-to-pdf-by-calling-diagram-save-with-saveformat-pdf.cs",
+      "task": "Convert a vsd file to pdf by calling diagram save with saveformat pdf",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "convert-only-the-first-two-pages-of-a-vsd-document-to-csv-by-specifying-a-page-range",
+      "file": "convert-only-the-first-two-pages-of-a-vsd-document-to-csv-by-specifying-a-page-range.cs",
+      "task": "Convert only the first two pages of a vsd document to csv by specifying a page range",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ]
+    },
+    {
+      "slug": "create-a-memorystream-to-capture-csv-data-in-memory-without-writing-to-disk",
+      "file": "create-a-memorystream-to-capture-csv-data-in-memory-without-writing-to-disk.cs",
+      "task": "Create a memorystream to capture csv data in memory without writing to disk",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "export-a-vsd-diagram-to-jpeg-image-by-specifying-saveformat-jpeg-in-diagram-save",
+      "file": "export-a-vsd-diagram-to-jpeg-image-by-specifying-saveformat-jpeg-in-diagram-save.cs",
+      "task": "Export a vsd diagram to jpeg image by specifying saveformat jpeg in diagram save",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "export-a-vsd-diagram-to-png-image-using-diagram-save-with-saveformat-png",
+      "file": "export-a-vsd-diagram-to-png-image-using-diagram-save-with-saveformat-png.cs",
+      "task": "Export a vsd diagram to png image using diagram save with saveformat png",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "export-a-vsd-diagram-to-svg-by-using-saveformat-svg-in-the-save-method",
+      "file": "export-a-vsd-diagram-to-svg-by-using-saveformat-svg-in-the-save-method.cs",
+      "task": "Export a vsd diagram to svg by using saveformat svg in the save method",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "export-each-page-of-a-multi-page-vsd-diagram-to-separate-csv-files-using-page-selection",
+      "file": "export-each-page-of-a-multi-page-vsd-diagram-to-separate-csv-files-using-page-selection.cs",
+      "task": "Export each page of a multi page vsd diagram to separate csv files using page selection",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ]
+    },
+    {
+      "slug": "generate-output-filenames-by-appending-a-timestamp-to-the-original-vsd-name-before-saving-csv",
+      "file": "generate-output-filenames-by-appending-a-timestamp-to-the-original-vsd-name-before-saving-csv.cs",
+      "task": "Generate output filenames by appending a timestamp to the original vsd name before saving csv",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "implement-a-console-application-that-converts-multiple-vsd-files-in-a-folder-to-csv-files",
+      "file": "implement-a-console-application-that-converts-multiple-vsd-files-in-a-folder-to-csv-files.cs",
+      "task": "Implement a console application that converts multiple vsd files in a folder to csv files",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "iterate-over-an-array-of-vsd-file-paths-with-a-foreach-loop-to-perform-batch-csv-exports",
+      "file": "iterate-over-an-array-of-vsd-file-paths-with-a-foreach-loop-to-perform-batch-csv-exports.cs",
+      "task": "Iterate over an array of vsd file paths with a foreach loop to perform batch csv exports",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "load-a-vsd-file-from-a-network-share-and-save-it-as-csv-using-diagram-save",
+      "file": "load-a-vsd-file-from-a-network-share-and-save-it-as-csv-using-diagram-save.cs",
+      "task": "Load a vsd file from a network share and save it as csv using diagram save",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "log-the-duration-of-each-vsd-to-csv-conversion-for-performance-monitoring",
+      "file": "log-the-duration-of-each-vsd-to-csv-conversion-for-performance-monitoring.cs",
+      "task": "Log the duration of each vsd to csv conversion for performance monitoring",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Diagnostics",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "parse-command-line-arguments-to-accept-input-folder-and-output-folder-paths-for-conversion",
+      "file": "parse-command-line-arguments-to-accept-input-folder-and-output-folder-paths-for-conversion.cs",
+      "task": "Parse command line arguments to accept input folder and output folder paths for conversion",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "resolve-relative-source-paths-to-absolute-paths-before-loading-each-vsd-diagram",
+      "file": "resolve-relative-source-paths-to-absolute-paths-before-loading-each-vsd-diagram.cs",
+      "task": "Resolve relative source paths to absolute paths before loading each vsd diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "retrieve-source-and-destination-directories-from-environment-variables-for-flexible-deployment-in-production",
+      "file": "retrieve-source-and-destination-directories-from-environment-variables-for-flexible-deployment-in-production.cs",
+      "task": "Retrieve source and destination directories from environment variables for flexible deployment in production",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "set-custom-image-resolution-before-saving-a-vsd-diagram-to-png-format",
+      "file": "set-custom-image-resolution-before-saving-a-vsd-diagram-to-png-format.cs",
+      "task": "Set custom image resolution before saving a vsd diagram to png format",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "set-the-csv-encoding-to-utf-8-by-configuring-the-saveoptions-before-calling-diagram-save",
+      "file": "set-the-csv-encoding-to-utf-8-by-configuring-the-saveoptions-before-calling-diagram-save.cs",
+      "task": "Set the csv encoding to utf 8 by configuring the saveoptions before calling diagram save",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Text"
+      ]
+    },
+    {
+      "slug": "use-a-filestream-inside-a-using-block-to-write-the-csv-output-for-a-single-vsd-conversion",
+      "file": "use-a-filestream-inside-a-using-block-to-write-the-csv-output-for-a-single-vsd-conversion.cs",
+      "task": "Use a filestream inside a using block to write the csv output for a single vsd conversion",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "use-parallel-foreach-to-convert-a-collection-of-vsd-files-to-csv-concurrently",
+      "file": "use-parallel-foreach-to-convert-a-collection-of-vsd-files-to-csv-concurrently.cs",
+      "task": "Use parallel foreach to convert a collection of vsd files to csv concurrently",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Threading.Tasks"
+      ]
+    },
+    {
+      "slug": "use-saveoptions-to-specify-image-quality-when-exporting-a-vsd-diagram-to-jpeg",
+      "file": "use-saveoptions-to-specify-image-quality-when-exporting-a-vsd-diagram-to-jpeg.cs",
+      "task": "Use saveoptions to specify image quality when exporting a vsd diagram to jpeg",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "verify-that-the-generated-csv-includes-the-required-header-row-defined-by-the-library-specification",
+      "file": "verify-that-the-generated-csv-includes-the-required-header-row-defined-by-the-library-specification.cs",
+      "task": "Verify that the generated csv includes the required header row defined by the library specification",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "verify-the-library-version-at-runtime-and-abort-conversion-if-it-is-older-than-the-required-build",
+      "file": "verify-the-library-version-at-runtime-and-abort-conversion-if-it-is-older-than-the-required-build.cs",
+      "task": "Verify the library version at runtime and abort conversion if it is older than the required build",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "wrap-the-conversion-call-in-a-try-catch-block-and-ensure-the-filestream-is-closed-in-finally",
+      "file": "wrap-the-conversion-call-in-a-try-catch-block-and-ensure-the-filestream-is-closed-in-finally.cs",
+      "task": "Wrap the conversion call in a try catch block and ensure the filestream is closed in finally",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ]
+    },
+    {
+      "slug": "write-a-unit-test-that-asserts-the-csv-file-contains-a-row-for-each-shape-in-the-diagram",
+      "file": "write-a-unit-test-that-asserts-the-csv-file-contains-a-row-for-each-shape-in-the-diagram.cs",
+      "task": "Write a unit test that asserts the csv file contains a row for each shape in the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Linq"
+      ]
+    }
+  ]
+}

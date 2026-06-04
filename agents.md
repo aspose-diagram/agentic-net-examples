@@ -3,8 +3,8 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 156
-categories: 3
+total_examples: 191
+categories: 4
 generated: 2026-06-04
 ---
 
@@ -21,8 +21,8 @@ generated: 2026-06-04
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 156 |
-| Categories | 3 |
+| Total Examples | 191 |
+| Categories | 4 |
 | Last Updated | 2026-06-04 |
 
 ## Persona
@@ -100,6 +100,7 @@ dotnet build --verbosity detailed
 | [Basic Operations](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/basic-operations/agents.md) |
 | [Convert Visio Document](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/convert-visio-document/agents.md) |
 | [Diagram Conversions](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-conversions) | 96 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/diagram-conversions/agents.md) |
+| [Diagram Vba](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/diagram-vba/agents.md) |
 
 ## Pipeline
 

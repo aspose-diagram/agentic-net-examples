@@ -1,0 +1,520 @@
+{
+  "category": "font-operations",
+  "display_name": "Font Operations",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 30,
+  "pass_rate": 100.0,
+  "generated": "2026-06-05",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "apply-a-bold-style-to-all-text-shapes-that-use-a-particular-font-within-the-diagram",
+      "file": "apply-a-bold-style-to-all-text-shapes-that-use-a-particular-font-within-the-diagram.cs",
+      "task": "Apply a bold style to all text shapes that use a particular font within the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-shadow-effect-to-all-text-using-a-particular-font-to-enhance-depth-in-the-output-image",
+      "file": "apply-a-shadow-effect-to-all-text-using-a-particular-font-to-enhance-depth-in-the-output-image.cs",
+      "task": "Apply a shadow effect to all text using a particular font to enhance depth in the output image",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "apply-kerning-adjustments-to-all-text-elements-using-a-particular-font-to-improve-spacing-consistency",
+      "file": "apply-kerning-adjustments-to-all-text-elements-using-a-particular-font-to-improve-spacing-consistency.cs",
+      "task": "Apply kerning adjustments to all text elements using a particular font to improve spacing consistency",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-convert-a-collection-of-vdx-files-to-pdf-ensuring-that-each-document-embeds-its-required-fonts",
+      "file": "batch-convert-a-collection-of-vdx-files-to-pdf-ensuring-that-each-document-embeds-its-required-fonts.cs",
+      "task": "Batch convert a collection of vdx files to pdf ensuring that each document embeds its required fonts",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-process-multiple-vsd-files-substituting-a-deprecated-font-with-a-modern-equivalent-in-each",
+      "file": "batch-process-multiple-vsd-files-substituting-a-deprecated-font-with-a-modern-equivalent-in-each.cs",
+      "task": "Batch process multiple vsd files substituting a deprecated font with a modern equivalent in each",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "configure-a-custom-font-folder-path-to-load-additional-truetype-fonts-for-diagram-processing",
+      "file": "configure-a-custom-font-folder-path-to-load-additional-truetype-fonts-for-diagram-processing.cs",
+      "task": "Configure a custom font folder path to load additional truetype fonts for diagram processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "configure-the-library-to-use-a-specific-font-cache-size-to-improve-performance-when-processing-large-diagrams",
+      "file": "configure-the-library-to-use-a-specific-font-cache-size-to-improve-performance-when-processing-large-diagrams.cs",
+      "task": "Configure the library to use a specific font cache size to improve performance when processing large diagrams",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-diagram-to-pdf-while-embedding-only-the-fonts-that-are-actually-used-in-the-document",
+      "file": "convert-a-diagram-to-pdf-while-embedding-only-the-fonts-that-are-actually-used-in-the-document.cs",
+      "task": "Convert a diagram to pdf while embedding only the fonts that are actually used in the document",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-custom-font-substitution-map-to-replace-unavailable-fonts-with-user-defined-alternatives-during-rendering",
+      "file": "create-a-custom-font-substitution-map-to-replace-unavailable-fonts-with-user-defined-alternatives-during-rendering.cs",
+      "task": "Create a custom font substitution map to replace unavailable fonts with user defined alternatives during rendering",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "detect-and-report-any-text-shapes-that-use-fonts-not-supported-by-the-target-output-format",
+      "file": "detect-and-report-any-text-shapes-that-use-fonts-not-supported-by-the-target-output-format.cs",
+      "task": "Detect and report any text shapes that use fonts not supported by the target output format",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Drawing.Text",
+        "System",
+        "System.Collections.Generic",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Fonts",
+        "Pages",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "embed-missing-fonts-into-the-output-pdf-to-ensure-visual-fidelity-across-different-devices",
+      "file": "embed-missing-fonts-into-the-output-pdf-to-ensure-visual-fidelity-across-different-devices.cs",
+      "task": "Embed missing fonts into the output pdf to ensure visual fidelity across different devices",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-a-diagram-to-html-embedding-web-safe-fonts-to-ensure-consistent-appearance-across-browsers",
+      "file": "export-a-diagram-to-html-embedding-web-safe-fonts-to-ensure-consistent-appearance-across-browsers.cs",
+      "task": "Export a diagram to html embedding web safe fonts to ensure consistent appearance across browsers",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-the-diagram-to-an-emf-file-that-all-text-is-converted-to-outlines-to-avoid-font-dependencies",
+      "file": "export-the-diagram-to-an-emf-file-that-all-text-is-converted-to-outlines-to-avoid-font-dependencies.cs",
+      "task": "Export the diagram to an emf file that all text is converted to outlines to avoid font dependencies",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "extract-a-list-of-unique-font-names-from-a-visio-file-and-export-them-to-a-csv-file",
+      "file": "extract-a-list-of-unique-font-names-from-a-visio-file-and-export-them-to-a-csv-file.cs",
+      "task": "Extract a list of unique font names from a visio file and export them to a csv file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Fonts",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "extract-font-metadata-such-as-family-name-style-and-version-from-each-text-shape-in-a-visio-file",
+      "file": "extract-font-metadata-such-as-family-name-style-and-version-from-each-text-shape-in-a-visio-file.cs",
+      "task": "Extract font metadata such as family name style and version from each text shape in a visio file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Fonts",
+        "Pages",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-preview-image-of-a-diagram-with-a-user-specified-font-applied-to-all-captions",
+      "file": "generate-a-preview-image-of-a-diagram-with-a-user-specified-font-applied-to-all-captions.cs",
+      "task": "Generate a preview image of a diagram with a user specified font applied to all captions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
+        "System",
+        "System.IO",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "generate-a-report-listing-each-font-used-in-a-diagram-along-with-the-number-of-occurrences-per-page",
+      "file": "generate-a-report-listing-each-font-used-in-a-diagram-along-with-the-number-of-occurrences-per-page.cs",
+      "task": "Generate a report listing each font used in a diagram along with the number of occurrences per page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-change-the-font-color-of-all-titles-to-an-rgb-value-and-save-as-pdf",
+      "file": "load-a-diagram-change-the-font-color-of-all-titles-to-an-rgb-value-and-save-as-pdf.cs",
+      "task": "Load a diagram change the font color of all titles to an rgb value and save as pdf",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-iterate-through-its-pages-and-replace-the-font-of-header-shapes-with-a-localized-version",
+      "file": "load-a-diagram-iterate-through-its-pages-and-replace-the-font-of-header-shapes-with-a-localized-version.cs",
+      "task": "Load a diagram iterate through its pages and replace the font of header shapes with a localized version",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Drawing.Text",
+        "System",
+        "System.IO",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-set-the-line-spacing-for-all-paragraphs-using-a-specific-font-and-save-as-docx",
+      "file": "load-a-diagram-set-the-line-spacing-for-all-paragraphs-using-a-specific-font-and-save-as-docx.cs",
+      "task": "Load a diagram set the line spacing for all paragraphs using a specific font and save as docx",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-a-vsdx-file-and-set-a-custom-default-font-for-rendering",
+      "file": "load-a-visio-diagram-from-a-vsdx-file-and-set-a-custom-default-font-for-rendering.cs",
+      "task": "Load a visio diagram from a vsdx file and set a custom default font for rendering",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "render-a-diagram-to-a-high-resolution-tiff-image-while-preserving-original-font-styles-and-weights",
+      "file": "render-a-diagram-to-a-high-resolution-tiff-image-while-preserving-original-font-styles-and-weights.cs",
+      "task": "Render a diagram to a high resolution tiff image while preserving original font styles and weights",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "render-a-diagram-to-png-format-while-forcing-the-use-of-a-specified-fallback-font-for-missing-glyphs",
+      "file": "render-a-diagram-to-png-format-while-forcing-the-use-of-a-specified-fallback-font-for-missing-glyphs.cs",
+      "task": "Render a diagram to png format while forcing the use of a specified fallback font for missing glyphs",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "replace-all-occurrences-of-a-specific-font-in-a-diagram-with-an-alternative-font-before-exporting",
+      "file": "replace-all-occurrences-of-a-specific-font-in-a-diagram-with-an-alternative-font-before-exporting.cs",
+      "task": "Replace all occurrences of a specific font in a diagram with an alternative font before exporting",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "replace-unicode-characters-in-text-shapes-with-equivalent-glyphs-from-a-fallback-font-to-avoid-missing-symbols",
+      "file": "replace-unicode-characters-in-text-shapes-with-equivalent-glyphs-from-a-fallback-font-to-avoid-missing-symbols.cs",
+      "task": "Replace unicode characters in text shapes with equivalent glyphs from a fallback font to avoid missing symbols",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-the-font-size-of-each-text-block-in-a-diagram-and-log-the-values-for-analysis",
+      "file": "retrieve-the-font-size-of-each-text-block-in-a-diagram-and-log-the-values-for-analysis.cs",
+      "task": "Retrieve the font size of each text block in a diagram and log the values for analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "set-the-default-font-for-newly-created-text-shapes-when-programmatically-adding-annotations-to-a-diagram",
+      "file": "set-the-default-font-for-newly-created-text-shapes-when-programmatically-adding-annotations-to-a-diagram.cs",
+      "task": "Set the default font for newly created text shapes when programmatically adding annotations to a diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-the-font-rendering-mode-to-anti-aliased-for-higher-quality-output-when-saving-as-svg",
+      "file": "set-the-font-rendering-mode-to-anti-aliased-for-higher-quality-output-when-saving-as-svg.cs",
+      "task": "Set the font rendering mode to anti aliased for higher quality output when saving as svg",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "SVGSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-all-fonts-used-in-a-loaded-diagram-are-available-on-the-system-before-rendering",
+      "file": "validate-that-all-fonts-used-in-a-loaded-diagram-are-available-on-the-system-before-rendering.cs",
+      "task": "Validate that all fonts used in a loaded diagram are available on the system before rendering",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Fonts",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-font-sizes-in-a-diagram-meet-accessibility-guidelines-before-exporting-to-pdf-a",
+      "file": "validate-that-font-sizes-in-a-diagram-meet-accessibility-guidelines-before-exporting-to-pdf-a.cs",
+      "task": "Validate that font sizes in a diagram meet accessibility guidelines before exporting to pdf a",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "Shapes"
+      ]
+    }
+  ]
+}

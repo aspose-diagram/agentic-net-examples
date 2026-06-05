@@ -6,8 +6,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Examples | 383 |
-| Categories | 7 |
+| Total Examples | 413 |
+| Categories | 8 |
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.5.0 |
 | Target Framework | net8.0 |
@@ -51,6 +51,10 @@ events-section-in-the-shapesheet/
   agents.md    ← Category AI instructions
   index.json   ← Category catalogue
   *.cs         ← Example files
+font-operations/
+  agents.md    ← Category AI instructions
+  index.json   ← Category catalogue
+  *.cs         ← Example files
 ```
 
 ## Categories
@@ -64,6 +68,7 @@ events-section-in-the-shapesheet/
 | [Document Properties](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties) | 34 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/document-properties/agents.md) |
 | [Drawing](https://github.com/aspose-diagram/agentic-net-examples/tree/main/drawing) | 125 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/drawing/agents.md) |
 | [Events Section In The Shapesheet](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet) | 33 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/events-section-in-the-shapesheet/agents.md) |
+| [Font Operations](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/font-operations/agents.md) |
 
 ## How to Use
 

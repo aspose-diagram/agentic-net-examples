@@ -2,9 +2,9 @@
   "product": "Aspose.Diagram for .NET",
   "version": "26.5.0",
   "framework": "net8.0",
-  "generated": "2026-06-04",
-  "total_examples": 225,
-  "total_categories": 5,
+  "generated": "2026-06-05",
+  "total_examples": 350,
+  "total_categories": 6,
   "categories": [
     {
       "slug": "basic-operations",
@@ -34,6 +34,12 @@
       "slug": "document-properties",
       "display_name": "Document Properties",
       "total": 34,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "drawing",
+      "display_name": "Drawing",
+      "total": 125,
       "pass_rate": 100.0
     }
   ]

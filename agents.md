@@ -3,9 +3,9 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 225
-categories: 5
-generated: 2026-06-04
+total_examples: 350
+categories: 6
+generated: 2026-06-05
 ---
 
 # Aspose.Diagram for .NET — Agentic Examples
@@ -21,9 +21,9 @@ generated: 2026-06-04
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 225 |
-| Categories | 5 |
-| Last Updated | 2026-06-04 |
+| Total Examples | 350 |
+| Categories | 6 |
+| Last Updated | 2026-06-05 |
 
 ## Persona
 
@@ -102,6 +102,7 @@ dotnet build --verbosity detailed
 | [Diagram Conversions](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-conversions) | 96 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/diagram-conversions/agents.md) |
 | [Diagram Vba](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/diagram-vba/agents.md) |
 | [Document Properties](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties) | 34 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/document-properties/agents.md) |
+| [Drawing](https://github.com/aspose-diagram/agentic-net-examples/tree/main/drawing) | 125 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/drawing/agents.md) |
 
 ## Pipeline
 
@@ -122,4 +123,4 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-04*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-05*

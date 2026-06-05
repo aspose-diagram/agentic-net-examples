@@ -3,8 +3,8 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 413
-categories: 8
+total_examples: 443
+categories: 9
 generated: 2026-06-05
 ---
 
@@ -21,8 +21,8 @@ generated: 2026-06-05
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 413 |
-| Categories | 8 |
+| Total Examples | 443 |
+| Categories | 9 |
 | Last Updated | 2026-06-05 |
 
 ## Persona
@@ -105,6 +105,7 @@ dotnet build --verbosity detailed
 | [Drawing](https://github.com/aspose-diagram/agentic-net-examples/tree/main/drawing) | 125 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/drawing/agents.md) |
 | [Events Section In The Shapesheet](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet) | 33 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/events-section-in-the-shapesheet/agents.md) |
 | [Font Operations](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/font-operations/agents.md) |
+| [Ole Objects In Visio Diagram](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/ole-objects-in-visio-diagram/agents.md) |
 
 ## Pipeline
 

@@ -6,12 +6,12 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Examples | 225 |
-| Categories | 5 |
+| Total Examples | 350 |
+| Categories | 6 |
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.5.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-04 |
+| Last Updated | 2026-06-05 |
 
 ## Repository Structure
 
@@ -43,6 +43,10 @@ document-properties/
   agents.md    ← Category AI instructions
   index.json   ← Category catalogue
   *.cs         ← Example files
+drawing/
+  agents.md    ← Category AI instructions
+  index.json   ← Category catalogue
+  *.cs         ← Example files
 ```
 
 ## Categories
@@ -54,6 +58,7 @@ document-properties/
 | [Diagram Conversions](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-conversions) | 96 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/diagram-conversions/agents.md) |
 | [Diagram Vba](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/diagram-vba/agents.md) |
 | [Document Properties](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties) | 34 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/document-properties/agents.md) |
+| [Drawing](https://github.com/aspose-diagram/agentic-net-examples/tree/main/drawing) | 125 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/drawing/agents.md) |
 
 ## How to Use
 
@@ -96,4 +101,4 @@ Examples are generated automatically by the [Aspose.Diagram Examples Generator A
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-04*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-05*

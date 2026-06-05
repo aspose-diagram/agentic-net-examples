@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-05",
-  "total_examples": 413,
-  "total_categories": 8,
+  "total_examples": 443,
+  "total_categories": 9,
   "categories": [
     {
       "slug": "basic-operations",
@@ -51,6 +51,12 @@
     {
       "slug": "font-operations",
       "display_name": "Font Operations",
+      "total": 30,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "ole-objects-in-visio-diagram",
+      "display_name": "Ole Objects In Visio Diagram",
       "total": 30,
       "pass_rate": 100.0
     }

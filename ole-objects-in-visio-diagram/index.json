@@ -1,0 +1,537 @@
+{
+  "category": "ole-objects-in-visio-diagram",
+  "display_name": "Ole Objects In Visio Diagram",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 30,
+  "pass_rate": 100.0,
+  "generated": "2026-06-05",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-new-ole-object-linking-to-a-word-document-at-a-specified-page-location",
+      "file": "add-a-new-ole-object-linking-to-a-word-document-at-a-specified-page-location.cs",
+      "task": "Add a new ole object linking to a word document at a specified page location",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "apply-a-custom-dpi-setting-when-rendering-ole-object-previews-to-improve-image-clarity",
+      "file": "apply-a-custom-dpi-setting-when-rendering-ole-object-previews-to-improve-image-clarity.cs",
+      "task": "Apply a custom dpi setting when rendering ole object previews to improve image clarity",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-security-password-to-ole-objects-that-contain-confidential-pdf-content-before-exporting",
+      "file": "apply-a-security-password-to-ole-objects-that-contain-confidential-pdf-content-before-exporting.cs",
+      "task": "Apply a security password to ole objects that contain confidential pdf content before exporting",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-process-a-folder-of-visio-files-extracting-ole-objects-and-generating-a-summary-csv-report",
+      "file": "batch-process-a-folder-of-visio-files-extracting-ole-objects-and-generating-a-summary-csv-report.cs",
+      "task": "Batch process a folder of visio files extracting ole objects and generating a summary csv report",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Reflection",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "compare-ole-objects-between-two-visio-diagrams-and-report-differences-in-embedded-file-types",
+      "file": "compare-ole-objects-between-two-visio-diagrams-and-report-differences-in-embedded-file-types.cs",
+      "task": "Compare ole objects between two visio diagrams and report differences in embedded file types",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "compress-ole-object-streams-using-zip-compression-before-saving-the-visio-diagram-to-reduce-file-size",
+      "file": "compress-ole-object-streams-using-zip-compression-before-saving-the-visio-diagram-to-reduce-file-size.cs",
+      "task": "Compress ole object streams using zip compression before saving the visio diagram to reduce file size",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.IO.Compression"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "configure-the-diagram-saver-to-retain-ole-objects-when-converting-the-visio-file-to-svg-format",
+      "file": "configure-the-diagram-saver-to-retain-ole-objects-when-converting-the-visio-file-to-svg-format.cs",
+      "task": "Configure the diagram saver to retain ole objects when converting the visio file to svg format",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "SVGSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-embedded-ole-excel-worksheets-to-csv-files-while-preserving-cell-formatting-information",
+      "file": "convert-embedded-ole-excel-worksheets-to-csv-files-while-preserving-cell-formatting-information.cs",
+      "task": "Convert embedded ole excel worksheets to csv files while preserving cell formatting information",
+      "namespaces": [
+        "Aspose.Cells",
+        "Aspose.Cells.Saving",
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "create-a-copy-of-a-visio-diagram-with-all-ole-objects-converted-to-embedded-images",
+      "file": "create-a-copy-of-a-visio-diagram-with-all-ole-objects-converted-to-embedded-images.cs",
+      "task": "Create a copy of a visio diagram with all ole objects converted to embedded images",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "delete-ole-objects-whose-embedded-type-matches-excel-worksheets-from-the-diagram",
+      "file": "delete-ole-objects-whose-embedded-type-matches-excel-worksheets-from-the-diagram.cs",
+      "task": "Delete ole objects whose embedded type matches excel worksheets from the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "detect-and-log-ole-objects-that-reference-missing-external-files-during-diagram-validation",
+      "file": "detect-and-log-ole-objects-that-reference-missing-external-files-during-diagram-validation.cs",
+      "task": "Detect and log ole objects that reference missing external files during diagram validation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "enable-lazy-loading-of-ole-objects-to-improve-initial-diagram-opening-performance",
+      "file": "enable-lazy-loading-of-ole-objects-to-improve-initial-diagram-opening-performance.cs",
+      "task": "Enable lazy loading of ole objects to improve initial diagram opening performance",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-ole-objects-to-a-zip-archive-while-preserving-original-directory-hierarchy-based-on-object-names",
+      "file": "export-ole-objects-to-a-zip-archive-while-preserving-original-directory-hierarchy-based-on-object-names.cs",
+      "task": "Export ole objects to a zip archive while preserving original directory hierarchy based on object names",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.IO.Compression"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "extract-the-binary-data-of-each-ole-object-and-save-it-as-separate-files-preserving-original-extensions",
+      "file": "extract-the-binary-data-of-each-ole-object-and-save-it-as-separate-files-preserving-original-extensions.cs",
+      "task": "Extract the binary data of each ole object and save it as separate files preserving original extensions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "filter-ole-objects-by-size-threshold-and-remove-those-exceeding-a-specified-megabyte-limit",
+      "file": "filter-ole-objects-by-size-threshold-and-remove-those-exceeding-a-specified-megabyte-limit.cs",
+      "task": "Filter ole objects by size threshold and remove those exceeding a specified megabyte limit",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-an-html-report-listing-each-ole-object-s-type-size-and-source-file-path",
+      "file": "generate-an-html-report-listing-each-ole-object-s-type-size-and-source-file-path.cs",
+      "task": "Generate an html report listing each ole object s type size and source file path",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "iterate-through-ole-objects-and-log-their-bounding-box-coordinates-for-layout-analysis",
+      "file": "iterate-through-ole-objects-and-log-their-bounding-box-coordinates-for-layout-analysis.cs",
+      "task": "Iterate through ole objects and log their bounding box coordinates for layout analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-a-file-path-and-enumerate-all-embedded-ole-objects",
+      "file": "load-a-visio-diagram-from-a-file-path-and-enumerate-all-embedded-ole-objects.cs",
+      "task": "Load a visio diagram from a file path and enumerate all embedded ole objects",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-a-memory-stream-and-enumerate-ole-objects-without-writing-to-disk",
+      "file": "load-a-visio-diagram-from-a-memory-stream-and-enumerate-ole-objects-without-writing-to-disk.cs",
+      "task": "Load a visio diagram from a memory stream and enumerate ole objects without writing to disk",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "merge-ole-objects-from-multiple-diagrams-into-a-single-master-diagram-preserving-original-positions",
+      "file": "merge-ole-objects-from-multiple-diagrams-into-a-single-master-diagram-preserving-original-positions.cs",
+      "task": "Merge ole objects from multiple diagrams into a single master diagram preserving original positions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "programmatically-unlock-ole-objects-that-are-password-protected-using-a-supplied-decryption-key",
+      "file": "programmatically-unlock-ole-objects-that-are-password-protected-using-a-supplied-decryption-key.cs",
+      "task": "Programmatically unlock ole objects that are password protected using a supplied decryption key",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Security.Cryptography"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "read-ole-object-metadata-such-as-source-file-name-and-creation-date-for-audit-purposes",
+      "file": "read-ole-object-metadata-such-as-source-file-name-and-creation-date-for-audit-purposes.cs",
+      "task": "Read ole object metadata such as source file name and creation date for audit purposes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "render-a-preview-image-of-each-ole-object-and-embed-it-as-a-shape-thumbnail",
+      "file": "render-a-preview-image-of-each-ole-object-and-embed-it-as-a-shape-thumbnail.cs",
+      "task": "Render a preview image of each ole object and embed it as a shape thumbnail",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "replace-a-specific-ole-object-identified-by-its-index-with-a-new-external-pdf-file",
+      "file": "replace-a-specific-ole-object-identified-by-its-index-with-a-new-external-pdf-file.cs",
+      "task": "Replace a specific ole object identified by its index with a new external pdf file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "replace-all-ole-objects-of-type-powerpoint-with-a-placeholder-image-to-reduce-diagram-complexity",
+      "file": "replace-all-ole-objects-of-type-powerpoint-with-a-placeholder-image-to-reduce-diagram-complexity.cs",
+      "task": "Replace all ole objects of type powerpoint with a placeholder image to reduce diagram complexity",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "serialize-ole-object-information-into-json-format-for-integration-with-external-inventory-systems",
+      "file": "serialize-ole-object-information-into-json-format-for-integration-with-external-inventory-systems.cs",
+      "task": "Serialize ole object information into json format for integration with external inventory systems",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "set-ole-object-display-mode-to-icon-only-and-customize-the-icon-caption-for-better-readability",
+      "file": "set-ole-object-display-mode-to-icon-only-and-customize-the-icon-caption-for-better-readability.cs",
+      "task": "Set ole object display mode to icon only and customize the icon caption for better readability",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-ole-object-hyperlinks-to-point-to-a-new-network-share-location-across-the-diagram",
+      "file": "update-ole-object-hyperlinks-to-point-to-a-new-network-share-location-across-the-diagram.cs",
+      "task": "Update ole object hyperlinks to point to a new network share location across the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-the-display-name-property-of-all-ole-objects-to-include-a-timestamp-prefix",
+      "file": "update-the-display-name-property-of-all-ole-objects-to-include-a-timestamp-prefix.cs",
+      "task": "Update the display name property of all ole objects to include a timestamp prefix",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-each-ole-object-contains-non-empty-data-and-log-warnings-for-empty-entries",
+      "file": "validate-that-each-ole-object-contains-non-empty-data-and-log-warnings-for-empty-entries.cs",
+      "task": "Validate that each ole object contains non empty data and log warnings for empty entries",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    }
+  ]
+}

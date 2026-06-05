@@ -1,0 +1,576 @@
+{
+  "category": "events-section-in-the-shapesheet",
+  "display_name": "Events Section In The Shapesheet",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 33,
+  "pass_rate": 100.0,
+  "generated": "2026-06-05",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-timestamp-to-the-eventafterupdate-cell-of-each-shape-to-track-modification-times",
+      "file": "add-a-timestamp-to-the-eventafterupdate-cell-of-each-shape-to-track-modification-times.cs",
+      "task": "Add a timestamp to the eventafterupdate cell of each shape to track modification times",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-global-eventvalidate-formula-that-enforces-naming-conventions-for-shape-titles",
+      "file": "apply-a-global-eventvalidate-formula-that-enforces-naming-conventions-for-shape-titles.cs",
+      "task": "Apply a global eventvalidate formula that enforces naming conventions for shape titles",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-conditional-formatting-to-shapes-based-on-the-result-of-their-eventcalc-cell-evaluation",
+      "file": "apply-conditional-formatting-to-shapes-based-on-the-result-of-their-eventcalc-cell-evaluation.cs",
+      "task": "Apply conditional formatting to shapes based on the result of their eventcalc cell evaluation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "automate-the-removal-of-duplicate-eventcomment-cells-to-streamline-diagram-metadata-across-all-pages",
+      "file": "automate-the-removal-of-duplicate-eventcomment-cells-to-streamline-diagram-metadata-across-all-pages.cs",
+      "task": "Automate the removal of duplicate eventcomment cells to streamline diagram metadata across all pages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-update-the-eventshapeadded-cell-to-assign-unique-identifiers-based-on-shape-index",
+      "file": "batch-update-the-eventshapeadded-cell-to-assign-unique-identifiers-based-on-shape-index.cs",
+      "task": "Batch update the eventshapeadded cell to assign unique identifiers based on shape index",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "compare-eventcell-values-between-two-versions-of-a-diagram-to-detect-changes-in-event-logic",
+      "file": "compare-eventcell-values-between-two-versions-of-a-diagram-to-detect-changes-in-event-logic.cs",
+      "task": "Compare eventcell values between two versions of a diagram to detect changes in event logic",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "configure-the-eventshapedeleted-cell-to-trigger-a-cleanup-routine-that-removes-related-custom-data",
+      "file": "configure-the-eventshapedeleted-cell-to-trigger-a-cleanup-routine-that-removes-related-custom-data.cs",
+      "task": "Configure the eventshapedeleted cell to trigger a cleanup routine that removes related custom data",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "configure-the-eventshaperesized-cell-to-maintain-aspect-ratio-by-applying-a-scaling-formula",
+      "file": "configure-the-eventshaperesized-cell-to-maintain-aspect-ratio-by-applying-a-scaling-formula.cs",
+      "task": "Configure the eventshaperesized cell to maintain aspect ratio by applying a scaling formula",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "copy-eventformula-cells-from-a-template-shape-to-newly-created-shapes-in-a-batch-operation",
+      "file": "copy-eventformula-cells-from-a-template-shape-to-newly-created-shapes-in-a-batch-operation.cs",
+      "task": "Copy eventformula cells from a template shape to newly created shapes in a batch operation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram",
+        "shape"
+      ]
+    },
+    {
+      "slug": "create-a-backup-of-the-eventsection-before-performing-bulk-modifications-to-enable-rollback",
+      "file": "create-a-backup-of-the-eventsection-before-performing-bulk-modifications-to-enable-rollback.cs",
+      "task": "Create a backup of the eventsection before performing bulk modifications to enable rollback",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-batch-process-that-disables-eventmousedown-cells-for-shapes-marked-as-read-only",
+      "file": "create-a-batch-process-that-disables-eventmousedown-cells-for-shapes-marked-as-read-only.cs",
+      "task": "Create a batch process that disables eventmousedown cells for shapes marked as read only",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-custom-event-handler-that-logs-shape-ids-whenever-the-eventmouseleave-cell-fires",
+      "file": "create-a-custom-event-handler-that-logs-shape-ids-whenever-the-eventmouseleave-cell-fires.cs",
+      "task": "Create a custom event handler that logs shape ids whenever the eventmouseleave cell fires",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-utility-that-clones-eventsection-cells-from-a-master-shape-to-a-group-of-duplicates",
+      "file": "create-a-utility-that-clones-eventsection-cells-from-a-master-shape-to-a-group-of-duplicates.cs",
+      "task": "Create a utility that clones eventsection cells from a master shape to a group of duplicates",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "export-eventcell-values-of-every-shape-to-a-csv-file-for-external-analysis",
+      "file": "export-eventcell-values-of-every-shape-to-a-csv-file-for-external-analysis.cs",
+      "task": "Export eventcell values of every shape to a csv file for external analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "extract-eventcell-formulas-and-visualize-them-as-a-directed-graph-to-analyze-dependencies",
+      "file": "extract-eventcell-formulas-and-visualize-them-as-a-directed-graph-to-analyze-dependencies.cs",
+      "task": "Extract eventcell formulas and visualize them as a directed graph to analyze dependencies",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.RegularExpressions"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "generate-a-report-listing-shapes-with-missing-eventmousedown-definitions-for-quality-assurance",
+      "file": "generate-a-report-listing-shapes-with-missing-eventmousedown-definitions-for-quality-assurance.cs",
+      "task": "Generate a report listing shapes with missing eventmousedown definitions for quality assurance",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "generate-documentation-summarizing-all-custom-eventsection-configurations-applied-to-a-diagram-for-developers",
+      "file": "generate-documentation-summarizing-all-custom-eventsection-configurations-applied-to-a-diagram-for-developers.cs",
+      "task": "Generate documentation summarizing all custom eventsection configurations applied to a diagram for developers",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "implement-a-validation-routine-that-ensures-eventcalc-formulas-reference-only-existing-shape-ids",
+      "file": "implement-a-validation-routine-that-ensures-eventcalc-formulas-reference-only-existing-shape-ids.cs",
+      "task": "Implement a validation routine that ensures eventcalc formulas reference only existing shape ids",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.Text.RegularExpressions"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "import-event-definitions-from-a-csv-file-and-apply-them-to-corresponding-shapes-programmatically",
+      "file": "import-event-definitions-from-a-csv-file-and-apply-them-to-corresponding-shapes-programmatically.cs",
+      "task": "Import event definitions from a csv file and apply them to corresponding shapes programmatically",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "iterate-through-all-shapes-and-prepend-a-prefix-to-their-eventdata1-cell-formulas",
+      "file": "iterate-through-all-shapes-and-prepend-a-prefix-to-their-eventdata1-cell-formulas.cs",
+      "task": "Iterate through all shapes and prepend a prefix to their eventdata1 cell formulas",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-and-set-the-eventdblclick-cell-for-a-specific-shape",
+      "file": "load-a-visio-diagram-and-set-the-eventdblclick-cell-for-a-specific-shape.cs",
+      "task": "Load a visio diagram and set the eventdblclick cell for a specific shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "merge-two-diagrams-by-copying-eventsection-cells-from-source-shapes-to-matching-target-shapes",
+      "file": "merge-two-diagrams-by-copying-eventsection-cells-from-source-shapes-to-matching-target-shapes.cs",
+      "task": "Merge two diagrams by copying eventsection cells from source shapes to matching target shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "programmatically-disable-all-eventmouseover-cells-to-improve-diagram-rendering-performance-during-batch-processing",
+      "file": "programmatically-disable-all-eventmouseover-cells-to-improve-diagram-rendering-performance-during-batch-processing.cs",
+      "task": "Programmatically disable all eventmouseover cells to improve diagram rendering performance during batch processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Reflection"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "read-the-eventdrop-cell-values-from-all-shapes-and-log-them-to-a-text-file",
+      "file": "read-the-eventdrop-cell-values-from-all-shapes-and-log-them-to-a-text-file.cs",
+      "task": "Read the eventdrop cell values from all shapes and log them to a text file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "remove-all-eventcomment-cells-from-a-diagram-to-clean-up-unused-event-definitions",
+      "file": "remove-all-eventcomment-cells-from-a-diagram-to-clean-up-unused-event-definitions.cs",
+      "task": "Remove all eventcomment cells from a diagram to clean up unused event definitions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Reflection"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-the-eventshapeadded-cell-to-automatically-assign-a-default-style-when-new-shapes-are-inserted",
+      "file": "set-the-eventshapeadded-cell-to-automatically-assign-a-default-style-when-new-shapes-are-inserted.cs",
+      "task": "Set the eventshapeadded cell to automatically assign a default style when new shapes are inserted",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-the-eventshapedatachanged-cell-to-invoke-a-custom-script-that-recalculates-dependent-values",
+      "file": "set-the-eventshapedatachanged-cell-to-invoke-a-custom-script-that-recalculates-dependent-values.cs",
+      "task": "Set the eventshapedatachanged cell to invoke a custom script that recalculates dependent values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-the-eventshapedeleted-cell-to-log-deletion-timestamps-into-an-external-audit-log-file",
+      "file": "set-the-eventshapedeleted-cell-to-log-deletion-timestamps-into-an-external-audit-log-file.cs",
+      "task": "Set the eventshapedeleted cell to log deletion timestamps into an external audit log file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-the-eventmouseenter-cell-to-trigger-a-custom-macro-across-multiple-selected-shapes",
+      "file": "update-the-eventmouseenter-cell-to-trigger-a-custom-macro-across-multiple-selected-shapes.cs",
+      "task": "Update the eventmouseenter cell to trigger a custom macro across multiple selected shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Diagram.Vba",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-a-regular-expression-to-filter-shapes-whose-eventcomment-cell-contains-a-specific-keyword",
+      "file": "use-a-regular-expression-to-filter-shapes-whose-eventcomment-cell-contains-a-specific-keyword.cs",
+      "task": "Use a regular expression to filter shapes whose eventcomment cell contains a specific keyword",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Text.RegularExpressions"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "use-conditional-logic-in-the-eventafterupdate-cell-to-trigger-different-actions-based-on-shape-type",
+      "file": "use-conditional-logic-in-the-eventafterupdate-cell-to-trigger-different-actions-based-on-shape-type.cs",
+      "task": "Use conditional logic in the eventafterupdate cell to trigger different actions based on shape type",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-each-shape-s-eventvalidate-cell-contains-a-non-empty-formula-before-saving",
+      "file": "validate-that-each-shape-s-eventvalidate-cell-contains-a-non-empty-formula-before-saving.cs",
+      "task": "Validate that each shape s eventvalidate cell contains a non empty formula before saving",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "write-a-script-that-logs-the-execution-order-of-eventmousedown-cells-across-all-shapes",
+      "file": "write-a-script-that-logs-the-execution-order-of-eventmousedown-cells-across-all-shapes.cs",
+      "task": "Write a script that logs the execution order of eventmousedown cells across all shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Reflection"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    }
+  ]
+}

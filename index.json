@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-05",
-  "total_examples": 350,
-  "total_categories": 6,
+  "total_examples": 383,
+  "total_categories": 7,
   "categories": [
     {
       "slug": "basic-operations",
@@ -40,6 +40,12 @@
       "slug": "drawing",
       "display_name": "Drawing",
       "total": 125,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "events-section-in-the-shapesheet",
+      "display_name": "Events Section In The Shapesheet",
+      "total": 33,
       "pass_rate": 100.0
     }
   ]

@@ -6,8 +6,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Examples | 413 |
-| Categories | 8 |
+| Total Examples | 443 |
+| Categories | 9 |
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.5.0 |
 | Target Framework | net8.0 |
@@ -55,6 +55,10 @@ font-operations/
   agents.md    ← Category AI instructions
   index.json   ← Category catalogue
   *.cs         ← Example files
+ole-objects-in-visio-diagram/
+  agents.md    ← Category AI instructions
+  index.json   ← Category catalogue
+  *.cs         ← Example files
 ```
 
 ## Categories
@@ -69,6 +73,7 @@ font-operations/
 | [Drawing](https://github.com/aspose-diagram/agentic-net-examples/tree/main/drawing) | 125 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/drawing/agents.md) |
 | [Events Section In The Shapesheet](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet) | 33 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/events-section-in-the-shapesheet/agents.md) |
 | [Font Operations](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/font-operations/agents.md) |
+| [Ole Objects In Visio Diagram](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/ole-objects-in-visio-diagram/agents.md) |
 
 ## How to Use
 

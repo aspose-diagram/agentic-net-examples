@@ -1,0 +1,1313 @@
+{
+  "category": "page-setup-features",
+  "display_name": "Page Setup Features",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 82,
+  "pass_rate": 100.0,
+  "generated": "2026-06-06",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "access-the-pageprops-of-the-selected-page-to-read-its-pageheight-property",
+      "file": "access-the-pageprops-of-the-selected-page-to-read-its-pageheight-property.cs",
+      "task": "Access the pageprops of the selected page to read its pageheight property",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "access-the-pageprops-of-the-selected-page-to-read-its-pagewidth-property",
+      "file": "access-the-pageprops-of-the-selected-page-to-read-its-pagewidth-property.cs",
+      "task": "Access the pageprops of the selected page to read its pagewidth property",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "adjust-line-thickness-of-connectors-proportionally-to-page-height-for-consistent-visual-weight",
+      "file": "adjust-line-thickness-of-connectors-proportionally-to-page-height-for-consistent-visual-weight.cs",
+      "task": "Adjust line thickness of connectors proportionally to page height for consistent visual weight",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "adjust-printprops-scalex-to-0-75-to-reduce-the-page-size-by-twenty-five-percent",
+      "file": "adjust-printprops-scalex-to-0-75-to-reduce-the-page-size-by-twenty-five-percent.cs",
+      "task": "Adjust printprops scalex to 0 75 to reduce the page size by twenty five percent",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "adjust-shape-rotation-angles-based-on-page-height-to-maintain-visual-balance-across-pages",
+      "file": "adjust-shape-rotation-angles-based-on-page-height-to-maintain-visual-balance-across-pages.cs",
+      "task": "Adjust shape rotation angles based on page height to maintain visual balance across pages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "after-modifying-print-settings-invoke-diagram-save-with-a-different-file-extension-to-preserve-the-original-file",
+      "file": "after-modifying-print-settings-invoke-diagram-save-with-a-different-file-extension-to-preserve-the-original-file.cs",
+      "task": "After modifying print settings invoke diagram save with a different file extension to preserve the original file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-conditional-layout-algorithm-that-changes-behavior-when-page-width-exceeds-11-inches",
+      "file": "apply-a-conditional-layout-algorithm-that-changes-behavior-when-page-width-exceeds-11-inches.cs",
+      "task": "Apply a conditional layout algorithm that changes behavior when page width exceeds 11 inches",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.AutoLayout",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Layout",
+        "LayoutOptions",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "apply-different-scalex-values-to-odd-numbered-pages-while-keeping-even-pages-at-default-size",
+      "file": "apply-different-scalex-values-to-odd-numbered-pages-while-keeping-even-pages-at-default-size.cs",
+      "task": "Apply different scalex values to odd numbered pages while keeping even pages at default size",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-portrait-orientation-and-a-scalex-of-1-2-to-improve-readability-of-detailed-diagrams",
+      "file": "apply-portrait-orientation-and-a-scalex-of-1-2-to-improve-readability-of-detailed-diagrams.cs",
+      "task": "Apply portrait orientation and a scalex of 1 2 to improve readability of detailed diagrams",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-the-calculated-scaling-factor-to-all-shape-coordinates-on-the-selected-page",
+      "file": "apply-the-calculated-scaling-factor-to-all-shape-coordinates-on-the-selected-page.cs",
+      "task": "Apply the calculated scaling factor to all shape coordinates on the selected page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-process-all-pages-collecting-their-widths-into-a-list-for-subsequent-analysis",
+      "file": "batch-process-all-pages-collecting-their-widths-into-a-list-for-subsequent-analysis.cs",
+      "task": "Batch process all pages collecting their widths into a list for subsequent analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "calculate-a-scaling-factor-based-on-page-width-to-fit-diagram-content-within-an-800-pixel-canvas",
+      "file": "calculate-a-scaling-factor-based-on-page-width-to-fit-diagram-content-within-an-800-pixel-canvas.cs",
+      "task": "Calculate a scaling factor based on page width to fit diagram content within an 800 pixel canvas",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "catch-argumentexception-when-assigning-an-undefined-value-to-printpageorientation-and-log-the-error",
+      "file": "catch-argumentexception-when-assigning-an-undefined-value-to-printpageorientation-and-log-the-error.cs",
+      "task": "Catch argumentexception when assigning an undefined value to printpageorientation and log the error",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "change-printprops-printpageorientation-to-portrait-on-all-pages-to-enforce-vertical-orientation",
+      "file": "change-printprops-printpageorientation-to-portrait-on-all-pages-to-enforce-vertical-orientation.cs",
+      "task": "Change printprops printpageorientation to portrait on all pages to enforce vertical orientation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "combine-landscape-orientation-with-a-scalex-of-0-9-to-create-a-custom-print-layout",
+      "file": "combine-landscape-orientation-with-a-scalex-of-0-9-to-create-a-custom-print-layout.cs",
+      "task": "Combine landscape orientation with a scalex of 0 9 to create a custom print layout",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "compare-page-dimensions-across-two-visio-files-to-detect-layout-inconsistencies",
+      "file": "compare-page-dimensions-across-two-visio-files-to-detect-layout-inconsistencies.cs",
+      "task": "Compare page dimensions across two visio files to detect layout inconsistencies",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "compare-printed-output-dimensions-when-scalex-is-set-to-1-0-versus-0-5-for-the-same-page",
+      "file": "compare-printed-output-dimensions-when-scalex-is-set-to-1-0-versus-0-5-for-the-same-page.cs",
+      "task": "Compare printed output dimensions when scalex is set to 1 0 versus 0 5 for the same page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "compare-the-page-height-against-a-predefined-maximum-and-raise-an-exception-if-exceeded",
+      "file": "compare-the-page-height-against-a-predefined-maximum-and-raise-an-exception-if-exceeded.cs",
+      "task": "Compare the page height against a predefined maximum and raise an exception if exceeded",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-retrieved-page-dimensions-from-inches-to-millimeters-before-storing-them-in-metadata",
+      "file": "convert-retrieved-page-dimensions-from-inches-to-millimeters-before-storing-them-in-metadata.cs",
+      "task": "Convert retrieved page dimensions from inches to millimeters before storing them in metadata",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-batch-job-that-processes-visio-files-nightly-applying-standardized-print-settings-for-corporate-reports",
+      "file": "create-a-batch-job-that-processes-visio-files-nightly-applying-standardized-print-settings-for-corporate-reports.cs",
+      "task": "Create a batch job that processes visio files nightly applying standardized print settings for corporate reports",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-configuration-file-that-maps-page-indices-to-specific-orientation-and-scaling-values",
+      "file": "create-a-configuration-file-that-maps-page-indices-to-specific-orientation-and-scaling-values.cs",
+      "task": "Create a configuration file that maps page indices to specific orientation and scaling values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-custom-export-function-that-embeds-page-dimension-metadata-into-the-output-file-header",
+      "file": "create-a-custom-export-function-that-embeds-page-dimension-metadata-into-the-output-file-header.cs",
+      "task": "Create a custom export function that embeds page dimension metadata into the output file header",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-diagnostic-routine-that-checks-whether-printprops-printpageorientation-matches-the-expected-enumeration-value",
+      "file": "create-a-diagnostic-routine-that-checks-whether-printprops-printpageorientation-matches-the-expected-enumeration-value.cs",
+      "task": "Create a diagnostic routine that checks whether printprops printpageorientation matches the expected enumeration value",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-dictionary-mapping-page-names-to-their-corresponding-dimensions-for-quick-lookup",
+      "file": "create-a-dictionary-mapping-page-names-to-their-corresponding-dimensions-for-quick-lookup.cs",
+      "task": "Create a dictionary mapping page names to their corresponding dimensions for quick lookup",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-macro-that-automatically-updates-page-margins-based-on-retrieved-page-dimensions",
+      "file": "create-a-macro-that-automatically-updates-page-margins-based-on-retrieved-page-dimensions.cs",
+      "task": "Create a macro that automatically updates page margins based on retrieved page dimensions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-reusable-service-that-applies-default-print-settings-to-any-diagram-instance-passed-to-it",
+      "file": "create-a-reusable-service-that-applies-default-print-settings-to-any-diagram-instance-passed-to-it.cs",
+      "task": "Create a reusable service that applies default print settings to any diagram instance passed to it",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-scheduled-task-that-reprocesses-diagrams-weekly-ensuring-print-settings-comply-with-new-corporate-standards",
+      "file": "create-a-scheduled-task-that-reprocesses-diagrams-weekly-ensuring-print-settings-comply-with-new-corporate-standards.cs",
+      "task": "Create a scheduled task that reprocesses diagrams weekly ensuring print settings comply with new corporate standards",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Threading"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-utility-method-that-sets-orientation-and-scaling-based-on-user-provided-parameters",
+      "file": "create-a-utility-method-that-sets-orientation-and-scaling-based-on-user-provided-parameters.cs",
+      "task": "Create a utility method that sets orientation and scaling based on user provided parameters",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "deserialize-previously-saved-json-page-dimensions-and-compare-them-with-current-diagram-values",
+      "file": "deserialize-previously-saved-json-page-dimensions-and-compare-them-with-current-diagram-values.cs",
+      "task": "Deserialize previously saved json page dimensions and compare them with current diagram values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "document-best-practices-for-configuring-page-orientation-and-scaling-to-achieve-optimal-print-quality-across-printers",
+      "file": "document-best-practices-for-configuring-page-orientation-and-scaling-to-achieve-optimal-print-quality-across-printers.cs",
+      "task": "Document best practices for configuring page orientation and scaling to achieve optimal print quality across printers",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-the-diagram-to-pdf-while-preserving-the-original-page-dimensions-retrieved-earlier",
+      "file": "export-the-diagram-to-pdf-while-preserving-the-original-page-dimensions-retrieved-earlier.cs",
+      "task": "Export the diagram to pdf while preserving the original page dimensions retrieved earlier",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-csv-file-summarizing-page-indices-orientation-and-scaling-factors-for-audit-purposes",
+      "file": "generate-a-csv-file-summarizing-page-indices-orientation-and-scaling-factors-for-audit-purposes.cs",
+      "task": "Generate a csv file summarizing page indices orientation and scaling factors for audit purposes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-report-listing-each-page-s-current-printprops-orientation-and-scalex-values-after-modification",
+      "file": "generate-a-report-listing-each-page-s-current-printprops-orientation-and-scalex-values-after-modification.cs",
+      "task": "Generate a report listing each page s current printprops orientation and scalex values after modification",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-report-summarizing-page-dimensions-and-total-diagram-area-in-square-centimeters",
+      "file": "generate-a-report-summarizing-page-dimensions-and-total-diagram-area-in-square-centimeters.cs",
+      "task": "Generate a report summarizing page dimensions and total diagram area in square centimeters",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-thumbnail-image-for-each-page-using-its-width-and-height-to-define-canvas-size",
+      "file": "generate-a-thumbnail-image-for-each-page-using-its-width-and-height-to-define-canvas-size.cs",
+      "task": "Generate a thumbnail image for each page using its width and height to define canvas size",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-caching-mechanism-that-stores-page-size-values-to-avoid-repeated-property-accesses",
+      "file": "implement-a-caching-mechanism-that-stores-page-size-values-to-avoid-repeated-property-accesses.cs",
+      "task": "Implement a caching mechanism that stores page size values to avoid repeated property accesses",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-fallback-to-portrait-orientation-if-landscape-assignment-fails-due-to-file-corruption",
+      "file": "implement-a-fallback-to-portrait-orientation-if-landscape-assignment-fails-due-to-file-corruption.cs",
+      "task": "Implement a fallback to portrait orientation if landscape assignment fails due to file corruption",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-feature-that-logs-the-previous-orientation-before-changing-it-enabling-audit-trails",
+      "file": "implement-a-feature-that-logs-the-previous-orientation-before-changing-it-enabling-audit-trails.cs",
+      "task": "Implement a feature that logs the previous orientation before changing it enabling audit trails",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-feature-that-resets-all-pages-to-default-portrait-orientation-and-scalex-of-1-0",
+      "file": "implement-a-feature-that-resets-all-pages-to-default-portrait-orientation-and-scalex-of-1-0.cs",
+      "task": "Implement a feature that resets all pages to default portrait orientation and scalex of 1 0",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-rollback-strategy-that-restores-original-printprops-if-any-validation-step-fails-after-changes",
+      "file": "implement-a-rollback-strategy-that-restores-original-printprops-if-any-validation-step-fails-after-changes.cs",
+      "task": "Implement a rollback strategy that restores original printprops if any validation step fails after changes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-batch-processing-to-apply-landscape-orientation-to-all-pages-in-a-folder-of-visio-files",
+      "file": "implement-batch-processing-to-apply-landscape-orientation-to-all-pages-in-a-folder-of-visio-files.cs",
+      "task": "Implement batch processing to apply landscape orientation to all pages in a folder of visio files",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-that-catches-exceptions-when-pageprops-properties-are-inaccessible",
+      "file": "implement-error-handling-that-catches-exceptions-when-pageprops-properties-are-inaccessible.cs",
+      "task": "Implement error handling that catches exceptions when pageprops properties are inaccessible",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-to-skip-pages-lacking-a-pagesheet-when-applying-print-settings",
+      "file": "implement-error-handling-to-skip-pages-lacking-a-pagesheet-when-applying-print-settings.cs",
+      "task": "Implement error handling to skip pages lacking a pagesheet when applying print settings",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "increase-printprops-scalex-to-1-5-for-a-diagram-page-to-enlarge-its-printed-output",
+      "file": "increase-printprops-scalex-to-1-5-for-a-diagram-page-to-enlarge-its-printed-output.cs",
+      "task": "Increase printprops scalex to 1 5 for a diagram page to enlarge its printed output",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "instantiate-the-diagram-object-with-a-visio-file-and-select-the-first-page",
+      "file": "instantiate-the-diagram-object-with-a-visio-file-and-select-the-first-page.cs",
+      "task": "Instantiate the diagram object with a visio file and select the first page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "integrate-page-size-data-into-a-printing-routine-that-sets-printer-margins-dynamically",
+      "file": "integrate-page-size-data-into-a-printing-routine-that-sets-printer-margins-dynamically.cs",
+      "task": "Integrate page size data into a printing routine that sets printer margins dynamically",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "iterate-through-diagram-pages-and-log-each-page-s-width-and-height-to-a-csv-file",
+      "file": "iterate-through-diagram-pages-and-log-each-page-s-width-and-height-to-a-csv-file.cs",
+      "task": "Iterate through diagram pages and log each page s width and height to a csv file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "iterate-through-each-page-in-the-diagram-and-retrieve-its-associated-pagesheet-for-configuration",
+      "file": "iterate-through-each-page-in-the-diagram-and-retrieve-its-associated-pagesheet-for-configuration.cs",
+      "task": "Iterate through each page in the diagram and retrieve its associated pagesheet for configuration",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-file-into-a-diagram-object-and-access-its-pages-collection",
+      "file": "load-a-visio-file-into-a-diagram-object-and-access-its-pages-collection.cs",
+      "task": "Load a visio file into a diagram object and access its pages collection",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-configuration-from-json-and-apply-mapped-print-settings-to-corresponding-diagram-pages",
+      "file": "load-configuration-from-json-and-apply-mapped-print-settings-to-corresponding-diagram-pages.cs",
+      "task": "Load configuration from json and apply mapped print settings to corresponding diagram pages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "log-the-original-and-updated-printprops-values-for-each-page-during-batch-modification",
+      "file": "log-the-original-and-updated-printprops-values-for-each-page-during-batch-modification.cs",
+      "task": "Log the original and updated printprops values for each page during batch modification",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "log-the-page-width-and-height-to-the-console-using-a-formatted-string",
+      "file": "log-the-page-width-and-height-to-the-console-using-a-formatted-string.cs",
+      "task": "Log the page width and height to the console using a formatted string",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "programmatically-toggle-between-portrait-and-landscape-orientations-based-on-page-content-analysis",
+      "file": "programmatically-toggle-between-portrait-and-landscape-orientations-based-on-page-content-analysis.cs",
+      "task": "Programmatically toggle between portrait and landscape orientations based on page content analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "save-the-modified-diagram-to-a-new-visio-file-after-updating-page-print-settings",
+      "file": "save-the-modified-diagram-to-a-new-visio-file-after-updating-page-print-settings.cs",
+      "task": "Save the modified diagram to a new visio file after updating page print settings",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "serialize-the-collected-page-size-information-to-json-for-consumption-by-a-web-service",
+      "file": "serialize-the-collected-page-size-information-to-json-for-consumption-by-a-web-service.cs",
+      "task": "Serialize the collected page size information to json for consumption by a web service",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-printprops-printpageorientation-to-landscape-on-a-specific-page-to-change-its-layout",
+      "file": "set-printprops-printpageorientation-to-landscape-on-a-specific-page-to-change-its-layout.cs",
+      "task": "Set printprops printpageorientation to landscape on a specific page to change its layout",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "store-page-dimensions-in-a-relational-database-table-for-historical-tracking-of-diagram-revisions",
+      "file": "store-page-dimensions-in-a-relational-database-table-for-historical-tracking-of-diagram-revisions.cs",
+      "task": "Store page dimensions in a relational database table for historical tracking of diagram revisions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Data.SqlClient"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "store-the-retrieved-width-and-height-values-in-a-custom-pagesize-structure-for-later-use",
+      "file": "store-the-retrieved-width-and-height-values-in-a-custom-pagesize-structure-for-later-use.cs",
+      "task": "Store the retrieved width and height values in a custom pagesize structure for later use",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-a-configuration-manager-to-retrieve-default-orientation-and-scaling-values-from-application-settings",
+      "file": "use-a-configuration-manager-to-retrieve-default-orientation-and-scaling-values-from-application-settings.cs",
+      "task": "Use a configuration manager to retrieve default orientation and scaling values from application settings",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-a-try-catch-block-to-handle-unsupported-orientation-values-while-processing-multiple-pages",
+      "file": "use-a-try-catch-block-to-handle-unsupported-orientation-values-while-processing-multiple-pages.cs",
+      "task": "Use a try catch block to handle unsupported orientation values while processing multiple pages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-diagram-clone-to-create-a-backup-before-applying-bulk-orientation-updates",
+      "file": "use-diagram-clone-to-create-a-backup-before-applying-bulk-orientation-updates.cs",
+      "task": "Use diagram clone to create a backup before applying bulk orientation updates",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-diagram-dispose-after-saving-to-release-resources-and-avoid-memory-leaks",
+      "file": "use-diagram-dispose-after-saving-to-release-resources-and-avoid-memory-leaks.cs",
+      "task": "Use diagram dispose after saving to release resources and avoid memory leaks",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-linq-to-filter-pages-where-scalex-exceeds-1-0-before-applying-additional-transformations",
+      "file": "use-linq-to-filter-pages-where-scalex-exceeds-1-0-before-applying-additional-transformations.cs",
+      "task": "Use linq to filter pages where scalex exceeds 1 0 before applying additional transformations",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-page-height-to-set-vertical-spacing-between-automatically-generated-legend-sections",
+      "file": "use-page-height-to-set-vertical-spacing-between-automatically-generated-legend-sections.cs",
+      "task": "Use page height to set vertical spacing between automatically generated legend sections",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-page-width-to-calculate-appropriate-font-size-for-page-level-titles-in-generated-pdfs",
+      "file": "use-page-width-to-calculate-appropriate-font-size-for-page-level-titles-in-generated-pdfs.cs",
+      "task": "Use page width to calculate appropriate font size for page level titles in generated pdfs",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Pages",
+        "PdfSaveOptions",
+        "Save"
+      ]
+    },
+    {
+      "slug": "use-page-width-to-compute-column-count-for-a-grid-layout-applied-to-diagram-shapes",
+      "file": "use-page-width-to-compute-column-count-for-a-grid-layout-applied-to-diagram-shapes.cs",
+      "task": "Use page width to compute column count for a grid layout applied to diagram shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-reflection-to-enumerate-all-printpageorientationvalue-enumeration-members-for-dynamic-ui-generation",
+      "file": "use-reflection-to-enumerate-all-printpageorientationvalue-enumeration-members-for-dynamic-ui-generation.cs",
+      "task": "Use reflection to enumerate all printpageorientationvalue enumeration members for dynamic ui generation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Reflection"
+      ],
+      "key_apis": []
+    },
+    {
+      "slug": "use-the-diagram-constructor-overload-that-accepts-a-stream-to-load-diagrams-from-memory",
+      "file": "use-the-diagram-constructor-overload-that-accepts-a-stream-to-load-diagrams-from-memory.cs",
+      "task": "Use the diagram constructor overload that accepts a stream to load diagrams from memory",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-the-page-height-to-determine-vertical-offset-when-adding-a-custom-footer-to-each-page",
+      "file": "use-the-page-height-to-determine-vertical-offset-when-adding-a-custom-footer-to-each-page.cs",
+      "task": "Use the page height to determine vertical offset when adding a custom footer to each page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-each-page-s-printprops-settings-match-expected-orientation-and-scaling-before-printing",
+      "file": "validate-each-page-s-printprops-settings-match-expected-orientation-and-scaling-before-printing.cs",
+      "task": "Validate each page s printprops settings match expected orientation and scaling before printing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-after-saving-the-visio-file-retains-the-modified-printprops-when-reopened",
+      "file": "validate-that-after-saving-the-visio-file-retains-the-modified-printprops-when-reopened.cs",
+      "task": "Validate that after saving the visio file retains the modified printprops when reopened",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-page-dimensions-conform-to-iso-216-standards-before-proceeding-with-batch-export",
+      "file": "validate-that-page-dimensions-conform-to-iso-216-standards-before-proceeding-with-batch-export.cs",
+      "task": "Validate that page dimensions conform to iso 216 standards before proceeding with batch export",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-setting-scalex-to-1-0-after-previous-scaling-resets-the-page-to-its-original-size",
+      "file": "validate-that-setting-scalex-to-1-0-after-previous-scaling-resets-the-page-to-its-original-size.cs",
+      "task": "Validate that setting scalex to 1 0 after previous scaling resets the page to its original size",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-the-retrieved-page-width-matches-the-expected-a4-size-in-inches",
+      "file": "validate-that-the-retrieved-page-width-matches-the-expected-a4-size-in-inches.cs",
+      "task": "Validate that the retrieved page width matches the expected a4 size in inches",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "verify-that-saving-the-diagram-after-print-option-changes-does-not-alter-other-page-content",
+      "file": "verify-that-saving-the-diagram-after-print-option-changes-does-not-alter-other-page-content.cs",
+      "task": "Verify that saving the diagram after print option changes does not alter other page content",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "write-a-console-output-that-lists-pages-where-scalex-is-not-equal-to-1-0-after-processing",
+      "file": "write-a-console-output-that-lists-pages-where-scalex-is-not-equal-to-1-0-after-processing.cs",
+      "task": "Write a console output that lists pages where scalex is not equal to 1 0 after processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "write-a-helper-function-that-checks-if-a-page-s-current-scalex-matches-the-desired-target-within-tolerance",
+      "file": "write-a-helper-function-that-checks-if-a-page-s-current-scalex-matches-the-desired-target-within-tolerance.cs",
+      "task": "Write a helper function that checks if a page s current scalex matches the desired target within tolerance",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": []
+    },
+    {
+      "slug": "write-a-sample-program-demonstrating-switching-between-portrait-and-landscape-orientations-based-on-user-input",
+      "file": "write-a-sample-program-demonstrating-switching-between-portrait-and-landscape-orientations-based-on-user-input.cs",
+      "task": "Write a sample program demonstrating switching between portrait and landscape orientations based on user input",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "write-a-script-that-reads-a-list-of-visio-files-and-applies-uniform-landscape-orientation-to-each",
+      "file": "write-a-script-that-reads-a-list-of-visio-files-and-applies-uniform-landscape-orientation-to-each.cs",
+      "task": "Write a script that reads a list of visio files and applies uniform landscape orientation to each",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "write-code-to-enumerate-all-pages-outputting-their-index-orientation-and-scalex-to-the-console",
+      "file": "write-code-to-enumerate-all-pages-outputting-their-index-orientation-and-scalex-to-the-console.cs",
+      "task": "Write code to enumerate all pages outputting their index orientation and scalex to the console",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "write-unit-tests-verifying-pageheight-returns-correct-value-for-a-known-sample-file",
+      "file": "write-unit-tests-verifying-pageheight-returns-correct-value-for-a-known-sample-file.cs",
+      "task": "Write unit tests verifying pageheight returns correct value for a known sample file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "write-unit-tests-verifying-pagewidth-returns-correct-value-for-a-known-sample-file",
+      "file": "write-unit-tests-verifying-pagewidth-returns-correct-value-for-a-known-sample-file.cs",
+      "task": "Write unit tests verifying pagewidth returns correct value for a known sample file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    }
+  ]
+}

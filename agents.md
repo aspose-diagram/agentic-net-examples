@@ -3,8 +3,8 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 525
-categories: 10
+total_examples: 555
+categories: 11
 generated: 2026-06-06
 ---
 
@@ -21,8 +21,8 @@ generated: 2026-06-06
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 525 |
-| Categories | 10 |
+| Total Examples | 555 |
+| Categories | 11 |
 | Last Updated | 2026-06-06 |
 
 ## Persona
@@ -107,6 +107,7 @@ dotnet build --verbosity detailed
 | [Font Operations](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/font-operations/agents.md) |
 | [Ole Objects In Visio Diagram](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/ole-objects-in-visio-diagram/agents.md) |
 | [Page Setup Features](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features) | 82 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/page-setup-features/agents.md) |
+| [Visio Activex Controls](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/visio-activex-controls/agents.md) |
 
 ## Pipeline
 

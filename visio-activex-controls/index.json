@@ -1,0 +1,543 @@
+{
+  "category": "visio-activex-controls",
+  "display_name": "Visio Activex Controls",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 30,
+  "pass_rate": 100.0,
+  "generated": "2026-06-06",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-new-slider-activex-control-to-a-shape-programmatically-and-initialize-its-minimum-maximum-and-value-properties",
+      "file": "add-a-new-slider-activex-control-to-a-shape-programmatically-and-initialize-its-minimum-maximum-and-value-properties.cs",
+      "task": "Add a new slider activex control to a shape programmatically and initialize its minimum maximum and value properties",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "benchmark-the-time-required-to-retrieve-and-modify-activex-controls-across-diagrams-of-varying-sizes-and-complexities",
+      "file": "benchmark-the-time-required-to-retrieve-and-modify-activex-controls-across-diagrams-of-varying-sizes-and-complexities.cs",
+      "task": "Benchmark the time required to retrieve and modify activex controls across diagrams of varying sizes and complexities",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.Diagnostics"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "cast-the-generic-activexcontrol-instance-to-its-specific-control-class-before-modifying-any-properties",
+      "file": "cast-the-generic-activexcontrol-instance-to-its-specific-control-class-before-modifying-any-properties.cs",
+      "task": "Cast the generic activexcontrol instance to its specific control class before modifying any properties",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "check-whether-a-shape-s-activexcontrol-property-is-null-before-accessing-its-members",
+      "file": "check-whether-a-shape-s-activexcontrol-property-is-null-before-accessing-its-members.cs",
+      "task": "Check whether a shape s activexcontrol property is null before accessing its members",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "compare-two-visio-diagrams-by-checking-differences-in-activex-control-property-values-across-matching-shapes",
+      "file": "compare-two-visio-diagrams-by-checking-differences-in-activex-control-property-values-across-matching-shapes.cs",
+      "task": "Compare two visio diagrams by checking differences in activex control property values across matching shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Shapes",
+        "page"
+      ]
+    },
+    {
+      "slug": "create-a-reusable-helper-method-that-abstracts-casting-of-activexcontrol-objects-to-their-concrete-types",
+      "file": "create-a-reusable-helper-method-that-abstracts-casting-of-activexcontrol-objects-to-their-concrete-types.cs",
+      "task": "Create a reusable helper method that abstracts casting of activexcontrol objects to their concrete types",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-script-that-disables-all-activex-controls-on-a-diagram-before-exporting-it-to-pdf-for-security",
+      "file": "create-a-script-that-disables-all-activex-controls-on-a-diagram-before-exporting-it-to-pdf-for-security.cs",
+      "task": "Create a script that disables all activex controls on a diagram before exporting it to pdf for security",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "create-a-unit-test-that-verifies-property-changes-on-a-retrieved-checkbox-activex-control-are-persisted-after-saving",
+      "file": "create-a-unit-test-that-verifies-property-changes-on-a-retrieved-checkbox-activex-control-are-persisted-after-saving.cs",
+      "task": "Create a unit test that verifies property changes on a retrieved checkbox activex control are persisted after saving",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "deserialize-json-configuration-and-apply-the-values-to-corresponding-activex-control-properties-within-a-visio-diagram",
+      "file": "deserialize-json-configuration-and-apply-the-values-to-corresponding-activex-control-properties-within-a-visio-diagram.cs",
+      "task": "Deserialize json configuration and apply the values to corresponding activex control properties within a visio diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "design-a-feature-that-disables-activex-controls-when-the-diagram-is-opened-in-read-only-mode-to-prevent-changes",
+      "file": "design-a-feature-that-disables-activex-controls-when-the-diagram-is-opened-in-read-only-mode-to-prevent-changes.cs",
+      "task": "Design a feature that disables activex controls when the diagram is opened in read only mode to prevent changes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "Windows"
+      ]
+    },
+    {
+      "slug": "determine-the-concrete-activex-control-type-of-a-retrieved-object-by-inspecting-its-progid-property-value",
+      "file": "determine-the-concrete-activex-control-type-of-a-retrieved-object-by-inspecting-its-progid-property-value.cs",
+      "task": "Determine the concrete activex control type of a retrieved object by inspecting its progid property value",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "extract-the-helpfile-property-from-a-commandbutton-activex-control-to-locate-associated-documentation-resources",
+      "file": "extract-the-helpfile-property-from-a-commandbutton-activex-control-to-locate-associated-documentation-resources.cs",
+      "task": "Extract the helpfile property from a commandbutton activex control to locate associated documentation resources",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "handle-invalidcastexception-when-attempting-to-cast-an-activexcontrol-to-an-incompatible-control-class-type",
+      "file": "handle-invalidcastexception-when-attempting-to-cast-an-activexcontrol-to-an-incompatible-control-class-type.cs",
+      "task": "Handle invalidcastexception when attempting to cast an activexcontrol to an incompatible control class type",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-safeguard-that-prevents-modifying-read-only-properties-of-an-activex-control-and-logs-a-warning",
+      "file": "implement-a-safeguard-that-prevents-modifying-read-only-properties-of-an-activex-control-and-logs-a-warning.cs",
+      "task": "Implement a safeguard that prevents modifying read only properties of an activex control and logs a warning",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.Collections.Generic",
+        "System.Reflection"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-to-catch-comexception-when-accessing-activex-control-properties-that-require-specific-permissio",
+      "file": "implement-error-handling-to-catch-comexception-when-accessing-activex-control-properties-that-require-specific-permissio.cs",
+      "task": "Implement error handling to catch comexception when accessing activex control properties that require specific permissio",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO",
+        "System.Runtime.InteropServices"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "integrate-activex-control-manipulation-into-an-asp-net-mvc-application-to-dynamically-update-diagram-visuals",
+      "file": "integrate-activex-control-manipulation-into-an-asp-net-mvc-application-to-dynamically-update-diagram-visuals.cs",
+      "task": "Integrate activex control manipulation into an asp net mvc application to dynamically update diagram visuals",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "iterate-over-all-shapes-in-a-diagram-processing-only-those-that-contain-an-activexcontrol-object",
+      "file": "iterate-over-all-shapes-in-a-diagram-processing-only-those-that-contain-an-activexcontrol-object.cs",
+      "task": "Iterate over all shapes in a diagram processing only those that contain an activexcontrol object",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-containing-activex-controls-and-enumerate-all-shapes-that-embed-such-controls",
+      "file": "load-a-visio-diagram-containing-activex-controls-and-enumerate-all-shapes-that-embed-such-controls.cs",
+      "task": "Load a visio diagram containing activex controls and enumerate all shapes that embed such controls",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-a-memory-stream-and-update-activex-control-properties-without-writing-to-disk",
+      "file": "load-a-visio-diagram-from-a-memory-stream-and-update-activex-control-properties-without-writing-to-disk.cs",
+      "task": "Load a visio diagram from a memory stream and update activex control properties without writing to disk",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "log-each-property-change-made-to-an-activex-control-including-previous-and-new-values-for-audit-purposes",
+      "file": "log-each-property-change-made-to-an-activex-control-including-previous-and-new-values-for-audit-purposes.cs",
+      "task": "Log each property change made to an activex control including previous and new values for audit purposes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "read-the-current-caption-property-of-a-button-activex-control-embedded-in-a-visio-shape",
+      "file": "read-the-current-caption-property-of-a-button-activex-control-embedded-in-a-visio-shape.cs",
+      "task": "Read the current caption property of a button activex control embedded in a visio shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "remove-an-activexcontrol-from-a-shape-by-setting-its-activexcontrol-property-to-null-and-saving-diagram",
+      "file": "remove-an-activexcontrol-from-a-shape-by-setting-its-activexcontrol-property-to-null-and-saving-diagram.cs",
+      "task": "Remove an activexcontrol from a shape by setting its activexcontrol property to null and saving diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Reflection"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-the-activexcontrol-object-from-a-specific-shape-using-shape-activexcontrol-property-for-further-processing",
+      "file": "retrieve-the-activexcontrol-object-from-a-specific-shape-using-shape-activexcontrol-property-for-further-processing.cs",
+      "task": "Retrieve the activexcontrol object from a specific shape using shape activexcontrol property for further processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "save-the-modified-visio-diagram-to-a-new-file-preserving-original-activex-control-configurations-and-layout",
+      "file": "save-the-modified-visio-diagram-to-a-new-file-preserving-original-activex-control-configurations-and-layout.cs",
+      "task": "Save the modified visio diagram to a new file preserving original activex control configurations and layout",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "serialize-the-property-values-of-an-activex-control-to-json-for-external-configuration-management",
+      "file": "serialize-the-property-values-of-an-activex-control-to-json-for-external-configuration-management.cs",
+      "task": "Serialize the property values of an activex control to json for external configuration management",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "set-the-enabled-property-of-a-checkbox-activex-control-to-false-to-disable-user-interaction",
+      "file": "set-the-enabled-property-of-a-checkbox-activex-control-to-false-to-disable-user-interaction.cs",
+      "task": "Set the enabled property of a checkbox activex control to false to disable user interaction",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-one-or-more-properties-of-the-activex-control-and-persist-the-modified-diagram-to-a-new-file",
+      "file": "update-one-or-more-properties-of-the-activex-control-and-persist-the-modified-diagram-to-a-new-file.cs",
+      "task": "Update one or more properties of the activex control and persist the modified diagram to a new file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-reflection-to-enumerate-all-publicly-settable-properties-of-a-specific-activex-control-class-at-runtime",
+      "file": "use-reflection-to-enumerate-all-publicly-settable-properties-of-a-specific-activex-control-class-at-runtime.cs",
+      "task": "Use reflection to enumerate all publicly settable properties of a specific activex control class at runtime",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.Reflection"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "validate-that-the-value-property-of-a-slider-activex-control-remains-within-its-defined-minimum-and-maximum-range",
+      "file": "validate-that-the-value-property-of-a-slider-activex-control-remains-within-its-defined-minimum-and-maximum-range.cs",
+      "task": "Validate that the value property of a slider activex control remains within its defined minimum and maximum range",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "write-a-method-that-retrieves-all-activex-controls-on-a-given-page-and-returns-their-count",
+      "file": "write-a-method-that-retrieves-all-activex-controls-on-a-given-page-and-returns-their-count.cs",
+      "task": "Write a method that retrieves all activex controls on a given page and returns their count",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Shapes",
+        "page"
+      ]
+    }
+  ]
+}

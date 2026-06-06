@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-06",
-  "total_examples": 525,
-  "total_categories": 10,
+  "total_examples": 555,
+  "total_categories": 11,
   "categories": [
     {
       "slug": "basic-operations",
@@ -64,6 +64,12 @@
       "slug": "page-setup-features",
       "display_name": "Page Setup Features",
       "total": 82,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "visio-activex-controls",
+      "display_name": "Visio Activex Controls",
+      "total": 30,
       "pass_rate": 100.0
     }
   ]

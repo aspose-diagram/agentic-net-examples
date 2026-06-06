@@ -2,9 +2,9 @@
   "product": "Aspose.Diagram for .NET",
   "version": "26.5.0",
   "framework": "net8.0",
-  "generated": "2026-06-05",
-  "total_examples": 443,
-  "total_categories": 9,
+  "generated": "2026-06-06",
+  "total_examples": 525,
+  "total_categories": 10,
   "categories": [
     {
       "slug": "basic-operations",
@@ -58,6 +58,12 @@
       "slug": "ole-objects-in-visio-diagram",
       "display_name": "Ole Objects In Visio Diagram",
       "total": 30,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "page-setup-features",
+      "display_name": "Page Setup Features",
+      "total": 82,
       "pass_rate": 100.0
     }
   ]

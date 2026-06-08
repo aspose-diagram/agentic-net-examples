@@ -2,9 +2,9 @@
   "product": "Aspose.Diagram for .NET",
   "version": "26.5.0",
   "framework": "net8.0",
-  "generated": "2026-06-06",
-  "total_examples": 555,
-  "total_categories": 11,
+  "generated": "2026-06-08",
+  "total_examples": 585,
+  "total_categories": 12,
   "categories": [
     {
       "slug": "basic-operations",
@@ -69,6 +69,12 @@
     {
       "slug": "visio-activex-controls",
       "display_name": "Visio Activex Controls",
+      "total": 30,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "visio-shape-gradient",
+      "display_name": "Visio Shape Gradient",
       "total": 30,
       "pass_rate": 100.0
     }

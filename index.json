@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-08",
-  "total_examples": 585,
-  "total_categories": 12,
+  "total_examples": 620,
+  "total_categories": 13,
   "categories": [
     {
       "slug": "basic-operations",
@@ -76,6 +76,12 @@
       "slug": "visio-shape-gradient",
       "display_name": "Visio Shape Gradient",
       "total": 30,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "working-with-comments",
+      "display_name": "Working With Comments",
+      "total": 35,
       "pass_rate": 100.0
     }
   ]

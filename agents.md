@@ -3,8 +3,8 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 620
-categories: 13
+total_examples: 660
+categories: 14
 generated: 2026-06-08
 ---
 
@@ -21,8 +21,8 @@ generated: 2026-06-08
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 620 |
-| Categories | 13 |
+| Total Examples | 660 |
+| Categories | 14 |
 | Last Updated | 2026-06-08 |
 
 ## Persona
@@ -110,6 +110,7 @@ dotnet build --verbosity detailed
 | [Visio Activex Controls](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/visio-activex-controls/agents.md) |
 | [Visio Shape Gradient](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/visio-shape-gradient/agents.md) |
 | [Working With Comments](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-comments/agents.md) |
+| [Working With Diagrams](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams) | 40 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-diagrams/agents.md) |
 
 ## Pipeline
 

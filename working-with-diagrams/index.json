@@ -1,0 +1,666 @@
+{
+  "category": "working-with-diagrams",
+  "display_name": "Working With Diagrams",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 40,
+  "pass_rate": 100.0,
+  "generated": "2026-06-08",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-digital-watermark-to-each-pdf-page-after-conversion-using-a-pdf-library",
+      "file": "add-a-digital-watermark-to-each-pdf-page-after-conversion-using-a-pdf-library.cs",
+      "task": "Add a digital watermark to each pdf page after conversion using a pdf library",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "after-merging-diagrams-generate-a-thumbnail-image-of-the-first-page-and-save-as-png",
+      "file": "after-merging-diagrams-generate-a-thumbnail-image-of-the-first-page-and-save-as-png.cs",
+      "task": "After merging diagrams generate a thumbnail image of the first page and save as png",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions"
+      ]
+    },
+    {
+      "slug": "after-removing-hidden-data-compare-file-size-before-and-after-to-confirm-reduction",
+      "file": "after-removing-hidden-data-compare-file-size-before-and-after-to-confirm-reduction.cs",
+      "task": "After removing hidden data compare file size before and after to confirm reduction",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-custom-page-background-color-before-exporting-the-diagram-to-pdf-for-branding",
+      "file": "apply-a-custom-page-background-color-before-exporting-the-diagram-to-pdf-for-branding.cs",
+      "task": "Apply a custom page background color before exporting the diagram to pdf for branding",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Pages",
+        "PdfSaveOptions",
+        "Save"
+      ]
+    },
+    {
+      "slug": "apply-a-global-line-color-change-to-all-connectors-to-match-corporate-palette-before-pdf-export",
+      "file": "apply-a-global-line-color-change-to-all-connectors-to-match-corporate-palette-before-pdf-export.cs",
+      "task": "Apply a global line color change to all connectors to match corporate palette before pdf export",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "apply-a-uniform-line-thickness-to-all-connectors-before-exporting-the-diagram-to-pdf",
+      "file": "apply-a-uniform-line-thickness-to-all-connectors-before-exporting-the-diagram-to-pdf.cs",
+      "task": "Apply a uniform line thickness to all connectors before exporting the diagram to pdf",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "apply-auto-fit-layout-to-all-shapes-in-the-diagram-before-saving",
+      "file": "apply-auto-fit-layout-to-all-shapes-in-the-diagram-before-saving.cs",
+      "task": "Apply auto fit layout to all shapes in the diagram before saving",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.AutoLayout",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Layout",
+        "LayoutOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-process-a-folder-of-vsdx-files-removing-hidden-info-and-converting-each-to-pdf",
+      "file": "batch-process-a-folder-of-vsdx-files-removing-hidden-info-and-converting-each-to-pdf.cs",
+      "task": "Batch process a folder of vsdx files removing hidden info and converting each to pdf",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "combine-a-vsd-diagram-with-a-vsdx-diagram-preserving-page-order-from-the-first-file",
+      "file": "combine-a-vsd-diagram-with-a-vsdx-diagram-preserving-page-order-from-the-first-file.cs",
+      "task": "Combine a vsd diagram with a vsdx diagram preserving page order from the first file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "configure-diagram-interruptmonitor-with-a-five-second-timeout-before-starting-pdf-conversion",
+      "file": "configure-diagram-interruptmonitor-with-a-five-second-timeout-before-starting-pdf-conversion.cs",
+      "task": "Configure diagram interruptmonitor with a five second timeout before starting pdf conversion",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Threading"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "configure-pdf-conversion-to-use-custom-page-margins-matching-corporate-standards",
+      "file": "configure-pdf-conversion-to-use-custom-page-margins-matching-corporate-standards.cs",
+      "task": "Configure pdf conversion to use custom page margins matching corporate standards",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-the-diagram-to-html-and-embed-all-shape-images-as-base64-data-uris",
+      "file": "convert-the-diagram-to-html-and-embed-all-shape-images-as-base64-data-uris.cs",
+      "task": "Convert the diagram to html and embed all shape images as base64 data uris",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-the-diagram-to-pdf-format-while-preserving-original-page-orientation",
+      "file": "convert-the-diagram-to-pdf-format-while-preserving-original-page-orientation.cs",
+      "task": "Convert the diagram to pdf format while preserving original page orientation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-the-diagram-to-pdf-with-grayscale-color-mode-to-reduce-archival-file-size",
+      "file": "convert-the-diagram-to-pdf-with-grayscale-color-mode-to-reduce-archival-file-size.cs",
+      "task": "Convert the diagram to pdf with grayscale color mode to reduce archival file size",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-pipeline-that-loads-a-diagram-merges-it-with-a-template-and-outputs-html-with-embedded-css",
+      "file": "create-a-pipeline-that-loads-a-diagram-merges-it-with-a-template-and-outputs-html-with-embedded-css.cs",
+      "task": "Create a pipeline that loads a diagram merges it with a template and outputs html with embedded css",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions"
+      ]
+    },
+    {
+      "slug": "create-a-utility-that-removes-hidden-information-from-diagrams-and-logs-amount-of-data-removed",
+      "file": "create-a-utility-that-removes-hidden-information-from-diagrams-and-logs-amount-of-data-removed.cs",
+      "task": "Create a utility that removes hidden information from diagrams and logs amount of data removed",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "embed-fonts-during-pdf-conversion-and-verify-that-all-fonts-are-embedded-in-the-output",
+      "file": "embed-fonts-during-pdf-conversion-and-verify-that-all-fonts-are-embedded-in-the-output.cs",
+      "task": "Embed fonts during pdf conversion and verify that all fonts are embedded in the output",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
+        "System",
+        "System.Collections.Generic",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Fonts",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "embed-pdf-metadata-such-as-author-and-creation-date-using-diagram-properties-after-conversion",
+      "file": "embed-pdf-metadata-such-as-author-and-creation-date-using-diagram-properties-after-conversion.cs",
+      "task": "Embed pdf metadata such as author and creation date using diagram properties after conversion",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-connector-routing-information-and-generate-a-visual-diagram-of-connections-using-a-third-party-graph-library",
+      "file": "export-connector-routing-information-and-generate-a-visual-diagram-of-connections-using-a-third-party-graph-library.cs",
+      "task": "Export connector routing information and generate a visual diagram of connections using a third party graph library",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "export-connector-start-and-end-points-from-the-diagram-to-a-json-file-for-external-analysis",
+      "file": "export-connector-start-and-end-points-from-the-diagram-to-a-json-file-for-external-analysis.cs",
+      "task": "Export connector start and end points from the diagram to a json file for external analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "extract-font-names-used-in-a-vsd-diagram-and-compare-them-against-a-corporate-whitelist",
+      "file": "extract-font-names-used-in-a-vsd-diagram-and-compare-them-against-a-corporate-whitelist.cs",
+      "task": "Extract font names used in a vsd diagram and compare them against a corporate whitelist",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Fonts",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "flatten-all-groups-into-individual-shapes-after-merging-to-simplify-further-processing",
+      "file": "flatten-all-groups-into-individual-shapes-after-merging-to-simplify-further-processing.cs",
+      "task": "Flatten all groups into individual shapes after merging to simplify further processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-summary-report-listing-page-counts-and-shape-totals-for-each-source-diagram-after-merging",
+      "file": "generate-a-summary-report-listing-page-counts-and-shape-totals-for-each-source-diagram-after-merging.cs",
+      "task": "Generate a summary report listing page counts and shape totals for each source diagram after merging",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "master"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-that-catches-interruptmonitor-exceptions-and-logs-the-aborted-operation",
+      "file": "implement-error-handling-that-catches-interruptmonitor-exceptions-and-logs-the-aborted-operation.cs",
+      "task": "Implement error handling that catches interruptmonitor exceptions and logs the aborted operation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-vsd-file-with-custom-loadoptions-enabling-interruptmonitor-for-cancellation",
+      "file": "load-a-vsd-file-with-custom-loadoptions-enabling-interruptmonitor-for-cancellation.cs",
+      "task": "Load a vsd file with custom loadoptions enabling interruptmonitor for cancellation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Threading"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "load-a-vsdx-file-into-a-diagram-object-using-default-load-options",
+      "file": "load-a-vsdx-file-into-a-diagram-object-using-default-load-options.cs",
+      "task": "Load a vsdx file into a diagram object using default load options",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-multiple-diagrams-concurrently-using-asynchronous-tasks-then-combine-them-into-a-single-output-file",
+      "file": "load-multiple-diagrams-concurrently-using-asynchronous-tasks-then-combine-them-into-a-single-output-file.cs",
+      "task": "Load multiple diagrams concurrently using asynchronous tasks then combine them into a single output file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "measure-conversion-time-for-pdf-output-with-and-without-interruptmonitor-to-assess-performance-impact",
+      "file": "measure-conversion-time-for-pdf-output-with-and-without-interruptmonitor-to-assess-performance-impact.cs",
+      "task": "Measure conversion time for pdf output with and without interruptmonitor to assess performance impact",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Diagnostics",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "merge-two-vsdx-diagrams-into-a-single-diagram-automatically-resolving-duplicate-shape-ids",
+      "file": "merge-two-vsdx-diagrams-into-a-single-diagram-automatically-resolving-duplicate-shape-ids.cs",
+      "task": "Merge two vsdx diagrams into a single diagram automatically resolving duplicate shape ids",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "protect-the-pdf-with-a-password-and-verify-that-opening-without-password-fails",
+      "file": "protect-the-pdf-with-a-password-and-verify-that-opening-without-password-fails.cs",
+      "task": "Protect the pdf with a password and verify that opening without password fails",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "remove-hidden-information-from-the-diagram-and-verify-that-hidden-layers-are-absent",
+      "file": "remove-hidden-information-from-the-diagram-and-verify-that-hidden-layers-are-absent.cs",
+      "task": "Remove hidden information from the diagram and verify that hidden layers are absent",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "rename-all-pages-sequentially-after-merging-to-avoid-naming-conflicts",
+      "file": "rename-all-pages-sequentially-after-merging-to-avoid-naming-conflicts.cs",
+      "task": "Rename all pages sequentially after merging to avoid naming conflicts",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-and-log-the-font-size-of-each-text-shape-for-accessibility-auditing",
+      "file": "retrieve-and-log-the-font-size-of-each-text-shape-for-accessibility-auditing.cs",
+      "task": "Retrieve and log the font size of each text shape for accessibility auditing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "retrieve-connector-information-from-the-loaded-diagram-and-export-it-to-a-csv-report",
+      "file": "retrieve-connector-information-from-the-loaded-diagram-and-export-it-to-a-csv-report.cs",
+      "task": "Retrieve connector information from the loaded diagram and export it to a csv report",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "save-the-converted-pdf-to-a-memory-stream-for-immediate-network-transmission",
+      "file": "save-the-converted-pdf-to-a-memory-stream-for-immediate-network-transmission.cs",
+      "task": "Save the converted pdf to a memory stream for immediate network transmission",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-loadoptions-interruptmonitor-to-abort-loading-after-ten-seconds-for-large-diagrams",
+      "file": "set-loadoptions-interruptmonitor-to-abort-loading-after-ten-seconds-for-large-diagrams.cs",
+      "task": "Set loadoptions interruptmonitor to abort loading after ten seconds for large diagrams",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Diagnostics"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "strip-hidden-metadata-from-a-vsdx-file-then-save-the-cleaned-diagram-back-to-vsdx",
+      "file": "strip-hidden-metadata-from-a-vsdx-file-then-save-the-cleaned-diagram-back-to-vsdx.cs",
+      "task": "Strip hidden metadata from a vsdx file then save the cleaned diagram back to vsdx",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-shape-text-in-the-diagram-to-include-a-timestamp-before-pdf-conversion",
+      "file": "update-shape-text-in-the-diagram-to-include-a-timestamp-before-pdf-conversion.cs",
+      "task": "Update shape text in the diagram to include a timestamp before pdf conversion",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "validate-that-no-hidden-comments-remain-after-calling-removehiddeninfo-by-inspecting-diagram-metadata",
+      "file": "validate-that-no-hidden-comments-remain-after-calling-removehiddeninfo-by-inspecting-diagram-metadata.cs",
+      "task": "Validate that no hidden comments remain after calling removehiddeninfo by inspecting diagram metadata",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-the-pdf-conversion-respects-page-orientation-by-checking-width-to-height-ratios",
+      "file": "validate-that-the-pdf-conversion-respects-page-orientation-by-checking-width-to-height-ratios.cs",
+      "task": "Validate that the pdf conversion respects page orientation by checking width to height ratios",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    }
+  ]
+}

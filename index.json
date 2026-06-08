@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-08",
-  "total_examples": 660,
-  "total_categories": 14,
+  "total_examples": 689,
+  "total_categories": 15,
   "categories": [
     {
       "slug": "basic-operations",
@@ -88,6 +88,12 @@
       "slug": "working-with-diagrams",
       "display_name": "Working With Diagrams",
       "total": 40,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "working-with-external-data-sources",
+      "display_name": "Working With External Data Sources",
+      "total": 29,
       "pass_rate": 100.0
     }
   ]

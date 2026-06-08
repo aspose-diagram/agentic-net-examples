@@ -3,8 +3,8 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 660
-categories: 14
+total_examples: 689
+categories: 15
 generated: 2026-06-08
 ---
 
@@ -21,8 +21,8 @@ generated: 2026-06-08
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 660 |
-| Categories | 14 |
+| Total Examples | 689 |
+| Categories | 15 |
 | Last Updated | 2026-06-08 |
 
 ## Persona
@@ -111,6 +111,7 @@ dotnet build --verbosity detailed
 | [Visio Shape Gradient](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/visio-shape-gradient/agents.md) |
 | [Working With Comments](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-comments/agents.md) |
 | [Working With Diagrams](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams) | 40 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-diagrams/agents.md) |
+| [Working With External Data Sources](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources) | 29 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-external-data-sources/agents.md) |
 
 ## Pipeline
 

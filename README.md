@@ -6,8 +6,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Examples | 689 |
-| Categories | 15 |
+| Total Examples | 722 |
+| Categories | 16 |
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.5.0 |
 | Target Framework | net8.0 |
@@ -83,6 +83,10 @@ working-with-external-data-sources/
   agents.md    ← Category AI instructions
   index.json   ← Category catalogue
   *.cs         ← Example files
+working-with-fields/
+  agents.md    ← Category AI instructions
+  index.json   ← Category catalogue
+  *.cs         ← Example files
 ```
 
 ## Categories
@@ -104,6 +108,7 @@ working-with-external-data-sources/
 | [Working With Comments](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-comments/agents.md) |
 | [Working With Diagrams](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams) | 40 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-diagrams/agents.md) |
 | [Working With External Data Sources](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources) | 29 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-external-data-sources/agents.md) |
+| [Working With Fields](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields) | 33 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-fields/agents.md) |
 
 ## How to Use
 

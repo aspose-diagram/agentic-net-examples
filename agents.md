@@ -3,9 +3,9 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 555
-categories: 11
-generated: 2026-06-06
+total_examples: 585
+categories: 12
+generated: 2026-06-08
 ---
 
 # Aspose.Diagram for .NET — Agentic Examples
@@ -21,9 +21,9 @@ generated: 2026-06-06
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 555 |
-| Categories | 11 |
-| Last Updated | 2026-06-06 |
+| Total Examples | 585 |
+| Categories | 12 |
+| Last Updated | 2026-06-08 |
 
 ## Persona
 
@@ -108,6 +108,7 @@ dotnet build --verbosity detailed
 | [Ole Objects In Visio Diagram](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/ole-objects-in-visio-diagram/agents.md) |
 | [Page Setup Features](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features) | 82 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/page-setup-features/agents.md) |
 | [Visio Activex Controls](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/visio-activex-controls/agents.md) |
+| [Visio Shape Gradient](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/visio-shape-gradient/agents.md) |
 
 ## Pipeline
 
@@ -128,4 +129,4 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-06*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-08*

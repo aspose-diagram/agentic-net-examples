@@ -1,0 +1,565 @@
+{
+  "category": "working-with-fields",
+  "display_name": "Working With Fields",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 33,
+  "pass_rate": 100.0,
+  "generated": "2026-06-08",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-field-only-to-shapes-that-have-a-specific-custom-property-set-to-true",
+      "file": "add-a-field-only-to-shapes-that-have-a-specific-custom-property-set-to-true.cs",
+      "task": "Add a field only to shapes that have a specific custom property set to true",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "assign-a-static-string-value-to-a-field-to-display-custom-text-on-the-shape",
+      "file": "assign-a-static-string-value-to-a-field-to-display-custom-text-on-the-shape.cs",
+      "task": "Assign a static string value to a field to display custom text on the shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-remove-a-specific-field-from-every-shape-in-multiple-diagrams-located-in-a-shared-folder",
+      "file": "batch-remove-a-specific-field-from-every-shape-in-multiple-diagrams-located-in-a-shared-folder.cs",
+      "task": "Batch remove a specific field from every shape in multiple diagrams located in a shared folder",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "catch-exceptions-when-a-specified-field-does-not-exist-and-log-detailed-error-information",
+      "file": "catch-exceptions-when-a-specified-field-does-not-exist-and-log-detailed-error-information.cs",
+      "task": "Catch exceptions when a specified field does not exist and log detailed error information",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "check-whether-a-field-already-exists-on-a-shape-before-attempting-to-create-a-duplicate-entry",
+      "file": "check-whether-a-field-already-exists-on-a-shape-before-attempting-to-create-a-duplicate-entry.cs",
+      "task": "Check whether a field already exists on a shape before attempting to create a duplicate entry",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "clone-an-existing-shape-and-copy-its-fields-to-the-new-shape-to-preserve-metadata",
+      "file": "clone-an-existing-shape-and-copy-its-fields-to-the-new-shape-to-preserve-metadata.cs",
+      "task": "Clone an existing shape and copy its fields to the new shape to preserve metadata",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "create-a-field-whose-formula-references-another-shape-s-height-to-calculate-proportional-scaling",
+      "file": "create-a-field-whose-formula-references-another-shape-s-height-to-calculate-proportional-scaling.cs",
+      "task": "Create a field whose formula references another shape s height to calculate proportional scaling",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "delete-a-field-from-a-shape-using-its-index-position-within-the-fields-collection-for-precise-removal",
+      "file": "delete-a-field-from-a-shape-using-its-index-position-within-the-fields-collection-for-precise-removal.cs",
+      "task": "Delete a field from a shape using its index position within the fields collection for precise removal",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-the-extracted-field-information-of-a-shape-to-a-json-file-for-external-analysis",
+      "file": "export-the-extracted-field-information-of-a-shape-to-a-json-file-for-external-analysis.cs",
+      "task": "Export the extracted field information of a shape to a json file for external analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "export-the-updated-diagram-to-a-new-file-name-to-preserve-the-original-version-unchanged",
+      "file": "export-the-updated-diagram-to-a-new-file-name-to-preserve-the-original-version-unchanged.cs",
+      "task": "Export the updated diagram to a new file name to preserve the original version unchanged",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-try-catch-blocks-around-field-insertion-code-to-capture-and-log-any-runtime-errors",
+      "file": "implement-try-catch-blocks-around-field-insertion-code-to-capture-and-log-any-runtime-errors.cs",
+      "task": "Implement try catch blocks around field insertion code to capture and log any runtime errors",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "insert-a-date-time-field-that-automatically-displays-the-current-system-timestamp-on-the-shape",
+      "file": "insert-a-date-time-field-that-automatically-displays-the-current-system-timestamp-on-the-shape.cs",
+      "task": "Insert a date time field that automatically displays the current system timestamp on the shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "insert-a-field-into-a-shape-and-connect-it-to-another-shape-using-a-dynamic-connector",
+      "file": "insert-a-field-into-a-shape-and-connect-it-to-another-shape-using-a-dynamic-connector.cs",
+      "task": "Insert a field into a shape and connect it to another shape using a dynamic connector",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "AddShape",
+        "ConnectShapesViaConnector",
+        "Diagram",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "insert-a-field-into-a-shape-s-geometry-at-a-defined-coordinate-to-display-dynamic-text",
+      "file": "insert-a-field-into-a-shape-s-geometry-at-a-defined-coordinate-to-display-dynamic-text.cs",
+      "task": "Insert a field into a shape s geometry at a defined coordinate to display dynamic text",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "insert-a-field-into-a-shape-using-its-name-property-to-locate-the-target-element",
+      "file": "insert-a-field-into-a-shape-using-its-name-property-to-locate-the-target-element.cs",
+      "task": "Insert a field into a shape using its name property to locate the target element",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "insert-a-newly-created-custom-field-into-a-shape-identified-by-its-unique-id",
+      "file": "insert-a-newly-created-custom-field-into-a-shape-identified-by-its-unique-id.cs",
+      "task": "Insert a newly created custom field into a shape identified by its unique id",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "iterate-over-all-shapes-in-the-diagram-and-add-a-timestamp-field-to-each-one",
+      "file": "iterate-over-all-shapes-in-the-diagram-and-add-a-timestamp-field-to-each-one.cs",
+      "task": "Iterate over all shapes in the diagram and add a timestamp field to each one",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-a-file-path-and-access-a-specific-shape-by-id",
+      "file": "load-a-visio-diagram-from-a-file-path-and-access-a-specific-shape-by-id.cs",
+      "task": "Load a visio diagram from a file path and access a specific shape by id",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "log-each-field-operation-result-to-the-console-for-real-time-monitoring-during-development",
+      "file": "log-each-field-operation-result-to-the-console-for-real-time-monitoring-during-development.cs",
+      "task": "Log each field operation result to the console for real time monitoring during development",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "loop-through-every-shape-and-update-an-existing-field-s-formula-only-if-the-shape-is-a-connector",
+      "file": "loop-through-every-shape-and-update-an-existing-field-s-formula-only-if-the-shape-is-a-connector.cs",
+      "task": "Loop through every shape and update an existing field s formula only if the shape is a connector",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "measure-execution-time-of-batch-field-updates-to-evaluate-performance-improvements-after-code-optimization",
+      "file": "measure-execution-time-of-batch-field-updates-to-evaluate-performance-improvements-after-code-optimization.cs",
+      "task": "Measure execution time of batch field updates to evaluate performance improvements after code optimization",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Diagnostics"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "perform-bulk-updates-of-field-formulas-across-several-diagrams-to-reflect-new-calculation-standards",
+      "file": "perform-bulk-updates-of-field-formulas-across-several-diagrams-to-reflect-new-calculation-standards.cs",
+      "task": "Perform bulk updates of field formulas across several diagrams to reflect new calculation standards",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "process-all-visio-files-in-a-directory-adding-a-custom-field-to-each-shape-across-every-diagram",
+      "file": "process-all-visio-files-in-a-directory-adding-a-custom-field-to-each-shape-across-every-diagram.cs",
+      "task": "Process all visio files in a directory adding a custom field to each shape across every diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "refresh-the-result-of-a-field-after-modifying-the-shape-s-geometry-to-ensure-accurate-values",
+      "file": "refresh-the-result-of-a-field-after-modifying-the-shape-s-geometry-to-ensure-accurate-values.cs",
+      "task": "Refresh the result of a field after modifying the shape s geometry to ensure accurate values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "TimelineHelper"
+      ]
+    },
+    {
+      "slug": "remove-a-field-from-a-shape-by-specifying-the-field-s-name-to-clean-up-unused-data",
+      "file": "remove-a-field-from-a-shape-by-specifying-the-field-s-name-to-clean-up-unused-data.cs",
+      "task": "Remove a field from a shape by specifying the field s name to clean up unused data",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "remove-all-existing-fields-from-a-shape-before-adding-a-fresh-set-of-updated-fields",
+      "file": "remove-all-existing-fields-from-a-shape-before-adding-a-fresh-set-of-updated-fields.cs",
+      "task": "Remove all existing fields from a shape before adding a fresh set of updated fields",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-the-list-of-field-names-and-their-data-types-from-a-given-shape-for-inspection",
+      "file": "retrieve-the-list-of-field-names-and-their-data-types-from-a-given-shape-for-inspection.cs",
+      "task": "Retrieve the list of field names and their data types from a given shape for inspection",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "save-the-modified-visio-diagram-back-to-its-original-file-location-after-completing-field-operations",
+      "file": "save-the-modified-visio-diagram-back-to-its-original-file-location-after-completing-field-operations.cs",
+      "task": "Save the modified visio diagram back to its original file location after completing field operations",
+      "namespaces": [
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-the-formula-of-an-existing-field-to-calculate-the-shape-s-area-based-on-its-dimensions",
+      "file": "set-the-formula-of-an-existing-field-to-calculate-the-shape-s-area-based-on-its-dimensions.cs",
+      "task": "Set the formula of an existing field to calculate the shape s area based on its dimensions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-a-field-s-formula-to-reference-another-shape-s-data-for-dynamic-calculations",
+      "file": "update-a-field-s-formula-to-reference-another-shape-s-data-for-dynamic-calculations.cs",
+      "task": "Update a field s formula to reference another shape s data for dynamic calculations",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-asynchronous-methods-to-load-a-visio-file-and-modify-fields-without-blocking-the-ui-thread",
+      "file": "use-asynchronous-methods-to-load-a-visio-file-and-modify-fields-without-blocking-the-ui-thread.cs",
+      "task": "Use asynchronous methods to load a visio file and modify fields without blocking the ui thread",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-field-results-after-modification-by-comparing-calculated-values-against-expected-thresholds",
+      "file": "validate-field-results-after-modification-by-comparing-calculated-values-against-expected-thresholds.cs",
+      "task": "Validate field results after modification by comparing calculated values against expected thresholds",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-a-field-s-formula-syntax-is-correct-before-applying-it-to-avoid-runtime-errors",
+      "file": "validate-that-a-field-s-formula-syntax-is-correct-before-applying-it-to-avoid-runtime-errors.cs",
+      "task": "Validate that a field s formula syntax is correct before applying it to avoid runtime errors",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    }
+  ]
+}

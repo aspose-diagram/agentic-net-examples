@@ -1,0 +1,593 @@
+{
+  "category": "working-with-comments",
+  "display_name": "Working With Comments",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 35,
+  "pass_rate": 100.0,
+  "generated": "2026-06-08",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-reply-to-an-existing-comment-thread-preserving-the-original-hierarchy-and-metadata",
+      "file": "add-a-reply-to-an-existing-comment-thread-preserving-the-original-hierarchy-and-metadata.cs",
+      "task": "Add a reply to an existing comment thread preserving the original hierarchy and metadata",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "add-timestamps-to-comments-automatically-when-they-are-created-using-the-system-s-current-time-zone",
+      "file": "add-timestamps-to-comments-automatically-when-they-are-created-using-the-system-s-current-time-zone.cs",
+      "task": "Add timestamps to comments automatically when they are created using the system s current time zone",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-conditional-formatting-rule-that-changes-comment-background-color-based-on-author-role",
+      "file": "apply-a-conditional-formatting-rule-that-changes-comment-background-color-based-on-author-role.cs",
+      "task": "Apply a conditional formatting rule that changes comment background color based on author role",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-custom-tag-to-comments-that-meet-certain-criteria-enabling-later-filtered-searches",
+      "file": "apply-a-custom-tag-to-comments-that-meet-certain-criteria-enabling-later-filtered-searches.cs",
+      "task": "Apply a custom tag to comments that meet certain criteria enabling later filtered searches",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "copy-comments-from-one-diagram-to-another-preserving-their-original-author-and-creation-dates",
+      "file": "copy-comments-from-one-diagram-to-another-preserving-their-original-author-and-creation-dates.cs",
+      "task": "Copy comments from one diagram to another preserving their original author and creation dates",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "page"
+      ]
+    },
+    {
+      "slug": "create-a-custom-comment-style-with-specific-font-and-background-color-then-apply-it-to-selected-comments",
+      "file": "create-a-custom-comment-style-with-specific-font-and-background-color-then-apply-it-to-selected-comments.cs",
+      "task": "Create a custom comment style with specific font and background color then apply it to selected comments",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "create-a-macro-that-removes-all-comments-older-than-a-specified-number-of-days-from-a-diagram",
+      "file": "create-a-macro-that-removes-all-comments-older-than-a-specified-number-of-days-from-a-diagram.cs",
+      "task": "Create a macro that removes all comments older than a specified number of days from a diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-report-that-groups-comments-by-shape-type-and-counts-occurrences-per-group",
+      "file": "create-a-report-that-groups-comments-by-shape-type-and-counts-occurrences-per-group.cs",
+      "task": "Create a report that groups comments by shape type and counts occurrences per group",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "create-a-utility-that-lists-comment-authors-alphabetically-and-outputs-the-list-to-a-text-file",
+      "file": "create-a-utility-that-lists-comment-authors-alphabetically-and-outputs-the-list-to-a-text-file.cs",
+      "task": "Create a utility that lists comment authors alphabetically and outputs the list to a text file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "delete-comments-containing-a-specific-keyword-and-verify-the-diagram-no-longer-displays-them",
+      "file": "delete-comments-containing-a-specific-keyword-and-verify-the-diagram-no-longer-displays-them.cs",
+      "task": "Delete comments containing a specific keyword and verify the diagram no longer displays them",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "detect-overlapping-comment-positions-and-automatically-adjust-their-coordinates-to-avoid-visual-clutter",
+      "file": "detect-overlapping-comment-positions-and-automatically-adjust-their-coordinates-to-avoid-visual-clutter.cs",
+      "task": "Detect overlapping comment positions and automatically adjust their coordinates to avoid visual clutter",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "develop-a-script-to-migrate-comments-from-legacy-diagram-files-to-the-latest-file-format-version",
+      "file": "develop-a-script-to-migrate-comments-from-legacy-diagram-files-to-the-latest-file-format-version.cs",
+      "task": "Develop a script to migrate comments from legacy diagram files to the latest file format version",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-all-diagram-comments-to-a-json-file-including-position-coordinates-and-linked-shape-identifiers",
+      "file": "export-all-diagram-comments-to-a-json-file-including-position-coordinates-and-linked-shape-identifiers.cs",
+      "task": "Export all diagram comments to a json file including position coordinates and linked shape identifiers",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "export-comment-data-to-an-html-file-formatting-each-comment-as-a-collapsible-section-with-metadata",
+      "file": "export-comment-data-to-an-html-file-formatting-each-comment-as-a-collapsible-section-with-metadata.cs",
+      "task": "Export comment data to an html file formatting each comment as a collapsible section with metadata",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-comment-metadata-to-a-relational-database-mapping-each-comment-to-its-associated-shape-id",
+      "file": "export-comment-metadata-to-a-relational-database-mapping-each-comment-to-its-associated-shape-id.cs",
+      "task": "Export comment metadata to a relational database mapping each comment to its associated shape id",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Data",
+        "System.Data.SqlClient",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "extract-comment-text-and-embed-it-as-hidden-metadata-within-the-diagram-file-for-later-retrieval",
+      "file": "extract-comment-text-and-embed-it-as-hidden-metadata-within-the-diagram-file-for-later-retrieval.cs",
+      "task": "Extract comment text and embed it as hidden metadata within the diagram file for later retrieval",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
+        "System",
+        "System.IO",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "filter-comments-by-creation-date-range-and-export-the-filtered-set-to-a-plain-text-log-file",
+      "file": "filter-comments-by-creation-date-range-and-export-the-filtered-set-to-a-plain-text-log-file.cs",
+      "task": "Filter comments by creation date range and export the filtered set to a plain text log file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-pdf-snapshot-of-a-diagram-with-comments-rendered-as-callout-annotations",
+      "file": "generate-a-pdf-snapshot-of-a-diagram-with-comments-rendered-as-callout-annotations.cs",
+      "task": "Generate a pdf snapshot of a diagram with comments rendered as callout annotations",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-summary-table-listing-comment-counts-per-page-and-save-it-as-an-excel-worksheet",
+      "file": "generate-a-summary-table-listing-comment-counts-per-page-and-save-it-as-an-excel-worksheet.cs",
+      "task": "Generate a summary table listing comment counts per page and save it as an excel worksheet",
+      "namespaces": [
+        "Aspose.Cells",
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-feature-to-lock-comments-preventing-further-edits-unless-a-specific-unlock-flag-is-set",
+      "file": "implement-a-feature-to-lock-comments-preventing-further-edits-unless-a-specific-unlock-flag-is-set.cs",
+      "task": "Implement a feature to lock comments preventing further edits unless a specific unlock flag is set",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-batch-processing-to-add-a-standardized-disclaimer-comment-to-every-diagram-in-a-project-directory",
+      "file": "implement-batch-processing-to-add-a-standardized-disclaimer-comment-to-every-diagram-in-a-project-directory.cs",
+      "task": "Implement batch processing to add a standardized disclaimer comment to every diagram in a project directory",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-to-gracefully-skip-diagrams-that-lack-comment-support-during-batch-operations",
+      "file": "implement-error-handling-to-gracefully-skip-diagrams-that-lack-comment-support-during-batch-operations.cs",
+      "task": "Implement error handling to gracefully skip diagrams that lack comment support during batch operations",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "import-comments-from-an-xml-document-assigning-them-to-corresponding-shapes-based-on-matching-ids",
+      "file": "import-comments-from-an-xml-document-assigning-them-to-corresponding-shapes-based-on-matching-ids.cs",
+      "task": "Import comments from an xml document assigning them to corresponding shapes based on matching ids",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "iterate-through-multiple-visio-files-in-a-folder-extracting-comment-timestamps-into-a-consolidated-report",
+      "file": "iterate-through-multiple-visio-files-in-a-folder-extracting-comment-timestamps-into-a-consolidated-report.cs",
+      "task": "Iterate through multiple visio files in a folder extracting comment timestamps into a consolidated report",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-enumerate-comment-ids-and-use-them-to-retrieve-detailed-comment-objects-via-api",
+      "file": "load-a-diagram-enumerate-comment-ids-and-use-them-to-retrieve-detailed-comment-objects-via-api.cs",
+      "task": "Load a diagram enumerate comment ids and use them to retrieve detailed comment objects via api",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-add-a-new-comment-to-a-specific-shape-then-save-the-file",
+      "file": "load-a-visio-diagram-add-a-new-comment-to-a-specific-shape-then-save-the-file.cs",
+      "task": "Load a visio diagram add a new comment to a specific shape then save the file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "programmatically-attach-a-comment-to-a-connector-shape-specifying-the-exact-segment-where-it-appears",
+      "file": "programmatically-attach-a-comment-to-a-connector-shape-specifying-the-exact-segment-where-it-appears.cs",
+      "task": "Programmatically attach a comment to a connector shape specifying the exact segment where it appears",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "AddShape",
+        "ConnectShapesViaConnector",
+        "Diagram",
+        "Page",
+        "Pages"
+      ]
+    },
+    {
+      "slug": "read-comments-from-a-diagram-translate-their-text-using-an-external-service-and-update-them-in-place",
+      "file": "read-comments-from-a-diagram-translate-their-text-using-an-external-service-and-update-them-in-place.cs",
+      "task": "Read comments from a diagram translate their text using an external service and update them in place",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-all-comments-from-a-diagram-and-export-their-text-and-author-information-to-a-csv-file",
+      "file": "retrieve-all-comments-from-a-diagram-and-export-their-text-and-author-information-to-a-csv-file.cs",
+      "task": "Retrieve all comments from a diagram and export their text and author information to a csv file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "search-for-comments-authored-by-a-particular-user-and-highlight-the-associated-shapes-in-the-diagram",
+      "file": "search-for-comments-authored-by-a-particular-user-and-highlight-the-associated-shapes-in-the-diagram.cs",
+      "task": "Search for comments authored by a particular user and highlight the associated shapes in the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-the-visibility-flag-of-all-comments-to-false-then-render-the-diagram-without-comment-overlays",
+      "file": "set-the-visibility-flag-of-all-comments-to-false-then-render-the-diagram-without-comment-overlays.cs",
+      "task": "Set the visibility flag of all comments to false then render the diagram without comment overlays",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "synchronize-comment-visibility-settings-across-multiple-diagrams-to-ensure-consistent-presentation-during-stakeholder-re",
+      "file": "synchronize-comment-visibility-settings-across-multiple-diagrams-to-ensure-consistent-presentation-during-stakeholder-re.cs",
+      "task": "Synchronize comment visibility settings across multiple diagrams to ensure consistent presentation during stakeholder re",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-author-names-of-existing-comments-using-a-provided-mapping-dictionary-then-save-the-changes",
+      "file": "update-author-names-of-existing-comments-using-a-provided-mapping-dictionary-then-save-the-changes.cs",
+      "task": "Update author names of existing comments using a provided mapping dictionary then save the changes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-comment-positions-stay-within-page-boundaries-after-diagram-scaling-operations",
+      "file": "validate-that-comment-positions-stay-within-page-boundaries-after-diagram-scaling-operations.cs",
+      "task": "Validate that comment positions stay within page boundaries after diagram scaling operations",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-each-comment-contains-non-empty-text-and-report-any-violations-as-warnings",
+      "file": "validate-that-each-comment-contains-non-empty-text-and-report-any-violations-as-warnings.cs",
+      "task": "Validate that each comment contains non empty text and report any violations as warnings",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    }
+  ]
+}

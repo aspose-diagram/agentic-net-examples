@@ -1,0 +1,539 @@
+{
+  "category": "working-with-external-data-sources",
+  "display_name": "Working With External Data Sources",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 29,
+  "pass_rate": 100.0,
+  "generated": "2026-06-08",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "apply-conditional-formatting-to-shapes-based-on-thresholds-defined-in-external-data",
+      "file": "apply-conditional-formatting-to-shapes-based-on-thresholds-defined-in-external-data.cs",
+      "task": "Apply conditional formatting to shapes based on thresholds defined in external data",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-transformations-to-imported-external-data-values-before-updating-diagram-shape-text",
+      "file": "apply-transformations-to-imported-external-data-values-before-updating-diagram-shape-text.cs",
+      "task": "Apply transformations to imported external data values before updating diagram shape text",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-xslt-transformations-to-xml-data-before-importing-into-diagram-shape-properties",
+      "file": "apply-xslt-transformations-to-xml-data-before-importing-into-diagram-shape-properties.cs",
+      "task": "Apply xslt transformations to xml data before importing into diagram shape properties",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Xml",
+        "System.Xml.Xsl"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "connect-to-a-sql-server-database-and-populate-diagram-shapes-with-query-results",
+      "file": "connect-to-a-sql-server-database-and-populate-diagram-shapes-with-query-results.cs",
+      "task": "Connect to a sql server database and populate diagram shapes with query results",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Data.SqlClient"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "create-new-diagram-pages-dynamically-for-each-distinct-record-in-an-external-dataset",
+      "file": "create-new-diagram-pages-dynamically-for-each-distinct-record-in-an-external-dataset.cs",
+      "task": "Create new diagram pages dynamically for each distinct record in an external dataset",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Data",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddMaster",
+        "AddShape",
+        "Diagram",
+        "Page",
+        "Pages"
+      ]
+    },
+    {
+      "slug": "create-swimlane-diagrams-where-lane-definitions-are-driven-by-external-csv-rows",
+      "file": "create-swimlane-diagrams-where-lane-definitions-are-driven-by-external-csv-rows.cs",
+      "task": "Create swimlane diagrams where lane definitions are driven by external csv rows",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddMaster",
+        "AddShape",
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "define-custom-mapping-rules-to-translate-external-field-names-to-diagram-shape-data-fields",
+      "file": "define-custom-mapping-rules-to-translate-external-field-names-to-diagram-shape-data-fields.cs",
+      "task": "Define custom mapping rules to translate external field names to diagram shape data fields",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-diagram-shape-data-to-a-csv-file-for-external-reporting-and-analysis",
+      "file": "export-diagram-shape-data-to-a-csv-file-for-external-reporting-and-analysis.cs",
+      "task": "Export diagram shape data to a csv file for external reporting and analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-diagram-shape-data-to-an-excel-workbook-for-further-manipulation",
+      "file": "export-diagram-shape-data-to-an-excel-workbook-for-further-manipulation.cs",
+      "task": "Export diagram shape data to an excel workbook for further manipulation",
+      "namespaces": [
+        "Aspose.Cells",
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "filter-external-data-using-linq-before-binding-to-diagram-shapes-to-reduce-clutter",
+      "file": "filter-external-data-using-linq-before-binding-to-diagram-shapes-to-reduce-clutter.cs",
+      "task": "Filter external data using linq before binding to diagram shapes to reduce clutter",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-diagram-legend-automatically-from-distinct-external-data-categories",
+      "file": "generate-a-diagram-legend-automatically-from-distinct-external-data-categories.cs",
+      "task": "Generate a diagram legend automatically from distinct external data categories",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-retry-logic-when-loading-data-from-an-unstable-network-source-for-diagram-updates",
+      "file": "implement-retry-logic-when-loading-data-from-an-unstable-network-source-for-diagram-updates.cs",
+      "task": "Implement retry logic when loading data from an unstable network source for diagram updates",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Threading"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "import-shape-data-from-a-csv-file-and-bind-each-row-to-corresponding-diagram-shapes",
+      "file": "import-shape-data-from-a-csv-file-and-bind-each-row-to-corresponding-diagram-shapes.cs",
+      "task": "Import shape data from a csv file and bind each row to corresponding diagram shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "integrate-sharepoint-list-items-as-external-data-to-drive-diagram-shape-content",
+      "file": "integrate-sharepoint-list-items-as-external-data-to-drive-diagram-shape-content.cs",
+      "task": "Integrate sharepoint list items as external data to drive diagram shape content",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "User"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-an-xml-data-source-and-map-elements-to-shape-properties",
+      "file": "load-a-visio-diagram-from-an-xml-data-source-and-map-elements-to-shape-properties.cs",
+      "task": "Load a visio diagram from an xml data source and map elements to shape properties",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Xml"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "log-each-step-of-the-external-data-import-process-for-audit-and-debugging-purposes",
+      "file": "log-each-step-of-the-external-data-import-process-for-audit-and-debugging-purposes.cs",
+      "task": "Log each step of the external data import process for audit and debugging purposes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "map-hierarchical-json-arrays-to-nested-shape-groups-within-the-diagram",
+      "file": "map-hierarchical-json-arrays-to-nested-shape-groups-within-the-diagram.cs",
+      "task": "Map hierarchical json arrays to nested shape groups within the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "merge-hierarchical-xml-data-into-grouped-shapes-within-the-visio-diagram",
+      "file": "merge-hierarchical-xml-data-into-grouped-shapes-within-the-visio-diagram.cs",
+      "task": "Merge hierarchical xml data into grouped shapes within the visio diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "perform-batch-processing-of-multiple-diagrams-each-loading-data-from-separate-csv-files",
+      "file": "perform-batch-processing-of-multiple-diagrams-each-loading-data-from-separate-csv-files.cs",
+      "task": "Perform batch processing of multiple diagrams each loading data from separate csv files",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "populate-shape-hyperlinks-using-urls-retrieved-from-an-external-data-feed",
+      "file": "populate-shape-hyperlinks-using-urls-retrieved-from-an-external-data-feed.cs",
+      "task": "Populate shape hyperlinks using urls retrieved from an external data feed",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Net.Http",
+        "System.Text.Json",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "populate-shape-tooltips-with-descriptive-text-sourced-from-an-external-database",
+      "file": "populate-shape-tooltips-with-descriptive-text-sourced-from-an-external-database.cs",
+      "task": "Populate shape tooltips with descriptive text sourced from an external database",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.Data.SqlClient"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "preserve-unicode-characters-when-importing-text-data-from-external-csv-files-into-shapes",
+      "file": "preserve-unicode-characters-when-importing-text-data-from-external-csv-files-into-shapes.cs",
+      "task": "Preserve unicode characters when importing text data from external csv files into shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "profile-memory-usage-while-loading-large-external-datasets-into-a-visio-diagram",
+      "file": "profile-memory-usage-while-loading-large-external-datasets-into-a-visio-diagram.cs",
+      "task": "Profile memory usage while loading large external datasets into a visio diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Diagnostics",
+        "System.IO",
+        "System.Security",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-json-data-from-a-rest-endpoint-and-assign-values-to-shape-custom-properties",
+      "file": "retrieve-json-data-from-a-rest-endpoint-and-assign-values-to-shape-custom-properties.cs",
+      "task": "Retrieve json data from a rest endpoint and assign values to shape custom properties",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Net.Http",
+        "System.Text.Json",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "User"
+      ]
+    },
+    {
+      "slug": "set-shape-visibility-dynamically-based-on-boolean-values-from-an-external-data-source",
+      "file": "set-shape-visibility-dynamically-based-on-boolean-values-from-an-external-data-source.cs",
+      "task": "Set shape visibility dynamically based on boolean values from an external data source",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-ado-net-to-fetch-data-from-an-oracle-database-and-populate-diagram-shapes-accordingly",
+      "file": "use-ado-net-to-fetch-data-from-an-oracle-database-and-populate-diagram-shapes-accordingly.cs",
+      "task": "Use ado net to fetch data from an oracle database and populate diagram shapes accordingly",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Data",
+        "System.Data.SqlClient",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "use-an-odata-feed-to-synchronize-external-data-with-diagram-shape-data-fields",
+      "file": "use-an-odata-feed-to-synchronize-external-data-with-diagram-shape-data-fields.cs",
+      "task": "Use an odata feed to synchronize external data with diagram shape data fields",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.Net.Http",
+        "System.Text.Json",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-external-data-to-set-shape-fill-colors-according-to-categorical-values",
+      "file": "use-external-data-to-set-shape-fill-colors-according-to-categorical-values.cs",
+      "task": "Use external data to set shape fill colors according to categorical values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-external-data-against-a-predefined-schema-before-mapping-to-diagram-shapes",
+      "file": "validate-external-data-against-a-predefined-schema-before-mapping-to-diagram-shapes.cs",
+      "task": "Validate external data against a predefined schema before mapping to diagram shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Xml",
+        "System.Xml.Schema"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    }
+  ]
+}

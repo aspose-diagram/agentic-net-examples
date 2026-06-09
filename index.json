@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-09",
-  "total_examples": 788,
-  "total_categories": 18,
+  "total_examples": 823,
+  "total_categories": 19,
   "categories": [
     {
       "slug": "basic-operations",
@@ -112,6 +112,12 @@
       "slug": "working-with-headers-and-footers",
       "display_name": "Working With Headers And Footers",
       "total": 30,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "working-with-hyperlinks",
+      "display_name": "Working With Hyperlinks",
+      "total": 35,
       "pass_rate": 100.0
     }
   ]

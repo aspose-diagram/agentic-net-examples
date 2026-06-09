@@ -3,9 +3,9 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 722
-categories: 16
-generated: 2026-06-08
+total_examples: 758
+categories: 17
+generated: 2026-06-09
 ---
 
 # Aspose.Diagram for .NET — Agentic Examples
@@ -21,9 +21,9 @@ generated: 2026-06-08
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 722 |
-| Categories | 16 |
-| Last Updated | 2026-06-08 |
+| Total Examples | 758 |
+| Categories | 17 |
+| Last Updated | 2026-06-09 |
 
 ## Persona
 
@@ -113,6 +113,7 @@ dotnet build --verbosity detailed
 | [Working With Diagrams](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams) | 40 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-diagrams/agents.md) |
 | [Working With External Data Sources](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources) | 29 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-external-data-sources/agents.md) |
 | [Working With Fields](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields) | 33 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-fields/agents.md) |
+| [Working With Geometry Section](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section) | 36 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-geometry-section/agents.md) |
 
 ## Pipeline
 
@@ -133,4 +134,4 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-08*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-09*

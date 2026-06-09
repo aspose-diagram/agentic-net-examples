@@ -1,0 +1,471 @@
+{
+  "category": "working-with-headers-and-footers",
+  "display_name": "Working With Headers And Footers",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 30,
+  "pass_rate": 100.0,
+  "generated": "2026-06-09",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "adjust-the-footer-margin-dynamically-based-on-the-number-of-shapes-on-the-page-to-avoid-overlap",
+      "file": "adjust-the-footer-margin-dynamically-based-on-the-number-of-shapes-on-the-page-to-avoid-overlap.cs",
+      "task": "Adjust the footer margin dynamically based on the number of shapes on the page to avoid overlap",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-uniform-header-margin-of-0-25-inches-to-all-diagrams-in-a-batch-and-log-failures",
+      "file": "apply-a-uniform-header-margin-of-0-25-inches-to-all-diagrams-in-a-batch-and-log-failures.cs",
+      "task": "Apply a uniform header margin of 0 25 inches to all diagrams in a batch and log failures",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-identical-header-and-footer-font-settings-across-all-diagrams-in-a-specified-folder-using-batch-processing",
+      "file": "apply-identical-header-and-footer-font-settings-across-all-diagrams-in-a-specified-folder-using-batch-processing.cs",
+      "task": "Apply identical header and footer font settings across all diagrams in a specified folder using batch processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Drawing",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-italic-style-to-the-right-footer-text-only-when-the-document-contains-more-than-ten-pages",
+      "file": "apply-italic-style-to-the-right-footer-text-only-when-the-document-contains-more-than-ten-pages.cs",
+      "task": "Apply italic style to the right footer text only when the document contains more than ten pages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "assign-a-new-string-to-the-right-footer-text-and-save-the-diagram-as-a-vdx-file",
+      "file": "assign-a-new-string-to-the-right-footer-text-and-save-the-diagram-as-a-vdx-file.cs",
+      "task": "Assign a new string to the right footer text and save the diagram as a vdx file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "automate-the-process-of-adding-a-page-number-placeholder-to-the-right-footer-of-each-diagram-in-a-collection",
+      "file": "automate-the-process-of-adding-a-page-number-placeholder-to-the-right-footer-of-each-diagram-in-a-collection.cs",
+      "task": "Automate the process of adding a page number placeholder to the right footer of each diagram in a collection",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "compare-left-header-text-between-two-diagrams-and-output-the-differences-to-a-log-file",
+      "file": "compare-left-header-text-between-two-diagrams-and-output-the-differences-to-a-log-file.cs",
+      "task": "Compare left header text between two diagrams and output the differences to a log file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "configure-the-footer-margin-to-0-3-centimeters-and-verify-the-change-using-print-preview",
+      "file": "configure-the-footer-margin-to-0-3-centimeters-and-verify-the-change-using-print-preview.cs",
+      "task": "Configure the footer margin to 0 3 centimeters and verify the change using print preview",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-fi",
+      "file": "create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-fi.cs",
+      "task": "Create a command line tool that accepts a directory path and applies a predefined header footer template to all visio fi",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-script-that-reads-header-and-footer-configurations-from-an-xml-file-and-applies-them-to-a-diagram",
+      "file": "create-a-script-that-reads-header-and-footer-configurations-from-an-xml-file-and-applies-them-to-a-diagram.cs",
+      "task": "Create a script that reads header and footer configurations from an xml file and applies them to a diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Drawing",
+        "System",
+        "System.Globalization",
+        "System.IO",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-utility-method-that-accepts-a-diagram-path-and-header-settings-applies-them-and-saves-the-file",
+      "file": "create-a-utility-method-that-accepts-a-diagram-path-and-header-settings-applies-them-and-saves-the-file.cs",
+      "task": "Create a utility method that accepts a diagram path and header settings applies them and saves the file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "define-header-font-name-as-arial-size-10-points-and-apply-bold-style-to-the-left-header",
+      "file": "define-header-font-name-as-arial-size-10-points-and-apply-bold-style-to-the-left-header.cs",
+      "task": "Define header font name as arial size 10 points and apply bold style to the left header",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "ensure-that-after-modifying-header-text-the-diagram-s-print-preview-reflects-the-updated-content-accurately",
+      "file": "ensure-that-after-modifying-header-text-the-diagram-s-print-preview-reflects-the-updated-content-accurately.cs",
+      "task": "Ensure that after modifying header text the diagram s print preview reflects the updated content accurately",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "extract-current-header-and-footer-text-values-from-a-diagram-and-write-them-to-a-json-configuration-file",
+      "file": "extract-current-header-and-footer-text-values-from-a-diagram-and-write-them-to-a-json-configuration-file.cs",
+      "task": "Extract current header and footer text values from a diagram and write them to a json configuration file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-report-listing-each-diagram-s-left-center-and-right-header-texts-after-batch-modifications",
+      "file": "generate-a-report-listing-each-diagram-s-left-center-and-right-header-texts-after-batch-modifications.cs",
+      "task": "Generate a report listing each diagram s left center and right header texts after batch modifications",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-summary-csv-file-listing-each-diagram-s-file-name-header-margins-and-footer-font-sizes-after-processing",
+      "file": "generate-a-summary-csv-file-listing-each-diagram-s-file-name-header-margins-and-footer-font-sizes-after-processing.cs",
+      "task": "Generate a summary csv file listing each diagram s file name header margins and footer font sizes after processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-function-to-copy-header-and-footer-settings-from-one-diagram-to-another-without-altering-page-content",
+      "file": "implement-a-function-to-copy-header-and-footer-settings-from-one-diagram-to-another-without-altering-page-content.cs",
+      "task": "Implement a function to copy header and footer settings from one diagram to another without altering page content",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-clear-all-existing-footer-texts-then-assign-a-standardized-disclaimer-to-each-footer-region",
+      "file": "load-a-diagram-clear-all-existing-footer-texts-then-assign-a-standardized-disclaimer-to-each-footer-region.cs",
+      "task": "Load a diagram clear all existing footer texts then assign a standardized disclaimer to each footer region",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-file-into-a-diagram-object-and-retrieve-the-left-header-text-value",
+      "file": "load-a-visio-file-into-a-diagram-object-and-retrieve-the-left-header-text-value.cs",
+      "task": "Load a visio file into a diagram object and retrieve the left header text value",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "load-multiple-visio-files-set-left-header-text-to-document-title-and-save-each-file-with-updated-headers",
+      "file": "load-multiple-visio-files-set-left-header-text-to-document-title-and-save-each-file-with-updated-headers.cs",
+      "task": "Load multiple visio files set left header text to document title and save each file with updated headers",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "read-the-center-header-text-replace-any-occurrence-of-the-word-draft-with-final-and-save-changes",
+      "file": "read-the-center-header-text-replace-any-occurrence-of-the-word-draft-with-final-and-save-changes.cs",
+      "task": "Read the center header text replace any occurrence of the word draft with final and save changes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-current-footer-margin-value-from-a-diagram-and-log-it-to-the-console-for-debugging",
+      "file": "retrieve-current-footer-margin-value-from-a-diagram-and-log-it-to-the-console-for-debugging.cs",
+      "task": "Retrieve current footer margin value from a diagram and log it to the console for debugging",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-the-current-header-font-style-change-it-to-italic-and-verify-the-change-by-reading-back-the-property",
+      "file": "retrieve-the-current-header-font-style-change-it-to-italic-and-verify-the-change-by-reading-back-the-property.cs",
+      "task": "Retrieve the current header font style change it to italic and verify the change by reading back the property",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-footer-font-to-times-new-roman-size-9-points-italic-style-for-the-center-footer-text",
+      "file": "set-footer-font-to-times-new-roman-size-9-points-italic-style-for-the-center-footer-text.cs",
+      "task": "Set footer font to times new roman size 9 points italic style for the center footer text",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-header-font-style-to-bold-and-underline-for-the-center-header-preserving-existing-font-name-and-size",
+      "file": "set-header-font-style-to-bold-and-underline-for-the-center-header-preserving-existing-font-name-and-size.cs",
+      "task": "Set header font style to bold and underline for the center header preserving existing font name and size",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-header-margin-based-on-page-size-0-2-inches-for-a4-and-0-3-inches-for-letter-formats",
+      "file": "set-header-margin-based-on-page-size-0-2-inches-for-a4-and-0-3-inches-for-letter-formats.cs",
+      "task": "Set header margin based on page size 0 2 inches for a4 and 0 3 inches for letter formats",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-the-header-margin-to-0-5-inches-for-a-diagram-before-exporting-to-pdf-format",
+      "file": "set-the-header-margin-to-0-5-inches-for-a-diagram-before-exporting-to-pdf-format.cs",
+      "task": "Set the header margin to 0 5 inches for a diagram before exporting to pdf format",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-the-center-header-text-of-a-loaded-diagram-with-a-custom-company-name-string",
+      "file": "update-the-center-header-text-of-a-loaded-diagram-with-a-custom-company-name-string.cs",
+      "task": "Update the center header text of a loaded diagram with a custom company name string",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-conditional-logic-to-set-different-footer-fonts-for-diagrams-based-on-their-file-extensions-vsdx-vs-vdx",
+      "file": "use-conditional-logic-to-set-different-footer-fonts-for-diagrams-based-on-their-file-extensions-vsdx-vs-vdx.cs",
+      "task": "Use conditional logic to set different footer fonts for diagrams based on their file extensions vsdx vs vdx",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-the-right-footer-text-matches-a-predefined-pattern-after-modification-and-raise-an-exception-if-not",
+      "file": "validate-that-the-right-footer-text-matches-a-predefined-pattern-after-modification-and-raise-an-exception-if-not.cs",
+      "task": "Validate that the right footer text matches a predefined pattern after modification and raise an exception if not",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Text.RegularExpressions"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    }
+  ]
+}

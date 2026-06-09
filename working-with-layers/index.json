@@ -1,0 +1,516 @@
+{
+  "category": "working-with-layers",
+  "display_name": "Working With Layers",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 30,
+  "pass_rate": 100.0,
+  "generated": "2026-06-09",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-custom-tag-to-the-legal-layer-and-retrieve-it-during-runtime-for-compliance-checks",
+      "file": "add-a-custom-tag-to-the-legal-layer-and-retrieve-it-during-runtime-for-compliance-checks.cs",
+      "task": "Add a custom tag to the legal layer and retrieve it during runtime for compliance checks",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "add-a-new-layer-named-annotations-to-an-existing-diagram-and-set-its-color-to-blue",
+      "file": "add-a-new-layer-named-annotations-to-an-existing-diagram-and-set-its-color-to-blue.cs",
+      "task": "Add a new layer named annotations to an existing diagram and set its color to blue",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-custom-metadata-property-to-the-security-layer-for-downstream-processing",
+      "file": "apply-a-custom-metadata-property-to-the-security-layer-for-downstream-processing.cs",
+      "task": "Apply a custom metadata property to the security layer for downstream processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-drop-shadow-effect-to-every-shape-within-the-ui-layer-using-layer-settings",
+      "file": "apply-a-drop-shadow-effect-to-every-shape-within-the-ui-layer-using-layer-settings.cs",
+      "task": "Apply a drop shadow effect to every shape within the ui layer using layer settings",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "change-the-fill-color-of-all-shapes-in-the-marketing-layer-to-light-gray",
+      "file": "change-the-fill-color-of-all-shapes-in-the-marketing-layer-to-light-gray.cs",
+      "task": "Change the fill color of all shapes in the marketing layer to light gray",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "clone-the-draft-layer-rename-the-clone-to-final-and-preserve-its-shape-properties",
+      "file": "clone-the-draft-layer-rename-the-clone-to-final-and-preserve-its-shape-properties.cs",
+      "task": "Clone the draft layer rename the clone to final and preserve its shape properties",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "copy-all-shapes-from-the-design-layer-into-a-newly-created-layer-called-prototype",
+      "file": "copy-all-shapes-from-the-design-layer-into-a-newly-created-layer-called-prototype.cs",
+      "task": "Copy all shapes from the design layer into a newly created layer called prototype",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-new-diagram-that-contains-only-the-shapes-from-the-export-layer-of-an-existing-file",
+      "file": "create-a-new-diagram-that-contains-only-the-shapes-from-the-export-layer-of-an-existing-file.cs",
+      "task": "Create a new diagram that contains only the shapes from the export layer of an existing file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "create-a-snapshot-image-of-the-diagram-with-only-the-presentation-layer-visible",
+      "file": "create-a-snapshot-image-of-the-diagram-with-only-the-presentation-layer-visible.cs",
+      "task": "Create a snapshot image of the diagram with only the presentation layer visible",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "delete-the-layer-obsolete-and-permanently-remove-its-associated-shapes-from-the-diagram",
+      "file": "delete-the-layer-obsolete-and-permanently-remove-its-associated-shapes-from-the-diagram.cs",
+      "task": "Delete the layer obsolete and permanently remove its associated shapes from the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "detect-and-remove-any-orphaned-shapes-that-are-not-assigned-to-any-layer",
+      "file": "detect-and-remove-any-orphaned-shapes-that-are-not-assigned-to-any-layer.cs",
+      "task": "Detect and remove any orphaned shapes that are not assigned to any layer",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-a-diagram-showing-only-the-visible-layers-to-a-vdx-file-for-legacy-compatibility",
+      "file": "export-a-diagram-showing-only-the-visible-layers-to-a-vdx-file-for-legacy-compatibility.cs",
+      "task": "Export a diagram showing only the visible layers to a vdx file for legacy compatibility",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-a-diagram-with-only-the-technical-layer-visible-to-an-svg-file-for-web-display",
+      "file": "export-a-diagram-with-only-the-technical-layer-visible-to-an-svg-file-for-web-display.cs",
+      "task": "Export a diagram with only the technical layer visible to an svg file for web display",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "SVGSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-the-list-of-layers-and-their-associated-shape-counts-to-a-json-file",
+      "file": "export-the-list-of-layers-and-their-associated-shape-counts-to-a-json-file.cs",
+      "task": "Export the list of layers and their associated shape counts to a json file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "filter-shapes-by-layer-and-export-only-those-from-the-analysis-layer-to-a-csv-report",
+      "file": "filter-shapes-by-layer-and-export-only-those-from-the-analysis-layer-to-a-csv-report.cs",
+      "task": "Filter shapes by layer and export only those from the analysis layer to a csv report",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "generate-a-summary-report-listing-each-layer-s-name-visibility-and-total-shape-count",
+      "file": "generate-a-summary-report-listing-each-layer-s-name-visibility-and-total-shape-count.cs",
+      "task": "Generate a summary report listing each layer s name visibility and total shape count",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "iterate-over-layers-and-export-each-visible-layer-as-an-individual-pdf-document",
+      "file": "iterate-over-layers-and-export-each-visible-layer-as-an-individual-pdf-document.cs",
+      "task": "Iterate over layers and export each visible layer as an individual pdf document",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "iterate-through-each-layer-and-count-the-number-of-connector-shapes-it-contains",
+      "file": "iterate-through-each-layer-and-count-the-number-of-connector-shapes-it-contains.cs",
+      "task": "Iterate through each layer and count the number of connector shapes it contains",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-disable-the-grid-layer-and-save-the-result-as-a-vsdx-file",
+      "file": "load-a-diagram-disable-the-grid-layer-and-save-the-result-as-a-vsdx-file.cs",
+      "task": "Load a diagram disable the grid layer and save the result as a vsdx file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-lock-the-architecture-layer-to-prevent-edits-and-save-the-locked-state",
+      "file": "load-a-diagram-lock-the-architecture-layer-to-prevent-edits-and-save-the-locked-state.cs",
+      "task": "Load a diagram lock the architecture layer to prevent edits and save the locked state",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-and-list-all-layer-names-with-their-visibility-status",
+      "file": "load-a-visio-diagram-and-list-all-layer-names-with-their-visibility-status.cs",
+      "task": "Load a visio diagram and list all layer names with their visibility status",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-multiple-visio-files-from-a-folder-merge-their-overview-layers-into-a-single-diagram",
+      "file": "load-multiple-visio-files-from-a-folder-merge-their-overview-layers-into-a-single-diagram.cs",
+      "task": "Load multiple visio files from a folder merge their overview layers into a single diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "merge-the-draft-and-review-layers-into-a-single-layer-while-preserving-shape-order",
+      "file": "merge-the-draft-and-review-layers-into-a-single-layer-while-preserving-shape-order.cs",
+      "task": "Merge the draft and review layers into a single layer while preserving shape order",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "programmatically-reorder-layers-so-that-background-appears-beneath-all-other-layers-in-the-stack",
+      "file": "programmatically-reorder-layers-so-that-background-appears-beneath-all-other-layers-in-the-stack.cs",
+      "task": "Programmatically reorder layers so that background appears beneath all other layers in the stack",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "rename-the-layer-background-to-base-and-update-all-shapes-referencing-the-old-name",
+      "file": "rename-the-layer-background-to-base-and-update-all-shapes-referencing-the-old-name.cs",
+      "task": "Rename the layer background to base and update all shapes referencing the old name",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-the-line-weight-of-the-infrastructure-layer-to-2-points-for-all-its-shapes",
+      "file": "set-the-line-weight-of-the-infrastructure-layer-to-2-points-for-all-its-shapes.cs",
+      "task": "Set the line weight of the infrastructure layer to 2 points for all its shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-the-print-visibility-of-the-confidential-layer-to-false-before-generating-a-print-ready-pdf",
+      "file": "set-the-print-visibility-of-the-confidential-layer-to-false-before-generating-a-print-ready-pdf.cs",
+      "task": "Set the print visibility of the confidential layer to false before generating a print ready pdf",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-the-transparency-of-the-watermark-layer-to-50-percent-for-all-its-shapes",
+      "file": "set-the-transparency-of-the-watermark-layer-to-50-percent-for-all-its-shapes.cs",
+      "task": "Set the transparency of the watermark layer to 50 percent for all its shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "toggle-visibility-of-the-details-layer-to-hidden-before-exporting-the-diagram-to-pdf",
+      "file": "toggle-visibility-of-the-details-layer-to-hidden-before-exporting-the-diagram-to-pdf.cs",
+      "task": "Toggle visibility of the details layer to hidden before exporting the diagram to pdf",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-each-layer-in-a-diagram-has-a-unique-name-and-report-duplicates",
+      "file": "validate-that-each-layer-in-a-diagram-has-a-unique-name-and-report-duplicates.cs",
+      "task": "Validate that each layer in a diagram has a unique name and report duplicates",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    }
+  ]
+}

@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-09",
-  "total_examples": 861,
-  "total_categories": 20,
+  "total_examples": 891,
+  "total_categories": 21,
   "categories": [
     {
       "slug": "basic-operations",
@@ -124,6 +124,12 @@
       "slug": "working-with-images",
       "display_name": "Working With Images",
       "total": 38,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "working-with-layers",
+      "display_name": "Working With Layers",
+      "total": 30,
       "pass_rate": 100.0
     }
   ]

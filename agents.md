@@ -3,8 +3,8 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 861
-categories: 20
+total_examples: 891
+categories: 21
 generated: 2026-06-09
 ---
 
@@ -21,8 +21,8 @@ generated: 2026-06-09
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 861 |
-| Categories | 20 |
+| Total Examples | 891 |
+| Categories | 21 |
 | Last Updated | 2026-06-09 |
 
 ## Persona
@@ -117,6 +117,7 @@ dotnet build --verbosity detailed
 | [Working With Headers And Footers](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-headers-and-footers/agents.md) |
 | [Working With Hyperlinks](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-hyperlinks/agents.md) |
 | [Working With Images](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images) | 38 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-images/agents.md) |
+| [Working With Layers](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-layers/agents.md) |
 
 ## Pipeline
 

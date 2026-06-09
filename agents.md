@@ -3,8 +3,8 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 823
-categories: 19
+total_examples: 861
+categories: 20
 generated: 2026-06-09
 ---
 
@@ -21,8 +21,8 @@ generated: 2026-06-09
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 823 |
-| Categories | 19 |
+| Total Examples | 861 |
+| Categories | 20 |
 | Last Updated | 2026-06-09 |
 
 ## Persona
@@ -116,6 +116,7 @@ dotnet build --verbosity detailed
 | [Working With Geometry Section](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section) | 36 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-geometry-section/agents.md) |
 | [Working With Headers And Footers](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-headers-and-footers/agents.md) |
 | [Working With Hyperlinks](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-hyperlinks/agents.md) |
+| [Working With Images](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images) | 38 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-images/agents.md) |
 
 ## Pipeline
 

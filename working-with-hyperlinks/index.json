@@ -1,0 +1,597 @@
+{
+  "category": "working-with-hyperlinks",
+  "display_name": "Working With Hyperlinks",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 35,
+  "pass_rate": 100.0,
+  "generated": "2026-06-09",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-hyperlink-using-a-mailto-address-to-enable-sending-email-directly-from-the-shape",
+      "file": "add-a-hyperlink-using-a-mailto-address-to-enable-sending-email-directly-from-the-shape.cs",
+      "task": "Add a hyperlink using a mailto address to enable sending email directly from the shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "add-a-new-hyperlink-to-the-selected-shape-pointing-to-an-external-website-with-a-descriptive-name",
+      "file": "add-a-new-hyperlink-to-the-selected-shape-pointing-to-an-external-website-with-a-descriptive-name.cs",
+      "task": "Add a new hyperlink to the selected shape pointing to an external website with a descriptive name",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-filter-to-select-only-shapes-whose-hyperlinks-target-external-domains-and-list-their-identifiers",
+      "file": "apply-a-filter-to-select-only-shapes-whose-hyperlinks-target-external-domains-and-list-their-identifiers.cs",
+      "task": "Apply a filter to select only shapes whose hyperlinks target external domains and list their identifiers",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "apply-conditional-logic-to-add-hyperlinks-only-to-shapes-that-meet-a-specific-custom-property-value",
+      "file": "apply-conditional-logic-to-add-hyperlinks-only-to-shapes-that-meet-a-specific-custom-property-value.cs",
+      "task": "Apply conditional logic to add hyperlinks only to shapes that meet a specific custom property value",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "check-for-duplicate-hyperlink-names-within-a-shape-and-consolidate-them-into-a-single-entry",
+      "file": "check-for-duplicate-hyperlink-names-within-a-shape-and-consolidate-them-into-a-single-entry.cs",
+      "task": "Check for duplicate hyperlink names within a shape and consolidate them into a single entry",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "clone-an-existing-hyperlink-and-attach-it-to-another-shape-with-a-modified-description",
+      "file": "clone-an-existing-hyperlink-and-attach-it-to-another-shape-with-a-modified-description.cs",
+      "task": "Clone an existing hyperlink and attach it to another shape with a modified description",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "compare-two-diagrams-and-list-shapes-where-hyperlink-targets-differ-outputting-differences-to-the-console",
+      "file": "compare-two-diagrams-and-list-shapes-where-hyperlink-targets-differ-outputting-differences-to-the-console.cs",
+      "task": "Compare two diagrams and list shapes where hyperlink targets differ outputting differences to the console",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "configure-the-hyperlink-s-subaddress-property-to-navigate-to-a-specific-page-within-the-diagram",
+      "file": "configure-the-hyperlink-s-subaddress-property-to-navigate-to-a-specific-page-within-the-diagram.cs",
+      "task": "Configure the hyperlink s subaddress property to navigate to a specific page within the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-batch-process-adding-identical-navigation-hyperlinks-to-multiple-shapes-across-all-pages",
+      "file": "create-a-batch-process-adding-identical-navigation-hyperlinks-to-multiple-shapes-across-all-pages.cs",
+      "task": "Create a batch process adding identical navigation hyperlinks to multiple shapes across all pages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-configuration-file-defining-default-hyperlink-properties-and-apply-them-programmatically-to-new-hyperlinks",
+      "file": "create-a-configuration-file-defining-default-hyperlink-properties-and-apply-them-programmatically-to-new-hyperlinks.cs",
+      "task": "Create a configuration file defining default hyperlink properties and apply them programmatically to new hyperlinks",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-hyperlink-that-opens-a-pdf-document-in-a-new-browser-window",
+      "file": "create-a-hyperlink-that-opens-a-pdf-document-in-a-new-browser-window.cs",
+      "task": "Create a hyperlink that opens a pdf document in a new browser window",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "create-a-unit-test-verifying-hyperlink-addition-correctly-updates-the-hyperlinkcollection-count",
+      "file": "create-a-unit-test-verifying-hyperlink-addition-correctly-updates-the-hyperlinkcollection-count.cs",
+      "task": "Create a unit test verifying hyperlink addition correctly updates the hyperlinkcollection count",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Shape",
+        "shape"
+      ]
+    },
+    {
+      "slug": "develop-a-console-application-that-scans-the-diagram-and-prints-each-shape-s-name-with-its-hyperlink-urls",
+      "file": "develop-a-console-application-that-scans-the-diagram-and-prints-each-shape-s-name-with-its-hyperlink-urls.cs",
+      "task": "Develop a console application that scans the diagram and prints each shape s name with its hyperlink urls",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "export-shape-identifiers-and-their-associated-hyperlink-urls-to-a-csv-file-for-reporting",
+      "file": "export-shape-identifiers-and-their-associated-hyperlink-urls-to-a-csv-file-for-reporting.cs",
+      "task": "Export shape identifiers and their associated hyperlink urls to a csv file for reporting",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "generate-a-summary-report-showing-the-number-of-hyperlinks-per-page-in-the-diagram",
+      "file": "generate-a-summary-report-showing-the-number-of-hyperlinks-per-page-in-the-diagram.cs",
+      "task": "Generate a summary report showing the number of hyperlinks per page in the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-visual-map-of-hyperlink-connections-between-shapes-and-export-the-map-as-an-image-file",
+      "file": "generate-a-visual-map-of-hyperlink-connections-between-shapes-and-export-the-map-as-an-image-file.cs",
+      "task": "Generate a visual map of hyperlink connections between shapes and export the map as an image file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions"
+      ]
+    },
+    {
+      "slug": "implement-a-rollback-mechanism-that-restores-original-hyperlink-settings-if-an-update-error-occurs",
+      "file": "implement-a-rollback-mechanism-that-restores-original-hyperlink-settings-if-an-update-error-occurs.cs",
+      "task": "Implement a rollback mechanism that restores original hyperlink settings if an update error occurs",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-routine-to-remove-all-hyperlinks-from-shapes-on-a-specified-page-before-exporting",
+      "file": "implement-a-routine-to-remove-all-hyperlinks-from-shapes-on-a-specified-page-before-exporting.cs",
+      "task": "Implement a routine to remove all hyperlinks from shapes on a specified page before exporting",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-for-malformed-or-unreachable-hyperlink-addresses-during-addition",
+      "file": "implement-error-handling-for-malformed-or-unreachable-hyperlink-addresses-during-addition.cs",
+      "task": "Implement error handling for malformed or unreachable hyperlink addresses during addition",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Net.Http"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-pagination-logic-that-adds-page-specific-hyperlinks-to-navigate-sequentially-through-diagram-pages",
+      "file": "implement-pagination-logic-that-adds-page-specific-hyperlinks-to-navigate-sequentially-through-diagram-pages.cs",
+      "task": "Implement pagination logic that adds page specific hyperlinks to navigate sequentially through diagram pages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "iterate-through-a-shape-s-hyperlinks-and-log-each-hyperlink-s-name-and-target-address",
+      "file": "iterate-through-a-shape-s-hyperlinks-and-log-each-hyperlink-s-name-and-target-address.cs",
+      "task": "Iterate through a shape s hyperlinks and log each hyperlink s name and target address",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-from-a-memory-stream-modify-hyperlink-targets-and-write-the-updated-diagram-back-to-the-stream",
+      "file": "load-a-diagram-from-a-memory-stream-modify-hyperlink-targets-and-write-the-updated-diagram-back-to-the-stream.cs",
+      "task": "Load a diagram from a memory stream modify hyperlink targets and write the updated diagram back to the stream",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-the-visio-diagram-from-file-and-access-a-shape-using-its-unique-identifier",
+      "file": "load-the-visio-diagram-from-file-and-access-a-shape-using-its-unique-identifier.cs",
+      "task": "Load the visio diagram from file and access a shape using its unique identifier",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "locate-shapes-by-their-names-within-the-diagram-and-assign-page-link-hyperlinks-for-navigation",
+      "file": "locate-shapes-by-their-names-within-the-diagram-and-assign-page-link-hyperlinks-for-navigation.cs",
+      "task": "Locate shapes by their names within the diagram and assign page link hyperlinks for navigation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "programmatically-set-the-hyperlink-s-target-frame-to-open-in-the-same-window",
+      "file": "programmatically-set-the-hyperlink-s-target-frame-to-open-in-the-same-window.cs",
+      "task": "Programmatically set the hyperlink s target frame to open in the same window",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "remove-a-hyperlink-from-a-shape-by-matching-its-name-and-save-the-updated-diagram",
+      "file": "remove-a-hyperlink-from-a-shape-by-matching-its-name-and-save-the-updated-diagram.cs",
+      "task": "Remove a hyperlink from a shape by matching its name and save the updated diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "replace-an-existing-hyperlink-s-target-url-with-a-new-address-while-preserving-its-description",
+      "file": "replace-an-existing-hyperlink-s-target-url-with-a-new-address-while-preserving-its-description.cs",
+      "task": "Replace an existing hyperlink s target url with a new address while preserving its description",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-hyperlink-properties-convert-them-to-a-dictionary-and-pass-the-dictionary-to-a-logging-framework",
+      "file": "retrieve-hyperlink-properties-convert-them-to-a-dictionary-and-pass-the-dictionary-to-a-logging-framework.cs",
+      "task": "Retrieve hyperlink properties convert them to a dictionary and pass the dictionary to a logging framework",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "retrieve-the-hyperlink-collection-from-a-shape-and-serialize-each-hyperlink-s-properties-into-json-format",
+      "file": "retrieve-the-hyperlink-collection-from-a-shape-and-serialize-each-hyperlink-s-properties-into-json-format.cs",
+      "task": "Retrieve the hyperlink collection from a shape and serialize each hyperlink s properties into json format",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "set-the-hyperlink-s-description-property-to-provide-tooltip-text-on-mouse-hover",
+      "file": "set-the-hyperlink-s-description-property-to-provide-tooltip-text-on-mouse-hover.cs",
+      "task": "Set the hyperlink s description property to provide tooltip text on mouse hover",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-all-hyperlinks-referencing-an-old-domain-to-a-new-domain-via-string-replacement",
+      "file": "update-all-hyperlinks-referencing-an-old-domain-to-a-new-domain-via-string-replacement.cs",
+      "task": "Update all hyperlinks referencing an old domain to a new domain via string replacement",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-asynchronous-i-o-to-load-the-diagram-modify-hyperlinks-and-save-without-blocking-the-ui-thread",
+      "file": "use-asynchronous-i-o-to-load-the-diagram-modify-hyperlinks-and-save-without-blocking-the-ui-thread.cs",
+      "task": "Use asynchronous i o to load the diagram modify hyperlinks and save without blocking the ui thread",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-hyperlinkcollection-add-overload-to-set-name-address-and-subaddress-simultaneously",
+      "file": "use-hyperlinkcollection-add-overload-to-set-name-address-and-subaddress-simultaneously.cs",
+      "task": "Use hyperlinkcollection add overload to set name address and subaddress simultaneously",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-the-hyperlinkcollection-class-to-enumerate-all-hyperlinks-associated-with-a-specific-shape",
+      "file": "use-the-hyperlinkcollection-class-to-enumerate-all-hyperlinks-associated-with-a-specific-shape.cs",
+      "task": "Use the hyperlinkcollection class to enumerate all hyperlinks associated with a specific shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-each-shape-with-a-hyperlink-has-a-non-empty-description-property",
+      "file": "validate-that-each-shape-with-a-hyperlink-has-a-non-empty-description-property.cs",
+      "task": "Validate that each shape with a hyperlink has a non empty description property",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    }
+  ]
+}

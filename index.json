@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-09",
-  "total_examples": 758,
-  "total_categories": 17,
+  "total_examples": 788,
+  "total_categories": 18,
   "categories": [
     {
       "slug": "basic-operations",
@@ -106,6 +106,12 @@
       "slug": "working-with-geometry-section",
       "display_name": "Working With Geometry Section",
       "total": 36,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "working-with-headers-and-footers",
+      "display_name": "Working With Headers And Footers",
+      "total": 30,
       "pass_rate": 100.0
     }
   ]

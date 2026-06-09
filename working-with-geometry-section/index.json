@@ -1,0 +1,633 @@
+{
+  "category": "working-with-geometry-section",
+  "display_name": "Working With Geometry Section",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 36,
+  "pass_rate": 100.0,
+  "generated": "2026-06-09",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "apply-a-gradient-fill-to-geometry-interiors-by-setting-appropriate-shapesheet-fill-properties-programmatically",
+      "file": "apply-a-gradient-fill-to-geometry-interiors-by-setting-appropriate-shapesheet-fill-properties-programmatically.cs",
+      "task": "Apply a gradient fill to geometry interiors by setting appropriate shapesheet fill properties programmatically",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-scaling-transformation-to-all-vertices-in-a-geometry-to-uniformly-enlarge-the-shape",
+      "file": "apply-a-scaling-transformation-to-all-vertices-in-a-geometry-to-uniformly-enlarge-the-shape.cs",
+      "task": "Apply a scaling transformation to all vertices in a geometry to uniformly enlarge the shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-custom-line-caps-to-geometry-edges-to-enhance-visual-representation-of-diagram-connectors",
+      "file": "apply-custom-line-caps-to-geometry-edges-to-enhance-visual-representation-of-diagram-connectors.cs",
+      "task": "Apply custom line caps to geometry edges to enhance visual representation of diagram connectors",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "AddShape",
+        "ConnectShapesViaConnector",
+        "Diagram",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "batch-process-multiple-shapes-adding-a-standard-geometry-template-to-each-for-consistent-styling",
+      "file": "batch-process-multiple-shapes-adding-a-standard-geometry-template-to-each-for-consistent-styling.cs",
+      "task": "Batch process multiple shapes adding a standard geometry template to each for consistent styling",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "calculate-the-total-length-of-all-line-segments-in-a-geometry-to-assess-diagram-complexity-metrics",
+      "file": "calculate-the-total-length-of-all-line-segments-in-a-geometry-to-assess-diagram-complexity-metrics.cs",
+      "task": "Calculate the total length of all line segments in a geometry to assess diagram complexity metrics",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "clone-geometry-from-a-source-shape-and-apply-it-to-a-target-shape-to-duplicate-design-elements",
+      "file": "clone-geometry-from-a-source-shape-and-apply-it-to-a-target-shape-to-duplicate-design-elements.cs",
+      "task": "Clone geometry from a source shape and apply it to a target shape to duplicate design elements",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "compare-geometry-vertex-lists-before-and-after-modification-to-ensure-intended-changes-were-applied-correctly",
+      "file": "compare-geometry-vertex-lists-before-and-after-modification-to-ensure-intended-changes-were-applied-correctly.cs",
+      "task": "Compare geometry vertex lists before and after modification to ensure intended changes were applied correctly",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "copy-geometry-from-a-master-template-shape-to-multiple-target-shapes-to-ensure-uniform-design-standards",
+      "file": "copy-geometry-from-a-master-template-shape-to-multiple-target-shapes-to-ensure-uniform-design-standards.cs",
+      "task": "Copy geometry from a master template shape to multiple target shapes to ensure uniform design standards",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "create-a-new-geometry-instance-define-custom-vertices-and-add-it-to-the-target-shape",
+      "file": "create-a-new-geometry-instance-define-custom-vertices-and-add-it-to-the-target-shape.cs",
+      "task": "Create a new geometry instance define custom vertices and add it to the target shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-asynchronous-methods-to-add-geometries-to-shapes-improving-performance-for-large-diagram-processing",
+      "file": "create-asynchronous-methods-to-add-geometries-to-shapes-improving-performance-for-large-diagram-processing.cs",
+      "task": "Create asynchronous methods to add geometries to shapes improving performance for large diagram processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "document-geometry-changes-by-adding-comments-to-shapesheet-cells-describing-the-modification-rationale",
+      "file": "document-geometry-changes-by-adding-comments-to-shapesheet-cells-describing-the-modification-rationale.cs",
+      "task": "Document geometry changes by adding comments to shapesheet cells describing the modification rationale",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "edit-connector-geometry-entries-directly-in-the-shapesheet-to-improve-diagram-routing-clarity",
+      "file": "edit-connector-geometry-entries-directly-in-the-shapesheet-to-improve-diagram-routing-clarity.cs",
+      "task": "Edit connector geometry entries directly in the shapesheet to improve diagram routing clarity",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Layout",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "export-the-diagram-with-updated-geometries-to-svg-format-to-verify-vector-rendering-accuracy",
+      "file": "export-the-diagram-with-updated-geometries-to-svg-format-to-verify-vector-rendering-accuracy.cs",
+      "task": "Export the diagram with updated geometries to svg format to verify vector rendering accuracy",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "SVGSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-the-updated-diagram-to-pdf-format-to-verify-visual-appearance-after-geometry-adjustments",
+      "file": "export-the-updated-diagram-to-pdf-format-to-verify-visual-appearance-after-geometry-adjustments.cs",
+      "task": "Export the updated diagram to pdf format to verify visual appearance after geometry adjustments",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "filter-geometries-by-line-type-processing-only-those-with-solid-lines-for-further-customization",
+      "file": "filter-geometries-by-line-type-processing-only-those-with-solid-lines-for-further-customization.cs",
+      "task": "Filter geometries by line type processing only those with solid lines for further customization",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-unit-tests-that-verify-geometry-addition-removal-and-vertex-updates-produce-expected-shapesheet-values",
+      "file": "generate-unit-tests-that-verify-geometry-addition-removal-and-vertex-updates-produce-expected-shapesheet-values.cs",
+      "task": "Generate unit tests that verify geometry addition removal and vertex updates produce expected shapesheet values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "handle-out-of-range-geometry-index-exceptions-by-logging-detailed-error-information-and-skipping-invalid-entries",
+      "file": "handle-out-of-range-geometry-index-exceptions-by-logging-detailed-error-information-and-skipping-invalid-entries.cs",
+      "task": "Handle out of range geometry index exceptions by logging detailed error information and skipping invalid entries",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-transaction-scope-that-commits-geometry-changes-only-if-all-modifications-succeed-without-errors",
+      "file": "implement-a-transaction-scope-that-commits-geometry-changes-only-if-all-modifications-succeed-without-errors.cs",
+      "task": "Implement a transaction scope that commits geometry changes only if all modifications succeed without errors",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-conditional-logic-that-updates-geometry-vertices-only-when-shape-width-exceeds-a-defined-threshold",
+      "file": "implement-conditional-logic-that-updates-geometry-vertices-only-when-shape-width-exceeds-a-defined-threshold.cs",
+      "task": "Implement conditional logic that updates geometry vertices only when shape width exceeds a defined threshold",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "integrate-geometry-manipulation-into-a-web-api-endpoint-allowing-remote-clients-to-modify-visio-shapes",
+      "file": "integrate-geometry-manipulation-into-a-web-api-endpoint-allowing-remote-clients-to-modify-visio-shapes.cs",
+      "task": "Integrate geometry manipulation into a web api endpoint allowing remote clients to modify visio shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "iterate-through-each-geometry-object-in-the-collection-and-log-vertex-coordinates-for-debugging",
+      "file": "iterate-through-each-geometry-object-in-the-collection-and-log-vertex-coordinates-for-debugging.cs",
+      "task": "Iterate through each geometry object in the collection and log vertex coordinates for debugging",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "measure-the-bounding-box-of-a-geometry-and-log-width-and-height-for-layout-analysis",
+      "file": "measure-the-bounding-box-of-a-geometry-and-log-width-and-height-for-layout-analysis.cs",
+      "task": "Measure the bounding box of a geometry and log width and height for layout analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "merge-multiple-geometries-within-a-shape-into-a-single-geometry-to-simplify-the-shapesheet-structure",
+      "file": "merge-multiple-geometries-within-a-shape-into-a-single-geometry-to-simplify-the-shapesheet-structure.cs",
+      "task": "Merge multiple geometries within a shape into a single geometry to simplify the shapesheet structure",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "offset-geometry-coordinates-by-a-given-delta-to-reposition-the-shape-without-changing-its-size",
+      "file": "offset-geometry-coordinates-by-a-given-delta-to-reposition-the-shape-without-changing-its-size.cs",
+      "task": "Offset geometry coordinates by a given delta to reposition the shape without changing its size",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "remove-the-first-geometry-entry-from-a-connector-shape-using-the-linetocol-method",
+      "file": "remove-the-first-geometry-entry-from-a-connector-shape-using-the-linetocol-method.cs",
+      "task": "Remove the first geometry entry from a connector shape using the linetocol method",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-a-shape-from-a-visio-diagram-and-obtain-its-geometry-collection-for-analysis",
+      "file": "retrieve-a-shape-from-a-visio-diagram-and-obtain-its-geometry-collection-for-analysis.cs",
+      "task": "Retrieve a shape from a visio diagram and obtain its geometry collection for analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "rollback-geometry-updates-within-a-transaction-when-an-exception-occurs-to-maintain-diagram-integrity",
+      "file": "rollback-geometry-updates-within-a-transaction-when-an-exception-occurs-to-maintain-diagram-integrity.cs",
+      "task": "Rollback geometry updates within a transaction when an exception occurs to maintain diagram integrity",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "rotate-geometry-vertices-by-a-specified-angle-to-align-the-shape-with-diagram-orientation-requirements",
+      "file": "rotate-geometry-vertices-by-a-specified-angle-to-align-the-shape-with-diagram-orientation-requirements.cs",
+      "task": "Rotate geometry vertices by a specified angle to align the shape with diagram orientation requirements",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "save-the-modified-visio-diagram-to-the-original-file-path-persisting-all-geometry-changes",
+      "file": "save-the-modified-visio-diagram-to-the-original-file-path-persisting-all-geometry-changes.cs",
+      "task": "Save the modified visio diagram to the original file path persisting all geometry changes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "schedule-periodic-geometry-validation-jobs-that-scan-diagrams-for-missing-or-corrupted-geometry-entries",
+      "file": "schedule-periodic-geometry-validation-jobs-that-scan-diagrams-for-missing-or-corrupted-geometry-entries.cs",
+      "task": "Schedule periodic geometry validation jobs that scan diagrams for missing or corrupted geometry entries",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Threading"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "set-geometry-fill-color-through-shapesheet-cells-to-highlight-specific-diagram-regions-programmatically",
+      "file": "set-geometry-fill-color-through-shapesheet-cells-to-highlight-specific-diagram-regions-programmatically.cs",
+      "task": "Set geometry fill color through shapesheet cells to highlight specific diagram regions programmatically",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-geometry-line-type-property-to-dashed-style-for-visual-distinction-of-connector-paths",
+      "file": "update-geometry-line-type-property-to-dashed-style-for-visual-distinction-of-connector-paths.cs",
+      "task": "Update geometry line type property to dashed style for visual distinction of connector paths",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-vertex-coordinates-of-an-existing-geometry-to-reshape-the-shape-according-to-new-dimensions",
+      "file": "update-vertex-coordinates-of-an-existing-geometry-to-reshape-the-shape-according-to-new-dimensions.cs",
+      "task": "Update vertex coordinates of an existing geometry to reshape the shape according to new dimensions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "use-a-configuration-file-to-specify-which-geometries-to-modify-enabling-flexible-runtime-behavior",
+      "file": "use-a-configuration-file-to-specify-which-geometries-to-modify-enabling-flexible-runtime-behavior.cs",
+      "task": "Use a configuration file to specify which geometries to modify enabling flexible runtime behavior",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-shapesheet-formulas-to-dynamically-calculate-geometry-vertex-positions-based-on-shape-dimensions",
+      "file": "use-shapesheet-formulas-to-dynamically-calculate-geometry-vertex-positions-based-on-shape-dimensions.cs",
+      "task": "Use shapesheet formulas to dynamically calculate geometry vertex positions based on shape dimensions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Page",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "validate-that-the-geometry-section-contains-the-expected-number-of-geometries-after-modifications",
+      "file": "validate-that-the-geometry-section-contains-the-expected-number-of-geometries-after-modifications.cs",
+      "task": "Validate that the geometry section contains the expected number of geometries after modifications",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    }
+  ]
+}

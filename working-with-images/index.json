@@ -1,0 +1,690 @@
+{
+  "category": "working-with-images",
+  "display_name": "Working With Images",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 38,
+  "pass_rate": 100.0,
+  "generated": "2026-06-09",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-drop-shadow-effect-to-each-exported-png-image-to-create-depth-perception",
+      "file": "add-a-drop-shadow-effect-to-each-exported-png-image-to-create-depth-perception.cs",
+      "task": "Add a drop shadow effect to each exported png image to create depth perception",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "apply-a-blur-filter-to-background-images-in-a-vsd-file-before-exporting-to-png-format",
+      "file": "apply-a-blur-filter-to-background-images-in-a-vsd-file-before-exporting-to-png-format.cs",
+      "task": "Apply a blur filter to background images in a vsd file before exporting to png format",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "apply-a-brightness-adjustment-of-twenty-percent-to-all-exported-jpeg-images-for-enhanced-visibility",
+      "file": "apply-a-brightness-adjustment-of-twenty-percent-to-all-exported-jpeg-images-for-enhanced-visibility.cs",
+      "task": "Apply a brightness adjustment of twenty percent to all exported jpeg images for enhanced visibility",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-color-inversion-filter-to-exported-png-images-to-create-a-negative-visual-effect",
+      "file": "apply-a-color-inversion-filter-to-exported-png-images-to-create-a-negative-visual-effect.cs",
+      "task": "Apply a color inversion filter to exported png images to create a negative visual effect",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
+        "Aspose.Drawing.Imaging",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-custom-color-palette-to-exported-png-images-to-match-corporate-branding-guidelines",
+      "file": "apply-a-custom-color-palette-to-exported-png-images-to-match-corporate-branding-guidelines.cs",
+      "task": "Apply a custom color palette to exported png images to match corporate branding guidelines",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-grayscale-filter-to-all-images-in-a-vsdx-diagram-before-exporting-pages-as-tiff-files",
+      "file": "apply-a-grayscale-filter-to-all-images-in-a-vsdx-diagram-before-exporting-pages-as-tiff-files.cs",
+      "task": "Apply a grayscale filter to all images in a vsdx diagram before exporting pages as tiff files",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-sepia-tone-effect-to-all-images-during-export-to-create-a-vintage-visual-style",
+      "file": "apply-a-sepia-tone-effect-to-all-images-during-export-to-create-a-vintage-visual-style.cs",
+      "task": "Apply a sepia tone effect to all images during export to create a vintage visual style",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "batch-convert-multiple-vsd-files-to-png-images-using-parallel-processing-to-improve-performance",
+      "file": "batch-convert-multiple-vsd-files-to-png-images-using-parallel-processing-to-improve-performance.cs",
+      "task": "Batch convert multiple vsd files to png images using parallel processing to improve performance",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-process-a-folder-of-vdx-files-extracting-images-and-saving-them-with-original-file-name-prefixes",
+      "file": "batch-process-a-folder-of-vdx-files-extracting-images-and-saving-them-with-original-file-name-prefixes.cs",
+      "task": "Batch process a folder of vdx files extracting images and saving them with original file name prefixes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-replace-a-specific-placeholder-image-across-multiple-vsdx-files-using-a-single-source-png",
+      "file": "batch-replace-a-specific-placeholder-image-across-multiple-vsdx-files-using-a-single-source-png.cs",
+      "task": "Batch replace a specific placeholder image across multiple vsdx files using a single source png",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-vsdx-diagram-to-jpeg-format-while-specifying-a-compression-quality-of-eighty-percent",
+      "file": "convert-a-vsdx-diagram-to-jpeg-format-while-specifying-a-compression-quality-of-eighty-percent.cs",
+      "task": "Convert a vsdx diagram to jpeg format while specifying a compression quality of eighty percent",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-a-pdf-a-compliant-document-from-a-vsd-file-embedding-all-images-with-lossless-compression",
+      "file": "export-a-pdf-a-compliant-document-from-a-vsd-file-embedding-all-images-with-lossless-compression.cs",
+      "task": "Export a pdf a compliant document from a vsd file embedding all images with lossless compression",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-a-specific-layer-of-a-visio-diagram-as-a-transparent-png-for-overlay-use",
+      "file": "export-a-specific-layer-of-a-visio-diagram-as-a-transparent-png-for-overlay-use.cs",
+      "task": "Export a specific layer of a visio diagram as a transparent png for overlay use",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-a-specific-visio-page-to-svg-format-preserving-vector-data-for-web-rendering",
+      "file": "export-a-specific-visio-page-to-svg-format-preserving-vector-data-for-web-rendering.cs",
+      "task": "Export a specific visio page to svg format preserving vector data for web rendering",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "SVGSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-a-visio-diagram-to-a-multi-page-pdf-and-embed-extracted-images-as-separate-attachments",
+      "file": "export-a-visio-diagram-to-a-multi-page-pdf-and-embed-extracted-images-as-separate-attachments.cs",
+      "task": "Export a visio diagram to a multi page pdf and embed extracted images as separate attachments",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "export-diagram-pages-as-jpeg-with-custom-quality-settings-per-page-based-on-content-complexity",
+      "file": "export-diagram-pages-as-jpeg-with-custom-quality-settings-per-page-based-on-content-complexity.cs",
+      "task": "Export diagram pages as jpeg with custom quality settings per page based on content complexity",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-diagram-pages-as-lossless-png-with-16-bit-color-depth-for-high-fidelity-image-preservation",
+      "file": "export-diagram-pages-as-lossless-png-with-16-bit-color-depth-for-high-fidelity-image-preservation.cs",
+      "task": "Export diagram pages as lossless png with 16 bit color depth for high fidelity image preservation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-diagram-pages-as-multi-page-tiff-with-lzw-compression-to-reduce-file-size",
+      "file": "export-diagram-pages-as-multi-page-tiff-with-lzw-compression-to-reduce-file-size.cs",
+      "task": "Export diagram pages as multi page tiff with lzw compression to reduce file size",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-diagram-pages-as-png-with-interlaced-option-enabled-for-progressive-rendering-in-browsers",
+      "file": "export-diagram-pages-as-png-with-interlaced-option-enabled-for-progressive-rendering-in-browsers.cs",
+      "task": "Export diagram pages as png with interlaced option enabled for progressive rendering in browsers",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-diagram-pages-as-progressive-jpegs-to-improve-loading-speed-on-web-browsers",
+      "file": "export-diagram-pages-as-progressive-jpegs-to-improve-loading-speed-on-web-browsers.cs",
+      "task": "Export diagram pages as progressive jpegs to improve loading speed on web browsers",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-diagram-pages-to-high-resolution-pdf-with-embedded-fonts-and-images-for-print-ready-output",
+      "file": "export-diagram-pages-to-high-resolution-pdf-with-embedded-fonts-and-images-for-print-ready-output.cs",
+      "task": "Export diagram pages to high resolution pdf with embedded fonts and images for print ready output",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "extract-all-embedded-images-from-a-vdx-file-and-save-each-to-a-designated-output-directory",
+      "file": "extract-all-embedded-images-from-a-vdx-file-and-save-each-to-a-designated-output-directory.cs",
+      "task": "Extract all embedded images from a vdx file and save each to a designated output directory",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "extract-image-metadata-such-as-dimensions-and-color-depth-from-each-shape-in-a-vdx-diagram",
+      "file": "extract-image-metadata-such-as-dimensions-and-color-depth-from-each-shape-in-a-vdx-diagram.cs",
+      "task": "Extract image metadata such as dimensions and color depth from each shape in a vdx diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Drawing",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "generate-a-pdf-file-from-a-vsdx-diagram-while-embedding-all-extracted-images-as-high-quality-resources",
+      "file": "generate-a-pdf-file-from-a-vsdx-diagram-while-embedding-all-extracted-images-as-high-quality-resources.cs",
+      "task": "Generate a pdf file from a vsdx diagram while embedding all extracted images as high quality resources",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "generate-a-sprite-sheet-combining-all-page-images-from-a-vst-diagram-for-game-development-assets",
+      "file": "generate-a-sprite-sheet-combining-all-page-images-from-a-vst-diagram-for-game-development-assets.cs",
+      "task": "Generate a sprite sheet combining all page images from a vst diagram for game development assets",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
+        "Aspose.Drawing.Imaging",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-thumbnail-images-of-each-page-in-a-vst-file-with-a-maximum-dimension-of-one-hundred-pixels",
+      "file": "generate-thumbnail-images-of-each-page-in-a-vst-file-with-a-maximum-dimension-of-one-hundred-pixels.cs",
+      "task": "Generate thumbnail images of each page in a vst file with a maximum dimension of one hundred pixels",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-a-file-and-export-the-first-page-as-a-high-resolution-png-image",
+      "file": "load-a-visio-diagram-from-a-file-and-export-the-first-page-as-a-high-resolution-png-image.cs",
+      "task": "Load a visio diagram from a file and export the first page as a high resolution png image",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "overlay-a-semi-transparent-watermark-image-onto-each-exported-png-page-to-protect-intellectual-property",
+      "file": "overlay-a-semi-transparent-watermark-image-onto-each-exported-png-page-to-protect-intellectual-property.cs",
+      "task": "Overlay a semi transparent watermark image onto each exported png page to protect intellectual property",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "replace-a-placeholder-shape-image-in-a-vsd-diagram-with-a-new-png-file-loaded-from-memory",
+      "file": "replace-a-placeholder-shape-image-in-a-vsd-diagram-with-a-new-png-file-loaded-from-memory.cs",
+      "task": "Replace a placeholder shape image in a vsd diagram with a new png file loaded from memory",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "replace-all-jpeg-images-in-a-diagram-with-png-equivalents-to-reduce-compression-artifacts",
+      "file": "replace-all-jpeg-images-in-a-diagram-with-png-equivalents-to-reduce-compression-artifacts.cs",
+      "task": "Replace all jpeg images in a diagram with png equivalents to reduce compression artifacts",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Imaging",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "replace-all-low-resolution-images-in-a-diagram-with-high-resolution-versions-sourced-from-a-specified-folder",
+      "file": "replace-all-low-resolution-images-in-a-diagram-with-high-resolution-versions-sourced-from-a-specified-folder.cs",
+      "task": "Replace all low resolution images in a diagram with high resolution versions sourced from a specified folder",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "replace-background-images-in-a-vsdx-diagram-with-a-solid-color-fill-to-simplify-visual-layout",
+      "file": "replace-background-images-in-a-vsdx-diagram-with-a-solid-color-fill-to-simplify-visual-layout.cs",
+      "task": "Replace background images in a vsdx diagram with a solid color fill to simplify visual layout",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "resize-all-exported-images-to-a-uniform-height-of-five-hundred-pixels-while-preserving-aspect-ratio",
+      "file": "resize-all-exported-images-to-a-uniform-height-of-five-hundred-pixels-while-preserving-aspect-ratio.cs",
+      "task": "Resize all exported images to a uniform height of five hundred pixels while preserving aspect ratio",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "resize-an-imported-bitmap-image-within-a-visio-shape-to-fit-the-shape-s-dimensions-proportionally",
+      "file": "resize-an-imported-bitmap-image-within-a-visio-shape-to-fit-the-shape-s-dimensions-proportionally.cs",
+      "task": "Resize an imported bitmap image within a visio shape to fit the shape s dimensions proportionally",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "resize-exported-bmp-images-to-a-fixed-width-of-eight-hundred-pixels-while-maintaining-aspect-ratio",
+      "file": "resize-exported-bmp-images-to-a-fixed-width-of-eight-hundred-pixels-while-maintaining-aspect-ratio.cs",
+      "task": "Resize exported bmp images to a fixed width of eight hundred pixels while maintaining aspect ratio",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "save-extracted-images-as-base64-strings-and-embed-them-back-into-the-diagram-using-data-uris",
+      "file": "save-extracted-images-as-base64-strings-and-embed-them-back-into-the-diagram-using-data-uris.cs",
+      "task": "Save extracted images as base64 strings and embed them back into the diagram using data uris",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-all-images-embedded-in-a-vsdx-file-meet-a-minimum-resolution-of-300-dpi",
+      "file": "validate-that-all-images-embedded-in-a-vsdx-file-meet-a-minimum-resolution-of-300-dpi.cs",
+      "task": "Validate that all images embedded in a vsdx file meet a minimum resolution of 300 dpi",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Drawing",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-no-image-exceeds-a-file-size-limit-of-two-megabytes-before-exporting-the-diagram",
+      "file": "validate-that-no-image-exceeds-a-file-size-limit-of-two-megabytes-before-exporting-the-diagram.cs",
+      "task": "Validate that no image exceeds a file size limit of two megabytes before exporting the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    }
+  ]
+}

@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-10",
-  "total_examples": 1088,
-  "total_categories": 23,
+  "total_examples": 1123,
+  "total_categories": 24,
   "categories": [
     {
       "slug": "basic-operations",
@@ -142,6 +142,12 @@
       "slug": "working-with-pages",
       "display_name": "Working With Pages",
       "total": 168,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "working-with-protection",
+      "display_name": "Working With Protection",
+      "total": 35,
       "pass_rate": 100.0
     }
   ]

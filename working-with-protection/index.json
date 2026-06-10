@@ -1,0 +1,578 @@
+{
+  "category": "working-with-protection",
+  "display_name": "Working With Protection",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 35,
+  "pass_rate": 100.0,
+  "generated": "2026-06-10",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "after-clearing-protection-validate-that-no-shape-attributes-remain-locked",
+      "file": "after-clearing-protection-validate-that-no-shape-attributes-remain-locked.cs",
+      "task": "After clearing protection validate that no shape attributes remain locked",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-diagram-level-protection-to-block-modification-of-page-orientation",
+      "file": "apply-diagram-level-protection-to-block-modification-of-page-orientation.cs",
+      "task": "Apply diagram level protection to block modification of page orientation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-diagram-level-protection-to-disable-changing-the-document-theme",
+      "file": "apply-diagram-level-protection-to-disable-changing-the-document-theme.cs",
+      "task": "Apply diagram level protection to disable changing the document theme",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-diagram-level-protection-to-prevent-adding-new-pages",
+      "file": "apply-diagram-level-protection-to-prevent-adding-new-pages.cs",
+      "task": "Apply diagram level protection to prevent adding new pages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-shape-protection-only-to-shapes-of-type-connector",
+      "file": "apply-shape-protection-only-to-shapes-of-type-connector.cs",
+      "task": "Apply shape protection only to shapes of type connector",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-shape-protection-only-to-shapes-whose-custom-property-category-equals-critical",
+      "file": "apply-shape-protection-only-to-shapes-whose-custom-property-category-equals-critical.cs",
+      "task": "Apply shape protection only to shapes whose custom property category equals critical",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-shape-protection-to-all-shapes-on-a-specific-layer",
+      "file": "apply-shape-protection-to-all-shapes-on-a-specific-layer.cs",
+      "task": "Apply shape protection to all shapes on a specific layer",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-shape-protection-to-shapes-that-belong-to-the-readonly-layer",
+      "file": "apply-shape-protection-to-shapes-that-belong-to-the-readonly-layer.cs",
+      "task": "Apply shape protection to shapes that belong to the readonly layer",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-shape-protection-to-shapes-whose-area-exceeds-a-predefined-threshold",
+      "file": "apply-shape-protection-to-shapes-whose-area-exceeds-a-predefined-threshold.cs",
+      "task": "Apply shape protection to shapes whose area exceeds a predefined threshold",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-shape-protection-to-shapes-whose-name-contains-banner",
+      "file": "apply-shape-protection-to-shapes-whose-name-contains-banner.cs",
+      "task": "Apply shape protection to shapes whose name contains banner",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-shape-protection-to-shapes-with-custom-property-fixedangle-set-to-true",
+      "file": "apply-shape-protection-to-shapes-with-custom-property-fixedangle-set-to-true.cs",
+      "task": "Apply shape protection to shapes with custom property fixedangle set to true",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "clear-all-protection-settings-from-the-diagram",
+      "file": "clear-all-protection-settings-from-the-diagram.cs",
+      "task": "Clear all protection settings from the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "clone-protection-settings-from-one-shape-to-another-within-the-same-diagram",
+      "file": "clone-protection-settings-from-one-shape-to-another-within-the-same-diagram.cs",
+      "task": "Clone protection settings from one shape to another within the same diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "compare-protection-settings-between-two-diagrams-to-detect-inconsistencies",
+      "file": "compare-protection-settings-between-two-diagrams-to-detect-inconsistencies.cs",
+      "task": "Compare protection settings between two diagrams to detect inconsistencies",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "enable-shape-protection-for-all-shapes-locking-width-height-x-position-y-position-and-rotation",
+      "file": "enable-shape-protection-for-all-shapes-locking-width-height-x-position-y-position-and-rotation.cs",
+      "task": "Enable shape protection for all shapes locking width height x position y position and rotation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-the-protected-diagram-to-pdf-and-verify-protection-metadata-persists",
+      "file": "export-the-protected-diagram-to-pdf-and-verify-protection-metadata-persists.cs",
+      "task": "Export the protected diagram to pdf and verify protection metadata persists",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-the-protected-diagram-to-vdx-and-verify-style-locks-are-retained",
+      "file": "export-the-protected-diagram-to-vdx-and-verify-style-locks-are-retained.cs",
+      "task": "Export the protected diagram to vdx and verify style locks are retained",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-json-summary-counting-locked-widths-heights-and-rotations-across-the-diagram",
+      "file": "generate-a-json-summary-counting-locked-widths-heights-and-rotations-across-the-diagram.cs",
+      "task": "Generate a json summary counting locked widths heights and rotations across the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-that-logs-attempts-to-modify-locked-diagram-elements",
+      "file": "implement-error-handling-that-logs-attempts-to-modify-locked-diagram-elements.cs",
+      "task": "Implement error handling that logs attempts to modify locked diagram elements",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-into-memory-and-verify-successful-parsing",
+      "file": "load-a-visio-diagram-into-memory-and-verify-successful-parsing.cs",
+      "task": "Load a visio diagram into memory and verify successful parsing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "lock-the-height-attribute-of-a-specific-shape-identified-by-its-id",
+      "file": "lock-the-height-attribute-of-a-specific-shape-identified-by-its-id.cs",
+      "task": "Lock the height attribute of a specific shape identified by its id",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "lock-the-rotation-attribute-of-a-specific-shape-identified-by-its-id",
+      "file": "lock-the-rotation-attribute-of-a-specific-shape-identified-by-its-id.cs",
+      "task": "Lock the rotation attribute of a specific shape identified by its id",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "lock-the-width-attribute-of-a-specific-shape-identified-by-its-id",
+      "file": "lock-the-width-attribute-of-a-specific-shape-identified-by-its-id.cs",
+      "task": "Lock the width attribute of a specific shape identified by its id",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "lock-the-x-position-attribute-of-a-specific-shape-identified-by-its-id",
+      "file": "lock-the-x-position-attribute-of-a-specific-shape-identified-by-its-id.cs",
+      "task": "Lock the x position attribute of a specific shape identified by its id",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "lock-the-y-position-attribute-of-a-specific-shape-identified-by-its-id",
+      "file": "lock-the-y-position-attribute-of-a-specific-shape-identified-by-its-id.cs",
+      "task": "Lock the y position attribute of a specific shape identified by its id",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "log-every-protection-change-with-timestamp-and-affected-element-identifier",
+      "file": "log-every-protection-change-with-timestamp-and-affected-element-identifier.cs",
+      "task": "Log every protection change with timestamp and affected element identifier",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "remove-protection-from-a-specific-shape",
+      "file": "remove-protection-from-a-specific-shape.cs",
+      "task": "Remove protection from a specific shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-current-protection-status-of-the-diagram-and-log-locked-elements",
+      "file": "retrieve-current-protection-status-of-the-diagram-and-log-locked-elements.cs",
+      "task": "Retrieve current protection status of the diagram and log locked elements",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "save-the-protected-diagram-to-a-new-file-preserving-original-metadata",
+      "file": "save-the-protected-diagram-to-a-new-file-preserving-original-metadata.cs",
+      "task": "Save the protected diagram to a new file preserving original metadata",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-background-protection-to-prevent-editing-or-deletion-of-background-pages",
+      "file": "set-background-protection-to-prevent-editing-or-deletion-of-background-pages.cs",
+      "task": "Set background protection to prevent editing or deletion of background pages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-master-stencil-protection-to-disallow-adding-new-shapes-from-those-masters",
+      "file": "set-master-stencil-protection-to-disallow-adding-new-shapes-from-those-masters.cs",
+      "task": "Set master stencil protection to disallow adding new shapes from those masters",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-style-protection-to-lock-diagram-styles-from-modification",
+      "file": "set-style-protection-to-lock-diagram-styles-from-modification.cs",
+      "task": "Set style protection to lock diagram styles from modification",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "toggle-diagram-protection-on-or-off-based-on-a-boolean-runtime-parameter",
+      "file": "toggle-diagram-protection-on-or-off-based-on-a-boolean-runtime-parameter.cs",
+      "task": "Toggle diagram protection on or off based on a boolean runtime parameter",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "unlock-the-height-attribute-of-a-specific-shape-identified-by-its-id",
+      "file": "unlock-the-height-attribute-of-a-specific-shape-identified-by-its-id.cs",
+      "task": "Unlock the height attribute of a specific shape identified by its id",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "unlock-the-rotation-attribute-of-a-specific-shape-identified-by-its-id",
+      "file": "unlock-the-rotation-attribute-of-a-specific-shape-identified-by-its-id.cs",
+      "task": "Unlock the rotation attribute of a specific shape identified by its id",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    }
+  ]
+}

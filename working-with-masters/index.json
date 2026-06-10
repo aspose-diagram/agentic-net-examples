@@ -1,0 +1,484 @@
+{
+  "category": "working-with-masters",
+  "display_name": "Working With Masters",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 29,
+  "pass_rate": 100.0,
+  "generated": "2026-06-10",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-hyperlink-to-a-master-shape-that-opens-a-help-document-when-clicked",
+      "file": "add-a-hyperlink-to-a-master-shape-that-opens-a-help-document-when-clicked.cs",
+      "task": "Add a hyperlink to a master shape that opens a help document when clicked",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-custom-style-to-all-masters-including-fill-color-and-shadow-effects",
+      "file": "apply-a-custom-style-to-all-masters-including-fill-color-and-shadow-effects.cs",
+      "task": "Apply a custom style to all masters including fill color and shadow effects",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-rotation-transformation-to-all-masters-that-have-a-specific-tag-attribute",
+      "file": "apply-a-rotation-transformation-to-all-masters-that-have-a-specific-tag-attribute.cs",
+      "task": "Apply a rotation transformation to all masters that have a specific tag attribute",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-process-a-folder-of-visio-files-to-remove-unused-masters-and-reduce-file-size",
+      "file": "batch-process-a-folder-of-visio-files-to-remove-unused-masters-and-reduce-file-size.cs",
+      "task": "Batch process a folder of visio files to remove unused masters and reduce file size",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "clone-an-existing-master-modify-its-text-block-and-apply-it-to-selected-shapes",
+      "file": "clone-an-existing-master-modify-its-text-block-and-apply-it-to-selected-shapes.cs",
+      "task": "Clone an existing master modify its text block and apply it to selected shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-master-shape-text-to-uppercase-while-preserving-original-formatting-and-alignment",
+      "file": "convert-master-shape-text-to-uppercase-while-preserving-original-formatting-and-alignment.cs",
+      "task": "Convert master shape text to uppercase while preserving original formatting and alignment",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-master-containing-a-data-graphic-and-embed-it-into-a-diagram-for-dynamic-visualization",
+      "file": "create-a-master-containing-a-data-graphic-and-embed-it-into-a-diagram-for-dynamic-visualization.cs",
+      "task": "Create a master containing a data graphic and embed it into a diagram for dynamic visualization",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddMaster",
+        "AddShape",
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-master-that-includes-a-background-image-and-apply-it-to-all-pages-automatically",
+      "file": "create-a-master-that-includes-a-background-image-and-apply-it-to-all-pages-automatically.cs",
+      "task": "Create a master that includes a background image and apply it to all pages automatically",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-new-master-shape-set-its-geometry-and-add-it-to-an-existing-diagram",
+      "file": "create-a-new-master-shape-set-its-geometry-and-add-it-to-an-existing-diagram.cs",
+      "task": "Create a new master shape set its geometry and add it to an existing diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Master",
+        "Masters",
+        "Save"
+      ]
+    },
+    {
+      "slug": "detect-and-report-any-circular-master-references-that-could-cause-rendering-errors",
+      "file": "detect-and-report-any-circular-master-references-that-could-cause-rendering-errors.cs",
+      "task": "Detect and report any circular master references that could cause rendering errors",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-master-shape-definitions-to-an-xml-file-for-external-analysis-and-documentation",
+      "file": "export-master-shape-definitions-to-an-xml-file-for-external-analysis-and-documentation.cs",
+      "task": "Export master shape definitions to an xml file for external analysis and documentation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-master-shape-geometry-to-a-json-schema-for-integration-with-external-design-tools",
+      "file": "export-master-shape-geometry-to-a-json-schema-for-integration-with-external-design-tools.cs",
+      "task": "Export master shape geometry to a json schema for integration with external design tools",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-master-shape-thumbnails-as-png-images-for-use-in-a-custom-shape-picker-ui",
+      "file": "export-master-shape-thumbnails-as-png-images-for-use-in-a-custom-shape-picker-ui.cs",
+      "task": "Export master shape thumbnails as png images for use in a custom shape picker ui",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Masters",
+        "Page",
+        "Pages"
+      ]
+    },
+    {
+      "slug": "generate-a-report-summarizing-master-usage-frequency-across-all-pages-in-a-diagram",
+      "file": "generate-a-report-summarizing-master-usage-frequency-across-all-pages-in-a-diagram.cs",
+      "task": "Generate a report summarizing master usage frequency across all pages in a diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "implement-a-filter-to-list-masters-containing-a-specific-custom-property-value",
+      "file": "implement-a-filter-to-list-masters-containing-a-specific-custom-property-value.cs",
+      "task": "Implement a filter to list masters containing a specific custom property value",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-to-catch-exceptions-when-loading-diagrams-with-corrupted-master-definitions",
+      "file": "implement-error-handling-to-catch-exceptions-when-loading-diagrams-with-corrupted-master-definitions.cs",
+      "task": "Implement error handling to catch exceptions when loading diagrams with corrupted master definitions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "import-master-definitions-from-an-xml-file-and-integrate-them-into-a-loaded-visio-document",
+      "file": "import-master-definitions-from-an-xml-file-and-integrate-them-into-a-loaded-visio-document.cs",
+      "task": "Import master definitions from an xml file and integrate them into a loaded visio document",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-change-the-master-of-a-group-shape-and-preserve-its-subshape-layout",
+      "file": "load-a-diagram-change-the-master-of-a-group-shape-and-preserve-its-subshape-layout.cs",
+      "task": "Load a diagram change the master of a group shape and preserve its subshape layout",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "load-a-visio-file-and-list-all-master-shapes-with-their-unique-identifiers",
+      "file": "load-a-visio-file-and-list-all-master-shapes-with-their-unique-identifiers.cs",
+      "task": "Load a visio file and list all master shapes with their unique identifiers",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "programmatically-assign-a-custom-id-to-each-master-for-easier-lookup-in-large-diagrams",
+      "file": "programmatically-assign-a-custom-id-to-each-master-for-easier-lookup-in-large-diagrams.cs",
+      "task": "Programmatically assign a custom id to each master for easier lookup in large diagrams",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "programmatically-reorder-masters-in-the-stencil-to-prioritize-frequently-used-shapes-for-faster-access",
+      "file": "programmatically-reorder-masters-in-the-stencil-to-prioritize-frequently-used-shapes-for-faster-access.cs",
+      "task": "Programmatically reorder masters in the stencil to prioritize frequently used shapes for faster access",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "remove-all-masters-not-referenced-on-any-page-to-clean-up-the-stencil",
+      "file": "remove-all-masters-not-referenced-on-any-page-to-clean-up-the-stencil.cs",
+      "task": "Remove all masters not referenced on any page to clean up the stencil",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "replace-all-instances-of-a-specific-master-with-another-master-while-preserving-connections",
+      "file": "replace-all-instances-of-a-specific-master-with-another-master-while-preserving-connections.cs",
+      "task": "Replace all instances of a specific master with another master while preserving connections",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddMaster",
+        "Diagram",
+        "Masters",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "set-a-default-master-for-newly-added-shapes-when-creating-diagrams-programmatically",
+      "file": "set-a-default-master-for-newly-added-shapes-when-creating-diagrams-programmatically.cs",
+      "task": "Set a default master for newly added shapes when creating diagrams programmatically",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddMaster",
+        "AddShape",
+        "Diagram",
+        "Page",
+        "Pages"
+      ]
+    },
+    {
+      "slug": "set-the-default-line-weight-for-all-masters-to-a-thin-value-for-consistent-styling",
+      "file": "set-the-default-line-weight-for-all-masters-to-a-thin-value-for-consistent-styling.cs",
+      "task": "Set the default line weight for all masters to a thin value for consistent styling",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "synchronize-master-definitions-across-multiple-visio-files-to-ensure-consistent-branding-organization-wide",
+      "file": "synchronize-master-definitions-across-multiple-visio-files-to-ensure-consistent-branding-organization-wide.cs",
+      "task": "Synchronize master definitions across multiple visio files to ensure consistent branding organization wide",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "update-the-line-color-of-all-masters-that-use-a-dashed-line-style",
+      "file": "update-the-line-color-of-all-masters-that-use-a-dashed-line-style.cs",
+      "task": "Update the line color of all masters that use a dashed line style",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-every-master-referenced-in-the-diagram-has-a-corresponding-definition-file",
+      "file": "validate-that-every-master-referenced-in-the-diagram-has-a-corresponding-definition-file.cs",
+      "task": "Validate that every master referenced in the diagram has a corresponding definition file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Masters",
+        "Pages",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-master-shapes-comply-with-company-style-guidelines-by-checking-color-and-font-settings",
+      "file": "validate-that-master-shapes-comply-with-company-style-guidelines-by-checking-color-and-font-settings.cs",
+      "task": "Validate that master shapes comply with company style guidelines by checking color and font settings",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Drawing.Text",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Fonts",
+        "Masters",
+        "diagram"
+      ]
+    }
+  ]
+}

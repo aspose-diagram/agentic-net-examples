@@ -6,12 +6,12 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Examples | 891 |
-| Categories | 21 |
+| Total Examples | 920 |
+| Categories | 22 |
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.5.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-09 |
+| Last Updated | 2026-06-10 |
 
 ## Repository Structure
 
@@ -107,6 +107,10 @@ working-with-layers/
   agents.md    ← Category AI instructions
   index.json   ← Category catalogue
   *.cs         ← Example files
+working-with-masters/
+  agents.md    ← Category AI instructions
+  index.json   ← Category catalogue
+  *.cs         ← Example files
 ```
 
 ## Categories
@@ -134,6 +138,7 @@ working-with-layers/
 | [Working With Hyperlinks](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-hyperlinks/agents.md) |
 | [Working With Images](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images) | 38 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-images/agents.md) |
 | [Working With Layers](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-layers/agents.md) |
+| [Working With Masters](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters) | 29 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-masters/agents.md) |
 
 ## How to Use
 
@@ -176,4 +181,4 @@ Examples are generated automatically by the [Aspose.Diagram Examples Generator A
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-09*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-10*

@@ -3,9 +3,9 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 891
-categories: 21
-generated: 2026-06-09
+total_examples: 920
+categories: 22
+generated: 2026-06-10
 ---
 
 # Aspose.Diagram for .NET — Agentic Examples
@@ -21,9 +21,9 @@ generated: 2026-06-09
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 891 |
-| Categories | 21 |
-| Last Updated | 2026-06-09 |
+| Total Examples | 920 |
+| Categories | 22 |
+| Last Updated | 2026-06-10 |
 
 ## Persona
 
@@ -118,6 +118,7 @@ dotnet build --verbosity detailed
 | [Working With Hyperlinks](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-hyperlinks/agents.md) |
 | [Working With Images](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images) | 38 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-images/agents.md) |
 | [Working With Layers](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-layers/agents.md) |
+| [Working With Masters](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters) | 29 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-masters/agents.md) |
 
 ## Pipeline
 
@@ -138,4 +139,4 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-09*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-10*

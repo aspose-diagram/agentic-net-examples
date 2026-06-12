@@ -3,8 +3,8 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 1780
-categories: 29
+total_examples: 1810
+categories: 30
 generated: 2026-06-12
 ---
 
@@ -21,8 +21,8 @@ generated: 2026-06-12
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 1780 |
-| Categories | 29 |
+| Total Examples | 1810 |
+| Categories | 30 |
 | Last Updated | 2026-06-12 |
 
 ## Persona
@@ -126,6 +126,7 @@ dotnet build --verbosity detailed
 | [Working With Text](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text) | 89 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-text/agents.md) |
 | [Working With Text Boxes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-text-boxes/agents.md) |
 | [Working With Themes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes) | 40 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-themes/agents.md) |
+| [Working With User Defined Cells](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-user-defined-cells/agents.md) |
 
 ## Pipeline
 

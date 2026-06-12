@@ -6,8 +6,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Examples | 1780 |
-| Categories | 29 |
+| Total Examples | 1810 |
+| Categories | 30 |
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.5.0 |
 | Target Framework | net8.0 |
@@ -139,6 +139,10 @@ working-with-themes/
   agents.md    ← Category AI instructions
   index.json   ← Category catalogue
   *.cs         ← Example files
+working-with-user-defined-cells/
+  agents.md    ← Category AI instructions
+  index.json   ← Category catalogue
+  *.cs         ← Example files
 ```
 
 ## Categories
@@ -174,6 +178,7 @@ working-with-themes/
 | [Working With Text](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text) | 89 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-text/agents.md) |
 | [Working With Text Boxes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-text-boxes/agents.md) |
 | [Working With Themes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes) | 40 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-themes/agents.md) |
+| [Working With User Defined Cells](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells) | 30 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-user-defined-cells/agents.md) |
 
 ## How to Use
 

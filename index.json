@@ -2,9 +2,9 @@
   "product": "Aspose.Diagram for .NET",
   "version": "26.5.0",
   "framework": "net8.0",
-  "generated": "2026-06-10",
-  "total_examples": 1123,
-  "total_categories": 24,
+  "generated": "2026-06-12",
+  "total_examples": 1582,
+  "total_categories": 25,
   "categories": [
     {
       "slug": "basic-operations",
@@ -148,6 +148,12 @@
       "slug": "working-with-protection",
       "display_name": "Working With Protection",
       "total": 35,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "working-with-shapes",
+      "display_name": "Working With Shapes",
+      "total": 459,
       "pass_rate": 100.0
     }
   ]

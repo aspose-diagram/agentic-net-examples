@@ -3,9 +3,9 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 1123
-categories: 24
-generated: 2026-06-10
+total_examples: 1582
+categories: 25
+generated: 2026-06-12
 ---
 
 # Aspose.Diagram for .NET — Agentic Examples
@@ -21,9 +21,9 @@ generated: 2026-06-10
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 1123 |
-| Categories | 24 |
-| Last Updated | 2026-06-10 |
+| Total Examples | 1582 |
+| Categories | 25 |
+| Last Updated | 2026-06-12 |
 
 ## Persona
 
@@ -121,6 +121,7 @@ dotnet build --verbosity detailed
 | [Working With Masters](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters) | 29 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-masters/agents.md) |
 | [Working With Pages](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-pages) | 168 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-pages/agents.md) |
 | [Working With Protection](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-protection/agents.md) |
+| [Working With Shapes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-shapes) | 459 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-shapes/agents.md) |
 
 ## Pipeline
 
@@ -141,4 +142,4 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-10*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-12*

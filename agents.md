@@ -3,8 +3,8 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 1582
-categories: 25
+total_examples: 1616
+categories: 26
 generated: 2026-06-12
 ---
 
@@ -21,8 +21,8 @@ generated: 2026-06-12
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 1582 |
-| Categories | 25 |
+| Total Examples | 1616 |
+| Categories | 26 |
 | Last Updated | 2026-06-12 |
 
 ## Persona
@@ -122,6 +122,7 @@ dotnet build --verbosity detailed
 | [Working With Pages](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-pages) | 168 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-pages/agents.md) |
 | [Working With Protection](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-protection/agents.md) |
 | [Working With Shapes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-shapes) | 459 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-shapes/agents.md) |
+| [Working With Solutionxml Elements](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements) | 34 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-solutionxml-elements/agents.md) |
 
 ## Pipeline
 

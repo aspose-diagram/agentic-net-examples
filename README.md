@@ -6,12 +6,12 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Examples | 1123 |
-| Categories | 24 |
+| Total Examples | 1582 |
+| Categories | 25 |
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.5.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-10 |
+| Last Updated | 2026-06-12 |
 
 ## Repository Structure
 
@@ -119,6 +119,10 @@ working-with-protection/
   agents.md    ← Category AI instructions
   index.json   ← Category catalogue
   *.cs         ← Example files
+working-with-shapes/
+  agents.md    ← Category AI instructions
+  index.json   ← Category catalogue
+  *.cs         ← Example files
 ```
 
 ## Categories
@@ -149,6 +153,7 @@ working-with-protection/
 | [Working With Masters](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters) | 29 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-masters/agents.md) |
 | [Working With Pages](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-pages) | 168 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-pages/agents.md) |
 | [Working With Protection](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-protection/agents.md) |
+| [Working With Shapes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-shapes) | 459 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-shapes/agents.md) |
 
 ## How to Use
 
@@ -191,4 +196,4 @@ Examples are generated automatically by the [Aspose.Diagram Examples Generator A
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-10*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-12*

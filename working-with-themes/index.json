@@ -1,0 +1,689 @@
+{
+  "category": "working-with-themes",
+  "display_name": "Working With Themes",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 40,
+  "pass_rate": 100.0,
+  "generated": "2026-06-12",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "after-applying-a-theme-extract-the-theme-s-color-palette-and-write-it-to-a-json-configuration-file",
+      "file": "after-applying-a-theme-extract-the-theme-s-color-palette-and-write-it-to-a-json-configuration-file.cs",
+      "task": "After applying a theme extract the theme s color palette and write it to a json configuration file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Colors",
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-different-preset-theme-variant-to-shapes-on-a-page-based-on-their-layer-membership",
+      "file": "apply-a-different-preset-theme-variant-to-shapes-on-a-page-based-on-their-layer-membership.cs",
+      "task": "Apply a different preset theme variant to shapes on a page based on their layer membership",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "apply-a-preset-theme-quickstyle-to-all-shapes-on-a-page-that-use-a-particular-master-style",
+      "file": "apply-a-preset-theme-quickstyle-to-all-shapes-on-a-page-that-use-a-particular-master-style.cs",
+      "task": "Apply a preset theme quickstyle to all shapes on a page that use a particular master style",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "apply-a-preset-theme-quickstyle-to-shapes-filtered-by-their-geometry-type-such-as-rectangles-only",
+      "file": "apply-a-preset-theme-quickstyle-to-shapes-filtered-by-their-geometry-type-such-as-rectangles-only.cs",
+      "task": "Apply a preset theme quickstyle to shapes filtered by their geometry type such as rectangles only",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-preset-theme-quickstyle-to-shapes-selected-via-a-linq-query-based-on-their-text-content",
+      "file": "apply-a-preset-theme-quickstyle-to-shapes-selected-via-a-linq-query-based-on-their-text-content.cs",
+      "task": "Apply a preset theme quickstyle to shapes selected via a linq query based on their text content",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "apply-a-preset-theme-to-a-page-then-flatten-the-page-to-ensure-theme-persistence-in-exported-formats",
+      "file": "apply-a-preset-theme-to-a-page-then-flatten-the-page-to-ensure-theme-persistence-in-exported-formats.cs",
+      "task": "Apply a preset theme to a page then flatten the page to ensure theme persistence in exported formats",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "apply-a-preset-theme-to-a-shape-only-if-its-current-theme-does-not-match-the-desired-preset",
+      "file": "apply-a-preset-theme-to-a-shape-only-if-its-current-theme-does-not-match-the-desired-preset.cs",
+      "task": "Apply a preset theme to a shape only if its current theme does not match the desired preset",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Prop"
+      ]
+    },
+    {
+      "slug": "apply-a-preset-theme-to-all-shapes-that-share-a-specific-custom-property-value",
+      "file": "apply-a-preset-theme-to-all-shapes-that-share-a-specific-custom-property-value.cs",
+      "task": "Apply a preset theme to all shapes that share a specific custom property value",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "apply-a-preset-theme-to-shapes-only-when-their-current-theme-matrix-differs-from-the-target-matrix",
+      "file": "apply-a-preset-theme-to-shapes-only-when-their-current-theme-matrix-differs-from-the-target-matrix.cs",
+      "task": "Apply a preset theme to shapes only when their current theme matrix differs from the target matrix",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "apply-a-preset-theme-variant-to-a-shape-group-by-iterating-through-its-child-shapes-and-setting-each",
+      "file": "apply-a-preset-theme-variant-to-a-shape-group-by-iterating-through-its-child-shapes-and-setting-each.cs",
+      "task": "Apply a preset theme variant to a shape group by iterating through its child shapes and setting each",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-preset-theme-variant-to-a-shape-only-if-the-shape-s-existing-theme-matrix-contains-a-color",
+      "file": "apply-a-preset-theme-variant-to-a-shape-only-if-the-shape-s-existing-theme-matrix-contains-a-color.cs",
+      "task": "Apply a preset theme variant to a shape only if the shape s existing theme matrix contains a color",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "batch-process-diagrams-in-parallel-applying-a-common-preset-theme-to-each-and-saving-results-concurrently",
+      "file": "batch-process-diagrams-in-parallel-applying-a-common-preset-theme-to-each-and-saving-results-concurrently.cs",
+      "task": "Batch process diagrams in parallel applying a common preset theme to each and saving results concurrently",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "clone-the-theme-settings-from-one-page-and-apply-them-to-another-page-within-the-same-diagram",
+      "file": "clone-the-theme-settings-from-one-page-and-apply-them-to-another-page-within-the-same-diagram.cs",
+      "task": "Clone the theme settings from one page and apply them to another page within the same diagram",
+      "namespaces": [
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "compare-the-theme-settings-of-a-shape-before-and-after-applying-a-quickstyle-to-verify-changes",
+      "file": "compare-the-theme-settings-of-a-shape-before-and-after-applying-a-quickstyle-to-verify-changes.cs",
+      "task": "Compare the theme settings of a shape before and after applying a quickstyle to verify changes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "create-a-configuration-file-that-maps-page-names-to-preset-themes-and-apply-them-programmatically",
+      "file": "create-a-configuration-file-that-maps-page-names-to-preset-themes-and-apply-them-programmatically.cs",
+      "task": "Create a configuration file that maps page names to preset themes and apply them programmatically",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "create-a-script-that-reads-theme-preferences-from-a-database-and-applies-them-to-corresponding-diagram-pages",
+      "file": "create-a-script-that-reads-theme-preferences-from-a-database-and-applies-them-to-corresponding-diagram-pages.cs",
+      "task": "Create a script that reads theme preferences from a database and applies them to corresponding diagram pages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Data",
+        "System.Data.SqlClient",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "create-a-unit-test-that-verifies-a-shape-s-presettheme-property-changes-after-applying-a-new-theme",
+      "file": "create-a-unit-test-that-verifies-a-shape-s-presettheme-property-changes-after-applying-a-new-theme.cs",
+      "task": "Create a unit test that verifies a shape s presettheme property changes after applying a new theme",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-a-themed-diagram-to-pdf-and-inspect-the-visual-consistency-across-all-pages",
+      "file": "export-a-themed-diagram-to-pdf-and-inspect-the-visual-consistency-across-all-pages.cs",
+      "task": "Export a themed diagram to pdf and inspect the visual consistency across all pages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-the-diagram-after-theming-to-both-pdf-and-xps-formats-to-compare-rendering-fidelity",
+      "file": "export-the-diagram-after-theming-to-both-pdf-and-xps-formats-to-compare-rendering-fidelity.cs",
+      "task": "Export the diagram after theming to both pdf and xps formats to compare rendering fidelity",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "XPSSaveOptions",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-the-themed-diagram-to-svg-format-for-web-preview-after-applying-page-level-themes",
+      "file": "export-the-themed-diagram-to-svg-format-for-web-preview-after-applying-page-level-themes.cs",
+      "task": "Export the themed diagram to svg format for web preview after applying page level themes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "SVGSaveOptions"
+      ]
+    },
+    {
+      "slug": "generate-a-report-listing-each-shape-s-original-theme-and-the-new-preset-theme-after-modification",
+      "file": "generate-a-report-listing-each-shape-s-original-theme-and-the-new-preset-theme-after-modification.cs",
+      "task": "Generate a report listing each shape s original theme and the new preset theme after modification",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "implement-a-retry-mechanism-when-setting-a-preset-theme-on-a-shape-that-may-be-locked",
+      "file": "implement-a-retry-mechanism-when-setting-a-preset-theme-on-a-shape-that-may-be-locked.cs",
+      "task": "Implement a retry mechanism when setting a preset theme on a shape that may be locked",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-to-catch-exceptions-when-applying-a-theme-to-a-shape-lacking-style-data",
+      "file": "implement-error-handling-to-catch-exceptions-when-applying-a-theme-to-a-shape-lacking-style-data.cs",
+      "task": "Implement error handling to catch exceptions when applying a theme to a shape lacking style data",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-logging-to-capture-each-theme-application-step-including-page-name-shape-id-and-applied-preset",
+      "file": "implement-logging-to-capture-each-theme-application-step-including-page-name-shape-id-and-applied-preset.cs",
+      "task": "Implement logging to capture each theme application step including page name shape id and applied preset",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "iterate-through-all-pages-in-a-diagram-and-assign-the-same-preset-theme-variant-to-each-page",
+      "file": "iterate-through-all-pages-in-a-diagram-and-assign-the-same-preset-theme-variant-to-each-page.cs",
+      "task": "Iterate through all pages in a diagram and assign the same preset theme variant to each page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-from-a-byte-array-apply-a-theme-variant-and-return-the-modified-byte-array",
+      "file": "load-a-diagram-from-a-byte-array-apply-a-theme-variant-and-return-the-modified-byte-array.cs",
+      "task": "Load a diagram from a byte array apply a theme variant and return the modified byte array",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetThemeVariant",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-remove-all-existing-theme-settings-then-apply-a-fresh-preset-theme-to-standardize-appearance",
+      "file": "load-a-diagram-remove-all-existing-theme-settings-then-apply-a-fresh-preset-theme-to-standardize-appearance.cs",
+      "task": "Load a diagram remove all existing theme settings then apply a fresh preset theme to standardize appearance",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "load-a-vsdx-diagram-from-disk-and-apply-a-preset-theme-to-its-first-page",
+      "file": "load-a-vsdx-diagram-from-disk-and-apply-a-preset-theme-to-its-first-page.cs",
+      "task": "Load a vsdx diagram from disk and apply a preset theme to its first page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "load-multiple-vsdx-files-from-a-folder-apply-a-uniform-preset-theme-and-save-them-back",
+      "file": "load-multiple-vsdx-files-from-a-folder-apply-a-uniform-preset-theme-and-save-them-back.cs",
+      "task": "Load multiple vsdx files from a folder apply a uniform preset theme and save them back",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "measure-the-execution-time-of-applying-a-preset-theme-to-a-large-diagram-with-thousands-of-shapes",
+      "file": "measure-the-execution-time-of-applying-a-preset-theme-to-a-large-diagram-with-thousands-of-shapes.cs",
+      "task": "Measure the execution time of applying a preset theme to a large diagram with thousands of shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Diagnostics",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "reset-the-presettheme-of-a-shape-to-the-default-value-to-remove-previously-applied-styling",
+      "file": "reset-the-presettheme-of-a-shape-to-the-default-value-to-remove-previously-applied-styling.cs",
+      "task": "Reset the presettheme of a shape to the default value to remove previously applied styling",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "retrieve-the-current-presetthemevariant-from-each-shape-and-log-it-for-diagnostic-purposes",
+      "file": "retrieve-the-current-presetthemevariant-from-each-shape-and-log-it-for-diagnostic-purposes.cs",
+      "task": "Retrieve the current presetthemevariant from each shape and log it for diagnostic purposes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "save-a-diagram-with-applied-themes-to-a-memory-stream-for-further-processing-without-disk-i-o",
+      "file": "save-a-diagram-with-applied-themes-to-a-memory-stream-for-further-processing-without-disk-i-o.cs",
+      "task": "Save a diagram with applied themes to a memory stream for further processing without disk i o",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-the-presettheme-property-on-a-specific-shape-identified-by-its-id-to-change-its-appearance",
+      "file": "set-the-presettheme-property-on-a-specific-shape-identified-by-its-id-to-change-its-appearance.cs",
+      "task": "Set the presettheme property on a specific shape identified by its id to change its appearance",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-a-dictionary-to-map-shape-ids-to-specific-preset-themes-and-apply-them-accordingly",
+      "file": "use-a-dictionary-to-map-shape-ids-to-specific-preset-themes-and-apply-them-accordingly.cs",
+      "task": "Use a dictionary to map shape ids to specific preset themes and apply them accordingly",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "use-a-loop-to-apply-different-preset-themes-to-each-page-based-on-its-index-position",
+      "file": "use-a-loop-to-apply-different-preset-themes-to-each-page-based-on-its-index-position.cs",
+      "task": "Use a loop to apply different preset themes to each page based on its index position",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-asynchronous-loading-of-a-vsdx-file-then-apply-a-preset-theme-to-its-pages-concurrently",
+      "file": "use-asynchronous-loading-of-a-vsdx-file-then-apply-a-preset-theme-to-its-pages-concurrently.cs",
+      "task": "Use asynchronous loading of a vsdx file then apply a preset theme to its pages concurrently",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Threading",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "use-setpresetthemestylematrics-to-assign-a-custom-style-matrix-to-a-shape-for-advanced-formatting",
+      "file": "use-setpresetthemestylematrics-to-assign-a-custom-style-matrix-to-a-shape-for-advanced-formatting.cs",
+      "task": "Use setpresetthemestylematrics to assign a custom style matrix to a shape for advanced formatting",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-applying-a-preset-theme-does-not-alter-shape-geometry-by-comparing-bounding-boxes-before-and-after",
+      "file": "validate-that-applying-a-preset-theme-does-not-alter-shape-geometry-by-comparing-bounding-boxes-before-and-after.cs",
+      "task": "Validate that applying a preset theme does not alter shape geometry by comparing bounding boxes before and after",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "validate-that-the-applied-preset-theme-matches-the-expected-theme-by-comparing-theme-identifiers-after-saving",
+      "file": "validate-that-the-applied-preset-theme-matches-the-expected-theme-by-comparing-theme-identifiers-after-saving.cs",
+      "task": "Validate that the applied preset theme matches the expected theme by comparing theme identifiers after saving",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Page",
+        "Pages",
+        "PresetTheme"
+      ]
+    }
+  ]
+}

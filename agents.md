@@ -3,8 +3,8 @@ product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
 version: 26.5.0
-total_examples: 1616
-categories: 26
+total_examples: 1705
+categories: 27
 generated: 2026-06-12
 ---
 
@@ -21,8 +21,8 @@ generated: 2026-06-12
 | Product | Aspose.Diagram for .NET |
 | Version | 26.5.0 |
 | Framework | net8.0 |
-| Total Examples | 1616 |
-| Categories | 26 |
+| Total Examples | 1705 |
+| Categories | 27 |
 | Last Updated | 2026-06-12 |
 
 ## Persona
@@ -123,6 +123,7 @@ dotnet build --verbosity detailed
 | [Working With Protection](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-protection/agents.md) |
 | [Working With Shapes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-shapes) | 459 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-shapes/agents.md) |
 | [Working With Solutionxml Elements](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements) | 34 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-solutionxml-elements/agents.md) |
+| [Working With Text](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text) | 89 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-text/agents.md) |
 
 ## Pipeline
 

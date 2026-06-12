@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-12",
-  "total_examples": 1582,
-  "total_categories": 25,
+  "total_examples": 1616,
+  "total_categories": 26,
   "categories": [
     {
       "slug": "basic-operations",
@@ -154,6 +154,12 @@
       "slug": "working-with-shapes",
       "display_name": "Working With Shapes",
       "total": 459,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "working-with-solutionxml-elements",
+      "display_name": "Working With Solutionxml Elements",
+      "total": 34,
       "pass_rate": 100.0
     }
   ]

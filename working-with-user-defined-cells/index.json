@@ -1,0 +1,529 @@
+{
+  "category": "working-with-user-defined-cells",
+  "display_name": "Working With User Defined Cells",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 30,
+  "pass_rate": 100.0,
+  "generated": "2026-06-12",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-new-user-defined-cell-with-a-custom-name-to-every-shape-in-a-loaded-diagram",
+      "file": "add-a-new-user-defined-cell-with-a-custom-name-to-every-shape-in-a-loaded-diagram.cs",
+      "task": "Add a new user defined cell with a custom name to every shape in a loaded diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "User"
+      ]
+    },
+    {
+      "slug": "apply-a-custom-namespace-prefix-to-all-user-defined-cells-when-exporting-the-diagram-to-xml",
+      "file": "apply-a-custom-namespace-prefix-to-all-user-defined-cells-when-exporting-the-diagram-to-xml.cs",
+      "task": "Apply a custom namespace prefix to all user defined cells when exporting the diagram to xml",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-mathematical-expression-to-a-user-defined-cell-based-on-other-cell-values-and-save-changes",
+      "file": "apply-a-mathematical-expression-to-a-user-defined-cell-based-on-other-cell-values-and-save-changes.cs",
+      "task": "Apply a mathematical expression to a user defined cell based on other cell values and save changes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "User"
+      ]
+    },
+    {
+      "slug": "apply-localization-by-translating-user-defined-cell-text-values-based-on-the-target-language-settings",
+      "file": "apply-localization-by-translating-user-defined-cell-text-values-based-on-the-target-language-settings.cs",
+      "task": "Apply localization by translating user defined cell text values based on the target language settings",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "clone-a-shape-copy-its-user-defined-cells-and-insert-the-clone-into-a-different-page",
+      "file": "clone-a-shape-copy-its-user-defined-cells-and-insert-the-clone-into-a-different-page.cs",
+      "task": "Clone a shape copy its user defined cells and insert the clone into a different page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Pages",
+        "Save",
+        "User"
+      ]
+    },
+    {
+      "slug": "create-a-batch-process-that-updates-a-specific-user-defined-cell-across-multiple-visio-files-in-a-folder",
+      "file": "create-a-batch-process-that-updates-a-specific-user-defined-cell-across-multiple-visio-files-in-a-folder.cs",
+      "task": "Create a batch process that updates a specific user defined cell across multiple visio files in a folder",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-diagnostic-tool-that-lists-shapes-with-missing-or-duplicate-user-defined-cell-names",
+      "file": "create-a-diagnostic-tool-that-lists-shapes-with-missing-or-duplicate-user-defined-cell-names.cs",
+      "task": "Create a diagnostic tool that lists shapes with missing or duplicate user defined cell names",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "create-a-template-diagram-with-predefined-user-defined-cells-for-reuse-in-automated-document-generation",
+      "file": "create-a-template-diagram-with-predefined-user-defined-cells-for-reuse-in-automated-document-generation.cs",
+      "task": "Create a template diagram with predefined user defined cells for reuse in automated document generation",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "create-a-ui-dialog-that-allows-users-to-edit-user-defined-cell-values-interactively",
+      "file": "create-a-ui-dialog-that-allows-users-to-edit-user-defined-cell-values-interactively.cs",
+      "task": "Create a ui dialog that allows users to edit user defined cell values interactively",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "delete-all-user-defined-cells-that-contain-empty-values-across-all-pages-of-a-visio-document",
+      "file": "delete-all-user-defined-cells-that-contain-empty-values-across-all-pages-of-a-visio-document.cs",
+      "task": "Delete all user defined cells that contain empty values across all pages of a visio document",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-diagram-with-user-defined-cells-to-svg-preserving-cell-metadata-as-custom-attributes",
+      "file": "export-diagram-with-user-defined-cells-to-svg-preserving-cell-metadata-as-custom-attributes.cs",
+      "task": "Export diagram with user defined cells to svg preserving cell metadata as custom attributes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "SVGSaveOptions",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "export-user-defined-cell-data-to-a-csv-file-including-shape-identifiers-and-cell-values",
+      "file": "export-user-defined-cell-data-to-a-csv-file-including-shape-identifiers-and-cell-values.cs",
+      "task": "Export user defined cell data to a csv file including shape identifiers and cell values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "extract-user-defined-cell-formulas-and-evaluate-them-using-the-built-in-expression-engine",
+      "file": "extract-user-defined-cell-formulas-and-evaluate-them-using-the-built-in-expression-engine.cs",
+      "task": "Extract user defined cell formulas and evaluate them using the built in expression engine",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "filter-shapes-to-process-only-those-containing-a-specific-user-defined-cell-name-pattern",
+      "file": "filter-shapes-to-process-only-those-containing-a-specific-user-defined-cell-name-pattern.cs",
+      "task": "Filter shapes to process only those containing a specific user defined cell name pattern",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-report-summarizing-the-count-of-user-defined-cells-per-shape-category-in-the-diagram",
+      "file": "generate-a-report-summarizing-the-count-of-user-defined-cells-per-shape-category-in-the-diagram.cs",
+      "task": "Generate a report summarizing the count of user defined cells per shape category in the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "generate-a-visual-preview-of-shape-changes-after-modifying-user-defined-cell-values-programmatically",
+      "file": "generate-a-visual-preview-of-shape-changes-after-modifying-user-defined-cell-values-programmatically.cs",
+      "task": "Generate a visual preview of shape changes after modifying user defined cell values programmatically",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "implement-a-rollback-mechanism-that-restores-previous-user-defined-cell-values-if-validation-fails",
+      "file": "implement-a-rollback-mechanism-that-restores-previous-user-defined-cell-values-if-validation-fails.cs",
+      "task": "Implement a rollback mechanism that restores previous user defined cell values if validation fails",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-versioning-system-that-records-changes-to-user-defined-cells-in-a-separate-log-file",
+      "file": "implement-a-versioning-system-that-records-changes-to-user-defined-cells-in-a-separate-log-file.cs",
+      "task": "Implement a versioning system that records changes to user defined cells in a separate log file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "User"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-for-missing-user-defined-cells-when-performing-calculations-on-diagram-shapes",
+      "file": "implement-error-handling-for-missing-user-defined-cells-when-performing-calculations-on-diagram-shapes.cs",
+      "task": "Implement error handling for missing user defined cells when performing calculations on diagram shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "import-a-spreadsheet-and-map-its-columns-to-corresponding-user-defined-cells-in-the-diagram",
+      "file": "import-a-spreadsheet-and-map-its-columns-to-corresponding-user-defined-cells-in-the-diagram.cs",
+      "task": "Import a spreadsheet and map its columns to corresponding user defined cells in the diagram",
+      "namespaces": [
+        "Aspose.Cells",
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "User"
+      ]
+    },
+    {
+      "slug": "import-user-defined-cell-values-from-a-json-file-and-assign-them-to-matching-shapes-in-the-diagram",
+      "file": "import-user-defined-cell-values-from-a-json-file-and-assign-them-to-matching-shapes-in-the-diagram.cs",
+      "task": "Import user defined cell values from a json file and assign them to matching shapes in the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "User"
+      ]
+    },
+    {
+      "slug": "iterate-through-shapes-and-log-each-user-defined-cell-s-name-and-current-value-to-a-text-file",
+      "file": "iterate-through-shapes-and-log-each-user-defined-cell-s-name-and-current-value-to-a-text-file.cs",
+      "task": "Iterate through shapes and log each user defined cell s name and current value to a text file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "load-a-visio-file-and-retrieve-values-of-all-user-defined-cells-from-each-shape",
+      "file": "load-a-visio-file-and-retrieve-values-of-all-user-defined-cells-from-each-shape.cs",
+      "task": "Load a visio file and retrieve values of all user defined cells from each shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "set-a-user-defined-cell-to-read-only-mode-to-prevent-further-modifications-during-runtime",
+      "file": "set-a-user-defined-cell-to-read-only-mode-to-prevent-further-modifications-during-runtime.cs",
+      "task": "Set a user defined cell to read only mode to prevent further modifications during runtime",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "synchronize-user-defined-cell-values-between-two-diagrams-to-maintain-consistent-metadata-across-files",
+      "file": "synchronize-user-defined-cell-values-between-two-diagrams-to-maintain-consistent-metadata-across-files.cs",
+      "task": "Synchronize user defined cell values between two diagrams to maintain consistent metadata across files",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Shapes",
+        "User",
+        "page"
+      ]
+    },
+    {
+      "slug": "update-the-formula-of-a-specific-user-defined-cell-and-save-the-diagram-in-vdx-format",
+      "file": "update-the-formula-of-a-specific-user-defined-cell-and-save-the-diagram-in-vdx-format.cs",
+      "task": "Update the formula of a specific user defined cell and save the diagram in vdx format",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-conditional-formatting-to-change-shape-colors-based-on-values-of-associated-user-defined-cells",
+      "file": "use-conditional-formatting-to-change-shape-colors-based-on-values-of-associated-user-defined-cells.cs",
+      "task": "Use conditional formatting to change shape colors based on values of associated user defined cells",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-multithreading-to-concurrently-update-user-defined-cells-in-large-diagrams-for-performance-improvement",
+      "file": "use-multithreading-to-concurrently-update-user-defined-cells-in-large-diagrams-for-performance-improvement.cs",
+      "task": "Use multithreading to concurrently update user defined cells in large diagrams for performance improvement",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "User"
+      ]
+    },
+    {
+      "slug": "validate-that-required-user-defined-cells-exist-on-each-shape-before-exporting-the-diagram-to-pdf",
+      "file": "validate-that-required-user-defined-cells-exist-on-each-shape-before-exporting-the-diagram-to-pdf.cs",
+      "task": "Validate that required user defined cells exist on each shape before exporting the diagram to pdf",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "validate-user-defined-cell-data-types-against-a-schema-before-saving-the-diagram-to-vsdx",
+      "file": "validate-user-defined-cell-data-types-against-a-schema-before-saving-the-diagram-to-vsdx.cs",
+      "task": "Validate user defined cell data types against a schema before saving the diagram to vsdx",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    }
+  ]
+}

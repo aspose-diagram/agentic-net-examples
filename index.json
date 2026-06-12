@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-12",
-  "total_examples": 1780,
-  "total_categories": 29,
+  "total_examples": 1810,
+  "total_categories": 30,
   "categories": [
     {
       "slug": "basic-operations",
@@ -178,6 +178,12 @@
       "slug": "working-with-themes",
       "display_name": "Working With Themes",
       "total": 40,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "working-with-user-defined-cells",
+      "display_name": "Working With User Defined Cells",
+      "total": 30,
       "pass_rate": 100.0
     }
   ]

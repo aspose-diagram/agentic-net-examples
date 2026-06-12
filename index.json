@@ -3,8 +3,8 @@
   "version": "26.5.0",
   "framework": "net8.0",
   "generated": "2026-06-12",
-  "total_examples": 1705,
-  "total_categories": 27,
+  "total_examples": 1740,
+  "total_categories": 28,
   "categories": [
     {
       "slug": "basic-operations",
@@ -166,6 +166,12 @@
       "slug": "working-with-text",
       "display_name": "Working With Text",
       "total": 89,
+      "pass_rate": 100.0
+    },
+    {
+      "slug": "working-with-text-boxes",
+      "display_name": "Working With Text Boxes",
+      "total": 35,
       "pass_rate": 100.0
     }
   ]

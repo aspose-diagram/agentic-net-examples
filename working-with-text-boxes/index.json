@@ -1,0 +1,605 @@
+{
+  "category": "working-with-text-boxes",
+  "display_name": "Working With Text Boxes",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 35,
+  "pass_rate": 100.0,
+  "generated": "2026-06-12",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "adjust-the-text-block-background-transparency-to-50-percent-for-a-semi-transparent-effect",
+      "file": "adjust-the-text-block-background-transparency-to-50-percent-for-a-semi-transparent-effect.cs",
+      "task": "Adjust the text block background transparency to 50 percent for a semi transparent effect",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "adjust-txtwidth-proportionally-to-the-shape-s-width-while-keeping-txtheight-constant-for-uniform-scaling",
+      "file": "adjust-txtwidth-proportionally-to-the-shape-s-width-while-keeping-txtheight-constant-for-uniform-scaling.cs",
+      "task": "Adjust txtwidth proportionally to the shape s width while keeping txtheight constant for uniform scaling",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "align-shape-text-to-the-left-side-of-the-shape-by-setting-orientation-and-horizontal-pin-values",
+      "file": "align-shape-text-to-the-left-side-of-the-shape-by-setting-orientation-and-horizontal-pin-values.cs",
+      "task": "Align shape text to the left side of the shape by setting orientation and horizontal pin values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "align-shape-text-to-the-right-side-of-the-shape-by-configuring-orientation-and-right-hand-pin",
+      "file": "align-shape-text-to-the-right-side-of-the-shape-by-configuring-orientation-and-right-hand-pin.cs",
+      "task": "Align shape text to the right side of the shape by configuring orientation and right hand pin",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-90-degree-orientation-angle-to-shape-text-and-reposition-it-to-the-left-side-of-the-shape",
+      "file": "apply-a-90-degree-orientation-angle-to-shape-text-and-reposition-it-to-the-left-side-of-the-shape.cs",
+      "task": "Apply a 90 degree orientation angle to shape text and reposition it to the left side of the shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-different-default-tab-stop-for-shapes-that-contain-multiline-text-to-improve-readability",
+      "file": "apply-a-different-default-tab-stop-for-shapes-that-contain-multiline-text-to-improve-readability.cs",
+      "task": "Apply a different default tab stop for shapes that contain multiline text to improve readability",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-solid-background-color-to-a-shape-s-text-block-using-the-textbackgroundcolor-property",
+      "file": "apply-a-solid-background-color-to-a-shape-s-text-block-using-the-textbackgroundcolor-property.cs",
+      "task": "Apply a solid background color to a shape s text block using the textbackgroundcolor property",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-process-multiple-visio-files-applying-a-30-degree-text-rotation-to-all-shape-texts",
+      "file": "batch-process-multiple-visio-files-applying-a-30-degree-text-rotation-to-all-shape-texts.cs",
+      "task": "Batch process multiple visio files applying a 30 degree text rotation to all shape texts",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "calculate-the-bounding-box-of-a-shape-s-text-block-after-setting-custom-width-and-height-values",
+      "file": "calculate-the-bounding-box-of-a-shape-s-text-block-after-setting-custom-width-and-height-values.cs",
+      "task": "Calculate the bounding box of a shape s text block after setting custom width and height values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "combine-text-rotation-and-margin-adjustments-to-create-a-diagonal-text-effect-inside-a-shape",
+      "file": "combine-text-rotation-and-margin-adjustments-to-create-a-diagonal-text-effect-inside-a-shape.cs",
+      "task": "Combine text rotation and margin adjustments to create a diagonal text effect inside a shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "copy-text-block-formatting-from-one-shape-to-another-using-the-shape-textblock-property-clone",
+      "file": "copy-text-block-formatting-from-one-shape-to-another-using-the-shape-textblock-property-clone.cs",
+      "task": "Copy text block formatting from one shape to another using the shape textblock property clone",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "define-a-default-tab-stop-of-0-5-inches-to-control-spacing-of-tab-characters-in-shape-text",
+      "file": "define-a-default-tab-stop-of-0-5-inches-to-control-spacing-of-tab-characters-in-shape-text.cs",
+      "task": "Define a default tab stop of 0 5 inches to control spacing of tab characters in shape text",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "detect-shapes-with-empty-text-blocks-and-assign-a-placeholder-background-color-for-visual-cues",
+      "file": "detect-shapes-with-empty-text-blocks-and-assign-a-placeholder-background-color-for-visual-cues.cs",
+      "task": "Detect shapes with empty text blocks and assign a placeholder background color for visual cues",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-the-text-block-content-of-a-shape-to-a-plain-text-file-for-external-analysis",
+      "file": "export-the-text-block-content-of-a-shape-to-a-plain-text-file-for-external-analysis.cs",
+      "task": "Export the text block content of a shape to a plain text file for external analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "filter-shapes-by-type-and-apply-centered-text-alignment-only-to-rectangle-shapes",
+      "file": "filter-shapes-by-type-and-apply-centered-text-alignment-only-to-rectangle-shapes.cs",
+      "task": "Filter shapes by type and apply centered text alignment only to rectangle shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-report-listing-each-shape-s-text-alignment-margin-settings-and-background-transparency-values",
+      "file": "generate-a-report-listing-each-shape-s-text-alignment-margin-settings-and-background-transparency-values.cs",
+      "task": "Generate a report listing each shape s text alignment margin settings and background transparency values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-when-setting-text-direction-on-shapes-that-lack-a-textblock-section",
+      "file": "implement-error-handling-when-setting-text-direction-on-shapes-that-lack-a-textblock-section.cs",
+      "task": "Implement error handling when setting text direction on shapes that lack a textblock section",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "iterate-through-all-shapes-in-a-diagram-and-set-their-text-direction-to-vertical-for-consistency",
+      "file": "iterate-through-all-shapes-in-a-diagram-and-set-their-text-direction-to-vertical-for-consistency.cs",
+      "task": "Iterate through all shapes in a diagram and set their text direction to vertical for consistency",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-diagram-modify-text-background-transparency-based-on-shape-fill-opacity-then-save",
+      "file": "load-a-diagram-modify-text-background-transparency-based-on-shape-fill-opacity-then-save.cs",
+      "task": "Load a diagram modify text background transparency based on shape fill opacity then save",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-file-access-a-shape-and-set-its-text-direction-to-right-to-left",
+      "file": "load-a-visio-file-access-a-shape-and-set-its-text-direction-to-right-to-left.cs",
+      "task": "Load a visio file access a shape and set its text direction to right to left",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "modify-the-top-bottom-left-and-right-text-margins-of-a-shape-to-specific-pixel-values",
+      "file": "modify-the-top-bottom-left-and-right-text-margins-of-a-shape-to-specific-pixel-values.cs",
+      "task": "Modify the top bottom left and right text margins of a shape to specific pixel values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "pin-the-text-to-a-custom-location-inside-a-shape-by-setting-the-txtpin-property-coordinates",
+      "file": "pin-the-text-to-a-custom-location-inside-a-shape-by-setting-the-txtpin-property-coordinates.cs",
+      "task": "Pin the text to a custom location inside a shape by setting the txtpin property coordinates",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "position-shape-text-at-the-bottom-of-the-shape-using-orientation-angle-and-bottom-margin-adjustments",
+      "file": "position-shape-text-at-the-bottom-of-the-shape-using-orientation-angle-and-bottom-margin-adjustments.cs",
+      "task": "Position shape text at the bottom of the shape using orientation angle and bottom margin adjustments",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "position-shape-text-at-the-top-of-the-shape-by-configuring-orientation-angle-and-vertical-offset",
+      "file": "position-shape-text-at-the-top-of-the-shape-by-configuring-orientation-angle-and-vertical-offset.cs",
+      "task": "Position shape text at the top of the shape by configuring orientation angle and vertical offset",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "programmatically-increase-the-text-block-s-left-margin-by-10-points-for-all-shapes-in-a-page",
+      "file": "programmatically-increase-the-text-block-s-left-margin-by-10-points-for-all-shapes-in-a-page.cs",
+      "task": "Programmatically increase the text block s left margin by 10 points for all shapes in a page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "read-the-current-text-alignment-of-each-shape-and-log-mismatches-against-a-style-guide",
+      "file": "read-the-current-text-alignment-of-each-shape-and-log-mismatches-against-a-style-guide.cs",
+      "task": "Read the current text alignment of each shape and log mismatches against a style guide",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "reset-a-shape-s-text-margins-to-default-values-after-custom-adjustments-have-been-applied",
+      "file": "reset-a-shape-s-text-margins-to-default-values-after-custom-adjustments-have-been-applied.cs",
+      "task": "Reset a shape s text margins to default values after custom adjustments have been applied",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "retrieve-a-shape-s-textblock-then-change-the-text-alignment-to-centered-within-the-shape",
+      "file": "retrieve-a-shape-s-textblock-then-change-the-text-alignment-to-centered-within-the-shape.cs",
+      "task": "Retrieve a shape s textblock then change the text alignment to centered within the shape",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "rotate-shape-text-by-45-degrees-using-the-txtlocpin-orientation-angle-property",
+      "file": "rotate-shape-text-by-45-degrees-using-the-txtlocpin-orientation-angle-property.cs",
+      "task": "Rotate shape text by 45 degrees using the txtlocpin orientation angle property",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "save-the-modified-visio-diagram-after-applying-all-text-formatting-changes-to-a-new-file",
+      "file": "save-the-modified-visio-diagram-after-applying-all-text-formatting-changes-to-a-new-file.cs",
+      "task": "Save the modified visio diagram after applying all text formatting changes to a new file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "serialize-a-shape-s-textblock-properties-to-json-for-configuration-backup-and-reuse",
+      "file": "serialize-a-shape-s-textblock-properties-to-json-for-configuration-backup-and-reuse.cs",
+      "task": "Serialize a shape s textblock properties to json for configuration backup and reuse",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "set-the-text-block-width-and-height-to-match-the-shape-s-dimensions-for-full-coverage",
+      "file": "set-the-text-block-width-and-height-to-match-the-shape-s-dimensions-for-full-coverage.cs",
+      "task": "Set the text block width and height to match the shape s dimensions for full coverage",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-conditional-logic-to-apply-a-transparent-background-only-to-shapes-containing-warning-messages",
+      "file": "use-conditional-logic-to-apply-a-transparent-background-only-to-shapes-containing-warning-messages.cs",
+      "task": "Use conditional logic to apply a transparent background only to shapes containing warning messages",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-txtpin-to-anchor-shape-text-at-the-exact-center-point-of-the-shape-s-geometry",
+      "file": "use-txtpin-to-anchor-shape-text-at-the-exact-center-point-of-the-shape-s-geometry.cs",
+      "task": "Use txtpin to anchor shape text at the exact center point of the shape s geometry",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-each-shape-s-text-background-color-meets-a-predefined-corporate-color-palette",
+      "file": "validate-that-each-shape-s-text-background-color-meets-a-predefined-corporate-color-palette.cs",
+      "task": "Validate that each shape s text background color meets a predefined corporate color palette",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    }
+  ]
+}

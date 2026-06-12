@@ -1,0 +1,495 @@
+{
+  "category": "working-with-window-elements",
+  "display_name": "Working With Window Elements",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 30,
+  "pass_rate": 100.0,
+  "generated": "2026-06-12",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-unit-tests-to-ensure-showpagebreaks-remains-true-after-saving-and-reloading-the-diagram",
+      "file": "add-unit-tests-to-ensure-showpagebreaks-remains-true-after-saving-and-reloading-the-diagram.cs",
+      "task": "Add unit tests to ensure showpagebreaks remains true after saving and reloading the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Window",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "compare-performance-of-adding-windows-individually-versus-adding-them-in-a-loop-for-large-diagrams",
+      "file": "compare-performance-of-adding-windows-individually-versus-adding-them-in-a-loop-for-large-diagrams.cs",
+      "task": "Compare performance of adding windows individually versus adding them in a loop for large diagrams",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Diagnostics",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Window"
+      ]
+    },
+    {
+      "slug": "create-a-custom-ui-panel-that-reflects-the-current-showgrid-state-of-the-active-window",
+      "file": "create-a-custom-ui-panel-that-reflects-the-current-showgrid-state-of-the-active-window.cs",
+      "task": "Create a custom ui panel that reflects the current showgrid state of the active window",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Window",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-new-window-enable-showgrid-disable-showguides-then-add-it-to-the-diagram",
+      "file": "create-a-new-window-enable-showgrid-disable-showguides-then-add-it-to-the-diagram.cs",
+      "task": "Create a new window enable showgrid disable showguides then add it to the diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Window",
+        "Windows",
+        "diagram",
+        "window"
+      ]
+    },
+    {
+      "slug": "create-a-powershell-script-that-iterates-over-a-folder-of-visio-files-and-toggles-showrulers-globally",
+      "file": "create-a-powershell-script-that-iterates-over-a-folder-of-visio-files-and-toggles-showrulers-globally.cs",
+      "task": "Create a powershell script that iterates over a folder of visio files and toggles showrulers globally",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Window",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-unit-test-verifying-showpagebreaks-changes-persist-after-diagram-serialization-and-reload",
+      "file": "create-a-unit-test-verifying-showpagebreaks-changes-persist-after-diagram-serialization-and-reload.cs",
+      "task": "Create a unit test verifying showpagebreaks changes persist after diagram serialization and reload",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Window",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-visual-diff-tool-that-compares-window-visibility-configurations-between-two-visio-files",
+      "file": "create-a-visual-diff-tool-that-compares-window-visibility-configurations-between-two-visio-files.cs",
+      "task": "Create a visual diff tool that compares window visibility configurations between two visio files",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram"
+      ]
+    },
+    {
+      "slug": "design-a-configuration-class-encapsulating-showgrid-showguides-showrulers-and-showpagebreaks-options",
+      "file": "design-a-configuration-class-encapsulating-showgrid-showguides-showrulers-and-showpagebreaks-options.cs",
+      "task": "Design a configuration class encapsulating showgrid showguides showrulers and showpagebreaks options",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "develop-a-batch-process-that-loads-several-visio-files-sets-showguides-to-false-and-saves-each-file",
+      "file": "develop-a-batch-process-that-loads-several-visio-files-sets-showguides-to-false-and-saves-each-file.cs",
+      "task": "Develop a batch process that loads several visio files sets showguides to false and saves each file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Window",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "develop-a-plugin-that-automatically-sets-showguides-to-false-when-a-diagram-exceeds-a-specified-page-count",
+      "file": "develop-a-plugin-that-automatically-sets-showguides-to-false-when-a-diagram-exceeds-a-specified-page-count.cs",
+      "task": "Develop a plugin that automatically sets showguides to false when a diagram exceeds a specified page count",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Window",
+        "Windows"
+      ]
+    },
+    {
+      "slug": "develop-a-test-harness-that-randomly-flips-showgrid-and-showguides-flags-to-stress-test-the-api",
+      "file": "develop-a-test-harness-that-randomly-flips-showgrid-and-showguides-flags-to-stress-test-the-api.cs",
+      "task": "Develop a test harness that randomly flips showgrid and showguides flags to stress test the api",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Window",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "document-the-effect-of-showpagebreaks-being-true-on-printed-output-by-generating-a-pdf-preview",
+      "file": "document-the-effect-of-showpagebreaks-being-true-on-printed-output-by-generating-a-pdf-preview.cs",
+      "task": "Document the effect of showpagebreaks being true on printed output by generating a pdf preview",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
+        "Save",
+        "Window",
+        "Windows"
+      ]
+    },
+    {
+      "slug": "generate-a-diagnostic-report-listing-each-window-s-visibility-settings-and-the-pages-they-apply-to",
+      "file": "generate-a-diagnostic-report-listing-each-window-s-visibility-settings-and-the-pages-they-apply-to.cs",
+      "task": "Generate a diagnostic report listing each window s visibility settings and the pages they apply to",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-caching-mechanism-for-window-settings-to-reduce-redundant-api-calls-during-batch-processing",
+      "file": "implement-a-caching-mechanism-for-window-settings-to-reduce-redundant-api-calls-during-batch-processing.cs",
+      "task": "Implement a caching mechanism for window settings to reduce redundant api calls during batch processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "Windows"
+      ]
+    },
+    {
+      "slug": "implement-a-command-line-tool-that-accepts-a-visio-file-path-and-toggles-showrulers-based-on-user-input",
+      "file": "implement-a-command-line-tool-that-accepts-a-visio-file-path-and-toggles-showrulers-based-on-user-input.cs",
+      "task": "Implement a command line tool that accepts a visio file path and toggles showrulers based on user input",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Window",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-rollback-routine-that-restores-original-window-settings-if-an-error-occurs-during-processing",
+      "file": "implement-a-rollback-routine-that-restores-original-window-settings-if-an-error-occurs-during-processing.cs",
+      "task": "Implement a rollback routine that restores original window settings if an error occurs during processing",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-asynchronous-loading-of-a-visio-file-and-asynchronous-updating-of-its-window-properties",
+      "file": "implement-asynchronous-loading-of-a-visio-file-and-asynchronous-updating-of-its-window-properties.cs",
+      "task": "Implement asynchronous loading of a visio file and asynchronous updating of its window properties",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-to-catch-exceptions-when-adding-a-window-to-a-diagram-without-a-windowcollection",
+      "file": "implement-error-handling-to-catch-exceptions-when-adding-a-window-to-a-diagram-without-a-windowcollection.cs",
+      "task": "Implement error handling to catch exceptions when adding a window to a diagram without a windowcollection",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Window",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "iterate-through-each-window-and-log-showgrid-showguides-showrulers-showpagebreaks-values",
+      "file": "iterate-through-each-window-and-log-showgrid-showguides-showrulers-showpagebreaks-values.cs",
+      "task": "Iterate through each window and log showgrid showguides showrulers showpagebreaks values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-and-retrieve-all-window-objects-from-its-windowcollection",
+      "file": "load-a-visio-diagram-and-retrieve-all-window-objects-from-its-windowcollection.cs",
+      "task": "Load a visio diagram and retrieve all window objects from its windowcollection",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "log-before-and-after-states-of-each-window-property-when-applying-bulk-visibility-changes",
+      "file": "log-before-and-after-states-of-each-window-property-when-applying-bulk-visibility-changes.cs",
+      "task": "Log before and after states of each window property when applying bulk visibility changes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Window",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "measure-memory-usage-when-loading-diagrams-with-many-windows-to-identify-optimization-opportunities",
+      "file": "measure-memory-usage-when-loading-diagrams-with-many-windows-to-identify-optimization-opportunities.cs",
+      "task": "Measure memory usage when loading diagrams with many windows to identify optimization opportunities",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Diagnostics",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "save-the-modified-visio-diagram-to-a-new-file-after-updating-window-visibility-properties",
+      "file": "save-the-modified-visio-diagram-to-a-new-file-after-updating-window-visibility-properties.cs",
+      "task": "Save the modified visio diagram to a new file after updating window visibility properties",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-showrulers-to-true-and-showpagebreaks-to-false-on-the-first-retrieved-window",
+      "file": "set-showrulers-to-true-and-showpagebreaks-to-false-on-the-first-retrieved-window.cs",
+      "task": "Set showrulers to true and showpagebreaks to false on the first retrieved window",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-linq-to-filter-window-objects-where-showrulers-is-false-and-enable-rulers-for-those-windows",
+      "file": "use-linq-to-filter-window-objects-where-showrulers-is-false-and-enable-rulers-for-those-windows.cs",
+      "task": "Use linq to filter window objects where showrulers is false and enable rulers for those windows",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-that-window-visibility-settings-apply-globally-by-confirming-multiple-pages-share-identical-configurations",
+      "file": "validate-that-window-visibility-settings-apply-globally-by-confirming-multiple-pages-share-identical-configurations.cs",
+      "task": "Validate that window visibility settings apply globally by confirming multiple pages share identical configurations",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "verify-that-changing-showrulers-on-one-page-does-not-affect-other-pages-within-the-same-diagram",
+      "file": "verify-that-changing-showrulers-on-one-page-does-not-affect-other-pages-within-the-same-diagram.cs",
+      "task": "Verify that changing showrulers on one page does not affect other pages within the same diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Page",
+        "Pages",
+        "Window",
+        "Windows"
+      ]
+    },
+    {
+      "slug": "write-a-function-that-toggles-showgrid-for-all-open-windows-in-a-visio-session",
+      "file": "write-a-function-that-toggles-showgrid-for-all-open-windows-in-a-visio-session.cs",
+      "task": "Write a function that toggles showgrid for all open windows in a visio session",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "write-a-script-that-restores-default-window-settings-grid-guides-rulers-page-breaks-for-a-diagram",
+      "file": "write-a-script-that-restores-default-window-settings-grid-guides-rulers-page-breaks-for-a-diagram.cs",
+      "task": "Write a script that restores default window settings grid guides rulers page breaks for a diagram",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "Window",
+        "Windows",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "write-documentation-comments-explaining-the-purpose-of-each-window-property-used-in-the-project",
+      "file": "write-documentation-comments-explaining-the-purpose-of-each-window-property-used-in-the-project.cs",
+      "task": "Write documentation comments explaining the purpose of each window property used in the project",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Windows",
+        "diagram"
+      ]
+    }
+  ]
+}

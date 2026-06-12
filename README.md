@@ -6,8 +6,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Examples | 1740 |
-| Categories | 28 |
+| Total Examples | 1780 |
+| Categories | 29 |
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.5.0 |
 | Target Framework | net8.0 |
@@ -135,6 +135,10 @@ working-with-text-boxes/
   agents.md    ← Category AI instructions
   index.json   ← Category catalogue
   *.cs         ← Example files
+working-with-themes/
+  agents.md    ← Category AI instructions
+  index.json   ← Category catalogue
+  *.cs         ← Example files
 ```
 
 ## Categories
@@ -169,6 +173,7 @@ working-with-text-boxes/
 | [Working With Solutionxml Elements](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements) | 34 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-solutionxml-elements/agents.md) |
 | [Working With Text](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text) | 89 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-text/agents.md) |
 | [Working With Text Boxes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes) | 35 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-text-boxes/agents.md) |
+| [Working With Themes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes) | 40 | 100.0% | [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-themes/agents.md) |
 
 ## How to Use
 

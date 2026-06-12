@@ -1,0 +1,585 @@
+{
+  "category": "working-with-solutionxml-elements",
+  "display_name": "Working With Solutionxml Elements",
+  "version": "26.5.0",
+  "framework": "net8.0",
+  "total": 34,
+  "pass_rate": 100.0,
+  "generated": "2026-06-12",
+  "common_pattern": "Load \u2192 Modify \u2192 Save",
+  "examples": [
+    {
+      "slug": "add-a-custom-data-row-to-a-specific-shape-within-the-solutionxml-and-update-the-file",
+      "file": "add-a-custom-data-row-to-a-specific-shape-within-the-solutionxml-and-update-the-file.cs",
+      "task": "Add a custom data row to a specific shape within the solutionxml and update the file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "add-a-hyperlink-element-to-a-shape-in-the-solutionxml-and-define-its-target-url",
+      "file": "add-a-hyperlink-element-to-a-shape-in-the-solutionxml-and-define-its-target-url.cs",
+      "task": "Add a hyperlink element to a shape in the solutionxml and define its target url",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "apply-a-conditional-formatting-rule-in-the-solutionxml-that-highlights-shapes-based-on-data-values",
+      "file": "apply-a-conditional-formatting-rule-in-the-solutionxml-that-highlights-shapes-based-on-data-values.cs",
+      "task": "Apply a conditional formatting rule in the solutionxml that highlights shapes based on data values",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-security-policy-that-removes-all-external-references-from-the-solutionxml-before-distribution",
+      "file": "apply-a-security-policy-that-removes-all-external-references-from-the-solutionxml-before-distribution.cs",
+      "task": "Apply a security policy that removes all external references from the solutionxml before distribution",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Linq",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "apply-a-transformation-xslt-to-the-solutionxml-to-generate-a-custom-shape-properties-report",
+      "file": "apply-a-transformation-xslt-to-the-solutionxml-to-generate-a-custom-shape-properties-report.cs",
+      "task": "Apply a transformation xslt to the solutionxml to generate a custom shape properties report",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Xml",
+        "System.Xml.Xsl"
+      ],
+      "key_apis": [
+        "Diagram",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "batch-process-a-folder-of-visio-files-updating-each-solutionxml-to-include-a-timestamp-attribute",
+      "file": "batch-process-a-folder-of-visio-files-updating-each-solutionxml-to-include-a-timestamp-attribute.cs",
+      "task": "Batch process a folder of visio files updating each solutionxml to include a timestamp attribute",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "clone-an-existing-shape-node-in-the-solutionxml-and-reposition-the-duplicate-on-the-same-page",
+      "file": "clone-an-existing-shape-node-in-the-solutionxml-and-reposition-the-duplicate-on-the-same-page.cs",
+      "task": "Clone an existing shape node in the solutionxml and reposition the duplicate on the same page",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Linq",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "compare-two-solutionxml-files-to-identify-added-removed-or-modified-shapes-between-versions",
+      "file": "compare-two-solutionxml-files-to-identify-added-removed-or-modified-shapes-between-versions.cs",
+      "task": "Compare two solutionxml files to identify added removed or modified shapes between versions",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "compress-the-solutionxml-content-using-gzip-before-embedding-it-into-a-vsdx-package",
+      "file": "compress-the-solutionxml-content-using-gzip-before-embedding-it-into-a-vsdx-package.cs",
+      "task": "Compress the solutionxml content using gzip before embedding it into a vsdx package",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.IO.Compression",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-custom-xml-namespace-mapping-for-solutionxml-to-avoid-naming-collisions-with-other-schemas",
+      "file": "create-a-custom-xml-namespace-mapping-for-solutionxml-to-avoid-naming-collisions-with-other-schemas.cs",
+      "task": "Create a custom xml namespace mapping for solutionxml to avoid naming collisions with other schemas",
+      "namespaces": [
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "create-a-new-page-node-in-the-solutionxml-and-assign-a-background-style",
+      "file": "create-a-new-page-node-in-the-solutionxml-and-assign-a-background-style.cs",
+      "task": "Create a new page node in the solutionxml and assign a background style",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Page",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "create-a-reusable-function-that-injects-a-predefined-style-sheet-into-any-solutionxml-document",
+      "file": "create-a-reusable-function-that-injects-a-predefined-style-sheet-into-any-solutionxml-document.cs",
+      "task": "Create a reusable function that injects a predefined style sheet into any solutionxml document",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "decrypt-an-encrypted-solutionxml-segment-with-a-provided-key-and-verify-its-integrity",
+      "file": "decrypt-an-encrypted-solutionxml-segment-with-a-provided-key-and-verify-its-integrity.cs",
+      "task": "Decrypt an encrypted solutionxml segment with a provided key and verify its integrity",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Security.Cryptography",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "export-the-solutionxml-to-a-formatted-json-file-for-easier-consumption-by-web-services",
+      "file": "export-the-solutionxml-to-a-formatted-json-file-for-easier-consumption-by-web-services.cs",
+      "task": "Export the solutionxml to a formatted json file for easier consumption by web services",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "extract-all-custom-data-sections-from-the-solutionxml-and-export-them-to-a-csv-file",
+      "file": "extract-all-custom-data-sections-from-the-solutionxml-and-export-them-to-a-csv-file.cs",
+      "task": "Extract all custom data sections from the solutionxml and export them to a csv file",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Linq",
+        "System.Text",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "generate-a-summary-report-of-shape-counts-per-page-by-analyzing-the-solutionxml-hierarchy",
+      "file": "generate-a-summary-report-of-shape-counts-per-page-by-analyzing-the-solutionxml-hierarchy.cs",
+      "task": "Generate a summary report of shape counts per page by analyzing the solutionxml hierarchy",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "generate-a-thumbnail-image-from-the-solutionxml-by-rendering-the-first-page-at-low-resolution",
+      "file": "generate-a-thumbnail-image-from-the-solutionxml-by-rendering-the-first-page-at-low-resolution.cs",
+      "task": "Generate a thumbnail image from the solutionxml by rendering the first page at low resolution",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Text"
+      ],
+      "key_apis": [
+        "Diagram",
+        "ImageSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-a-version-control-system-that-stores-incremental-solutionxml-changes-as-separate-diff-files",
+      "file": "implement-a-version-control-system-that-stores-incremental-solutionxml-changes-as-separate-diff-files.cs",
+      "task": "Implement a version control system that stores incremental solutionxml changes as separate diff files",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "SolutionXMLs"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-to-catch-malformed-solutionxml-nodes-and-log-detailed-diagnostics",
+      "file": "implement-error-handling-to-catch-malformed-solutionxml-nodes-and-log-detailed-diagnostics.cs",
+      "task": "Implement error handling to catch malformed solutionxml nodes and log detailed diagnostics",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Xml"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "import-a-json-representation-of-diagram-elements-and-merge-it-into-the-existing-solutionxml",
+      "file": "import-a-json-representation-of-diagram-elements-and-merge-it-into-the-existing-solutionxml.cs",
+      "task": "Import a json representation of diagram elements and merge it into the existing solutionxml",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text.Json"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "integrate-a-third-party-library-to-validate-xml-namespaces-within-the-solutionxml-before-saving",
+      "file": "integrate-a-third-party-library-to-validate-xml-namespaces-within-the-solutionxml-before-saving.cs",
+      "task": "Integrate a third party library to validate xml namespaces within the solutionxml before saving",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "iterate-through-all-connectors-in-the-solutionxml-and-adjust-their-line-weight-uniformly",
+      "file": "iterate-through-all-connectors-in-the-solutionxml-and-adjust-their-line-weight-uniformly.cs",
+      "task": "Iterate through all connectors in the solutionxml and adjust their line weight uniformly",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "SolutionXMLs"
+      ]
+    },
+    {
+      "slug": "load-a-visio-file-and-obtain-its-solutionxml-representation-for-analysis",
+      "file": "load-a-visio-file-and-obtain-its-solutionxml-representation-for-analysis.cs",
+      "task": "Load a visio file and obtain its solutionxml representation for analysis",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "optimize-the-solutionxml-size-by-removing-redundant-style-definitions-and-consolidating-identical-elements",
+      "file": "optimize-the-solutionxml-size-by-removing-redundant-style-definitions-and-consolidating-identical-elements.cs",
+      "task": "Optimize the solutionxml size by removing redundant style definitions and consolidating identical elements",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "StyleSheets",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "parse-the-solutionxml-to-extract-each-shape-s-id-and-corresponding-name",
+      "file": "parse-the-solutionxml-to-extract-each-shape-s-id-and-corresponding-name.cs",
+      "task": "Parse the solutionxml to extract each shape s id and corresponding name",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
+      ]
+    },
+    {
+      "slug": "remove-all-comments-from-the-solutionxml-document-to-clean-up-metadata-before-saving",
+      "file": "remove-all-comments-from-the-solutionxml-document-to-clean-up-metadata-before-saving.cs",
+      "task": "Remove all comments from the solutionxml document to clean up metadata before saving",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Xml"
+      ],
+      "key_apis": [
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "remove-orphaned-shape-references-from-the-solutionxml-to-prevent-rendering-errors",
+      "file": "remove-orphaned-shape-references-from-the-solutionxml-to-prevent-rendering-errors.cs",
+      "task": "Remove orphaned shape references from the solutionxml to prevent rendering errors",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.Xml"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "SolutionXMLs"
+      ]
+    },
+    {
+      "slug": "replace-all-instances-of-a-specific-font-name-in-the-solutionxml-with-a-new-font",
+      "file": "replace-all-instances-of-a-specific-font-name-in-the-solutionxml-with-a-new-font.cs",
+      "task": "Replace all instances of a specific font name in the solutionxml with a new font",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "search-the-solutionxml-for-shapes-containing-a-specific-keyword-and-list-their-ids",
+      "file": "search-the-solutionxml-for-shapes-containing-a-specific-keyword-and-list-their-ids.cs",
+      "task": "Search the solutionxml for shapes containing a specific keyword and list their ids",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "serialize-the-modified-solutionxml-back-into-the-original-vsdx-package-while-preserving-all-resources",
+      "file": "serialize-the-modified-solutionxml-back-into-the-original-vsdx-package-while-preserving-all-resources.cs",
+      "task": "Serialize the modified solutionxml back into the original vsdx package while preserving all resources",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "set-a-custom-document-level-property-in-the-solutionxml-for-version-tracking",
+      "file": "set-a-custom-document-level-property-in-the-solutionxml-for-version-tracking.cs",
+      "task": "Set a custom document level property in the solutionxml for version tracking",
+      "namespaces": [
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "update-page-dimensions-in-the-solutionxml-to-modify-the-diagram-canvas-size-programmatically",
+      "file": "update-page-dimensions-in-the-solutionxml-to-modify-the-diagram-canvas-size-programmatically.cs",
+      "task": "Update page dimensions in the solutionxml to modify the diagram canvas size programmatically",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "use-linq-to-xml-for-efficiently-querying-shape-attributes-within-the-solutionxml",
+      "file": "use-linq-to-xml-for-efficiently-querying-shape-attributes-within-the-solutionxml.cs",
+      "task": "Use linq to xml for efficiently querying shape attributes within the solutionxml",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO",
+        "System.Linq",
+        "System.Xml.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "validate-the-solutionxml-against-the-visio-schema-to-ensure-structural-integrity",
+      "file": "validate-the-solutionxml-against-the-visio-schema-to-ensure-structural-integrity.cs",
+      "task": "Validate the solutionxml against the visio schema to ensure structural integrity",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Xml",
+        "System.Xml.Schema"
+      ],
+      "key_apis": [
+        "Diagram",
+        "SolutionXMLs",
+        "diagram"
+      ]
+    }
+  ]
+}

@@ -5,7 +5,7 @@ framework: net8.0
 version: 26.5.0
 total_examples: 1840
 categories: 31
-generated: 2026-06-12
+generated: 2026-06-23
 ---
 
 # Aspose.Diagram for .NET — Agentic Examples
@@ -23,7 +23,7 @@ generated: 2026-06-12
 | Framework | net8.0 |
 | Total Examples | 1840 |
 | Categories | 31 |
-| Last Updated | 2026-06-12 |
+| Last Updated | 2026-06-23 |
 
 ## Persona
 
@@ -146,6 +146,45 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - Trigger PR creation via the web UI **Create PR** button
 - Use **Final PR** button to regenerate all agents.md files in one PR
 
+## Agent Capabilities
+
+### What This Agent Does
+
+The Aspose.Diagram Examples Generator Agent produces compiler-validated C# console application examples for **Aspose.Diagram for .NET**. It accepts natural-language task descriptions and returns ready-to-run C# code that has passed both `dotnet build` and `dotnet run` validation.
+
+### Accepted Inputs
+
+- **Natural language task description** specifying the Aspose.Diagram operation
+- **Category context** — used for output routing and rule selection
+- **Batch task list** — plain text file with one task per line
+
+### Produced Outputs
+
+- **C# source file** (`.cs`) — passes `dotnet build` and `dotnet run`
+- **`agents.md`** per category — AI-friendly instructions with Q&A and use cases
+- **`README.md`** per category — SEO-optimized landing page
+- **`index.json`** per category — machine-readable metadata
+- **Root `agents.md`**, **`README.md`**, **`index.json`**, **`llms.txt`**, **`/.well-known/agent.json`**, **`openapi.json`** at repository root
+
+### Supported Operations
+
+Covers all 31 Aspose.Diagram for .NET task categories: basic operations, shapes, pages, connectors, text, themes, format conversion, VBA, layers, masters, headers/footers, hyperlinks, comments, protection, user-defined cells, window elements, external data, OLE objects, ActiveX controls, drawing, fonts, document properties, SolutionXML, and ShapeSheet events.
+
+## Quick Reference
+
+| Task | Category | Key API |
+|------|----------|---------|
+| Load VSDX | basic-operations | `new Diagram("input.vsdx")` |
+| Save as PDF | diagram-conversions | `diagram.Save("out.pdf", new PdfSaveOptions())` |
+| Save as PNG | diagram-conversions | `diagram.Save("out.png", new ImageSaveOptions(SaveFileFormat.Png))` |
+| Add shape | working-with-shapes | `long id = diagram.AddShape(x, y, w, h, master, page)` |
+| Connect shapes | working-with-connectors | `page.ConnectShapesViaConnector(id1, place, id2, place, connId)` |
+| Set shape text | working-with-text | `shape.Text.Value.Add(new Txt("text"))` |
+| Apply theme | working-with-themes | `page.PresetTheme = PresetThemeValue.Bubble` |
+| Add page | working-with-pages | `diagram.Pages.Add(new Page())` |
+| Set fill color | working-with-shapes | `shape.Fill.FillForegnd.Value = "#FF0000"` |
+| Read custom prop | working-with-user-defined-cells | `foreach (Prop p in shape.Props)` |
+
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-12*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) | Examples: 1840 | Categories: 31 | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) | Updated: 2026-06-23*

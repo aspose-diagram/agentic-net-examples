@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0",
+  "name": "Aspose.Diagram Examples Agent",
+  "description": "AI agent that generates, validates, and publishes C# examples for Aspose.Diagram for .NET. Produces 1840 compiler-validated examples across 31 categories targeting net8.0 and Aspose.Diagram v26.5.0.",
+  "url": "https://github.com/aspose-diagram/agentic-net-examples",
+  "capabilities": [
+    "Generate C# console examples for Aspose.Diagram for .NET",
+    "Compile and validate examples against local .NET 8 SDK",
+    "Push validated examples to GitHub as pull requests",
+    "Generate per-category documentation (agents.md, index.json, README.md)",
+    "Apply API correction rules to fix common Aspose.Diagram mistakes"
+  ],
+  "supported_operations": [
+    "Basic diagram operations (load, save, create)",
+    "Shape creation, modification, and styling",
+    "Page management and navigation",
+    "Connector creation and routing",
+    "Text and formatting operations",
+    "Theme application and management",
+    "Format conversion (VSDX, PDF, PNG, SVG, HTML, XPS)",
+    "VBA project handling",
+    "Layer management",
+    "Master shape operations",
+    "Header/footer configuration",
+    "Hyperlink management",
+    "Comment handling",
+    "Protection settings",
+    "User-defined cells and custom properties",
+    "Window element configuration",
+    "External data source linking",
+    "OLE object handling",
+    "ActiveX control properties",
+    "Drawing and geometry operations",
+    "Font operations",
+    "Document properties",
+    "SolutionXML elements",
+    "Events section in ShapeSheet"
+  ],
+  "input_format": "Natural language task description",
+  "output_format": "Compiler-validated C# console application (.cs file)",
+  "product": "Aspose.Diagram for .NET",
+  "product_version": "26.5.0",
+  "framework": "net8.0",
+  "language": "csharp",
+  "repository": {
+    "url": "https://github.com/aspose-diagram/agentic-net-examples",
+    "index": "https://github.com/aspose-diagram/agentic-net-examples/raw/refs/heads/main/index.json",
+    "agents_md": "https://github.com/aspose-diagram/agentic-net-examples/raw/refs/heads/main/agents.md",
+    "llms_txt": "https://github.com/aspose-diagram/agentic-net-examples/raw/refs/heads/main/llms.txt"
+  },
+  "api": {
+    "categories": "https://github.com/aspose-diagram/agentic-net-examples/tree/main",
+    "index": "https://github.com/aspose-diagram/agentic-net-examples/raw/refs/heads/main/index.json"
+  },
+  "contact": {
+    "issues": "https://github.com/aspose-diagram/agentic-net-examples/issues"
+  },
+  "statistics": {
+    "total_examples": 1840,
+    "total_categories": 31,
+    "pass_rate": 100.0,
+    "last_updated": "2026-06-23"
+  }
+}

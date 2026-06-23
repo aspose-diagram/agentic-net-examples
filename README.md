@@ -11,7 +11,7 @@
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.5.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-12 |
+| Last Updated | 2026-06-23 |
 
 ## Repository Structure
 
@@ -222,8 +222,89 @@ Each Aspose.Diagram release gets its own set of PRs validated against that versi
 
 ## Contributing
 
-Examples are generated automatically by the [Aspose.Diagram Examples Generator Agent](https://github.com/aspose-diagram/agentic-net-examples). To contribute rules or fixes see `rules/rules.json` in the generator repo.
+Examples are generated automatically by the Aspose.Diagram Examples Generator Agent. To request new examples or report issues, open an issue on this repository. For AI agent instructions, see [agents.md](./agents.md).
+
+## Aspose.Diagram for .NET Capabilities
+
+**Aspose.Diagram for .NET** is a class library for working with Microsoft Visio files programmatically in .NET applications. This repository demonstrates:
+
+| Capability | Formats / Operations |
+|------------|---------------------|
+| Read Visio files | VSDX, VSD, VDX, VSX, VTX, VSSX, VSTX |
+| Write Visio files | VSDX, VDX, VSDM, VSTM, VSSM |
+| Export to image | PNG, JPEG, BMP, TIFF, EMF, SVG |
+| Export to document | PDF, XPS, HTML, XAML |
+| Shape operations | Add, modify, connect, style, group shapes |
+| Page operations | Add, copy, move, resize, reorder pages |
+| Theme operations | Apply preset themes and variants |
+| Text operations | Add, update, format text in shapes |
+| Data operations | User-defined cells, custom properties, external data |
+| VBA operations | Read, modify, remove VBA projects |
+
+## FAQ — Aspose.Diagram for .NET
+
+**How do I load a Visio file in C#?**
+
+```csharp
+using Aspose.Diagram;
+Diagram diagram = new Diagram("input.vsdx");
+```
+
+**How do I convert a Visio diagram to PDF?**
+
+```csharp
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+Diagram diagram = new Diagram("input.vsdx");
+diagram.Save("output.pdf", new PdfSaveOptions());
+```
+
+**Why does `using (Diagram diagram = ...)` cause a compiler error?**
+
+`Diagram` does not implement `IDisposable`. Remove the `using` statement: `Diagram diagram = new Diagram("input.vsdx");`
+
+**Why does `SaveFileFormat.VSDX` cause CS0117?**
+
+`SaveFileFormat` enum members use PascalCase: `SaveFileFormat.Vsdx`, `SaveFileFormat.Pdf`, `SaveFileFormat.Png` — never ALL_CAPS.
+
+**How do I add a shape to a Visio diagram?**
+
+```csharp
+long shapeId = diagram.AddShape(pinX, pinY, width, height, "masterName", 0);
+Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+```
+
+**How do I connect two shapes?**
+
+```csharp
+Shape connector = new Shape();
+long connId = diagram.AddShape(connector, "Dynamic connector", 0);
+diagram.Pages[0].ConnectShapesViaConnector(
+    shape1Id, ConnectionPointPlace.Right,
+    shape2Id, ConnectionPointPlace.Left, connId);
+```
+
+## Evaluation and Benchmarks
+
+All examples are compiler-validated before being committed. The benchmark is a 100% build pass rate across all generated examples.
+
+| Version | Total Examples | Pass Rate | Framework |
+|---------|----------------|-----------|-----------|
+| 26.5.0 | 1840 | 100.0% | net8.0 |
+
+Pass rate is enforced by the agent pipeline — only examples that pass both `dotnet build` and `dotnet run` are committed to this repository.
+
+## How to Run Validation
+
+Validation runs automatically on every pull request targeting `main` via GitHub Actions (`.github/workflows/validate-pr.yml`).
+
+To trigger validation:
+
+1. Push your branch to GitHub
+2. Open a pull request targeting `main`
+3. GitHub Actions will automatically build and run all changed `.cs` files
+4. Build failures block the merge — runtime errors are informational only
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · 2026-06-12*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) · 2026-06-23*

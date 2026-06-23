@@ -1,0 +1,71 @@
+# Aspose.Diagram for .NET — Agentic Examples
+
+> 1840 AI-generated, compiler-validated C# examples for the [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) API. All examples target `net8.0` and Aspose.Diagram v26.5.0. Every example passes both `dotnet build` and `dotnet run`.
+
+## Key Resources
+
+- [Repository Root](https://github.com/aspose-diagram/agentic-net-examples): Full category listing and statistics
+- [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md): AI agent instructions, boundaries, common mistakes, and API patterns
+- [index.json](https://github.com/aspose-diagram/agentic-net-examples/blob/main/index.json): Machine-readable catalogue with per-category example counts and pass rates
+- [Aspose.Diagram Documentation](https://docs.aspose.com/diagram/net/): Official API documentation
+- [Aspose.Diagram API Reference](https://reference.aspose.com/diagram/net/): Full API reference
+
+## Statistics
+
+- Total Examples: 1840
+- Categories: 31
+- Overall Pass Rate: 100.0%
+- Aspose.Diagram Version: 26.5.0
+- Target Framework: net8.0
+- Last Updated: 2026-06-23
+
+## Categories
+
+- [Basic Operations](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations): 30 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/basic-operations/agents.md)
+- [Convert Visio Document](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document): 30 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/convert-visio-document/agents.md)
+- [Diagram Conversions](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-conversions): 96 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/diagram-conversions/agents.md)
+- [Diagram Vba](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba): 35 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/diagram-vba/agents.md)
+- [Document Properties](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties): 34 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/document-properties/agents.md)
+- [Drawing](https://github.com/aspose-diagram/agentic-net-examples/tree/main/drawing): 125 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/drawing/agents.md)
+- [Events Section In The Shapesheet](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet): 33 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/events-section-in-the-shapesheet/agents.md)
+- [Font Operations](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations): 30 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/font-operations/agents.md)
+- [Ole Objects In Visio Diagram](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram): 30 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/ole-objects-in-visio-diagram/agents.md)
+- [Page Setup Features](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features): 82 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/page-setup-features/agents.md)
+- [Visio Activex Controls](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls): 30 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/visio-activex-controls/agents.md)
+- [Visio Shape Gradient](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient): 30 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/visio-shape-gradient/agents.md)
+- [Working With Comments](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments): 35 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-comments/agents.md)
+- [Working With Diagrams](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams): 40 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-diagrams/agents.md)
+- [Working With External Data Sources](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources): 29 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-external-data-sources/agents.md)
+- [Working With Fields](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields): 33 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-fields/agents.md)
+- [Working With Geometry Section](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section): 36 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-geometry-section/agents.md)
+- [Working With Headers And Footers](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers): 30 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-headers-and-footers/agents.md)
+- [Working With Hyperlinks](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks): 35 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-hyperlinks/agents.md)
+- [Working With Images](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images): 38 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-images/agents.md)
+- [Working With Layers](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers): 30 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-layers/agents.md)
+- [Working With Masters](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters): 29 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-masters/agents.md)
+- [Working With Pages](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-pages): 168 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-pages/agents.md)
+- [Working With Protection](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection): 35 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-protection/agents.md)
+- [Working With Shapes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-shapes): 459 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-shapes/agents.md)
+- [Working With Solutionxml Elements](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements): 34 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-solutionxml-elements/agents.md)
+- [Working With Text](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text): 89 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-text/agents.md)
+- [Working With Text Boxes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes): 35 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-text-boxes/agents.md)
+- [Working With Themes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes): 40 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-themes/agents.md)
+- [Working With User Defined Cells](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells): 30 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-user-defined-cells/agents.md)
+- [Working With Window Elements](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements): 30 examples; instructions in [agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/working-with-window-elements/agents.md)
+
+## Related Agentic .NET Repositories
+
+- Aspose.Imaging: https://github.com/aspose-imaging/agentic-net-examples
+- Aspose.Email: https://github.com/aspose-email/agentic-net-examples
+- Aspose.Words: https://github.com/aspose-words/agentic-net-examples
+- Aspose.Slides: https://github.com/aspose-slides/agentic-net-examples
+- Aspose.HTML: https://github.com/aspose-html/agentic-net-examples
+
+## Agent Connection
+
+This repository is generated by the Aspose.Diagram Examples Generator Agent. To connect to the agent or explore examples programmatically:
+
+- Browse categories: `GET https://github.com/aspose-diagram/agentic-net-examples/tree/main`
+- Machine-readable index: `GET https://github.com/aspose-diagram/agentic-net-examples/raw/main/index.json`
+- Per-category index: `GET https://github.com/aspose-diagram/agentic-net-examples/raw/main/{category}/index.json`
+- AI instructions: `GET https://github.com/aspose-diagram/agentic-net-examples/raw/main/agents.md`

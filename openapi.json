@@ -1,0 +1,287 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Aspose.Diagram Examples Generator Agent API",
+    "description": "REST API for the Aspose.Diagram Examples Generator Agent \u2014 generates, validates, and publishes C# examples for Aspose.Diagram for .NET.",
+    "version": "2.0.0",
+    "contact": {
+      "url": "https://github.com/aspose-diagram/agentic-net-examples"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/aspose-diagram/agentic-net-examples/blob/main/LICENSE"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://faisalabad-examples-mcp.dynabic.com:7012",
+      "description": "Public demo instance (VPN required)"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health check",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "summary": "List all task categories",
+        "operationId": "listCategories",
+        "responses": {
+          "200": {
+            "description": "List of available categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "task_count": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{category_id}": {
+      "get": {
+        "summary": "List tasks for a category",
+        "operationId": "listTasks",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "working-with-shapes"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tasks in the category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "task": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/run/single": {
+      "post": {
+        "summary": "Run a single task through the generation pipeline",
+        "operationId": "runSingle",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "task"
+                ],
+                "properties": {
+                  "task": {
+                    "type": "string",
+                    "description": "Natural language task description",
+                    "example": "Create a new Visio diagram and add a rectangle shape"
+                  },
+                  "category_slug": {
+                    "type": "string",
+                    "description": "Category slug for output routing",
+                    "example": "working-with-shapes"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passed": {
+                      "type": "boolean"
+                    },
+                    "attempts": {
+                      "type": "integer"
+                    },
+                    "winning_strategy": {
+                      "type": "string"
+                    },
+                    "saved_path": {
+                      "type": "string"
+                    },
+                    "error_summary": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/run/batch": {
+      "post": {
+        "summary": "Run a batch of tasks with SSE progress streaming",
+        "operationId": "runBatch",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "tasks"
+                ],
+                "properties": {
+                  "tasks": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of task descriptions"
+                  },
+                  "category_slug": {
+                    "type": "string",
+                    "description": "Category slug for output routing"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE stream of task progress events",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/history": {
+      "get": {
+        "summary": "Get run history",
+        "operationId": "getHistory",
+        "responses": {
+          "200": {
+            "description": "List of past run summaries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/github/status": {
+      "get": {
+        "summary": "Check GitHub connection status",
+        "operationId": "githubStatus",
+        "responses": {
+          "200": {
+            "description": "GitHub connection status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "connected": {
+                      "type": "boolean"
+                    },
+                    "demo_mode": {
+                      "type": "boolean"
+                    },
+                    "repo": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Service health"
+    },
+    {
+      "name": "tasks",
+      "description": "Task browsing and execution"
+    },
+    {
+      "name": "github",
+      "description": "GitHub integration"
+    }
+  ]
+}

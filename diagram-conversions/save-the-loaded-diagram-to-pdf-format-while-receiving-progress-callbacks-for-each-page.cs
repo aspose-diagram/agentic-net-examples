@@ -2,48 +2,49 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-// Callback class to receive page saving progress
-public class PageSavingCallback : IPageSavingCallback
+class MyPageSavingCallback : IPageSavingCallback
 {
-    // Called when a page starts saving
+    // Called before each page is saved
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        // args.PageIndex provides the zero‑based index of the page being saved
-        Console.WriteLine($"Start saving page {args.PageIndex}");
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
     }
 
-    // Called when a page finishes saving
+    // Called after each page is saved
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        // args.PageIndex provides the zero‑based index of the page that was saved
-        Console.WriteLine($"Finished saving page {args.PageIndex}");
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}");
+        // Continue processing remaining pages (do not set args.HasMorePages = false)
     }
 }
 
-public class DiagramToPdfExample
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with actual file path)
-            var diagram = new Diagram(@"C:\Input\sample.vsdx");
+            // Paths to the source Visio file and the target PDF file
+            string inputPath = "input.vsdx";
+            string outputPath = "output.pdf";
 
-            // Create PDF save options
-            var pdfOptions = new PdfSaveOptions
-            {
-                // Assign the progress callback
-                PageSavingCallback = new PageSavingCallback()
-            };
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Save the diagram to PDF using the options (replace with desired output path)
-            diagram.Save(@"C:\Output\sample.pdf", pdfOptions);
+            // Configure PDF save options and attach the page‑saving callback
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";               // Fallback font for missing characters
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;     // Explicitly set the format tracker
+            pdfOptions.PageSavingCallback = new MyPageSavingCallback();
+
+            // Save the diagram to PDF, invoking the callback for each page
+            diagram.Save(outputPath, pdfOptions);
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

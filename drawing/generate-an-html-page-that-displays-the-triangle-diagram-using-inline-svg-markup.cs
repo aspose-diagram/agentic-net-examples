@@ -1,57 +1,29 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        try
-        {
+        // HTML content with inline SVG that draws a simple triangle
+        string html = @"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=""UTF-8"">
+    <title>Triangle Diagram</title>
+</head>
+<body>
+    <svg width=""200"" height=""200"" viewBox=""0 0 200 200"" xmlns=""http://www.w3.org/2000/svg"">
+        <polygon points=""100,20 180,180 20,180"" fill=""#ADD8E6"" stroke=""#000000"" stroke-width=""2"" />
+    </svg>
+</body>
+</html>";
 
-            // Path to the Visio diagram that contains the triangle shape
-            string diagramPath = "triangle.vsdx";
+        // Write the HTML to a file
+        string outputPath = "triangle.html";
+        File.WriteAllText(outputPath, html);
 
-            // Load the diagram using the Diagram constructor (load rule)
-            using (Diagram diagram = new Diagram(diagramPath))
-            {
-                // Assume the triangle is the first shape on the first page
-                Shape triangleShape = diagram.Pages[0].Shapes[0];
-
-                // Prepare SVG save options (optional, can be left default)
-                SVGSaveOptions svgOptions = new SVGSaveOptions();
-
-                // Export the shape to a temporary SVG file (Shape.ToSvg rule)
-                string tempSvgPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".svg");
-                triangleShape.ToSvg(tempSvgPath, svgOptions);
-
-                // Read the generated SVG markup
-                string svgMarkup = File.ReadAllText(tempSvgPath);
-
-                // Clean up the temporary file
-                File.Delete(tempSvgPath);
-
-                // Build an HTML page that embeds the SVG markup inline
-                string htmlContent = @"<!DOCTYPE html>
-            <html>
-            <head>
-            <meta charset=""UTF-8"">
-            <title>Triangle Diagram</title>
-            </head>
-            <body>
-            " + svgMarkup + @"
-            </body>
-            </html>";
-
-                // Save the HTML page to disk
-                File.WriteAllText("triangle.html", htmlContent);
-            }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        Console.WriteLine($"HTML file generated at: {outputPath}");
     }
 }

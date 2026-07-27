@@ -5,29 +5,29 @@ using Aspose.Diagram.Saving;
 
 namespace HtmlConversionWithCustomStreamProvider
 {
-    // Custom stream provider for HTML export
+    // Custom stream provider for HTML export resources
     public class CustomStreamProvider : IStreamProvider
     {
-        // Called when a new stream is required for a resource (e.g., image) during HTML export
+        // Called when a resource stream is needed during HTML export
         public void InitStream(StreamProviderOptions options)
         {
-            // Create a file stream in the output directory using the default path as the file name
-            // Ensure the directory exists
-            string outputDir = Path.GetDirectoryName(options.DefaultPath);
-            if (!Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
+            // Set a custom base URL for resources (e.g., images, scripts)
+            options.CustomPath = "http://example.com/resources/";
 
-            // Open a file stream for writing the resource
-            options.Stream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write);
+            // Provide a stream where the resource will be written.
+            // Here we use a MemoryStream as a placeholder.
+            options.Stream = new MemoryStream();
         }
 
         // Called after the resource has been written
         public void CloseStream(StreamProviderOptions options)
         {
             // Dispose the stream if it was created
-            options.Stream?.Dispose();
+            if (options.Stream != null)
+            {
+                options.Stream.Dispose();
+                options.Stream = null;
+            }
         }
     }
 
@@ -35,27 +35,32 @@ namespace HtmlConversionWithCustomStreamProvider
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and output HTML file path
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: HtmlConversionWithCustomStreamProvider <inputVisioFile> <outputHtmlFile>");
-                return;
+
+                // Path to the source Visio diagram
+                string inputPath = "sample.vsdx";
+
+                // Path for the generated HTML file
+                string outputPath = "output.html";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Configure HTML save options with the custom stream provider
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                htmlOptions.StreamProvider = new CustomStreamProvider();
+
+                // Export the diagram to HTML using the configured options
+                diagram.Save(outputPath, htmlOptions);
+
+                Console.WriteLine($"Diagram exported to HTML successfully: {outputPath}");
+
             }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure HTML save options and assign the custom stream provider
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = new CustomStreamProvider();
-
-            // Perform the HTML conversion
-            diagram.Save(outputPath, htmlOptions);
-
-            Console.WriteLine($"Diagram successfully converted to HTML: {outputPath}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

@@ -5,13 +5,17 @@ using Aspose.Diagram.Properties;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load the Visio diagram from a file
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the exported SVG file
+                string outputPath = "output.svg";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Create a custom property named "ReviewStatus" with value "Pending"
@@ -23,12 +27,13 @@ class Program
                 // Add the custom property to the document's custom properties collection
                 diagram.DocumentProps.CustomProps.Add(reviewProp);
 
-                // Export the diagram to SVG while preserving all metadata
-                string outputPath = "output.svg";
+                // Prepare SVG save options (default options preserve metadata)
                 SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+                // Export the diagram to SVG
                 diagram.Save(outputPath, svgOptions);
 
-                Console.WriteLine("Diagram exported to SVG with custom property 'ReviewStatus' set to 'Pending'.");
+                Console.WriteLine("Diagram exported to SVG with ReviewStatus set to Pending.");
 
             }
             catch (System.IO.FileNotFoundException ex)

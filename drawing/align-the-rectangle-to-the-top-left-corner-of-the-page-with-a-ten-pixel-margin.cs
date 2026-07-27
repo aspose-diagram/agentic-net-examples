@@ -1,51 +1,39 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+class AlignRectangleExample
 {
     static void Main()
     {
-        try
-        {
+        // Create a new blank diagram
+        Diagram diagram = new Diagram();
 
-            // Load an existing Visio diagram
-            using (Diagram diagram = new Diagram("input.vsdx"))
-            {
-                // Convert 10 pixels to inches (assuming 96 DPI)
-                double marginInches = 10.0 / 96.0;
+        // Access the first (default) page
+        Page page = diagram.Pages[0];
 
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
+        // Define rectangle dimensions
+        double rectWidth = 100.0;   // width in points (or pixels depending on DPI)
+        double rectHeight = 50.0;   // height in points
 
-                // Locate the first rectangle shape on the page
-                Shape rectangle = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Master != null && shape.Master.Name == "Rectangle")
-                    {
-                        rectangle = shape;
-                        break;
-                    }
-                }
+        // Define margin from the top‑left corner
+        double margin = 10.0;
 
-                if (rectangle == null)
-                {
-                    throw new Exception("Rectangle shape not found on the first page.");
-                }
+        // Calculate the pin (center) coordinates so that the rectangle's
+        // top‑left corner aligns with the page's top‑left corner plus margin.
+        // PinX = left margin + half of width
+        // PinY = top margin + half of height
+        double pinX = margin + rectWidth / 2.0;
+        double pinY = margin + rectHeight / 2.0;
 
-                // Align the rectangle to the top‑left corner with a 10‑pixel margin
-                rectangle.XForm.PinX.Value = marginInches; // left margin
-                rectangle.XForm.PinY.Value = marginInches; // top margin
+        // Draw the rectangle on the page
+        long shapeId = page.DrawRectangle(pinX, pinY, rectWidth, rectHeight);
 
-                // Save the updated diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            }
+        // (Optional) Retrieve the shape to modify further if needed
+        // Shape rectShape = page.Shapes.GetShape(shapeId);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        // Save the diagram to a VSDX file
+        diagram.Save("AlignedRectangle.vsdx", SaveFileFormat.Vsdx);
     }
 }

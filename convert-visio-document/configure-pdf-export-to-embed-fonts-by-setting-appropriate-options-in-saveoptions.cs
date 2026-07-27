@@ -16,9 +16,8 @@ class Program
             // Create PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Set a default font to ensure characters are rendered correctly
-            // and the font is embedded in the resulting PDF.
-            pdfOptions.DefaultFont = "Arial Unicode MS";
+            // Set the default font to ensure fonts are embedded in the PDF
+            pdfOptions.DefaultFont = "Arial";
 
             // Save the diagram as PDF using the configured options
             diagram.Save("output.pdf", pdfOptions);

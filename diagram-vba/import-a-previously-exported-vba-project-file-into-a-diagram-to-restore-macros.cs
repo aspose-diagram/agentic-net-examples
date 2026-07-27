@@ -9,35 +9,35 @@ class ImportVbaProject
         try
         {
 
-            // Path to the existing Visio diagram (VSDX, VSD, etc.)
-            string diagramPath = "inputDiagram.vsdx";
+            // Path to the Visio diagram file (VSDX, VSD, etc.)
+            string diagramPath = @"C:\Docs\MyDiagram.vsdx";
 
             // Path to the exported VBA project file (.vba)
-            string vbaProjectPath = "exportedMacro.vba";
+            string vbaProjectPath = @"C:\Docs\MyMacroProject.vba";
 
-            // Path where the diagram with restored macros will be saved
-            string outputDiagramPath = "outputDiagramWithMacro.vsdx";
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load the diagram using the appropriate constructor (load rule)
-            using (Diagram diagram = new Diagram(diagramPath))
-            {
-                // Read the VBA project file into a byte array
-                byte[] vbaData = File.ReadAllBytes(vbaProjectPath);
+            // Read the VBA project data (MIME encoded) from the .vba file
+            byte[] vbaData = File.ReadAllBytes(vbaProjectPath);
 
-                // Assign the VBA project data to the diagram (property rule)
-                diagram.VbProjectData = vbaData;
+            // Assign the VBA project data to the diagram
+            diagram.VbProjectData = vbaData;
 
-                // Optionally, set the VBA project name (if required)
-                // diagram.VbaProject.Name = "MyMacroProject";
+            // Optionally set the VBA project name (if desired)
+            // diagram.VbaProject.Name = "MyMacroProject";
 
-                // Save the diagram with the restored macros (save rule)
-                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-            }
+            // Save the diagram with the imported macros
+            string outputPath = @"C:\Docs\MyDiagram_WithMacros.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            // Clean up
+            diagram.Dispose();
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

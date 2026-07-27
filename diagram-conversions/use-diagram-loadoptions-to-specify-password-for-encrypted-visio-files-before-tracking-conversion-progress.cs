@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,34 +10,34 @@ class Program
         try
         {
 
-            // Path to the encrypted Visio file.
-            string inputPath = "encrypted.vsdx";
+            // Path to the encrypted Visio file
+            string inputPath = "encrypted_input.vsdx";
+            // Path for the converted output (e.g., PDF)
+            string outputPath = "converted_output.pdf";
 
-            // LoadOptions can be used for format‑specific settings,
-            // but this version of Aspose.Diagram does not support a password property.
+            // Initialize load options (no password property is available)
             LoadOptions loadOptions = new LoadOptions();
 
-            // Load the diagram. Password handling for encrypted files is not available,
-            // so the file must be accessible without a password or the password must be
-            // supplied by another mechanism outside of LoadOptions.
+            // Load the diagram using the constructor that accepts LoadOptions.
+            // Password handling for encrypted files is not supported via LoadOptions.
             Diagram diagram = new Diagram(inputPath, loadOptions);
 
-            // Simple progress tracking while processing each page.
+            // Simple progress tracking: report each page processed.
             int totalPages = diagram.Pages.Count;
-            int processed = 0;
+            Console.WriteLine($"Total pages to process: {totalPages}");
 
-            foreach (Page page in diagram.Pages)
+            for (int i = 0; i < totalPages; i++)
             {
-                processed++;
-                Console.WriteLine($"Processing page {processed} of {totalPages}...");
-                // Insert conversion or manipulation logic here.
+                // Here you could perform per‑page operations.
+                // For demonstration we just output progress.
+                Console.WriteLine($"Processing page {i + 1} of {totalPages}...");
             }
 
-            // Save the processed diagram.
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the diagram to PDF (or any other supported format).
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            diagram.Save(outputPath, pdfOptions);
 
-            Console.WriteLine("Conversion completed.");
+            Console.WriteLine("Conversion completed successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

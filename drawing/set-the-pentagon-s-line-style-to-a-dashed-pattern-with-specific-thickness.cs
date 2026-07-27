@@ -1,45 +1,52 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Load the existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Desired line thickness (in inches)
-            double lineThickness = 0.02; // adjust as needed
-
-            // Locate all pentagon shapes and apply the dashed line style
-            foreach (Page page in diagram.Pages)
+            // Define points for a regular pentagon (flat double array: x1, y1, x2, y2, ...)
+            double[] pentagonPoints = new double[]
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Master != null && shape.Master.Name == "Pentagon")
-                    {
-                        // Set dash pattern
-                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
-                        // Set line weight (thickness)
-                        shape.Line.LineWeight.Value = lineThickness;
-                    }
-                }
+                5.0, 3.0,   // Point 1
+                6.9, 4.0,   // Point 2
+                6.1, 6.9,   // Point 3
+                3.9, 6.9,   // Point 4
+                3.1, 4.0,   // Point 5
+                5.0, 3.0    // Close the polygon by returning to Point 1
+            };
+
+            // Draw the pentagon on the page
+            page.DrawPolyline(pentagonPoints);
+
+            // Retrieve the shape that was just added (the first shape on the page)
+            Shape pentagonShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                pentagonShape = shape;
+                break; // we only need the first shape
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            if (pentagonShape != null)
+            {
+                // Set line pattern to dashed
+                pentagonShape.Line.LinePattern.Value = LinePatternValue.Dash;
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Set line thickness (weight) – value is in inches
+                pentagonShape.Line.LineWeight.Value = 0.03; // example thickness
+            }
+            else
+            {
+                throw new Exception("Pentagon shape was not created.");
+            }
+
+            // Save the diagram to a VSDX file
+            diagram.Save("Pentagon.vsdx", SaveFileFormat.Vsdx);
         }
     }
-}

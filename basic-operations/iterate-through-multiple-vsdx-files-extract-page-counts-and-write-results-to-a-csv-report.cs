@@ -1,13 +1,12 @@
 using System;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
 
 class VsdxPageCountReport
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Input folder containing VSDX files
+        // Folder containing VSDX files
         string inputFolder = @"C:\VisioFiles";
 
         // Output CSV file path
@@ -17,25 +16,27 @@ class VsdxPageCountReport
         Directory.CreateDirectory(Path.GetDirectoryName(csvReportPath));
 
         // Get all VSDX files in the input folder (non‑recursive)
-        var vsdxFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+        string[] vsdxFiles = Directory.GetFiles(inputFolder, "*.vsdx");
 
-        // Prepare the CSV header
-        using (var writer = new StreamWriter(csvReportPath, false))
+        // Open a StreamWriter for the CSV report
+        using (var writer = new StreamWriter(csvReportPath))
         {
-            writer.WriteLine("FileName,PageCount");
+            // Write CSV header
+            writer.WriteLine("FilePath,PageCount");
 
             // Process each VSDX file
-            foreach (var filePath in vsdxFiles)
+            foreach (string filePath in vsdxFiles)
             {
-                // Load the diagram using the Diagram(string) constructor
+                // Load the Visio diagram using the provided constructor (load rule)
                 using (var diagram = new Diagram(filePath))
                 {
-                    // Retrieve the number of pages in the diagram
+                    // Extract the number of pages from the diagram
                     int pageCount = diagram.Pages.Count;
 
-                    // Write the result to the CSV (file name without path)
-                    string fileName = Path.GetFileName(filePath);
-                    writer.WriteLine($"{fileName},{pageCount}");
+                    // Write the result as a CSV line
+                    // Escape commas in the file path if necessary
+                    string escapedPath = filePath.Contains(",") ? $"\"{filePath}\"" : filePath;
+                    writer.WriteLine($"{escapedPath},{pageCount}");
                 }
             }
         }

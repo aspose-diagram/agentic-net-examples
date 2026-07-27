@@ -5,23 +5,23 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramHtmlExport
 {
-    // Implements warning callback to collect warnings during save operation
+    // Implements the warning callback to collect warnings during save operation
     public class WarningCollector : IWarningCallback
     {
-        // Stores warning descriptions
-        public List<string> Warnings { get; } = new List<string>();
+        // Stores warning messages
+        public List<string> Messages { get; } = new List<string>();
 
-        // Called by Aspose.Diagram for each warning
+        // Called by Aspose.Diagram when a warning occurs
         public void Warning(WarningInfo warning)
         {
-            // Add warning description to the list
-            Warnings.Add(warning.Description);
+            // Capture the description of the warning
+            Messages.Add(warning.Description);
         }
     }
 
-    public class Program
+    class Program
     {
-        public static void Main(string[] args)
+        static void Main(string[] args)
         {
             try
             {
@@ -33,30 +33,34 @@ namespace DiagramHtmlExport
                 string outputPath = "output.html";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Prepare HTML save options and assign warning callback
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.DefaultFont = "Arial";
-
-                WarningCollector warningCollector = new WarningCollector();
-                htmlOptions.WarningCallback = warningCollector;
-
-                // Save diagram as HTML
-                diagram.Save(outputPath, htmlOptions);
-
-                // Output captured warnings
-                if (warningCollector.Warnings.Count > 0)
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    Console.WriteLine("Warnings captured during HTML export:");
-                    foreach (string warning in warningCollector.Warnings)
+                    // Create HTML save options
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+
+                    // Set a default font to avoid missing font issues
+                    htmlOptions.DefaultFont = "Arial";
+
+                    // Assign the warning collector
+                    WarningCollector collector = new WarningCollector();
+                    htmlOptions.WarningCallback = collector;
+
+                    // Save the diagram as HTML
+                    diagram.Save(outputPath, htmlOptions);
+
+                    // Output captured warnings
+                    if (collector.Messages.Count > 0)
                     {
-                        Console.WriteLine("- " + warning);
+                        Console.WriteLine("Warnings captured during HTML export:");
+                        foreach (string msg in collector.Messages)
+                        {
+                            Console.WriteLine("- " + msg);
+                        }
                     }
-                }
-                else
-                {
-                    Console.WriteLine("No warnings were generated during HTML export.");
+                    else
+                    {
+                        Console.WriteLine("HTML export completed without warnings.");
+                    }
                 }
 
             }

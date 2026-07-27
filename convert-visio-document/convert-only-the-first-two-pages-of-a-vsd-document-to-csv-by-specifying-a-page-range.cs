@@ -1,48 +1,52 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the original diagram
+            using (Diagram sourceDiagram = new Diagram(inputPath))
             {
+                // Create a new diagram that will contain only the desired pages
+                using (Diagram newDiagram = new Diagram())
+                {
+                    // Remove the automatically created empty page in the new diagram
+                    if (newDiagram.Pages.Count > 0)
+                    {
+                        Page emptyPage = newDiagram.Pages[0];
+                        newDiagram.Pages.Remove(emptyPage);
+                    }
 
-                // Input Visio file (VSD format)
-                string inputPath = "input.vsd";
-                // Output CSV file
-                string outputPath = "output.csv";
+                    // Verify that the source diagram has at least two pages
+                    if (sourceDiagram.Pages.Count < 2)
+                    {
+                        Console.WriteLine("The source diagram does not contain two pages.");
+                        return;
+                    }
 
-                // Load the source diagram
-                Diagram sourceDiagram = new Diagram(inputPath, LoadFileFormat.Vsd);
+                    // Add the first two pages from the source diagram to the new diagram
+                    newDiagram.Pages.Add(sourceDiagram.Pages[0]);
+                    newDiagram.Pages.Add(sourceDiagram.Pages[1]);
 
-                // Verify that the source diagram has at least two pages
-                if (sourceDiagram.Pages.Count < 2)
-                    throw new Exception("The source diagram must contain at least two pages.");
-
-                // Create a new empty diagram
-                Diagram newDiagram = new Diagram();
-
-                // The default constructor creates one empty page; remove it
-                newDiagram.Pages.Remove(newDiagram.Pages[0]);
-
-                // Add only the first two pages from the source diagram
-                newDiagram.Pages.Add(sourceDiagram.Pages[0]);
-                newDiagram.Pages.Add(sourceDiagram.Pages[1]);
-
-                // Save the new diagram as CSV (only the added pages will be exported)
-                newDiagram.Save(outputPath, SaveFileFormat.Csv);
-
-                // Clean up resources
-                sourceDiagram.Dispose();
-                newDiagram.Dispose();
-
-                Console.WriteLine($"First two pages exported to CSV successfully: {outputPath}");
-
+                    // Export the new diagram (containing only the first two pages) to CSV
+                    string outputPath = "output.csv";
+                    newDiagram.Save(outputPath, SaveFileFormat.Csv);
+                    Console.WriteLine($"First two pages have been exported to CSV at: {outputPath}");
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,72 +1,65 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class CustomPageSavingCallback : IPageSavingCallback
+namespace CustomPageNamingExample
 {
-    private readonly Diagram _diagram;
-    private readonly IList<string> _customTitles;
-
-    public CustomPageSavingCallback(Diagram diagram, IList<string> customTitles)
+    // Callback implementation that changes the page title before each page is saved
+    public class CustomPageSavingCallback : IPageSavingCallback
     {
-        _diagram = diagram;
-        _customTitles = customTitles;
-    }
+        private readonly Diagram _diagram;
 
-    // Called when a page starts saving
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        // Ensure the page will be output
-        args.IsToOutput = true;
-
-        // Apply a custom title if one is defined for this page index
-        if (args.PageIndex >= 0 && args.PageIndex < _customTitles.Count)
+        public CustomPageSavingCallback(Diagram diagram)
         {
-            // The Name property of a Page is used as the title in the output
-            _diagram.Pages[args.PageIndex].Name = _customTitles[args.PageIndex];
+            _diagram = diagram;
         }
-    }
 
-    // Called when a page finishes saving
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        // Indicate whether more pages remain to be processed
-        args.HasMorePages = args.PageIndex < args.PageCount - 1;
-    }
-}
-
-public class Program
-{
-    public static void Main()
-    {
-        try
+        // Called when a page starts to be saved
+        public void PageStartSaving(PageStartSavingArgs args)
         {
-
-            // Load an existing diagram (lifecycle rule)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Define custom titles for each page (adjust count as needed)
-            var customTitles = new List<string>
+            // Ensure the page index is within the collection bounds
+            if (args.PageIndex >= 0 && args.PageIndex < _diagram.Pages.Count)
             {
-                "Project Overview",
-                "Detailed Design",
-                "Implementation Plan"
-            };
+                // Set a custom name for the page; this name will be used as the title in the output
+                _diagram.Pages[args.PageIndex].Name = $"Custom Title {args.PageIndex + 1}";
+            }
 
-            // Configure PDF save options and attach the callback
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                PageSavingCallback = new CustomPageSavingCallback(diagram, customTitles)
-            };
-
-            // Save the diagram to PDF (lifecycle rule)
-            diagram.Save("output.pdf", pdfOptions);
-
+            // Keep the page in the output (default is true, but we set it explicitly)
+            args.IsToOutput = true;
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Called when a page finishes saving
+        public void PageEndSaving(PageEndSavingArgs args)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // No special handling needed after a page is saved; just indicate that more pages may follow
+            args.HasMorePages = args.PageIndex < args.PageCount - 1;
         }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            try
+            {
+
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram(@"InputDiagram.vsdx");
+
+                // Prepare PDF save options and attach the custom callback
+                PdfSaveOptions saveOptions = new PdfSaveOptions
+                {
+                    PageSavingCallback = new CustomPageSavingCallback(diagram)
+                };
+
+                // Save the diagram to PDF; the callback will rename each page during the save process
+                diagram.Save(@"OutputDiagram.pdf", saveOptions);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

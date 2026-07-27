@@ -1,32 +1,31 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class RotateDiagramPage
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            // Replace "input.vsdx" with the path to your source file
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Define the rotation angle in radians (45 degrees)
-            double angleInRadians = 45.0 * Math.PI / 180.0;
+            // Get the active page of the diagram
+            Page page = diagram.ActivePage;
 
-            // Apply the rotation to every shape on the active page
-            foreach (Shape shape in diagram.ActivePage.Shapes)
+            // 45 degrees expressed in radians (SetAngle expects radians)
+            double angleRad = 45.0 * Math.PI / 180.0;
+
+            // Rotate every shape on the page by 45 degrees
+            foreach (Shape shape in page.Shapes)
             {
-                shape.SetAngle(angleInRadians);
+                shape.SetAngle(angleRad);
             }
 
             // Save the modified diagram
-            // Replace "output.vsdx" with the desired output file path
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions();
-            diagram.Save("output.vsdx", saveOptions);
+            diagram.Save("output.vsdx", SaveFileFormat.Vdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

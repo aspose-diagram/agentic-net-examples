@@ -1,49 +1,56 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Assume the pentagon is on the first page
-            Page page = diagram.Pages[0];
-            Shape pentagon = null;
-
-            // Find the first non‑deleted shape whose master name is "Pentagon"
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                if (shape.Master != null && shape.Master.Name == "Pentagon" && shape.Del == BOOL.False)
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes to find pentagon shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    pentagon = shape;
-                    break;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Ensure the shape is not deleted and has a master named "Pentagon"
+                        if (shape.Del == BOOL.False && shape.Master != null && shape.Master.Name == "Pentagon")
+                        {
+                            // Clear any existing text
+                            shape.Text.Value.Clear();
+
+                            // Add the annotation text
+                            shape.Text.Value.Add(new Txt("Annotation"));
+
+                            // Center the text block within the shape
+                            shape.TextXForm.TxtPinX.Value = 0.5; // 50% of shape width
+                            shape.TextXForm.TxtPinY.Value = 0.5; // 50% of shape height
+
+                            // Optional: set vertical alignment to middle
+                            shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
+
+                            // Optional: set horizontal alignment to center if a paragraph exists
+                            if (shape.Paras.Count > 0)
+                            {
+                                shape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+                            }
+                        }
+                    }
                 }
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            if (pentagon == null)
-                throw new Exception("Pentagon shape not found in the diagram.");
-
-            // Clear any existing text and add the annotation label
-            pentagon.Text.Value.Clear();
-            pentagon.Text.Value.Add(new Txt("Annotation"));
-
-            // Center the text block inside the pentagon
-            pentagon.TextXForm.TxtPinX.Value = 0.5; // 50% of shape width
-            pentagon.TextXForm.TxtPinY.Value = 0.5; // 50% of shape height
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

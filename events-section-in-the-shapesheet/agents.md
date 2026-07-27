@@ -4,10 +4,10 @@ display_name: Events Section In The Shapesheet
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.5.0
+version: 26.7.0
 examples: 33
 pass_rate: 100.0
-generated: 2026-06-23
+generated: 2026-07-27
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 33 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.5.0 |
+| Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-27 |
 
 ## Persona
 
@@ -63,11 +63,10 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 33 | Core diagram API |
 | `System` | 33 | Console, Math, DateTime, Exception |
-| `System.IO` | 21 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 8 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 6 | List, Dictionary, HashSet |
-| `System.Text.RegularExpressions` | 3 | Supporting utilities |
-| `System.Reflection` | 3 | Supporting utilities |
+| `System.IO` | 25 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 16 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 4 | List, Dictionary, HashSet |
+| `System.Text.RegularExpressions` | 2 | Supporting utilities |
 | `Aspose.Diagram.Vba` | 1 | Supporting utilities |
 
 ## Common Code Pattern
@@ -104,16 +103,16 @@ class Program
 | [apply-conditional-formatting-to-shapes-based-on-the-result-of-their-eventcalc-cell-evaluation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/apply-conditional-formatting-to-shapes-based-on-the-result-of-their-eventcalc-cell-evaluation.cs) | `Diagram`, `Pages`, `Save` | Apply conditional formatting to shapes based on the result of their eventcalc cell evaluation |
 | [automate-the-removal-of-duplicate-eventcomment-cells-to-streamline-diagram-metadata-across-all-pages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/automate-the-removal-of-duplicate-eventcomment-cells-to-streamline-diagram-metadata-across-all-pages.cs) | `Diagram`, `Pages`, `Save` | Automate the removal of duplicate eventcomment cells to streamline diagram metadata across all pages |
 | [batch-update-the-eventshapeadded-cell-to-assign-unique-identifiers-based-on-shape-index.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/batch-update-the-eventshapeadded-cell-to-assign-unique-identifiers-based-on-shape-index.cs) | `Diagram`, `Pages`, `Save` | Batch update the eventshapeadded cell to assign unique identifiers based on shape index |
-| [compare-eventcell-values-between-two-versions-of-a-diagram-to-detect-changes-in-event-logic.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/compare-eventcell-values-between-two-versions-of-a-diagram-to-detect-changes-in-event-logic.cs) | `Diagram`, `diagram`, `page` | Compare eventcell values between two versions of a diagram to detect changes in event logic |
+| [compare-eventcell-values-between-two-versions-of-a-diagram-to-detect-changes-in-event-logic.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/compare-eventcell-values-between-two-versions-of-a-diagram-to-detect-changes-in-event-logic.cs) | `Diagram`, `diagram` | Compare eventcell values between two versions of a diagram to detect changes in event logic |
 | [configure-the-eventshapedeleted-cell-to-trigger-a-cleanup-routine-that-removes-related-custom-data.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/configure-the-eventshapedeleted-cell-to-trigger-a-cleanup-routine-that-removes-related-custom-data.cs) | `Diagram`, `Pages`, `Save` | Configure the eventshapedeleted cell to trigger a cleanup routine that removes related custom data |
-| [configure-the-eventshaperesized-cell-to-maintain-aspect-ratio-by-applying-a-scaling-formula.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/configure-the-eventshaperesized-cell-to-maintain-aspect-ratio-by-applying-a-scaling-formula.cs) | `AddShape`, `Diagram`, `Pages` | Configure the eventshaperesized cell to maintain aspect ratio by applying a scaling formula |
-| [copy-eventformula-cells-from-a-template-shape-to-newly-created-shapes-in-a-batch-operation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/copy-eventformula-cells-from-a-template-shape-to-newly-created-shapes-in-a-batch-operation.cs) | `Diagram`, `Pages`, `Save` | Copy eventformula cells from a template shape to newly created shapes in a batch operation |
+| [configure-the-eventshaperesized-cell-to-maintain-aspect-ratio-by-applying-a-scaling-formula.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/configure-the-eventshaperesized-cell-to-maintain-aspect-ratio-by-applying-a-scaling-formula.cs) | `Diagram`, `Pages`, `Save` | Configure the eventshaperesized cell to maintain aspect ratio by applying a scaling formula |
+| [copy-eventformula-cells-from-a-template-shape-to-newly-created-shapes-in-a-batch-operation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/copy-eventformula-cells-from-a-template-shape-to-newly-created-shapes-in-a-batch-operation.cs) | `AddShape`, `Diagram`, `Pages` | Copy eventformula cells from a template shape to newly created shapes in a batch operation |
 | [create-a-backup-of-the-eventsection-before-performing-bulk-modifications-to-enable-rollback.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/create-a-backup-of-the-eventsection-before-performing-bulk-modifications-to-enable-rollback.cs) | `Diagram`, `Pages`, `Save` | Create a backup of the eventsection before performing bulk modifications to enable rollback |
 | [create-a-batch-process-that-disables-eventmousedown-cells-for-shapes-marked-as-read-only.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/create-a-batch-process-that-disables-eventmousedown-cells-for-shapes-marked-as-read-only.cs) | `Diagram`, `Pages`, `Save` | Create a batch process that disables eventmousedown cells for shapes marked as read only |
 | [create-a-custom-event-handler-that-logs-shape-ids-whenever-the-eventmouseleave-cell-fires.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/create-a-custom-event-handler-that-logs-shape-ids-whenever-the-eventmouseleave-cell-fires.cs) | `Diagram`, `Pages`, `Save` | Create a custom event handler that logs shape ids whenever the eventmouseleave cell fires |
-| [create-a-utility-that-clones-eventsection-cells-from-a-master-shape-to-a-group-of-duplicates.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/create-a-utility-that-clones-eventsection-cells-from-a-master-shape-to-a-group-of-duplicates.cs) | `Diagram`, `Masters`, `Pages` | Create a utility that clones eventsection cells from a master shape to a group of duplicates |
+| [create-a-utility-that-clones-eventsection-cells-from-a-master-shape-to-a-group-of-duplicates.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/create-a-utility-that-clones-eventsection-cells-from-a-master-shape-to-a-group-of-duplicates.cs) | `AddShape`, `Diagram`, `Pages` | Create a utility that clones eventsection cells from a master shape to a group of duplicates |
 | [export-eventcell-values-of-every-shape-to-a-csv-file-for-external-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/export-eventcell-values-of-every-shape-to-a-csv-file-for-external-analysis.cs) | `Diagram`, `Pages`, `Shapes` | Export eventcell values of every shape to a csv file for external analysis |
-| [extract-eventcell-formulas-and-visualize-them-as-a-directed-graph-to-analyze-dependencies.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/extract-eventcell-formulas-and-visualize-them-as-a-directed-graph-to-analyze-dependencies.cs) | `Diagram`, `Pages`, `Shapes` | Extract eventcell formulas and visualize them as a directed graph to analyze dependencies |
+| [extract-eventcell-formulas-and-visualize-them-as-a-directed-graph-to-analyze-dependencies.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/extract-eventcell-formulas-and-visualize-them-as-a-directed-graph-to-analyze-dependencies.cs) | `Diagram`, `Pages`, `Save` | Extract eventcell formulas and visualize them as a directed graph to analyze dependencies |
 | [generate-a-report-listing-shapes-with-missing-eventmousedown-definitions-for-quality-assurance.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/generate-a-report-listing-shapes-with-missing-eventmousedown-definitions-for-quality-assurance.cs) | `Diagram`, `Pages`, `Shapes` | Generate a report listing shapes with missing eventmousedown definitions for quality assurance |
 | [generate-documentation-summarizing-all-custom-eventsection-configurations-applied-to-a-diagram-for-developers.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/generate-documentation-summarizing-all-custom-eventsection-configurations-applied-to-a-diagram-for-developers.cs) | `Diagram`, `Pages`, `Shapes` | Generate documentation summarizing all custom eventsection configurations applied to a diagram for developers |
 | [implement-a-validation-routine-that-ensures-eventcalc-formulas-reference-only-existing-shape-ids.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/implement-a-validation-routine-that-ensures-eventcalc-formulas-reference-only-existing-shape-ids.cs) | `Diagram`, `Pages`, `Shapes` | Implement a validation routine that ensures eventcalc formulas reference only existing shape ids |
@@ -128,8 +127,8 @@ class Program
 | [set-the-eventshapedatachanged-cell-to-invoke-a-custom-script-that-recalculates-dependent-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/set-the-eventshapedatachanged-cell-to-invoke-a-custom-script-that-recalculates-dependent-values.cs) | `Diagram`, `Pages`, `Save` | Set the eventshapedatachanged cell to invoke a custom script that recalculates dependent values |
 | [set-the-eventshapedeleted-cell-to-log-deletion-timestamps-into-an-external-audit-log-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/set-the-eventshapedeleted-cell-to-log-deletion-timestamps-into-an-external-audit-log-file.cs) | `Diagram`, `Pages`, `Save` | Set the eventshapedeleted cell to log deletion timestamps into an external audit log file |
 | [update-the-eventmouseenter-cell-to-trigger-a-custom-macro-across-multiple-selected-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/update-the-eventmouseenter-cell-to-trigger-a-custom-macro-across-multiple-selected-shapes.cs) | `Diagram`, `Pages`, `Save` | Update the eventmouseenter cell to trigger a custom macro across multiple selected shapes |
-| [use-a-regular-expression-to-filter-shapes-whose-eventcomment-cell-contains-a-specific-keyword.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/use-a-regular-expression-to-filter-shapes-whose-eventcomment-cell-contains-a-specific-keyword.cs) | `Diagram`, `Pages`, `Shapes` | Use a regular expression to filter shapes whose eventcomment cell contains a specific keyword |
-| [use-conditional-logic-in-the-eventafterupdate-cell-to-trigger-different-actions-based-on-shape-type.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/use-conditional-logic-in-the-eventafterupdate-cell-to-trigger-different-actions-based-on-shape-type.cs) | `Diagram`, `Pages`, `Save` | Use conditional logic in the eventafterupdate cell to trigger different actions based on shape type |
+| [use-a-regular-expression-to-filter-shapes-whose-eventcomment-cell-contains-a-specific-keyword.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/use-a-regular-expression-to-filter-shapes-whose-eventcomment-cell-contains-a-specific-keyword.cs) | `Diagram`, `Pages`, `Save` | Use a regular expression to filter shapes whose eventcomment cell contains a specific keyword |
+| [use-conditional-logic-in-the-eventafterupdate-cell-to-trigger-different-actions-based-on-shape-type.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/use-conditional-logic-in-the-eventafterupdate-cell-to-trigger-different-actions-based-on-shape-type.cs) | `Diagram`, `Save`, `diagram` | Use conditional logic in the eventafterupdate cell to trigger different actions based on shape type |
 | [validate-that-each-shape-s-eventvalidate-cell-contains-a-non-empty-formula-before-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/validate-that-each-shape-s-eventvalidate-cell-contains-a-non-empty-formula-before-saving.cs) | `Diagram`, `Pages`, `Save` | Validate that each shape s eventvalidate cell contains a non empty formula before saving |
 | [write-a-script-that-logs-the-execution-order-of-eventmousedown-cells-across-all-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/events-section-in-the-shapesheet/write-a-script-that-logs-the-execution-order-of-eventmousedown-cells-across-all-shapes.cs) | `Diagram`, `Pages`, `Shapes` | Write a script that logs the execution order of eventmousedown cells across all shapes |
 
@@ -219,7 +218,6 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 - `AddShape`
 - `Diagram`
-- `Masters`
 - `Pages`
 - `Save`
 - `Shapes`
@@ -240,7 +238,7 @@ Frequently asked questions about **Events Section In The Shapesheet** in **Aspos
 
 **Q: How do I get started with Events Section In The Shapesheet in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.5.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -271,4 +269,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-06-23 | Examples: 33 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-07-27 | Examples: 33 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

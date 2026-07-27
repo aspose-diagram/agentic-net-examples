@@ -8,26 +8,25 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first (default) page
+            // Get the first page (there is always at least one page in a new diagram)
             Page page = diagram.Pages[0];
 
-            // Define pentagon vertices (closed shape, first point repeated at end)
-            // Coordinates are in inches
+            // Define pentagon vertices (clockwise) – coordinates are in inches
+            // The shape will be closed by repeating the first point at the end
             double[] pentagonPoints = new double[]
             {
-                5.0, 7.0,   // Top vertex
-                6.9, 6.0,
-                6.3, 8.5,
-                3.7, 8.5,
-                3.1, 6.0,
-                5.0, 7.0    // Close the shape
+                2.0, 2.0,   // Point 1
+                4.0, 2.0,   // Point 2
+                5.0, 4.0,   // Point 3
+                3.0, 6.0,   // Point 4
+                1.0, 4.0,   // Point 5
+                2.0, 2.0    // Close polygon (repeat first point)
             };
 
-            // Draw the pentagon using DrawPolyline; returns the shape ID (long)
-            long shapeId = page.DrawPolyline(pentagonPoints);
-
-            // Retrieve the shape object (GetShape expects an int)
-            Shape pentagon = page.Shapes.GetShape((int)shapeId);
+            // Draw the pentagon using DrawPolyline (flat double array overload)
+            long shapeIdLong = page.DrawPolyline(pentagonPoints);
+            // Retrieve the shape object (cast long to int as required by GetShape)
+            Shape pentagonShape = page.Shapes.GetShape((int)shapeIdLong);
 
             // Initialize bounding box extremes
             double minX = double.MaxValue;
@@ -35,23 +34,24 @@ class Program
             double minY = double.MaxValue;
             double maxY = double.MinValue;
 
-            // The geometry is stored in the first Geom collection
-            Geom geom = (Geom)pentagon.Geoms[0];
-
-            // Iterate over all coordinate segments (MoveTo, LineTo, etc.)
-            foreach (var segment in geom.CoordinateCol)
+            // Iterate through all geometry sections of the shape
+            foreach (Aspose.Diagram.Geom geom in pentagonShape.Geoms)
             {
-                // Handle MoveTo segment
-                if (segment is MoveTo move)
+                // Iterate through each coordinate (MoveTo, LineTo, etc.)
+                for (int i = 0; i < geom.CoordinateCol.Count; i++)
                 {
-                    UpdateBounds(move.X.Value, move.Y.Value, ref minX, ref maxX, ref minY, ref maxY);
+                    // The collection stores untyped objects; retrieve as object then use dynamic
+                    object coordObj = geom.CoordinateCol[i];
+                    dynamic coord = coordObj; // Allows access to X and Y at runtime
+
+                    double x = (double)coord.X.Value;
+                    double y = (double)coord.Y.Value;
+
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
                 }
-                // Handle LineTo segment
-                else if (segment is LineTo line)
-                {
-                    UpdateBounds(line.X.Value, line.Y.Value, ref minX, ref maxX, ref minY, ref maxY);
-                }
-                // Additional segment types (ArcTo, SplineKnot, etc.) can be added here if needed
             }
 
             // Calculate width and height of the bounding box
@@ -59,21 +59,13 @@ class Program
             double boundingHeight = maxY - minY;
 
             // Output the results
-            Console.WriteLine($"Pentagon Bounding Box:");
+            Console.WriteLine($"Bounding Box for the pentagon:");
             Console.WriteLine($"Min X: {minX}, Max X: {maxX}");
             Console.WriteLine($"Min Y: {minY}, Max Y: {maxY}");
             Console.WriteLine($"Width : {boundingWidth}");
             Console.WriteLine($"Height: {boundingHeight}");
-        }
 
-        // Helper method to update min/max values
-        static void UpdateBounds(double x, double y,
-                                 ref double minX, ref double maxX,
-                                 ref double minY, ref double maxY)
-        {
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
+            // (Optional) Save the diagram to verify the shape visually
+            diagram.Save("Pentagon.vsdx", SaveFileFormat.Vsdx);
         }
     }

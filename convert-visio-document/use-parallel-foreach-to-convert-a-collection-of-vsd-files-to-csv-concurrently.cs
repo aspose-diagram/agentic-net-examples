@@ -7,35 +7,38 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Directory containing VSD files
-            string inputDirectory = @"C:\VisioFiles";
+            // Input folder containing VSD files; use first argument or current directory
+            string inputFolder = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
 
-            // Get all .vsd files in the directory (including subfolders)
-            string[] vsdFiles = Directory.GetFiles(inputDirectory, "*.vsd", SearchOption.AllDirectories);
+            // Get all .vsd files in the folder
+            string[] vsdFiles = Directory.GetFiles(inputFolder, "*.vsd", SearchOption.TopDirectoryOnly);
+
+            if (vsdFiles.Length == 0)
+            {
+                Console.WriteLine("No VSD files found in the specified folder.");
+                return;
+            }
 
             // Convert each VSD file to CSV concurrently
-            Parallel.ForEach(vsdFiles, vsdFilePath =>
+            Parallel.ForEach(vsdFiles, vsdPath =>
             {
                 try
                 {
-                    // Load the Visio diagram using the appropriate load format
-                    Diagram diagram = new Diagram(vsdFilePath, LoadFileFormat.Vsd);
+                    // Load the Visio diagram
+                    Diagram diagram = new Diagram(vsdPath);
 
-                    // Determine output CSV file path (same name, .csv extension)
-                    string csvFilePath = Path.ChangeExtension(vsdFilePath, ".csv");
+                    // Determine output CSV path (same name with .csv extension)
+                    string csvPath = Path.ChangeExtension(vsdPath, ".csv");
 
                     // Save the diagram as CSV
-                    diagram.Save(csvFilePath, SaveFileFormat.Csv);
+                    diagram.Save(csvPath, SaveFileFormat.Csv);
 
-                    Console.WriteLine($"Successfully converted: {vsdFilePath} -> {csvFilePath}");
+                    Console.WriteLine($"Successfully converted: {Path.GetFileName(vsdPath)} -> {Path.GetFileName(csvPath)}");
                 }
                 catch (Exception ex)
                 {
-                    // Log any errors for this file
-                    Console.WriteLine($"Error processing file '{vsdFilePath}': {ex.Message}");
+                    Console.WriteLine($"Error processing file '{vsdPath}': {ex.Message}");
                 }
             });
-
-            Console.WriteLine("Conversion process completed.");
         }
     }

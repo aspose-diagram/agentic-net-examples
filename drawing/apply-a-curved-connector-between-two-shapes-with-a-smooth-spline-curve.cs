@@ -1,52 +1,49 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Access the first page (use Pages collection, not ActivePage)
-                Page page = diagram.Pages[0];
+            // Get the active page
+            Page page = diagram.ActivePage;
 
-                // Add two rectangle shapes to the page
-                long shapeId1 = page.AddShape(2.0, 2.0, "Rectangle");
-                long shapeId2 = page.AddShape(6.0, 4.0, "Rectangle");
+            // Add the first rectangle shape
+            long shapeId1 = page.AddShape(2.0, 5.0, "Rectangle");
+            Shape shape1 = page.Shapes.GetShape(shapeId1);
 
-                // Retrieve the shape objects (optional, for further modifications)
-                Shape shape1 = page.Shapes.GetShape(shapeId1);
-                Shape shape2 = page.Shapes.GetShape(shapeId2);
+            // Add the second rectangle shape
+            long shapeId2 = page.AddShape(8.0, 5.0, "Rectangle");
+            Shape shape2 = page.Shapes.GetShape(shapeId2);
 
-                // Add a dynamic connector shape
-                long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector");
-                Shape connector = page.Shapes.GetShape(connectorId);
+            // Add a dynamic connector shape (position is arbitrary)
+            long connectorId = page.AddShape(5.0, 5.0, "Dynamic connector");
+            Shape connector = page.Shapes.GetShape(connectorId);
 
-                // Set the connector to use a curved (smooth spline) routing style
-                connector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
+            // Set the connector to use a smooth curved line (spline)
+            connector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
 
-                // Connect the two rectangles using the connector
-                // Use Bottom of the first shape and Top of the second shape as connection points
-                page.ConnectShapesViaConnector(
-                    shapeId1,
-                    ConnectionPointPlace.Bottom,
-                    shapeId2,
-                    ConnectionPointPlace.Top,
-                    connectorId);
+            // Connect the two rectangles using the connector
+            page.ConnectShapesViaConnector(
+                shapeId1, ConnectionPointPlace.Bottom,
+                shapeId2, ConnectionPointPlace.Top,
+                connectorId);
 
-                // Save the diagram to a VSDX file
-                diagram.Save("CurvedConnector.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram to VSDX format
+            diagram.Save("CurvedConnector.vsdx", SaveFileFormat.Vsdx);
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+        }
     }
-    }
+}

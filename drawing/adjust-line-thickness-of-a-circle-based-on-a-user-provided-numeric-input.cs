@@ -6,39 +6,31 @@ class Program
 {
     static void Main()
     {
-        // Prompt the user for the desired line thickness (in inches)
-        Console.Write("Enter line thickness (in inches): ");
-        string input = Console.ReadLine();
+        // Prompt user for line thickness (points)
+        Console.Write("Enter line thickness (in points): ");
+        double thickness = double.Parse(Console.ReadLine());
 
-        // Validate the input
-        if (!double.TryParse(input, out double thickness) || thickness <= 0)
-        {
-            Console.WriteLine("Invalid thickness value.");
-            return;
-        }
-
-        // Create a new empty diagram
+        // Create a new diagram (lifecycle create rule)
         Diagram diagram = new Diagram();
 
-        // Add a new page to the diagram
-        diagram.Pages.Add(new Page());
-
-        // Get the first (and only) page
+        // Use the first page (a diagram always contains at least one page)
         Page page = diagram.Pages[0];
 
-        // Draw a circle using DrawEllipse (width == height)
-        // Center at (5,5) with a diameter of 2 inches
-        long shapeId = page.DrawEllipse(5.0, 5.0, 2.0, 2.0);
+        // Circle parameters
+        double centerX = 5.0;   // X coordinate of the circle's center
+        double centerY = 5.0;   // Y coordinate of the circle's center
+        double radius  = 2.0;   // Desired radius
+        double width   = radius * 2; // Width of the ellipse (circle)
+        double height  = radius * 2; // Height of the ellipse (circle)
 
-        // Retrieve the shape object by its ID
+        // Draw the circle (ellipse with equal width and height)
+        long shapeId = page.DrawEllipse(centerX, centerY, width, height);
+
+        // Retrieve the shape and set its line thickness
         Shape circle = page.Shapes.GetShape(shapeId);
-
-        // Set the line thickness (weight) in inches
         circle.Line.LineWeight.Value = thickness;
 
-        // Save the diagram to a VSDX file
-        diagram.Save("Circle.vsdx", SaveFileFormat.Vsdx);
-
-        Console.WriteLine($"Diagram saved as Circle.vsdx with line thickness {thickness} inches.");
+        // Save the diagram (lifecycle save rule)
+        diagram.Save("Circle.vdx", SaveFileFormat.Vdx);
     }
 }

@@ -1,46 +1,45 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        try
         {
-            try
+            // Initialize a new empty diagram inside a using block for proper disposal
+            using (Diagram diagram = new Diagram())
             {
+                // Convert 20 points to inches (Visio uses inches for margins)
+                double marginInInches = 20.0 / 72.0;
 
-                // Create a new diagram instance
-                using (Diagram diagram = new Diagram())
+                // Apply the same margins to every existing page (none at creation, but loop is safe)
+                foreach (Page page in diagram.Pages)
                 {
-                    // Access the first (default) page
-                    Page page = diagram.Pages[0];
-
-                    // Define margin in points and convert to inches (1 point = 1/72 inch)
-                    double marginPoints = 20.0;
-                    double marginInches = marginPoints / 72.0;
-
-                    // Set all four page margins using PrintProps (values are in inches)
-                    page.PageSheet.PrintProps.PageTopMargin.Value = marginInches;
-                    page.PageSheet.PrintProps.PageBottomMargin.Value = marginInches;
-                    page.PageSheet.PrintProps.PageLeftMargin.Value = marginInches;
-                    page.PageSheet.PrintProps.PageRightMargin.Value = marginInches;
-
-                    // Example shape addition after margins are set
-                    // Add a rectangle master shape at position (2,2) inches; 'false' means no geometry recalculation needed now
-                    long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
-                    Shape shape = page.Shapes.GetShape(shapeId);
-
-                    // Set simple text for the shape
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt("Sample Shape"));
-
-                    // Save the diagram to a VSDX file
-                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                    // Set top, bottom, left, and right margins via the PrintProps collection
+                    page.PageSheet.PrintProps.PageTopMargin.Value = marginInInches;
+                    page.PageSheet.PrintProps.PageBottomMargin.Value = marginInInches;
+                    page.PageSheet.PrintProps.PageLeftMargin.Value = marginInInches;
+                    page.PageSheet.PrintProps.PageRightMargin.Value = marginInInches;
                 }
 
+                // Add a rectangle shape to the first page; fourth argument is a bool (isCalculate)
+                long shapeId = diagram.Pages[0].AddShape(2.0, 2.0, "Rectangle", false);
+                // Retrieve the shape object using the returned ID
+                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+                // Clear any existing text and add new sample text
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt("Sample Shape"));
+
+                // Save the diagram to a VSDX file
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Output any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

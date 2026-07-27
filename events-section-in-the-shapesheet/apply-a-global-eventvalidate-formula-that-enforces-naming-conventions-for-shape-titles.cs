@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,26 +8,28 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path to the output Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Apply a global event formula that will be called to validate the shape's title
-                        // The formula uses CALLTHIS to invoke a custom macro (to be defined in the Visio file)
-                        shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"ValidateShapeTitle\")";
-
-                        // Optionally, also trigger validation on shape drop
-                        shape.Event.EventDrop.Ufe.F = "CALLTHIS(\"ValidateShapeTitle\")";
+                        // Apply a validation formula to the double‑click event.
+                        // The formula calls a macro (or external function) named ValidateTitle.
+                        // Adjust the formula as needed for your naming convention logic.
+                        shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"ValidateTitle\")";
                     }
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

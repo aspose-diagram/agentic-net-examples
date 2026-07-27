@@ -1,44 +1,57 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class HtmlHyperlinkExtractor
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from file
-            var diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Prepare HTML save options
-            var htmlOptions = new HTMLSaveOptions();
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // Save the diagram as HTML into a memory stream
-            using (var htmlStream = new MemoryStream())
+            // List to hold all extracted hyperlink URLs
+            List<string> extractedUrls = new List<string>();
+
+            // Iterate through all pages and shapes in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                diagram.Save(htmlStream, htmlOptions);
-                htmlStream.Position = 0;
-
-                // Read the generated HTML markup
-                string htmlContent;
-                using (var reader = new StreamReader(htmlStream))
+                foreach (Shape shape in page.Shapes)
                 {
-                    htmlContent = reader.ReadToEnd();
-                }
+                    // Generate HTML for the current shape into a memory stream
+                    using (MemoryStream htmlStream = new MemoryStream())
+                    {
+                        shape.ToHTML(htmlStream, htmlOptions);
+                        // Convert the stream content to a string (UTF-8 encoding)
+                        string htmlContent = Encoding.UTF8.GetString(htmlStream.ToArray());
 
-                // Extract all hyperlink URLs from the HTML markup
-                var urls = ExtractHyperlinkUrls(htmlContent);
-
-                // Output the extracted URLs for analysis
-                foreach (var url in urls)
-                {
-                    Console.WriteLine(url);
+                        // Use a regular expression to find all href attributes in the HTML
+                        foreach (Match match in Regex.Matches(htmlContent, @"href\s*=\s*[""']([^""']+)[""']", RegexOptions.IgnoreCase))
+                        {
+                            string url = match.Groups[1].Value;
+                            if (!string.IsNullOrEmpty(url) && !extractedUrls.Contains(url))
+                            {
+                                extractedUrls.Add(url);
+                            }
+                        }
+                    }
                 }
+            }
+
+            // Output the extracted URLs for analysis
+            Console.WriteLine("Extracted Hyperlink URLs:");
+            foreach (string url in extractedUrls)
+            {
+                Console.WriteLine(url);
             }
 
         }
@@ -46,22 +59,5 @@ class HtmlHyperlinkExtractor
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-    }
-
-    // Helper method to find href values using a regular expression
-    private static List<string> ExtractHyperlinkUrls(string html)
-    {
-        var result = new List<string>();
-        if (string.IsNullOrEmpty(html))
-            return result;
-
-        // Regex matches href="..." (case‑insensitive)
-        var regex = new Regex(@"href\s*=\s*""([^""]*)""", RegexOptions.IgnoreCase);
-        foreach (Match match in regex.Matches(html))
-        {
-            if (match.Groups.Count > 1)
-                result.Add(match.Groups[1].Value);
-        }
-        return result;
     }
 }

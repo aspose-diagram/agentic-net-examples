@@ -3,51 +3,69 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class LoggingStreamProvider : IStreamProvider
+namespace DiagramHtmlExport
 {
-    // Called by Aspose before writing a resource (e.g., image, CSS) to a stream.
-    public void InitStream(StreamProviderOptions options)
+    // Custom stream provider that logs the size of each resource after it is closed.
+    public class CustomStreamProvider : IStreamProvider
     {
-        // Provide a fresh memory stream for the resource.
-        options.Stream = new MemoryStream();
-    }
-
-    // Called by Aspose after the resource stream has been closed.
-    public void CloseStream(StreamProviderOptions options)
-    {
-        Stream stream = options.Stream;
-        if (stream != null)
+        // Called by Aspose before writing a resource. Provide a stream for the resource.
+        public void InitStream(StreamProviderOptions options)
         {
-            long size = stream.Length;
-            // Log the resource path and its final size for auditing.
-            Console.WriteLine($"Resource '{options.DefaultPath}' closed. Size: {size} bytes.");
-            stream.Dispose();
+            // Use a memory stream to capture the resource data.
+            options.Stream = new MemoryStream();
         }
-    }
-}
 
-class Program
-{
-    static void Main()
-    {
-        try
+        // Called by Aspose after the resource has been written and the stream is closed.
+        public void CloseStream(StreamProviderOptions options)
         {
-
-            // Load an existing Visio diagram.
-            using (Diagram diagram = new Diagram("sample.vsdx"))
+            // Ensure the stream exists.
+            if (options.Stream != null)
             {
-                // Set up HTML export options and attach the custom stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new LoggingStreamProvider();
+                // Get the length of the written data.
+                long size = options.Stream.Length;
 
-                // Export the diagram to HTML; each resource stream will be logged.
-                diagram.Save("output.html", htmlOptions);
+                // Log the resource path and its size.
+                Console.WriteLine($"Resource '{options.DefaultPath}' size: {size} bytes");
+
+                // Dispose the stream to release resources.
+                options.Stream.Dispose();
             }
+        }
+    }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
+    class Program
+    {
+        static void Main()
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            try
+            {
+
+                // Path to the source Visio file.
+                string inputPath = "input.vsdx";
+
+                // Path for the generated HTML output.
+                string outputPath = "output.html";
+
+                // Load the diagram.
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Configure HTML save options with the custom stream provider.
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                    {
+                        StreamProvider = new CustomStreamProvider()
+                    };
+
+                    // Save the diagram as HTML. Resources (e.g., images) will be processed via the stream provider.
+                    diagram.Save(outputPath, htmlOptions);
+                }
+
+                Console.WriteLine("HTML export completed.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

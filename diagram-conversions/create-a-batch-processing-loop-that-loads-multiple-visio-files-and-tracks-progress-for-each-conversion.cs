@@ -3,51 +3,61 @@ using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 
-class VisioBatchConverter
-{
-    // Entry point
-    static void Main()
+class Program
     {
-        // Define input Visio files (could be populated dynamically)
-        List<string> inputFiles = new List<string>
+        static void Main(string[] args)
         {
-            @"C:\VisioFiles\Diagram1.vsdx",
-            @"C:\VisioFiles\Diagram2.vsd",
-            @"C:\VisioFiles\Diagram3.vdx"
-        };
-
-        // Define output folder
-        string outputFolder = @"C:\ConvertedFiles";
-
-        // Ensure output folder exists
-        Directory.CreateDirectory(outputFolder);
-
-        // Process each file
-        for (int i = 0; i < inputFiles.Count; i++)
-        {
-            string inputPath = inputFiles[i];
-            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-            string outputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
-
-            try
+            // Example usage:
+            // Provide a list of Visio files to convert and an output folder.
+            var inputFiles = new List<string>
             {
-                // Load Visio diagram using the constructor that accepts a file path
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Save the diagram to PDF format
-                    diagram.Save(outputPath, SaveFileFormat.Pdf);
-                }
+                @"C:\VisioFiles\Diagram1.vsdx",
+                @"C:\VisioFiles\Diagram2.vsd",
+                @"C:\VisioFiles\Diagram3.vdx"
+            };
 
-                // Report progress
-                Console.WriteLine($"[{i + 1}/{inputFiles.Count}] Converted '{inputPath}' to PDF successfully.");
-            }
-            catch (Exception ex)
-            {
-                // Report error but continue processing remaining files
-                Console.WriteLine($"[{i + 1}/{inputFiles.Count}] Failed to convert '{inputPath}'. Error: {ex.Message}");
-            }
+            string outputFolder = @"C:\ConvertedFiles";
+
+            // Ensure the output directory exists.
+            Directory.CreateDirectory(outputFolder);
+
+            // Process the batch.
+            ProcessVisioBatch(inputFiles, outputFolder);
         }
 
-        Console.WriteLine("Batch conversion completed.");
+        /// <summary>
+        /// Loads each Visio file, converts it to PDF, and tracks progress.
+        /// </summary>
+        /// <param name="inputFiles">Full paths of the Visio files to process.</param>
+        /// <param name="outputFolder">Folder where converted files will be saved.</param>
+        static void ProcessVisioBatch(IList<string> inputFiles, string outputFolder)
+        {
+            int total = inputFiles.Count;
+            for (int i = 0; i < total; i++)
+            {
+                string inputPath = inputFiles[i];
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                string outputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
+
+                try
+                {
+                    // Load the Visio diagram using the constructor that accepts a file path.
+                    using (Diagram diagram = new Diagram(inputPath))
+                    {
+                        // Save the diagram as PDF using the Save method with SaveFileFormat.
+                        diagram.Save(outputPath, SaveFileFormat.Pdf);
+                    }
+
+                    // Report progress.
+                    Console.WriteLine($"[{i + 1}/{total}] Converted: {inputPath} -> {outputPath}");
+                }
+                catch (Exception ex)
+                {
+                    // Report error but continue processing remaining files.
+                    Console.WriteLine($"[{i + 1}/{total}] Failed to convert {inputPath}: {ex.Message}");
+                }
+            }
+
+            Console.WriteLine("Batch processing completed.");
+        }
     }
-}

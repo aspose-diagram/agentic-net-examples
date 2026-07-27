@@ -1,97 +1,82 @@
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Get the folder containing diagrams
-            string inputFolder;
-            if (args.Length > 0 && Directory.Exists(args[0]))
-            {
-                inputFolder = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the full path to the folder containing Visio files: ");
-                inputFolder = Console.ReadLine();
-                if (!Directory.Exists(inputFolder))
-                {
-                    Console.WriteLine("Folder does not exist. Exiting.");
-                    return;
-                }
-            }
-
-            // Get the regular expression pattern
-            string pattern;
-            if (args.Length > 1)
-            {
-                pattern = args[1];
-            }
-            else
-            {
-                Console.Write("Enter the regular expression pattern to match custom property names: ");
-                pattern = Console.ReadLine();
-            }
-
-            Regex regex;
             try
             {
-                regex = new Regex(pattern, RegexOptions.IgnoreCase);
-            }
-            catch (ArgumentException ex)
-            {
-                Console.WriteLine($"Invalid regex pattern: {ex.Message}");
-                return;
-            }
 
-            // Supported Visio file extensions
-            string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vsdm", ".vssx", ".vstx", ".vssm", ".vstm", ".vsd", ".vss", ".vst" };
+                // Input folder containing Visio files
+                string inputFolder = @"C:\Visio\Input";
+                // Output folder where modified files will be saved
+                string outputFolder = @"C:\Visio\Output";
+                // Regular expression pattern to match custom property names
+                string pattern = @"^Temp_.*$";
 
-            // Process each diagram file
-            foreach (string filePath in Directory.GetFiles(inputFolder))
-            {
-                string ext = Path.GetExtension(filePath).ToLowerInvariant();
-                if (Array.IndexOf(extensions, ext) < 0)
+                // Ensure output folder exists
+                if (!Directory.Exists(outputFolder))
                 {
-                    // Skip non-Visio files
-                    continue;
+                    Directory.CreateDirectory(outputFolder);
                 }
 
-                try
-                {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
+                // Compile the regex once for efficiency
+                Regex regex = new Regex(pattern, RegexOptions.IgnoreCase);
 
-                    // Collect custom properties that match the pattern
-                    var propsToRemove = new List<CustomProp>();
-                    foreach (CustomProp prop in diagram.DocumentProps.CustomProps)
+                // Process each Visio file in the input folder
+                string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+                foreach (string filePath in files)
+                {
+                    // Only process supported Visio formats
+                    string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                    if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
                     {
-                        if (regex.IsMatch(prop.Name))
+                        Console.WriteLine($"Skipping unsupported file: {filePath}");
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Load the diagram
+                        Diagram diagram = new Diagram(filePath);
+
+                        // Collect custom properties that match the pattern
+                        var propsToRemove = new System.Collections.Generic.List<CustomProp>();
+                        foreach (CustomProp prop in diagram.DocumentProps.CustomProps)
                         {
-                            propsToRemove.Add(prop);
+                            if (regex.IsMatch(prop.Name))
+                            {
+                                propsToRemove.Add(prop);
+                            }
                         }
-                    }
 
-                    // Remove the matching custom properties
-                    foreach (CustomProp prop in propsToRemove)
+                        // Remove the matching custom properties
+                        foreach (CustomProp prop in propsToRemove)
+                        {
+                            diagram.DocumentProps.CustomProps.Remove(prop);
+                        }
+
+                        // Save the modified diagram to the output folder
+                        string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                        Console.WriteLine($"Processed and saved: {outputPath}");
+                    }
+                    catch (Exception ex)
                     {
-                        diagram.DocumentProps.CustomProps.Remove(prop);
+                        Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
                     }
+                }
 
-                    // Save the modified diagram (overwrite original)
-                    diagram.Save(filePath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)} (removed {propsToRemove.Count} properties)");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
-                }
+                Console.WriteLine("Bulk removal operation completed.");
+
             }
-
-            Console.WriteLine("Bulk removal operation completed.");
-        }
+            catch (System.IO.DirectoryNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            }
+    }
     }

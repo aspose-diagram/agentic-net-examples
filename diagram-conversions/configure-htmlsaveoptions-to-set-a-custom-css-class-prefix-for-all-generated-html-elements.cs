@@ -1,31 +1,37 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+            try
+            {
 
-        try
-        {
-            Diagram diagram = new Diagram(inputPath);
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                // Create HTML save options.
+                // Note: Aspose.Diagram.HTMLSaveOptions does not provide a property to set a custom CSS class prefix.
+                // Therefore, we cannot configure a CSS class prefix directly.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // Save the diagram as HTML using the configured options
-            diagram.Save("output.html", htmlOptions);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+                // Example of setting other available options (optional)
+                // htmlOptions.SaveAsSingleFile = true; // Save all pages into a single HTML file
+                // htmlOptions.ExportHiddenPage = false; // Do not export hidden pages
+
+                // Save the diagram as HTML using the configured options
+                string outputPath = "output.html";
+                diagram.Save(outputPath, htmlOptions);
+
+                Console.WriteLine($"Diagram exported to HTML at: {outputPath}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

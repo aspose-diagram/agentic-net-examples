@@ -4,61 +4,42 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Validate arguments: input diagram path and output HTML file path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramHtmlExport <inputDiagramPath> <outputHtmlPath>");
-                return;
-            }
 
-            string inputDiagramPath = args[0];
-            string outputHtmlPath = args[1];
+            // Load the Visio diagram from a file (lifecycle rule: use Diagram constructor)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputDiagramPath);
-
-            // Configure HTML export options
+            // Configure HTML save options (optional settings can be adjusted as needed)
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                // Example: do not export hidden pages
-                ExportHiddenPage = false,
-                // Export comments if needed
-                IsExportComments = false
+                SaveAsSingleFile = true,   // Save all pages into a single HTML file
+                SaveToolBar = false        // Example: omit the toolbar in the output
             };
 
-            // Export the diagram to HTML
-            diagram.Save(outputHtmlPath, htmlOptions);
-
-            // Ensure the HTML file was created
-            if (!File.Exists(outputHtmlPath))
-            {
-                Console.WriteLine($"Failed to generate HTML file at '{outputHtmlPath}'.");
-                return;
-            }
+            // Save the diagram as HTML (lifecycle rule: use Diagram.Save with SaveOptions)
+            string htmlFilePath = "output.html";
+            diagram.Save(htmlFilePath, htmlOptions);
 
             // Read the generated HTML content
-            string htmlContent = File.ReadAllText(outputHtmlPath);
+            string htmlContent = File.ReadAllText(htmlFilePath);
 
-            // Define placeholder-to-CDN replacements
-            var replacements = new System.Collections.Generic.Dictionary<string, string>
-            {
-                { "PLACEHOLDER_URL_1", "https://cdn.example.com/resource1.js" },
-                { "PLACEHOLDER_URL_2", "https://cdn.example.com/style2.css" }
-                // Add more pairs as needed
-            };
-
-            // Perform replacements
-            foreach (var kvp in replacements)
-            {
-                htmlContent = htmlContent.Replace(kvp.Key, kvp.Value);
-            }
+            // Replace placeholder URLs with CDN links using string manipulation
+            // Example placeholder URL pattern
+            string placeholderUrl = "http://placeholder.com/";
+            string cdnUrl = "https://cdn.example.com/";
+            htmlContent = htmlContent.Replace(placeholderUrl, cdnUrl);
 
             // Write the updated HTML back to the file
-            File.WriteAllText(outputHtmlPath, htmlContent);
+            File.WriteAllText(htmlFilePath, htmlContent);
 
-            Console.WriteLine($"HTML export completed and placeholders replaced. Output saved to '{outputHtmlPath}'.");
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

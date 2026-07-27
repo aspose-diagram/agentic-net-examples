@@ -7,53 +7,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine the folder to scan: use first argument or current directory.
+        // Determine the folder to scan for Visio diagram files.
         string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
 
         if (!Directory.Exists(folderPath))
         {
-            Console.WriteLine($"Folder does not exist: {folderPath}");
+            Console.Error.WriteLine($"Folder not found: {folderPath}");
             return;
         }
 
-        // Visio file extensions to consider.
-        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vss", ".vstx", ".vst", ".vtx" };
+        // Supported Visio file extensions.
+        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx" };
 
-        // Retrieve all matching files.
-        var files = Directory.GetFiles(folderPath)
-                             .Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
-                             .ToArray();
+        // Collect all diagram files in the folder (non‑recursive).
+        var diagramFiles = Directory.GetFiles(folderPath)
+                                    .Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
+                                    .ToArray();
 
-        if (files.Length == 0)
+        if (diagramFiles.Length == 0)
         {
             Console.WriteLine("No Visio diagram files found in the specified folder.");
             return;
         }
 
         Console.WriteLine("Inventory Management Report");
-        Console.WriteLine(new string('-', 40));
+        Console.WriteLine("----------------------------");
+        Console.WriteLine($"Folder: {folderPath}");
+        Console.WriteLine();
 
-        foreach (string filePath in files)
+        foreach (var filePath in diagramFiles)
         {
+            // Guard to ensure the file actually exists before processing.
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
+            }
+
             try
             {
-                // Load the diagram.
+                // Load the diagram using the constructor that accepts a file path.
                 Diagram diagram = new Diagram(filePath);
 
-                // Count custom properties.
+                // Count custom properties at the document level.
                 int customPropCount = diagram.DocumentProps.CustomProps.Count;
 
-                // Output the result.
-                Console.WriteLine($"Diagram: {Path.GetFileName(filePath)} | Custom Properties: {customPropCount}");
+                Console.WriteLine($"Diagram: {Path.GetFileName(filePath)}");
+                Console.WriteLine($"Custom Property Count: {customPropCount}");
+                Console.WriteLine();
             }
             catch (Exception ex)
             {
-                // Report any loading errors.
-                Console.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
+                // Report any errors but continue processing other files.
+                Console.Error.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
+                Console.Error.WriteLine();
             }
         }
 
-        Console.WriteLine(new string('-', 40));
         Console.WriteLine("Report generation completed.");
     }
 }

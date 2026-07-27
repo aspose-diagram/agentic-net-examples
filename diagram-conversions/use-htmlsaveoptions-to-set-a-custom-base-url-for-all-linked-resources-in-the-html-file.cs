@@ -1,48 +1,54 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace HtmlExportWithCustomBaseUrl
+class CustomStreamProvider : IStreamProvider
 {
-    // Implements IStreamProvider to set a custom base URL for linked resources.
-    class CustomStreamProvider : IStreamProvider
+    public void InitStream(StreamProviderOptions options)
     {
-        // Called before the HTML export starts.
-        public void InitStream(StreamProviderOptions options)
-        {
-            // Set the custom base URL that will be prefixed to all linked resources.
-            options.CustomPath = "https://cdn.example.com/visio-resources/";
-        }
+        // Set the custom base URL for all linked resources in the HTML output
+        options.CustomPath = "https://mycdn.example.com/visio/";
 
-        // Called after the HTML export finishes.
-        public void CloseStream(StreamProviderOptions options)
-        {
-            // No additional cleanup required.
-        }
+        // Provide a dummy stream (required by the interface)
+        options.Stream = new MemoryStream();
     }
 
-    class Program
+    public void CloseStream(StreamProviderOptions options)
     {
-        static void Main()
+        // Clean up the stream created in InitStream
+        if (options.Stream != null)
         {
-            try
-            {
-
-                // Load an existing Visio diagram.
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Configure HTML save options and assign the custom stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new CustomStreamProvider();
-
-                // Export the diagram to HTML; linked resources will use the custom base URL.
-                diagram.Save("output.html", htmlOptions);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            options.Stream.Dispose();
+        }
     }
+}
+
+class Program
+{
+    static void Main()
+    {
+        try
+        {
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure HTML save options and assign the custom stream provider
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = new CustomStreamProvider();
+
+            // Save the diagram as HTML with the custom base URL applied
+            string outputPath = "output.html";
+            diagram.Save(outputPath, htmlOptions);
+
+            Console.WriteLine("Diagram saved to HTML with custom base URL.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

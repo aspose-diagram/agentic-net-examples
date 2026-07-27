@@ -10,18 +10,16 @@ class Program
         try
         {
 
-            // Load the existing Visio file (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the existing Visio document (replace with your file path)
+            using (var diagram = new Diagram("input.vsdx"))
+            {
+                // Insert a pentagon shape on the active page at coordinates (5, 5) inches
+                // "Pentagon" is the master name of the shape in the default Visio stencil
+                diagram.ActivePage.AddShape(5.0, 5.0, "Pentagon");
 
-            // Get the active page where the shape will be inserted
-            Page page = diagram.ActivePage;
-
-            // Insert a pentagon shape at coordinates (5, 5) inches
-            // "Pentagon" is the master name for the pentagon shape in the default stencil
-            page.AddShape(5.0, 5.0, "Pentagon");
-
-            // Save the modified diagram to a new file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified document (replace with desired output path)
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

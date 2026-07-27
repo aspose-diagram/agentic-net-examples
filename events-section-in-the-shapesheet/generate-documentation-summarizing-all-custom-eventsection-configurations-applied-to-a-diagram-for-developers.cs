@@ -1,100 +1,54 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file to analyze
+            string filePath = "input.vsdx";
+
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(filePath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Determine the input Visio file path.
-                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-                // Load the diagram.
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Iterate through each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
+                    // Ensure the shape has an Event section
+                    if (shape.Event == null)
+                        continue;
 
-                    // Iterate through each shape on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // Local helper to output event information when a formula is present
+                    void PrintEvent(string eventName, string formula)
                     {
-                        // Skip shapes that have no Event section.
-                        if (shape.Event == null)
-                            continue;
-
-                        bool hasCustomEvent = false;
-
-                        // Check each supported event cell.
-                        if (!string.IsNullOrWhiteSpace(shape.Event.EventXFMod?.Ufe?.F))
+                        if (!string.IsNullOrWhiteSpace(formula))
                         {
-                            if (!hasCustomEvent)
-                            {
-                                Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
-                                hasCustomEvent = true;
-                            }
-                            Console.WriteLine($"    EventXFMod: {shape.Event.EventXFMod.Ufe.F}");
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(shape.Event.EventDblClick?.Ufe?.F))
-                        {
-                            if (!hasCustomEvent)
-                            {
-                                Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
-                                hasCustomEvent = true;
-                            }
-                            Console.WriteLine($"    EventDblClick: {shape.Event.EventDblClick.Ufe.F}");
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(shape.Event.EventDrop?.Ufe?.F))
-                        {
-                            if (!hasCustomEvent)
-                            {
-                                Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
-                                hasCustomEvent = true;
-                            }
-                            Console.WriteLine($"    EventDrop: {shape.Event.EventDrop.Ufe.F}");
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(shape.Event.EventMultiDrop?.Ufe?.F))
-                        {
-                            if (!hasCustomEvent)
-                            {
-                                Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
-                                hasCustomEvent = true;
-                            }
-                            Console.WriteLine($"    EventMultiDrop: {shape.Event.EventMultiDrop.Ufe.F}");
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(shape.Event.TheText?.Ufe?.F))
-                        {
-                            if (!hasCustomEvent)
-                            {
-                                Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
-                                hasCustomEvent = true;
-                            }
-                            Console.WriteLine($"    TheText: {shape.Event.TheText.Ufe.F}");
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(shape.Event.TheData?.Ufe?.F))
-                        {
-                            if (!hasCustomEvent)
-                            {
-                                Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
-                                hasCustomEvent = true;
-                            }
-                            Console.WriteLine($"    TheData: {shape.Event.TheData.Ufe.F}");
+                            Console.WriteLine(
+                                $"Page: {page.Name} | Shape ID: {shape.ID} | Shape Name: {shape.Name} | Event: {eventName} | Formula: {formula}");
                         }
                     }
-                }
 
+                    // Check each supported event cell and output its formula if defined
+                    PrintEvent("EventXFMod", shape.Event.EventXFMod.Ufe.F);
+                    PrintEvent("EventDblClick", shape.Event.EventDblClick.Ufe.F);
+                    PrintEvent("EventDrop", shape.Event.EventDrop.Ufe.F);
+                    PrintEvent("EventMultiDrop", shape.Event.EventMultiDrop.Ufe.F);
+                    PrintEvent("TheText", shape.Event.TheText.Ufe.F);
+                    PrintEvent("TheData", shape.Event.TheData.Ufe.F);
+                }
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -9,16 +9,13 @@ class Program
         try
         {
 
-            // Path to the Visio file to be loaded
-            string visioFilePath = "sample.vsdx";
+            // Load the Visio diagram from a file
+            var diagram = new Diagram("input.vsdx"); // replace with your file path
 
-            // Load the Visio diagram using the Diagram constructor (load rule)
-            Diagram diagram = new Diagram(visioFilePath);
-
-            // Access the built‑in Author property (mapped to Creator in DocumentProperties)
+            // Read the built‑in "Author" property (mapped to Creator)
             string author = diagram.DocumentProps.Creator;
 
-            // Log the Author value to the console
+            // Log the author value
             Console.WriteLine($"Author: {author}");
 
             // Clean up resources

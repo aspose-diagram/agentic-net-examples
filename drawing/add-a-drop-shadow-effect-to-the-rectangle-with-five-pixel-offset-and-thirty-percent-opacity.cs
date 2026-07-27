@@ -1,50 +1,46 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        try
+        static void Main()
         {
+            // Create a new diagram (contains a default page)
+            Diagram diagram = new Diagram();
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Assume the rectangle is on the first page
+            // Access the first page (avoid using ActivePage as per rules)
             Page page = diagram.Pages[0];
 
-            // Find the first shape whose master name is "Rectangle"
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.Master != null && shape.Master.Name == "Rectangle")
-                {
-                    // Enable simple drop shadow
-                    shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+            // Define rectangle geometry (pin position and size in inches)
+            double pinX = 5.0;   // X coordinate of the rectangle's center
+            double pinY = 5.0;   // Y coordinate of the rectangle's center
+            double width = 2.0;  // Width of the rectangle
+            double height = 1.0; // Height of the rectangle
 
-                    // Set shadow color to black
-                    shape.Fill.ShdwForegnd.Value = "#000000";
+            // Draw the rectangle; returns the shape ID (long)
+            long rectId = page.DrawRectangle(pinX, pinY, width, height);
 
-                    // Set shadow opacity to 30% (0.3 = 30% transparent)
-                    shape.Fill.ShdwForegndTrans.Value = 0.3;
+            // Retrieve the shape object using the ID (GetShape expects an int)
+            Shape rectShape = page.Shapes.GetShape((int)rectId);
 
-                    // Set shadow offsets (5 units; Visio uses inches, adjust as needed)
-                    shape.Fill.ShapeShdwOffsetX.Value = 5;
-                    shape.Fill.ShapeShdwOffsetY.Value = 5;
+            // -----------------------------------------------------------------
+            // Apply drop shadow effect
+            // -----------------------------------------------------------------
+            // Enable simple shadow
+            rectShape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
 
-                    // Shadow applied; exit loop
-                    break;
-                }
-            }
+            // Shadow color (black)
+            rectShape.Fill.ShdwForegnd.Value = "#000000";
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Shadow opacity: 30% transparent (0.3 means 30% transparent)
+            rectShape.Fill.ShdwForegndTrans.Value = 0.3;
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Offset of the shadow.
+            // Approximate 5‑pixel offset assuming 96 DPI (~0.052 inches).
+            rectShape.Fill.ShapeShdwOffsetX.Value = 0.05;
+            rectShape.Fill.ShapeShdwOffsetY.Value = 0.05;
+
+            // Save the diagram to a VSDX file
+            diagram.Save("RectangleWithShadow.vsdx", SaveFileFormat.Vsdx);
         }
     }
-}

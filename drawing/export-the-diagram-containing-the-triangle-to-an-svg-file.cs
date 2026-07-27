@@ -1,23 +1,28 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ExportTriangleToSvg
 {
     static void Main()
     {
-        // Load the Visio diagram that contains the triangle shape
-        Diagram diagram = new Diagram("TriangleDiagram.vsdx");
-
-        // Set up SVG save options
-        SVGSaveOptions svgOptions = new SVGSaveOptions
+        try
         {
-            PageIndex = 0,               // render the first page
-            SVGFitToViewPort = true      // make the SVG fit the viewport
-        };
 
-        // Export the diagram (or the specified page) to an SVG file
-        diagram.Save("TriangleDiagram.svg", svgOptions);
+            // Load the existing Visio diagram that contains the triangle shape
+            Diagram diagram = new Diagram("input.vsd");
+
+            // Configure SVG save options (default options are sufficient for basic export)
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+            // Export the entire diagram (or specific page) to an SVG file
+            diagram.Save("triangle.svg", svgOptions);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

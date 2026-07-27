@@ -1,52 +1,43 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            Diagram diagram = new Diagram(inputPath);
 
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Master != null)
-                    {
-                        string masterName = shape.Master.Name;
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                        if (masterName == "Rectangle")
-                        {
-                            shape.Event.EventXFMod.Ufe.F = "CALLTHIS(\"RectUpdate\")";
-                        }
-                        else if (masterName == "Ellipse")
-                        {
-                            shape.Event.EventXFMod.Ufe.F = "CALLTHIS(\"EllipseUpdate\")";
-                        }
-                        else
-                        {
-                            shape.Event.EventXFMod.Ufe.F = "CALLTHIS(\"DefaultUpdate\")";
-                        }
-                    }
-                }
-            }
+            // Add a rectangle shape on the active page
+            long rectId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle");
+            Shape rectShape = diagram.ActivePage.Shapes.GetShape(rectId);
 
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Add an ellipse shape on the active page
+            long ellipseId = diagram.ActivePage.AddShape(4.0, 2.0, "Ellipse");
+            Shape ellipseShape = diagram.ActivePage.Shapes.GetShape(ellipseId);
+
+            // Set an event formula that uses conditional logic.
+            // The formula checks the master name of the shape and calls a different macro accordingly.
+            // This is placed in the EventDrop cell (a valid event cell) using the required Ufe.F property.
+            string conditionalFormula = "IF(Master.Name=\"Rectangle\", CALLTHIS(\"RectAction\"), CALLTHIS(\"OtherAction\"))";
+
+            // Apply the same conditional formula to both shapes.
+            // At runtime Visio will evaluate the condition based on each shape's master.
+            rectShape.Event.EventDrop.Ufe.F = conditionalFormula;
+            ellipseShape.Event.EventDrop.Ufe.F = conditionalFormula;
+
+            // Save the diagram to a VSDX file
+            diagram.Save("ConditionalEventDiagram.vsdx", SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.NullReferenceException ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
 }

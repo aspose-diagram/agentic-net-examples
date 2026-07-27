@@ -10,20 +10,20 @@ class Program
         try
         {
 
-            // Path to the source Visio file (can be VSD, VSDX, VDX, etc.)
-            string sourcePath = "input.vsdx";
+            // Path to the source Visio file
+            string inputFile = "input.vsdx";
 
-            // Path where the cleaned file will be saved
-            string targetPath = "output.vsdx";
+            // Path for the output file without VBA project
+            string outputFile = "output_without_vba.vsdx";
 
-            // Load the diagram from the source file
-            Diagram diagram = new Diagram(sourcePath);
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputFile);
 
-            // Remove any VBA macros or projects to reduce file size
+            // Remove any VBA macros to reduce file size
             diagram.RemoveMacro();
 
-            // Save the diagram using the desired format (e.g., VSDX)
-            diagram.Save(targetPath, SaveFileFormat.Vsdx);
+            // Save the diagram in the same format (VSDX) without the VBA project
+            diagram.Save(outputFile, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

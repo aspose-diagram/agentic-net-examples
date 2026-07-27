@@ -3,71 +3,60 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Input Visio file path
+                // Input and output file paths
                 string inputPath = "input.vsdx";
-                // Output Visio file path
                 string outputPath = "output.vsdx";
-                // Name of the master shape whose Event cells will be cloned
-                string masterName = "MyMaster";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Retrieve the master by name
-                Master master = diagram.Masters.GetMasterByName(masterName);
-                if (master == null)
-                    throw new Exception($"Master with name '{masterName}' not found.");
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
 
-                // Ensure the master contains at least one shape (the master shape)
-                if (master.Shapes.Count == 0)
-                    throw new Exception($"Master '{masterName}' does not contain any shapes.");
-
-                // The first shape in the master is the template shape
-                Shape masterShape = master.Shapes[0];
-
-                // Iterate through all pages and shapes to find duplicates of the master
-                foreach (Page page in diagram.Pages)
+                // Locate a shape that is based on a master (the source master shape)
+                Shape masterShape = null;
+                foreach (Shape shp in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    if (shp.Master != null)
                     {
-                        // Identify shapes that are instances of the specified master
-                        if (shape.Master != null && shape.Master.Name == master.Name)
-                        {
-                            // Clone Event cells from the master shape to the duplicate shape
-                            // EventXFMod
-                            if (masterShape.Event.EventXFMod != null && shape.Event.EventXFMod != null)
-                                shape.Event.EventXFMod.Ufe.F = masterShape.Event.EventXFMod.Ufe.F;
-
-                            // EventDblClick
-                            if (masterShape.Event.EventDblClick != null && shape.Event.EventDblClick != null)
-                                shape.Event.EventDblClick.Ufe.F = masterShape.Event.EventDblClick.Ufe.F;
-
-                            // EventDrop
-                            if (masterShape.Event.EventDrop != null && shape.Event.EventDrop != null)
-                                shape.Event.EventDrop.Ufe.F = masterShape.Event.EventDrop.Ufe.F;
-
-                            // EventMultiDrop
-                            if (masterShape.Event.EventMultiDrop != null && shape.Event.EventMultiDrop != null)
-                                shape.Event.EventMultiDrop.Ufe.F = masterShape.Event.EventMultiDrop.Ufe.F;
-
-                            // TheText
-                            if (masterShape.Event.TheText != null && shape.Event.TheText != null)
-                                shape.Event.TheText.Ufe.F = masterShape.Event.TheText.Ufe.F;
-
-                            // TheData
-                            if (masterShape.Event.TheData != null && shape.Event.TheData != null)
-                                shape.Event.TheData.Ufe.F = masterShape.Event.TheData.Ufe.F;
-                        }
+                        masterShape = shp;
+                        break;
                     }
+                }
+
+                if (masterShape == null)
+                {
+                    Console.WriteLine("No master-based shape found in the diagram.");
+                    return;
+                }
+
+                // Create a few duplicate shapes based on the same master
+                const int duplicateCount = 5;
+                double offsetX = 2.0; // inches offset for each duplicate
+                double offsetY = 0.0;
+
+                for (int i = 0; i < duplicateCount; i++)
+                {
+                    // Position the duplicate shape
+                    double pinX = masterShape.XForm.PinX.Value + (i + 1) * offsetX;
+                    double pinY = masterShape.XForm.PinY.Value + offsetY;
+
+                    // Add a new shape using the same master name
+                    long dupId = page.AddShape(pinX, pinY, masterShape.Master.Name);
+                    Shape dupShape = page.Shapes.GetShape(dupId);
+
+                    // Clone the EventSection cells from the master shape to the duplicate
+                    CloneEventSection(masterShape, dupShape);
                 }
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -75,4 +64,39 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
+
+        /// <summary>
+        /// Copies all supported event formulas from a source shape to a target shape.
+        /// </summary>
+        /// <param name="source">Shape containing the original EventSection.</param>
+        /// <param name="target">Shape that will receive the copied event formulas.</param>
+        static void CloneEventSection(Shape source, Shape target)
+        {
+            if (source.Event == null || target.Event == null)
+                return;
+
+            // EventDblClick
+            if (source.Event.EventDblClick != null && source.Event.EventDblClick.Ufe != null)
+                target.Event.EventDblClick.Ufe.F = source.Event.EventDblClick.Ufe.F;
+
+            // EventDrop
+            if (source.Event.EventDrop != null && source.Event.EventDrop.Ufe != null)
+                target.Event.EventDrop.Ufe.F = source.Event.EventDrop.Ufe.F;
+
+            // EventMultiDrop
+            if (source.Event.EventMultiDrop != null && source.Event.EventMultiDrop.Ufe != null)
+                target.Event.EventMultiDrop.Ufe.F = source.Event.EventMultiDrop.Ufe.F;
+
+            // EventXFMod
+            if (source.Event.EventXFMod != null && source.Event.EventXFMod.Ufe != null)
+                target.Event.EventXFMod.Ufe.F = source.Event.EventXFMod.Ufe.F;
+
+            // TheText
+            if (source.Event.TheText != null && source.Event.TheText.Ufe != null)
+                target.Event.TheText.Ufe.F = source.Event.TheText.Ufe.F;
+
+            // TheData
+            if (source.Event.TheData != null && source.Event.TheData.Ufe != null)
+                target.Event.TheData.Ufe.F = source.Event.TheData.Ufe.F;
+        }
     }

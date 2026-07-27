@@ -1,41 +1,44 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // -----------------------------------------------------------------
+            // Verify Aspose.Diagram library version at runtime.
+            // -----------------------------------------------------------------
+            // Required minimum assembly version (adjust as needed).
+            const string requiredAssemblyVersion = "23.5.0";
 
-            // Minimum required Aspose.Diagram version (adjust as needed)
-            var requiredVersion = new Version("23.5.0.0");
+            // BuildVersionInfo provides static read‑only version information.
+            // AssemblyVersion is a string like "23.5.0.0".
+            string currentVersionString = BuildVersionInfo.AssemblyVersion;
 
-            // Retrieve the current library version from BuildVersionInfo
-            var currentVersionString = BuildVersionInfo.AssemblyVersion;
-            var currentVersion = new Version(currentVersionString);
+            // Parse the version strings.
+            Version currentVersion = new Version(currentVersionString);
+            Version minimumVersion = new Version(requiredAssemblyVersion);
 
-            // Abort if the current library version is older than the required one
-            if (currentVersion < requiredVersion)
+            // Abort if the current library version is older than required.
+            if (currentVersion < minimumVersion)
             {
-                Console.WriteLine($"Aspose.Diagram version {currentVersion} is older than required {requiredVersion}. Conversion aborted.");
-                return;
+                throw new InvalidOperationException(
+                    $"Aspose.Diagram version {currentVersion} is older than the required version {minimumVersion}. Conversion aborted.");
             }
 
-            // Load the source Visio diagram (lifecycle rule)
-            var diagram = new Diagram("input.vsdx");
+            // -----------------------------------------------------------------
+            // Load the Visio diagram (use existing load rule – placeholder here).
+            // -----------------------------------------------------------------
+            // Diagram diagram = LoadYourDiagramSomehow();
 
-            // Perform the conversion (e.g., save as PDF)
-            diagram.Save("output.pdf", SaveFileFormat.Pdf);
+            // -----------------------------------------------------------------
+            // Perform conversion operations here.
+            // -----------------------------------------------------------------
+            // ...
 
-            Console.WriteLine("Conversion completed successfully.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // -----------------------------------------------------------------
+            // Save the result (use existing save rule – placeholder here).
+            // -----------------------------------------------------------------
+            // SaveYourDiagramSomehow(diagram);
         }
     }
-}

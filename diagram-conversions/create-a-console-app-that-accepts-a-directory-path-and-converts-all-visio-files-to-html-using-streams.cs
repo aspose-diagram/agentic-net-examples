@@ -10,61 +10,58 @@ class Program
             // Verify that a directory path was provided
             if (args.Length == 0)
             {
-                Console.WriteLine("Please provide a directory path as an argument.");
+                Console.WriteLine("Please provide a directory path containing Visio files.");
                 return;
             }
 
-            string directoryPath = args[0];
+            string inputDirectory = args[0];
 
-            // Check if the directory exists
-            if (!Directory.Exists(directoryPath))
+            if (!Directory.Exists(inputDirectory))
             {
-                Console.WriteLine($"The directory \"{directoryPath}\" does not exist.");
+                Console.WriteLine($"The directory \"{inputDirectory}\" does not exist.");
                 return;
             }
 
-            // Supported Visio file extensions
-            string[] visioExtensions = new[]
+            // Define Visio file extensions to process
+            string[] visioExtensions = new[] { ".vsd", ".vsdx", ".vdx", ".vss", ".vssx", ".vst", ".vstx", ".vsx", ".vtx", ".vdw" };
+
+            // Get all Visio files in the directory (non‑recursive)
+            var visioFiles = Directory.GetFiles(inputDirectory)
+                                      .Where(f => visioExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
+                                      .ToList();
+
+            if (!visioFiles.Any())
             {
-                ".vsd", ".vsdx", ".vdx", ".vss", ".vssx", ".vst", ".vstx"
-            };
+                Console.WriteLine("No Visio files found in the specified directory.");
+                return;
+            }
 
-            // Enumerate all Visio files in the directory (including subfolders)
-            var visioFiles = Directory.EnumerateFiles(directoryPath, "*.*", SearchOption.AllDirectories)
-                                     .Where(f => visioExtensions.Contains(Path.GetExtension(f).ToLower()));
-
-            foreach (string visioFilePath in visioFiles)
+            foreach (var visioFilePath in visioFiles)
             {
                 try
                 {
-                    // Load the Visio diagram from the file
-                    using (Diagram diagram = new Diagram(visioFilePath))
+                    // Load the Visio diagram from file using the Diagram constructor (lifecycle rule)
+                    using (var diagram = new Diagram(visioFilePath))
                     {
-                        // Prepare a memory stream for the HTML output
-                        using (MemoryStream htmlStream = new MemoryStream())
+                        // Prepare an output stream for HTML (lifecycle rule)
+                        using (var htmlStream = new MemoryStream())
                         {
-                            // Save the diagram as HTML into the stream
+                            // Save the diagram to the stream in HTML format (save rule)
                             diagram.Save(htmlStream, SaveFileFormat.Html);
 
-                            // Reset stream position before reading
-                            htmlStream.Position = 0;
-
-                            // Determine the output HTML file path
+                            // Determine output HTML file path (same name with .html extension)
                             string htmlFilePath = Path.ChangeExtension(visioFilePath, ".html");
 
-                            // Write the HTML stream to the output file
-                            using (FileStream fileStream = new FileStream(htmlFilePath, FileMode.Create, FileAccess.Write))
-                            {
-                                htmlStream.CopyTo(fileStream);
-                            }
+                            // Write the stream content to the HTML file
+                            File.WriteAllBytes(htmlFilePath, htmlStream.ToArray());
 
-                            Console.WriteLine($"Converted \"{visioFilePath}\" to \"{htmlFilePath}\"");
+                            Console.WriteLine($"Converted \"{Path.GetFileName(visioFilePath)}\" to HTML successfully.");
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to convert \"{visioFilePath}\": {ex.Message}");
+                    Console.WriteLine($"Failed to convert \"{Path.GetFileName(visioFilePath)}\": {ex.Message}");
                 }
             }
         }

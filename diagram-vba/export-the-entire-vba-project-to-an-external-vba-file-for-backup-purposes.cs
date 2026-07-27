@@ -10,19 +10,13 @@ class ExportVbaProject
         {
 
             // Load the Visio diagram (replace with your actual file path)
-            string inputVisioPath = "sample.vsdx";
-            Diagram diagram = new Diagram(inputVisioPath);
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Retrieve the VBA project data (MIME‑encoded byte array)
+            // Retrieve the VBA project data (MIME‑encoded) as a byte array
             byte[] vbaData = diagram.VbProjectData;
 
-            // Define the output file for the VBA backup
-            string outputVbaPath = "backup.vba";
-
-            // Write the VBA project data to the external .vba file
-            File.WriteAllBytes(outputVbaPath, vbaData);
-
-            Console.WriteLine($"VBA project exported successfully to '{outputVbaPath}'.");
+            // Write the VBA project to an external .vba file for backup
+            File.WriteAllBytes("backup.vba", vbaData);
 
         }
         catch (System.IO.FileNotFoundException ex)

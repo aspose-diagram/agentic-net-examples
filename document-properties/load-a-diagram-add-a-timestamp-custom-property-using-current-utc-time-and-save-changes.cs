@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 
 class Program
 {
@@ -13,21 +14,20 @@ class Program
             string inputPath = "input.vsdx";
             string outputPath = "output.vsdx";
 
-            // Load the diagram from the file
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Create a new custom property to store the current UTC timestamp
-                CustomProp timestampProp = new CustomProp();
-                timestampProp.Name = "TimestampUTC";
-                timestampProp.PropType = PropType.String;
-                timestampProp.CustomValue.ValueString = DateTime.UtcNow.ToString("o");
+            // Load the existing diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Add the custom property to the document's custom properties collection
-                diagram.DocumentProps.CustomProps.Add(timestampProp);
+            // Create a custom property to store the current UTC timestamp
+            CustomProp timestampProp = new CustomProp();
+            timestampProp.Name = "Timestamp";
+            timestampProp.PropType = PropType.String;
+            timestampProp.CustomValue.ValueString = DateTime.UtcNow.ToString("o");
 
-                // Save the modified diagram back to a file
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
+            // Add the custom property to the diagram's custom properties collection
+            diagram.DocumentProps.CustomProps.Add(timestampProp);
+
+            // Save the diagram with the new custom property
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

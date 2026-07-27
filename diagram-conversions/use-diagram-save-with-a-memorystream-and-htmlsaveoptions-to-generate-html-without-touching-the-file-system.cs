@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,30 +11,31 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("sample.vsd");
+            // Load the Visio diagram (replace with your source as needed)
+            Diagram diagram = new Diagram("sample.vsdx");
 
-            // Configure HTML save options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.SaveAsSingleFile = true; // optional: generate a single HTML file
+            // Configure HTML save options (customize as required)
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            {
+                // Example: generate a single HTML file with embedded resources
+                SaveAsSingleFile = true,
+                // Example: include the toolbar in the output
+                SaveToolBar = true
+            };
 
-            // Create a memory stream to hold the HTML output
+            // Save the diagram to a memory stream in HTML format
             using (MemoryStream htmlStream = new MemoryStream())
             {
-                // Save the diagram as HTML into the memory stream
                 diagram.Save(htmlStream, htmlOptions);
 
-                // Reset the stream position to the beginning for reading
+                // Reset the stream position before reading
                 htmlStream.Position = 0;
 
-                // Read the generated HTML content from the stream
-                using (StreamReader reader = new StreamReader(htmlStream))
-                {
-                    string htmlContent = reader.ReadToEnd();
+                // Convert the HTML bytes to a string
+                string htmlContent = new StreamReader(htmlStream, Encoding.UTF8).ReadToEnd();
 
-                    // Example usage: output the HTML to console
-                    Console.WriteLine(htmlContent);
-                }
+                // htmlContent now contains the generated HTML without any file system access
+                Console.WriteLine(htmlContent);
             }
 
         }

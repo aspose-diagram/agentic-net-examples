@@ -2,74 +2,105 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramProgressLogging
 {
-    static void Main(string[] args)
+    // Custom callback to log page saving progress
+    public class ProgressLoggingCallback : IPageSavingCallback
     {
-        // Load configuration from appsettings.json
-        string configPath = "appsettings.json";
-        if (!File.Exists(configPath))
+        private readonly bool _enableLogging;
+
+        public ProgressLoggingCallback(bool enableLogging)
         {
-            Console.Error.WriteLine($"Config file not found: {configPath}");
-            return;
+            _enableLogging = enableLogging;
         }
 
-        bool enableLogging = false;
-        try
+        public void PageStartSaving(PageStartSavingArgs args)
         {
-            string json = File.ReadAllText(configPath);
-            using JsonDocument doc = JsonDocument.Parse(json);
-            if (doc.RootElement.TryGetProperty("EnableProgressLogging", out JsonElement elem) &&
-                elem.ValueKind == JsonValueKind.True)
+            // Log start of each page if logging is enabled
+            if (_enableLogging)
             {
-                enableLogging = true;
+                Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
             }
         }
-        catch (Exception ex)
+
+        public void PageEndSaving(PageEndSavingArgs args)
         {
-            Console.Error.WriteLine($"Error reading configuration: {ex.Message}");
-            return;
+            // Log end of each page if logging is enabled
+            if (_enableLogging)
+            {
+                Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+            }
         }
+    }
 
-        if (enableLogging)
-            Console.WriteLine("Progress logging is enabled.");
-
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+    public class Program
+    {
+        public static void Main(string[] args)
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
-            return;
-        }
+            // Path to optional configuration file
+            string configPath = "appsettings.json";
 
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-            if (enableLogging)
-                Console.WriteLine("Diagram loaded successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+            // Default to disabled logging
+            bool enableProgressLogging = false;
 
-        // Define output path and format
-        string outputPath = "output.png";
-        if (enableLogging)
-            Console.WriteLine($"Saving diagram to '{outputPath}'...");
+            // Attempt to read configuration if file exists
+            if (File.Exists(configPath))
+            {
+                try
+                {
+                    // Parse JSON and extract the EnableProgressLogging flag
+                    string json = File.ReadAllText(configPath);
+                    using JsonDocument doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("EnableProgressLogging", out JsonElement elem) &&
+                        elem.ValueKind == JsonValueKind.True)
+                    {
+                        enableProgressLogging = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Report any errors while reading config but continue with defaults
+                    Console.Error.WriteLine($"Error reading config: {ex.Message}");
+                }
+            }
 
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Png);
-            if (enableLogging)
+            // Paths to input diagram and output PDF
+            string inputPath = "input.vsdx";
+            // Guard: ensure input file exists before proceeding
+            if (!File.Exists(inputPath))
+            {
+                Console.Error.WriteLine($"File not found: {inputPath}");
+                return;
+            }
+
+            string outputPath = "output.pdf";
+
+            try
+            {
+                // Load the diagram from the input file
+                Diagram diagram = new Diagram(inputPath);
+
+                // Set up PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+                // Assign the progress logging callback if enabled
+                if (enableProgressLogging)
+                {
+                    pdfOptions.PageSavingCallback = new ProgressLoggingCallback(true);
+                }
+
+                // Save the diagram as PDF using the configured options
+                diagram.Save(outputPath, pdfOptions);
+
                 Console.WriteLine("Diagram saved successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                // Capture any Aspose or I/O errors and report them
+                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            }
         }
     }
 }

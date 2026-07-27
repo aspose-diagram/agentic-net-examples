@@ -9,31 +9,35 @@ public class TempFolderStreamProvider : IStreamProvider
 
     public TempFolderStreamProvider()
     {
-        // Create a unique temporary folder for this conversion.
-        _tempFolder = Path.Combine(Path.GetTempPath(), "AsposeDiagramTemp_" + Guid.NewGuid().ToString("N"));
+        // Create a unique temporary folder for this conversion
+        _tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(_tempFolder);
     }
 
-    // Called by Aspose.Diagram when a resource stream is required.
+    // Called by Aspose.Diagram when a resource stream is needed
     public void InitStream(StreamProviderOptions options)
     {
-        // The DefaultPath property contains the original resource name (e.g., image file name).
-        // Build a full path inside the temporary folder.
-        string fileName = Path.GetFileName(options.DefaultPath);
-        string fullPath = Path.Combine(_tempFolder, fileName);
+        // Combine the temporary folder with the default path provided by the options
+        // DefaultPath is read‑only and contains the relative file name (e.g., "images/img1.png")
+        string filePath = Path.Combine(_tempFolder, options.DefaultPath);
 
-        // Create a writable file stream and assign it to the options.
-        options.Stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
+        // Ensure the directory for the file exists
+        string dir = Path.GetDirectoryName(filePath);
+        if (!Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+
+        // Assign a writable FileStream to the options
+        options.Stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
     }
 
-    // Called after the resource has been written.
+    // Called after the resource has been written
     public void CloseStream(StreamProviderOptions options)
     {
-        // Ensure the stream is properly closed and disposed.
         options.Stream?.Dispose();
+        options.Stream = null;
     }
 
-    // Helper to clean up the temporary folder after conversion.
+    // Cleanup method to delete the temporary folder after conversion
     public void Cleanup()
     {
         if (Directory.Exists(_tempFolder))
@@ -44,7 +48,7 @@ public class TempFolderStreamProvider : IStreamProvider
             }
             catch
             {
-                // If deletion fails, ignore – the OS may still be releasing handles.
+                // Ignored – folder may be in use or already deleted
             }
         }
     }
@@ -54,29 +58,31 @@ public class Program
 {
     public static void Main()
     {
-        // Load or create a diagram.
-        Diagram diagram = new Diagram();
-
-        // Configure HTML export options.
-        HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+        try
         {
-            // Use the custom stream provider to write resources to a temp folder.
-            StreamProvider = new TempFolderStreamProvider(),
-            // Export each page as separate files (default behavior).
-            SaveAsSingleFile = false
-        };
 
-        // Export the diagram to HTML.
-        string outputPath = "output.html";
-        diagram.Save(outputPath, htmlOptions);
+            // Load a diagram (replace with your actual file path)
+            string inputPath = "sample.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-        // Clean up temporary resources.
-        if (htmlOptions.StreamProvider is TempFolderStreamProvider provider)
-        {
-            provider.Cleanup();
+            // Configure HTML save options with the custom stream provider
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            TempFolderStreamProvider streamProvider = new TempFolderStreamProvider();
+            htmlOptions.StreamProvider = streamProvider;
+
+            // Save the diagram to HTML; resources (images, CSS, etc.) will be written to the temp folder
+            string outputHtml = "output.html";
+            diagram.Save(outputHtml, htmlOptions);
+
+            // Clean up temporary resources
+            streamProvider.Cleanup();
+
+            Console.WriteLine($"Diagram exported to {outputHtml}");
+
         }
-
-        // Optional: inform the user.
-        Console.WriteLine($"Diagram exported to {outputPath}. Temporary resources have been removed.");
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

@@ -4,59 +4,51 @@ using System.IO.Compression;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace GzipHtmlExport
+namespace DiagramHtmlExport
 {
-    // Implements IStreamProvider to compress exported resources using GZIP.
+    // Implements IStreamProvider to compress each resource using GZIP before writing to disk.
     public class GzipStreamProvider : IStreamProvider
     {
-        // Called before a resource stream is created.
+        // Called by Aspose.Diagram when a new resource stream is required.
         public void InitStream(StreamProviderOptions options)
         {
-            // The path where the resource should be saved.
-            string targetPath = options.DefaultPath;
+            // Ensure the target directory exists.
+            string directory = Path.GetDirectoryName(options.DefaultPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
 
-            // Create a file stream for the target path.
-            FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write);
-
-            // Wrap the file stream with GZip compression.
-            GZipStream gzipStream = new GZipStream(fileStream, CompressionMode.Compress);
-
-            // Assign the compressed stream back to the options.
-            options.Stream = gzipStream;
+            // Create a file stream for the resource and wrap it with GZipStream for compression.
+            FileStream fileStream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write);
+            options.Stream = new GZipStream(fileStream, CompressionMode.Compress);
         }
 
-        // Called after the resource has been written.
+        // Called after the resource has been written; dispose the stream.
         public void CloseStream(StreamProviderOptions options)
         {
-            // Dispose the stream (which also disposes the underlying file stream).
             options.Stream?.Dispose();
         }
     }
 
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input Visio file path (adjust as needed).
-                string inputPath = "input.vsdx";
+                // Load an existing Visio diagram.
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Output HTML file path.
-                string outputPath = "output.html";
-
-                // Load the diagram.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Configure HTML save options and assign the custom stream provider.
+                // Configure HTML export options and assign the custom GZIP stream provider.
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
                     StreamProvider = new GzipStreamProvider()
                 };
 
-                // Save the diagram as HTML; resources will be compressed via GZIP.
-                diagram.Save(outputPath, htmlOptions);
+                // Export the diagram to HTML; resources (images, CSS, etc.) will be compressed.
+                diagram.Save("output.html", htmlOptions);
 
                 Console.WriteLine("Diagram exported to HTML with GZIP-compressed resources.");
 

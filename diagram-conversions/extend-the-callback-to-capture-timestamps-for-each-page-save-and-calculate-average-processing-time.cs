@@ -1,58 +1,58 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class TimingPageSavingCallback : IPageSavingCallback
+// Custom callback to capture timestamps for each page and compute average processing time
+class PageTimingCallback : IPageSavingCallback
 {
-    private readonly Stopwatch _stopwatch = new Stopwatch();
+    // Stores the start time of the current page
+    private DateTime _pageStartTime;
+
+    // List of processing times (in milliseconds) for all pages
     private readonly List<double> _pageDurations = new List<double>();
 
     // Called when a page starts saving
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        // Restart the stopwatch for the new page
-        _stopwatch.Restart();
+        // Record the start timestamp for this page
+        _pageStartTime = DateTime.UtcNow;
     }
 
     // Called when a page finishes saving
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        // Stop the stopwatch and record the elapsed time for this page
-        _stopwatch.Stop();
-        _pageDurations.Add(_stopwatch.Elapsed.TotalMilliseconds);
+        // Calculate the elapsed time for the page
+        var elapsedMs = (DateTime.UtcNow - _pageStartTime).TotalMilliseconds;
+        _pageDurations.Add(elapsedMs);
 
-        // If this was the last page, calculate and output the average processing time
+        // If this was the last page, compute and display the average processing time
         if (!args.HasMorePages)
         {
-            double average = _pageDurations.Count > 0
-                ? _pageDurations.Average()
-                : 0.0;
-
+            double average = _pageDurations.Count > 0 ? _pageDurations.Average() : 0;
             Console.WriteLine($"Average page processing time: {average:F2} ms");
         }
     }
 }
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
 
-            // Load the diagram (replace with your actual file path)
+            // Load the diagram (using the provided load rule)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Configure PDF save options and attach the timing callback
+            // Configure PDF save options and attach the custom callback
             PdfSaveOptions saveOptions = new PdfSaveOptions
             {
-                PageSavingCallback = new TimingPageSavingCallback()
+                PageSavingCallback = new PageTimingCallback()
             };
 
-            // Save the diagram to PDF (replace with your desired output path)
+            // Save the diagram to PDF (using the provided save rule)
             diagram.Save("output.pdf", saveOptions);
 
         }

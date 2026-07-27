@@ -5,48 +5,69 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramHtmlExport
 {
-    // Custom stream provider that logs each resource creation event.
+    // Custom stream provider that logs each resource creation event
     public class LoggingStreamProvider : IStreamProvider
     {
-        // Called by Aspose.Diagram when a new resource stream is needed.
+        // Called when a new resource stream is required
         public void InitStream(StreamProviderOptions options)
         {
-            // Log the resource being created.
-            Console.WriteLine($"[Log] InitStream called for resource: {options.DefaultPath}");
+            // Log the resource being created (e.g., image, CSS, etc.)
+            Console.WriteLine($"[Log] Creating resource: {options.DefaultPath}");
 
-            // Provide a memory stream for the resource.
-            options.Stream = new MemoryStream();
+            // Create a file stream for the resource and assign it to the options
+            // Ensure the directory exists
+            string directory = Path.GetDirectoryName(options.DefaultPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            options.Stream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write);
         }
 
-        // Called by Aspose.Diagram when the resource stream is no longer needed.
+        // Called when the resource stream is closed
         public void CloseStream(StreamProviderOptions options)
         {
-            // Log the resource being closed.
-            Console.WriteLine($"[Log] CloseStream called for resource: {options.DefaultPath}");
+            // Log the closing of the resource
+            Console.WriteLine($"[Log] Closing resource: {options.DefaultPath}");
 
-            // Ensure the stream is properly disposed.
+            // Dispose the stream if it was created
             options.Stream?.Dispose();
         }
     }
 
-    class Program
+    public class Program
     {
-        static void Main()
+        public static void Main(string[] args)
         {
-            // Create an empty diagram.
-            Diagram diagram = new Diagram();
-
-            // Configure HTML save options and assign the custom stream provider.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            try
             {
-                StreamProvider = new LoggingStreamProvider()
-            };
 
-            // Save the diagram to HTML. This will trigger InitStream/CloseStream for each resource.
-            string outputPath = "output.html";
-            diagram.Save(outputPath, htmlOptions);
+                // Input Visio file (adjust the path as needed)
+                string inputPath = "input.vsdx";
 
-            Console.WriteLine("Diagram saved to HTML with logging.");
-        }
+                // Output HTML file
+                string outputPath = "output.html";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Configure HTML save options and assign the custom stream provider
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    StreamProvider = new LoggingStreamProvider()
+                };
+
+                // Save the diagram as HTML; the stream provider will log each resource creation
+                diagram.Save(outputPath, htmlOptions);
+
+                Console.WriteLine("HTML export completed.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

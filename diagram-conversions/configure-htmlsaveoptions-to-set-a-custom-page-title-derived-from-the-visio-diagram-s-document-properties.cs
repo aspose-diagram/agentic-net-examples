@@ -15,20 +15,17 @@ class Program
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Derive a custom title from the document's built‑in or custom properties
+            // Derive a custom title from the built‑in document properties
             string title = diagram.DocumentProps.Title;
-
-            // If the built‑in title is empty, fall back to the first custom property (if any)
-            if (string.IsNullOrWhiteSpace(title) && diagram.DocumentProps.CustomProps.Count > 0)
+            if (string.IsNullOrWhiteSpace(title))
             {
-                CustomProp firstCustom = diagram.DocumentProps.CustomProps[0];
-                title = firstCustom.CustomValue.ValueString;
+                // Fallback to the file name (without extension) if the Title property is empty
+                title = System.IO.Path.GetFileNameWithoutExtension(inputPath);
             }
 
-            // Configure HTML export options with the derived title
+            // Configure HTML save options with the custom title
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.Title = title;          // Set the page title
-            htmlOptions.SaveTitle = true;       // Ensure the title is included in the output
+            htmlOptions.Title = title; // sets the page title in the generated HTML
 
             // Save the diagram as HTML using the configured options
             string outputPath = "output.html";

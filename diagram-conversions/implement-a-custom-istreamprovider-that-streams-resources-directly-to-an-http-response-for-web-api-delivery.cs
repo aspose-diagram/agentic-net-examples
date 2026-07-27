@@ -1,76 +1,76 @@
 using System;
 using System.IO;
+using System.Net;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class HttpResponseStreamProvider : IStreamProvider
 {
-    static void Main(string[] args)
+    private readonly HttpListenerResponse _response;
+
+    public HttpResponseStreamProvider(HttpListenerResponse response)
     {
-        // Example invocation
-        string diagramPath = "sample.vsdx";
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
-
-        // Simulate an HTTP response using a MemoryStream for demonstration.
-        using var responseStream = new MemoryStream();
-        var exporter = new DiagramExporter();
-        exporter.ExportDiagramAsHtml(diagramPath, responseStream);
-        // The responseStream now contains the HTML output.
-    }
-}
-
-// Custom IStreamProvider that writes diagram resources directly to a provided Stream.
-public class StreamProvider : IStreamProvider
-{
-    private readonly Stream _outputStream;
-
-    public StreamProvider(Stream outputStream)
-    {
-        _outputStream = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
+        _response = response;
     }
 
+    // Assign the HTTP response output stream to the options
     public void InitStream(StreamProviderOptions options)
     {
-        // Assign the provided stream to the options.
-        options.Stream = _outputStream;
+        options.Stream = _response.OutputStream;
     }
 
+    // Flush the stream after writing; do not close the response here
     public void CloseStream(StreamProviderOptions options)
     {
-        // No special cleanup required.
+        options.Stream?.Flush();
     }
 }
 
-// Service class handling diagram export.
-public class DiagramExporter
+class Program
 {
-    public void ExportDiagramAsHtml(string diagramFilePath, Stream outputStream)
+    static void Main()
     {
-        if (!File.Exists(diagramFilePath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramFilePath}");
-            return;
-        }
+        // Simple HTTP listener that serves the HTML export of a Visio diagram
+        HttpListener listener = new HttpListener();
+        listener.Prefixes.Add("http://localhost:8080/");
+        listener.Start();
+        Console.WriteLine("Listening on http://localhost:8080/ ...");
 
-        try
+        while (true)
         {
-            var diagram = new Diagram(diagramFilePath);
-
-            var htmlOptions = new HTMLSaveOptions
+            HttpListenerContext context = listener.GetContext(); // wait for request
+            try
             {
-                StreamProvider = new StreamProvider(outputStream)
-            };
+                // Load the diagram (adjust the path as needed)
+                string diagramPath = "sample.vsdx";
+                Diagram diagram = new Diagram(diagramPath);
 
-            // Save the diagram; Aspose will stream the HTML directly to the provided stream.
-            diagram.Save(outputStream, htmlOptions);
+                // Configure HTML save options and assign the custom stream provider
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                htmlOptions.StreamProvider = new HttpResponseStreamProvider(context.Response);
+                htmlOptions.Title = "Exported Diagram";
+
+                // Set response headers for HTML content
+                context.Response.ContentType = "text/html";
+
+                // Save the diagram directly to the HTTP response stream
+                diagram.Save(context.Response.OutputStream, htmlOptions);
+
+                // Close the response stream
+                context.Response.OutputStream.Close();
+            }
+            catch (Exception ex)
+            {
+                // Return error information
+                context.Response.StatusCode = 500;
+                using (StreamWriter writer = new StreamWriter(context.Response.OutputStream))
+                {
+                    writer.Write($"Error: {ex.Message}");
+                }
+                context.Response.OutputStream.Close();
+            }
         }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error during export: {ex.Message}");
-        }
+
+        // listener.Stop(); // Unreachable in this example
     }
 }

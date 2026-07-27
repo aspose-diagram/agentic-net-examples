@@ -8,54 +8,49 @@ namespace DiagramConversion
     // Simple localization helper
     public static class Localizer
     {
-        private static readonly Dictionary<string, Dictionary<string, string>> _messages = new()
+        // Language code -> (key -> message)
+        private static readonly Dictionary<string, Dictionary<string, string>> _messages = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
         {
-            {
-                "en", new Dictionary<string, string>
+            { "en", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    { "SelectLanguage", "Select language (en/es): " },
-                    { "EnterInputPath", "Enter the path of the Visio file to convert: " },
-                    { "EnterOutputPath", "Enter the desired output PNG file path: " },
-                    { "LoadingDiagram", "Loading diagram..." },
-                    { "DiagramLoaded", "Diagram loaded successfully." },
-                    { "Converting", "Converting diagram to PNG..." },
-                    { "ConversionCompleted", "Conversion completed." },
-                    { "SavingFile", "Saving file..." },
-                    { "FileSaved", "File saved at: {0}" },
-                    { "Error", "Error: {0}" }
+                    { "Loading", "Loading diagram..." },
+                    { "Saving", "Saving diagram..." },
+                    { "Completed", "Conversion completed successfully." },
+                    { "Error", "An error occurred: {0}" }
                 }
             },
-            {
-                "es", new Dictionary<string, string>
+            { "es", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    { "SelectLanguage", "Seleccione el idioma (en/es): " },
-                    { "EnterInputPath", "Ingrese la ruta del archivo Visio a convertir: " },
-                    { "EnterOutputPath", "Ingrese la ruta de salida del archivo PNG: " },
-                    { "LoadingDiagram", "Cargando diagrama..." },
-                    { "DiagramLoaded", "Diagrama cargado correctamente." },
-                    { "Converting", "Convirtiendo diagrama a PNG..." },
-                    { "ConversionCompleted", "Conversión completada." },
-                    { "SavingFile", "Guardando archivo..." },
-                    { "FileSaved", "Archivo guardado en: {0}" },
-                    { "Error", "Error: {0}" }
+                    { "Loading", "Cargando el diagrama..." },
+                    { "Saving", "Guardando el diagrama..." },
+                    { "Completed", "Conversión completada con éxito." },
+                    { "Error", "Ocurrió un error: {0}" }
+                }
+            },
+            { "fr", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Loading", "Chargement du diagramme..." },
+                    { "Saving", "Enregistrement du diagramme..." },
+                    { "Completed", "Conversion terminée avec succès." },
+                    { "Error", "Une erreur s'est produite : {0}" }
                 }
             }
         };
 
-        private static string _currentLang = "en";
+        // Selected language (default to English)
+        public static string Language { get; set; } = "en";
 
-        public static void SetLanguage(string langCode)
-        {
-            if (_messages.ContainsKey(langCode))
-                _currentLang = langCode;
-        }
-
+        // Retrieve a localized message; fallback to English if missing
         public static string Get(string key, params object[] args)
         {
-            if (_messages.TryGetValue(_currentLang, out var dict) && dict.TryGetValue(key, out var msg))
-                return args.Length > 0 ? string.Format(msg, args) : msg;
-            // Fallback to key if not found
-            return key;
+            if (!_messages.TryGetValue(Language, out var langDict) || !langDict.TryGetValue(key, out var template))
+            {
+                // Fallback to English
+                _messages["en"].TryGetValue(key, out template);
+                template ??= key; // if still missing, use key itself
+            }
+
+            return args != null && args.Length > 0 ? string.Format(template, args) : template;
         }
     }
 
@@ -63,39 +58,41 @@ namespace DiagramConversion
     {
         static void Main()
         {
-            // Select language
-            Console.Write(Localizer.Get("SelectLanguage"));
-            string lang = Console.ReadLine()?.Trim().ToLower() ?? "en";
-            Localizer.SetLanguage(lang);
+            // Prompt user for language selection
+            Console.WriteLine("Select language (en/es/fr):");
+            string inputLang = Console.ReadLine()?.Trim();
+            if (!string.IsNullOrEmpty(inputLang) && Localizer.Language != null)
+            {
+                Localizer.Language = inputLang;
+            }
 
-            // Input file path
-            Console.Write(Localizer.Get("EnterInputPath"));
-            string inputPath = Console.ReadLine()?.Trim();
-
-            // Output file path
-            Console.Write(Localizer.Get("EnterOutputPath"));
-            string outputPath = Console.ReadLine()?.Trim();
+            // Paths (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.png";
 
             try
             {
-                // Load diagram
-                Console.WriteLine(Localizer.Get("LoadingDiagram"));
+                // Show localized loading message
+                Console.WriteLine(Localizer.Get("Loading"));
+
+                // Load diagram using Aspose.Diagram
                 Diagram diagram = new Diagram(inputPath);
-                Console.WriteLine(Localizer.Get("DiagramLoaded"));
 
-                // Convert to PNG
-                Console.WriteLine(Localizer.Get("Converting"));
+                // Show localized saving message
+                Console.WriteLine(Localizer.Get("Saving"));
+
+                // Prepare PNG save options
                 ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                diagram.Save(outputPath, saveOptions);
-                Console.WriteLine(Localizer.Get("ConversionCompleted"));
 
-                // Save file (already saved by Save method, but keep message for UI flow)
-                Console.WriteLine(Localizer.Get("SavingFile"));
-                // No additional action needed; Save already performed.
-                Console.WriteLine(Localizer.Get("FileSaved", outputPath));
+                // Save diagram to PNG
+                diagram.Save(outputPath, saveOptions);
+
+                // Show localized completion message
+                Console.WriteLine(Localizer.Get("Completed"));
             }
             catch (Exception ex)
             {
+                // Show localized error message
                 Console.WriteLine(Localizer.Get("Error", ex.Message));
             }
         }

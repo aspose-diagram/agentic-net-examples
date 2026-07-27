@@ -3,32 +3,36 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VisioConversion
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the encrypted Visio file
-            const string inputPath = "encrypted_input.vsd";
-            // Path for the converted output file
-            const string outputPath = "converted_output.vdx";
+            // Path to the encrypted Visio file (the password cannot be supplied; Aspose.Diagram does not support it)
+            string inputPath = "encrypted_diagram.vsdx";
+            // Output PDF path
+            string outputPath = "converted_diagram.pdf";
 
-            // Open the encrypted Visio file as a stream
-            using (FileStream inputStream = File.OpenRead(inputPath))
+            // Load the Visio file from a stream
+            using (FileStream stream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
             {
-                // Prepare load options – specify format if needed and set the password
-                LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsd);
-                // If the LoadOptions class supports a Password property, set it here
-                // loadOptions.Password = "yourPassword"; // Uncomment and set the actual password
+                // The Diagram constructor loads the document from the stream.
+                // Note: Encrypted files cannot be opened with a password using Aspose.Diagram.
+                Diagram diagram = new Diagram(stream);
 
-                // Load the diagram from the encrypted stream using the load options
-                Diagram diagram = new Diagram(inputStream, loadOptions);
+                // Prepare PDF save options (optional: set default font to avoid missing glyphs)
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                {
+                    DefaultFont = "Arial"
+                };
 
-                // Save the diagram in the desired format (e.g., VDX)
-                diagram.Save(outputPath, SaveFileFormat.Vdx);
+                // Save the diagram as PDF
+                diagram.Save(outputPath, pdfOptions);
             }
+
+            Console.WriteLine("Conversion completed.");
 
         }
         catch (System.IO.FileNotFoundException ex)

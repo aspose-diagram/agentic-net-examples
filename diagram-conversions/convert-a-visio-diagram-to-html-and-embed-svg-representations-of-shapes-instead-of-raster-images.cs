@@ -1,43 +1,39 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
+            // Validate input arguments
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: VisioToHtmlSvg <inputVisioFile> <outputHtmlFile>");
+                return;
+            }
 
-            // Path to the source Visio file (VDX, VSDX, etc.)
-            string inputPath = "input.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-            // Path where the HTML output will be saved
-            string outputPath = "output.html";
-
-            // Load the Visio diagram from the file system
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
             // Configure HTML export options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            {
+                // Export all pages (default), do not export hidden pages
+                ExportHiddenPage = false,
+                // Do not include comments in the HTML output
+                IsExportComments = false,
+                // Generate a single HTML file with embedded resources
+                SaveAsSingleFile = true
+                // The HTML exporter will embed vector graphics (SVG) for shapes automatically
+            };
 
-            // Do not export hidden pages (optional)
-            htmlOptions.ExportHiddenPage = false;
-
-            // Do not include comments in the HTML (optional)
-            htmlOptions.IsExportComments = false;
-
-            // Save the entire diagram as a single HTML file with embedded SVG shapes
-            htmlOptions.SaveAsSingleFile = true;
-
-            // Export the diagram to HTML using the configured options
+            // Save the diagram as HTML with embedded SVG representations
             diagram.Save(outputPath, htmlOptions);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Diagram successfully exported to HTML: {outputPath}");
         }
     }
-}

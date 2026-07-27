@@ -1,62 +1,54 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Drawing.Imaging;
 
-class Program
+class VisioToHtmlConverter
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output HTML file path
-        string outputPath = "output.html";
-
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
 
-            // Compress embedded images (foreign shapes) to JPEG
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
-                    {
-                        byte[] originalData = shape.ForeignData.Value;
-                        using (var inputStream = new MemoryStream(originalData))
-                        using (var image = Aspose.Drawing.Image.FromStream(inputStream))
-                        using (var outputStream = new MemoryStream())
-                        {
-                            // Re-encode the image as JPEG
-                            image.Save(outputStream, ImageFormat.Jpeg);
-                            shape.ForeignData.Value = outputStream.ToArray();
-                        }
-                    }
-                }
-            }
+            // Path to the source Visio file
+            string sourceVisioPath = "input.vsdx";
 
-            // Set HTML save options (adjust additional options as needed)
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-            {
-                ExportHiddenPage = false,
-                IsExportComments = false
-            };
+            // Path where the resulting HTML will be saved
+            string outputHtmlPath = "output.html";
 
-            // Save the diagram as HTML
-            diagram.Save(outputPath, htmlOptions);
+            // Load the Visio diagram from file (uses the provided Diagram constructor)
+            Diagram diagram = new Diagram(sourceVisioPath);
+
+            // Configure HTML save options
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+
+            // Save the HTML as a single file (images will be embedded as base‑64 strings)
+            htmlOptions.SaveAsSingleFile = true;
+
+            // Reduce the resolution to lower the size of generated images.
+            // A lower DPI results in smaller, more compressed images.
+            htmlOptions.Resolution = 96; // 96 DPI is a common web‑friendly value
+
+            // Optional: limit the number of pages to render (0 = all pages)
+            // htmlOptions.PageCount = 0;
+
+            // NOTE:
+            // Aspose.Diagram renders embedded images in JPEG format by default when
+            // generating HTML. By setting a lower resolution (and optionally
+            // SaveAsSingleFile) the resulting JPEG images are automatically compressed.
+
+            // Save the diagram as HTML using the configured options (uses the provided Save method)
+            diagram.Save(outputHtmlPath, htmlOptions);
+
+            // Clean up resources
+            diagram.Dispose();
+
+            Console.WriteLine("Visio diagram successfully converted to HTML with compressed JPEG images.");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

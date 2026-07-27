@@ -1,57 +1,65 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramPageSavingDemo
+public class MyPageSavingCallback : IPageSavingCallback
 {
-    // Custom callback to receive page‑level notifications during saving
-    public class MyPageSavingCallback : IPageSavingCallback
+    // Invoked when a page starts to be saved.
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        // Called when a page starts to be saved
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            // Example: write start info to console
-            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+        // Log start information.
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
 
-            // Optionally cancel saving of a specific page
-            // args.IsToOutput = false; // uncomment to skip a page
-        }
-
-        // Called when a page finishes saving
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            // Example: write end info to console
-            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-
-            // Indicate whether more pages remain (default is true)
-            // args.HasMorePages = args.PageIndex < args.PageCount - 1;
-        }
+        // Example: cancel saving of a specific page.
+        // args.IsToOutput = false;
     }
 
-    class Program
+    // Invoked when a page has finished saving.
+    public void PageEndSaving(PageEndSavingArgs args)
     {
-        static void Main()
-        {
-            try
-            {
+        // Log completion information.
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
 
-                // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Configure PDF save options and attach the custom callback
-                PdfSaveOptions saveOptions = new PdfSaveOptions
-                {
-                    PageSavingCallback = new MyPageSavingCallback()
-                };
-
-                // Save the diagram to PDF; callbacks will be invoked for each page
-                diagram.Save("output.pdf", saveOptions);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        // Example: indicate whether more pages remain.
+        // args.HasMorePages = args.PageIndex < args.PageCount - 1;
     }
+}
+
+// Demonstrates assigning the callback to PdfSaveOptions.
+public class DiagramConverter
+{
+    public void ConvertToPdf(string sourceFile, string targetFile)
+    {
+        // Load the diagram (uses existing load rule).
+        Diagram diagram = new Diagram(sourceFile);
+
+        // Configure PDF save options.
+        PdfSaveOptions pdfOptions = new PdfSaveOptions
+        {
+            // Attach the custom page‑saving callback.
+            PageSavingCallback = new MyPageSavingCallback()
+        };
+
+        // Save the diagram as PDF (uses existing save rule).
+        diagram.Save(targetFile, pdfOptions);
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        try
+        {
+
+            var obj = new MyPageSavingCallback();
+            obj.PageStartSaving(null);
+
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+        }
     }
 }

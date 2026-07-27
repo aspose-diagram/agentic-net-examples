@@ -10,19 +10,15 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
+            // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create HTML save options
+            // Create HTML save options and configure them
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.SaveAsSingleFile = true;   // Embed all resources (images, CSS, etc.) as base64
+            htmlOptions.Resolution = 96;           // Optional: set DPI for generated images
 
-            // Generate a single HTML file with all resources (images, CSS, etc.) embedded as Base64
-            htmlOptions.SaveAsSingleFile = true;
-
-            // Optional: set resolution (default is 96 DPI)
-            htmlOptions.Resolution = 96;
-
-            // Save the diagram as a single HTML file
+            // Save the diagram as a single HTML file with embedded resources
             diagram.Save("output.html", htmlOptions);
 
         }

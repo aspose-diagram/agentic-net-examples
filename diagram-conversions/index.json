@@ -1,11 +1,11 @@
 {
   "category": "diagram-conversions",
   "display_name": "Diagram Conversions",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 96,
   "pass_rate": 100.0,
-  "generated": "2026-06-04",
+  "generated": "2026-07-27",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,12 +14,14 @@
       "task": "Add configuration to enable or disable progress logging via appsettings json without code changes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Text.Json"
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -31,8 +33,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.Collections.Generic"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -48,7 +49,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -98,13 +100,12 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
-        "PdfSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -133,8 +134,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -185,8 +185,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -243,7 +242,9 @@
       ],
       "key_apis": [
         "Diagram",
-        "Save",
+        "HTMLSaveOptions",
+        "Pages",
+        "Shapes",
         "diagram"
       ]
     },
@@ -259,7 +260,6 @@
         "System.Net.Http",
         "System.Net.Http.Headers",
         "System.Text",
-        "System.Text.Json",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -279,13 +279,13 @@
         "System",
         "System.IO",
         "System.Net.Mail",
-        "System.Net.Mime",
         "System.Text"
       ],
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Save",
+        "Pages",
+        "Shapes",
         "diagram"
       ]
     },
@@ -302,7 +302,6 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -316,12 +315,12 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Linq",
-        "System.Xml.Linq"
+        "System.Xml"
       ],
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -358,8 +357,7 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
-        "Shapes",
+        "Save",
         "diagram"
       ]
     },
@@ -370,8 +368,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -387,16 +384,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "Aspose.Drawing.Imaging",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -406,8 +401,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -492,9 +486,11 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "HTMLSaveOptions",
         "Save",
@@ -525,8 +521,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.Collections.Generic"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -542,14 +537,15 @@
       "task": "Create a wpf application that visualizes conversion progress using animated progress circles per page",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO",
-        "System.Threading"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
+        "Page",
         "Pages",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -559,8 +555,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -634,8 +629,7 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
-        "Shapes",
+        "Save",
         "diagram"
       ]
     },
@@ -663,10 +657,11 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Concurrent",
         "System.IO",
         "System.Net",
-        "System.Text.Json"
+        "System.Text",
+        "System.Text.Json",
+        "System.Threading"
       ],
       "key_apis": [
         "Diagram",
@@ -684,15 +679,13 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
-        "System.Diagnostics",
         "System.Linq"
       ],
       "key_apis": [
         "Diagram",
         "PdfSaveOptions",
         "Save",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -741,12 +734,14 @@
         "System",
         "System.Collections.Generic",
         "System.IO",
+        "System.Text",
         "System.Text.RegularExpressions"
       ],
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Save",
+        "Pages",
+        "Shapes",
         "diagram"
       ]
     },
@@ -774,8 +769,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Threading",
-        "System.Threading.Tasks"
+        "System.Threading"
       ],
       "key_apis": [
         "Diagram",
@@ -791,7 +785,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -808,8 +803,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Concurrent",
-        "System.Diagnostics",
         "System.Threading"
       ],
       "key_apis": [
@@ -862,7 +855,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Net"
       ],
       "key_apis": [
         "Diagram",
@@ -879,9 +873,15 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
-      "key_apis": []
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
     },
     {
       "slug": "implement-a-logging-mechanism-inside-istreamprovider-getstream-to-record-each-resource-creation-event",
@@ -942,11 +942,11 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.Collections.Generic"
+        "System"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "PdfSaveOptions",
         "Save",
         "diagram"
@@ -960,15 +960,13 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -986,8 +984,8 @@
         "AddShape",
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -1141,8 +1139,8 @@
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Pages",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -1157,9 +1155,7 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Pages",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -1175,9 +1171,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -1186,12 +1180,15 @@
       "task": "Log page index and total page count to a database table for audit trail purposes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
+        "System.Data",
         "System.Data.SqlClient"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
+        "PdfSaveOptions",
+        "Save",
         "diagram"
       ]
     },
@@ -1238,7 +1235,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -1287,7 +1283,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1339,9 +1336,7 @@
         "System",
         "System.Collections.Generic",
         "System.IO",
-        "System.Net.Http",
-        "System.Text.Json",
-        "System.Threading.Tasks"
+        "System.Text.Json"
       ],
       "key_apis": [
         "Diagram",
@@ -1393,8 +1388,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Security.Cryptography"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1429,8 +1424,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1451,6 +1445,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -1461,12 +1456,14 @@
       "task": "Use diagram loadoptions to specify password for encrypted visio files before tracking conversion progress",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -1496,7 +1493,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -1518,7 +1516,8 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Save",
+        "Pages",
+        "Shapes",
         "diagram"
       ]
     },
@@ -1563,7 +1562,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1580,12 +1580,13 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Concurrent",
+        "System.Collections.Generic",
         "System.IO",
         "System.Threading.Tasks"
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -1598,6 +1599,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO",
         "System.Text.RegularExpressions"
       ],

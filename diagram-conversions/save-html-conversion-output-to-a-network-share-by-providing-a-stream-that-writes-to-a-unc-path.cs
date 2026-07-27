@@ -11,35 +11,30 @@ class Program
         {
 
             // Load the Visio diagram from a local file
-            Diagram diagram = new Diagram(@"C:\Docs\sample.vsdx");
+            Diagram diagram = new Diagram(@"C:\InputDiagram.vsdx");
 
-            // Select the shape to be converted (e.g., first shape on the first page)
+            // Access a shape to be converted (example: first shape on the first page)
             Shape shape = diagram.Pages[0].Shapes[0];
 
-            // Configure HTML save options
+            // Configure HTML save options (optional settings)
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                // Save the HTML as a single file for easier handling
-                SaveAsSingleFile = true
+                SaveAsSingleFile = true // save as a single HTML file
             };
 
-            // UNC path on the network share where the HTML will be written
-            string uncPath = @"\\Server\Share\Exports\shape.html";
-
-            // Ensure the target directory exists
-            Directory.CreateDirectory(Path.GetDirectoryName(uncPath));
-
-            // Create a FileStream that writes directly to the UNC location
-            using (FileStream stream = new FileStream(uncPath, FileMode.Create, FileAccess.Write))
+            // Create a file stream that points to a network share (UNC path)
+            using (FileStream networkStream = new FileStream(@"\\ServerName\ShareFolder\ShapeOutput.html",
+                                                             FileMode.Create,
+                                                             FileAccess.Write))
             {
-                // Export the shape to HTML using the stream
-                shape.ToHTML(stream, htmlOptions);
+                // Export the shape to HTML and write directly to the UNC stream
+                shape.ToHTML(networkStream, htmlOptions);
             }
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

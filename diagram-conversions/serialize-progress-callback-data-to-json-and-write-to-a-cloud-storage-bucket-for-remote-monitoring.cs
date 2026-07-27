@@ -1,85 +1,93 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
+using System.Collections.Generic;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 namespace DiagramProgressMonitoring
 {
-    // Class to hold progress information for each page saved
+    // Class to hold progress information for each page event
     public class PageProgressInfo
     {
         public int PageIndex { get; set; }
+        public int PageCount { get; set; }
+        public string Event { get; set; } // "Start" or "End"
         public DateTime Timestamp { get; set; }
     }
 
-    // Implementation of IPageSavingCallback to capture page saving events
-    public class ProgressCallback : IPageSavingCallback
+    // Implementation of the page saving callback to capture progress
+    public class PageSavingCallback : IPageSavingCallback
     {
-        private readonly List<PageProgressInfo> _progressData = new List<PageProgressInfo>();
+        private readonly List<PageProgressInfo> _progressList;
 
-        public IReadOnlyList<PageProgressInfo> ProgressData => _progressData.AsReadOnly();
+        public PageSavingCallback(List<PageProgressInfo> progressList)
+        {
+            _progressList = progressList;
+        }
 
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            // No action needed at start of page saving for this example
+            _progressList.Add(new PageProgressInfo
+            {
+                PageIndex = args.PageIndex,
+                PageCount = args.PageCount,
+                Event = "Start",
+                Timestamp = DateTime.UtcNow
+            });
         }
 
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            // Record the page index and the time when the page finished saving
-            _progressData.Add(new PageProgressInfo
+            _progressList.Add(new PageProgressInfo
             {
                 PageIndex = args.PageIndex,
+                PageCount = args.PageCount,
+                Event = "End",
                 Timestamp = DateTime.UtcNow
             });
         }
     }
 
-    class Program
+    public class Program
     {
-        // Entry point of the console application
-        static async Task Main(string[] args)
+        public static void Main()
         {
             try
             {
 
-                // Path to the source Visio diagram (replace with actual path)
-                const string sourceDiagramPath = "input.vsdx";
-
-                // Path where the PDF will be saved locally (temporary)
-                const string outputPdfPath = "output.pdf";
-
-                // URL of the cloud storage bucket endpoint (replace with actual endpoint)
-                const string cloudBucketUrl = "https://example.com/upload";
+                // Path to the source Visio diagram
+                string diagramPath = "input.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(sourceDiagramPath);
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Create PDF save options and assign the custom progress callback
+                // Prepare a list to collect progress data
+                List<PageProgressInfo> progressData = new List<PageProgressInfo>();
+
+                // Configure PDF save options with the custom callback
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                ProgressCallback progressCallback = new ProgressCallback();
-                pdfOptions.PageSavingCallback = progressCallback;
+                pdfOptions.PageSavingCallback = new PageSavingCallback(progressData);
 
-                // Save the diagram as PDF using the options
-                diagram.Save(outputPdfPath, pdfOptions);
+                // Output PDF path (could be any format; PDF is used to trigger page callbacks)
+                string pdfOutputPath = "output.pdf";
 
-                // Serialize the captured progress data to JSON
-                string jsonProgress = JsonSerializer.Serialize(progressCallback.ProgressData, new JsonSerializerOptions { WriteIndented = true });
+                // Save the diagram using the options (this will invoke the callback)
+                diagram.Save(pdfOutputPath, pdfOptions);
 
-                // Upload the JSON data to the cloud storage bucket
-                await UploadProgressAsync(cloudBucketUrl, jsonProgress);
+                // Serialize progress data to JSON
+                string json = JsonSerializer.Serialize(progressData, new JsonSerializerOptions { WriteIndented = true });
 
-                // Clean up temporary PDF file if desired
-                if (File.Exists(outputPdfPath))
-                {
-                    File.Delete(outputPdfPath);
-                }
+                // Define the "cloud storage bucket" path (simulated as a local folder)
+                string bucketFolder = Path.Combine("cloud_bucket");
+                Directory.CreateDirectory(bucketFolder);
+                string jsonFilePath = Path.Combine(bucketFolder, "progress.json");
 
-                Console.WriteLine("Progress data uploaded successfully.");
+                // Write JSON to the bucket
+                File.WriteAllText(jsonFilePath, json);
+
+                // Optional: inform the user
+                Console.WriteLine($"Progress data written to: {jsonFilePath}");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -87,19 +95,5 @@ namespace DiagramProgressMonitoring
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
-
-        // Helper method to upload JSON data to a cloud storage bucket via HTTP POST
-        private static async Task UploadProgressAsync(string url, string jsonContent)
-        {
-            using HttpClient client = new HttpClient();
-
-            using var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await client.PostAsync(url, content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"Failed to upload progress data. Status code: {response.StatusCode}");
-            }
-        }
     }
 }

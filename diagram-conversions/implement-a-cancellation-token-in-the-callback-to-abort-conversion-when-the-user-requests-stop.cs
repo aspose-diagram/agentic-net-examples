@@ -1,79 +1,74 @@
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class PageSavingCallback : IPageSavingCallback
-{
-    private readonly CancellationToken _token;
-
-    public PageSavingCallback(CancellationToken token)
-    {
-        _token = token;
-    }
-
-    // Called before a page is saved
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        // No action needed at start of page saving
-    }
-
-    // Called after a page is saved
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        // If cancellation is requested, stop further page processing
-        if (_token.IsCancellationRequested)
-        {
-            args.HasMorePages = false;
-        }
-    }
-}
-
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Paths for input diagram and output PDF
-            string inputPath = "input.vsdx";
-            string outputPath = "output.pdf";
-
-            // Load the diagram
-            using var diagram = new Diagram(inputPath);
-
-            // Prepare PDF save options
-            var pdfOptions = new PdfSaveOptions();
-
-            // Cancellation token source to allow user to stop conversion
+            // Token source that can be triggered by the user (e.g., UI button)
             var cts = new CancellationTokenSource();
 
-            // Listen for user input to trigger cancellation
-            Task.Run(() =>
+            // Example: automatically cancel after 5 seconds (replace with real user action)
+            var timer = new Timer(_ => cts.Cancel(), null, 5000, Timeout.Infinite);
+
+            // Create an Aspose interrupt monitor
+            var interruptMonitor = new InterruptMonitor();
+
+            // When the token is cancelled, signal the monitor to interrupt the operation
+            cts.Token.Register(() => interruptMonitor.Interrupt());
+
+            // Load options with the interrupt monitor attached
+            var loadOptions = new LoadOptions
             {
-                Console.WriteLine("Press 'c' to cancel conversion...");
-                while (Console.ReadKey(true).KeyChar != 'c')
-                {
-                    // Wait until 'c' is pressed
-                }
-                cts.Cancel();
-                Console.WriteLine("Cancellation requested.");
-            });
+                InterruptMonitor = interruptMonitor
+            };
 
-            // Assign the page saving callback with the cancellation token
-            pdfOptions.PageSavingCallback = new PageSavingCallback(cts.Token);
+            // Load the diagram (potentially long‑running)
+            Diagram diagram = new Diagram("input.vsdx", loadOptions);
 
-            // Perform the conversion
-            diagram.Save(outputPath, pdfOptions);
+            // Save options with a page‑saving callback that also checks cancellation
+            var saveOptions = new PdfSaveOptions
+            {
+                PageSavingCallback = new CancelPageSavingCallback(cts.Token)
+            };
 
-            Console.WriteLine("Conversion completed.");
+            // Save the diagram (potentially long‑running)
+            diagram.Save("output.pdf", saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
+    }
+
+    // Callback that aborts the save operation when cancellation is requested
+    class CancelPageSavingCallback : IPageSavingCallback
+    {
+        private readonly CancellationToken _token;
+
+        public CancelPageSavingCallback(CancellationToken token)
+        {
+            _token = token;
+        }
+
+        public void PageStartSaving(PageStartSavingArgs args)
+        {
+            // No special handling needed at the start of a page
+        }
+
+        public void PageEndSaving(PageEndSavingArgs args)
+        {
+            // If cancellation was requested, throw to stop the save process
+            if (_token.IsCancellationRequested)
+            {
+                throw new OperationCanceledException("Conversion cancelled by user.");
+            }
         }
     }
 }

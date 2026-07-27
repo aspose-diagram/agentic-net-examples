@@ -1,8 +1,8 @@
+using Aspose.Diagram;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using Aspose.Diagram;
 
 class Program
 {
@@ -14,7 +14,7 @@ class Program
             // Load the Visio diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Collect all shape IDs from every page
+            // Collect all shape IDs from all pages
             List<long> shapeIds = new List<long>();
             foreach (Page page in diagram.Pages)
             {

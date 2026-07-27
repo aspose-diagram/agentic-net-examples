@@ -6,42 +6,43 @@ using Aspose.Diagram.Saving;
 namespace DiagramHtmlExportWithProgress
 {
     // Custom stream provider that reports progress to the console each time a stream is initialized.
-    public class ProgressStreamProvider : IStreamProvider
+    public class ConsoleProgressStreamProvider : IStreamProvider
     {
-        private int _callCount = 0;
+        // Counter for the number of resources processed.
+        private static int _resourceCount = 0;
 
-        // Called by Aspose.Diagram when a new stream is needed during HTML export.
+        // Called by Aspose.Diagram before writing a resource (e.g., an image) to a stream.
         public void InitStream(StreamProviderOptions options)
         {
-            _callCount++;
-            // Assign a new memory stream for the requested resource.
-            options.Stream = new MemoryStream();
+            // Increment the counter and display progress.
+            _resourceCount++;
+            Console.Write($"\rResources processed: {_resourceCount}");
 
-            // Simple console progress indicator.
-            Console.WriteLine($"[Progress] InitStream called {_callCount} time(s).");
+            // Provide a writable stream for the resource.
+            // Using MemoryStream here; Aspose.Diagram will write the resource data into it.
+            options.Stream = new MemoryStream();
         }
 
-        // Called by Aspose.Diagram after the stream is no longer needed.
+        // Called after the resource has been written.
         public void CloseStream(StreamProviderOptions options)
         {
-            // Ensure the stream is properly disposed.
+            // Dispose the stream that was used for the resource.
             options.Stream?.Dispose();
-            Console.WriteLine($"[Progress] CloseStream called for stream #{_callCount}.");
         }
     }
 
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main()
         {
             try
             {
 
-                // Input diagram file path (adjust as needed).
+                // Path to the source Visio diagram.
                 string inputPath = "input.vsdx";
 
-                // Output HTML file path.
-                string outputPath = "output.html";
+                // Path to the output HTML folder (Aspose.Diagram will create files inside this folder).
+                string outputFolder = "output_html";
 
                 // Load the diagram.
                 Diagram diagram = new Diagram(inputPath);
@@ -49,13 +50,24 @@ namespace DiagramHtmlExportWithProgress
                 // Configure HTML save options and assign the custom stream provider.
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    StreamProvider = new ProgressStreamProvider()
+                    // Export all pages.
+                    PageCount = int.MaxValue,
+                    // Use the custom provider to get progress updates.
+                    StreamProvider = new ConsoleProgressStreamProvider()
                 };
 
-                // Save the diagram to HTML, progress will be reported via the stream provider.
-                diagram.Save(outputPath, htmlOptions);
+                // Ensure the output folder exists.
+                if (!Directory.Exists(outputFolder))
+                {
+                    Directory.CreateDirectory(outputFolder);
+                }
 
-                Console.WriteLine("Export completed.");
+                // Save the diagram as HTML. Each resource (images, CSS, etc.) will trigger InitStream/CloseStream.
+                string htmlFilePath = Path.Combine(outputFolder, "diagram.html");
+                diagram.Save(htmlFilePath, htmlOptions);
+
+                // Final newline after progress output.
+                Console.WriteLine("\nHTML export completed.");
 
             }
             catch (System.IO.FileNotFoundException ex)

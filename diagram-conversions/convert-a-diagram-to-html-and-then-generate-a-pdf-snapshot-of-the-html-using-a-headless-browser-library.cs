@@ -4,65 +4,41 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input Visio file (default to "input.vsdx" if not provided)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output files
-        string htmlPath = "output.html";
-        string pdfPath = "output.pdf";
-
-        // Export diagram to HTML
-        try
-        {
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                {
-                    DefaultFont = "Arial"
-                };
+
+                // Input Visio diagram file path
+                string diagramPath = "input.vsdx";
+
+                // Verify the diagram file exists
+                if (!File.Exists(diagramPath))
+                    throw new FileNotFoundException($"Diagram file not found: {diagramPath}");
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Export the diagram to HTML
+                string htmlPath = "output.html";
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
                 diagram.Save(htmlPath, htmlOptions);
+
+                // Convert the generated HTML to PDF using Aspose.Pdf (fully qualified to avoid namespace conflict)
+                string pdfPath = "output.pdf";
+                var htmlLoadOptions = new Aspose.Pdf.HtmlLoadOptions();
+                Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(htmlPath, htmlLoadOptions);
+                pdfDocument.Save(pdfPath);
+
+                Console.WriteLine("Conversion completed successfully.");
+                Console.WriteLine($"HTML file: {Path.GetFullPath(htmlPath)}");
+                Console.WriteLine($"PDF file: {Path.GetFullPath(pdfPath)}");
+
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error exporting to HTML: {ex.Message}");
-            return;
-        }
-
-        // Ensure the HTML file exists before proceeding
-        if (!File.Exists(htmlPath))
-        {
-            Console.Error.WriteLine($"HTML file was not created: {htmlPath}");
-            return;
-        }
-
-        // Export diagram to PDF (snapshot)
-        try
-        {
-            using (Diagram diagram = new Diagram(inputPath))
+            catch (System.IO.FileNotFoundException ex)
             {
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    DefaultFont = "Arial"
-                };
-                diagram.Save(pdfPath, pdfOptions);
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error exporting to PDF: {ex.Message}");
-            return;
-        }
-
-        Console.WriteLine($"Diagram converted to HTML: {Path.GetFullPath(htmlPath)}");
-        Console.WriteLine($"PDF snapshot created: {Path.GetFullPath(pdfPath)}");
     }
-}
+    }

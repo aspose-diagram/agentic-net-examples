@@ -10,15 +10,18 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram(@"C:\Input\sample.vsdx");
+            // Load the source Visio diagram
+            var diagram = new Diagram(@"C:\Input\sample.vsdx");
 
             // Create HTML save options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            var htmlOptions = new HTMLSaveOptions();
 
-            // Limit the generated image size by setting a maximum page size (width x height in pixels)
-            // Adjust the values as needed for your scenario
+            // Limit the generated image size by setting the page size (width, height in points)
+            // Example: maximum width = 800 points, maximum height = 600 points
             htmlOptions.PageSize = new PageSize(800, 600);
+
+            // Optionally adjust resolution (dots per inch) if needed
+            // htmlOptions.Resolution = 96;
 
             // Save the diagram as HTML with the configured options
             diagram.Save(@"C:\Output\sample.html", htmlOptions);

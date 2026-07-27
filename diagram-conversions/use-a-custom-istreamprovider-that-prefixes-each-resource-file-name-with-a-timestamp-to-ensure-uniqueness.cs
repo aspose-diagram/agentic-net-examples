@@ -5,64 +5,56 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramExport
 {
-    // Custom stream provider that prefixes each resource file name with a timestamp
-    public class TimestampStreamProvider : IStreamProvider
+    // Custom stream provider that prefixes each resource file name with a timestamp.
+    public class TimestampedStreamProvider : IStreamProvider
     {
-        // Called when Aspose.Diagram needs a stream for a resource (e.g., images, CSS)
+        // Called when a new stream is required for a resource.
         public void InitStream(StreamProviderOptions options)
         {
-            // Get the original resource name (e.g., "image1.png")
-            string originalName = Path.GetFileName(options.DefaultPath);
+            // Generate a unique file name using the current timestamp and the original default path.
+            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+            string fileName = $"{timestamp}_{Path.GetFileName(options.DefaultPath)}";
 
-            // Create a timestamp prefix (yyyyMMdd_HHmmssfff)
-            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
+            // Combine with the system temporary folder to avoid cluttering the working directory.
+            string fullPath = Path.Combine(Path.GetTempPath(), fileName);
 
-            // Build a unique file name
-            string uniqueName = $"{timestamp}_{originalName}";
-
-            // Determine a folder to store the resources (same folder as the output HTML)
-            string outputFolder = Path.GetDirectoryName(options.DefaultPath) ?? Directory.GetCurrentDirectory();
-
-            // Ensure the folder exists
-            Directory.CreateDirectory(outputFolder);
-
-            // Full path for the resource file
-            string fullPath = Path.Combine(outputFolder, uniqueName);
-
-            // Assign a writable file stream to the options
+            // Create a writable file stream and assign it to the options.
             options.Stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
         }
 
-        // Called after Aspose.Diagram finishes writing to the stream
+        // Called when the stream is no longer needed.
         public void CloseStream(StreamProviderOptions options)
         {
-            // Safely close the stream if it was created
-            options.Stream?.Close();
+            // Ensure the stream is properly closed and disposed.
+            if (options.Stream != null)
+            {
+                options.Stream.Dispose();
+                options.Stream = null;
+            }
         }
     }
 
     class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load an existing Visio diagram (replace with your actual file path)
-                string inputPath = "input.vsdx";
+                // Path to the source Visio diagram.
+                string inputPath = "sample.vsdx";
+
+                // Load the diagram.
                 Diagram diagram = new Diagram(inputPath);
 
-                // Configure HTML export options and assign the custom stream provider
+                // Configure HTML save options and assign the custom stream provider.
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    StreamProvider = new TimestampStreamProvider()
+                    StreamProvider = new TimestampedStreamProvider()
                 };
 
-                // Export the diagram to HTML; resources will be saved with timestamped names
-                string outputHtml = "output.html";
-                diagram.Save(outputHtml, htmlOptions);
-
-                Console.WriteLine($"Diagram exported to {outputHtml} with timestamped resources.");
+                // Export the diagram to HTML. Resources (images, CSS, etc.) will be saved with timestamped names.
+                diagram.Save("output.html", htmlOptions);
 
             }
             catch (System.IO.FileNotFoundException ex)

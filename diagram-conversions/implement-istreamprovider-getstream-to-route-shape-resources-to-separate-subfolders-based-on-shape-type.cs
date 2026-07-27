@@ -5,49 +5,42 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramExport
 {
-    // Custom stream provider for HTML export.
-    // Routes resources (images, CSS, scripts) into subfolders based on file type.
+    // Custom stream provider that routes resources to subfolders based on shape type.
     public class CustomStreamProvider : IStreamProvider
     {
-        private readonly string _outputRoot;
-
-        public CustomStreamProvider(string outputRoot)
-        {
-            _outputRoot = outputRoot ?? throw new ArgumentNullException(nameof(outputRoot));
-        }
-
-        // Called by Aspose.Diagram when a resource stream is required.
+        // Called before a resource stream is created.
         public void InitStream(StreamProviderOptions options)
         {
-            // DefaultPath contains the relative path of the resource (e.g., "image1.png").
-            // Determine subfolder based on file extension.
-            string fileName = Path.GetFileName(options.DefaultPath);
-            string extension = Path.GetExtension(fileName).ToLowerInvariant();
+            // Determine the base directory where the original resource would be saved.
+            string originalPath = options.DefaultPath; // Read‑only property containing the intended file name.
+            string fileName = Path.GetFileName(originalPath);
+            string baseDir = Path.GetDirectoryName(originalPath) ?? Directory.GetCurrentDirectory();
 
-            string subFolder = extension switch
-            {
-                ".png" or ".jpg" or ".jpeg" or ".gif" or ".bmp" or ".tiff" => "Images",
-                ".css" => "Styles",
-                ".js" => "Scripts",
-                ".svg" => "SVG",
-                _ => "Resources"
-            };
+            // Simple heuristic to decide subfolder based on file name/content.
+            string subFolder;
+            if (originalPath.IndexOf("image", StringComparison.OrdinalIgnoreCase) >= 0)
+                subFolder = "Images";
+            else if (originalPath.IndexOf("foreign", StringComparison.OrdinalIgnoreCase) >= 0)
+                subFolder = "Foreign";
+            else
+                subFolder = "Resources";
 
-            // Build full directory and ensure it exists.
-            string targetDir = Path.Combine(_outputRoot, subFolder);
+            // Ensure the subfolder exists.
+            string targetDir = Path.Combine(baseDir, subFolder);
             Directory.CreateDirectory(targetDir);
 
-            // Full file path for the resource.
+            // Full path for the resource file.
             string targetPath = Path.Combine(targetDir, fileName);
 
-            // Assign a writable file stream to the options.
+            // Assign the stream that Aspose.Diagram will write to.
             options.Stream = new FileStream(targetPath, FileMode.Create, FileAccess.Write);
         }
 
-        // Called after the resource has been written.
+        // Called after the resource stream has been written.
         public void CloseStream(StreamProviderOptions options)
         {
-            options.Stream?.Close();
+            // Dispose the stream if it was created.
+            options.Stream?.Dispose();
         }
     }
 
@@ -58,29 +51,18 @@ namespace DiagramExport
             try
             {
 
-                // Path to the source Visio file.
-                string sourcePath = "input.vsdx";
+                // Load an existing Visio diagram.
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Directory where HTML and resources will be saved.
-                string outputFolder = "ExportedHtml";
+                // Configure HTML export options and assign the custom stream provider.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                htmlOptions.StreamProvider = new CustomStreamProvider();
 
-                // Ensure the output directory exists.
-                Directory.CreateDirectory(outputFolder);
+                // Export the diagram to HTML; resources (images, foreign objects, etc.) will be placed
+                // in subfolders according to the logic in CustomStreamProvider.
+                diagram.Save("output.html", htmlOptions);
 
-                // Load the diagram.
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Configure HTML save options and assign the custom stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                {
-                    StreamProvider = new CustomStreamProvider(outputFolder)
-                };
-
-                // Save the diagram as HTML. Resources will be placed in subfolders.
-                string htmlPath = Path.Combine(outputFolder, "diagram.html");
-                diagram.Save(htmlPath, htmlOptions);
-
-                Console.WriteLine("HTML export completed successfully.");
+                Console.WriteLine("Diagram exported to HTML with resources routed to subfolders.");
 
             }
             catch (System.IO.FileNotFoundException ex)

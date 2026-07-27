@@ -4,60 +4,45 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         // Retrieve source and destination directories from environment variables
         string sourceDir = Environment.GetEnvironmentVariable("SOURCE_DIR");
-        string destDir = Environment.GetEnvironmentVariable("DEST_DIR");
+        string destDir   = Environment.GetEnvironmentVariable("DEST_DIR");
 
-        // Validate that the environment variables are set
-        if (string.IsNullOrWhiteSpace(sourceDir))
+        if (string.IsNullOrWhiteSpace(sourceDir) || string.IsNullOrWhiteSpace(destDir))
         {
-            Console.Error.WriteLine("Environment variable 'SOURCE_DIR' is not set or empty.");
+            Console.WriteLine("Please set both SOURCE_DIR and DEST_DIR environment variables.");
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(destDir))
+        // Build full file paths (adjust file names as needed)
+        string sourceFile = Path.Combine(sourceDir, "input.vdx");
+        string destFile   = Path.Combine(destDir, "output.vdx");
+
+        if (!File.Exists(sourceFile))
         {
-            Console.Error.WriteLine("Environment variable 'DEST_DIR' is not set or empty.");
+            Console.WriteLine($"Source file not found: {sourceFile}");
             return;
         }
 
-        // Ensure source directory exists
-        if (!Directory.Exists(sourceDir))
+        // Load the diagram from the source file
+        Diagram diagram = new Diagram(sourceFile);
+
+        // Optionally configure font folders (example: use a FONT_DIR env variable)
+        string fontDir = Environment.GetEnvironmentVariable("FONT_DIR");
+        if (!string.IsNullOrWhiteSpace(fontDir) && Directory.Exists(fontDir))
         {
-            Console.Error.WriteLine($"Source directory does not exist: {sourceDir}");
-            return;
+            // Set the font folder for the diagram (recursive scan)
+            diagram.FontDirs = new[] { fontDir };
         }
 
-        // Ensure destination directory exists; create if it does not
-        if (!Directory.Exists(destDir))
-            Directory.CreateDirectory(destDir);
+        // Ensure the destination directory exists
+        Directory.CreateDirectory(destDir);
 
-        // Process each Visio file in the source directory (e.g., .vsdx files)
-        string[] diagramFiles = Directory.GetFiles(sourceDir, "*.vsdx");
+        // Save the diagram to the destination path in VDX format
+        diagram.Save(destFile, SaveFileFormat.Vdx);
 
-        foreach (string sourceFilePath in diagramFiles)
-        {
-            try
-            {
-                // Load the diagram from the source file
-                using (Diagram diagram = new Diagram(sourceFilePath))
-                {
-                    // Determine the output file path in the destination directory
-                    string fileName = Path.GetFileName(sourceFilePath);
-                    string destFilePath = Path.Combine(destDir, fileName);
-
-                    // Save the diagram to the destination path using the same format
-                    diagram.Save(destFilePath, SaveFileFormat.Vsdx);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error processing file '{sourceFilePath}': {ex.Message}");
-            }
-        }
-
-        Console.WriteLine("Diagram processing completed successfully.");
+        Console.WriteLine($"Diagram successfully saved to: {destFile}");
     }
 }

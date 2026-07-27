@@ -10,41 +10,32 @@ class Program
         try
         {
 
-            // Path to the source Visio file (adjust as needed)
-            string sourcePath = "input.vsdx";
-
-            // Path for the generated CSV file
+            // Paths for the source Visio file and the generated CSV
+            string visioPath = "input.vsdx";
             string csvPath = "output.csv";
 
-            // Load the diagram from the file
-            Diagram diagram = new Diagram(sourcePath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
 
             // Export the diagram to CSV format
             diagram.Save(csvPath, SaveFileFormat.Csv);
 
-            // Verify that the CSV contains the required header row
-            // Expected header (as defined by Aspose.Diagram CSV export specification)
-            const string expectedHeaderStart = "Shape ID";
+            // Verify that the CSV file contains the required header row
+            if (!File.Exists(csvPath))
+                throw new Exception("CSV file was not created.");
 
-            // Read the first line of the CSV file
-            string firstLine;
-            using (var reader = new StreamReader(csvPath))
-            {
-                firstLine = reader.ReadLine();
-            }
+            string[] lines = File.ReadAllLines(csvPath);
+            if (lines.Length == 0)
+                throw new Exception("CSV file is empty.");
 
-            // Perform the validation
-            if (firstLine == null)
-            {
-                throw new Exception("CSV file is empty. Header row is missing.");
-            }
+            // Expected header as defined by the library specification
+            const string expectedHeader = "Shape ID,Shape Name,Shape Type";
 
-            if (!firstLine.StartsWith(expectedHeaderStart, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new Exception($"CSV header validation failed. Expected header to start with '{expectedHeaderStart}', but got: '{firstLine}'.");
-            }
+            string actualHeader = lines[0];
+            if (!actualHeader.Equals(expectedHeader, StringComparison.OrdinalIgnoreCase))
+                throw new Exception($"CSV header mismatch. Expected: \"{expectedHeader}\", Got: \"{actualHeader}\"");
 
-            Console.WriteLine("CSV header validation succeeded.");
+            Console.WriteLine("CSV header verified successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

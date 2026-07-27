@@ -5,56 +5,59 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Entry point of the console application.
     static void Main(string[] args)
     {
-        // Validate command line arguments.
-        if (args.Length < 2)
+        // Expect exactly two arguments: input folder and output folder
+        if (args.Length != 2)
         {
-            Console.WriteLine("Usage: <exe> <inputFolder> <outputFolder>");
+            Console.WriteLine("Usage: DiagramConverter <inputFolder> <outputFolder>");
             return;
         }
 
         string inputFolder = args[0];
         string outputFolder = args[1];
 
-        // Ensure the input folder exists.
+        // Validate input folder
         if (!Directory.Exists(inputFolder))
         {
             Console.WriteLine($"Input folder does not exist: {inputFolder}");
             return;
         }
 
-        // Create the output folder if it does not exist.
+        // Ensure output folder exists
         if (!Directory.Exists(outputFolder))
         {
-            Directory.CreateDirectory(outputFolder);
-        }
-
-        // Optional: set font folders for Aspose.Diagram if custom fonts are required.
-        // FontConfigs.SetFontFolders(new string[] { @"C:\Windows\Fonts" }, true);
-
-        // Process each Visio file in the input folder.
-        string[] visioExtensions = new[] { ".vsd", ".vsdx", ".vss", ".vssx", ".vst", ".vstx" };
-        foreach (string filePath in Directory.GetFiles(inputFolder))
-        {
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (Array.IndexOf(visioExtensions, ext) < 0)
-                continue; // Skip non‑Visio files.
-
             try
             {
-                // Load the diagram using default LoadOptions.
-                LoadOptions loadOptions = new LoadOptions(); // default format is VSD
-                Diagram diagram = new Diagram(filePath, loadOptions);
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                return;
+            }
+        }
 
-                // Determine output file name (same name, .vdx extension).
-                string outputFileName = Path.GetFileNameWithoutExtension(filePath) + ".vdx";
-                string outputPath = Path.Combine(outputFolder, outputFileName);
+        // Optional: set custom font folders if required
+        // FontConfigs.SetFontFolders(new[] { @"C:\Windows\Fonts" }, true);
 
-                // Save the diagram in VDX format.
-                diagram.Save(outputPath, SaveFileFormat.Vdx);
-                Console.WriteLine($"Converted: {Path.GetFileName(filePath)} -> {outputFileName}");
+        // Process each Visio file in the input folder
+        string[] visioFiles = Directory.GetFiles(inputFolder, "*.vsd");
+        foreach (string filePath in visioFiles)
+        {
+            try
+            {
+                // Load the diagram using default load options
+                Diagram diagram = new Diagram(filePath, new LoadOptions());
+
+                // Build output file path (same name with .pdf extension)
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                string outputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
+
+                // Save the diagram as PDF
+                diagram.Save(outputPath, SaveFileFormat.Pdf);
+
+                Console.WriteLine($"Converted: {filePath} -> {outputPath}");
             }
             catch (Exception ex)
             {

@@ -4,10 +4,10 @@ display_name: Convert Visio Document
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.5.0
+version: 26.7.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-06-23
+generated: 2026-07-27
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.5.0 |
+| Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-27 |
 
 ## Persona
 
@@ -64,12 +64,11 @@ You always use explicit types (never `var`), include all required `using` direct
 | `Aspose.Diagram` | 30 | Core diagram API |
 | `System` | 30 | Console, Math, DateTime, Exception |
 | `System.IO` | 28 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 13 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `Aspose.Diagram.Saving` | 11 | Save options (PDF, PNG, HTML, SVG, XPS) |
 | `System.Collections.Generic` | 1 | List, Dictionary, HashSet |
-| `System.Diagnostics` | 1 | Supporting utilities |
-| `System.Text` | 1 | StringBuilder |
-| `System.Threading.Tasks` | 1 | Supporting utilities |
 | `System.Linq` | 1 | LINQ queries on collections |
+| `System.Diagnostics` | 1 | Supporting utilities |
+| `System.Threading.Tasks` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -100,9 +99,9 @@ class Program
 
 | File | Key APIs | Task |
 |------|----------|------|
-| [add-custom-shape-properties-as-additional-columns-when-exporting-vsd-diagram-to-csv.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/add-custom-shape-properties-as-additional-columns-when-exporting-vsd-diagram-to-csv.cs) | `Diagram`, `Pages`, `Save` | Add custom shape properties as additional columns when exporting vsd diagram to csv |
+| [add-custom-shape-properties-as-additional-columns-when-exporting-vsd-diagram-to-csv.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/add-custom-shape-properties-as-additional-columns-when-exporting-vsd-diagram-to-csv.cs) | `Diagram`, `Pages`, `Shapes` | Add custom shape properties as additional columns when exporting vsd diagram to csv |
 | [after-conversion-read-the-csv-content-and-verify-that-the-first-row-contains-expected-column-headers.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/after-conversion-read-the-csv-content-and-verify-that-the-first-row-contains-expected-column-headers.cs) | `Diagram`, `Save`, `diagram` | After conversion read the csv content and verify that the first row contains expected column headers |
-| [catch-library-specific-exceptions-and-rethrow-them-with-additional-useful-context-information.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/catch-library-specific-exceptions-and-rethrow-them-with-additional-useful-context-information.cs) | `Diagram` | Catch library specific exceptions and rethrow them with additional useful context information |
+| [catch-library-specific-exceptions-and-rethrow-them-with-additional-useful-context-information.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/catch-library-specific-exceptions-and-rethrow-them-with-additional-useful-context-information.cs) | `Diagram`, `ImageSaveOptions`, `Save` | Catch library specific exceptions and rethrow them with additional useful context information |
 | [check-that-the-application-field-in-the-generated-csv-matches-the-library-s-default-value.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/check-that-the-application-field-in-the-generated-csv-matches-the-library-s-default-value.cs) | `AddShape`, `Diagram`, `Save` | Check that the application field in the generated csv matches the library s default value |
 | [configure-pdf-export-to-embed-fonts-by-setting-appropriate-options-in-saveoptions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/configure-pdf-export-to-embed-fonts-by-setting-appropriate-options-in-saveoptions.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Configure pdf export to embed fonts by setting appropriate options in saveoptions |
 | [convert-a-vsd-file-to-html-format-using-diagram-save-with-saveformat-html.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/convert-a-vsd-file-to-html-format-using-diagram-save-with-saveformat-html.cs) | `Diagram`, `Save`, `diagram` | Convert a vsd file to html format using diagram save with saveformat html |
@@ -114,12 +113,12 @@ class Program
 | [export-a-vsd-diagram-to-svg-by-using-saveformat-svg-in-the-save-method.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/export-a-vsd-diagram-to-svg-by-using-saveformat-svg-in-the-save-method.cs) | `Diagram`, `Save`, `diagram` | Export a vsd diagram to svg by using saveformat svg in the save method |
 | [export-each-page-of-a-multi-page-vsd-diagram-to-separate-csv-files-using-page-selection.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/export-each-page-of-a-multi-page-vsd-diagram-to-separate-csv-files-using-page-selection.cs) | `Diagram`, `diagram` | Export each page of a multi page vsd diagram to separate csv files using page selection |
 | [generate-output-filenames-by-appending-a-timestamp-to-the-original-vsd-name-before-saving-csv.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/generate-output-filenames-by-appending-a-timestamp-to-the-original-vsd-name-before-saving-csv.cs) | `Diagram`, `Save`, `diagram` | Generate output filenames by appending a timestamp to the original vsd name before saving csv |
-| [implement-a-console-application-that-converts-multiple-vsd-files-in-a-folder-to-csv-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/implement-a-console-application-that-converts-multiple-vsd-files-in-a-folder-to-csv-files.cs) | `Diagram`, `Save`, `diagram` | Implement a console application that converts multiple vsd files in a folder to csv files |
-| [iterate-over-an-array-of-vsd-file-paths-with-a-foreach-loop-to-perform-batch-csv-exports.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/iterate-over-an-array-of-vsd-file-paths-with-a-foreach-loop-to-perform-batch-csv-exports.cs) | `Diagram` | Iterate over an array of vsd file paths with a foreach loop to perform batch csv exports |
+| [implement-a-console-application-that-converts-multiple-vsd-files-in-a-folder-to-csv-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/implement-a-console-application-that-converts-multiple-vsd-files-in-a-folder-to-csv-files.cs) | `Diagram`, `Pages`, `Shapes` | Implement a console application that converts multiple vsd files in a folder to csv files |
+| [iterate-over-an-array-of-vsd-file-paths-with-a-foreach-loop-to-perform-batch-csv-exports.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/iterate-over-an-array-of-vsd-file-paths-with-a-foreach-loop-to-perform-batch-csv-exports.cs) |  | Iterate over an array of vsd file paths with a foreach loop to perform batch csv exports |
 | [load-a-vsd-file-from-a-network-share-and-save-it-as-csv-using-diagram-save.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/load-a-vsd-file-from-a-network-share-and-save-it-as-csv-using-diagram-save.cs) | `Diagram`, `Save`, `diagram` | Load a vsd file from a network share and save it as csv using diagram save |
 | [log-the-duration-of-each-vsd-to-csv-conversion-for-performance-monitoring.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/log-the-duration-of-each-vsd-to-csv-conversion-for-performance-monitoring.cs) | `Diagram`, `Save`, `diagram` | Log the duration of each vsd to csv conversion for performance monitoring |
 | [parse-command-line-arguments-to-accept-input-folder-and-output-folder-paths-for-conversion.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/parse-command-line-arguments-to-accept-input-folder-and-output-folder-paths-for-conversion.cs) | `Diagram`, `Save`, `diagram` | Parse command line arguments to accept input folder and output folder paths for conversion |
-| [resolve-relative-source-paths-to-absolute-paths-before-loading-each-vsd-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/resolve-relative-source-paths-to-absolute-paths-before-loading-each-vsd-diagram.cs) | `Diagram`, `Save`, `diagram` | Resolve relative source paths to absolute paths before loading each vsd diagram |
+| [resolve-relative-source-paths-to-absolute-paths-before-loading-each-vsd-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/resolve-relative-source-paths-to-absolute-paths-before-loading-each-vsd-diagram.cs) | `Diagram`, `Pages`, `diagram` | Resolve relative source paths to absolute paths before loading each vsd diagram |
 | [retrieve-source-and-destination-directories-from-environment-variables-for-flexible-deployment-in-production.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/retrieve-source-and-destination-directories-from-environment-variables-for-flexible-deployment-in-production.cs) | `Diagram`, `Save`, `diagram` | Retrieve source and destination directories from environment variables for flexible deployment in production |
 | [set-custom-image-resolution-before-saving-a-vsd-diagram-to-png-format.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/set-custom-image-resolution-before-saving-a-vsd-diagram-to-png-format.cs) | `Diagram`, `ImageSaveOptions`, `Save` | Set custom image resolution before saving a vsd diagram to png format |
 | [set-the-csv-encoding-to-utf-8-by-configuring-the-saveoptions-before-calling-diagram-save.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/set-the-csv-encoding-to-utf-8-by-configuring-the-saveoptions-before-calling-diagram-save.cs) | `Diagram`, `Save`, `diagram` | Set the csv encoding to utf 8 by configuring the saveoptions before calling diagram save |
@@ -127,7 +126,7 @@ class Program
 | [use-parallel-foreach-to-convert-a-collection-of-vsd-files-to-csv-concurrently.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/use-parallel-foreach-to-convert-a-collection-of-vsd-files-to-csv-concurrently.cs) | `Diagram`, `Save`, `diagram` | Use parallel foreach to convert a collection of vsd files to csv concurrently |
 | [use-saveoptions-to-specify-image-quality-when-exporting-a-vsd-diagram-to-jpeg.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/use-saveoptions-to-specify-image-quality-when-exporting-a-vsd-diagram-to-jpeg.cs) | `Diagram`, `ImageSaveOptions`, `Save` | Use saveoptions to specify image quality when exporting a vsd diagram to jpeg |
 | [verify-that-the-generated-csv-includes-the-required-header-row-defined-by-the-library-specification.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/verify-that-the-generated-csv-includes-the-required-header-row-defined-by-the-library-specification.cs) | `Diagram`, `Save`, `diagram` | Verify that the generated csv includes the required header row defined by the library specification |
-| [verify-the-library-version-at-runtime-and-abort-conversion-if-it-is-older-than-the-required-build.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/verify-the-library-version-at-runtime-and-abort-conversion-if-it-is-older-than-the-required-build.cs) | `Diagram`, `Save`, `diagram` | Verify the library version at runtime and abort conversion if it is older than the required build |
+| [verify-the-library-version-at-runtime-and-abort-conversion-if-it-is-older-than-the-required-build.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/verify-the-library-version-at-runtime-and-abort-conversion-if-it-is-older-than-the-required-build.cs) |  | Verify the library version at runtime and abort conversion if it is older than the required build |
 | [wrap-the-conversion-call-in-a-try-catch-block-and-ensure-the-filestream-is-closed-in-finally.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/wrap-the-conversion-call-in-a-try-catch-block-and-ensure-the-filestream-is-closed-in-finally.cs) |  | Wrap the conversion call in a try catch block and ensure the filestream is closed in finally |
 | [write-a-unit-test-that-asserts-the-csv-file-contains-a-row-for-each-shape-in-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/convert-visio-document/write-a-unit-test-that-asserts-the-csv-file-contains-a-row-for-each-shape-in-the-diagram.cs) | `Diagram`, `Pages`, `Save` | Write a unit test that asserts the csv file contains a row for each shape in the diagram |
 
@@ -239,7 +238,7 @@ Frequently asked questions about **Convert Visio Document** in **Aspose.Diagram 
 
 **Q: How do I get started with Convert Visio Document in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.5.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -271,4 +270,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-06-23 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-07-27 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

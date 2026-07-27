@@ -9,10 +9,10 @@ class Program
         try
         {
 
-            // Load the VSD diagram from file (lifecycle rule: Diagram(string))
+            // Load the Visio diagram from a VSD file
             Diagram diagram = new Diagram("input.vsd");
 
-            // Save the diagram as a JPEG image (lifecycle rule: Save(string, SaveFileFormat))
+            // Save the diagram as a JPEG image
             diagram.Save("output.jpg", SaveFileFormat.Jpeg);
 
             // Release resources

@@ -3,25 +3,27 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class VsdToPdfConverter
 {
     static void Main()
     {
         try
         {
 
-            // Input Visio file (VSD)
+            // Path to the source VSD file
             string inputFile = "input.vsd";
 
-            // Output PDF file
+            // Path where the PDF will be saved
             string outputFile = "output.pdf";
 
-            // Load the diagram from the VSD file
-            using (Diagram diagram = new Diagram(inputFile))
-            {
-                // Save the diagram as PDF using the Save method with SaveFileFormat.Pdf
-                diagram.Save(outputFile, SaveFileFormat.Pdf);
-            }
+            // Load the Visio diagram from the file
+            Diagram diagram = new Diagram(inputFile);
+
+            // Save the diagram as PDF using the SaveFileFormat enum
+            diagram.Save(outputFile, SaveFileFormat.Pdf);
+
+            // Release resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

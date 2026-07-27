@@ -3,182 +3,111 @@ using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Manipulation;
 
 class Program
     {
-        // Simple representation of a flowchart node parsed from MMD
-        class Node
-        {
-            public string Id;
-            public string Text;
-            public string Type; // e.g., "process", "decision"
-        }
-
-        // Simple representation of a connection between nodes
-        class Edge
-        {
-            public string FromId;
-            public string ToId;
-        }
-
         static void Main(string[] args)
         {
-            try
+            // Input MMD file path (first argument or default)
+            string mmdPath = args.Length > 0 ? args[0] : "flowchart.mmd";
+            if (!File.Exists(mmdPath))
             {
-
-                // Path to the input MMD file and output Visio file
-                string inputMmdPath = "flowchart.mmd";
-                string outputVisioPath = "flowchart.vdx";
-
-                // Parse the MMD file (very basic parser for Mermaid flowchart syntax)
-                List<Node> nodes = new List<Node>();
-                List<Edge> edges = new List<Edge>();
-                ParseMmd(File.ReadAllLines(inputMmdPath), nodes, edges);
-
-                // Create an empty Visio diagram
-                Diagram diagram = new Diagram();
-
-                // Add a default page (Visio creates a default page automatically)
-                int pageIndex = 0;
-
-                // Mapping from node Id to shape PinX,PinY for connector placement
-                Dictionary<string, (double X, double Y)> nodePositions = new Dictionary<string, (double, double)>();
-
-                // Layout parameters
-                double startX = 2.0;   // inches
-                double startY = 5.0;   // inches
-                double horizontalSpacing = 3.0;
-                double verticalSpacing = 2.0;
-
-                // Place nodes on the page
-                for (int i = 0; i < nodes.Count; i++)
-                {
-                    Node node = nodes[i];
-                    double pinX = startX + (i % 3) * horizontalSpacing;
-                    double pinY = startY - (i / 3) * verticalSpacing;
-
-                    // Choose master shape based on node type
-                    string masterName = node.Type == "decision" ? "Decision" : "Process";
-
-                    // Add the shape to the diagram
-                    diagram.AddShape(pinX, pinY, masterName, pageIndex);
-
-                    // Store position for later connector creation
-                    nodePositions[node.Id] = (pinX, pinY);
-                }
-
-                // Add connectors between nodes
-                foreach (Edge edge in edges)
-                {
-                    if (nodePositions.TryGetValue(edge.FromId, out var fromPos) &&
-                        nodePositions.TryGetValue(edge.ToId, out var toPos))
-                    {
-                        // Add a dynamic connector shape
-                        // The AddShape overload with coordinates creates a shape with given PinX,PinY,Width,Height.
-                        // For connectors we use a very small width/height and rely on the "Dynamic connector" master.
-                        double connectorPinX = (fromPos.X + toPos.X) / 2;
-                        double connectorPinY = (fromPos.Y + toPos.Y) / 2;
-                        diagram.AddShape(connectorPinX, connectorPinY, 0.1, 0.1, "Dynamic connector", pageIndex);
-                    }
-                }
-
-                // Save the diagram in Visio VDX format
-                diagram.Save(outputVisioPath, SaveFileFormat.Vdx);
-
-                // Clean up
-                diagram.Dispose();
-
+                Console.WriteLine($"MMD file not found: {mmdPath}");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
 
-        // Very simple parser for Mermaid flowchart syntax:
-        // Example lines:
-        //   A[Start] --> B{Decision}
-        //   B --> C[Process]
-        //   B --> D[End]
-        static void ParseMmd(string[] lines, List<Node> nodes, List<Edge> edges)
-        {
-            int nodeCounter = 0;
-            var nodeMap = new Dictionary<string, Node>();
+            // Read all lines from the MMD file
+            string[] lines = File.ReadAllLines(mmdPath);
 
+            // Create an empty diagram and add a page
+            Diagram diagram = new Diagram();
+            Page page = new Page();
+            diagram.Pages.Add(page);
+
+            // Dictionaries to keep track of node names and their shape IDs
+            Dictionary<string, long> nodeShapeIds = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+            List<(string from, string to)> connections = new List<(string, string)>();
+
+            // Simple parsing: look for lines containing "-->" or "->"
             foreach (string rawLine in lines)
             {
                 string line = rawLine.Trim();
+                if (string.IsNullOrEmpty(line) || line.StartsWith("%") || line.StartsWith("#"))
+                    continue; // skip empty or comment lines
 
-                // Skip empty lines and the graph declaration (e.g., "graph TD")
-                if (string.IsNullOrEmpty(line) || line.StartsWith("graph", StringComparison.OrdinalIgnoreCase))
+                string delimiter = null;
+                if (line.Contains("-->"))
+                    delimiter = "-->";
+                else if (line.Contains("->"))
+                    delimiter = "->";
+
+                if (delimiter != null)
+                {
+                    string[] parts = line.Split(new string[] { delimiter }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length == 2)
+                    {
+                        string fromNode = parts[0].Trim();
+                        string toNode = parts[1].Trim();
+                        connections.Add((fromNode, toNode));
+
+                        // Ensure both nodes have shapes (will be created later)
+                        if (!nodeShapeIds.ContainsKey(fromNode))
+                            nodeShapeIds[fromNode] = 0;
+                        if (!nodeShapeIds.ContainsKey(toNode))
+                            nodeShapeIds[toNode] = 0;
+                    }
+                }
+            }
+
+            // Layout parameters for node shapes
+            double startX = 2.0;          // inches from left
+            double startY = 2.0;          // inches from top
+            double verticalSpacing = 2.0; // inches between nodes
+            double shapeWidth = 2.0;      // rectangle width
+            double shapeHeight = 1.0;     // rectangle height
+
+            // Create shapes for each unique node
+            double currentY = startY;
+            foreach (var node in new List<string>(nodeShapeIds.Keys))
+            {
+                long shapeId = page.AddShape(startX, currentY, shapeWidth, shapeHeight, "Rectangle", false);
+                Shape shape = page.Shapes.GetShape(shapeId);
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt(node));
+
+                // Store the generated shape ID
+                nodeShapeIds[node] = shapeId;
+
+                currentY += shapeHeight + verticalSpacing;
+            }
+
+            // Create connectors and link shapes
+            foreach (var conn in connections)
+            {
+                if (!nodeShapeIds.TryGetValue(conn.from, out long fromId) ||
+                    !nodeShapeIds.TryGetValue(conn.to, out long toId))
+                {
+                    Console.WriteLine($"Warning: missing shape for connection {conn.from} -> {conn.to}");
                     continue;
-
-                // Split on connector arrow
-                string[] parts = line.Split(new[] { "-->", "->" }, StringSplitOptions.None);
-                if (parts.Length != 2)
-                    continue; // Not a simple edge definition
-
-                string left = parts[0].Trim();
-                string right = parts[1].Trim();
-
-                // Parse left node
-                Node leftNode = ParseNode(left, ref nodeCounter);
-                if (!nodeMap.ContainsKey(leftNode.Id))
-                {
-                    nodes.Add(leftNode);
-                    nodeMap[leftNode.Id] = leftNode;
                 }
 
-                // Parse right node
-                Node rightNode = ParseNode(right, ref nodeCounter);
-                if (!nodeMap.ContainsKey(rightNode.Id))
-                {
-                    nodes.Add(rightNode);
-                    nodeMap[rightNode.Id] = rightNode;
-                }
+                // Add a dynamic connector shape (size parameters are ignored for connectors)
+                long connectorId = page.AddShape(0, 0, 0, 0, "Dynamic connector", false);
+                Shape connector = page.Shapes.GetShape(connectorId);
 
-                // Record edge
-                edges.Add(new Edge { FromId = leftNode.Id, ToId = rightNode.Id });
-            }
-        }
-
-        // Parses a node token like "A[Start]" or "B{Decision}"
-        static Node ParseNode(string token, ref int counter)
-        {
-            // Identify the identifier (before any bracket)
-            int bracketIdx = token.IndexOfAny(new[] { '[', '{', '(' });
-            string id = bracketIdx > 0 ? token.Substring(0, bracketIdx).Trim() : token.Trim();
-
-            // Determine type based on surrounding brackets
-            string type = "process"; // default
-            string text = id; // fallback
-
-            if (bracketIdx > 0 && bracketIdx < token.Length - 1)
-            {
-                char open = token[bracketIdx];
-                char close = token[token.Length - 1];
-                int closeIdx = token.LastIndexOf(close);
-                if (closeIdx > bracketIdx)
-                {
-                    text = token.Substring(bracketIdx + 1, closeIdx - bracketIdx - 1);
-                }
-
-                if (open == '{' && close == '}')
-                    type = "decision";
-                else if (open == '[' && close == ']')
-                    type = "process";
-                else if (open == '(' && close == ')')
-                    type = "process";
+                // Connect the two shapes using the connector
+                page.ConnectShapesViaConnector(
+                    fromId,
+                    ConnectionPointPlace.Bottom,
+                    toId,
+                    ConnectionPointPlace.Top,
+                    connectorId);
             }
 
-            // Ensure a unique identifier for Visio shapes
-            string uniqueId = $"Node{counter++}";
-
-            return new Node
-            {
-                Id = uniqueId,
-                Text = text,
-                Type = type
-            };
+            // Save the resulting diagram as Visio VSDX
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
         }
     }

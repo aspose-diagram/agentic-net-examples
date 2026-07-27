@@ -1,34 +1,34 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 namespace DiagramConversionDiagnostic
 {
-    // Custom IStreamProvider that records each resource created during HTML export
+    // Custom IStreamProvider that records each resource path requested during HTML export
     public class DiagnosticStreamProvider : IStreamProvider
     {
-        // List to hold the paths of created resources
+        // List to hold the default paths of created resources
         public List<string> CreatedResources { get; } = new List<string>();
 
-        // Called when a new stream for a resource is initialized
+        // Called by Aspose.Diagram when a new stream for a resource is needed
         public void InitStream(StreamProviderOptions options)
         {
-            // Record the default path (resource name) provided by Aspose.Diagram
+            // Record the resource identifier (DefaultPath is read‑only but provides the name)
             if (!string.IsNullOrEmpty(options.DefaultPath))
             {
                 CreatedResources.Add(options.DefaultPath);
             }
 
-            // Assign a writable stream (in this example, a MemoryStream)
-            // In real scenarios you might write to a file system location
-            options.Stream = new System.IO.MemoryStream();
+            // Provide a memory stream for the resource (could be a FileStream if needed)
+            options.Stream = new MemoryStream();
         }
 
-        // Called when the stream for a resource is closed
+        // Called when the stream is no longer needed
         public void CloseStream(StreamProviderOptions options)
         {
-            // Ensure the stream is properly disposed
+            // Ensure the stream is properly closed and disposed
             options.Stream?.Dispose();
         }
     }
@@ -40,42 +40,41 @@ namespace DiagramConversionDiagnostic
             try
             {
 
-                // Path to the source Visio diagram (adjust as needed)
-                string inputPath = "input.vsdx";
+                // Create a simple diagram with one rectangle shape
+                Diagram diagram = new Diagram();
+                // Add a rectangle shape at position (1,1) on the first page (master index 0)
+                long shapeId = diagram.AddShape(1.0, 1.0, "Rectangle", 0);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Create HTML save options and assign the custom stream provider
+                // Prepare HTML save options and attach the diagnostic stream provider
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                DiagnosticStreamProvider streamProvider = new DiagnosticStreamProvider();
-                htmlOptions.StreamProvider = streamProvider;
+                DiagnosticStreamProvider provider = new DiagnosticStreamProvider();
+                htmlOptions.StreamProvider = provider;
 
-                // Perform the HTML export
-                string outputHtmlPath = "output.html";
-                diagram.Save(outputHtmlPath, htmlOptions);
+                // Export the diagram to HTML
+                string outputPath = "output.html";
+                diagram.Save(outputPath, htmlOptions);
 
-                // Generate diagnostic report
+                // Generate diagnostic report of all resources created by the stream provider
                 Console.WriteLine("=== Diagnostic Report: Resources Created by IStreamProvider ===");
-                if (streamProvider.CreatedResources.Count == 0)
+                if (provider.CreatedResources.Count == 0)
                 {
-                    Console.WriteLine("No resources were created.");
+                    Console.WriteLine("No resources were created during the conversion.");
                 }
                 else
                 {
-                    foreach (string resource in streamProvider.CreatedResources)
+                    for (int i = 0; i < provider.CreatedResources.Count; i++)
                     {
-                        Console.WriteLine($"- {resource}");
+                        Console.WriteLine($"{i + 1}. {provider.CreatedResources[i]}");
                     }
                 }
 
-                // Clean up
+                // Clean up diagram resources
                 diagram.Dispose();
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

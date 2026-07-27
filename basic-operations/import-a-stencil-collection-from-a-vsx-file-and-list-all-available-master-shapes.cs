@@ -9,25 +9,19 @@ class Program
         try
         {
 
-            // Path to the VSX stencil file
-            string stencilPath = @"C:\Stencils\example.vsx";
+            // Load the VSX stencil file using the appropriate load format
+            var stencilDiagram = new Diagram("StencilFile.vsx", LoadFileFormat.Vsx);
 
-            // Load the stencil using the VSX format
-            Diagram stencil = new Diagram(stencilPath, LoadFileFormat.Vsx);
-
-            // List all master shapes contained in the stencil
-            foreach (Master master in stencil.Masters)
+            // Iterate through all masters (shapes) in the stencil and output their names
+            foreach (Master master in stencilDiagram.Masters)
             {
                 Console.WriteLine($"Master Name: {master.Name}, Universal Name: {master.NameU}");
             }
 
-            // Clean up resources
-            stencil.Dispose();
-
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

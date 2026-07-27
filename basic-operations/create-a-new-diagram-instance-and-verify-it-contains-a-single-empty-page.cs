@@ -16,18 +16,21 @@ class Program
         }
         else
         {
-            Console.WriteLine("Diagram contains a single page as expected.");
+            // Access the single page
+            Page page = diagram.Pages[0];
+
+            // Verify that the page has no shapes (i.e., it is empty)
+            if (page.Shapes.Count == 0)
+            {
+                Console.WriteLine("Diagram contains a single empty page as expected.");
+            }
+            else
+            {
+                Console.WriteLine($"Page contains {page.Shapes.Count} shape(s), expected 0.");
+            }
         }
 
-        // Verify that the single page is empty (has no shapes)
-        Page page = diagram.Pages[0];
-        if (page.Shapes.Count != 0)
-        {
-            Console.WriteLine($"Page is not empty; it contains {page.Shapes.Count} shape(s).");
-        }
-        else
-        {
-            Console.WriteLine("Page is empty as expected.");
-        }
+        // Clean up resources
+        diagram.Dispose();
     }
 }

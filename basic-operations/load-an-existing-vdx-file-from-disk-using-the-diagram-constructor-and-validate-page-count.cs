@@ -9,29 +9,26 @@ class Program
         try
         {
 
-            // Path to the VDX file on disk
+            // Path to the VDX file to be loaded
             string filePath = "input.vdx";
 
             // Load the diagram using the constructor that accepts a file name
             Diagram diagram = new Diagram(filePath);
 
-            // Get the number of pages in the loaded diagram
+            // Validate the number of pages in the loaded diagram
             int pageCount = diagram.Pages.Count;
-
-            // Output the page count for verification
             Console.WriteLine($"Page count: {pageCount}");
 
-            // Simple validation example: ensure the diagram has at least one page
             if (pageCount == 0)
             {
                 Console.WriteLine("The diagram contains no pages.");
             }
             else
             {
-                Console.WriteLine("Diagram loaded successfully.");
+                Console.WriteLine("Diagram loaded successfully with pages.");
             }
 
-            // Release resources
+            // Clean up resources
             diagram.Dispose();
 
         }

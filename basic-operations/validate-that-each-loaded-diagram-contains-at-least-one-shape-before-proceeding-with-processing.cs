@@ -2,50 +2,48 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
+class DiagramValidator
+{
+    // Validates that the diagram at the given path contains at least one shape.
+    public static void Validate(string filePath)
+    {
+        // Load the diagram using the provided constructor (lifecycle rule).
+        Diagram diagram = new Diagram(filePath);
+
+        // Check each page for shapes.
+        bool hasShape = false;
+        foreach (Page page in diagram.Pages)
+        {
+            if (page.Shapes.Count > 0)
+            {
+                hasShape = true;
+                break;
+            }
+        }
+
+        // Throw if no shapes are found.
+        if (!hasShape)
+        {
+            throw new InvalidOperationException("The diagram does not contain any shapes.");
+        }
+
+        // Proceed with further processing here.
+    }
+}
+
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the diagram (uses the provided load rule)
-            var diagram = new Diagram("input.vsdx");
-
-            // Validate that the diagram contains at least one shape
-            bool hasShape = false;
-            foreach (Page page in diagram.Pages)
-            {
-                if (page.Shapes.Count > 0)
-                {
-                    hasShape = true;
-                    break;
-                }
-            }
-
-            if (!hasShape)
-            {
-                Console.WriteLine("The diagram does not contain any shapes. Processing stopped.");
-                diagram.Dispose();
-                return;
-            }
-
-            // Proceed with further processing
-            ProcessDiagram(diagram);
-
-            // Save the diagram (uses the provided save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            diagram.Dispose();
+            DiagramValidator.Validate("");
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
-    }
-
-    static void ProcessDiagram(Diagram diagram)
-    {
-        // Add processing logic here
     }
 }

@@ -1,44 +1,30 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        try
-        {
+        // Create a new diagram
+        Diagram diagram = new Diagram();
 
-            // Create a new diagram (empty Visio file)
-            Diagram diagram = new Diagram();
+        // Get the first page (index 0)
+        Page page = diagram.Pages[0];
 
-            // Get the first page (index 0)
-            Page page = diagram.Pages[0];
+        // Define rectangle parameters
+        double pinX = 2.0; // X coordinate (inches)
+        double pinY = 2.0; // Y coordinate (inches)
 
-            // Define position (PinX, PinY) in inches
-            double pinX = 2.0; // X coordinate
-            double pinY = 2.0; // Y coordinate
+        // Convert 3 centimeters to inches (1 cm = 0.393701 inches)
+        double widthInInches = 3.0 * 0.393701;
+        double heightInInches = widthInInches; // using same value for height
 
-            // Width is 3 centimeters; convert to inches (1 inch = 2.54 cm)
-            double widthCm = 3.0;
-            double widthIn = widthCm / 2.54;
+        // Draw the rectangle on the page
+        long shapeId = page.DrawRectangle(pinX, pinY, widthInInches, heightInInches);
 
-            // For this example, set height equal to width (square). Adjust as needed.
-            double heightIn = widthIn;
-
-            // Add a rectangle shape using the built‑in "Rectangle" master
-            long shapeId = page.AddShape(pinX, pinY, widthIn, heightIn, "Rectangle");
-
-            // Optionally, you can work with the shape via its ID:
-            // Shape rectShape = page.Shapes[shapeId];
-
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+        // Save the diagram to a file
+        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
     }
 }

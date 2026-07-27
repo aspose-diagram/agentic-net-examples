@@ -1,30 +1,27 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
-        {
+        // Create a new diagram
+        var diagram = new Diagram();
 
-            // Load the source Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+        // Add a simple rectangle to have some content
+        var page = diagram.Pages[0];
+        page.DrawRectangle(2.0, 2.0, 4.0, 3.0);
 
-            // Initialize image save options for PNG format
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Set resolution to 300 DPI for high‑quality output
-            saveOptions.Resolution = 300f;
+        // Configure image save options: PNG format with 300 DPI resolution
+        var saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+        saveOptions.Resolution = 300f; // DPI
 
-            // Save the diagram (first page by default) as a PNG image with the specified options
-            diagram.Save("output.png", saveOptions);
+        // Save the diagram as a high‑quality PNG image
+        string outputPath = "output.png";
+        diagram.Save(outputPath, saveOptions);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        Console.WriteLine($"Diagram saved to '{outputPath}' with 300 DPI PNG format.");
     }
 }

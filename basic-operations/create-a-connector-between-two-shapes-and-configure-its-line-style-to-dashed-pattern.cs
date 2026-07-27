@@ -13,30 +13,25 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Access the first page of the diagram
+            // Access the first (default) page
             Page page = diagram.Pages[0];
 
-            // Add two rectangle shapes to the page
-            // Parameters: PinX, PinY, master name, page index (0 for first page)
+            // Add the first rectangle shape
             long shapeId1 = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
-            long shapeId2 = diagram.AddShape(5.0, 5.0, "Rectangle", 0);
-
-            // Retrieve the shape objects (optional, useful for further modifications)
             Shape shape1 = page.Shapes.GetShape(shapeId1);
+
+            // Add the second rectangle shape
+            long shapeId2 = diagram.AddShape(5.0, 5.0, "Rectangle", 0);
             Shape shape2 = page.Shapes.GetShape(shapeId2);
 
-            // Add a dynamic connector shape (the connector itself)
-            long connectorId = diagram.AddShape(0, 0, "Dynamic connector", 0);
+            // Add a dynamic connector shape (initial position does not matter)
+            long connectorId = diagram.AddShape(0.0, 0.0, "Dynamic connector", 0);
             Shape connector = page.Shapes.GetShape(connectorId);
 
             // Connect the two rectangles using the connector
-            // Connect bottom of shape1 to top of shape2
-            page.ConnectShapesViaConnector(
-                shapeId1,
-                ConnectionPointPlace.Bottom,
-                shapeId2,
-                ConnectionPointPlace.Top,
-                connectorId);
+            page.ConnectShapesViaConnector(shapeId1, ConnectionPointPlace.Bottom,
+                                          shapeId2, ConnectionPointPlace.Top,
+                                          connectorId);
 
             // Set the connector's line style to a dashed pattern
             connector.Line.LinePattern.Value = LinePatternValue.Dash;

@@ -16,10 +16,10 @@ class Program
             // Create PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Set PDF/A-1b conformance level (embeds all fonts automatically)
+            // Set PDF/A-1b conformance (requires embedding all fonts)
             pdfOptions.Compliance = PdfCompliance.PdfA1b;
 
-            // Save the diagram as a PDF with the specified options
+            // Save the diagram as PDF with the configured options
             diagram.Save("output.pdf", pdfOptions);
 
         }

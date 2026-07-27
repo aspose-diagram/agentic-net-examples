@@ -18,7 +18,7 @@ class Program
                 // Load the diagram from the stream using the Diagram(Stream) constructor
                 Diagram diagram = new Diagram(stream);
 
-                // Access the first page (index 0) of the diagram
+                // Get the first page (index 0)
                 Page firstPage = diagram.Pages[0];
 
                 // Enumerate all shapes on the first page

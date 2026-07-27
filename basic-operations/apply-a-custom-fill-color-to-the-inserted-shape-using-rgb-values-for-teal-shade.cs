@@ -8,22 +8,22 @@ class Program
             try
             {
 
-                // Create a new diagram
+                // Create a new empty diagram
                 Diagram diagram = new Diagram();
 
-                // Use the first page (default page is created automatically)
+                // Access the first (default) page
                 Page page = diagram.Pages[0];
 
-                // Add a rectangle shape at position (2, 2) inches
+                // Insert a rectangle shape at coordinates (2,2)
                 long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
 
-                // Retrieve the shape object using the returned ID
+                // Retrieve the shape instance using its ID
                 Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Set solid fill pattern
-                shape.Fill.FillPattern.Value = 1; // 1 = solid
+                // Set the fill pattern to solid (value 1)
+                shape.Fill.FillPattern.Value = 1;
 
-                // Apply teal color (RGB 0,128,128) using hex notation
+                // Apply a teal fill color using its RGB hex code
                 shape.Fill.FillForegnd.Value = "#008080";
 
                 // Save the diagram to a VSDX file

@@ -16,17 +16,17 @@ class Program
             // Create the destination VDW file for writing
             outputStream = new FileStream("output.vdw", FileMode.Create, FileAccess.Write);
 
-            // Perform the export conversion
+            // Perform the conversion
             Diagram.Export(inputStream, outputStream);
         }
         catch (Exception ex)
         {
-            // Handle any errors that occur during the export
-            Console.WriteLine($"Error during export: {ex.Message}");
+            // Handle any errors that occur during conversion
+            Console.WriteLine("Conversion failed: " + ex.Message);
         }
         finally
         {
-            // Ensure both streams are closed regardless of success or failure
+            // Ensure both streams are closed even if an exception occurs
             if (outputStream != null)
                 outputStream.Close();
 

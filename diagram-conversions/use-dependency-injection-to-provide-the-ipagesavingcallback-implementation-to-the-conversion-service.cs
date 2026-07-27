@@ -1,103 +1,77 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramConversionDemo
+namespace DiagramConversionApp
 {
-    // Custom implementation of IPageSavingCallback to handle PDF page saving events
+    // Custom implementation of IPageSavingCallback to receive page saving events.
     public class CustomPageSavingCallback : IPageSavingCallback
     {
-        // Called before a page starts saving
+        // Called before a page starts saving.
         public void PageStartSaving(PageStartSavingArgs args)
         {
             Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
         }
 
-        // Called after a page has been saved
+        // Called after a page has been saved.
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-
-            // Example: stop processing after the first page
-            if (args.PageIndex == 0)
-            {
-                args.HasMorePages = false;
-                Console.WriteLine("Stopping further page processing as per callback logic.");
-            }
+            Console.WriteLine($"Finished saving page {args.PageIndex + 1}.");
+            // Example: stop processing after the first page.
+            // if (args.PageIndex == 0) args.HasMorePages = false;
         }
     }
 
-    // Service that performs diagram conversion using injected IPageSavingCallback
-    public class ConversionService
+    // Service that performs diagram conversion using the injected callback.
+    public class DiagramConversionService
     {
-        private readonly IPageSavingCallback _pageSavingCallback;
+        private readonly IPageSavingCallback _callback;
 
-        public ConversionService(IPageSavingCallback pageSavingCallback)
+        // Callback is provided via constructor injection.
+        public DiagramConversionService(IPageSavingCallback callback)
         {
-            _pageSavingCallback = pageSavingCallback ?? throw new ArgumentNullException(nameof(pageSavingCallback));
+            _callback = callback;
         }
 
-        // Converts a Visio diagram to PDF using the injected callback
+        // Converts a Visio file to PDF, applying the page saving callback.
         public void ConvertToPdf(string inputPath, string outputPath)
         {
-            if (string.IsNullOrWhiteSpace(inputPath))
-                throw new ArgumentException("Input path must be provided.", nameof(inputPath));
-            if (string.IsNullOrWhiteSpace(outputPath))
-                throw new ArgumentException("Output path must be provided.", nameof(outputPath));
-            if (!File.Exists(inputPath))
-                throw new FileNotFoundException("Input file not found.", inputPath);
-
-            try
+            // Load the diagram from file.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Configure PDF save options and assign the callback
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions
-                    {
-                        SaveFormat = SaveFileFormat.Pdf,
-                        DefaultFont = "Arial",
-                        PageSavingCallback = _pageSavingCallback
-                    };
+                // Configure PDF save options and assign the callback.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.PageSavingCallback = _callback;
 
-                    // Save the diagram as PDF
-                    diagram.Save(outputPath, pdfOptions);
-                    Console.WriteLine($"Diagram saved to PDF at: {outputPath}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+                // Save the diagram as PDF using the options.
+                diagram.Save(outputPath, pdfOptions);
             }
         }
     }
 
-    // Application entry point
+    // Entry point of the console application.
     public class Program
     {
         public static void Main(string[] args)
         {
-            // Simple argument handling
+            // Expect input and output file paths as arguments.
             if (args.Length < 2)
             {
-                Console.WriteLine("Usage: DiagramConversionDemo <inputVisioFile> <outputPdfFile>");
+                Console.WriteLine("Usage: DiagramConversionApp <input.vsdx> <output.pdf>");
                 return;
             }
 
-            string inputFile = args[0];
-            if (!File.Exists(inputFile))
-            {
-                Console.Error.WriteLine($"File not found: {inputFile}");
-                return;
-            }
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-            string outputFile = args[1];
-
-            // Manually inject the callback into the conversion service
+            // Manual dependency injection: create the callback and pass it to the service.
             IPageSavingCallback callback = new CustomPageSavingCallback();
-            ConversionService converter = new ConversionService(callback);
-            converter.ConvertToPdf(inputFile, outputFile);
+            DiagramConversionService conversionService = new DiagramConversionService(callback);
+
+            // Perform the conversion.
+            conversionService.ConvertToPdf(inputPath, outputPath);
+
+            Console.WriteLine("Conversion completed.");
         }
     }
 }

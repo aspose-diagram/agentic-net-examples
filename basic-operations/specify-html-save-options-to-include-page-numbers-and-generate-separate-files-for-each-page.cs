@@ -3,29 +3,30 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+public class Program
 {
-    static void Main()
+    public static void Main()
     {
         try
         {
 
-            // Load the diagram (replace with your source file)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram from a file
+            string inputPath = "sample.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create HTML save options
+            // Insert page number field code into the footer (right side)
+            diagram.HeaderFooter.FooterRight = "Page: &p";
+
+            // Configure HTML save options
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-
-            // Generate separate files for each page (default is false, set explicitly for clarity)
+            // Generate a separate HTML file for each page
             htmlOptions.SaveAsSingleFile = false;
+            // Do not export hidden pages (optional)
+            htmlOptions.ExportHiddenPage = false;
 
-            // Render all pages (default is MaxValue, set explicitly)
-            htmlOptions.PageCount = int.MaxValue;
-
-            // Save the diagram as HTML.
-            // When SaveAsSingleFile is false, Aspose.Diagram creates one HTML file per page,
-            // and the file names include the page numbers automatically.
-            diagram.Save("output.html", htmlOptions);
+            // Save the diagram as HTML
+            string outputPath = "output.html";
+            diagram.Save(outputPath, htmlOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

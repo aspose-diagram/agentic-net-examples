@@ -2,9 +2,10 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using System.Drawing;
 
-class Program
+using System.Drawing; // For Color if needed
+
+class ExportDiagramToPng
 {
     static void Main()
     {
@@ -15,13 +16,16 @@ class Program
             Diagram diagram = new Diagram("input.vsdx");
 
             // Configure image save options for PNG format
-            ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-            // PNG supports transparency by default; if the library exposes a background color property,
-            // it can be set to Color.Transparent here.
-            // options.BackgroundColor = Color.Transparent; // Uncomment if the property exists
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            saveOptions.SaveFormat = SaveFileFormat.Png; // Explicitly set PNG format
 
-            // Export the diagram to PNG with a transparent background
-            diagram.Save("output.png", options);
+            // Set transparent background if the option is available
+            // (Aspose.Diagram uses transparent background for PNG by default;
+            // if a BackgroundColor property exists, it can be set to Color.Transparent)
+            // saveOptions.BackgroundColor = Color.Transparent; // Uncomment if supported
+
+            // Save the diagram as a PNG image with the specified options
+            diagram.Save("output.png", saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

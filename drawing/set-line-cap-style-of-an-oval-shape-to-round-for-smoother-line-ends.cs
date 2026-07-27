@@ -3,31 +3,42 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Create a new diagram (contains a default page)
-            Diagram diagram = new Diagram();
+            try
+            {
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
 
-            // Define oval geometry (center at (5,5), width 2 inches, height 1 inch)
-            double pinX = 5.0;
-            double pinY = 5.0;
-            double width = 2.0;
-            double height = 1.0;
+                // Get the first (default) page
+                Page page = diagram.Pages[0];
 
-            // Draw the oval; returns the shape ID (long)
-            long ovalId = page.DrawEllipse(pinX, pinY, width, height);
+                // Define position and size for the oval (ellipse)
+                double pinX = 5.0;   // center X in inches
+                double pinY = 5.0;   // center Y in inches
+                double width = 3.0;  // width in inches
+                double height = 2.0; // height in inches
 
-            // Retrieve the Shape object using the ID
-            Shape oval = page.Shapes.GetShape((int)ovalId);
+                // Add an oval shape using the built‑in "Ellipse" master
+                long shapeId = page.AddShape(pinX, pinY, width, height, "Ellipse");
 
-            // Set line cap style to round (smooth line ends)
-            // BOOL.True creates rounded caps; BOOL.False would be square caps
-            oval.Line.LineCap.Value = BOOL.True;
+                // Retrieve the shape object from the page
+                Shape oval = page.Shapes.GetShape(shapeId);
 
-            // Save the diagram to a VSDX file
-            diagram.Save("OvalRoundedLineCap.vsdx", SaveFileFormat.Vsdx);
-        }
+                // Set the line cap style to round (smooth line ends)
+                // BOOL.True corresponds to a rounded line cap
+                oval.Line.LineCap.Value = BOOL.True;
+
+                // Save the diagram to a VSDX file to verify the change
+                diagram.Save("OvalWithRoundCap.vsdx", SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Oval shape created with rounded line caps and saved as OvalWithRoundCap.vsdx");
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
+    }
     }

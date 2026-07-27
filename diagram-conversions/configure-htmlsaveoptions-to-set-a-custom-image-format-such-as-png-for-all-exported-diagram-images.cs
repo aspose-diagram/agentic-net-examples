@@ -11,18 +11,21 @@ class Program
         {
 
             // Load an existing Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create HTML save options.
-            // PNG is the default image format for HTML export, so no additional configuration is required.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            // Configure HTML export options.
+            // PNG is the default image format for HTML export, so no explicit property is needed.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            {
+                // Example of additional settings (optional)
+                ExportHiddenPage = false,
+                IsExportComments = false
+            };
 
-            // Example of setting other optional properties (optional, not required for PNG format)
-            // htmlOptions.ExportHiddenPage = false;
-            // htmlOptions.IsExportComments = false;
-
-            // Save the diagram as HTML. All images embedded in the HTML will be rendered as PNG.
-            diagram.Save("output.html", htmlOptions);
+            // Save the diagram as HTML. All images will be rendered in PNG format.
+            string outputPath = "output.html";
+            diagram.Save(outputPath, htmlOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

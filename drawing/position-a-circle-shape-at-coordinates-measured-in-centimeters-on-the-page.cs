@@ -1,40 +1,38 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        static void Main()
+        {
+            // Create a new empty Visio diagram
+            using (Diagram diagram = new Diagram())
+            {
+                // Access the first (default) page
+                Page page = diagram.Pages[0];
 
-        // Get the first (default) page
-        Page page = diagram.Pages[0];
+                // Desired position and size in centimeters
+                double cmPinX = 5.0;      // X coordinate of the circle center
+                double cmPinY = 3.0;      // Y coordinate of the circle center
+                double cmDiameter = 2.0; // Diameter of the circle
 
-        // Conversion factor from centimeters to inches (Aspose.Diagram uses inches)
-        const double cmToInch = 0.393700787;
+                // Convert centimeters to inches (Aspose.Diagram uses inches)
+                const double cmToInch = 0.393700787;
+                double pinXInches = cmPinX * cmToInch;
+                double pinYInches = cmPinY * cmToInch;
+                double diameterInches = cmDiameter * cmToInch;
 
-        // Desired position and size in centimeters
-        double xCm = 5.0;          // X coordinate (center) in cm
-        double yCm = 7.0;          // Y coordinate (center) in cm
-        double radiusCm = 2.0;     // Circle radius in cm
+                // Draw an ellipse (circle) on the page
+                // DrawEllipse returns the shape ID (long)
+                long shapeId = page.DrawEllipse(pinXInches, pinYInches, diameterInches, diameterInches);
 
-        // Convert to inches for Aspose.Diagram
-        double pinX = xCm * cmToInch;
-        double pinY = yCm * cmToInch;
-        double diameterInch = radiusCm * 2 * cmToInch;
+                // Retrieve the shape to optionally modify its appearance
+                Shape circleShape = page.Shapes.GetShape((int)shapeId);
+                // Example: set the fill color to red
+                circleShape.Fill.FillForegnd.Value = "#FF0000";
 
-        // Draw an ellipse (circle) at the specified position
-        long shapeId = page.DrawEllipse(pinX, pinY, diameterInch, diameterInch);
-
-        // Retrieve the shape object if further modifications are needed
-        Shape circle = page.Shapes.GetShape((int)shapeId);
-
-        // Example: set a fill color for the circle
-        circle.Fill.FillForegnd.Value = "#FF0000"; // Red fill
-
-        // Save the diagram to a VSDX file
-        diagram.Save("CircleDiagram.vsdx", SaveFileFormat.Vsdx);
+                // Save the diagram to a VSDX file
+                diagram.Save("CircleDiagram.vsdx", SaveFileFormat.Vsdx);
+            }
+        }
     }
-}

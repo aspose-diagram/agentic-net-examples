@@ -10,23 +10,23 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
+            // Load the multi‑page Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
             // Configure HTML save options to generate separate HTML files per page
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                // Ensure each page is saved to its own file (default is false, set explicitly for clarity)
+                // Ensure each page is saved as an individual file (default is false)
                 SaveAsSingleFile = false,
 
-                // Start rendering from the first page (0‑based index)
-                PageIndex = 0,
+                // Render all pages of the diagram
+                PageCount = diagram.Pages.Count,
 
-                // Render all pages in the diagram
-                PageCount = diagram.Pages.Count
+                // Start rendering from the first page (optional, default is 0)
+                PageIndex = 0
             };
 
-            // Save the diagram as HTML; multiple files will be created (e.g., output.html, output_1.html, ...)
+            // Save the diagram to HTML; separate files will be created for each page
             diagram.Save("output.html", htmlOptions);
 
         }

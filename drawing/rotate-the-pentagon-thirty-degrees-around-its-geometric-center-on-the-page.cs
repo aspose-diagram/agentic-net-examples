@@ -1,6 +1,7 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,27 +10,27 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
+            // Load the Visio diagram (create/load rule)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Rotation angle: 30 degrees expressed in radians
-            double angleRad = Math.PI / 6.0;
-
-            // Locate the pentagon shape and apply the rotation
+            // Iterate through pages and shapes to locate the pentagon
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify the pentagon by its name (adjust if needed)
-                    if (shape.NameU != null && shape.NameU.Equals("Pentagon", StringComparison.OrdinalIgnoreCase))
+                    // Assuming the shape's universal name is "Pentagon"
+                    if (shape.NameU == "Pentagon")
                     {
-                        // Set the new angle (counter‑clockwise) around the shape's pin (center)
+                        // Convert 30 degrees to radians (SetAngle expects radians)
+                        double angleRad = Math.PI / 6.0; // 30° = π/6 rad
+
+                        // Rotate the shape around its geometric center (pin)
                         shape.SetAngle(angleRad);
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram (save rule)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Properties;
 
 class Program
 {
@@ -10,40 +9,33 @@ class Program
         try
         {
 
-            // Paths to the source and destination Visio files
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+
+            // Path where the modified file will be saved
             string outputPath = "output.vsdx";
 
-            // Load the diagram from file
+            // Load the diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Access the collection of custom properties
                 var customProps = diagram.DocumentProps.CustomProps;
 
-                // Locate the custom property named "ReviewDate"
-                CustomProp reviewDateProp = null;
-                foreach (CustomProp prop in customProps)
+                // Find and remove the custom property named "ReviewDate"
+                for (int i = customProps.Count - 1; i >= 0; i--)
                 {
+                    var prop = customProps[i];
                     if (prop.Name == "ReviewDate")
                     {
-                        reviewDateProp = prop;
+                        customProps.Remove(prop);
+                        Console.WriteLine("Removed custom property 'ReviewDate'.");
                         break;
                     }
                 }
 
-                // Remove the property if it exists
-                if (reviewDateProp != null)
-                {
-                    customProps.Remove(reviewDateProp);
-                    Console.WriteLine("Custom property 'ReviewDate' has been removed.");
-                }
-                else
-                {
-                    Console.WriteLine("Custom property 'ReviewDate' was not found.");
-                }
-
                 // Save the updated diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
             }
 
         }

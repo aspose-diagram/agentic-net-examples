@@ -1,41 +1,34 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-            // Insert automatic page numbering aligned to the right margin
-            diagram.HeaderFooter.FooterRight = "Page: &p";
+                // Load the Visio diagram (no using block as Diagram is not disposable per rules)
+                Diagram diagram = new Diagram(inputPath);
 
-            // Optional: set the distance of the footer from the bottom edge (in inches)
-            diagram.HeaderFooter.FooterMargin.Value = 0.5;
+                // Set the right-aligned footer with automatic page numbering.
+                // '&p' is the Visio field code for the current page number.
+                diagram.HeaderFooter.FooterRight = "Page: &p";
 
-            // Optional: configure footer typography (font, weight, size)
-            var font = diagram.HeaderFooter.HeaderFooterFont;
-            font.FaceName = "Calibri";
-            font.Weight = 700;          // Bold
-            font.Height = -16;          // Approx. 12pt (desired point size * -1.333)
+                // Optional: adjust the distance of the footer from the page edge (in inches).
+                diagram.HeaderFooter.FooterMargin.Value = 0.5; // half‑inch margin
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the updated diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Clean up resources
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

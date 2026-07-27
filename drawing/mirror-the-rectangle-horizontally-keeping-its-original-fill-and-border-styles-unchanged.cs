@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -14,18 +13,17 @@ class Program
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Work with the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
-
-            // Iterate through all shapes on the page
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all pages and shapes to find rectangle shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Identify rectangle shapes by their master name
-                if (shape.Master != null && shape.Master.Name == "Rectangle")
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Mirror the shape horizontally by setting FlipX to True
-                    shape.XForm.FlipX.Value = BOOL.True;
-                    // Fill and border (line) styles remain unchanged automatically
+                    // Identify a rectangle by its master name
+                    if (shape.Master != null && shape.Master.Name == "Rectangle")
+                    {
+                        // Mirror horizontally by flipping the shape on the X axis
+                        shape.XForm.FlipX.Value = BOOL.True;
+                    }
                 }
             }
 

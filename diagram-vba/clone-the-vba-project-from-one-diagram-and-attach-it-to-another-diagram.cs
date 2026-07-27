@@ -1,25 +1,36 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-class VbaProjectCloneExample
+class VbaCloneExample
 {
     static void Main()
     {
         try
         {
 
-            // Load the source diagram that contains the VBA project
-            Diagram sourceDiagram = new Diagram("sourceDiagram.vsdx");
+            // Paths to the source diagram (contains VBA) and the target diagram
+            string sourceDiagramPath = "source.vsdx";
+            string targetDiagramPath = "target.vsdx";
+            string outputDiagramPath = "target_with_vba.vsdx";
 
-            // Load the target diagram to which the VBA project will be attached
-            Diagram targetDiagram = new Diagram("targetDiagram.vsdx");
+            // Load the source diagram (contains the VBA project)
+            Diagram sourceDiagram = new Diagram(sourceDiagramPath);
 
-            // Clone the VBA project data (MIME‑encoded byte array) from source to target
-            targetDiagram.VbProjectData = sourceDiagram.VbProjectData;
+            // Load the target diagram (will receive the VBA project)
+            Diagram targetDiagram = new Diagram(targetDiagramPath);
+
+            // Clone the VBA project data from source to target
+            // VbProjectData holds the VBA project in MIME‑encoded byte array form
+            byte[] vbaProjectData = sourceDiagram.VbProjectData;
+            targetDiagram.VbProjectData = vbaProjectData;
 
             // Save the modified target diagram
-            targetDiagram.Save("targetDiagram_WithVba.vsdx", SaveFileFormat.Vsdx);
+            targetDiagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+
+            // Clean up resources
+            sourceDiagram.Dispose();
+            targetDiagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,39 +1,23 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Vba;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input Visio file (can be .vsdx, .vdx, etc.)
-            string inputPath = "input.vsdx";
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Output file must be a macro‑enabled format to preserve VBA (even after removal)
-            string outputPath = "output.vsdm";
+            // Remove the VBA project (macro) which also clears any digital signature
+            diagram.RemoveMacro();
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Verify that a VBA project exists and is signed
-            if (diagram.VbaProject != null && diagram.VbaProject.IsSigned)
-            {
-                // Remove the VBA project data (clears the digital signature)
-                diagram.VbProjectData = null;
-                Console.WriteLine("Digital signature removed from VBA project.");
-            }
-            else
-            {
-                Console.WriteLine("No signed VBA project found; no action needed.");
-            }
-
-            // Save the diagram using a macro‑enabled format
-            diagram.Save(outputPath, SaveFileFormat.Vsdm);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            // Save the diagram without the VBA signature
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

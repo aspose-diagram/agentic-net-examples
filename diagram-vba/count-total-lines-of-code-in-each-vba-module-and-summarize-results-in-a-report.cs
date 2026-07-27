@@ -1,55 +1,55 @@
-using System.IO;
 using System;
-using System.Text;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class VbaLineCounter
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram file (replace with your actual file path)
+            // Load the Visio diagram file (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Access the VBA project contained in the diagram
             VbaProject vbaProject = diagram.VbaProject;
 
-            // Prepare a report builder
-            StringBuilder reportBuilder = new StringBuilder();
-            reportBuilder.AppendLine("VBA Module Line Count Report");
-            reportBuilder.AppendLine("----------------------------");
+            // Prepare a report string
+            StringWriter report = new StringWriter();
+            report.WriteLine("VBA Module Line Count Report");
+            report.WriteLine("============================");
+            report.WriteLine();
 
-            // Iterate through each VBA module in the project
-            foreach (VbaModule module in vbaProject.Modules)
+            // Iterate through each VBA module
+            for (int i = 0; i < vbaProject.Modules.Count; i++)
             {
-                // Retrieve the VBA code as a single string
+                VbaModule module = vbaProject.Modules[i];
                 string code = module.Codes ?? string.Empty;
 
                 // Count lines by splitting on newline characters
-                // Handles both Windows (\r\n) and Unix (\n) line endings
                 int lineCount = 0;
-                if (code.Length > 0)
+                using (StringReader reader = new StringReader(code))
                 {
-                    // Normalize line endings to '\n' then split
-                    string normalized = code.Replace("\r\n", "\n").Replace("\r", "\n");
-                    lineCount = normalized.Split('\n').Length;
+                    while (reader.ReadLine() != null)
+                    {
+                        lineCount++;
+                    }
                 }
 
                 // Append module information to the report
-                reportBuilder.AppendLine($"Module Name: {module.Name}");
-                reportBuilder.AppendLine($"Module Type: {module.Type}");
-                reportBuilder.AppendLine($"Total Lines: {lineCount}");
-                reportBuilder.AppendLine();
+                report.WriteLine($"Module Name : {module.Name}");
+                report.WriteLine($"Module Type : {module.Type}");
+                report.WriteLine($"Line Count  : {lineCount}");
+                report.WriteLine();
             }
 
-            // Output the report to the console
-            Console.WriteLine(reportBuilder.ToString());
+            // Write the report to a text file (replace with desired output path)
+            File.WriteAllText("VbaModuleLineCountReport.txt", report.ToString());
 
-            // Optionally, write the report to a text file
-            // System.IO.File.WriteAllText("VbaLineCountReport.txt", reportBuilder.ToString());
+            // Optionally, also output to console
+            Console.WriteLine(report.ToString());
 
         }
         catch (System.IO.FileNotFoundException ex)

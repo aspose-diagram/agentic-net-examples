@@ -1,91 +1,116 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class VbaDiff
+class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect two diagram file paths as command‑line arguments
-        if (args.Length < 2)
+        try
         {
-            Console.WriteLine("Usage: VbaDiff <diagram1.vsdx> <diagram2.vsdx>");
-            return;
-        }
 
-        string filePath1 = args[0];
-        string filePath2 = args[1];
+            // Paths to the two Visio files to compare
+            string diagramPath1 = "Diagram1.vsdx";
+            string diagramPath2 = "Diagram2.vsdx";
 
-        // Load the diagrams using the provided constructors (lifecycle rule)
-        Diagram diagram1 = new Diagram(filePath1);
-        Diagram diagram2 = new Diagram(filePath2);
+            // Load the diagrams
+            Diagram diagram1 = new Diagram(diagramPath1);
+            Diagram diagram2 = new Diagram(diagramPath2);
 
-        // Access the VBA projects of each diagram
-        VbaProject vbaProject1 = diagram1.VbaProject;
-        VbaProject vbaProject2 = diagram2.VbaProject;
+            // Build dictionaries of module name -> VBA code for each diagram
+            var vbaMap1 = BuildVbaModuleMap(diagram1);
+            var vbaMap2 = BuildVbaModuleMap(diagram2);
 
-        // Build dictionaries: module name -> code
-        var modules1 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (VbaModule module in vbaProject1.Modules)
-        {
-            modules1[module.Name] = module.Codes ?? string.Empty;
-        }
+            // Prepare the diff report
+            StringWriter report = new StringWriter();
 
-        var modules2 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (VbaModule module in vbaProject2.Modules)
-        {
-            modules2[module.Name] = module.Codes ?? string.Empty;
-        }
-
-        // Prepare diff report lines
-        var report = new List<string>();
-        report.Add($"VBA Diff Report between '{Path.GetFileName(filePath1)}' and '{Path.GetFileName(filePath2)}'");
-        report.Add(new string('=', 80));
-
-        // Compare modules present in the first diagram
-        foreach (var kvp in modules1)
-        {
-            string moduleName = kvp.Key;
-            string code1 = kvp.Value;
-
-            if (!modules2.ContainsKey(moduleName))
+            // Compare modules present in the first diagram
+            foreach (var kvp in vbaMap1)
             {
-                report.Add($"Module '{moduleName}' exists only in the first diagram.");
-                continue;
+                string moduleName = kvp.Key;
+                string code1 = kvp.Value;
+
+                if (vbaMap2.TryGetValue(moduleName, out string code2))
+                {
+                    // Both diagrams have the module – compare line by line
+                    CompareModuleCode(moduleName, code1, code2, report);
+                }
+                else
+                {
+                    // Module missing in the second diagram
+                    report.WriteLine($"Module '{moduleName}' exists in Diagram1 but not in Diagram2.");
+                }
             }
 
-            string code2 = modules2[moduleName];
-            if (code1 != code2)
+            // Find modules that exist only in the second diagram
+            foreach (var moduleName in vbaMap2.Keys)
             {
-                report.Add($"Module '{moduleName}' differs:");
-                report.Add("--- First Diagram ---");
-                report.AddRange(code1.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
-                report.Add("--- Second Diagram ---");
-                report.AddRange(code2.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
-                report.Add(new string('-', 40));
+                if (!vbaMap1.ContainsKey(moduleName))
+                {
+                    report.WriteLine($"Module '{moduleName}' exists in Diagram2 but not in Diagram1.");
+                }
+            }
+
+            // Output the diff report to console
+            Console.WriteLine(report.ToString());
+
+            // Also write the report to a text file
+            string reportPath = "VbaDiffReport.txt";
+            File.WriteAllText(reportPath, report.ToString());
+            Console.WriteLine($"Diff report saved to '{reportPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
+    }
+
+    // Builds a dictionary of module name to its VBA source code
+    private static System.Collections.Generic.Dictionary<string, string> BuildVbaModuleMap(Diagram diagram)
+    {
+        var map = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (VbaModule module in diagram.VbaProject.Modules)
+        {
+            // Ensure the module has a name; skip empty entries
+            if (!string.IsNullOrWhiteSpace(module.Name))
+            {
+                map[module.Name] = module.Codes ?? string.Empty;
+            }
+        }
+        return map;
+    }
+
+    // Compares two code strings line by line and writes differences to the report
+    private static void CompareModuleCode(string moduleName, string code1, string code2, StringWriter report)
+    {
+        string[] lines1 = code1.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+        string[] lines2 = code2.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+        int maxLines = Math.Max(lines1.Length, lines2.Length);
+        bool hasDifferences = false;
+
+        for (int i = 0; i < maxLines; i++)
+        {
+            string line1 = i < lines1.Length ? lines1[i] : string.Empty;
+            string line2 = i < lines2.Length ? lines2[i] : string.Empty;
+
+            if (!string.Equals(line1, line2, StringComparison.Ordinal))
+            {
+                if (!hasDifferences)
+                {
+                    report.WriteLine($"Differences in module '{moduleName}':");
+                    hasDifferences = true;
+                }
+                report.WriteLine($"  Line {i + 1}:");
+                report.WriteLine($"    Diagram1: {line1}");
+                report.WriteLine($"    Diagram2: {line2}");
             }
         }
 
-        // Identify modules that exist only in the second diagram
-        foreach (var kvp in modules2)
+        if (!hasDifferences)
         {
-            if (!modules1.ContainsKey(kvp.Key))
-            {
-                report.Add($"Module '{kvp.Key}' exists only in the second diagram.");
-            }
+            report.WriteLine($"Module '{moduleName}' is identical in both diagrams.");
         }
-
-        // Output report to console
-        foreach (string line in report)
-        {
-            Console.WriteLine(line);
-        }
-
-        // Save report to a text file (standard .NET I/O, not a diagram save)
-        string reportPath = "VbaDiffReport.txt";
-        File.WriteAllLines(reportPath, report);
-        Console.WriteLine($"Diff report saved to {reportPath}");
     }
 }

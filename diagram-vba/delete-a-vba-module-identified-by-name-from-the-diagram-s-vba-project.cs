@@ -3,23 +3,23 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class DeleteVbaModule
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the existing Visio diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Name of the VBA module to be removed
+            // Specify the name of the VBA module to delete
             string moduleName = "MyMacroModule";
 
-            // Remove the specified VBA module from the diagram's VBA project
+            // Remove the module from the VBA project if it exists
             diagram.VbaProject.Modules.Remove(moduleName);
 
-            // Save the modified diagram
+            // Save the updated diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

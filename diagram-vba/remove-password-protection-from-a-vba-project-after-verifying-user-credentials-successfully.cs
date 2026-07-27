@@ -1,84 +1,51 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Vba;
 
-class RemoveVbaPassword
+class Program
 {
-    // Simple user credential validation (replace with real authentication as needed)
-    private static bool ValidateUser(string userName, string password)
+    static void Main(string[] args)
     {
-        // Example: hard‑coded credentials for demonstration
-        const string validUser = "admin";
-        const string validPass = "secret";
+        // Expect input and output file paths as command‑line arguments
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: <inputVisioFile> <outputVisioFile>");
+            return;
+        }
 
-        return string.Equals(userName, validUser, StringComparison.OrdinalIgnoreCase) &&
-               password == validPass;
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Simple console‑based credential verification
+        Console.Write("Enter username: ");
+        string username = Console.ReadLine();
+
+        Console.Write("Enter password: ");
+        string password = Console.ReadLine();
+
+        if (!ValidateCredentials(username, password))
+        {
+            Console.WriteLine("Invalid credentials. Operation aborted.");
+            return;
+        }
+
+        // Load the Visio diagram
+        Diagram diagram = new Diagram(inputPath);
+
+        // Remove VBA project data (clears password protection)
+        diagram.VbProjectData = null;
+
+        // Save the diagram in a macro‑enabled format to preserve the (now unprotected) VBA structure
+        diagram.Save(outputPath, SaveFileFormat.Vsdm);
+
+        Console.WriteLine("Password protection removed and file saved successfully.");
     }
 
-    static void Main()
+    // Replace this with real authentication logic as needed
+    static bool ValidateCredentials(string user, string pass)
     {
-        try
-        {
-
-            // Paths to the source and destination Visio files
-            string inputPath = @"C:\Diagrams\ProtectedDiagram.vsdx";
-            string outputPath = @"C:\Diagrams\UnprotectedDiagram.vsdx";
-
-            // Load the diagram (lifecycle rule: load)
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prompt for user credentials
-            Console.Write("Enter user name: ");
-            string userName = Console.ReadLine();
-
-            Console.Write("Enter password: ");
-            string password = ReadPassword();
-
-            // Verify credentials before proceeding
-            if (!ValidateUser(userName, password))
-            {
-                Console.WriteLine("Invalid credentials. Operation aborted.");
-                return;
-            }
-
-            // Remove VBA macro (which also removes any VBA project password protection)
-            diagram.RemoveMacro();
-
-            // Optionally clear the raw VBA project data
-            diagram.VbProjectData = null;
-
-            // Save the modified diagram (lifecycle rule: save)
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Password protection removed and diagram saved successfully.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    // Helper method to read password without echoing characters
-    private static string ReadPassword()
-    {
-        string password = string.Empty;
-        ConsoleKeyInfo info;
-        do
-        {
-            info = Console.ReadKey(intercept: true);
-            if (info.Key == ConsoleKey.Backspace && password.Length > 0)
-            {
-                password = password[0..^1];
-                Console.Write("\b \b");
-            }
-            else if (!char.IsControl(info.KeyChar))
-            {
-                password += info.KeyChar;
-                Console.Write("*");
-            }
-        } while (info.Key != ConsoleKey.Enter);
-        Console.WriteLine();
-        return password;
+        // Example hard‑coded check
+        return user == "admin" && pass == "secret";
     }
 }

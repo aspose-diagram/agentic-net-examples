@@ -5,25 +5,32 @@ using Aspose.Diagram.Vba;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
             // Load the existing Visio diagram
-            Diagram diagram = new Diagram("inputDiagram.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Access the VBA project contained in the diagram
             VbaProject vbaProject = diagram.VbaProject;
 
-            // Retrieve the VBA module you want to rename (by its current name)
-            VbaModule module = vbaProject.Modules["OldModuleName"]; // replace with actual current name
+            // Define the current module name and the desired new name
+            string oldModuleName = "OldModule";
+            string newModuleName = "NewDescriptiveModule";
 
-            // Assign a new, more descriptive name to the module
-            module.Name = "NewDescriptiveModuleName"; // replace with desired name
+            // Retrieve the module by its current name
+            VbaModule module = vbaProject.Modules[oldModuleName];
 
-            // Save the modified diagram back to file
-            diagram.Save("outputDiagram.vsdx", SaveFileFormat.Vsdx);
+            // If the module exists, rename it
+            if (module != null)
+            {
+                module.Name = newModuleName;
+            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

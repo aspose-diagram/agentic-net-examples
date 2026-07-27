@@ -1,43 +1,41 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Access the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            // Define triangle vertices (closed polygon) using a flat double array: x1, y1, x2, y2, ...
+            double[] trianglePoints = new double[]
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                2.0, 2.0,   // Point A
+                5.0, 2.0,   // Point B
+                3.5, 5.0,   // Point C
+                2.0, 2.0    // Close the shape by returning to Point A
+            };
 
-                    // Identify triangle shapes by master name
-                    if (shape.Master != null && shape.Master.Name == "Triangle")
-                    {
-                        // Set the line dash pattern to dashed
-                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
-                    }
-                }
-            }
+            // Draw the triangle; DrawPolyline returns the shape ID as a long
+            long triangleId = page.DrawPolyline(trianglePoints);
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Retrieve the shape object using the ID (cast to int for the indexer)
+            Shape triangle = page.Shapes.GetShape((int)triangleId);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Set the line dash pattern to dashed
+            triangle.Line.LinePattern.Value = LinePatternValue.Dash;
+
+            // (Optional) Adjust line weight and color for better visibility
+            triangle.Line.LineWeight.Value = 0.02;               // Thickness in inches
+            triangle.Line.LineColor.Value = "#FF0000";          // Red color
+
+            // Save the diagram as a PNG image
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            diagram.Save("triangle.png", saveOptions);
         }
     }
-}

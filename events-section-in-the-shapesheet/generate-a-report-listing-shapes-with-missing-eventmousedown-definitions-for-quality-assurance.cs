@@ -6,79 +6,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Get the Visio file path from command line arguments or prompt the user.
-        string filePath;
-        if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
+        // Expect the Visio file path as the first argument.
+        if (args.Length == 0)
         {
-            filePath = args[0];
-        }
-        else
-        {
-            Console.Write("Enter the path to the Visio file: ");
-            filePath = Console.ReadLine();
-        }
-
-        if (string.IsNullOrWhiteSpace(filePath))
-        {
-            Console.WriteLine("No file path provided. Exiting.");
+            Console.WriteLine("Usage: ShapeEventReport <visio-file-path>");
             return;
         }
 
-        if (!File.Exists(filePath))
+        string visioPath = args[0];
+        // Verify the input file exists before proceeding.
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"File not found: {filePath}");
+            Console.Error.WriteLine($"File not found: {visioPath}");
             return;
         }
 
-        // Load the diagram.
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(filePath);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(visioPath);
 
-        Console.WriteLine("Shapes missing EventDblClick definitions:");
-        Console.WriteLine("-------------------------------------------------");
+            Console.WriteLine("Shapes missing EventDrop definitions:");
 
-        // Iterate through all pages and shapes.
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all pages in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                // Ensure the shape is not marked as deleted.
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                // Check if the EventDblClick formula is empty or not set.
-                bool missingEvent = false;
-                try
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    string formula = shape.Event.EventDblClick.Ufe.F;
-                    if (string.IsNullOrWhiteSpace(formula))
+                    // Skip shapes that are marked as deleted.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Access the EventDrop formula (as a representative event cell).
+                    // The formula string is stored in the Ufe.F property.
+                    string eventDropFormula = shape.Event.EventDrop?.Ufe?.F;
+
+                    // If the formula is null, empty, or whitespace, report the shape.
+                    if (string.IsNullOrWhiteSpace(eventDropFormula))
                     {
-                        missingEvent = true;
+                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, Name: {shape.NameU}");
                     }
-                }
-                catch
-                {
-                    // If accessing the cell throws, treat it as missing.
-                    missingEvent = true;
-                }
-
-                if (missingEvent)
-                {
-                    // Output shape identification details.
-                    string shapeName = !string.IsNullOrWhiteSpace(shape.Name) ? shape.Name : "(no name)";
-                    Console.WriteLine($"Page: {page.Name} | Shape ID: {shape.ID} | Name: {shapeName}");
                 }
             }
         }
-
-        Console.WriteLine("Report generation completed.");
+        catch (Exception ex)
+        {
+            // Output any errors encountered during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

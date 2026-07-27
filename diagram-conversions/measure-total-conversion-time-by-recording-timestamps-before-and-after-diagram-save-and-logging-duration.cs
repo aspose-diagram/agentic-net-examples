@@ -11,23 +11,31 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your actual file path)
-            var diagram = new Diagram("input.vsdx");
+            // Paths for the source diagram and the output file
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vdx";
 
-            // Prepare save options (optional, can be omitted if not needed)
-            var saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
+            // Load the diagram from the source file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Record start time before saving
-            var stopwatch = Stopwatch.StartNew();
+            // Optional: configure save options (e.g., specify format)
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
+            // saveOptions.AutoFitPageToDrawingContent = true; // example of additional option
 
-            // Save the diagram to a new file
-            diagram.Save("output.vdx", saveOptions);
+            // Record start time
+            Stopwatch stopwatch = Stopwatch.StartNew();
 
-            // Stop the timer after saving completes
+            // Save the diagram using the configured options
+            diagram.Save(outputPath, saveOptions);
+
+            // Record end time
             stopwatch.Stop();
 
-            // Log the duration of the save operation
-            Console.WriteLine($"Diagram saved in {stopwatch.ElapsedMilliseconds} ms.");
+            // Log the elapsed time
+            Console.WriteLine($"Diagram saved in {stopwatch.Elapsed.TotalMilliseconds} ms.");
+
+            // Clean up resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

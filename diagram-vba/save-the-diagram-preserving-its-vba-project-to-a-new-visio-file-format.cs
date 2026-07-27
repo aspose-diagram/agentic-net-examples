@@ -1,38 +1,28 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class PreserveVbaExample
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio file (must contain a VBA project)
-            string sourcePath = "input.vsdm";
+            // Load the source Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram from the file
-            Diagram diagram = new Diagram(sourcePath);
+            // Create save options for a macro‑enabled Visio format (VSDM)
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdm);
+            // Explicitly set the format (optional, but clarifies intent)
+            saveOptions.SaveFormat = SaveFileFormat.Vsdm;
 
-            // Optional: verify that the VBA project is present
-            if (diagram.VbaProject == null)
-            {
-                Console.WriteLine("No VBA project found in the source file.");
-            }
-            else
-            {
-                Console.WriteLine("VBA project detected and will be preserved.");
-            }
+            // Save the diagram to a new file while preserving its VBA project
+            diagram.Save("output.vsdm", saveOptions);
 
-            // Path for the new Visio file (choose a format that supports macros, e.g., VSDM)
-            string outputPath = "output.vsdm";
-
-            // Save the diagram using the SaveFileFormat that supports macros.
-            // This preserves the VBA project in the new file.
-            diagram.Save(outputPath, SaveFileFormat.Vsdm);
-
-            Console.WriteLine($"Diagram saved to '{outputPath}' with VBA project preserved.");
+            // Clean up resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

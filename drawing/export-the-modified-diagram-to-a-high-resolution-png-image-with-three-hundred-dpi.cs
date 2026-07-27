@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,13 +10,12 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file (replace with your actual file path)
+            // Load the Visio diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create image save options for PNG format
+            // Set up image save options for PNG format with 300 DPI resolution
             ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-            // Set the resolution to 300 DPI
-            options.Resolution = 300f;
+            options.Resolution = 300f; // DPI
 
             // Export the diagram to a high‑resolution PNG image
             diagram.Save("output.png", options);

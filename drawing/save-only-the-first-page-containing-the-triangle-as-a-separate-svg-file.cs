@@ -1,66 +1,59 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram from a file
+            string inputPath = "input.vsdx"; // replace with your source file path
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the source Visio file
-                const string inputPath = "input.vsdx";
-                // Path for the exported SVG file
-                const string outputPath = "first_triangle_page.svg";
-
-                // Load the diagram inside a using block to ensure resources are released
-                using (Diagram diagram = new Diagram(inputPath))
+                // Find the first page that contains a triangle shape
+                int pageIndex = -1;
+                int currentIndex = 0;
+                foreach (Page page in diagram.Pages)
                 {
-                    int trianglePageIndex = -1;
-
-                    // Iterate through pages to locate the first page that contains a triangle shape
-                    for (int i = 0; i < diagram.Pages.Count; i++)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Page page = diagram.Pages[i];
-                        foreach (Shape shape in page.Shapes)
+                        // Check if the shape uses a master named "Triangle"
+                        if (shape.Master != null && shape.Master.Name == "Triangle")
                         {
-                            // Ensure the shape has a master and compare its name to "Triangle"
-                            if (shape.Master != null && string.Equals(shape.Master.Name, "Triangle", StringComparison.OrdinalIgnoreCase))
-                            {
-                                trianglePageIndex = i;
-                                break;
-                            }
-                        }
-
-                        if (trianglePageIndex != -1)
+                            pageIndex = currentIndex;
                             break;
+                        }
                     }
 
-                    // If no triangle was found, abort with an informative message
-                    if (trianglePageIndex == -1)
-                    {
-                        Console.WriteLine("No triangle shape was found in any page of the diagram.");
-                        return;
-                    }
+                    if (pageIndex != -1)
+                        break;
 
-                    // Configure SVG export options to render only the identified page
-                    SVGSaveOptions svgOptions = new SVGSaveOptions
-                    {
-                        PageIndex = trianglePageIndex,
-                        ExportHiddenPage = false,
-                        DefaultFont = "Arial"
-                    };
-
-                    // Save the selected page as an SVG file
-                    diagram.Save(outputPath, svgOptions);
-                    Console.WriteLine($"Page {trianglePageIndex + 1} containing a triangle was saved to '{outputPath}'.");
+                    currentIndex++;
                 }
 
+                if (pageIndex == -1)
+                {
+                    Console.WriteLine("No triangle shape found in any page.");
+                    return;
+                }
+
+                // Export the identified page as an SVG file
+                string outputPath = "triangle_page.svg"; // desired output file
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+                svgOptions.PageIndex = pageIndex; // export only the found page
+                diagram.Save(outputPath, svgOptions);
+
+                Console.WriteLine($"Page {pageIndex} containing a triangle was saved to '{outputPath}'.");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,36 +1,52 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Input and output file paths (use arguments if provided)
-            string inputPath = args.Length > 0 ? args[0] : "original.vsdx";
-            string outputPath = args.Length > 1 ? args[1] : "clone.vsdx";
-
-            // Load the original diagram
-            using (Diagram original = new Diagram(inputPath))
+            try
             {
-                // Create a new empty diagram
-                using (Diagram clone = new Diagram())
+
+                // Path to the source Visio file
+                string sourcePath = "source.vsdx";
+                // Path where the cloned diagram will be saved
+                string clonedPath = "cloned.vsdx";
+
+                // Load the original diagram from file
+                Diagram originalDiagram = new Diagram(sourcePath);
+
+                // Clone the diagram by saving it to a memory stream and loading it back
+                Diagram clonedDiagram;
+                using (MemoryStream ms = new MemoryStream())
                 {
-                    // Merge all pages, masters, styles, and custom properties from the original
-                    clone.Combine(original);
-
-                    // Save the cloned diagram preserving all custom properties
-                    clone.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Save the original diagram into the memory stream in VSDX format
+                    originalDiagram.Save(ms, SaveFileFormat.Vsdx);
+                    // Reset stream position to the beginning before loading
+                    ms.Position = 0;
+                    // Load a new Diagram instance from the memory stream
+                    clonedDiagram = new Diagram(ms);
                 }
-            }
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+                // Verify that custom document properties are preserved
+                Console.WriteLine("Custom properties in the cloned diagram:");
+                foreach (var prop in clonedDiagram.DocumentProps.CustomProps)
+                {
+                    // CustomValue holds the actual value; use ValueString for string representation
+                    string value = prop.CustomValue?.ValueString ?? "(null)";
+                    Console.WriteLine($"- {prop.Name}: {value}");
+                }
+
+                // Save the cloned diagram to a new file
+                clonedDiagram.Save(clonedPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Cloned diagram saved to '{clonedPath}'.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

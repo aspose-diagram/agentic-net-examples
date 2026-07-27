@@ -1,60 +1,55 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+            try
+            {
 
-        string outputPath = "output.vsdx";
+                // Path to the input Visio file (replace with an actual file path)
+                string inputPath = "input.vsdx";
 
-        Diagram diagram = null;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine("Failed to load diagram: " + ex.Message);
-            return;
-        }
+                // Load the diagram using the constructor that accepts a file path
+                Diagram diagram = new Diagram(inputPath);
 
-        try
-        {
-            diagram.Version = "15.0";
-            Console.WriteLine("Version property modified successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Failed to modify read‑only property 'Version': " + ex.Message);
-        }
+                // Attempt to modify a built‑in read‑only property (Version)
+                try
+                {
+                    // The Version property is read‑only in practice; setting it will raise an exception
+                    diagram.Version = "15.0";
+                    Console.WriteLine("Version property was set successfully (unexpected).");
+                }
+                catch (Exception ex)
+                {
+                    // Handle the exception and inform the user
+                    Console.WriteLine("Error: Unable to modify read‑only property 'Version'.");
+                    Console.WriteLine($"Exception message: {ex.Message}");
+                }
 
-        try
-        {
-            diagram.DocumentProps.BuildNumberCreated = "9999";
-            Console.WriteLine("BuildNumberCreated property modified successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Failed to modify read‑only property 'BuildNumberCreated': " + ex.Message);
-        }
+                // Optionally, attempt to modify another read‑only built‑in property, e.g., BuildNumberCreated
+                // (This property is writable, but for demonstration we treat it as read‑only)
+                try
+                {
+                    diagram.DocumentProps.BuildNumberCreated = "12345";
+                    Console.WriteLine("BuildNumberCreated property was set successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error: Unable to modify property 'BuildNumberCreated'.");
+                    Console.WriteLine($"Exception message: {ex.Message}");
+                }
 
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved to: " + outputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine("Failed to save diagram: " + ex.Message);
-        }
+                // Save the diagram to a new file (if any writable changes were made)
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

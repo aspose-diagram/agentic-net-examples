@@ -1,48 +1,43 @@
 using System;
 using System.IO;
-using System.Text;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
-class DiagramCustomPropertiesSummary
+class Program
 {
     static void Main(string[] args)
     {
-        // Directory containing Visio diagram files (e.g., .vsdx, .vsd)
-        string diagramsFolder = @"C:\Diagrams";
-
-        // Output CSV file path
-        string csvPath = @"C:\Diagrams\CustomPropertiesSummary.csv";
-
-        // Prepare a StringBuilder for CSV content
-        var csvBuilder = new StringBuilder();
-        csvBuilder.AppendLine("Filename,CustomPropertyCount");
-
-        // Enumerate all supported Visio files in the folder
-        foreach (string filePath in Directory.EnumerateFiles(diagramsFolder, "*.*", SearchOption.TopDirectoryOnly))
+        // Expect two arguments: input folder containing diagrams and output CSV file path
+        if (args.Length < 2)
         {
-            // Filter by typical Visio extensions
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
-            if (extension != ".vsdx" && extension != ".vsd" && extension != ".vsdm" && extension != ".vssx" && extension != ".vss")
-                continue;
+            Console.WriteLine("Usage: Program <inputFolder> <outputCsv>");
+            return;
+        }
 
-            // Load the diagram using the provided constructor
+        string inputFolder = args[0];
+        string outputCsv = args[1];
+
+        var csvLines = new List<string>();
+        csvLines.Add("Filename,CustomPropertiesCount");
+
+        // Retrieve all Visio diagram files (adjust extension filter as needed)
+        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+
+        foreach (string filePath in diagramFiles)
+        {
+            // Load diagram using Aspose.Diagram constructor (load rule)
             using (var diagram = new Diagram(filePath))
             {
-                // Access the collection of custom properties
-                var customProps = diagram.DocumentProps.CustomProps;
+                // Count custom properties in the document
+                int customPropCount = diagram.DocumentProps.CustomProps.Count;
 
-                // Count the custom properties (if collection is null, count is zero)
-                int count = customProps?.Count ?? 0;
-
-                // Append the result to CSV
+                // Add entry to CSV
                 string fileName = Path.GetFileName(filePath);
-                csvBuilder.AppendLine($"{fileName},{count}");
+                csvLines.Add($"{fileName},{customPropCount}");
             }
         }
 
-        // Write the CSV content to the file system
-        File.WriteAllText(csvPath, csvBuilder.ToString());
-
-        Console.WriteLine($"Summary CSV created at: {csvPath}");
+        // Write the summary CSV file
+        File.WriteAllLines(outputCsv, csvLines);
     }
 }

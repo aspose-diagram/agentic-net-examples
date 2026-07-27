@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 
 class Program
     {
@@ -8,32 +9,42 @@ class Program
             try
             {
 
-                // Input and output file paths
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Flag to indicate if the property was found
-                bool statusFound = false;
+                // Access custom properties collection
+                CustomPropCollection customProps = diagram.DocumentProps.CustomProps;
 
-                // Iterate through custom properties to find "Status"
-                foreach (CustomProp prop in diagram.DocumentProps.CustomProps)
+                // Try to find an existing custom property named "Status"
+                CustomProp statusProp = null;
+                foreach (CustomProp prop in customProps)
                 {
-                    if (string.Equals(prop.Name, "Status", StringComparison.OrdinalIgnoreCase))
+                    if (prop.Name == "Status")
                     {
-                        // Update the value to "Completed"
-                        prop.CustomValue.ValueString = "Completed";
-                        statusFound = true;
+                        statusProp = prop;
                         break;
                     }
                 }
 
-                // If the property was not found, throw an exception
-                if (!statusFound)
+                if (statusProp != null)
                 {
-                    throw new Exception("Custom property 'Status' was not found in the diagram.");
+                    // Update the existing property's value
+                    statusProp.CustomValue.ValueString = "Completed";
+                }
+                else
+                {
+                    // Create a new custom property if it does not exist
+                    CustomProp newProp = new CustomProp
+                    {
+                        Name = "Status",
+                        PropType = PropType.String,
+                        CustomValue = { ValueString = "Completed" }
+                    };
+                    customProps.Add(newProp);
                 }
 
                 // Save the updated diagram

@@ -2,7 +2,6 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Properties;
 
 class Program
 {
@@ -11,40 +10,44 @@ class Program
         try
         {
 
-            // Input and output file paths (adjust as needed)
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Validate input arguments
+            if (args.Length == 0)
+            {
+                Console.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputPath = args.Length > 1 ? args[1] : "cleaned_output.vsdx";
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the collection of custom document properties
-            var customProps = diagram.DocumentProps.CustomProps;
-
-            // Collect properties with null values
+            // Collect custom properties with null values
             var propsToRemove = new List<CustomProp>();
-            foreach (CustomProp prop in customProps)
+            foreach (CustomProp prop in diagram.DocumentProps.CustomProps)
             {
-                // CustomValue.ValueString holds the string value of the property
-                if (prop.CustomValue.ValueString == null)
+                // Some custom properties may have a null CustomValue or a null string inside it
+                if (prop.CustomValue == null || prop.CustomValue.ValueString == null)
                 {
                     propsToRemove.Add(prop);
                 }
             }
 
             // Remove the identified properties from the collection
-            foreach (var prop in propsToRemove)
+            foreach (CustomProp prop in propsToRemove)
             {
-                customProps.Remove(prop);
+                diagram.DocumentProps.CustomProps.Remove(prop);
             }
 
             // Save the cleaned diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}' with null-valued custom properties removed.");
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

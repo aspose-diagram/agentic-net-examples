@@ -3,29 +3,29 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportDiagramToPdf
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio diagram
-            string sourceFile = "input.vsdx";
+            // Load an existing Visio diagram (replace with your source file)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Path for the resulting PDF file
-            string pdfFile = "output.pdf";
+            // Configure PDF save options.
+            // Custom document properties are preserved automatically.
+            // Additional options can be set here if needed.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                // Example: include hidden pages so that any hidden custom data is kept.
+                ExportHiddenPage = true
+            };
 
-            // Load the Visio diagram (custom properties are part of the diagram and will be retained)
-            Diagram diagram = new Diagram(sourceFile);
+            // Export the diagram to PDF using the configured options.
+            diagram.Save("output.pdf", pdfOptions);
 
-            // Configure PDF save options (default settings retain all document data)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-            // Save the diagram as PDF using the configured options
-            diagram.Save(pdfFile, pdfOptions);
-
-            // Clean up resources
+            // Clean up resources.
             diagram.Dispose();
 
         }

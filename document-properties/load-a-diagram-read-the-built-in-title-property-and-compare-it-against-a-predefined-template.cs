@@ -9,26 +9,30 @@ class Program
         try
         {
 
-            // Path to the Visio diagram to be examined
-            string diagramPath = @"C:\Diagrams\sample.vsdx";
+            // Path to the Visio diagram file to be loaded
+            string diagramPath = "input.vsdx";
 
-            // Load the diagram using the constructor that accepts a file name
+            // Load the diagram using the built‑in constructor (lifecycle rule)
             Diagram diagram = new Diagram(diagramPath);
 
             // Retrieve the built‑in Title property from the document properties
-            // DocumentProps.Title returns the title set in the Visio file
-            string diagramTitle = diagram.DocumentProps.Title;
+            string actualTitle = diagram.DocumentProps.Title;
 
             // Predefined template title to compare against
-            string templateTitle = "Standard Diagram Title";
+            const string expectedTitle = "My Template Title";
 
-            // Compare the titles (case‑insensitive)
-            bool titlesMatch = string.Equals(diagramTitle, templateTitle, StringComparison.OrdinalIgnoreCase);
+            // Compare the actual title with the expected template title
+            if (string.Equals(actualTitle, expectedTitle, StringComparison.Ordinal))
+            {
+                Console.WriteLine("Title matches the template.");
+            }
+            else
+            {
+                Console.WriteLine($"Title mismatch. Actual: \"{actualTitle}\", Expected: \"{expectedTitle}\"");
+            }
 
-            // Output the result
-            Console.WriteLine("Diagram Title: \"{0}\"", diagramTitle ?? "<null>");
-            Console.WriteLine("Template Title: \"{0}\"", templateTitle);
-            Console.WriteLine("Titles match: {0}", titlesMatch);
+            // Clean up resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

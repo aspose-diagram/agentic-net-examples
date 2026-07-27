@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,16 +10,20 @@ class Program
         // Create a new Visio diagram
         Diagram diagram = new Diagram();
 
-        // Define XML data to store as a custom property
-        string xmlContent = "<mydata><value>123</value></mydata>";
+        // XML data to store as a custom property
+        string xmlData = "<root><item id=\"1\">Value</item></root>";
 
-        // Create a SolutionXML object with a unique name and the XML content
-        SolutionXML customXml = new SolutionXML("MyCustomData", xmlContent);
+        // Create a SolutionXML object and assign name and XML value
+        SolutionXML customXml = new SolutionXML
+        {
+            Name = "MyCustomXml",
+            XmlValue = xmlData
+        };
 
-        // Add the custom XML to the diagram's SolutionXML collection
+        // Add the custom XML to the diagram's SolutionXMLs collection
         diagram.SolutionXMLs.Add(customXml);
 
-        // Save the diagram to a VDX file (Visio XML format)
+        // Save the diagram; the custom XML will be serialized within the file
         diagram.Save("CustomPropertyDiagram.vdx", SaveFileFormat.Vdx);
     }
 }

@@ -5,69 +5,58 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect three arguments: source diagram path, target diagram path, output diagram path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramCustomPropertyCopy <source.vsdx> <target.vsdx> [output.vsdx]");
-                return;
-            }
-
-            string sourcePath = args[0];
-            string targetPath = args[1];
-            string outputPath = args.Length >= 3 ? args[2] : targetPath;
-
             try
             {
-                // Load source and target diagrams
+
+                // Paths to the source diagram, the target diagram, and the output file.
+                string sourcePath = "source.vsdx";
+                string targetPath = "target.vsdx";
+                string outputPath = "merged.vsdx";
+
+                // Load the source and target diagrams.
                 Diagram sourceDiagram = new Diagram(sourcePath);
                 Diagram targetDiagram = new Diagram(targetPath);
 
-                // Access custom property collections
-                var sourceCustomProps = sourceDiagram.DocumentProps.CustomProps;
-                var targetCustomProps = targetDiagram.DocumentProps.CustomProps;
-
-                // Iterate over each custom property in the source diagram
-                for (int i = 0; i < sourceCustomProps.Count; i++)
+                // Copy custom properties from source to target.
+                foreach (CustomProp srcProp in sourceDiagram.DocumentProps.CustomProps)
                 {
-                    var srcProp = sourceCustomProps[i];
-
-                    // Remove any existing property in the target with the same name to avoid duplicates
-                    CustomProp existing = null;
-                    for (int j = 0; j < targetCustomProps.Count; j++)
+                    // Check if a property with the same name already exists in the target.
+                    CustomProp existingProp = null;
+                    foreach (CustomProp tgtProp in targetDiagram.DocumentProps.CustomProps)
                     {
-                        if (targetCustomProps[j].Name == srcProp.Name)
+                        if (tgtProp.Name == srcProp.Name)
                         {
-                            existing = targetCustomProps[j];
+                            existingProp = tgtProp;
                             break;
                         }
                     }
-                    if (existing != null)
+
+                    // If it exists, remove it to avoid duplicates.
+                    if (existingProp != null)
                     {
-                        targetCustomProps.Remove(existing);
+                        targetDiagram.DocumentProps.CustomProps.Remove(existingProp);
                     }
 
-                    // Create a new custom property and copy values
+                    // Create a new custom property and copy its details.
                     CustomProp newProp = new CustomProp
                     {
                         Name = srcProp.Name,
-                        // Preserve the original property type
                         PropType = srcProp.PropType,
-                        // Copy the stored value (as string)
+                        // Preserve the original value string.
                         CustomValue = { ValueString = srcProp.CustomValue.ValueString }
                     };
 
-                    // Add the new property to the target diagram
-                    targetCustomProps.Add(newProp);
+                    // Add the new property to the target diagram.
+                    targetDiagram.DocumentProps.CustomProps.Add(newProp);
                 }
 
-                // Save the modified target diagram
+                // Save the updated target diagram.
                 targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Custom properties copied successfully to '{outputPath}'.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("An error occurred: " + ex.Message);
-                throw;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
+    }
     }

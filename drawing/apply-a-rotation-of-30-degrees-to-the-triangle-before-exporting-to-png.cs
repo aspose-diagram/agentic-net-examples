@@ -10,20 +10,20 @@ class Program
         try
         {
 
-            // Load the Visio diagram that contains the triangle
+            // Load the Visio diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Retrieve the triangle shape.
-            // Here we assume the triangle is the first user‑defined shape on the first page.
-            // Index 0 is the page shape itself, so we start from 1.
+            // Here we assume the triangle is the first shape on the first page.
+            // Adjust the index or use a different lookup method as needed.
             Shape triangle = diagram.Pages[0].Shapes[1];
 
-            // Rotate the triangle by 30 degrees.
-            // Shape.SetAngle expects the angle in radians.
-            double angleRadians = 30.0 * Math.PI / 180.0;
-            triangle.SetAngle(angleRadians);
+            // Apply a rotation of 30 degrees.
+            // SetAngle expects the angle in radians.
+            double angleInRadians = 30 * Math.PI / 180.0;
+            triangle.SetAngle(angleInRadians);
 
-            // Export the rotated triangle to a PNG file.
+            // Export the rotated shape to PNG.
             ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
             triangle.ToImage("triangle.png", pngOptions);
 

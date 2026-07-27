@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,33 +10,34 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vdx");
 
-            // Access the first page of the diagram
+            // Access the first page (or any specific page)
             Page page = diagram.Pages[0];
 
             // Original rectangle parameters
-            double pinX = 5.0;   // X coordinate of the rectangle's pin (center of rotation)
-            double pinY = 5.0;   // Y coordinate of the rectangle's pin
-            double width = 2.0; // Original width
-            double height = 1.0; // Original height
+            double pinX = 5.0;          // X coordinate of the rectangle's pin (center)
+            double pinY = 5.0;          // Y coordinate of the rectangle's pin (center)
+            double originalWidth = 2.0;
+            double originalHeight = 1.0;
 
-            // Draw the original rectangle (optional, for reference)
-            page.DrawRectangle(pinX, pinY, width, height);
-
-            // Scale factor to double the size while keeping aspect ratio
+            // Scale factor to double width and height
             double scaleFactor = 2.0;
 
-            // Calculate new dimensions
-            double newWidth = width * scaleFactor;
-            double newHeight = height * scaleFactor;
+            // Compute new dimensions while preserving aspect ratio
+            double newWidth = originalWidth * scaleFactor;
+            double newHeight = originalHeight * scaleFactor;
 
-            // Draw the scaled rectangle with doubled width and height
-            page.DrawRectangle(pinX, pinY, newWidth, newHeight);
+            // Draw the rectangle with the scaled dimensions
+            long shapeId = page.DrawRectangle(pinX, pinY, newWidth, newHeight);
 
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // (Optional) Adjust the shape's DropOnPageScale if you need to reflect scaling in the shape's properties
+            // Shape shape = page.Shapes[shapeId];
+            // shape.DropOnPageScale = new DoubleValue(scaleFactor * 100); // percentage
+
+            // Save the modified diagram
+            diagram.Save("output.vdx", SaveFileFormat.Vdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

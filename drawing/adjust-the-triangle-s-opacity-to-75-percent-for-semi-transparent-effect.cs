@@ -1,41 +1,46 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the page
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Assume the triangle is on the first page
+                Page page = diagram.Pages[0];
+
+                // Find the first shape whose master name is "Triangle"
+                Shape? triangleShape = null;
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify triangle shapes by master name
                     if (shape.Master != null && shape.Master.Name == "Triangle")
                     {
-                        // Set fill foreground transparency to 75% (0.75 = 75% transparent)
-                        shape.Fill.FillForegndTrans.Value = 0.75;
-                        // Optionally, also set background transparency if needed
-                        shape.Fill.FillBkgndTrans.Value = 0.75;
+                        triangleShape = shape;
+                        break;
                     }
                 }
+
+                if (triangleShape == null)
+                {
+                    throw new Exception("Triangle shape not found in the diagram.");
+                }
+
+                // Set fill transparency to 75% (0.75 = 75% transparent)
+                // FillForegndTrans expects a value between 0.0 (opaque) and 1.0 (fully transparent)
+                triangleShape.Fill.FillForegndTrans.Value = 0.75;
+
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -3,36 +3,46 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramExport
+namespace DiagramHtmlExport
 {
-    // Custom stream provider that throws an exception when a requested resource is missing
-    class MyStreamProvider : IStreamProvider
+    // Custom stream provider that supplies resource streams for HTML export.
+    // Throws an exception when the requested resource cannot be found.
+    public class CustomStreamProvider : IStreamProvider
     {
+        private readonly string _resourceBasePath;
+
+        public CustomStreamProvider(string resourceBasePath)
+        {
+            _resourceBasePath = resourceBasePath;
+        }
+
+        // Called by Aspose.Diagram when a resource stream is required.
         public void InitStream(StreamProviderOptions options)
         {
-            // The expected file name for the resource is provided via DefaultPath
-            string resourcePath = options.DefaultPath;
+            // The name of the resource to be provided (e.g., image file name).
+            string resourceName = options.DefaultPath;
 
-            if (File.Exists(resourcePath))
+            // Build the full path to the resource file.
+            string fullPath = Path.Combine(_resourceBasePath, resourceName);
+
+            if (File.Exists(fullPath))
             {
-                // Open the file stream for the existing resource
-                options.Stream = new FileStream(resourcePath, FileMode.Open, FileAccess.Read);
+                // Assign the opened stream to the options so Aspose can read it.
+                options.Stream = File.OpenRead(fullPath);
             }
             else
             {
-                // Resource not found – raise an informative exception
-                throw new FileNotFoundException($"Resource not found: {resourcePath}");
+                // Resource is missing – handle the error as required.
+                // Here we throw an exception to stop the export and inform the caller.
+                throw new FileNotFoundException($"Required resource not found: {fullPath}");
             }
         }
 
+        // Called after Aspose.Diagram finishes using the stream.
         public void CloseStream(StreamProviderOptions options)
         {
-            // Ensure the opened stream is properly disposed
-            if (options.Stream != null)
-            {
-                options.Stream.Dispose();
-                options.Stream = null;
-            }
+            // Dispose the stream if it was created.
+            options.Stream?.Dispose();
         }
     }
 
@@ -40,37 +50,27 @@ namespace DiagramExport
     {
         static void Main()
         {
-            string inputDiagram = "input.vsdx";
-
-            if (!File.Exists(inputDiagram))
+            try
             {
-                Console.WriteLine($"Input diagram file not found: {inputDiagram}");
-                return;
-            }
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputDiagram))
-            {
-                // Set up HTML save options with the custom stream provider
+                // Load an existing Visio diagram.
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Configure HTML export options and assign the custom stream provider.
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    StreamProvider = new MyStreamProvider()
+                    // Folder where external resources (images, CSS, etc.) are stored.
+                    StreamProvider = new CustomStreamProvider("Resources")
                 };
 
-                string outputHtml = "output.html";
+                // Export the diagram to HTML. Missing resources will cause an exception.
+                diagram.Save("output.html", htmlOptions);
 
-                try
-                {
-                    // Save the diagram as HTML using the configured options
-                    diagram.Save(outputHtml, htmlOptions);
-                    Console.WriteLine($"Diagram successfully saved to {outputHtml}");
-                }
-                catch (Exception ex)
-                {
-                    // Handle any errors that occur during the save process
-                    Console.WriteLine($"Error during HTML export: {ex.Message}");
-                }
             }
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

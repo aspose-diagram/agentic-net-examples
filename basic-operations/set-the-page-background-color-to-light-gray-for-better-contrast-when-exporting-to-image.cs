@@ -10,47 +10,53 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            using (Diagram diagram = new Diagram("input.vsdx"))
+            // Create a new diagram instance
+            using (Diagram diagram = new Diagram())
             {
-                // Apply a light‑gray background to every page
-                foreach (Page page in diagram.Pages)
-                {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Add a foreground page (the page that will contain the actual drawing)
+                Page foregroundPage = new Page();
+                diagram.Pages.Add(foregroundPage);
 
-                    // Center of the page
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
+                // Retrieve page dimensions (in inches)
+                double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
 
-                    // Draw a rectangle that spans the whole page
-                    long rectId = page.DrawRectangle(pinX, pinY, pageWidth, pageHeight);
-                    Shape rectShape = page.Shapes.GetShape((int)rectId);
+                // Add a background page and mark it as a background
+                Page backgroundPage = new Page();
+                backgroundPage.Background = BOOL.True;
+                diagram.Pages.Add(backgroundPage);
 
-                    // Fill with solid light gray (#D3D3D3)
-                    rectShape.Fill.FillPattern.Value = 1;                     // solid fill
-                    rectShape.Fill.FillForegnd.Value = "#D3D3D3";             // light gray color
+                // Create a rectangle shape that spans the entire page
+                double pinX = pageWidth / 2.0;   // Center X
+                double pinY = pageHeight / 2.0;  // Center Y
+                long bgShapeId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle");
 
-                    // Remove the rectangle border
-                    rectShape.Line.LinePattern.Value = (LinePatternValue)0;   // no line
+                // Retrieve the shape to set its fill and line properties
+                Shape bgShape = backgroundPage.Shapes.GetShape(bgShapeId);
+                // Solid fill pattern
+                bgShape.Fill.FillPattern.Value = 1;
+                // Light gray color (hex code)
+                bgShape.Fill.FillForegnd.Value = "#D3D3D3";
+                // No outline
+                bgShape.Line.LinePattern.Value = 0;
+                // Ensure the background shape is behind other content
+                bgShape.SendToBack();
 
-                    // Send the rectangle to the back so other shapes appear above it
-                    rectShape.SendToBack();
+                // Link the foreground page to the background page
+                foregroundPage.BackPage = backgroundPage;
 
-                    // Make the background shape non‑selectable
-                    rectShape.Protection.LockSelect.Value = BOOL.True;
-                }
-
-                // Export the diagram to PNG (image) format
+                // Export the diagram to an image (PNG) with the background applied
                 ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                saveOptions.PageIndex = 0; // Export the first (and only) page
                 diagram.Save("output.png", saveOptions);
             }
 
+            Console.WriteLine("Diagram exported with light gray background.");
+
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

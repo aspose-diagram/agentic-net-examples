@@ -1,43 +1,37 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Position and size for the oval (ellipse)
-            double pinX = 5.0;   // X coordinate of the center
-            double pinY = 5.0;   // Y coordinate of the center
-            double width = 4.0;  // Width of the oval (in inches)
-            double height = 2.0; // Height of the oval (in inches)
+            // Access the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Draw the oval on the active page; returns the shape ID
-            long shapeId = diagram.ActivePage.DrawEllipse(pinX, pinY, width, height);
+            // Define position and size for the oval (in inches)
+            double pinX = 5.0;   // center X
+            double pinY = 5.0;   // center Y
+            double width = 4.0;  // horizontal diameter
+            double height = 2.5; // vertical diameter
 
-            // Retrieve the concrete Shape instance using the ID
-            Shape oval = diagram.ActivePage.Shapes.GetShape((int)shapeId);
+            // Draw an oval shape on the page; returns the shape ID (long)
+            long shapeId = page.DrawEllipse(pinX, pinY, width, height);
 
-            // Optional: set a fill color (green in this example)
-            oval.Fill.FillForegnd.Value = "#00FF00";
+            // Retrieve the Shape object using the ID
+            Shape oval = page.Shapes.GetShape((int)shapeId);
 
-            // Set fill opacity to 70% (i.e., 30% transparency)
-            // FillForegndTrans.Value expects a percentage (0 = opaque, 100 = fully transparent)
-            oval.Fill.FillForegndTrans.Value = 30; // 30% transparent => 70% opaque
+            // Set a solid fill color (optional, here light blue)
+            oval.Fill.FillForegnd.Value = "#ADD8E6";
+
+            // Set fill transparency to achieve 70% opacity.
+            // Transparency is expressed as a percentage (0 = opaque, 100 = fully transparent).
+            // 70% opacity => 30% transparency.
+            oval.Fill.FillForegndTrans.Value = 30;
 
             // Save the diagram to a VSDX file
-            diagram.Save("OvalOpacity.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.NullReferenceException ex)
-        {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            diagram.Save("OvalWithOpacity.vsdx", SaveFileFormat.Vsdx);
         }
     }
-}

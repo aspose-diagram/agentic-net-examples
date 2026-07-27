@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,23 +10,21 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (VSD/VSDX)
-            // (Assumes the create/load rule is used internally by Diagram.Load)
-            Diagram diagram = new Diagram(@"C:\Input\sample.vsd");
+            // Load the source Visio diagram (VSD/VSDX)
+            Diagram diagram = new Diagram("input.vsd");
 
-            // Create ImageSaveOptions for PNG format
+            // Create image save options for PNG format
             ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Set custom resolution (e.g., 300 DPI)
-            pngOptions.Resolution = 300f;
+            // Set the desired resolution (dots per inch)
+            pngOptions.Resolution = 300f; // Example: 300 DPI
 
-            // Save the diagram to PNG using the specified options
-            // (Assumes the save rule is used internally by Diagram.Save)
-            diagram.Save(@"C:\Output\sample.png", pngOptions);
+            // Save the diagram to PNG using the custom resolution
+            diagram.Save("output.png", pngOptions);
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

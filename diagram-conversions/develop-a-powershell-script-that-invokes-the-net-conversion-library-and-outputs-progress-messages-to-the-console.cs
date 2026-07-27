@@ -6,16 +6,18 @@ using Aspose.Diagram.Saving;
 namespace DiagramConversion
 {
     // Implements page saving callback to report progress during PDF export
-    public class CustomPageSavingCallback : IPageSavingCallback
+    public class ConsolePageSavingCallback : IPageSavingCallback
     {
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            Console.WriteLine($"[PDF] Starting page {args.PageIndex + 1} of {args.PageCount}");
+            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
         }
 
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            Console.WriteLine($"[PDF] Finished page {args.PageIndex + 1} of {args.PageCount}");
+            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+            // Example: stop after first page (uncomment if needed)
+            // args.HasMorePages = false;
         }
     }
 
@@ -24,55 +26,73 @@ namespace DiagramConversion
         // Entry point
         public static void Main(string[] args)
         {
-            if (args.Length < 2)
+            // Determine input and output directories
+            string inputFolder;
+            string outputFolder;
+
+            if (args.Length >= 2)
+            {
+                inputFolder = args[0];
+                outputFolder = args[1];
+            }
+            else
             {
                 Console.WriteLine("Usage: DiagramConversion <inputFolder> <outputFolder>");
                 return;
             }
 
-            string inputFolder = args[0];
-            string outputFolder = args[1];
-
-            // Ensure output directory exists
-            Directory.CreateDirectory(outputFolder);
-
-            // Get all Visio files (VSDX) in the input folder
-            string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
-            int totalFiles = diagramFiles.Length;
-            Console.WriteLine($"Found {totalFiles} diagram file(s) to process.");
-
-            int processedCount = 0;
-            foreach (string diagramPath in diagramFiles)
+            if (!Directory.Exists(inputFolder))
             {
+                Console.WriteLine($"Input folder does not exist: {inputFolder}");
+                return;
+            }
+
+            if (!Directory.Exists(outputFolder))
+            {
+                Directory.CreateDirectory(outputFolder);
+                Console.WriteLine($"Created output folder: {outputFolder}");
+            }
+
+            // Get all Visio files (VSDX, VDX, VSSX, etc.) in the input folder
+            string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+            int totalFiles = diagramFiles.Length;
+            int processedCount = 0;
+
+            foreach (string filePath in diagramFiles)
+            {
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                // Process only supported Visio formats
+                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx" && extension != ".vssx")
+                {
+                    continue;
+                }
+
+                processedCount++;
+                string fileName = Path.GetFileNameWithoutExtension(filePath);
+                string outputPath = Path.Combine(outputFolder, fileName + ".pdf");
+
                 try
                 {
-                    processedCount++;
-                    string fileName = Path.GetFileName(diagramPath);
-                    Console.WriteLine($"Processing ({processedCount}/{totalFiles}): {fileName}");
-
-                    // Load diagram from file
-                    Diagram diagram = new Diagram(diagramPath);
+                    Console.WriteLine($"[{processedCount}/{totalFiles}] Loading diagram: {filePath}");
+                    // Load diagram (no LoadOptions needed for this version)
+                    Diagram diagram = new Diagram(filePath);
 
                     // Prepare PDF save options with progress callback
                     PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.PageSavingCallback = new CustomPageSavingCallback();
+                    pdfOptions.PageSavingCallback = new ConsolePageSavingCallback();
 
-                    // Define output PDF path
-                    string outputPdfPath = Path.Combine(outputFolder,
-                        Path.GetFileNameWithoutExtension(diagramPath) + ".pdf");
+                    Console.WriteLine($"Saving to PDF: {outputPath}");
+                    diagram.Save(outputPath, pdfOptions);
 
-                    // Save diagram as PDF using the options
-                    diagram.Save(outputPdfPath, pdfOptions);
-
-                    Console.WriteLine($"Saved PDF: {outputPdfPath}");
+                    Console.WriteLine($"Successfully converted: {fileName}.pdf");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing '{diagramPath}': {ex.Message}");
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
                 }
             }
 
-            Console.WriteLine("All files processed.");
+            Console.WriteLine("Conversion process completed.");
         }
     }
 }

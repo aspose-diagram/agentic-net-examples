@@ -10,20 +10,20 @@ class Program
         try
         {
 
-            // Load the diagram (replace with the actual file path)
+            // Load the diagram file (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Access the VBA project associated with the diagram
             VbaProject vbaProject = diagram.VbaProject;
 
-            // Get the collection of VBA modules
-            VbaModuleCollection modules = vbaProject.Modules;
-
-            // Enumerate each module and output its name
-            foreach (VbaModule module in modules)
+            // Enumerate all VBA modules and output their names
+            foreach (VbaModule vbaModule in vbaProject.Modules)
             {
-                Console.WriteLine(module.Name);
+                Console.WriteLine(vbaModule.Name);
             }
+
+            // Save the diagram if any modifications were made (optional)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -5,63 +5,54 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramConversion
 {
-    // Implements page saving callback to display progress in console
-    public class ConsolePageSavingCallback : IPageSavingCallback
+    // Implements page saving callback to display progress.
+    public class ProgressCallback : IPageSavingCallback
     {
-        // Called before a page starts saving
+        // Called before a page starts saving.
         public void PageStartSaving(PageStartSavingArgs args)
         {
             Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}...");
         }
 
-        // Called after a page has been saved
+        // Called after a page has been saved.
         public void PageEndSaving(PageEndSavingArgs args)
         {
             Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
         }
     }
 
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        // Entry point of the console application.
+        public static void Main(string[] args)
         {
-            // Retrieve input and output file paths
-            string inputPath;
-            string outputPath;
-
-            if (args.Length >= 2)
+            // Validate arguments.
+            if (args.Length != 2)
             {
-                inputPath = args[0];
-                outputPath = args[1];
-            }
-            else
-            {
-                Console.Write("Enter the path to the source Visio file: ");
-                inputPath = Console.ReadLine();
-
-                Console.Write("Enter the desired output PDF path: ");
-                outputPath = Console.ReadLine();
+                Console.WriteLine("Usage: DiagramConversion <inputFilePath> <outputPdfPath>");
+                return;
             }
 
-            // Validate input file existence
+            string inputPath = args[0];
+            string outputPath = args[1];
+
+            // Verify input file exists.
             if (!File.Exists(inputPath))
             {
-                Console.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+                Console.WriteLine($"Error: Input file not found: {inputPath}");
                 return;
             }
 
             try
             {
-                // Load the diagram from the specified file
+                // Load the Visio diagram.
                 Diagram diagram = new Diagram(inputPath);
 
-                // Configure PDF save options and attach the progress callback
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    PageSavingCallback = new ConsolePageSavingCallback()
-                };
+                // Configure PDF save options with progress callback.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.PageSavingCallback = new ProgressCallback();
 
-                // Save the diagram as PDF with progress reporting
+                // Save the diagram as PDF.
                 diagram.Save(outputPath, pdfOptions);
 
                 Console.WriteLine("Conversion completed successfully.");

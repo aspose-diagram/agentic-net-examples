@@ -1,41 +1,44 @@
-using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using System;
 using System.IO;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        // Create a new diagram
-        Diagram diagram = new Diagram();
+        static void Main()
+        {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-        // Access the first (default) page
-        Page page = diagram.Pages[0];
+            // Get the first page (by default a diagram has at least one page)
+            Page page = diagram.Pages[0];
 
-        // Parameters for a circle (ellipse with equal width and height)
-        double centerX = 5.0;
-        double centerY = 5.0;
-        double radius = 2.0;
-        double width = radius * 2;
-        double height = radius * 2;
+            // Draw a circle using DrawEllipse (pinX, pinY, width, height)
+            // Center at (5,5) inches, radius 2 inches => width and height = 4 inches
+            double pinX = 5.0;
+            double pinY = 5.0;
+            double diameter = 4.0;
+            page.DrawEllipse(pinX, pinY, diameter, diameter);
 
-        // Draw the ellipse (circle) on the page
-        // DrawEllipse expects the pin (top‑left corner of bounding box) and size
-        page.DrawEllipse(centerX - radius, centerY - radius, width, height);
+            // Export the diagram to SVG
+            string svgPath = "output.svg";
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            diagram.Save(svgPath, svgOptions);
 
-        // Save the diagram as SVG
-        string svgPath = "circle.svg";
-        diagram.Save(svgPath, SaveFileFormat.Svg);
+            // Verify that the exported SVG contains an <ellipse> element
+            if (!File.Exists(svgPath))
+            {
+                throw new Exception($"SVG file was not created at path: {svgPath}");
+            }
 
-        // Load the generated SVG content
-        string svgContent = File.ReadAllText(svgPath);
-
-        // Verify that an <ellipse> element is present
-        bool containsEllipse = svgContent.Contains("<ellipse");
-
-        Console.WriteLine(containsEllipse
-            ? "SVG contains an <ellipse> element."
-            : "SVG does NOT contain an <ellipse> element.");
+            string svgContent = File.ReadAllText(svgPath);
+            if (svgContent.Contains("<ellipse"))
+            {
+                Console.WriteLine("Verification succeeded: <ellipse> element found in the SVG.");
+            }
+            else
+            {
+                throw new Exception("Verification failed: <ellipse> element not found in the exported SVG.");
+            }
+        }
     }
-}

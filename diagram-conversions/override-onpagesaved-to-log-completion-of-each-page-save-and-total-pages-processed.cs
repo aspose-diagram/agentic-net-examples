@@ -2,51 +2,53 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class MyPageSavingCallback : IPageSavingCallback
+namespace DiagramPageSavingDemo
 {
-    // Called when a page starts saving; not needed for logging.
-    public void PageStartSaving(PageStartSavingArgs args)
+    // Custom callback to monitor page saving progress
+    public class MyPageSavingCallback : IPageSavingCallback
     {
-        // No implementation required.
-    }
-
-    // Called when a page finishes saving.
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        // Log the completion of the current page.
-        Console.WriteLine($"Page {args.PageIndex + 1} of {args.PageCount} saved.");
-
-        // If this was the last page, log the total pages processed.
-        if (!args.HasMorePages)
+        // Called when a page starts saving (optional implementation)
+        public void PageStartSaving(PageStartSavingArgs args)
         {
-            Console.WriteLine($"All {args.PageCount} pages have been processed.");
+            // You can log start of page saving here if needed
+            // Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
+        }
+
+        // Called when a page finishes saving
+        public void PageEndSaving(PageEndSavingArgs args)
+        {
+            // Log completion of the current page
+            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}");
+
+            // Update HasMorePages if you want to stop early; default is true
+            // args.HasMorePages = true;
         }
     }
-}
 
-public class Program
-{
-    public static void Main()
+    class Program
     {
-        try
+        static void Main()
         {
-
-            // Load an existing diagram (lifecycle rule: load).
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Set up PDF save options and attach the page‑saving callback.
-            PdfSaveOptions saveOptions = new PdfSaveOptions
+            try
             {
-                PageSavingCallback = new MyPageSavingCallback()
-            };
 
-            // Save the diagram to PDF (lifecycle rule: save).
-            diagram.Save("output.pdf", saveOptions);
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Configure PDF save options and attach the custom callback
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                {
+                    PageSavingCallback = new MyPageSavingCallback()
+                };
+
+                // Save the diagram as PDF; the callback will log each page saved
+                diagram.Save("output.pdf", pdfOptions);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

@@ -4,10 +4,10 @@ display_name: Basic Operations
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.5.0
+version: 26.7.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-06-23
+generated: 2026-07-27
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.5.0 |
+| Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-27 |
 
 ## Persona
 
@@ -63,12 +63,10 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 30 | Core diagram API |
 | `System` | 30 | Console, Math, DateTime, Exception |
-| `System.IO` | 29 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 14 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `Aspose.Diagram.Manipulation` | 2 | Supporting utilities |
-| `System.Linq` | 2 | LINQ queries on collections |
+| `System.IO` | 28 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 18 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `Aspose.Diagram.Manipulation` | 3 | Supporting utilities |
 | `System.Diagnostics` | 1 | Supporting utilities |
-| `System.Xml.Linq` | 1 | Supporting utilities |
 | `System.Collections.Generic` | 1 | List, Dictionary, HashSet |
 
 ## Common Code Pattern
@@ -109,27 +107,27 @@ class Program
 | [convert-a-visio-file-to-swf-format-and-confirm-playback-works-in-a-web-browser.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/convert-a-visio-file-to-swf-format-and-confirm-playback-works-in-a-web-browser.cs) | `Diagram`, `Save`, `diagram` | Convert a visio file to swf format and confirm playback works in a web browser |
 | [create-a-connector-between-two-shapes-and-configure-its-line-style-to-dashed-pattern.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/create-a-connector-between-two-shapes-and-configure-its-line-style-to-dashed-pattern.cs) | `AddShape`, `ConnectShapesViaConnector`, `Diagram` | Create a connector between two shapes and configure its line style to dashed pattern |
 | [create-a-new-diagram-instance-and-verify-it-contains-a-single-empty-page.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/create-a-new-diagram-instance-and-verify-it-contains-a-single-empty-page.cs) | `Diagram`, `Pages`, `Shapes` | Create a new diagram instance and verify it contains a single empty page |
-| [create-an-svg-file-from-the-diagram-and-test-that-hyperlinks-on-shapes-remain-functional.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/create-an-svg-file-from-the-diagram-and-test-that-hyperlinks-on-shapes-remain-functional.cs) | `Diagram`, `SVGSaveOptions`, `Save` | Create an svg file from the diagram and test that hyperlinks on shapes remain functional |
-| [define-image-save-options-with-300-dpi-resolution-and-png-format-for-high-quality-output.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/define-image-save-options-with-300-dpi-resolution-and-png-format-for-high-quality-output.cs) | `Diagram`, `ImageSaveOptions`, `Save` | Define image save options with 300 dpi resolution and png format for high quality output |
+| [create-an-svg-file-from-the-diagram-and-test-that-hyperlinks-on-shapes-remain-functional.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/create-an-svg-file-from-the-diagram-and-test-that-hyperlinks-on-shapes-remain-functional.cs) | `Diagram`, `Pages`, `SVGSaveOptions` | Create an svg file from the diagram and test that hyperlinks on shapes remain functional |
+| [define-image-save-options-with-300-dpi-resolution-and-png-format-for-high-quality-output.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/define-image-save-options-with-300-dpi-resolution-and-png-format-for-high-quality-output.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Define image save options with 300 dpi resolution and png format for high quality output |
 | [duplicate-an-existing-shape-change-its-position-and-connect-it-to-the-original-using-a-connector.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/duplicate-an-existing-shape-change-its-position-and-connect-it-to-the-original-using-a-connector.cs) | `AddShape`, `ConnectShapesViaConnector`, `Diagram` | Duplicate an existing shape change its position and connect it to the original using a connector |
 | [export-the-diagram-as-a-pdf-document-and-ensure-all-shapes-retain-their-original-colors.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/export-the-diagram-as-a-pdf-document-and-ensure-all-shapes-retain-their-original-colors.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Export the diagram as a pdf document and ensure all shapes retain their original colors |
 | [generate-a-jpeg-image-of-the-diagram-with-150-dpi-and-embed-a-watermark-text-overlay.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/generate-a-jpeg-image-of-the-diagram-with-150-dpi-and-embed-a-watermark-text-overlay.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Generate a jpeg image of the diagram with 150 dpi and embed a watermark text overlay |
 | [import-a-stencil-collection-from-a-vsx-file-and-list-all-available-master-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/import-a-stencil-collection-from-a-vsx-file-and-list-all-available-master-shapes.cs) | `Diagram` | Import a stencil collection from a vsx file and list all available master shapes |
-| [insert-a-rectangle-shape-onto-the-first-page-at-coordinates-2-2-with-width-3-centimeters.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/insert-a-rectangle-shape-onto-the-first-page-at-coordinates-2-2-with-width-3-centimeters.cs) | `AddShape`, `Diagram`, `Pages` | Insert a rectangle shape onto the first page at coordinates 2 2 with width 3 centimeters |
+| [insert-a-rectangle-shape-onto-the-first-page-at-coordinates-2-2-with-width-3-centimeters.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/insert-a-rectangle-shape-onto-the-first-page-at-coordinates-2-2-with-width-3-centimeters.cs) | `Diagram`, `Pages`, `Save` | Insert a rectangle shape onto the first page at coordinates 2 2 with width 3 centimeters |
 | [iterate-through-multiple-vsdx-files-extract-page-counts-and-write-results-to-a-csv-report.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/iterate-through-multiple-vsdx-files-extract-page-counts-and-write-results-to-a-csv-report.cs) | `Diagram`, `Pages`, `diagram` | Iterate through multiple vsdx files extract page counts and write results to a csv report |
-| [load-a-single-stencil-from-a-vss-file-and-add-a-master-shape-to-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/load-a-single-stencil-from-a-vss-file-and-add-a-master-shape-to-the-diagram.cs) | `AddMaster`, `Diagram`, `Save` | Load a single stencil from a vss file and add a master shape to the diagram |
+| [load-a-single-stencil-from-a-vss-file-and-add-a-master-shape-to-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/load-a-single-stencil-from-a-vss-file-and-add-a-master-shape-to-the-diagram.cs) | `AddMaster`, `AddShape`, `Diagram` | Load a single stencil from a vss file and add a master shape to the diagram |
 | [load-an-existing-vdx-file-from-disk-using-the-diagram-constructor-and-validate-page-count.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/load-an-existing-vdx-file-from-disk-using-the-diagram-constructor-and-validate-page-count.cs) | `Diagram`, `Pages`, `diagram` | Load an existing vdx file from disk using the diagram constructor and validate page count |
 | [open-a-vsd-file-through-a-filestream-then-enumerate-all-shapes-on-the-first-page.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/open-a-vsd-file-through-a-filestream-then-enumerate-all-shapes-on-the-first-page.cs) | `Diagram`, `Pages`, `diagram` | Open a vsd file through a filestream then enumerate all shapes on the first page |
-| [parse-an-mmd-file-into-a-diagram-object-and-convert-its-flowchart-to-visio-format.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/parse-an-mmd-file-into-a-diagram-object-and-convert-its-flowchart-to-visio-format.cs) | `AddShape`, `Diagram`, `Save` | Parse an mmd file into a diagram object and convert its flowchart to visio format |
-| [produce-an-html-representation-of-the-diagram-with-embedded-css-for-interactive-navigation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/produce-an-html-representation-of-the-diagram-with-embedded-css-for-interactive-navigation.cs) | `Diagram`, `HTMLSaveOptions`, `Pages` | Produce an html representation of the diagram with embedded css for interactive navigation |
+| [parse-an-mmd-file-into-a-diagram-object-and-convert-its-flowchart-to-visio-format.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/parse-an-mmd-file-into-a-diagram-object-and-convert-its-flowchart-to-visio-format.cs) | `AddShape`, `ConnectShapesViaConnector`, `Diagram` | Parse an mmd file into a diagram object and convert its flowchart to visio format |
+| [produce-an-html-representation-of-the-diagram-with-embedded-css-for-interactive-navigation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/produce-an-html-representation-of-the-diagram-with-embedded-css-for-interactive-navigation.cs) | `Diagram`, `HTMLSaveOptions`, `Save` | Produce an html representation of the diagram with embedded css for interactive navigation |
 | [read-a-vsdx-diagram-from-a-memory-stream-and-extract-its-document-title-property.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/read-a-vsdx-diagram-from-a-memory-stream-and-extract-its-document-title-property.cs) | `Diagram` | Read a vsdx diagram from a memory stream and extract its document title property |
 | [remove-a-specific-shape-by-its-id-from-the-diagram-and-re-save-the-updated-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/remove-a-specific-shape-by-its-id-from-the-diagram-and-re-save-the-updated-file.cs) | `Diagram`, `Pages`, `Save` | Remove a specific shape by its id from the diagram and re save the updated file |
 | [save-the-current-diagram-to-vsdx-format-and-verify-the-file-size-does-not-exceed-limit.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/save-the-current-diagram-to-vsdx-format-and-verify-the-file-size-does-not-exceed-limit.cs) | `Diagram`, `Save`, `diagram` | Save the current diagram to vsdx format and verify the file size does not exceed limit |
-| [set-the-default-font-for-the-entire-diagram-to-times-new-roman-before-adding-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/set-the-default-font-for-the-entire-diagram-to-times-new-roman-before-adding-shapes.cs) | `AddShape`, `Diagram`, `Save` | Set the default font for the entire diagram to times new roman before adding shapes |
-| [set-the-page-background-color-to-light-gray-for-better-contrast-when-exporting-to-image.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/set-the-page-background-color-to-light-gray-for-better-contrast-when-exporting-to-image.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Set the page background color to light gray for better contrast when exporting to image |
+| [set-the-default-font-for-the-entire-diagram-to-times-new-roman-before-adding-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/set-the-default-font-for-the-entire-diagram-to-times-new-roman-before-adding-shapes.cs) | `Diagram`, `Page`, `Pages` | Set the default font for the entire diagram to times new roman before adding shapes |
+| [set-the-page-background-color-to-light-gray-for-better-contrast-when-exporting-to-image.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/set-the-page-background-color-to-light-gray-for-better-contrast-when-exporting-to-image.cs) | `Diagram`, `ImageSaveOptions`, `Page` | Set the page background color to light gray for better contrast when exporting to image |
 | [specify-a-custom-page-range-in-html-save-options-to-export-only-pages-two-through-four.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/specify-a-custom-page-range-in-html-save-options-to-export-only-pages-two-through-four.cs) | `Diagram`, `HTMLSaveOptions`, `Save` | Specify a custom page range in html save options to export only pages two through four |
 | [specify-html-save-options-to-include-page-numbers-and-generate-separate-files-for-each-page.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/specify-html-save-options-to-include-page-numbers-and-generate-separate-files-for-each-page.cs) | `Diagram`, `HTMLSaveOptions`, `Save` | Specify html save options to include page numbers and generate separate files for each page |
-| [validate-that-each-loaded-diagram-contains-at-least-one-shape-before-proceeding-with-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/validate-that-each-loaded-diagram-contains-at-least-one-shape-before-proceeding-with-processing.cs) | `Diagram`, `Pages`, `Save` | Validate that each loaded diagram contains at least one shape before proceeding with processing |
+| [validate-that-each-loaded-diagram-contains-at-least-one-shape-before-proceeding-with-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations/validate-that-each-loaded-diagram-contains-at-least-one-shape-before-proceeding-with-processing.cs) | `Diagram`, `Pages`, `Shapes` | Validate that each loaded diagram contains at least one shape before proceeding with processing |
 
 ## Command Reference
 
@@ -245,7 +243,7 @@ Frequently asked questions about **Basic Operations** in **Aspose.Diagram for .N
 
 **Q: How do I get started with Basic Operations in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.5.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -277,4 +275,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-06-23 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-07-27 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

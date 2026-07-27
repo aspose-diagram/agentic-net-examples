@@ -1,63 +1,38 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportDiagramWithTriangle
+class Program
 {
     static void Main()
     {
-        try
-        {
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+        // Add a new page that will contain the triangle
+        Page trianglePage = new Page();
+        trianglePage.ID = diagram.Pages.Count + 1; // ensure a unique page ID
+        diagram.Pages.Add(trianglePage);
 
-            // -----------------------------------------------------------------
-            // 1. Export the whole diagram to a PDF file
-            // -----------------------------------------------------------------
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Keep all pages together; no need to split
-            pdfOptions.SplitMultiPages = false;
-            diagram.Save("fullDiagram.pdf", pdfOptions);
+        // Define the triangle vertices (PinX, PinY) in inches.
+        // The first point is repeated at the end to close the shape.
+        double[] trianglePoints = new double[] { 2, 2, 5, 2, 3.5, 5, 2, 2 };
 
-            // -----------------------------------------------------------------
-            // 2. Locate the triangle shape in the diagram
-            // -----------------------------------------------------------------
-            Shape triangleShape = null;
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Assuming the triangle shape is named "Triangle"
-                    if (shape.NameU != null && shape.NameU.Equals("Triangle", StringComparison.OrdinalIgnoreCase))
-                    {
-                        triangleShape = shape;
-                        break;
-                    }
-                }
-                if (triangleShape != null) break;
-            }
+        // Draw the triangle on the newly created page.
+        long triangleShapeId = trianglePage.DrawPolyline(trianglePoints);
 
-            // -----------------------------------------------------------------
-            // 3. Export the triangle shape to a separate PDF page
-            // -----------------------------------------------------------------
-            if (triangleShape != null)
-            {
-                // This creates a PDF containing only the triangle shape.
-                // The resulting file can be merged with the full diagram PDF
-                // using any PDF manipulation library if a single document is required.
-                triangleShape.ToPdf("triangleOnly.pdf");
-            }
-            else
-            {
-                Console.WriteLine("Triangle shape not found in the diagram.");
-            }
+        // Add a label to the triangle (optional).
+        Shape triangleShape = trianglePage.Shapes.GetShape((int)triangleShapeId);
+        triangleShape.Text.Value.Clear();
+        triangleShape.Text.Value.Add(new Txt("Triangle"));
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        // Configure PDF save options.
+        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+        pdfOptions.DefaultFont = "Arial";
+
+        // Export the diagram to PDF. Both the original (empty) page and the
+        // page with the triangle will be included in the output file.
+        diagram.Save("DiagramWithTriangle.pdf", pdfOptions);
     }
 }

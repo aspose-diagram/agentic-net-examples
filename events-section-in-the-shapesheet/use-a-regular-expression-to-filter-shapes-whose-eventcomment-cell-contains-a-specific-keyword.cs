@@ -1,40 +1,55 @@
-using System;
 using System.IO;
-using Aspose.Diagram;
+using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Aspose.Diagram;
 
-class Program
+class FilterShapesByEventComment
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            Diagram diagram = new Diagram(inputPath);
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Define the keyword to search for (case‑insensitive)
             string keyword = "Important";
+            // Build a regular expression that looks for the keyword anywhere in the comment
             Regex regex = new Regex(keyword, RegexOptions.IgnoreCase);
 
+            // List to hold IDs of shapes whose comment matches the regex
+            List<long> matchingShapeIds = new List<long>();
+
+            // Iterate through all pages and their shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    string comment = shape.Misc.Comment.Value;
+                    // The comment text is stored in the Misc.Comment property
+                    string comment = shape.Misc?.Comment?.Value;
                     if (!string.IsNullOrEmpty(comment) && regex.IsMatch(comment))
                     {
-                        Console.WriteLine($"Shape ID {shape.ID} on page \"{page.Name}\" matches the keyword.");
+                        matchingShapeIds.Add(shape.ID);
                     }
                 }
             }
+
+            // Output the matching shape IDs
+            Console.WriteLine("Shapes with EventComment containing the keyword:");
+            foreach (long id in matchingShapeIds)
+            {
+                Console.WriteLine($"Shape ID: {id}");
+            }
+
+            // (Optional) Save the diagram if any modifications were made
+            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,65 +1,53 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input and output file paths (adjust as needed)
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Prefix to prepend to the Event cell formula
+        const string prefix = "MyPrefix_";
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Prefix to prepend to the EventData1 formula
-                string prefix = "Prefix_";
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Ensure the shape has an Event section
-                        if (shape.Event == null)
-                            continue;
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Use reflection to find the EventData1 cell (if it exists)
-                        var eventDataProp = shape.Event.GetType().GetProperty("EventData1");
-                        if (eventDataProp == null)
-                            continue; // No EventData1 cell on this shape
-
-                        var eventCell = eventDataProp.GetValue(shape.Event);
-                        if (eventCell == null)
-                            continue;
-
-                        // Access the Ufe property of the cell
-                        var ufeProp = eventCell.GetType().GetProperty("Ufe");
-                        var ufe = ufeProp?.GetValue(eventCell);
-                        if (ufe == null)
-                            continue;
-
-                        // Access the formula string (F) and prepend the prefix
-                        var fProp = ufe.GetType().GetProperty("F");
-                        var currentFormula = fProp?.GetValue(ufe) as string;
-                        if (currentFormula == null)
-                            continue;
-
-                        fProp.SetValue(ufe, prefix + currentFormula);
-                    }
+                    // Use a valid event cell (TheData) to modify its formula
+                    // TheData cell holds a formula that can be prefixed
+                    string currentFormula = shape.Event.TheData.Ufe.F;
+                    shape.Event.TheData.Ufe.F = prefix + currentFormula;
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram using the correct overload
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

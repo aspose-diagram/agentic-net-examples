@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
 class Program
@@ -11,72 +8,60 @@ class Program
             try
             {
 
-                // Input Visio file path (first argument or default)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Expect the input Visio file path as the first argument.
+                if (args.Length == 0)
+                {
+                    Console.WriteLine("Usage: EventCellGraph <input-visio-file>");
+                    return;
+                }
 
-                // Load the diagram using Aspose.Diagram constructor
+                string inputPath = args[0];
+
+                // Load the Visio diagram.
                 Diagram diagram = new Diagram(inputPath);
 
-                // Prepare lines for GraphViz DOT format
-                List<string> dotLines = new List<string>();
-                dotLines.Add("digraph EventDependencies {");
+                Console.WriteLine("Extracting EventCell formulas and building dependency graph...");
 
-                // Regular expression to find numeric shape IDs inside formulas
-                Regex idRegex = new Regex(@"\b\d+\b", RegexOptions.Compiled);
-
-                // Iterate through all pages and shapes
+                // Iterate through all pages and shapes.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Skip any empty pages.
+                    if (page.Shapes == null) continue;
+
                     foreach (Shape shape in page.Shapes)
                     {
-                        string shapeId = shape.ID.ToString();
+                        // Collect event formulas for the current shape.
+                        bool hasAnyEvent = false;
 
-                        // Add node for the shape
-                        dotLines.Add($"  \"{shapeId}\" [label=\"Shape {shapeId}\"];");
-
-                        // Collect all event formulas for this shape
-                        List<string> formulas = new List<string>();
-
-                        // Helper to add formula if present
-                        void AddFormula(string formula)
+                        // Helper local function to process a single event cell.
+                        void ProcessEvent(string eventName, string formula)
                         {
-                            if (!string.IsNullOrEmpty(formula))
+                            if (!string.IsNullOrWhiteSpace(formula))
                             {
-                                formulas.Add(formula);
-                            }
-                        }
-
-                        // Event cells (use Ufe.F to get the formula string)
-                        if (shape.Event.EventDblClick?.Ufe != null) AddFormula(shape.Event.EventDblClick.Ufe.F);
-                        if (shape.Event.EventDrop?.Ufe != null) AddFormula(shape.Event.EventDrop.Ufe.F);
-                        if (shape.Event.EventMultiDrop?.Ufe != null) AddFormula(shape.Event.EventMultiDrop.Ufe.F);
-                        if (shape.Event.EventXFMod?.Ufe != null) AddFormula(shape.Event.EventXFMod.Ufe.F);
-                        if (shape.Event.TheText?.Ufe != null) AddFormula(shape.Event.TheText.Ufe.F);
-                        if (shape.Event.TheData?.Ufe != null) AddFormula(shape.Event.TheData.Ufe.F);
-
-                        // Parse each formula for referenced shape IDs and create edges
-                        foreach (string formula in formulas)
-                        {
-                            foreach (Match match in idRegex.Matches(formula))
-                            {
-                                string targetId = match.Value;
-                                // Avoid self‑reference edges
-                                if (targetId != shapeId)
+                                if (!hasAnyEvent)
                                 {
-                                    dotLines.Add($"  \"{shapeId}\" -> \"{targetId}\";");
+                                    Console.WriteLine($"Shape ID {shape.ID} (NameU: {shape.NameU}) events:");
+                                    hasAnyEvent = true;
                                 }
+                                Console.WriteLine($"  {eventName} -> \"{formula}\"");
                             }
                         }
+
+                        // Event cells are accessed via the Event property.
+                        // Each event cell contains a Ufe (Universal Formula Expression) object with the formula string in its F property.
+                        ProcessEvent("EventXFMod", shape.Event.EventXFMod?.Ufe?.F);
+                        ProcessEvent("EventDblClick", shape.Event.EventDblClick?.Ufe?.F);
+                        ProcessEvent("EventDrop", shape.Event.EventDrop?.Ufe?.F);
+                        ProcessEvent("EventMultiDrop", shape.Event.EventMultiDrop?.Ufe?.F);
+                        ProcessEvent("TheText", shape.Event.TheText?.Ufe?.F);
+                        ProcessEvent("TheData", shape.Event.TheData?.Ufe?.F);
                     }
                 }
 
-                dotLines.Add("}");
-
-                // Output DOT file
-                string outputPath = "event_graph.dot";
-                File.WriteAllLines(outputPath, dotLines);
-
-                Console.WriteLine($"Event dependency graph written to: {Path.GetFullPath(outputPath)}");
+                // Optionally, save the diagram (unchanged) to demonstrate proper lifecycle handling.
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to {outputPath}");
 
             }
             catch (Aspose.Diagram.DiagramException ex)

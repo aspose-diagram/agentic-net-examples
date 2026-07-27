@@ -1,39 +1,37 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
-
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Add a new page (optional, the default diagram already has one page)
-            // Page page = diagram.Pages[0];
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Add a rectangle shape to the first page
-            // Parameters: PinX, PinY, Width, Height, Master name
-            long rectId = diagram.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle", 0);
+            // Add a rectangle shape to the page (returns the shape ID)
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
 
-            // Retrieve the shape instance to modify its event cells
-            Shape rectShape = diagram.Pages[0].Shapes.GetShape(rectId);
+            // Retrieve the shape object using its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Set the EventDrop cell to assign a default style when the shape is dropped/added.
-            // The formula uses the SETSTYLE function to apply a style named "Basic".
-            // Adjust the style name as needed for your diagram.
-            rectShape.Event.EventDrop.Ufe.F = "SETSTYLE(\"Basic\")";
+            // Set a supported event cell (EventXFMod) to call a macro that applies a default style.
+            // EventShapeAdded does not exist; EventXFMod is the closest valid event cell.
+            shape.Event.EventXFMod.Ufe.F = "CALLTHIS(\"ThisDocument.ApplyDefaultStyle\")";
 
-            // Save the diagram to a VSDX file
-            diagram.Save("StyledDiagram.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the diagram as VSDX
+            diagram.Save("Output.vsdx", SaveFileFormat.Vsdx);
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

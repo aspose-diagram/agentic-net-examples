@@ -9,11 +9,11 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
+            // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Open a text file to log EventDrop values
-            using (StreamWriter logWriter = new StreamWriter("EventDropLog.txt"))
+            using (StreamWriter writer = new StreamWriter("EventDropValues.txt"))
             {
                 // Iterate through every page in the diagram
                 foreach (Page page in diagram.Pages)
@@ -21,22 +21,18 @@ class Program
                     // Iterate through every shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has an Event collection and the EventDrop cell is present
+                        // Check if the shape has an Event object and an EventDrop cell
                         if (shape.Event != null && shape.Event.EventDrop != null)
                         {
                             // Retrieve the numeric value of the EventDrop cell
                             double eventDropValue = shape.Event.EventDrop.Value;
 
-                            // Write the page ID, shape ID, and EventDrop value to the log file
-                            logWriter.WriteLine(
-                                $"Page ID: {page.ID}, Shape ID: {shape.ID}, EventDrop: {eventDropValue}");
+                            // Log the page name, shape ID, and EventDrop value
+                            writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, EventDrop: {eventDropValue}");
                         }
                     }
                 }
             }
-
-            // Optional: inform that logging is complete
-            Console.WriteLine("EventDrop values have been logged to EventDropLog.txt");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,11 +1,11 @@
 {
   "category": "events-section-in-the-shapesheet",
   "display_name": "Events Section In The Shapesheet",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 33,
   "pass_rate": 100.0,
-  "generated": "2026-06-05",
+  "generated": "2026-07-27",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,6 +14,7 @@
       "task": "Add a timestamp to the eventafterupdate cell of each shape to track modification times",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -31,7 +32,6 @@
       "task": "Apply a global eventvalidate formula that enforces naming conventions for shape titles",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -48,8 +48,8 @@
       "task": "Apply conditional formatting to shapes based on the result of their eventcalc cell evaluation",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -66,7 +66,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -99,13 +100,11 @@
       "task": "Compare eventcell values between two versions of a diagram to detect changes in event logic",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.Collections.Generic"
+        "System"
       ],
       "key_apis": [
         "Diagram",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -114,9 +113,8 @@
       "task": "Configure the eventshapedeleted cell to trigger a cleanup routine that removes related custom data",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -132,6 +130,24 @@
       "task": "Configure the eventshaperesized cell to maintain aspect ratio by applying a scaling formula",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "copy-eventformula-cells-from-a-template-shape-to-newly-created-shapes-in-a-batch-operation",
+      "file": "copy-eventformula-cells-from-a-template-shape-to-newly-created-shapes-in-a-batch-operation.cs",
+      "task": "Copy eventformula cells from a template shape to newly created shapes in a batch operation",
+      "namespaces": [
+        "Aspose.Diagram",
         "System",
         "System.IO"
       ],
@@ -144,29 +160,14 @@
       ]
     },
     {
-      "slug": "copy-eventformula-cells-from-a-template-shape-to-newly-created-shapes-in-a-batch-operation",
-      "file": "copy-eventformula-cells-from-a-template-shape-to-newly-created-shapes-in-a-batch-operation.cs",
-      "task": "Copy eventformula cells from a template shape to newly created shapes in a batch operation",
-      "namespaces": [
-        "Aspose.Diagram",
-        "System"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "Save",
-        "diagram",
-        "shape"
-      ]
-    },
-    {
       "slug": "create-a-backup-of-the-eventsection-before-performing-bulk-modifications-to-enable-rollback",
       "file": "create-a-backup-of-the-eventsection-before-performing-bulk-modifications-to-enable-rollback.cs",
       "task": "Create a backup of the eventsection before performing bulk modifications to enable rollback",
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -182,6 +183,7 @@
       "task": "Create a batch process that disables eventmousedown cells for shapes marked as read only",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -199,6 +201,7 @@
       "task": "Create a custom event handler that logs shape ids whenever the eventmouseleave cell fires",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -219,8 +222,8 @@
         "System"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Masters",
         "Pages",
         "Save",
         "Shapes"
@@ -249,17 +252,14 @@
       "task": "Extract eventcell formulas and visualize them as a directed graph to analyze dependencies",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.Collections.Generic",
-        "System.IO",
-        "System.Text.RegularExpressions"
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -285,7 +285,8 @@
       "task": "Generate documentation summarizing all custom eventsection configurations applied to a diagram for developers",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -321,14 +322,12 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -338,7 +337,9 @@
       "task": "Iterate through all shapes and prepend a prefix to their eventdata1 cell formulas",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -354,7 +355,8 @@
       "task": "Load a visio diagram and set the eventdblclick cell for a specific shape",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -371,7 +373,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram"
@@ -384,8 +387,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO",
-        "System.Reflection"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -418,9 +420,9 @@
       "task": "Remove all eventcomment cells from a diagram to clean up unused event definitions",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Reflection"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -436,6 +438,7 @@
       "task": "Set the eventshapeadded cell to automatically assign a default style when new shapes are inserted",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -444,7 +447,7 @@
         "Diagram",
         "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -453,7 +456,6 @@
       "task": "Set the eventshapedatachanged cell to invoke a custom script that recalculates dependent values",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -471,6 +473,7 @@
       "task": "Set the eventshapedeleted cell to log deletion timestamps into an external audit log file",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -508,15 +511,16 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO",
         "System.Text.RegularExpressions"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -531,9 +535,7 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -562,7 +564,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Reflection"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",

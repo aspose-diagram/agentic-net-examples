@@ -4,73 +4,50 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the Visio file to be processed
-                string visioPath = "input.vsdx";
+                // Input Visio file path (adjust as needed)
+                string diagramPath = "input.vsdx";
 
-                // Path to the CSV file that will contain the exported event formulas
+                // Output CSV file path
                 string csvPath = "shape_events.csv";
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Open a StreamWriter for the CSV output
+                // Create a CSV writer
                 using (StreamWriter writer = new StreamWriter(csvPath))
                 {
                     // Write CSV header
-                    writer.WriteLine("PageIndex,ShapeID,ShapeNameU,EventXFMod,EventDblClick,EventDrop,EventMultiDrop,TheText,TheData");
+                    writer.WriteLine("PageName,ShapeID,ShapeName,EventXFMod,EventDblClick,EventDrop,EventMultiDrop,TheText,TheData");
 
                     // Iterate through all pages
-                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                    foreach (Page page in diagram.Pages)
                     {
-                        Page page = diagram.Pages[pageIndex];
-
-                        // Iterate through all shapes on the current page
+                        // Iterate through all shapes on the page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Skip shapes that are marked as deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
+                            // Retrieve event cell formulas; use empty string if null
+                            string eventXFMod = shape.Event.EventXFMod?.Ufe?.F ?? string.Empty;
+                            string eventDblClick = shape.Event.EventDblClick?.Ufe?.F ?? string.Empty;
+                            string eventDrop = shape.Event.EventDrop?.Ufe?.F ?? string.Empty;
+                            string eventMultiDrop = shape.Event.EventMultiDrop?.Ufe?.F ?? string.Empty;
+                            string theText = shape.Event.TheText?.Ufe?.F ?? string.Empty;
+                            string theData = shape.Event.TheData?.Ufe?.F ?? string.Empty;
 
-                            // Helper to safely retrieve an event formula; returns empty string if not set
-                            string GetEventFormula(Func<string> getter)
-                            {
-                                try
-                                {
-                                    string formula = getter();
-                                    return string.IsNullOrEmpty(formula) ? "" : formula.Replace(",", ";");
-                                }
-                                catch
-                                {
-                                    return "";
-                                }
-                            }
+                            // Escape commas in values
+                            eventXFMod = EscapeCsv(eventXFMod);
+                            eventDblClick = EscapeCsv(eventDblClick);
+                            eventDrop = EscapeCsv(eventDrop);
+                            eventMultiDrop = EscapeCsv(eventMultiDrop);
+                            theText = EscapeCsv(theText);
+                            theData = EscapeCsv(theData);
 
-                            // Retrieve event formulas using the Ufe.F property
-                            string eventXFMod = GetEventFormula(() => shape.Event.EventXFMod.Ufe.F);
-                            string eventDblClick = GetEventFormula(() => shape.Event.EventDblClick.Ufe.F);
-                            string eventDrop = GetEventFormula(() => shape.Event.EventDrop.Ufe.F);
-                            string eventMultiDrop = GetEventFormula(() => shape.Event.EventMultiDrop.Ufe.F);
-                            string theText = GetEventFormula(() => shape.Event.TheText.Ufe.F);
-                            string theData = GetEventFormula(() => shape.Event.TheData.Ufe.F);
-
-                            // Compose CSV line
-                            string line = string.Join(",",
-                                pageIndex,
-                                shape.ID,
-                                shape.NameU,
-                                eventXFMod,
-                                eventDblClick,
-                                eventDrop,
-                                eventMultiDrop,
-                                theText,
-                                theData);
-
-                            writer.WriteLine(line);
+                            // Write a CSV line for the shape
+                            writer.WriteLine($"{EscapeCsv(page.Name)},{shape.ID},{EscapeCsv(shape.Name)},{eventXFMod},{eventDblClick},{eventDrop},{eventMultiDrop},{theText},{theData}");
                         }
                     }
                 }
@@ -83,4 +60,15 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
+
+        // Helper to escape CSV fields containing commas or quotes
+        private static string EscapeCsv(string field)
+        {
+            if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
+            {
+                field = field.Replace("\"", "\"\"");
+                return $"\"{field}\"";
+            }
+            return field;
+        }
     }

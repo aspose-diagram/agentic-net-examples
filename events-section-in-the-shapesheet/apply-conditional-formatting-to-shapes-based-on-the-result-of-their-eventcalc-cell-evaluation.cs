@@ -1,66 +1,56 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Search for a user‑defined cell named "EventCalc"
-                    User eventCalcUser = null;
-                    foreach (User user in shape.Users)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (user.Name == "EventCalc")
+                        // Example: Access a custom event cell named EventCalc.
+                        // The actual cell name may vary; adjust as needed.
+                        // Event cells are accessed via the Event property and the specific cell name.
+                        // Here we use Event.EventXFMod as a placeholder for EventCalc.
+                        string eventFormula = shape.Event.EventXFMod.Ufe.F;
+
+                        // Simple condition: if the formula contains the word "TRUE"
+                        // (replace with actual evaluation logic as required)
+                        bool conditionMet = !string.IsNullOrEmpty(eventFormula) && eventFormula.Contains("TRUE", StringComparison.OrdinalIgnoreCase);
+
+                        // Apply conditional formatting based on the condition
+                        if (conditionMet)
                         {
-                            eventCalcUser = user;
-                            break;
+                            // Set fill foreground color to red
+                            shape.Fill.FillForegnd.Value = "#FF0000";
                         }
-                    }
-
-                    // If the cell exists, evaluate its value and apply formatting
-                    if (eventCalcUser != null)
-                    {
-                        // Attempt to parse the cell value as a double
-                        if (double.TryParse(eventCalcUser.Value.Val, out double result))
+                        else
                         {
-                            // Conditional formatting based on the numeric result
-                            if (result > 100)
-                            {
-                                // High values → red fill
-                                shape.Fill.FillForegnd.Value = "#FF0000";
-                            }
-                            else
-                            {
-                                // Low values → green fill
-                                shape.Fill.FillForegnd.Value = "#00FF00";
-                            }
-
-                            // Set a common line color (black) for visibility
-                            shape.Line.LineColor.Value = "#000000";
+                            // Set fill foreground color to green
+                            shape.Fill.FillForegnd.Value = "#00FF00";
                         }
                     }
                 }
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram to a new file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

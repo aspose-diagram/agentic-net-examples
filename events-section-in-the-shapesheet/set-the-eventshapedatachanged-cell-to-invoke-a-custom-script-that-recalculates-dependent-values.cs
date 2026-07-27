@@ -1,55 +1,56 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Path to the source Visio file
         string inputPath = "input.vsdx";
+        // Verify the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-        Page page = diagram.Pages[0];
+            // Access the first page in the document
+            Page page = diagram.Pages[0];
 
-        if (page.Shapes.Count == 0)
-        {
-            Console.WriteLine("The diagram contains no shapes.");
-            return;
-        }
+            // Retrieve the first shape on the page (if any)
+            Shape targetShape = null;
+            foreach (Shape s in page.Shapes)
+            {
+                targetShape = s;
+                break;
+            }
 
-        long firstShapeId = page.Shapes[0].ID;
-        Shape shape = page.Shapes.GetShape(firstShapeId);
+            if (targetShape == null)
+            {
+                Console.WriteLine("No shapes found on the first page.");
+                return;
+            }
 
-        // Set the EventXFMod cell to invoke a custom script when shape data changes
-        shape.Event.EventXFMod.Ufe.F = "CALLTHIS(\"RecalcScript\")";
+            // Assign a custom script to the EventXFMod cell (shape data changed event).
+            // The formula uses CALLTHIS to invoke a macro or script named "RecalcDependentValues".
+            targetShape.Event.EventXFMod.Ufe.F = "CALLTHIS(\"RecalcDependentValues\")";
 
-        string outputPath = "output.vsdx";
-        try
-        {
+            // Save the modified diagram to a new file
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Event cell updated and diagram saved to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
-            return;
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
-
-        Console.WriteLine("EventXFMod cell configured and diagram saved successfully.");
     }
 }

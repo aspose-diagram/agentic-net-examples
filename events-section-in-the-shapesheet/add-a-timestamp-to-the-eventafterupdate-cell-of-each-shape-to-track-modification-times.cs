@@ -1,38 +1,57 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+public class Program
 {
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
+        // Expect two arguments: input Visio file path and output Visio file path
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: <program> <inputFilePath> <outputFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard to ensure the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string outputPath = "output.vsdx";
+        string outputPath = args[1];
 
         try
         {
+            // Load the diagram from the specified input file
             Diagram diagram = new Diagram(inputPath);
 
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Set the EventXFMod cell (fires after shape update) to the current time
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Set the EventXFMod cell (triggered after shape update) to the current timestamp
+                    // Visio formula NOW() returns the current date and time; assign via Ufe.F
                     shape.Event.EventXFMod.Ufe.F = "NOW()";
                 }
             }
 
+            // Save the modified diagram to the specified output file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors encountered during processing to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

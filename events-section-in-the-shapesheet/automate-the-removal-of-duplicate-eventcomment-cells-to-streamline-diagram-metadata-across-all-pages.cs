@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -9,54 +10,52 @@ class Program
             try
             {
 
-                // Path to the input Visio file
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                // Path to the output Visio file
+                // Path for the cleaned Visio file
                 string outputPath = "output_cleaned.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Dictionary to track unique EventComment values
-                var seenComments = new System.Collections.Generic.Dictionary<string, User>();
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // HashSet to keep track of unique event comment formulas
+                    HashSet<string> seenComments = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Collect users named "EventComment" for processing
-                        var usersToCheck = new System.Collections.Generic.List<User>();
-                        foreach (User user in shape.Users)
+                        // Iterate through all shapes on the current page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            if (string.Equals(user.Name, "EventComment", StringComparison.OrdinalIgnoreCase))
-                            {
-                                usersToCheck.Add(user);
-                            }
-                        }
+                            // NOTE: Aspose.Diagram does not define a specific "EventComment" cell.
+                            // For the purpose of this example we treat the EventDrop cell as the
+                            // location where a comment formula might be stored.
+                            // Adjust the cell name if your diagram uses a different event cell.
+                            string commentFormula = shape.Event.EventDrop.Ufe.F;
 
-                        // Process each EventComment user cell
-                        foreach (User user in usersToCheck)
-                        {
-                            string commentValue = user.Value?.Val ?? string.Empty;
+                            // If the cell is empty, skip processing
+                            if (string.IsNullOrWhiteSpace(commentFormula))
+                                continue;
 
-                            if (seenComments.ContainsKey(commentValue))
+                            // If this comment has already been encountered, clear it to remove the duplicate
+                            if (seenComments.Contains(commentFormula))
                             {
-                                // Duplicate found – remove this user cell from the shape
-                                shape.Users.Remove(user);
+                                // Clear the duplicate comment by setting an empty formula
+                                shape.Event.EventDrop.Ufe.F = string.Empty;
                             }
                             else
                             {
-                                // First occurrence – remember it
-                                seenComments[commentValue] = user;
+                                // First occurrence – keep it and record the formula
+                                seenComments.Add(commentFormula);
                             }
                         }
                     }
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                // Save the cleaned diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("Duplicate event comments have been removed and the diagram saved.");
 
             }
             catch (System.IO.FileNotFoundException ex)

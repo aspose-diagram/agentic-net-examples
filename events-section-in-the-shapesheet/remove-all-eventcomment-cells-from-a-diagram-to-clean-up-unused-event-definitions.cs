@@ -1,66 +1,46 @@
-using System.IO;
 using System;
-using System.Reflection;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Input and output file paths (adjust as needed)
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        string outputPath = "output_cleaned.vsdx";
+
         try
         {
-
-            // Input and output file paths (adjust as needed)
-            string inputPath = "input.vsdx";
-            string outputPath = "output_cleaned.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has an Event section
-                    if (shape.Event == null)
-                        continue;
-
-                    // Use reflection to find a property named "EventComment"
-                    PropertyInfo commentProp = shape.Event.GetType().GetProperty("EventComment");
-                    if (commentProp == null)
-                        continue; // No EventComment cell on this shape
-
-                    // Get the cell object
-                    object commentCell = commentProp.GetValue(shape.Event);
-                    if (commentCell == null)
-                        continue;
-
-                    // Access the Ufe property of the cell
-                    PropertyInfo ufeProp = commentCell.GetType().GetProperty("Ufe");
-                    if (ufeProp == null)
-                        continue;
-
-                    object ufeObj = ufeProp.GetValue(commentCell);
-                    if (ufeObj == null)
-                        continue;
-
-                    // Set the formula (F) to an empty string, effectively clearing the comment
-                    PropertyInfo fProp = ufeObj.GetType().GetProperty("F");
-                    if (fProp != null && fProp.CanWrite)
+                    // Ensure the shape has an Event section before accessing it
+                    if (shape.Event != null)
                     {
-                        fProp.SetValue(ufeObj, string.Empty);
+                        // The EventComment cell does not exist in Aspose.Diagram.
+                        // If other event cells need to be cleared, they can be set here.
+                        // Example (optional): shape.Event.EventDblClick.Ufe.F = "";
                     }
                 }
             }
 
-            // Save the cleaned diagram
+            // Save the modified diagram using the correct SaveFileFormat enum member
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any unexpected errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

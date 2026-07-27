@@ -1,46 +1,61 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to find the diamond shape
-            foreach (Page page in diagram.Pages)
+            try
             {
+
+                // Paths to the source and destination Visio files
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Assume the diamond shape is on the first page
+                Page page = diagram.Pages[0];
+
+                // Find the first shape whose master name is "Diamond"
+                Shape diamondShape = null;
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has a master and check its name
                     if (shape.Master != null && shape.Master.Name == "Diamond")
                     {
-                        // Lock the aspect ratio so width and height stay proportional
-                        shape.Protection.LockAspect.Value = BOOL.True;
-
-                        // Example resize: set a new width; height will follow the locked ratio
-                        double newWidth = 2.0; // inches
-                        shape.SetWidth(newWidth);
-                        // Height is automatically adjusted because the aspect is locked
+                        diamondShape = shape;
+                        break;
                     }
                 }
+
+                if (diamondShape == null)
+                {
+                    throw new Exception("Diamond shape not found in the diagram.");
+                }
+
+                // Lock the aspect ratio of the diamond shape
+                diamondShape.Protection.LockAspect.Value = BOOL.True;
+
+                // Desired new width (in inches)
+                double newWidth = 2.0;
+
+                // Preserve the original aspect ratio
+                double originalWidth = diamondShape.XForm.Width.Value;
+                double originalHeight = diamondShape.XForm.Height.Value;
+                double aspectRatio = originalHeight / originalWidth;
+
+                // Apply new dimensions while keeping the proportion
+                diamondShape.XForm.Width.Value = newWidth;
+                diamondShape.XForm.Height.Value = newWidth * aspectRatio;
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

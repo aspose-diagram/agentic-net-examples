@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,26 +7,32 @@ class Program
 {
     static void Main()
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        try
+        {
 
-        // Access the first page (avoid using ActivePage)
-        Page page = diagram.Pages[0];
+            // Load an existing Visio diagram that contains a circle and an oval
+            Diagram diagram = new Diagram("input.vsdx");
 
-        // Draw a circle (ellipse with equal width and height)
-        // Parameters: pinX, pinY (center), width, height
-        long circleId = page.DrawEllipse(2.0, 2.0, 1.0, 1.0);
-        Shape circle = page.Shapes.GetShape(circleId);
+            // Get the first page of the diagram
+            Page page = diagram.Pages[0];
 
-        // Draw an oval (ellipse with different width and height)
-        long ovalId = page.DrawEllipse(4.0, 2.0, 2.0, 1.0);
-        Shape oval = page.Shapes.GetShape(ovalId);
+            // Retrieve the shapes to be grouped (replace the IDs with the actual IDs of your circle and oval)
+            Shape circle = page.Shapes.GetShape(1);
+            Shape oval   = page.Shapes.GetShape(2);
 
-        // Group the circle and oval together
-        Shape group = page.Shapes.Group(new Shape[] { circle, oval });
+            // Group the circle and oval together
+            Shape group = page.Shapes.Group(new Shape[] { circle, oval });
 
-        // Export the group as a single SVG file
-        SVGSaveOptions svgOptions = new SVGSaveOptions();
-        group.ToSvg("group.svg", svgOptions);
+            // Create SVG save options (default configuration)
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+            // Export the grouped shape as a single SVG file
+            group.ToSvg("group.svg", svgOptions);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

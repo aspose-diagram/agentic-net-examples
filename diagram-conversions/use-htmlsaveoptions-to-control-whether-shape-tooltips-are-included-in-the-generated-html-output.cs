@@ -16,11 +16,19 @@ class Program
             // Create HTML save options
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // Set to false to omit shape tooltips (controlled via toolbar option)
+            // Set to false to omit shape tooltips in the generated HTML
+            // (SaveToolBar also controls the inclusion of tooltips)
             htmlOptions.SaveToolBar = false;
 
-            // Save the diagram as HTML using the configured options
-            diagram.Save("output.html", htmlOptions);
+            // Export each shape to an individual HTML file using the options above
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    string fileName = $"shape_page{page.ID}_shape{shape.ID}.html";
+                    shape.ToHTML(fileName, htmlOptions);
+                }
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -2,14 +2,16 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-// Custom callback to monitor page saving progress
+// Custom callback implementing IPageSavingCallback
 class MyPageSavingCallback : IPageSavingCallback
 {
+    // Called when a page starts saving
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        Console.WriteLine($"Starting to save page {args.PageIndex}");
+        Console.WriteLine($"Start saving page {args.PageIndex}");
     }
 
+    // Called when a page finishes saving
     public void PageEndSaving(PageEndSavingArgs args)
     {
         Console.WriteLine($"Finished saving page {args.PageIndex}");
@@ -23,17 +25,17 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load the diagram (replace with your source file)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Create save options for the desired format (e.g., PDF)
+            PdfSaveOptions saveOptions = new PdfSaveOptions();
 
-            // Assign the custom IPageSavingCallback instance
-            pdfOptions.PageSavingCallback = new MyPageSavingCallback();
+            // Assign the custom page‑saving callback
+            saveOptions.PageSavingCallback = new MyPageSavingCallback();
 
             // Save the diagram using the options with the callback attached
-            diagram.Save("output.pdf", pdfOptions);
+            diagram.Save("output.pdf", saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

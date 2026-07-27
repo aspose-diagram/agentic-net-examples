@@ -1,32 +1,31 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Path to the VSD file on a network share
-            string inputPath = @"\\ServerName\ShareFolder\Diagram.vsd";
+                // Path to the source Visio file on a network share
+                string inputPath = @"\\ServerName\ShareFolder\SampleDiagram.vsd";
 
-            // Desired output CSV file path
-            string outputPath = @"C:\Temp\Diagram.csv";
+                // Path where the CSV file will be saved
+                string outputPath = @"C:\ExportedDiagram.csv";
 
-            // Load the Visio diagram from the network location.
-            // The constructor with (string, LoadFileFormat) explicitly specifies the VSD format.
-            Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vsd);
+                // Load the Visio diagram from the specified file
+                Diagram diagram = new Diagram(inputPath);
 
-            // Save the diagram as CSV.
-            // Assuming Aspose.Diagram supports CSV via the SaveFileFormat enumeration.
-            diagram.Save(outputPath, SaveFileFormat.Csv);
+                // Save the diagram as CSV
+                diagram.Save(outputPath, SaveFileFormat.Csv);
 
-        }
-        catch (System.IO.IOException ex)
-        {
-            Console.Error.WriteLine($"[IOException] {ex.Message}");
-        }
+                Console.WriteLine("Diagram successfully exported to CSV at: " + outputPath);
+
+            }
+            catch (System.IO.IOException ex)
+            {
+                Console.Error.WriteLine($"[IOException] {ex.Message}");
+            }
     }
-}
+    }

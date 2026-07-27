@@ -1,49 +1,46 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Properties;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        // Create a new empty diagram
+        using (Diagram diagram = new Diagram())
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Prepare ISO 8601 formatted date string
-            string isoDate = DateTime.UtcNow.ToString("o"); // e.g., 2023-08-15T12:34:56.789Z
+            // Define ISO 8601 date string
+            string isoDate = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
 
             // Create a custom property
             CustomProp customProp = new CustomProp
             {
                 Name = "CreationDate",
                 PropType = PropType.String,
-                // Assign the date string to the custom value
-                CustomValue = new CustomValue { ValueString = isoDate }
+                // Assign the ISO date value
+                CustomValue = { ValueString = isoDate }
             };
 
-            // Add the custom property to the document's custom properties collection
+            // Add the custom property to the document
             diagram.DocumentProps.CustomProps.Add(customProp);
 
-            // Verify that the property was added correctly
+            // Verify that the property was stored correctly
             if (diagram.DocumentProps.CustomProps.Count == 0)
                 throw new Exception("Custom property was not added.");
 
-            // Retrieve the property (by index, as we just added one)
-            CustomProp retrievedProp = diagram.DocumentProps.CustomProps[0];
-
-            // Check name
-            if (retrievedProp.Name != "CreationDate")
+            CustomProp storedProp = diagram.DocumentProps.CustomProps[0];
+            if (storedProp.Name != "CreationDate")
                 throw new Exception("Custom property name mismatch.");
 
-            // Check value
-            string storedValue = retrievedProp.CustomValue.ValueString;
-            if (storedValue != isoDate)
-                throw new Exception($"Custom property value mismatch. Expected: {isoDate}, Got: {storedValue}");
+            if (storedProp.CustomValue.ValueString != isoDate)
+                throw new Exception($"Custom property value mismatch. Expected: {isoDate}, Actual: {storedProp.CustomValue.ValueString}");
 
             Console.WriteLine("Custom property added and verified successfully.");
-            Console.WriteLine($"Name: {retrievedProp.Name}, Value: {storedValue}");
 
             // Save the diagram to a VSDX file
-            diagram.Save("CustomPropertyDemo.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
         }
     }
+}

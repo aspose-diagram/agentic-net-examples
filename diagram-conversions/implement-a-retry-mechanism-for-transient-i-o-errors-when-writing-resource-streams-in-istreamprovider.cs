@@ -9,17 +9,17 @@ namespace DiagramHtmlExportWithRetry
     // Implements IStreamProvider with retry logic for transient I/O errors.
     public class RetryStreamProvider : IStreamProvider
     {
-        private const int MaxRetries = 3;
-        private const int DelayMilliseconds = 2000;
+        private const int MaxRetries = 3;          // Maximum number of retry attempts.
+        private const int DelayMilliseconds = 500; // Delay between retries.
 
-        // Called by Aspose when a resource stream needs to be created.
+        // Called by Aspose.Diagram when a resource stream needs to be created.
         public void InitStream(StreamProviderOptions options)
         {
-            // The DefaultPath property contains the relative path for the resource (e.g., images/style.css).
-            string filePath = options.DefaultPath;
+            // The path where the resource (e.g., image) should be written.
+            string path = options.DefaultPath;
 
-            // Ensure the directory exists.
-            string directory = Path.GetDirectoryName(filePath);
+            // Ensure the target directory exists.
+            string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
@@ -30,61 +30,67 @@ namespace DiagramHtmlExportWithRetry
             {
                 try
                 {
-                    // Create the file stream for writing the resource.
-                    options.Stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                    break; // Success
+                    // Open the file stream for writing.
+                    options.Stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+                    break; // Success – exit the retry loop.
                 }
-                catch (IOException)
+                catch (IOException ex) when (IsTransient(ex) && attempt < MaxRetries)
                 {
+                    // Transient error – wait and retry.
                     attempt++;
-                    if (attempt >= MaxRetries)
-                    {
-                        throw; // Re‑throw after exceeding retry count.
-                    }
-                    // Wait before retrying.
                     Thread.Sleep(DelayMilliseconds);
+                }
+                catch
+                {
+                    // Non‑transient error or max retries exceeded – rethrow.
+                    throw;
                 }
             }
         }
 
-        // Called by Aspose after the resource has been written.
+        // Called by Aspose.Diagram after the resource stream is no longer needed.
         public void CloseStream(StreamProviderOptions options)
         {
-            // Close and dispose the stream if it was created.
             if (options.Stream != null)
             {
                 options.Stream.Dispose();
                 options.Stream = null;
             }
         }
+
+        // Simple heuristic to decide if an IOException is transient.
+        private bool IsTransient(IOException ex)
+        {
+            // For demonstration, treat all IOExceptions as transient.
+            // In production, inspect HResult or inner exceptions for more precise detection.
+            return true;
+        }
     }
 
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Load an existing diagram (replace with your actual file path).
-                string inputPath = "sample.vsdx";
+                // Input Visio file.
+                string inputPath = "input.vsdx";
+
+                // Output HTML file.
+                string outputPath = "output.html";
+
+                // Load the diagram.
                 Diagram diagram = new Diagram(inputPath);
 
                 // Configure HTML save options and assign the custom stream provider.
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    StreamProvider = new RetryStreamProvider(),
-                    // Optional: set other options as needed.
-                    SaveAsSingleFile = false,
-                    PageIndex = 0,
-                    PageCount = int.MaxValue
+                    StreamProvider = new RetryStreamProvider()
                 };
 
-                // Define the output HTML file path.
-                string outputHtml = "output.html";
-
-                // Save the diagram to HTML using the retry‑enabled stream provider.
-                diagram.Save(outputHtml, htmlOptions);
+                // Save the diagram as HTML using the options.
+                diagram.Save(outputPath, htmlOptions);
 
                 Console.WriteLine("Diagram exported to HTML successfully.");
 

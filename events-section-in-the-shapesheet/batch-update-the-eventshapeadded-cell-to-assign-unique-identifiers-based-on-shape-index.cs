@@ -1,43 +1,47 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths (adjust as needed)
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages and their shapes
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Create a unique identifier based on the shape's ID
-                    // The identifier is stored as a string literal in the event formula
-                    string uniqueIdFormula = $"\"ID_{shape.ID}\"";
-
-                    // Assign the unique identifier to an event cell.
-                    // Since EventShapeAdded is not a standard event cell, we use EventDrop as an example.
-                    shape.Event.EventDrop.Ufe.F = uniqueIdFormula;
+                    // Ensure the shape is not marked as deleted
+                    if (shape.Del == BOOL.False)
+                    {
+                        // Assign a unique identifier to a valid event cell (EventXFMod) using the shape's ID
+                        shape.Event.EventXFMod.Ufe.F = $"\"{shape.ID}\"";
+                    }
                 }
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram using the correct overload with a SaveFileFormat argument
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

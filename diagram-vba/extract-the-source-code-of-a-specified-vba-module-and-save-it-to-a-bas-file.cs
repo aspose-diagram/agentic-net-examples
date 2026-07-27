@@ -3,41 +3,53 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class Program
+class VbaModuleExtractor
 {
+    // Extracts the VBA code of a specified module from a Visio diagram and saves it to a .bas file.
     static void Main(string[] args)
     {
+        // Validate arguments: input diagram path, module name, output .bas file path
+        if (args.Length != 3)
+        {
+            Console.WriteLine("Usage: VbaModuleExtractor <inputDiagram> <moduleName> <outputBasFile>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string moduleName = args[1];
+        string outputBasPath = args[2];
+
+        // Load the Visio diagram
+        Diagram diagram = new Diagram(diagramPath);
+
+        // Ensure the diagram contains a VBA project
+        VbaProject vbaProject = diagram.VbaProject;
+        if (vbaProject == null)
+        {
+            Console.WriteLine("The diagram does not contain a VBA project.");
+            return;
+        }
+
+        // Retrieve the requested VBA module by name
+        VbaModule vbaModule = vbaProject.Modules[moduleName];
+        if (vbaModule == null)
+        {
+            Console.WriteLine($"VBA module '{moduleName}' not found in the diagram.");
+            return;
+        }
+
+        // Get the VBA source code from the module
+        string vbaCode = vbaModule.Codes;
+
+        // Write the code to the specified .bas file
         try
         {
-
-            // Path to the source Visio diagram file
-            string diagramPath = "input.vsdx";
-
-            // Name of the VBA module to extract
-            string moduleName = "Module1";
-
-            // Destination path for the extracted .bas file
-            string outputBasPath = "Module1.bas";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Access the VBA project contained in the diagram
-            VbaProject vbaProject = diagram.VbaProject;
-
-            // Retrieve the specified VBA module by its name
-            VbaModule vbaModule = vbaProject.Modules[moduleName];
-
-            // Get the VBA source code from the module
-            string vbaCode = vbaModule.Codes;
-
-            // Write the source code to a .bas file
             File.WriteAllText(outputBasPath, vbaCode);
-
+            Console.WriteLine($"VBA module '{moduleName}' has been saved to '{outputBasPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Failed to write the .bas file: {ex.Message}");
         }
     }
 }

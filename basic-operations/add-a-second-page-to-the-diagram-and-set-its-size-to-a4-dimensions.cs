@@ -1,35 +1,32 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
         // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Determine the next page ID (max existing ID + 1)
-        int maxId = 0;
-        foreach (Page p in diagram.Pages)
+        using (Diagram diagram = new Diagram())
         {
-            if (p.ID > maxId)
-                maxId = p.ID;
+            // Add a first page (optional, ensures the diagram has at least one page)
+            Page firstPage = new Page();
+            diagram.Pages.Add(firstPage);
+
+            // Add the second page
+            Page secondPage = new Page();
+            diagram.Pages.Add(secondPage);
+
+            // Set the second page size to A4 dimensions (in inches)
+            secondPage.PageSheet.PageProps.PageWidth.Value = 8.27;   // A4 width
+            secondPage.PageSheet.PageProps.PageHeight.Value = 11.69; // A4 height
+
+            // Optionally give the page a name
+            secondPage.Name = "A4Page";
+
+            // Save the diagram to a VSDX file
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
         }
-
-        // Create a new page and assign a unique ID
-        Page newPage = new Page();
-        newPage.ID = maxId + 1;
-        newPage.Name = "Page-2";
-
-        // Set A4 size (width = 8.27 inches, height = 11.69 inches)
-        newPage.PageSheet.PageProps.PageWidth.Value = 8.27;
-        newPage.PageSheet.PageProps.PageHeight.Value = 11.69;
-
-        // Add the new page to the diagram
-        diagram.Pages.Add(newPage);
-
-        // Save the diagram to a VSDX file
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
     }
 }

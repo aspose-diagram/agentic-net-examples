@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -13,22 +12,31 @@ class Program
                 string inputPath = "input.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes to find the triangle shape
+                // Iterate through all pages and shapes to find a triangle shape
+                bool triangleFound = false;
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has a master and that the master name is "Triangle"
+                        // Identify triangle by its master name (e.g., "Triangle")
                         if (shape.Master != null && shape.Master.Name == "Triangle")
                         {
-                            // Apply a solid fill pattern (value 1) and set the foreground color to solid red
-                            shape.Fill.FillPattern.Value = 1;               // Solid fill
-                            shape.Fill.FillForegnd.Value = "#FF0000";       // Red color in HEX
+                            // Apply solid fill pattern
+                            shape.Fill.FillPattern.Value = 1; // 1 = solid
+                            // Set foreground (fill) color to solid red
+                            shape.Fill.FillForegnd.Value = "#FF0000";
 
-                            // Optional: you can break after the first match if only one triangle is expected
-                            // break;
+                            triangleFound = true;
+                            // If only one triangle is needed, break out of loops
+                            break;
                         }
                     }
+                    if (triangleFound) break;
+                }
+
+                if (!triangleFound)
+                {
+                    throw new Exception("Triangle shape not found in the diagram.");
                 }
 
                 // Save the modified diagram

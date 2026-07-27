@@ -2,10 +2,10 @@
 product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
-version: 26.5.0
+version: 26.7.0
 total_examples: 1840
 categories: 31
-generated: 2026-06-23
+generated: 2026-07-27
 ---
 
 # Aspose.Diagram for .NET — Agentic Examples
@@ -19,11 +19,11 @@ generated: 2026-06-23
 | Agent | agent-aspose-diagram-examples |
 | Repository | [aspose-diagram/agentic-net-examples](https://github.com/aspose-diagram/agentic-net-examples) |
 | Product | Aspose.Diagram for .NET |
-| Version | 26.5.0 |
+| Version | 26.7.0 |
 | Framework | net8.0 |
 | Total Examples | 1840 |
 | Categories | 31 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-27 |
 
 ## Persona
 
@@ -187,4 +187,4 @@ Covers all 31 Aspose.Diagram for .NET task categories: basic operations, shapes,
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) | Examples: 1840 | Categories: 31 | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) | Updated: 2026-06-23*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) | Examples: 1840 | Categories: 31 | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) | Updated: 2026-07-27*

@@ -1,67 +1,51 @@
 using System;
-using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.Properties;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input folder containing Visio files
-                string inputFolder = @"C:\Visio\Input";
-                // Output folder for processed files
-                string outputFolder = @"C:\Visio\Output";
-
-                // Ensure output directory exists
-                if (!Directory.Exists(outputFolder))
+                // Define the input diagram file paths.
+                string[] diagramPaths = new string[]
                 {
-                    Directory.CreateDirectory(outputFolder);
-                }
+                    @"C:\Diagrams\Diagram1.vsdx",
+                    @"C:\Diagrams\Diagram2.vsdx",
+                    // Add more paths as needed.
+                };
 
-                // Get all Visio files (adjust extension as needed)
-                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-
-                foreach (string filePath in diagramFiles)
+                // Process each diagram.
+                foreach (string inputPath in diagramPaths)
                 {
-                    // Load diagram using the constructor that accepts a file path
-                    using (Diagram diagram = new Diagram(filePath))
+                    // Load the diagram from file.
+                    Diagram diagram = new Diagram(inputPath);
+
+                    // Remove any custom property named "DeprecatedFlag".
+                    var customProps = diagram.DocumentProps.CustomProps;
+                    // Iterate backwards to safely remove items while iterating.
+                    for (int i = customProps.Count - 1; i >= 0; i--)
                     {
-                        // Access custom properties collection
-                        CustomPropCollection customProps = diagram.DocumentProps.CustomProps;
-
-                        // Collect properties named "DeprecatedFlag" to remove
-                        List<CustomProp> propsToRemove = new List<CustomProp>();
-                        foreach (CustomProp prop in customProps)
-                        {
-                            if (prop.Name == "DeprecatedFlag")
-                            {
-                                propsToRemove.Add(prop);
-                            }
-                        }
-
-                        // Remove the identified custom properties
-                        foreach (CustomProp prop in propsToRemove)
+                        var prop = customProps[i];
+                        if (prop.Name == "DeprecatedFlag")
                         {
                             customProps.Remove(prop);
                         }
-
-                        // Save the modified diagram to the output folder
-                        string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
                     }
+
+                    // Define the output path (overwrite the original file in this example).
+                    string outputPath = inputPath; // Change if you want a different location.
+
+                    // Save the modified diagram using the appropriate SaveFileFormat.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("Processing completed.");
-
             }
-            catch (System.IO.DirectoryNotFoundException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

@@ -1,37 +1,38 @@
 using System;
-using System.IO;
 using System.Linq;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        var diagramPath = "input.vsdx";
-        if (!File.Exists(diagramPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
-
-        try
-        {
-            Diagram diagram = new Diagram(diagramPath);
-            var customProps = diagram.DocumentProps.CustomProps;
-
-            var deptProperties = customProps
-                .Cast<CustomProp>()
-                .Where(p => !string.IsNullOrEmpty(p.Name) && p.Name.StartsWith("Dept", StringComparison.OrdinalIgnoreCase));
-
-            foreach (var prop in deptProperties)
+            try
             {
-                string value = prop.CustomValue?.ValueString ?? string.Empty;
-                Console.WriteLine($"{prop.Name}: {value}");
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Filter custom properties whose names start with "Dept"
+                var deptProperties = diagram.DocumentProps.CustomProps
+                    .Where(prop => !string.IsNullOrEmpty(prop.Name) && prop.Name.StartsWith("Dept"));
+
+                // List the names and values of the filtered properties
+                foreach (var prop in deptProperties)
+                {
+                    // Access the value via CustomValue.ValueString as per Aspose.Diagram API
+                    string value = prop.CustomValue?.ValueString ?? string.Empty;
+                    Console.WriteLine($"{prop.Name}: {value}");
+                }
+
+                // Save the diagram (optional, demonstrates lifecycle usage)
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

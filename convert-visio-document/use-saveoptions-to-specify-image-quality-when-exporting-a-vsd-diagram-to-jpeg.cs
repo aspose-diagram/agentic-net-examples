@@ -3,7 +3,7 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportDiagramToJpeg
+class Program
 {
     static void Main()
     {
@@ -13,13 +13,12 @@ class ExportDiagramToJpeg
             // Load the VSD diagram from file
             Diagram diagram = new Diagram("input.vsd");
 
-            // Create image save options for JPEG format
+            // Create ImageSaveOptions for JPEG format
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+            // Set the desired JPEG quality (0-100)
+            saveOptions.JpegQuality = 75;
 
-            // Set the desired JPEG quality (0‑100). Lower value = higher compression.
-            saveOptions.JpegQuality = 70;
-
-            // Export the diagram to a JPEG file using the specified quality
+            // Export the diagram to a JPEG image using the specified quality
             diagram.Save("output.jpg", saveOptions);
 
         }

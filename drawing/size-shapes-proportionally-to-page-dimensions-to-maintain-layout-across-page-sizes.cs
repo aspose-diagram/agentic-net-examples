@@ -1,49 +1,50 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Input and output file paths
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                string outputPath = "output_scaled.vsdx";
 
-                // Load the diagram inside a using block to ensure proper disposal
+                // Load the Visio diagram
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Define the target page size (in inches). Adjust as needed.
-                    double targetPageWidth = 11.0;   // Example: landscape width
-                    double targetPageHeight = 8.5;   // Example: landscape height
+                    // Reference page size (Letter size in inches)
+                    const double referenceWidth = 8.5;
+                    const double referenceHeight = 11.0;
 
                     // Iterate through all pages in the diagram
                     foreach (Page page in diagram.Pages)
                     {
-                        // Original page dimensions
-                        double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
+                        // Retrieve current page dimensions (in inches)
+                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                        // Calculate scaling factors for X and Y axes
-                        double scaleX = targetPageWidth / originalWidth;
-                        double scaleY = targetPageHeight / originalHeight;
+                        // Compute scaling factors relative to the reference size
+                        double scaleX = pageWidth / referenceWidth;
+                        double scaleY = pageHeight / referenceHeight;
 
-                        // Apply the new page dimensions
-                        page.PageSheet.PageProps.PageWidth.Value = targetPageWidth;
-                        page.PageSheet.PageProps.PageHeight.Value = targetPageHeight;
-
-                        // Iterate through all shapes on the current page
+                        // Iterate through all shapes on the page
                         foreach (Shape shape in page.Shapes)
                         {
+                            // Skip shapes that are marked as deleted
+                            if (shape.Del == BOOL.True)
+                                continue;
+
                             // Scale position (PinX, PinY)
-                            shape.XForm.PinX.Value = shape.XForm.PinX.Value * scaleX;
-                            shape.XForm.PinY.Value = shape.XForm.PinY.Value * scaleY;
+                            shape.XForm.PinX.Value *= scaleX;
+                            shape.XForm.PinY.Value *= scaleY;
 
                             // Scale size (Width, Height)
-                            shape.XForm.Width.Value = shape.XForm.Width.Value * scaleX;
-                            shape.XForm.Height.Value = shape.XForm.Height.Value * scaleY;
+                            shape.XForm.Width.Value *= scaleX;
+                            shape.XForm.Height.Value *= scaleY;
                         }
                     }
 

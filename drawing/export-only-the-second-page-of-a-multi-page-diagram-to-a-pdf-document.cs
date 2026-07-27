@@ -10,27 +10,21 @@ class Program
         try
         {
 
-            // Path to the source Visio file (multi‑page diagram)
-            string sourcePath = "input.vsdx";
+            // Path to the source Visio diagram (multi‑page)
+            string inputPath = "input.vsdx";
 
-            // Load the diagram
-            Diagram diagram = new Diagram(sourcePath);
+            // Path for the resulting PDF containing only the second page
+            string outputPath = "second_page.pdf";
 
-            // Configure PDF save options to export only the second page (index 1)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                // 0‑based page index; 1 selects the second page
-                PageIndex = 1,
-                // Export only one page starting from PageIndex
-                PageCount = 1,
-                // Optional: do not include hidden pages
-                ExportHiddenPage = false,
-                // Optional: set a default font to avoid missing‑font issues
-                DefaultFont = "Arial"
-            };
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure PDF save options to export only the second page (zero‑based index = 1)
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageIndex = 1;   // start from the second page
+            pdfOptions.PageCount = 1;   // export a single page
 
             // Save the selected page as PDF
-            string outputPath = "second_page.pdf";
             diagram.Save(outputPath, pdfOptions);
 
         }

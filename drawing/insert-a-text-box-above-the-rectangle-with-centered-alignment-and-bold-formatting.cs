@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -13,64 +12,53 @@ class Program
                 string inputPath = "input.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
-                // Get the first page
+                // Get the first page (adjust if needed)
                 Page page = diagram.Pages[0];
 
                 // Find the first rectangle shape on the page
-                Shape rectangleShape = null;
-                foreach (Shape shp in page.Shapes)
+                Shape? rectangle = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    if (shp.Master != null && shp.Master.Name == "Rectangle")
+                    // Ensure the shape has a master and that the master name is "Rectangle"
+                    if (shape.Master != null && shape.Master.Name == "Rectangle")
                     {
-                        rectangleShape = shp;
+                        rectangle = shape;
                         break;
                     }
                 }
 
-                if (rectangleShape == null)
+                if (rectangle == null)
                 {
-                    throw new Exception("Rectangle shape not found on the page.");
+                    throw new Exception("No rectangle shape found on the page.");
                 }
 
                 // Calculate position for the text box (above the rectangle)
-                double rectPinX = rectangleShape.XForm.PinX.Value;
-                double rectPinY = rectangleShape.XForm.PinY.Value;
-                double rectHeight = rectangleShape.XForm.Height.Value;
+                double rectPinY = rectangle.XForm.PinY.Value;
+                double rectHeight = rectangle.XForm.Height.Value;
+                double offset = 0.2; // inches above the rectangle
+                double textPinY = rectPinY + (rectHeight / 2) + offset;
+                double textPinX = rectangle.XForm.PinX.Value; // center horizontally with rectangle
 
-                // Define text box size
-                double textBoxWidth = rectHeight;   // arbitrary width
-                double textBoxHeight = 0.5;         // height in inches
+                // Define size of the text box
+                double textWidth = 2.0;   // inches
+                double textHeight = 0.5;  // inches
 
-                // Position: same PinX, PinY above the rectangle (add half height + offset)
-                double offset = 0.2; // extra space above the rectangle
-                double textPinX = rectPinX;
-                double textPinY = rectPinY + (rectHeight / 2) + (textBoxHeight / 2) + offset;
+                // Add a text shape (text box) to the page
+                Shape textShape = page.AddText(textPinX, textPinY, textWidth, textHeight, "Sample Text");
 
-                // Add the text box shape
-                Shape textShape = page.AddText(textPinX, textPinY, textBoxWidth, textBoxHeight, "Sample Text");
-
-                // Clear any existing text runs and add our text
-                textShape.Text.Value.Clear();
-                textShape.Text.Value.Add(new Txt("Sample Text"));
-
-                // Ensure there is at least one paragraph to set alignment
-                if (textShape.Paras.Count == 0)
+                // Center the text horizontally within the text box
+                if (textShape.Paras.Count > 0)
                 {
-                    textShape.Paras.Add(new Para());
+                    textShape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
                 }
 
-                // Center align the paragraph horizontally
-                textShape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
-
-                // Optionally set vertical alignment to middle within the text block
-                textShape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
-
-                // Add a character formatting run for bold style
-                Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-                ch.IX = 0; // start index
-                ch.Style.Value = StyleValue.Bold;
+                // Apply bold formatting to the entire text
+                // Clear any existing characters and add a new Char with bold style
                 textShape.Chars.Clear();
-                textShape.Chars.Add(ch);
+                Aspose.Diagram.Char boldChar = new Aspose.Diagram.Char();
+                boldChar.IX = 0; // start index
+                boldChar.Style.Value = StyleValue.Bold;
+                textShape.Chars.Add(boldChar);
 
                 // Save the modified diagram
                 string outputPath = "output.vsdx";

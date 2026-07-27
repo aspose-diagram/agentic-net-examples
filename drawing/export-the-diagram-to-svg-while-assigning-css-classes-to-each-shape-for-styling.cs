@@ -1,57 +1,57 @@
 using System;
 using System.IO;
-using System.Linq;
-using System.Xml.Linq;
+using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportDiagramToSvgWithCss
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file
-            var diagram = new Diagram("input.vsd");
+            // Load the Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Configure SVG save options
-            var svgOptions = new SVGSaveOptions
+            // Assign a CSS class name to each shape.
+            // Here we use the NameU property to store the class name.
+            foreach (Page page in diagram.Pages)
             {
-                // Make the generated SVG fit the viewport
-                SVGFitToViewPort = true
-            };
-
-            // Export the entire diagram to an SVG file
-            string svgPath = "output.svg";
-            diagram.Save(svgPath, svgOptions);
-
-            // Load the generated SVG for post‑processing
-            XDocument svgDoc = XDocument.Load(svgPath);
-            XNamespace svgNs = "http://www.w3.org/2000/svg";
-
-            // Iterate through shapes on the first page and assign a CSS class
-            // based on the shape's ID (e.g., class="shape-5")
-            foreach (Shape shape in diagram.Pages[0].Shapes)
-            {
-                // The ID property is an integer unique to each shape
-                string shapeId = shape.ID.ToString();
-
-                // In the SVG, shapes are typically given an id attribute like "shape5"
-                // Find the element with a matching id attribute
-                var element = svgDoc
-                    .Descendants()
-                    .FirstOrDefault(e => (string)e.Attribute("id") == $"shape{shapeId}");
-
-                if (element != null)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Assign a CSS class to the element for styling
-                    element.SetAttributeValue("class", $"shape-{shapeId}");
+                    shape.NameU = $"cls_{shape.ID}";
                 }
             }
 
-            // Save the modified SVG back to disk
-            svgDoc.Save(svgPath);
+            // Prepare SVG save options.
+            SVGSaveOptions svgOptions = new SVGSaveOptions
+            {
+                // Ensure the whole page is rendered.
+                PageIndex = 0,
+                // Optional: fit the SVG to the viewport.
+                SVGFitToViewPort = true
+            };
+
+            // Save the diagram as an SVG file using the provided Save method.
+            diagram.Save("output.svg", svgOptions);
+
+            // Post‑process the generated SVG to replace the default id attribute
+            // with a class attribute that contains the CSS class we assigned.
+            string svgContent = File.ReadAllText("output.svg", Encoding.UTF8);
+
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    string idAttribute = $"id=\"{shape.ID}\"";
+                    string classAttribute = $"class=\"{shape.NameU}\"";
+                    svgContent = svgContent.Replace(idAttribute, classAttribute);
+                }
+            }
+
+            // Write the modified SVG back to disk.
+            File.WriteAllText("output.svg", svgContent, Encoding.UTF8);
 
         }
         catch (System.IO.FileNotFoundException ex)

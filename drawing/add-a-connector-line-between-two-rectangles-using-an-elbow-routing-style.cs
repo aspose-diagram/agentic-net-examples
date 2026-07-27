@@ -1,7 +1,6 @@
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -16,31 +15,32 @@ class Program
                 // Get the first (default) page
                 Page page = diagram.Pages[0];
 
-                // Add two rectangle shapes using the built‑in "Rectangle" master
-                // Parameters: pinX, pinY, master name, page index (0‑based)
+                // Add two rectangle shapes
+                // Parameters: pinX, pinY, master name, page index
                 long rect1Id = diagram.AddShape(2.0, 5.0, "Rectangle", 0);
-                long rect2Id = diagram.AddShape(6.0, 5.0, "Rectangle", 0);
+                long rect2Id = diagram.AddShape(8.0, 5.0, "Rectangle", 0);
 
-                // Create a dynamic connector shape
+                // Add a dynamic connector shape
                 Shape connectorShape = new Shape();
                 long connectorId = diagram.AddShape(connectorShape, "Dynamic connector", 0);
 
-                // Retrieve the connector shape to set its routing style
+                // Retrieve the connector shape object for further configuration
                 Shape connector = page.Shapes.GetShape(connectorId);
-                // Set elbow (right‑angle) routing style
+
+                // Set the connector routing style to elbow (right‑angle)
                 connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
 
-                // Connect the two rectangles with the connector
-                // Use bottom of the first rectangle and top of the second rectangle
+                // Connect the two rectangles using the connector
+                // Use ConnectionPointPlace.Right for the first rectangle and Left for the second
                 page.ConnectShapesViaConnector(
                     rect1Id,
-                    ConnectionPointPlace.Bottom,
+                    ConnectionPointPlace.Right,
                     rect2Id,
-                    ConnectionPointPlace.Top,
+                    ConnectionPointPlace.Left,
                     connectorId);
 
                 // Save the diagram to a VSDX file
-                diagram.Save("ConnectorDiagram.vsdx", SaveFileFormat.Vsdx);
+                diagram.Save("ConnectorExample.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (Aspose.Diagram.DiagramException ex)

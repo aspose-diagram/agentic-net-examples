@@ -8,27 +8,30 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram
+                // Load an existing Visio diagram (replace with actual file path)
                 Diagram diagram = new Diagram("input.vsdx");
 
-                // Iterate through all pages and shapes to find the triangle shape
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Ensure the shape has a master and that the master name is "Triangle"
-                        if (shape.Master != null && shape.Master.Name == "Triangle")
-                        {
-                            // Set solid fill pattern
-                            shape.Fill.FillPattern.Value = 1; // 1 = solid
+                // Assume the triangle shape is on the first page
+                Page page = diagram.Pages[0];
 
-                            // Change fill color to blue (hex code)
-                            shape.Fill.FillForegnd.Value = "#0000FF";
-                        }
+                // Iterate through all shapes on the page to find the triangle master
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Check if the shape uses the "Triangle" master
+                    if (shape.Master != null && shape.Master.Name == "Triangle")
+                    {
+                        // Set a solid fill pattern (1 = solid)
+                        shape.Fill.FillPattern.Value = 1;
+
+                        // Set the foreground fill color to blue (hex code)
+                        shape.Fill.FillForegnd.Value = "#0000FF";
+
+                        // Optionally break after the first triangle is processed
+                        break;
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to a new file
                 diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }

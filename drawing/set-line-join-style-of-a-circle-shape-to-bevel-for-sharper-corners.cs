@@ -1,52 +1,38 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Access the first page of the diagram
+            Page page = diagram.Pages[0];
+
+            // Find shapes that use the "Ellipse" master (circle/ellipse shapes)
+            foreach (Shape shape in page.Shapes)
             {
-
-                // Load an existing Visio diagram (replace with your file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page (or any specific page you need)
-                Page page = diagram.Pages[0];
-
-                // Find the first circle shape.
-                // This example assumes the shape's master name is "Ellipse" (used for circles/ovals).
-                Shape circleShape = null;
-                foreach (Shape shape in page.Shapes)
+                if (shape.Master != null && shape.Master.Name == "Ellipse")
                 {
-                    if (shape.Master != null && shape.Master.Name == "Ellipse")
-                    {
-                        circleShape = shape;
-                        break;
-                    }
+                    // Set line rounding to 0 to achieve a bevel‑like sharp corner effect
+                    shape.Line.Rounding.Value = 0;
+                    Console.WriteLine($"Shape ID {shape.ID} line rounding set to 0.");
                 }
-
-                if (circleShape == null)
-                {
-                    throw new Exception("Circle shape not found in the diagram.");
-                }
-
-                // Aspose.Diagram does not expose a LineJoin property.
-                // To achieve sharper corners on a shape's outline, you can set the rounding value to zero.
-                // This removes any corner rounding that might be applied.
-                circleShape.Line.Rounding.Value = 0.0;
-
-                // Save the modified diagram (optional)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Line rounding set to zero for the circle shape and diagram saved.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

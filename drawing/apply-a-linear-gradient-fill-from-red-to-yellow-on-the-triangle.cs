@@ -1,50 +1,50 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Get the first (default) page
-        Page page = diagram.Pages[0];
-
-        // Define triangle vertices (in inches)
-        double[] trianglePoints = new double[]
+        static void Main()
         {
-            2.0, 2.0,   // Point 1
-            5.0, 2.0,   // Point 2
-            3.5, 5.0    // Point 3
-        };
+            // Create a new diagram
+            Diagram diagram = new Diagram();
 
-        // Draw the triangle using a polyline (returns the shape ID)
-        long shapeId = page.DrawPolyline(trianglePoints);
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-        // Retrieve the shape object
-        Shape triangle = page.Shapes.GetShape((int)shapeId);
+            // Define triangle points (X1,Y1, X2,Y2, X3,Y3, X1,Y1 to close)
+            double[] trianglePoints = new double[] { 2, 2, 4, 2, 3, 4, 2, 2 };
 
-        // Apply a linear gradient fill from red to yellow
-        triangle.Fill.FillPattern.Value = 25; // Gradient fill pattern
-        triangle.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-        triangle.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.Linear;
+            // Draw the triangle; returns the shape ID (long)
+            long shapeId = page.DrawPolyline(trianglePoints);
 
-        // Clear any existing gradient stops
-        triangle.Fill.GradientFill.GradientStops.Clear();
+            // Retrieve the shape object using the ID
+            Shape shape = page.Shapes.GetShape((int)shapeId);
 
-        // Add gradient stop at position 0 (red)
-        triangle.Fill.GradientFill.GradientStops.Add(
-            new DoubleValue(0, MeasureConst.NUM),
-            new ColorValue("#FF0000", MeasureConst.Undefined));
+            // Apply gradient fill
+            // 1. Set fill pattern to gradient (value 25)
+            shape.Fill.FillPattern.Value = 25;
 
-        // Add gradient stop at position 1 (yellow)
-        triangle.Fill.GradientFill.GradientStops.Add(
-            new DoubleValue(1, MeasureConst.NUM),
-            new ColorValue("#FFFF00", MeasureConst.Undefined));
+            // 2. Enable gradient fill
+            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-        // Save the diagram to a VSDX file
-        diagram.Save("TriangleGradient.vsdx", SaveFileFormat.Vsdx);
+            // 3. Set gradient direction to linear (0 degrees)
+            shape.Fill.GradientFill.GradientDir.Value = 0;
+
+            // 4. Clear any existing gradient stops
+            shape.Fill.GradientFill.GradientStops.Clear();
+
+            // 5. Add gradient stop at position 0 (red)
+            shape.Fill.GradientFill.GradientStops.Add(
+                new DoubleValue(0, MeasureConst.NUM),
+                new ColorValue("#FF0000", MeasureConst.Undefined));
+
+            // 6. Add gradient stop at position 1 (yellow)
+            shape.Fill.GradientFill.GradientStops.Add(
+                new DoubleValue(1, MeasureConst.NUM),
+                new ColorValue("#FFFF00", MeasureConst.Undefined));
+
+            // Save the diagram to a VSDX file
+            diagram.Save("TriangleGradient.vsdx", SaveFileFormat.Vsdx);
+        }
     }
-}

@@ -1,43 +1,38 @@
-using System.IO;
 using System;
-using Aspose.Diagram;
+using System.IO;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the existing Visio diagram
-            string inputPath = "input.vsdx";
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load an existing Visio diagram
+            var diagram = new Aspose.Diagram.Diagram("input.vsdx");
+
+            // Access the first page (adjust index if needed)
+            var page = diagram.Pages[0];
+
+            // Find the triangle shape by its name (replace "Triangle" with the actual shape name if different)
+            Aspose.Diagram.Shape triangle = null;
+            foreach (Aspose.Diagram.Shape shape in page.Shapes)
             {
-                // Access the first page (adjust index if needed)
-                Page page = diagram.Pages[0];
-
-                // Locate the triangle shape by its master name
-                Shape triangle = null;
-                foreach (Shape shape in page.Shapes)
+                if (shape.NameU == "Triangle")
                 {
-                    if (shape.Master != null && shape.Master.Name == "Triangle")
-                    {
-                        triangle = shape;
-                        break;
-                    }
+                    triangle = shape;
+                    break;
                 }
-
-                if (triangle == null)
-                    throw new Exception("Triangle shape not found.");
-
-                // Move the triangle to the desired coordinates (200, 150)
-                triangle.XForm.PinX.Value = 200.0;
-                triangle.XForm.PinY.Value = 150.0;
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            // If the triangle shape is found, move it to the absolute coordinates (200, 150)
+            if (triangle != null)
+            {
+                triangle.MoveTo(200.0, 150.0);
+            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

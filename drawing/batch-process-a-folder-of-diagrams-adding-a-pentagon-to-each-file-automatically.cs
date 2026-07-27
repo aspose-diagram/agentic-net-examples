@@ -3,39 +3,63 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class BatchPentagonAdder
 {
-    static void Main(string[] args)
+    // Folder containing the Visio diagram files
+    private const string InputFolder = @"C:\Diagrams\Input";
+    // Folder where modified diagrams will be saved
+    private const string OutputFolder = @"C:\Diagrams\Output";
+
+    static void Main()
     {
         try
         {
 
-            // Specify the folder containing Visio diagram files.
-            // You can pass the folder path as a command‑line argument; otherwise use a default path.
-            string folderPath = args.Length > 0 ? args[0] : @"C:\VisioDiagrams";
+            // Ensure output directory exists
+            Directory.CreateDirectory(OutputFolder);
 
-            // Process each Visio file in the folder (supports common extensions).
-            foreach (string filePath in Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly))
+            // Process each Visio file in the input folder (supports .vsdx, .vsd, .vdx)
+            foreach (string filePath in Directory.GetFiles(InputFolder, "*.*", SearchOption.TopDirectoryOnly))
             {
-                string ext = Path.GetExtension(filePath).ToLowerInvariant();
-                if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx" && ext != ".vsx")
-                    continue; // Skip non‑Visio files.
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
+                    continue; // Skip non‑Visio files
 
-                // Load the diagram using the constructor that accepts a file name.
-                Diagram diagram = new Diagram(filePath);
+                try
+                {
+                    // Load the diagram using the appropriate constructor (Diagram(string))
+                    using (Diagram diagram = new Diagram(filePath))
+                    {
+                        // Use the first page (or ActivePage) to add the shape
+                        Page page = diagram.Pages[0];
 
-                // Add a pentagon shape to the active page.
-                // PinX and PinY are set to 2.0 inches; adjust as needed.
-                // The built‑in master name for a pentagon is "Pentagon".
-                diagram.ActivePage.AddShape(2.0, 2.0, "Pentagon");
+                        // Define position and size for the pentagon (in inches)
+                        double pinX = 5.0;   // X‑coordinate of the shape's center
+                        double pinY = 5.0;   // Y‑coordinate of the shape's center
+                        double width = 2.0; // Width of the pentagon
+                        double height = 2.0; // Height of the pentagon
 
-                // Save the modified diagram back to the same file.
-                // Using VDX format for simplicity; change if you need to preserve the original format.
-                diagram.Save(filePath, SaveFileFormat.Vdx);
+                        // Add a pentagon shape using the master name "Pentagon"
+                        // AddShape(double pinX, double pinY, double width, double height, string masterName)
+                        page.AddShape(pinX, pinY, width, height, "Pentagon");
 
-                // Release resources.
-                diagram.Dispose();
+                        // Prepare output file path
+                        string fileName = Path.GetFileNameWithoutExtension(filePath);
+                        string outputPath = Path.Combine(OutputFolder, fileName + ".vdx");
+
+                        // Save the modified diagram using Save(string, SaveFileFormat)
+                        diagram.Save(outputPath, SaveFileFormat.Vdx);
+                    }
+
+                    Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
+                }
             }
+
+            Console.WriteLine("Batch processing completed.");
 
         }
         catch (System.IO.DirectoryNotFoundException ex)

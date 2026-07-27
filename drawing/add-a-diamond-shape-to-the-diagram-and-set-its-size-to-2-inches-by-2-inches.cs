@@ -1,45 +1,40 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            // Create a new empty diagram
+
+            // Create a new diagram (lifecycle rule: create)
             Diagram diagram = new Diagram();
 
-            // Add a blank page to the diagram
-            Page page = new Page();
-            // Determine a unique page ID
-            int maxPageId = 0;
-            foreach (Page p in diagram.Pages)
-            {
-                if (p.ID > maxPageId)
-                    maxPageId = p.ID;
-            }
-            page.ID = maxPageId + 1;
-            page.Name = "Page-1";
-            diagram.Pages.Add(page);
+            // Get the first page (or create one if none exists)
+            Page page = diagram.Pages[0];
 
-            // Draw a diamond shape using a polyline.
-            // Coordinates define a closed diamond centered at (5,5) with width and height of 2 inches.
-            long shapeId = page.DrawPolyline(new double[]
-            {
-                5, 6,   // top vertex
-                6, 5,   // right vertex
-                5, 4,   // bottom vertex
-                4, 5,   // left vertex
-                5, 6    // close back to top
-            });
+            // Define the position (PinX, PinY) for the diamond shape.
+            // Here we place it at (5, 5) inches from the page origin.
+            double pinX = 5.0;
+            double pinY = 5.0;
 
-            // Retrieve the shape object to set its size explicitly
-            Shape diamond = page.Shapes.GetShape((int)shapeId);
-            diamond.XForm.Width.Value = 2;   // 2 inches width
-            diamond.XForm.Height.Value = 2;  // 2 inches height
-            diamond.XForm.PinX.Value = 5;    // center X
-            diamond.XForm.PinY.Value = 5;    // center Y
+            // Define the size of the diamond: 2 inches width and 2 inches height.
+            double width = 2.0;
+            double height = 2.0;
 
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Add a diamond shape using the built‑in master named "Diamond".
+            // This uses the AddShape overload that accepts PinX, PinY, Width, Height and master name.
+            page.AddShape(pinX, pinY, width, height, "Diamond");
+
+            // Save the diagram to a file (lifecycle rule: save)
+            diagram.Save("DiamondShape.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
+}

@@ -1,34 +1,51 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        static void Main()
+        {
+            try
+            {
 
-        // Access the first page of the diagram
-        Page page = diagram.Pages[0];
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
 
-        // Add a text shape with white font color
-        // Parameters: pinX, pinY, width, height, text, fontName, fontColor, fontSize(in inches)
-        Shape textShape = page.AddText(5, 5, 2, 1, "Sample Text", "Arial", "#FFFFFF", 0.2);
+                // Add a new page (the diagram already contains a default page)
+                Page page = diagram.Pages[0];
 
-        // Apply a black background to the text block to simulate an outline
-        textShape.TextBlock.TextBkgnd.Value = "#000000";
-        textShape.TextBlock.TextBkgndTrans.Value = 0; // fully opaque
+                // Add a rectangle shape to the page
+                // PinX and PinY are the center coordinates (in inches)
+                double pinX = 5.0;
+                double pinY = 5.0;
+                long shapeId = page.AddShape(pinX, pinY, "Rectangle");
 
-        // Ensure the inner text is white via the Char collection
-        textShape.Chars.Clear(); // remove any existing character formatting
-        Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-        ch.IX = 0;                     // apply to the whole text run
-        ch.Color.Value = "#FFFFFF";   // white text color
-        ch.Style.Value = StyleValue.Bold; // optional bold style for better contrast
-        textShape.Chars.Add(ch);
+                // Retrieve the shape object using the returned ID
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-        // Save the diagram as VSDX
-        diagram.Save("TextOutline.vsdx", SaveFileFormat.Vsdx);
+                // Clear any existing text and add new text
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt("Sample Text"));
+
+                // Create a character formatting entry for the text run
+                Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+                ch.IX = 0;                         // Index of the character run
+                ch.Color.Value = "#FFFFFF";       // White fill color for the text
+                shape.Chars.Add(ch);
+
+                // Apply a thin black border around the text by using the shape's line formatting
+                // This simulates a text outline effect (1 pixel ≈ 0.01 inches)
+                shape.Line.LineColor.Value = "#000000";   // Black border color
+                shape.Line.LineWeight.Value = 0.01;       // Line weight (in inches)
+
+                // Save the diagram to a VSDX file
+                diagram.Save("TextOutlineDiagram.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

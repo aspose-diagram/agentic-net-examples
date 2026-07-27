@@ -9,21 +9,20 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Work with the first page of the diagram
+            // Get the first page (adjust index if needed)
             Page page = diagram.Pages[0];
 
-            // Retrieve the pentagon and square shapes (by name or ID)
+            // Retrieve the pentagon and square shapes by their names (replace with actual names/IDs)
             Shape pentagon = page.Shapes.GetShape("Pentagon");
             Shape square   = page.Shapes.GetShape("Square");
 
-            // Group the two shapes into a composite shape collection
-            Shape[] shapesToGroup = new Shape[] { pentagon, square };
-            Shape groupShape = page.Shapes.Group(shapesToGroup);
+            // Group the two shapes into a composite shape
+            Shape groupShape = page.Shapes.Group(new Shape[] { pentagon, square });
 
-            // Optionally assign a name to the new group shape
+            // Optional: give the group a meaningful name
             groupShape.Name = "PentagonSquareGroup";
 
             // Save the updated diagram

@@ -10,33 +10,33 @@ class Program
         try
         {
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Get the active page where shapes will be drawn
-            Page page = diagram.ActivePage;
-
-            // Define the common center for all circles
-            double centerX = 5.0;
-            double centerY = 5.0;
-
-            // Starting radius and increment for each successive circle
-            double startRadius = 0.5;
-            double radiusIncrement = 0.5;
-
-            // Draw 50 circles with incremental radii
-            for (int i = 0; i < 50; i++)
+            // Create a new Visio diagram
+            using (Diagram diagram = new Diagram())
             {
-                double radius = startRadius + i * radiusIncrement;
-                double width = radius * 2;   // Circle width = diameter
-                double height = radius * 2;  // Circle height = diameter
+                // Get the active page where shapes will be drawn
+                Page page = diagram.ActivePage;
 
-                // Draw an ellipse (circle) on the page
-                page.DrawEllipse(centerX, centerY, width, height);
+                // Center point for all circles
+                double centerX = 200.0;
+                double centerY = 200.0;
+
+                // Incremental radius step
+                double radiusStep = 5.0;
+
+                // Draw 50 circles with increasing radii
+                for (int i = 1; i <= 50; i++)
+                {
+                    double radius = i * radiusStep;
+                    double width = radius * 2;
+                    double height = radius * 2;
+
+                    // DrawEllipse draws an ellipse; using equal width/height creates a circle
+                    page.DrawEllipse(centerX, centerY, width, height);
+                }
+
+                // Save the diagram as PDF
+                diagram.Save("Circles.pdf", SaveFileFormat.Pdf);
             }
-
-            // Export the diagram to a PDF file
-            diagram.Save("Circles.pdf", SaveFileFormat.Pdf);
 
         }
         catch (System.NullReferenceException ex)

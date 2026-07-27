@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,15 +10,13 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your source file path)
+            // Load the Visio diagram from file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Set up PDF save options with high resolution (300 DPI) for print quality
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                HorizontalResolution = 300, // 300 dots per inch horizontally
-                VerticalResolution = 300    // 300 dots per inch vertically
-            };
+            // Set up PDF save options with high resolution (e.g., 300 DPI) for print quality
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.HorizontalResolution = 300; // DPI horizontally
+            pdfOptions.VerticalResolution = 300;   // DPI vertically
 
             // Save the diagram as a PDF using the configured options
             diagram.Save("output.pdf", pdfOptions);

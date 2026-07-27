@@ -1,65 +1,58 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
-
-            // ----- Add a pentagon (using DrawPolyline) -----
-            // Coordinates: (3,6) -> (2,5.5) -> (2,4.5) -> (3,4) -> (4,4.5) -> (4,5.5) -> back to (3,6)
-            long pentagonId = page.DrawPolyline(new double[]
+            try
             {
-                3, 6,
-                2, 5.5,
-                2, 4.5,
-                3, 4,
-                4, 4.5,
-                4, 5.5,
-                3, 6   // close the shape
-            });
 
-            // ----- Add a square (using DrawRectangle) -----
-            // Position (7,5) with width and height of 2 units
-            long squareId = page.DrawRectangle(7, 5, 2, 2);
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
 
-            // ----- Add a dynamic connector -----
-            // The connector can be placed anywhere; its position will be adjusted by the glue operation
-            long connectorId = page.AddShape(0, 0, "Dynamic connector");
+                // Use the first (default) page
+                Page page = diagram.Pages[0];
 
-            // Retrieve the connector shape for configuration
-            Shape connector = page.Shapes.GetShape(connectorId);
+                // Draw a pentagon using a polyline (closed by repeating the first point)
+                // Points: (2,2) -> (3,4) -> (5,4) -> (6,2) -> (4,1) -> (2,2)
+                long pentagonId = page.DrawPolyline(new double[]
+                {
+                    2, 2,
+                    3, 4,
+                    5, 4,
+                    6, 2,
+                    4, 1,
+                    2, 2
+                });
 
-            // Set arrowheads on both ends of the connector
-            connector.Line.BeginArrow.Value = 4;               // Arrow style (example value)
-            connector.Line.EndArrow.Value = 4;
-            connector.Line.BeginArrowSize.Value = ArrowSizeValue.Large;
-            connector.Line.EndArrowSize.Value = ArrowSizeValue.Large;
+                // Draw a square (center at 8,3 with width and height of 2)
+                long squareId = page.DrawRectangle(8, 3, 2, 2);
 
-            // Set connector routing style (right‑angle routing)
-            connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+                // Add a dynamic connector shape (initial position is arbitrary)
+                long connectorId = page.AddShape(5, 3, "Dynamic connector", false);
 
-            // Connect the pentagon to the square using the dynamic connector
-            // Use Bottom of the pentagon and Top of the square as connection points
-            page.ConnectShapesViaConnector(
-                pentagonId,
-                ConnectionPointPlace.Bottom,
-                squareId,
-                ConnectionPointPlace.Top,
-                connectorId);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+                // Retrieve the connector shape to set its arrowheads
+                Shape connector = page.Shapes.GetShape(connectorId);
+                connector.Line.BeginArrow.Value = 4; // Arrow style (integer value)
+                connector.Line.EndArrow.Value = 4;   // Arrow style (integer value)
+
+                // Connect the pentagon to the square using the dynamic connector
+                page.ConnectShapesViaConnector(
+                    pentagonId,
+                    ConnectionPointPlace.Bottom,
+                    squareId,
+                    ConnectionPointPlace.Top,
+                    connectorId);
+
+                // Save the diagram to a VSDX file
+                diagram.Save("ConnectedDiagram.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

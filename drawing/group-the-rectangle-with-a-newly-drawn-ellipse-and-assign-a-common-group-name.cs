@@ -2,40 +2,48 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
+public class DiagramGrouper
+{
+    // This method assumes a diagram is already created or loaded elsewhere
+    // and that the rectangle shape already exists on the first page.
+    public void GroupRectangleWithEllipse(Diagram diagram, long rectangleShapeId,
+                                          double ellipsePinX, double ellipsePinY,
+                                          double ellipseWidth, double ellipseHeight,
+                                          string groupName)
+    {
+        // Get the first page of the diagram
+        Page page = diagram.Pages[0];
+
+        // Draw a new ellipse on the page
+        long ellipseShapeId = page.DrawEllipse(ellipsePinX, ellipsePinY, ellipseWidth, ellipseHeight);
+
+        // Retrieve the Shape objects for the rectangle and the newly drawn ellipse
+        Shape rectangleShape = page.Shapes.GetShape(rectangleShapeId);
+        Shape ellipseShape = page.Shapes.GetShape(ellipseShapeId);
+
+        // Group the rectangle and ellipse together
+        Shape[] shapesToGroup = new Shape[] { rectangleShape, ellipseShape };
+        Shape groupShape = page.Shapes.Group(shapesToGroup);
+
+        // Assign a common name to the group (the Name property is available on Shape)
+        groupShape.Name = groupName;
+    }
+}
+
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access the first page of the diagram
-            Page page = diagram.Pages[0];
-
-            // Retrieve an existing rectangle shape (assumed to have ID 1)
-            Shape rectangle = page.Shapes.GetShape(1);
-
-            // Draw a new ellipse on the page
-            // Parameters: pinX, pinY, width, height
-            long ellipseId = page.DrawEllipse(2.0, 2.0, 1.5, 1.0);
-            Shape ellipse = page.Shapes.GetShape(ellipseId);
-
-            // Group the rectangle and the newly drawn ellipse
-            Shape groupShape = page.Shapes.Group(new Shape[] { rectangle, ellipse });
-
-            // Assign a common name to the group shape
-            groupShape.Name = "RectEllipseGroup";
-
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            var obj = new DiagramGrouper();
+            obj.GroupRectangleWithEllipse(null, 0, 0, 0, 0, 0, "");
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.NullReferenceException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
 }

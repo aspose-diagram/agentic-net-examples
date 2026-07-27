@@ -1,47 +1,36 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Load an existing Visio diagram (replace with your actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
+            // Access the page that contains the oval shape (e.g., first page)
+            Page page = diagram.Pages[0];
 
-                // Find the first oval shape on the page.
-                // Oval shapes typically have a master named "Oval".
-                Shape? ovalShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Master != null && shape.Master.Name == "Oval")
-                    {
-                        ovalShape = shape;
-                        break;
-                    }
-                }
+            // Retrieve the oval shape by its ID (replace 1 with the actual shape ID)
+            Shape oval = page.Shapes.GetShape(1);
 
-                if (ovalShape == null)
-                {
-                    throw new Exception("No oval shape found on the first page.");
-                }
+            // Convert 30 degrees to radians (Aspose.Diagram expects radians)
+            double angleInRadians = 30.0 * Math.PI / 180.0;
 
-                // Set the rotation angle of the oval shape to 30 degrees.
-                // According to Aspose.Diagram API, the Angle cell expects the angle value directly.
-                ovalShape.XForm.Angle.Value = 30.0;
+            // Set the rotation angle of the oval shape
+            oval.SetAngle(angleInRadians);
 
-                // Save the modified diagram to a new file.
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

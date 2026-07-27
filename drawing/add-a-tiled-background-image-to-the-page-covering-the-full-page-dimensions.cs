@@ -1,63 +1,66 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Create a new diagram (contains a default page)
-            Diagram diagram = new Diagram();
-
-            // Access the first (and only) page
-            Page page = diagram.Pages[0];
-
-            // Optionally set page size (e.g., A4)
-            page.PageSheet.PageProps.PageWidth.Value = 8.27;   // inches
-            page.PageSheet.PageProps.PageHeight.Value = 11.69; // inches
-
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-            // Path to the image that will be tiled as background
-            string imagePath = "background.png";
-
-            // Add a shape that covers the entire page using the image stream
-            using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+            try
             {
-                // Center of the page
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
 
-                // AddShape returns the shape ID (long)
-                long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, fs);
+                // Paths for the source Visio file and the background image.
+                string diagramPath = "input.vsdx";
+                string imagePath = "background.png";
+                string outputPath = "output.vsdx";
 
-                // Retrieve the shape object
-                Shape bgShape = page.Shapes.GetShape((int)shapeId);
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Set fill pattern to a texture (tile) – pattern 25 is the texture pattern
-                bgShape.Fill.FillPattern.Value = 25;
+                // Process each page in the diagram.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Retrieve page dimensions (in inches).
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Optional: set a background color for the texture
-                bgShape.Fill.FillBkgnd.Value = "#FFFFFF";
+                    // Calculate the center position for the background shape.
+                    double pinX = pageWidth / 2.0;
+                    double pinY = pageHeight / 2.0;
 
-                // Send the background shape to the back so other shapes appear above it
-                bgShape.SendToBack();
+                    // Insert the image as a shape that spans the full page.
+                    using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                    {
+                        // AddShape overload that accepts an image stream.
+                        long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, imgStream);
 
-                // Make the background non‑selectable
-                bgShape.Protection.LockSelect.Value = BOOL.True;
+                        // Retrieve the created shape.
+                        Shape bgShape = page.Shapes.GetShape(shapeId);
+
+                        // Send the shape to the back so it appears behind other content.
+                        bgShape.SendToBack();
+
+                        // Make the background non‑selectable.
+                        bgShape.Protection.LockSelect.Value = BOOL.True;
+
+                        // Set the fill pattern to a picture texture (pattern value 25).
+                        bgShape.Fill.FillPattern.Value = 25;
+                    }
+                }
+
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                // Clean up.
+                diagram.Dispose();
+
+                Console.WriteLine("Background image tiled and diagram saved successfully.");
+
             }
-
-            // Save the diagram in Visio format
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

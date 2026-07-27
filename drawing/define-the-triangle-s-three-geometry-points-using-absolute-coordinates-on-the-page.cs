@@ -1,41 +1,39 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+class TriangleExample
+{
+    static void Main()
     {
-        static void Main()
-        {
-            // Create a new empty Visio diagram (contains a default page)
-            using (Diagram diagram = new Diagram())
-            {
-                // Access the first (and only) page
-                Page page = diagram.Pages[0];
+        // Create a new diagram (lifecycle rule: create)
+        Diagram diagram = new Diagram();
 
-                // Define absolute coordinates for the triangle vertices (in inches)
-                // Vertex A (2, 2)
-                // Vertex B (5, 2)
-                // Vertex C (3.5, 5)
-                double x1 = 2.0;
-                double y1 = 2.0;
-                double x2 = 5.0;
-                double y2 = 2.0;
+        // Get the first page (default page is always present)
+        Page page = diagram.Pages[0];
 
-                // Additional points: C and back to A to close the shape
-                double[] additionalPoints = new double[]
-                {
-                    3.5, 5.0,   // Vertex C
-                    2.0, 2.0    // Return to Vertex A to close the triangle
-                };
+        // Define absolute coordinates for the three vertices of the triangle
+        // Vertex A (100, 100)
+        double ax = 100.0;
+        double ay = 100.0;
 
-                // Draw the triangle using a polyline
-                // The method creates a shape and returns its ID (long), which we ignore here
-                page.DrawPolyline(x1, y1, x2, y2, additionalPoints);
+        // Vertex B (300, 100)
+        double bx = 300.0;
+        double by = 100.0;
 
-                // Save the diagram to a VSDX file
-                diagram.Save("TriangleDiagram.vsdx", SaveFileFormat.Vsdx);
-            }
+        // Vertex C (200, 250)
+        double cx = 200.0;
+        double cy = 250.0;
 
-            Console.WriteLine("Triangle diagram created and saved as 'TriangleDiagram.vsdx'.");
-        }
+        // Draw the three sides of the triangle using absolute coordinates
+        // Side AB
+        page.DrawLine(ax, ay, bx, by);
+        // Side BC
+        page.DrawLine(bx, by, cx, cy);
+        // Side CA
+        page.DrawLine(cx, cy, ax, ay);
+
+        // Save the diagram to a file (lifecycle rule: save)
+        diagram.Save("TriangleDiagram.vsdx", SaveFileFormat.Vsdx);
     }
+}

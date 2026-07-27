@@ -1,51 +1,41 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Paths for input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Access the first page of the diagram
+            Page page = diagram.Pages[0];
 
-            // Load the existing diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Define the three vertices of the triangle (in inches)
+            // Example coordinates form an equilateral triangle
+            double x1 = 2.0, y1 = 2.0;
+            double x2 = 4.0, y2 = 2.0;
+            double x3 = 3.0, y3 = 4.0;
 
-            // Locate the triangle shape (by universal name) and rotate it 45° clockwise
-            bool rotated = false;
-            foreach (Page page in diagram.Pages)
+            // Draw the triangle using a polyline.
+            // The first point is repeated at the end to close the shape.
+            page.DrawPolyline(new double[]
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.NameU != null && shape.NameU.Equals("Triangle", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Clockwise rotation: negative angle in radians
-                        double angleRad = -Math.PI / 4.0; // -45 degrees
-                        shape.SetAngle(angleRad);
-                        rotated = true;
-                        break;
-                    }
-                }
-                if (rotated) break;
-            }
+                x1, y1,
+                x2, y2,
+                x3, y3,
+                x1, y1   // close the polygon
+            });
 
-            if (!rotated)
-            {
-                throw new Exception("Triangle shape not found in the diagram.");
-            }
+            // Retrieve the shape that was just added.
+            // The newly drawn shape will be the last one in the collection.
+            Shape triangle = page.Shapes[page.Shapes.Count - 1];
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Rotate the triangle 45 degrees clockwise around its center.
+            // SetAngle expects the rotation angle in degrees (per Aspose.Diagram rule set).
+            triangle.SetAngle(45);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Save the diagram to a VSDX file.
+            diagram.Save("TriangleRotated.vsdx", SaveFileFormat.Vsdx);
         }
     }
-}

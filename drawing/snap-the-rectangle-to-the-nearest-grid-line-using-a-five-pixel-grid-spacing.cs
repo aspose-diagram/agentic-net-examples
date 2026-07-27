@@ -1,15 +1,16 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         // Create a new empty diagram
         Diagram diagram = new Diagram();
 
-        // Ensure there is at least one page to work with
+        // Ensure there is at least one page
         if (diagram.Pages.Count == 0)
         {
             diagram.Pages.Add(new Page());
@@ -22,29 +23,29 @@ public class Program
         double rectWidth = 2.0;   // 2 inches wide
         double rectHeight = 1.0;  // 1 inch high
 
-        // Initial position (center of rectangle) – arbitrary values
-        double initialPinX = 3.0;
-        double initialPinY = 4.0;
+        // Initial position (pin point) in inches
+        double initialPinX = 1.2;
+        double initialPinY = 2.3;
 
-        // Draw the rectangle; returns the shape ID
+        // Add a rectangle shape to the page
         long shapeId = page.DrawRectangle(initialPinX, initialPinY, rectWidth, rectHeight);
 
-        // Retrieve the shape object for further manipulation
-        Shape rect = page.Shapes.GetShape(shapeId);
+        // Retrieve the shape object for manipulation
+        Shape rectangle = page.Shapes.GetShape(shapeId);
 
-        // Grid spacing: 5 pixels. Convert to inches (96 DPI is the default)
-        const double pixelsPerInch = 96.0;
-        double gridSizeInches = 5.0 / pixelsPerInch; // ≈0.0520833 inches
+        // Grid spacing: 5 pixels. Assuming 96 DPI, convert to inches.
+        const double dpi = 96.0;
+        double gridSpacingInches = 5.0 / dpi; // ≈0.0520833 inches
 
         // Snap PinX to the nearest grid line
-        double currentPinX = rect.XForm.PinX.Value;
-        double snappedPinX = Math.Round(currentPinX / gridSizeInches) * gridSizeInches;
-        rect.XForm.PinX.Value = snappedPinX;
+        double currentPinX = rectangle.XForm.PinX.Value;
+        double snappedPinX = Math.Round(currentPinX / gridSpacingInches) * gridSpacingInches;
+        rectangle.XForm.PinX.Value = snappedPinX;
 
         // Snap PinY to the nearest grid line
-        double currentPinY = rect.XForm.PinY.Value;
-        double snappedPinY = Math.Round(currentPinY / gridSizeInches) * gridSizeInches;
-        rect.XForm.PinY.Value = snappedPinY;
+        double currentPinY = rectangle.XForm.PinY.Value;
+        double snappedPinY = Math.Round(currentPinY / gridSpacingInches) * gridSpacingInches;
+        rectangle.XForm.PinY.Value = snappedPinY;
 
         // Save the diagram to a VSDX file
         diagram.Save("SnappedRectangle.vsdx", SaveFileFormat.Vsdx);

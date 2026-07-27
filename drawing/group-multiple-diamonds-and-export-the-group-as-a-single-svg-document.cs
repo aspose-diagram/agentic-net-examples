@@ -1,55 +1,61 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
+
             // Create a new empty diagram
-            using (Diagram diagram = new Diagram())
+            Diagram diagram = new Diagram();
+
+            // Get the active page where shapes will be added
+            Page page = diagram.ActivePage;
+
+            // Helper method to create a diamond shape using DrawPolyline
+            // points: left, top, right, bottom, left (closed)
+            long CreateDiamond(double centerX, double centerY, double width, double height)
             {
-                // Get the first page (default page exists in a new diagram)
-                var page = diagram.Pages[0];
-
-                // Helper to create a diamond shape using DrawPolyline
-                // Diamond points: top, right, bottom, left, back to top (closed)
-                long CreateDiamond(double centerX, double centerY, double size)
+                double halfW = width / 2.0;
+                double halfH = height / 2.0;
+                double[] points = new double[]
                 {
-                    double half = size / 2.0;
-                    // Coordinates: (centerX, centerY - half), (centerX + half, centerY),
-                    // (centerX, centerY + half), (centerX - half, centerY), back to start
-                    double[] points = new double[]
-                    {
-                        centerX, centerY - half,
-                        centerX + half, centerY,
-                        centerX, centerY + half,
-                        centerX - half, centerY,
-                        centerX, centerY - half
-                    };
-                    return page.DrawPolyline(points);
-                }
-
-                // Create three diamonds at different positions
-                long id1 = CreateDiamond(5.0, 5.0, 2.0);
-                long id2 = CreateDiamond(8.0, 5.0, 2.0);
-                long id3 = CreateDiamond(6.5, 8.0, 2.0);
-
-                // Retrieve Shape objects from their IDs
-                Shape diamond1 = page.Shapes.GetShape(id1);
-                Shape diamond2 = page.Shapes.GetShape(id2);
-                Shape diamond3 = page.Shapes.GetShape(id3);
-
-                // Group the diamonds into a single group shape
-                Shape groupShape = page.Shapes.Group(new Shape[] { diamond1, diamond2, diamond3 });
-
-                // Export the group as a standalone SVG file
-                string outputSvgPath = "GroupedDiamonds.svg";
-                SVGSaveOptions svgOptions = new SVGSaveOptions();
-                groupShape.ToSvg(outputSvgPath, svgOptions);
-
-                // Optional: save the whole diagram for reference
-                diagram.Save("DiagramWithGroup.vsdx", SaveFileFormat.Vsdx);
+                    centerX, centerY - halfH, // top
+                    centerX + halfW, centerY, // right
+                    centerX, centerY + halfH, // bottom
+                    centerX - halfW, centerY, // left
+                    centerX, centerY - halfH  // close polygon
+                };
+                return page.DrawPolyline(points);
             }
+
+            // Create three diamonds at different locations
+            long diamondId1 = CreateDiamond(2.0, 2.0, 1.0, 1.0);
+            long diamondId2 = CreateDiamond(4.0, 2.0, 1.0, 1.0);
+            long diamondId3 = CreateDiamond(3.0, 3.5, 1.0, 1.0);
+
+            // Retrieve the Shape objects from their IDs
+            Shape diamond1 = page.Shapes.GetShape(diamondId1);
+            Shape diamond2 = page.Shapes.GetShape(diamondId2);
+            Shape diamond3 = page.Shapes.GetShape(diamondId3);
+
+            // Group the three diamonds into a single group shape
+            Shape groupShape = page.Shapes.Group(new Shape[] { diamond1, diamond2, diamond3 });
+
+            // Export the group as a single SVG file
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            groupShape.ToSvg("GroupedDiamonds.svg", svgOptions);
+
+            Console.WriteLine("Grouped diamonds exported to GroupedDiamonds.svg");
+
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
+}

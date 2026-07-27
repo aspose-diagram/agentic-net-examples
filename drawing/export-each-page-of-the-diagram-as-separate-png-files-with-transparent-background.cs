@@ -3,29 +3,38 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ExportDiagramPages
 {
     static void Main()
     {
         try
         {
 
-            // Load the diagram file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the diagram file (replace with your actual file path)
+            string inputFile = "input.vsdx";
+            Diagram diagram = new Diagram(inputFile);
 
-            // Iterate through each page in the diagram
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Get total number of pages in the diagram
+            int totalPages = diagram.Pages.Count;
+
+            // Loop through each page and save it as a separate PNG with transparent background
+            for (int i = 0; i < totalPages; i++)
             {
-                // Configure image save options for PNG with transparent background
-                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-                options.PageIndex = i;          // zero‑based index of the page to render
-                options.PageCount = 1;          // render only the selected page
-                options.SaveForegroundPagesOnly = true; // ensures background remains transparent
+                // Configure image save options for PNG format
+                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    // Render only the current page
+                    PageIndex = i,
+                    PageCount = 1,
 
-                // Define output file name for the current page
+                    // Render only foreground pages (background will be transparent if not present)
+                    SaveForegroundPagesOnly = true
+                };
+
+                // Build output file name (e.g., Page_1.png, Page_2.png, ...)
                 string outputFile = $"Page_{i + 1}.png";
 
-                // Save the current page as a separate PNG file
+                // Save the current page as PNG using the configured options
                 diagram.Save(outputFile, options);
             }
 

@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,17 +10,18 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your actual file path)
-            string inputPath = "input.vsdx";
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx"; // replace with actual file path
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page of the diagram
+            // Work with the first page
             Page page = diagram.Pages[0];
 
             // Find the first diamond shape on the page
             Shape? diamondShape = null;
             foreach (Shape shape in page.Shapes)
             {
+                // Ensure the shape has a master and that the master name is "Diamond"
                 if (shape.Master != null && shape.Master.Name == "Diamond")
                 {
                     diamondShape = shape;
@@ -29,25 +31,30 @@ class Program
 
             if (diamondShape == null)
             {
-                throw new Exception("No diamond shape found on the page.");
+                Console.WriteLine("No diamond shape found on the page.");
+                return;
             }
 
-            // Retrieve the original shape's geometry
+            // Retrieve original position
             double originalPinX = diamondShape.XForm.PinX.Value;
             double originalPinY = diamondShape.XForm.PinY.Value;
-            double originalWidth = diamondShape.XForm.Width.Value;
-            double originalHeight = diamondShape.XForm.Height.Value;
 
-            // Add a duplicate of the diamond shape, offset 0.5 inches to the right
-            double newPinX = originalPinX + 0.5; // offset by 0.5 inches
-            long newShapeId = page.AddShape(newPinX, originalPinY, originalWidth, originalHeight, "Diamond");
+            // Calculate new position (offset 0.5 inches to the right)
+            double newPinX = originalPinX + 0.5;
+            double newPinY = originalPinY; // Y coordinate remains the same
 
-            // (Optional) Retrieve the newly added shape if further modifications are needed
-            // Shape newShape = page.Shapes.GetShape(newShapeId);
+            // Duplicate the shape using the same master name
+            string masterName = diamondShape.Master.Name;
+            long newShapeId = page.AddShape(newPinX, newPinY, masterName);
+
+            // Optionally retrieve the newly added shape for further modifications
+            Shape newShape = page.Shapes.GetShape(newShapeId);
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
+            string outputPath = "output.vsdx"; // replace with desired output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Diamond shape duplicated and offset successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

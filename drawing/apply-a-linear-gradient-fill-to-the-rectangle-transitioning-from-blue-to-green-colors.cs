@@ -1,34 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        try
+        {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-        // Access the first page of the diagram
-        Page page = diagram.Pages[0];
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-        // Add a rectangle shape at (2,2) with width 4 and height 2 inches
-        long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
-        Shape rect = page.Shapes.GetShape((int)rectId);
+            // Draw a rectangle shape (pinX, pinY, width, height); returns shape ID as long
+            long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
 
-        // Apply a linear gradient fill from blue to green
-        rect.Fill.FillPattern.Value = 25; // Gradient fill pattern
-        rect.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-        rect.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.Linear;
-        rect.Fill.GradientFill.GradientStops.Clear();
-        rect.Fill.GradientFill.GradientStops.Add(
-            new DoubleValue(0, MeasureConst.NUM),
-            new ColorValue("#0000FF", MeasureConst.Undefined));
-        rect.Fill.GradientFill.GradientStops.Add(
-            new DoubleValue(1, MeasureConst.NUM),
-            new ColorValue("#00FF00", MeasureConst.Undefined));
+            // Retrieve the shape object using the ID (cast to int as required by GetShape)
+            Shape rectShape = page.Shapes.GetShape((int)rectId);
 
-        // Save the diagram to a VSDX file
-        diagram.Save("GradientRectangle.vsdx", SaveFileFormat.Vsdx);
+            // Set fill pattern to gradient (value 25)
+            rectShape.Fill.FillPattern.Value = 25;
+
+            // Enable gradient fill
+            rectShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+
+            // Set gradient direction to linear (assign enum as its underlying int value)
+            rectShape.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.Linear;
+
+            // Clear any existing gradient stops
+            rectShape.Fill.GradientFill.GradientStops.Clear();
+
+            // Add gradient stop at position 0 (blue)
+            rectShape.Fill.GradientFill.GradientStops.Add(
+                new DoubleValue(0, MeasureConst.NUM),
+                new ColorValue("#0000FF", MeasureConst.Undefined));
+
+            // Add gradient stop at position 1 (green)
+            rectShape.Fill.GradientFill.GradientStops.Add(
+                new DoubleValue(1, MeasureConst.NUM),
+                new ColorValue("#00FF00", MeasureConst.Undefined));
+
+            // Save the diagram to a VSDX file
+            diagram.Save("GradientRectangle.vsdx", SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

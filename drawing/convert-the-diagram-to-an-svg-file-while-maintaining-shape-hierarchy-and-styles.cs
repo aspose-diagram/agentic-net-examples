@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,40 +7,33 @@ class Program
 {
     static void Main()
     {
+        // Input Visio file path (replace with actual path)
+        string inputPath = "input.vsdx";
+        // Desired SVG output file path
+        string outputPath = "output.svg";
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram("input.vsdx"); // replace with your source file
-
-            // Set up SVG save options to keep hierarchy and styles
+            // Configure SVG export options
             SVGSaveOptions svgOptions = new SVGSaveOptions
             {
-                // Export the visible page only (default page index is 0)
-                PageIndex = 0,
-
-                // Preserve scaling in transformation matrices
-                IsExportScaleInMatrix = true,
-
-                // Fit the generated SVG to the viewport
-                SVGFitToViewPort = true,
-
-                // Do not export hidden pages, guide shapes, or comments
-                ExportHiddenPage = false,
-                ExportGuideShapes = false,
-                IsExportComments = false,
-
-                // Export elements as standard SVG tags (not forced rect tags)
-                ExportElementAsRectTag = false
+                ExportHiddenPage = false,          // Do not export hidden pages
+                ExportGuideShapes = false,         // Exclude guide shapes
+                SVGFitToViewPort = true,           // Fit SVG to viewport
+                ExportElementAsRectTag = true      // Export shapes as <rect> where appropriate
             };
 
-            // Save the entire diagram as a single SVG file
-            diagram.Save("output.svg", svgOptions);
+            // Save the diagram as SVG while preserving hierarchy and styles
+            diagram.Save(outputPath, svgOptions);
 
+            Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Error during SVG export: {ex.Message}");
         }
     }
 }

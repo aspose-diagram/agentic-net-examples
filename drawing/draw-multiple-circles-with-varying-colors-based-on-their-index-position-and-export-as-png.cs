@@ -4,22 +4,22 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first (default) page
+            // Use the first page (index 0)
             Page page = diagram.Pages[0];
 
             // Define circle parameters
             int circleCount = 5;
-            double radius = 1.0; // inches
-            double startX = 2.0;
-            double startY = 2.0;
-            double spacing = 2.5; // distance between circle centers
+            double startX = 2.0; // inches
+            double startY = 5.0; // inches
+            double spacing = 2.5; // inches between circle centers
+            double radius = 1.0; // inches (width and height will be 2*radius)
 
-            // Simple color palette (hex strings)
+            // Define colors for each circle (hex strings)
             string[] colors = new string[]
             {
                 "#FF0000", // Red
@@ -31,30 +31,32 @@ class Program
 
             for (int i = 0; i < circleCount; i++)
             {
-                // Calculate position for each circle
+                // Calculate center position for this circle
                 double pinX = startX + i * spacing;
                 double pinY = startY;
 
                 // Draw an ellipse (circle) on the page
-                // DrawEllipse(pinX, pinY, width, height)
+                // DrawEllipse expects: pinX, pinY, width, height
                 long shapeId = page.DrawEllipse(pinX, pinY, radius * 2, radius * 2);
 
-                // Retrieve the shape object
-                Shape shape = page.Shapes.GetShape((int)shapeId);
+                // Retrieve the shape object (cast long to int for GetShape)
+                Shape circleShape = page.Shapes.GetShape((int)shapeId);
 
-                // Set fill color based on index (cycle if more circles than colors)
+                // Set the fill foreground color based on index
                 string fillColor = colors[i % colors.Length];
-                shape.Fill.FillForegnd.Value = fillColor;
-                shape.Fill.FillPattern.Value = 1; // Solid fill
+                circleShape.Fill.FillForegnd.Value = fillColor;
 
-                // Optional: set a thin black outline
-                shape.Line.LineColor.Value = "#000000";
-                shape.Line.LineWeight.Value = 0.02; // inches
-                shape.Line.LinePattern.Value = LinePatternValue.Solid;
+                // Optional: remove outline by setting line pattern to 0 (no line)
+                circleShape.Line.LinePattern.Value = 0;
             }
 
-            // Export the diagram as PNG
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            diagram.Save("circles.png", saveOptions);
+            // Prepare PNG export options
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+
+            // Save the diagram as a PNG image
+            string outputPath = "circles.png";
+            diagram.Save(outputPath, pngOptions);
+
+            Console.WriteLine($"Diagram with {circleCount} circles saved to '{outputPath}'.");
         }
     }

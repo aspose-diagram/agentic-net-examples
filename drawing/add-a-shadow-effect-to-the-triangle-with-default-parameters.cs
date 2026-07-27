@@ -6,36 +6,31 @@ class Program
 {
     static void Main()
     {
-        // Create a new diagram
+        // Create a new empty diagram
         Diagram diagram = new Diagram();
 
-        // Get the first page
+        // Get the first (default) page
         Page page = diagram.Pages[0];
 
-        // Draw a triangle using a polyline (three points)
-        page.DrawPolyline(new double[] { 1, 1, 3, 1, 2, 3 });
+        // Define points for a triangle (closed polygon)
+        // Points: (2,2) -> (4,2) -> (3,4) -> back to (2,2)
+        double[] trianglePoints = new double[] { 2, 2, 4, 2, 3, 4, 2, 2 };
 
-        // Retrieve the created shape (first shape on the page)
-        Shape triangle = null;
-        foreach (Shape s in page.Shapes)
-        {
-            triangle = s;
-            break;
-        }
+        // Draw the triangle; returns the shape ID (long)
+        long triangleId = page.DrawPolyline(trianglePoints);
 
-        if (triangle == null)
-        {
-            throw new Exception("Failed to create triangle shape.");
-        }
+        // Retrieve the shape object using the ID
+        Shape triangle = page.Shapes.GetShape((int)triangleId);
 
         // Apply default shadow effect
+        // Simple shadow type with default color (black) and default offsets
         triangle.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-        triangle.Fill.ShdwForegnd.Value = "#000000"; // black shadow
-        triangle.Fill.ShdwForegndTrans.Value = 0.0;   // opaque
-        triangle.Fill.ShapeShdwOffsetX.Value = 0.1;  // horizontal offset
-        triangle.Fill.ShapeShdwOffsetY.Value = 0.1;  // vertical offset
+        triangle.Fill.ShdwForegnd.Value = "#000000";          // Shadow color: black
+        triangle.Fill.ShdwForegndTrans.Value = 0.3;          // 30% transparency
+        triangle.Fill.ShapeShdwOffsetX.Value = 0.1;          // Horizontal offset
+        triangle.Fill.ShapeShdwOffsetY.Value = 0.1;          // Vertical offset
 
-        // Save the diagram
+        // Save the diagram to a VSDX file
         diagram.Save("TriangleWithShadow.vsdx", SaveFileFormat.Vsdx);
     }
 }

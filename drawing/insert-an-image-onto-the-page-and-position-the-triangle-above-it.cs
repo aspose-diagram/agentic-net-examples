@@ -9,42 +9,49 @@ class Program
         try
         {
 
-            // Create a new diagram
+            // Create a new diagram (lifecycle rule)
             Diagram diagram = new Diagram();
 
-            // Use the first page (created by default)
+            // Use the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // ---------- Insert Image ----------
-            // Image position (center) and size in inches
-            double imgPinX = 5.0;      // X coordinate of image center
-            double imgPinY = 5.0;      // Y coordinate of image center
-            double imgWidth = 3.0;    // Image width
-            double imgHeight = 2.0;   // Image height
+            // -----------------------------------------------------------------
+            // Insert an image onto the page
+            // -----------------------------------------------------------------
+            // Image file path (adjust as needed)
+            const string imagePath = "image.png";
 
-            // Load image file into a stream
-            using (FileStream imgStream = File.OpenRead("sample.png"))
+            // Define image position and size (in inches)
+            double imgPinX = 5.0;   // X‑coordinate of the image centre
+            double imgPinY = 5.0;   // Y‑coordinate of the image centre
+            double imgWidth = 2.0; // Image width
+            double imgHeight = 2.0; // Image height
+
+            // Add the image shape using the stream overload (AddShape overload)
+            using (FileStream imgStream = File.OpenRead(imagePath))
             {
-                // Add the image shape to the page
-                // Overload: AddShape(pinX, pinY, width, height, Stream)
-                page.AddShape(imgPinX, imgPinY, imgWidth, imgHeight, imgStream);
+                long imageShapeId = page.AddShape(imgPinX, imgPinY, imgWidth, imgHeight, imgStream);
+                // imageShapeId can be used later if needed
             }
 
-            // ---------- Insert Triangle Above Image ----------
-            // Triangle size in inches
-            double triWidth = 2.0;
-            double triHeight = 1.0;
+            // -----------------------------------------------------------------
+            // Add a triangle shape positioned above the image
+            // -----------------------------------------------------------------
+            // Define triangle position (above the image)
+            double trianglePinX = imgPinX;          // Same X as the image
+            double trianglePinY = imgPinY + imgHeight / 2 + 0.5; // Slight gap above the image
 
-            // Position triangle directly above the image with a small gap (0.2 inches)
-            double triPinX = imgPinX;
-            double triPinY = imgPinY - (imgHeight / 2) - (triHeight / 2) - 0.2;
+            // Master name for a triangle shape (Visio built‑in)
+            const string triangleMaster = "Triangle";
 
-            // Add a triangle shape using the built‑in master named "Triangle"
-            // Overload: AddShape(pinX, pinY, width, height, masterName)
-            page.AddShape(triPinX, triPinY, triWidth, triHeight, "Triangle");
+            // Add the triangle shape (AddShape overload with master name)
+            long triangleShapeId = page.AddShape(trianglePinX, trianglePinY, triangleMaster);
+            // triangleShapeId can be used later if needed
 
-            // Save the diagram to a VDX file
-            diagram.Save("output.vdx", SaveFileFormat.Vdx);
+            // -----------------------------------------------------------------
+            // Save the diagram (lifecycle rule)
+            // -----------------------------------------------------------------
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

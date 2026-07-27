@@ -1,25 +1,21 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Instantiate a new, empty diagram
+        // Instantiate a new empty Diagram object
         Diagram diagram = new Diagram();
 
-        // Create a new page
+        // Create a new Page instance
         Page newPage = new Page();
 
         // Optionally set a name for the page
         newPage.Name = "MyPage";
 
-        // Add the page to the diagram's Pages collection
+        // Add the newly created page to the diagram's Pages collection
         diagram.Pages.Add(newPage);
-
-        // Save the diagram (using the provided Save method)
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
     }
 }

@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation;
 
 class Program
 {
@@ -14,22 +13,19 @@ class Program
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Define dark gray color (hex) and line weight (1.5 points = 0.0208333 inches)
-            const string darkGrayHex = "#A9A9A9";
-            const double lineWeightInInches = 1.5 / 72.0; // 1 point = 1/72 inch
-
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify connector shapes (1‑D shapes)
+                    // Process only connector shapes (1‑D shapes)
                     if (shape.OneD)
                     {
-                        // Set line color
-                        shape.Line.LineColor.Value = darkGrayHex;
-                        // Set line thickness
-                        shape.Line.LineWeight.Value = lineWeightInInches;
+                        // Set line color to dark gray (hex #A9A9A9)
+                        shape.Line.LineColor.Value = "#A9A9A9";
+
+                        // Set line thickness to 1.5 points (≈0.0208333 inches)
+                        shape.Line.LineWeight.Value = 0.0208333;
                     }
                 }
             }

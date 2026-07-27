@@ -1,7 +1,6 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -14,13 +13,9 @@ class Program
             Diagram diagram = new Diagram();
 
             // Add a triangle shape to the first page (page index 0)
-            // PinX and PinY define the shape's position on the page
-            double pinX = 4.0;
-            double pinY = 5.0;
-            diagram.AddShape(pinX, pinY, "Triangle", 0);
-
-            // Save the diagram to a VSDX file
-            diagram.Save("TriangleDiagram.vsdx", SaveFileFormat.Vsdx);
+            // PinX and PinY are the coordinates (in inches) where the shape will be placed
+            // "Triangle" is the master name of the built‑in triangle shape
+            diagram.AddShape(4.0, 5.0, "Triangle", 0);
 
         }
         catch (Aspose.Diagram.DiagramException ex)

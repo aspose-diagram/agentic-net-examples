@@ -7,32 +7,41 @@ class Program
 {
     static void Main()
     {
-        // Create a new empty diagram
-        using (Diagram diagram = new Diagram())
+        try
         {
-            // Access the first page (a new diagram contains a default page)
-            Page page = diagram.Pages[0];
 
-            // Define triangle vertices (X, Y) in inches
-            // Points: (2,2), (4,2), (3,4)
-            double[] trianglePoints = new double[] { 2, 2, 4, 2, 3, 4, 2, 2 };
+            // Path to the source Visio file containing the triangle
+            string inputPath = "input.vsdx";
 
-            // Draw the triangle as a polyline; the method returns the shape ID (long)
-            long triangleId = page.DrawPolyline(trianglePoints);
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                double scaleFactor = 1.5; // Uniform scaling factor
 
-            // Retrieve the shape object using the returned ID
-            Shape triangle = page.Shapes.GetShape(triangleId);
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Identify triangle shapes by their master name
+                        if (shape.Master != null && shape.Master.Name == "Triangle")
+                        {
+                            // Scale width and height uniformly; PinX/PinY remain unchanged to keep the center position
+                            shape.XForm.Width.Value *= scaleFactor;
+                            shape.XForm.Height.Value *= scaleFactor;
+                        }
+                    }
+                }
 
-            // Uniformly scale the triangle by a factor of 1.5
-            // Multiply the width and height of the shape's XForm cell values
-            triangle.XForm.Width.Value *= 1.5;
-            triangle.XForm.Height.Value *= 1.5;
+                // Save the updated diagram
+                string outputPath = "output_scaled.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            // Optionally, you could also adjust the PinX/PinY if you want to keep the shape centered.
-            // In this example we keep the center (PinX/PinY) unchanged.
-
-            // Save the diagram to a VSDX file
-            diagram.Save("ScaledTriangle.vsdx", SaveFileFormat.Vsdx);
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

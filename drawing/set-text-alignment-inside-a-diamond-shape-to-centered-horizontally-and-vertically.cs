@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,36 +10,35 @@ class Program
         try
         {
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Identify diamond shapes by their master name
-                    if (shape.Master != null && shape.Master.Name == "Diamond")
-                    {
-                        // Center text horizontally (use first paragraph)
-                        if (shape.Paras.Count > 0)
-                        {
-                            shape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
-                        }
+            // Get the first page (avoid using ActivePage as per rules)
+            Page page = diagram.Pages[0];
 
-                        // Center text vertically
-                        shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
-                    }
-                }
-            }
+            // Add a diamond shape to the page at position (2,2) inches
+            long shapeId = page.AddShape(2.0, 2.0, "Diamond");
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Retrieve the shape object using the returned ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Set horizontal text alignment to center
+            shape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+
+            // Set vertical text alignment to middle
+            shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
+
+            // Add sample text to the shape
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt("Sample Text"));
+
+            // Save the diagram to a VSDX file
+            diagram.Save("DiamondAligned.vsdx", SaveFileFormat.Vsdx);
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

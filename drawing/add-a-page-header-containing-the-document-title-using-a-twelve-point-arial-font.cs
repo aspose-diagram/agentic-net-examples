@@ -1,38 +1,38 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Drawing;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        try
-        {
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                string title = string.IsNullOrWhiteSpace(diagram.DocumentProps.Title) ? "Untitled Document" : diagram.DocumentProps.Title;
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Retrieve the document title from built‑in properties
+                string title = diagram.DocumentProps.Title;
+
+                // Set the header text (centered) to the document title
                 diagram.HeaderFooter.HeaderCenter = title;
 
+                // Configure the header/footer font: Arial, 12 pt
+                // Height uses a negative mapping: Height = -(PointSize * 1.333) ≈ -16 for 12 pt
                 diagram.HeaderFooter.HeaderFooterFont.FaceName = "Arial";
-                diagram.HeaderFooter.HeaderFooterFont.Weight = 400;
-                diagram.HeaderFooter.HeaderFooterFont.Height = -16; // 12 pt * 1.333 ≈ 16, negative as required
+                diagram.HeaderFooter.HeaderFooterFont.Height = -16; // 12 pt
+                diagram.HeaderFooter.HeaderFooterFont.Weight = 400; // Normal weight
 
-                diagram.HeaderFooter.HeaderFooterColor = Color.Black;
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

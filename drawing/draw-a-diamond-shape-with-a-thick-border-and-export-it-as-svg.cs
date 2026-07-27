@@ -1,33 +1,51 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        static void Main(string[] args)
+        {
+            try
+            {
 
-        // Access the first (default) page
-        Page page = diagram.Pages[0];
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
 
-        // Define the diamond vertices.
-        // Start at top (0,1), go to right (1,0), then bottom, left, and back to top.
-        double[] points = new double[] { 0, -1, -1, 0, 0, 1 };
+                // Get the active page (the first page)
+                Page page = diagram.ActivePage;
 
-        // Draw the diamond shape; returns the shape ID.
-        long shapeId = page.DrawPolyline(0, 1, 1, 0, points);
+                // Define points for a diamond shape (top, right, bottom, left, back to top)
+                // Coordinates are in inches
+                double[] diamondPoints = new double[]
+                {
+                    5.0, 7.0,   // Top
+                    7.0, 5.0,   // Right
+                    5.0, 3.0,   // Bottom
+                    3.0, 5.0,   // Left
+                    5.0, 7.0    // Close the polygon
+                };
 
-        // Retrieve the shape object using the returned ID.
-        Shape diamond = page.Shapes.GetShape((int)shapeId);
+                // Draw the diamond polyline; this returns the shape ID
+                long shapeId = page.DrawPolyline(diamondPoints);
 
-        // Apply a thick border (line weight) and set its color.
-        diamond.Line.LineWeight.Value = 0.05; // thickness in inches
-        diamond.Line.LineColor.Value = "#000000";
+                // Retrieve the shape object using the returned ID
+                Shape diamondShape = page.Shapes.GetShape((int)shapeId);
 
-        // Export the diagram (containing the diamond) to SVG.
-        diagram.Save("diamond.svg", new SVGSaveOptions());
+                // Set a thick border (line weight) and color
+                diamondShape.Line.LineWeight.Value = 0.05; // Thickness in inches
+                diamondShape.Line.LineColor.Value = "#FF0000"; // Red border
+
+                // Export the entire diagram (containing the diamond) as SVG
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+                diagram.Save("diamond.svg", svgOptions);
+
+                Console.WriteLine("Diamond shape exported to diamond.svg");
+
+            }
+            catch (System.NullReferenceException ex)
+            {
+                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            }
     }
-}
+    }

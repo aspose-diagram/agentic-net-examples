@@ -1,85 +1,66 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class VisioBatchConverter
 {
-    // Object used to synchronize console output across threads
-    private static readonly object consoleLock = new object();
-
     static void Main()
     {
-        try
+        // List of Visio files to convert
+        var inputFiles = new List<string>
         {
+            @"C:\Visio\Input1.vsdx",
+            @"C:\Visio\Input2.vsdx",
+            // Add more file paths as needed
+        };
 
-            // Input folder containing Visio files
-            string inputFolder = @"C:\Visio\Input";
-            // Output folder for converted PDFs
-            string outputFolder = @"C:\Visio\Output";
+        // Destination folder for converted files
+        string outputFolder = @"C:\Visio\Converted";
 
-            // Ensure output directory exists
-            if (!Directory.Exists(outputFolder))
+        ConvertVisioFilesConcurrently(inputFiles, outputFolder);
+    }
+
+    static void ConvertVisioFilesConcurrently(IEnumerable<string> inputFiles, string outputFolder)
+    {
+        // Ensure the output directory exists
+        Directory.CreateDirectory(outputFolder);
+
+        // Thread‑safe collection for progress messages
+        var progressLog = new ConcurrentBag<string>();
+
+        // Process each file in parallel
+        Parallel.ForEach(inputFiles, inputPath =>
+        {
+            try
             {
-                Directory.CreateDirectory(outputFolder);
+                // Load the diagram using the constructor that accepts a file name
+                using (var diagram = new Diagram(inputPath))
+                {
+                    // Build the output file name (same base name, .pdf extension)
+                    string outputPath = Path.Combine(
+                        outputFolder,
+                        Path.GetFileNameWithoutExtension(inputPath) + ".pdf");
+
+                    // Save the diagram using the Save method with SaveFileFormat enum
+                    diagram.Save(outputPath, SaveFileFormat.Pdf);
+
+                    progressLog.Add($"Converted: {inputPath} → {outputPath}");
+                }
             }
-
-            // Get all Visio files (any supported extension) in the input folder
-            string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-            // Filter to known Visio extensions
-            visioFiles = Array.FindAll(visioFiles, f =>
-                f.EndsWith(".vsdx", StringComparison.OrdinalIgnoreCase) ||
-                f.EndsWith(".vsd", StringComparison.OrdinalIgnoreCase) ||
-                f.EndsWith(".vdx", StringComparison.OrdinalIgnoreCase) ||
-                f.EndsWith(".vsx", StringComparison.OrdinalIgnoreCase) ||
-                f.EndsWith(".vtx", StringComparison.OrdinalIgnoreCase));
-
-            // Process each file in parallel
-            Parallel.ForEach(visioFiles, visioPath =>
+            catch (Exception ex)
             {
-                try
-                {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(visioPath);
+                progressLog.Add($"Failed: {inputPath} – {ex.Message}");
+            }
+        });
 
-                    // Prepare PDF save options
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions
-                    {
-                        DefaultFont = "Arial",
-                        SaveFormat = SaveFileFormat.Pdf
-                    };
-
-                    // Determine output file name
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(visioPath);
-                    string outputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
-
-                    // Save the diagram as PDF
-                    diagram.Save(outputPath, pdfOptions);
-
-                    // Thread‑safe progress logging
-                    lock (consoleLock)
-                    {
-                        Console.WriteLine($"Successfully converted: {visioPath} -> {outputPath}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Thread‑safe error logging
-                    lock (consoleLock)
-                    {
-                        Console.WriteLine($"Error processing '{visioPath}': {ex.Message}");
-                    }
-                }
-            });
-
-            // Final message
-            Console.WriteLine("Batch conversion completed.");
-
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
+        // Output the progress log in a thread‑safe manner
+        foreach (var message in progressLog)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.WriteLine(message);
         }
     }
 }

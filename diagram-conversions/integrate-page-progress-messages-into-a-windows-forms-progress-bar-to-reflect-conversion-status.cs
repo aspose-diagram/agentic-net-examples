@@ -2,73 +2,54 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramConversion
-{
-    // Callback to report progress for each page during PDF saving
-    public class PageProgressCallback : IPageSavingCallback
-    {
-        private readonly int _totalPages;
-        private int _processedPages = 0;
-
-        public PageProgressCallback(int totalPages)
-        {
-            _totalPages = totalPages;
-        }
-
-        // Called before a page is saved
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            // No action needed at start
-        }
-
-        // Called after a page is saved
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            _processedPages++;
-            double percent = (double)_processedPages / _totalPages * 100;
-            Console.WriteLine($"Saving progress: {_processedPages}/{_totalPages} pages ({percent:F1}%)");
-        }
-    }
-
-    class Program
+class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Validate input arguments
+            if (args.Length < 2)
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-
-                // Output PDF file path
-                string outputPath = "output.pdf";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Determine total number of pages
-                int pageCount = diagram.Pages.Count;
-
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    // Ensure a default font is set to avoid missing font issues
-                    DefaultFont = "Arial"
-                };
-
-                // Assign the progress callback
-                pdfOptions.PageSavingCallback = new PageProgressCallback(pageCount);
-
-                // Save the diagram as PDF with progress reporting
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine("Conversion completed successfully.");
-
+                Console.WriteLine("Usage: DiagramConversion <inputVisioFile> <outputFolder>");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            string inputPath = args[0];
+            string outputFolder = args[1];
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the output folder exists
+            if (!System.IO.Directory.Exists(outputFolder))
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                System.IO.Directory.CreateDirectory(outputFolder);
             }
+
+            // Total number of pages to process
+            int totalPages = diagram.Pages.Count;
+            Console.WriteLine($"Total pages to convert: {totalPages}");
+
+            // Loop through each page and export it as an image
+            for (int i = 0; i < totalPages; i++)
+            {
+                // Retrieve the current page
+                Page page = diagram.Pages[i];
+
+                // Prepare the output file name (e.g., Page_1.png)
+                string outputPath = System.IO.Path.Combine(outputFolder, $"Page_{i + 1}.png");
+
+                // Configure image save options for the current page
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                saveOptions.PageIndex = i; // Export only the current page
+
+                // Save the page as an image
+                diagram.Save(outputPath, saveOptions);
+
+                // Update progress in the console
+                int percentComplete = (int)(((i + 1) / (double)totalPages) * 100);
+                Console.WriteLine($"Page {i + 1}/{totalPages} exported. Progress: {percentComplete}%");
+            }
+
+            Console.WriteLine("Conversion completed successfully.");
+        }
     }
-    }
-}

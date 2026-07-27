@@ -3,38 +3,35 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class ReplaceDeprecatedVbaFunction
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
+            // Load the Visio diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the VBA project contained in the diagram
+            // Get the VBA project associated with the diagram
             VbaProject vbaProject = diagram.VbaProject;
 
             // Define the deprecated function name and its replacement
-            const string deprecatedFunction = "OldFunc";
-            const string updatedFunction = "NewFunc";
+            string deprecatedFunction = "OldFunction";   // <-- deprecated name
+            string updatedFunction = "NewFunction";     // <-- new name
 
-            // Iterate through all VBA modules in the project
+            // Iterate through each VBA module in the project
             foreach (VbaModule module in vbaProject.Modules)
             {
-                // Get the source code of the current module
-                string code = module.Codes;
-
-                // If the code contains the deprecated function, replace it
-                if (!string.IsNullOrEmpty(code) && code.Contains(deprecatedFunction))
+                // Ensure the module contains code before attempting replacement
+                if (!string.IsNullOrEmpty(module.Codes))
                 {
-                    string updatedCode = code.Replace(deprecatedFunction, updatedFunction);
-                    module.Codes = updatedCode; // Update the module with the new code
+                    // Replace all occurrences of the deprecated function name
+                    module.Codes = module.Codes.Replace(deprecatedFunction, updatedFunction);
                 }
             }
 
-            // Save the modified diagram (replace with your desired output path)
+            // Save the modified diagram (replace with desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

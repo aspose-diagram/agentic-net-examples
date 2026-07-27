@@ -10,51 +10,31 @@ class Program
         try
         {
 
-            // Input Visio file (VSDX) path
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram from a file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Output HTML file path
-            string outputPath = "output.html";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Add simple navigation hyperlinks: each page's first shape links to the next page
-            for (int i = 0; i < diagram.Pages.Count - 1; i++)
+            // Configure HTML save options
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                Page page = diagram.Pages[i];
+                // Embed all resources (images, CSS) into a single HTML file for easy navigation
+                SaveAsSingleFile = true,
 
-                // Ensure the page has at least one shape
-                if (page.Shapes.Count > 0)
-                {
-                    Shape shape = page.Shapes[0];
+                // Include a title for the HTML page
+                Title = "Interactive Diagram",
 
-                    // Create a hyperlink that points to the next page by its universal name
-                    Hyperlink link = new Hyperlink
-                    {
-                        Name = $"LinkToPage{i + 2}",
-                        SubAddress = { Value = diagram.Pages[i + 1].NameU },
-                        Description = { Value = $"Navigate to page {i + 2}" }
-                    };
+                // Disable the default toolbar if you want a cleaner UI
+                SaveToolBar = false,
 
-                    // Add the hyperlink to the shape's collection
-                    shape.Hyperlinks.Add(link);
-                }
-            }
+                // Export all pages (default) and enable navigation between them
+                PageCount = int.MaxValue,
+                PageIndex = 0,
 
-            // Configure HTML export options with embedded resources (CSS, images)
-            HTMLSaveOptions options = new HTMLSaveOptions
-            {
-                SaveAsSingleFile = true,      // Embed CSS and images into a single HTML file
-                ExportHiddenPage = false,     // Do not export hidden pages
-                IsExportComments = false,     // Skip comments
-                Title = "Diagram HTML Export"
+                // Set resolution for generated images (optional)
+                Resolution = 96
             };
 
-            // Save the diagram as an HTML file using the configured options
-            diagram.Save(outputPath, options);
-
-            Console.WriteLine("HTML export completed successfully.");
+            // Save the diagram as an HTML file with the specified options
+            diagram.Save("output.html", htmlOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

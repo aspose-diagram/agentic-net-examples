@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -13,7 +12,7 @@ class Program
             // Load the Visio diagram from a VSD file
             Diagram diagram = new Diagram("input.vsd");
 
-            // Save the diagram as HTML
+            // Save the diagram as HTML using the Save method with SaveFileFormat.Html
             diagram.Save("output.html", SaveFileFormat.Html);
 
         }

@@ -1,32 +1,31 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Load the Visio diagram from a file
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram from file
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-                // Configure HTML save options to exclude hidden pages (and thus hidden layers)
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                {
-                    ExportHiddenPage = false // Do not export hidden pages/layers
-                };
+            // Configure HTML export options to exclude hidden pages (layers are respected by visibility)
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.ExportHiddenPage = false; // Do not export hidden pages/layers
 
-                // Save the diagram as HTML using the configured options
-                string outputPath = "output.html";
-                diagram.Save(outputPath, htmlOptions);
+            // Save the diagram as HTML using the configured options
+            string outputPath = "output.html";
+            diagram.Save(outputPath, htmlOptions);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

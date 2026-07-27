@@ -10,28 +10,33 @@ class Program
         try
         {
 
-            // Load an existing diagram (using the provided load rule)
-            string inputFile = "input.vsdx";
-            Diagram diagram = new Diagram(inputFile);
+            // Load an existing diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Prepare save options (using the provided save rule)
-            var saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
-            // Example: set additional options if needed
-            // saveOptions.AutoFitPageToDrawingContent = true;
+            // Define save options if needed (optional)
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
+            // Example: enable auto fit page
+            saveOptions.AutoFitPageToDrawingContent = true;
 
-            // Save the diagram with exception handling
             try
             {
-                diagram.Save("output.vsdx", saveOptions);
+                // Attempt to save the diagram to a file using the specified format
+                diagram.Save("output.vdx", saveOptions);
+                Console.WriteLine("Diagram saved successfully.");
             }
-            catch (DiagramException ex)
+            catch (DiagramException dex)
             {
-                // Log the error
-                Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+                // Handle Aspose.Diagram specific exceptions
+                Console.Error.WriteLine($"DiagramException occurred while saving: {dex.Message}");
+            }
+            catch (Exception ex)
+            {
+                // Handle any other unexpected exceptions
+                Console.Error.WriteLine($"Unexpected error while saving diagram: {ex.Message}");
             }
             finally
             {
-                // Ensure resources are released (using the provided lifecycle rule)
+                // Ensure resources are released
                 diagram.Dispose();
             }
 

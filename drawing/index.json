@@ -1,11 +1,11 @@
 {
   "category": "drawing",
   "display_name": "Drawing",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 125,
   "pass_rate": 100.0,
-  "generated": "2026-06-05",
+  "generated": "2026-07-27",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -18,11 +18,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -31,8 +31,8 @@
       "task": "Add a centered text label inside the pentagon for annotation purposes",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -49,7 +49,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -66,14 +65,15 @@
       "task": "Add a diamond shape to the diagram and set its size to 2 inches by 2 inches",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Page",
         "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -82,8 +82,7 @@
       "task": "Add a drop shadow effect to the rectangle with five pixel offset and thirty percent opacity",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -99,9 +98,8 @@
       "task": "Add a page header containing the document title using a twelve point arial font",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Drawing",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -132,6 +130,7 @@
       "task": "Add a tiled background image to the page covering the full page dimensions",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -154,10 +153,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -166,8 +165,7 @@
       "task": "Adjust the triangle s opacity to 75 percent for semi transparent effect",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -184,7 +182,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -200,8 +199,8 @@
       "task": "Align the pentagon shape to the exact center of the diagram page for symmetry",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -217,6 +216,7 @@
       "task": "Align the rectangle to the top left corner of the page with a ten pixel margin",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -234,14 +234,15 @@
       "task": "Apply a 45 degree rotation transform to the entire diagram page for artistic effect",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Save",
-        "diagram"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -251,15 +252,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "ConnectShapesViaConnector",
         "Diagram",
-        "Pages",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -268,8 +269,8 @@
       "task": "Apply a linear gradient fill from red to yellow on the triangle",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -319,7 +320,6 @@
       "task": "Apply a solid red fill color to the triangle shape for visual emphasis",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -336,14 +336,15 @@
       "task": "Apply a text outline effect with a one pixel black border around white text",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -352,7 +353,6 @@
       "task": "Arrange shapes in a grid layout and export the diagram as pdf",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.AutoLayout",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
@@ -360,9 +360,9 @@
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Layout",
-        "LayoutOptions",
-        "PdfSaveOptions"
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -376,7 +376,9 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -392,9 +394,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -403,6 +405,7 @@
       "task": "Center the triangle on the page using page dimensions for alignment",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -420,6 +423,7 @@
       "task": "Change the connector s arrowhead style to a filled triangle at the target end",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
         "System",
         "System.IO"
       ],
@@ -470,15 +474,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "AddShape",
         "ConnectShapesViaConnector",
         "Diagram",
         "Pages",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -522,6 +525,7 @@
       "task": "Create a diagram with two pages each containing a triangle of different colors",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -539,14 +543,12 @@
       "task": "Create a new diagram object and add a triangle shape to the first page",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Save",
         "diagram"
       ]
     },
@@ -562,8 +564,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -591,9 +591,7 @@
       "task": "Create guide lines on the page and align shapes precisely to those guides",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "AddShape",
@@ -609,8 +607,8 @@
       "task": "Define the triangle s three geometry points using absolute coordinates on the page",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -625,8 +623,7 @@
       "task": "Distribute three identical rectangles evenly across the page horizontally with equal spacing between each shape",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "AddShape",
@@ -643,15 +640,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "SVGSaveOptions",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -660,9 +656,7 @@
       "task": "Draw a pentagon shape on the page with custom size and position",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Drawing",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -679,7 +673,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -712,15 +707,14 @@
       "task": "Duplicate a circle shape across five pages each with unique position offsets",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Page",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -729,6 +723,7 @@
       "task": "Duplicate a diamond shape and offset its position by 0 5 inches to the right",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -746,11 +741,12 @@
       "task": "Duplicate the pentagon multiple times in a grid layout across the diagram canvas",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "diagram"
@@ -762,11 +758,9 @@
       "task": "Duplicate the triangle shape three times and arrange them vertically on the page",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
@@ -782,11 +776,11 @@
         "System"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -796,7 +790,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -920,14 +915,12 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
-        "SVGSaveOptions",
-        "Shapes",
+        "HTMLSaveOptions",
+        "Save",
         "diagram"
       ]
     },
@@ -943,10 +936,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
         "PdfSaveOptions",
-        "Save",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -1014,8 +1007,9 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
-        "Save",
-        "diagram"
+        "Page",
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -1044,15 +1038,14 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Linq",
-        "System.Xml.Linq"
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "SVGSaveOptions",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -1096,7 +1089,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1146,15 +1140,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
         "HTMLSaveOptions",
         "Pages",
-        "Save"
+        "Shapes"
       ]
     },
     {
@@ -1163,28 +1156,20 @@
       "task": "Generate an html page that displays the triangle diagram using inline svg markup",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "SVGSaveOptions",
-        "diagram"
-      ]
+      "key_apis": []
     },
     {
       "slug": "generate-ten-identical-triangles-arranged-in-a-grid-pattern-across-the-page",
       "file": "generate-ten-identical-triangles-arranged-in-a-grid-pattern-across-the-page.cs",
       "task": "Generate ten identical triangles arranged in a grid pattern across the page",
       "namespaces": [
-        "Aspose.Diagram",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
         "Pages",
         "Save",
         "diagram"
@@ -1215,14 +1200,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "SVGSaveOptions",
-        "Save",
-        "Shape"
+        "Shape",
+        "Shapes",
+        "page"
       ]
     },
     {
@@ -1252,11 +1238,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
         "Pages",
-        "Save",
         "Shape",
-        "Shapes"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -1265,7 +1251,8 @@
       "task": "Group the triangle with the inserted image to move them together",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -1282,7 +1269,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -1298,8 +1286,7 @@
       "task": "Insert a page footer with automatic page numbering aligned to the right margin",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1313,6 +1300,7 @@
       "task": "Insert a square shape on the same page and apply a solid fill color",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -1329,7 +1317,6 @@
       "task": "Insert a text box above the rectangle with centered alignment and bold formatting",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -1381,6 +1368,7 @@
       "task": "Insert an oval shape onto a newly added page and position it at specific coordinates",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1389,7 +1377,7 @@
         "Page",
         "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -1398,16 +1386,14 @@
       "task": "Insert multiline text inside the rectangle using a custom truetype font at fourteen point size",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -1416,7 +1402,6 @@
       "task": "Instantiate a diagram object and add a new page to the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1424,7 +1409,6 @@
         "Diagram",
         "Page",
         "Pages",
-        "Save",
         "diagram"
       ]
     },
@@ -1434,14 +1418,15 @@
       "task": "Load a vsdx diagram file and add a rectangle with a solid red border",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -1455,11 +1440,9 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Save",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -1468,9 +1451,7 @@
       "task": "Lock aspect ratio of a diamond shape while resizing to preserve proportions",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1503,14 +1484,12 @@
       "task": "Lock the rectangle to prevent modifications during batch processing until all drawing steps are completed",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -1520,7 +1499,6 @@
       "task": "Mirror the rectangle horizontally keeping its original fill and border styles unchanged",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1537,16 +1515,15 @@
       "file": "move-the-triangle-to-coordinates-200-150-on-the-page-for-precise-placement.cs",
       "task": "Move the triangle to coordinates 200 150 on the page for precise placement",
       "namespaces": [
-        "Aspose.Diagram",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
         "Pages",
         "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -1555,8 +1532,7 @@
       "task": "Position a circle shape at coordinates measured in centimeters on the page",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1572,6 +1548,7 @@
       "task": "Rotate the pentagon thirty degrees around its geometric center on the page",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1589,14 +1566,16 @@
       "task": "Rotate the rectangle forty five degrees around its center point while preserving its position",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -1605,8 +1584,7 @@
       "task": "Rotate the triangle shape 45 degrees clockwise around its center point for alignment",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1623,7 +1601,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1660,7 +1639,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -1705,15 +1683,15 @@
       "task": "Scale the pentagon uniformly to double its original dimensions while preserving proportions",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -1722,6 +1700,7 @@
       "task": "Scale the rectangle proportionally to double its original width and height maintaining aspect ratio",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1729,6 +1708,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -1737,15 +1717,15 @@
       "file": "scale-the-triangle-by-0-5-factor-to-create-a-smaller-version-on-the-same-page.cs",
       "task": "Scale the triangle by 0 5 factor to create a smaller version on the same page",
       "namespaces": [
-        "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "Diagram",
         "Pages",
         "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -1772,35 +1752,20 @@
       "task": "Set custom page margins of twenty points on all sides before drawing shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
       "slug": "set-fill-opacity-of-an-oval-shape-to-70-percent-for-semi-transparent-appearance",
       "file": "set-fill-opacity-of-an-oval-shape-to-70-percent-for-semi-transparent-appearance.cs",
       "task": "Set fill opacity of an oval shape to 70 percent for semi transparent appearance",
-      "namespaces": [
-        "Aspose.Diagram",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Save",
-        "diagram"
-      ]
-    },
-    {
-      "slug": "set-line-cap-style-of-an-oval-shape-to-round-for-smoother-line-ends",
-      "file": "set-line-cap-style-of-an-oval-shape-to-round-for-smoother-line-ends.cs",
-      "task": "Set line cap style of an oval shape to round for smoother line ends",
       "namespaces": [
         "Aspose.Diagram",
         "System"
@@ -1814,12 +1779,29 @@
       ]
     },
     {
+      "slug": "set-line-cap-style-of-an-oval-shape-to-round-for-smoother-line-ends",
+      "file": "set-line-cap-style-of-an-oval-shape-to-round-for-smoother-line-ends.cs",
+      "task": "Set line cap style of an oval shape to round for smoother line ends",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System"
+      ],
+      "key_apis": [
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
       "slug": "set-line-join-style-of-a-circle-shape-to-bevel-for-sharper-corners",
       "file": "set-line-join-style-of-a-circle-shape-to-bevel-for-sharper-corners.cs",
       "task": "Set line join style of a circle shape to bevel for sharper corners",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1835,14 +1817,16 @@
       "task": "Set rotation pivot point of a circle shape to its geometric center before rotating",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -1851,15 +1835,16 @@
       "task": "Set text alignment inside a diamond shape to centered horizontally and vertically",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -1868,6 +1853,7 @@
       "task": "Set the circle shape s fill color to blue and its line weight to 0 5 points",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -1884,7 +1870,6 @@
       "task": "Set the connector line color to dark gray and line thickness to one point five",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
         "System",
         "System.IO"
       ],
@@ -1902,6 +1887,7 @@
       "task": "Set the diagram page background to a light gray color before adding shapes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1919,6 +1905,7 @@
       "task": "Set the page background color to light gray and draw shapes on top",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1936,13 +1923,11 @@
       "task": "Set the page background color to light gray for the entire diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "diagram"
@@ -1954,9 +1939,7 @@
       "task": "Set the pentagon s line style to a dashed pattern with specific thickness",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1972,6 +1955,7 @@
       "task": "Set the rectangle s line dash pattern to dash dot and increase line thickness to two points",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1989,7 +1973,8 @@
       "task": "Set the rotation angle of an oval shape to 30 degrees using api parameters",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2005,15 +1990,15 @@
       "task": "Set the text direction inside the rectangle to vertical for column layout",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -2022,15 +2007,15 @@
       "task": "Set the triangle s line dash pattern to dashed for stylized border",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -2039,7 +2024,8 @@
       "task": "Set the triangle s line weight to 2 points and change line color to navy",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2055,6 +2041,7 @@
       "task": "Size shapes proportionally to page dimensions to maintain layout across page sizes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -2071,6 +2058,7 @@
       "task": "Snap the rectangle to the nearest grid line using a five pixel grid spacing",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2088,15 +2076,16 @@
       "task": "Unlock the rectangle after completing all drawing operations to allow further editing",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -2105,7 +2094,8 @@
       "task": "Validate that all pentagon vertices align with the expected coordinate grid positions",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2128,6 +2118,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "SVGSaveOptions",
         "Save",
         "diagram"
       ]

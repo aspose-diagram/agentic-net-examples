@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,18 +10,30 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file.
-            // The Diagram constructor that takes a file path loads the document.
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram from a file
+            Diagram diagram = new Diagram("input.vsd");
 
-            // Create SVG save options.
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            // Configure SVG save options, including default font for embedding
+            SVGSaveOptions svgOptions = new SVGSaveOptions
+            {
+                // Specify a default font to ensure characters are rendered correctly
+                DefaultFont = "Arial",
 
-            // Set a default font to ensure Unicode characters are rendered correctly
-            // when the required font is not installed locally.
-            svgOptions.DefaultFont = "Arial Unicode MS";
+                // Fit the generated SVG to the viewport
+                SVGFitToViewPort = true,
 
-            // Save the diagram as an SVG file, embedding the font resources as specified.
+                // Export only the first page (change PageIndex for other pages)
+                PageIndex = 0,
+
+                // Optional: control additional export behavior
+                ExportHiddenPage = false,
+                ExportGuideShapes = false,
+                IsExportComments = false,
+                ExportElementAsRectTag = false,
+                EnlargePage = false
+            };
+
+            // Save the diagram as an SVG file using the configured options
             diagram.Save("output.svg", svgOptions);
 
         }

@@ -3,46 +3,51 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VdxToPdfBatch
+class VdxToPdfBatchConverter
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input folder containing VDX files (default if not provided)
-            string inputFolder = args.Length > 0 ? args[0] : @"C:\InputVdx";
-            // Output folder for generated PDFs (default if not provided)
-            string outputFolder = args.Length > 1 ? args[1] : @"C:\OutputPdf";
+            // Folder containing VDX files
+            string inputFolder = @"C:\Visio\VDXFiles";
+            // Folder where PDF files will be saved
+            string outputFolder = @"C:\Visio\PDFOutput";
 
-            // Ensure the output directory exists
+            // Ensure output directory exists
             Directory.CreateDirectory(outputFolder);
 
-            // Retrieve all VDX files in the input directory
+            // Get all VDX files in the input folder
             string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx", SearchOption.TopDirectoryOnly);
 
             foreach (string vdxPath in vdxFiles)
             {
-                // Load the diagram using the provided constructor
+                // Load the VDX diagram using the provided constructor
                 using (Diagram diagram = new Diagram(vdxPath))
                 {
-                    // Configure custom PDF save options
+                    // Configure PDF save options (customize as needed)
                     PdfSaveOptions pdfOptions = new PdfSaveOptions
                     {
-                        EnlargePage = true,               // Enlarge page to fit drawing content
-                        ExportHiddenPage = false,         // Do not export hidden pages
-                        ExportGuideShapes = false,        // Do not export guide shapes
-                        DefaultFont = "Arial"             // Fallback font for Unicode characters
+                        // Example customizations
+                        EnlargePage = true,                     // Enlarge page to fit drawing content
+                        ExportHiddenPage = false,               // Do not export hidden pages
+                        ExportGuideShapes = false,              // Do not export guide shapes
+                        IsExportComments = true,                // Export comments if present
+                        PageCount = int.MaxValue,               // Export all pages
+                        DefaultFont = "Arial"                   // Fallback font for Unicode characters
                     };
 
-                    // Build the output PDF file path
+                    // Build output PDF file path
                     string pdfFileName = Path.GetFileNameWithoutExtension(vdxPath) + ".pdf";
                     string pdfPath = Path.Combine(outputFolder, pdfFileName);
 
-                    // Save the diagram as PDF using the provided Save method with SaveOptions
+                    // Save the diagram as PDF using the provided Save method and PdfSaveOptions
                     diagram.Save(pdfPath, pdfOptions);
                 }
             }
+
+            Console.WriteLine("Batch conversion completed.");
 
         }
         catch (System.IO.DirectoryNotFoundException ex)

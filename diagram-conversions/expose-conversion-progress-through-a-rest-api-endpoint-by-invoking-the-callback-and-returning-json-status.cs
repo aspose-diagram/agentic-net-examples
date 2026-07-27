@@ -1,150 +1,171 @@
 using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Text.Json;
+using System.Threading;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class PdfProgressCallback : IPageSavingCallback
+public class ConversionProgressCallback : IPageSavingCallback
 {
-    private readonly string _requestId;
-    private static readonly ConcurrentDictionary<string, int> ProgressMap = new();
+    // Total number of pages in the document
+    public int TotalPages { get; private set; }
 
-    public PdfProgressCallback(string requestId)
-    {
-        _requestId = requestId;
-        ProgressMap[_requestId] = 0;
-    }
+    // Number of pages that have been saved so far
+    public int SavedPages { get; private set; }
 
+    // Called before a page starts saving
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        // No action needed at start of a page.
+        // Capture total page count on first call
+        if (TotalPages == 0)
+        {
+            TotalPages = args.PageCount;
+        }
     }
 
+    // Called after a page has been saved
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        int progress = (int)(((args.PageIndex + 1) / (double)args.PageCount) * 100);
-        ProgressMap[_requestId] = progress;
+        SavedPages = args.PageIndex + 1; // PageIndex is zero‑based
+        // If all pages are processed, we can stop further processing (optional)
+        if (SavedPages >= TotalPages)
+        {
+            args.HasMorePages = false;
+        }
     }
+}
 
-    public static int GetProgress(string requestId)
-    {
-        return ProgressMap.TryGetValue(requestId, out var value) ? value : 0;
-    }
-
-    public static void Remove(string requestId)
-    {
-        ProgressMap.TryRemove(requestId, out _);
-    }
+public static class ProgressStore
+{
+    // Holds the latest callback instance for status reporting
+    public static ConversionProgressCallback CurrentCallback { get; set; }
 }
 
 public class Program
 {
-    public static void Main(string[] args)
+    private const string Prefix = "http://localhost:5000/";
+
+    public static void Main()
     {
-        const string prefix = "http://localhost:5000/";
-        using var listener = new HttpListener();
-        listener.Prefixes.Add(prefix);
-        try
-        {
-            listener.Start();
-            Console.WriteLine($"Listening on {prefix}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to start HttpListener: {ex.Message}");
-            return;
-        }
+        HttpListener listener = new HttpListener();
+        listener.Prefixes.Add(Prefix);
+        listener.Start();
+        Console.WriteLine($"Listening on {Prefix}");
 
         while (true)
         {
-            HttpListenerContext context;
-            try
-            {
-                context = listener.GetContext();
-            }
-            catch (HttpListenerException)
-            {
-                break; // Listener stopped.
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Listener error: {ex.Message}");
-                continue;
-            }
-
-            ProcessRequest(context);
+            HttpListenerContext context = listener.GetContext();
+            ThreadPool.QueueUserWorkItem(_ => HandleRequest(context));
         }
     }
 
-    private static void ProcessRequest(HttpListenerContext context)
+    private static void HandleRequest(HttpListenerContext context)
     {
-        var request = context.Request;
-        var response = context.Response;
-
-        if (request.HttpMethod != "GET" || request.Url?.AbsolutePath != "/convert")
-        {
-            response.StatusCode = 404;
-            response.Close();
-            return;
-        }
-
-        string inputPath = request.QueryString["input"];
-        string outputPath = request.QueryString["output"];
-        string requestId = request.QueryString["id"];
-
-        if (string.IsNullOrWhiteSpace(inputPath) ||
-            string.IsNullOrWhiteSpace(outputPath) ||
-            string.IsNullOrWhiteSpace(requestId))
-        {
-            response.StatusCode = 400;
-            WriteResponse(response, "Missing required query parameters: input, output, id");
-            return;
-        }
-
-        if (!File.Exists(inputPath))
-        {
-            response.StatusCode = 404;
-            WriteResponse(response, $"Input file not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            Diagram diagram = new Diagram(inputPath);
+            string path = context.Request.Url.AbsolutePath.ToLowerInvariant();
 
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.PageSavingCallback = new PdfProgressCallback(requestId);
-
-            diagram.Save(outputPath, pdfOptions);
-
-            int finalProgress = PdfProgressCallback.GetProgress(requestId);
-            PdfProgressCallback.Remove(requestId);
-
-            var responseObj = new
+            if (path == "/convert")
             {
-                id = requestId,
-                status = "Completed",
-                progress = finalProgress,
-                output = outputPath
-            };
+                var query = ParseQuery(context.Request.Url.Query);
+                if (!query.TryGetValue("input", out string inputPath) ||
+                    !query.TryGetValue("output", out string outputPath))
+                {
+                    WriteJson(context.Response, new { status = "error", message = "Missing input or output parameters." });
+                    return;
+                }
 
-            response.ContentType = "application/json";
-            WriteResponse(response, JsonSerializer.Serialize(responseObj));
+                // Start conversion on a background thread
+                Thread conversionThread = new Thread(() => ConvertDiagramToPdf(inputPath, outputPath));
+                conversionThread.IsBackground = true;
+                conversionThread.Start();
+
+                WriteJson(context.Response, new { status = "started" });
+            }
+            else if (path == "/status")
+            {
+                var callback = ProgressStore.CurrentCallback;
+                if (callback == null)
+                {
+                    WriteJson(context.Response, new { status = "idle" });
+                }
+                else
+                {
+                    WriteJson(context.Response, new
+                    {
+                        status = "running",
+                        totalPages = callback.TotalPages,
+                        savedPages = callback.SavedPages
+                    });
+                }
+            }
+            else
+            {
+                WriteJson(context.Response, new { status = "error", message = "Unknown endpoint." });
+            }
         }
         catch (Exception ex)
         {
-            response.StatusCode = 500;
-            var errorObj = new { id = requestId, status = "Error", message = ex.Message };
-            WriteResponse(response, JsonSerializer.Serialize(errorObj));
+            WriteJson(context.Response, new { status = "error", message = ex.Message });
+        }
+        finally
+        {
+            context.Response.OutputStream.Close();
         }
     }
 
-    private static void WriteResponse(HttpListenerResponse response, string content)
+    private static void ConvertDiagramToPdf(string inputFile, string outputFile)
     {
-        using var writer = new StreamWriter(response.OutputStream);
-        writer.Write(content);
-        response.Close();
+        // Load the diagram
+        Diagram diagram = new Diagram(inputFile);
+
+        // Prepare PDF save options and attach the progress callback
+        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+        var progressCallback = new ConversionProgressCallback();
+        pdfOptions.PageSavingCallback = progressCallback;
+
+        // Store the callback for status queries
+        ProgressStore.CurrentCallback = progressCallback;
+
+        // Perform the save operation
+        diagram.Save(outputFile, pdfOptions);
+
+        // Reset the stored callback after completion
+        ProgressStore.CurrentCallback = null;
+    }
+
+    private static void WriteJson(HttpListenerResponse response, object data)
+    {
+        response.ContentType = "application/json";
+        string json = JsonSerializer.Serialize(data);
+        byte[] buffer = Encoding.UTF8.GetBytes(json);
+        response.ContentLength64 = buffer.Length;
+        response.OutputStream.Write(buffer, 0, buffer.Length);
+    }
+
+    private static System.Collections.Generic.Dictionary<string, string> ParseQuery(string query)
+    {
+        var result = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrEmpty(query))
+            return result;
+
+        // Trim leading '?'
+        if (query.StartsWith("?"))
+            query = query.Substring(1);
+
+        string[] pairs = query.Split('&', StringSplitOptions.RemoveEmptyEntries);
+        foreach (string pair in pairs)
+        {
+            string[] kv = pair.Split('=', 2);
+            if (kv.Length == 2)
+            {
+                string key = WebUtility.UrlDecode(kv[0]);
+                string value = WebUtility.UrlDecode(kv[1]);
+                result[key] = value;
+            }
+        }
+        return result;
     }
 }

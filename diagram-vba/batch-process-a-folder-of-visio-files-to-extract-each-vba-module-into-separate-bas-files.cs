@@ -5,53 +5,60 @@ using Aspose.Diagram.Vba;
 
 class VbaExtractor
 {
-    // Processes all Visio files in the specified input folder
-    // and extracts each VBA module to a separate .bas file in the output folder.
-    public static void ProcessFolder(string inputFolder, string outputFolder)
+    // Entry point: args[0] = input folder, args[1] = output folder
+    static void Main(string[] args)
     {
-        // Ensure output directory exists
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: VbaExtractor <inputFolder> <outputFolder>");
+            return;
+        }
+
+        string inputFolder = args[0];
+        string outputFolder = args[1];
+
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
+
+        // Ensure output folder exists
         Directory.CreateDirectory(outputFolder);
 
-        // Get Visio files (common extensions)
+        // Process all Visio files in the input folder (common extensions)
         string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
         foreach (string filePath in visioFiles)
         {
             string ext = Path.GetExtension(filePath).ToLowerInvariant();
             if (ext != ".vsd" && ext != ".vsdx" && ext != ".vsdm")
-                continue; // Skip non‑Visio files
+                continue; // skip non-Visio files
 
-            // Load the diagram using the Diagram(string) constructor (lifecycle rule)
+            // Load diagram using the provided constructor (lifecycle rule)
             using (Diagram diagram = new Diagram(filePath))
             {
-                // Access the VBA project; if none, skip
+                // Check if the diagram contains a VBA project
                 VbaProject vbaProject = diagram.VbaProject;
                 if (vbaProject == null)
+                {
+                    Console.WriteLine($"No VBA project found in: {Path.GetFileName(filePath)}");
                     continue;
+                }
 
-                // Iterate through all VBA modules
+                // Iterate through each VBA module
                 foreach (VbaModule module in vbaProject.Modules)
                 {
                     // Build a unique file name for the module
                     string baseFileName = $"{Path.GetFileNameWithoutExtension(filePath)}_{module.Name}.bas";
                     string outputPath = Path.Combine(outputFolder, baseFileName);
 
-                    // Write the module's code to the .bas file
+                    // Write the module's code to a .bas file
                     File.WriteAllText(outputPath, module.Codes ?? string.Empty);
+                    Console.WriteLine($"Extracted module '{module.Name}' to: {outputPath}");
                 }
             }
         }
-    }
 
-    // Example usage
-    static void Main(string[] args)
-    {
-        // Input folder containing Visio files
-        string inputFolder = @"C:\VisioFiles";
-
-        // Output folder where .bas files will be saved
-        string outputFolder = @"C:\VbaModules";
-
-        ProcessFolder(inputFolder, outputFolder);
-        Console.WriteLine("VBA modules extraction completed.");
+        Console.WriteLine("VBA extraction completed.");
     }
 }

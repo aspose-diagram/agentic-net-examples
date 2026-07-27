@@ -1,56 +1,48 @@
 using System;
-using System.IO;
 using System.Diagnostics;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Input Visio file path (adjust as needed)
+                // Input Visio file path (change as needed)
                 string inputPath = "input.vsdx";
 
                 // Output SWF file path
                 string outputPath = "output.swf";
 
-                // Verify input file exists
-                if (!File.Exists(inputPath))
-                    throw new FileNotFoundException($"Input file not found: {inputPath}");
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Configure SWF save options (default settings are sufficient for basic conversion)
-                SWFSaveOptions swfOptions = new SWFSaveOptions();
-
-                // Save the diagram as SWF
-                diagram.Save(outputPath, swfOptions);
-
-                // Verify that the SWF file was created
-                if (!File.Exists(outputPath))
-                    throw new Exception("SWF conversion failed: output file was not created.");
-
-                Console.WriteLine("SWF file saved successfully at: " + Path.GetFullPath(outputPath));
-
-                // Attempt to open the SWF file with the default associated application (e.g., web browser)
                 try
                 {
-                    ProcessStartInfo startInfo = new ProcessStartInfo
+                    // Load the Visio diagram
+                    Diagram diagram = new Diagram(inputPath);
+
+                    // Configure SWF save options (optional: set default font)
+                    SWFSaveOptions swfOptions = new SWFSaveOptions();
+                    swfOptions.DefaultFont = "Arial";
+
+                    // Save the diagram as SWF
+                    diagram.Save(outputPath, swfOptions);
+                    Console.WriteLine($"SWF file saved to: {outputPath}");
+
+                    // Attempt to open the SWF file in the default web browser
+                    ProcessStartInfo startInfo = new ProcessStartInfo(outputPath)
                     {
-                        FileName = outputPath,
                         UseShellExecute = true
                     };
                     Process.Start(startInfo);
-                    Console.WriteLine("Opened SWF file for playback verification.");
+                    Console.WriteLine("Opened SWF file in the default browser for playback verification.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Unable to open SWF file automatically. Please open it manually to verify playback.");
-                    Console.WriteLine("Error: " + ex.Message);
+                    // Report any errors
+                    Console.WriteLine("An error occurred during conversion:");
+                    Console.WriteLine(ex.Message);
+                    throw;
                 }
 
             }

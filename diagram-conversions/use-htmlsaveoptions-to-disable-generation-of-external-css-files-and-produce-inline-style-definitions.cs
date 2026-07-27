@@ -10,20 +10,18 @@ class Program
         try
         {
 
-            // Load the Visio diagram from file
+            // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
             // Create HTML save options
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // Set to save as a single file – this embeds CSS (and other resources) directly
-            // into the generated HTML, avoiding external CSS files.
+            // Set to save as a single HTML file.
+            // This embeds CSS and other resources directly into the HTML,
+            // preventing generation of external CSS files.
             htmlOptions.SaveAsSingleFile = true;
 
-            // Optional: disable the toolbar if not needed
-            htmlOptions.SaveToolBar = false;
-
-            // Save the diagram as HTML with inline style definitions
+            // Save the diagram as HTML with the configured options
             diagram.Save("output.html", htmlOptions);
 
         }

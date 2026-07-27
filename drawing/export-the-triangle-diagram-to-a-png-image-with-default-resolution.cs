@@ -1,24 +1,22 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportTriangleDiagram
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the existing Visio diagram that contains the triangle.
-            // The Diagram constructor that takes a file path is the standard load method.
+            // Load the existing Visio diagram (triangle)
             Diagram diagram = new Diagram("triangle.vsd");
 
-            // Create image save options for PNG format.
-            // No additional settings are changed, so default resolution is used.
+            // Set up image save options for PNG (default resolution)
             ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
-            // Export the diagram to a PNG image file using the Save method overload that accepts SaveOptions.
+            // Export the diagram to a PNG file
             diagram.Save("triangle.png", pngOptions);
 
         }

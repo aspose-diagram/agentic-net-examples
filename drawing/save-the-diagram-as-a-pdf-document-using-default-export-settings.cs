@@ -10,14 +10,11 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your source file)
+            // Load an existing Visio diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create PDF save options with default settings
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-            // Save the diagram as a PDF file using the default export options
-            diagram.Save("output.pdf", pdfOptions);
+            // Save the diagram as a PDF using default export settings
+            diagram.Save("output.pdf", SaveFileFormat.Pdf);
 
         }
         catch (System.IO.FileNotFoundException ex)

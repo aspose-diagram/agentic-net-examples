@@ -9,7 +9,7 @@ class Program
         try
         {
 
-            // Load an existing diagram (replace with your source file or stream)
+            // Load an existing diagram (replace with your source file)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Create a memory stream to hold the CSV output
@@ -22,8 +22,14 @@ class Program
                 csvStream.Position = 0;
 
                 // Example: read the CSV data as a string (optional)
-                string csvContent = new StreamReader(csvStream).ReadToEnd();
-                Console.WriteLine(csvContent);
+                using (StreamReader reader = new StreamReader(csvStream))
+                {
+                    string csvContent = reader.ReadToEnd();
+                    Console.WriteLine(csvContent);
+                }
+
+                // At this point, csvStream contains the CSV data in memory
+                // It can be returned, sent over a network, etc., without touching the file system
             }
 
         }

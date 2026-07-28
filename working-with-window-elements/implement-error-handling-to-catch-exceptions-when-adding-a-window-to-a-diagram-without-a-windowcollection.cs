@@ -9,22 +9,25 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
+
+            // Create a new Window instance and set basic properties
+            Window newWindow = new Window
+            {
+                WindowType = WindowTypeValue.Drawing,
+                WindowWidth = 800,
+                WindowHeight = 600
+            };
 
             try
             {
-                // Create a new Window instance
-                Window newWindow = new Window();
+                // Verify that the diagram actually has a WindowCollection
+                if (diagram.Windows == null)
+                    throw new DiagramException("The diagram does not contain a WindowCollection.");
 
-                // Set required properties (example: a drawing window)
-                newWindow.WindowType = WindowTypeValue.Drawing;
-
-                // Attempt to add the window to the diagram's WindowCollection
-                // This may throw a DiagramException if the collection is null or invalid
+                // Add the window to the collection
                 diagram.Windows.Add(newWindow);
-
-                Console.WriteLine("Window added successfully.");
             }
             catch (DiagramException dex)
             {
@@ -34,10 +37,10 @@ class Program
             catch (Exception ex)
             {
                 // Handle any other unexpected errors
-                Console.WriteLine($"Unexpected error: {ex.Message}");
+                Console.WriteLine($"Unexpected exception: {ex.Message}");
             }
 
-            // Save the modified diagram (replace with your desired output path)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

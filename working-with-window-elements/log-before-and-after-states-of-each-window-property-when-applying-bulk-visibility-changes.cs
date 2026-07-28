@@ -1,74 +1,70 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        if (diagram.Windows.Count == 0)
-        {
-            Window defaultWindow = new Window
+            try
             {
-                WindowType = WindowTypeValue.Drawing,
-                WindowState = WindowStateValue.Maximized,
-                WindowWidth = 800,
-                WindowHeight = 600
-            };
-            diagram.Windows.Add(defaultWindow);
-        }
 
-        foreach (Window window in diagram.Windows)
-        {
-            BOOL beforeShowGrid = window.ShowGrid;
-            BOOL beforeShowGuides = window.ShowGuides;
-            BOOL beforeShowRulers = window.ShowRulers;
-            BOOL beforeShowPageBreaks = window.ShowPageBreaks;
-            BOOL beforeShowConnectionPoints = window.ShowConnectionPoints;
-            BOOL beforeDynamicGridEnabled = window.DynamicGridEnabled;
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-            window.ShowGrid = BOOL.False;
-            window.ShowGuides = BOOL.False;
-            window.ShowRulers = BOOL.False;
-            window.ShowPageBreaks = BOOL.False;
-            window.ShowConnectionPoints = BOOL.False;
-            window.DynamicGridEnabled = BOOL.False;
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            Console.WriteLine($"Window ID {window.ID}:");
-            Console.WriteLine($"  ShowGrid               before={beforeShowGrid}, after={window.ShowGrid}");
-            Console.WriteLine($"  ShowGuides             before={beforeShowGuides}, after={window.ShowGuides}");
-            Console.WriteLine($"  ShowRulers             before={beforeShowRulers}, after={window.ShowRulers}");
-            Console.WriteLine($"  ShowPageBreaks         before={beforeShowPageBreaks}, after={window.ShowPageBreaks}");
-            Console.WriteLine($"  ShowConnectionPoints   before={beforeShowConnectionPoints}, after={window.ShowConnectionPoints}");
-            Console.WriteLine($"  DynamicGridEnabled     before={beforeDynamicGridEnabled}, after={window.DynamicGridEnabled}");
-        }
+                // Ensure there is at least one window; if not, create a default drawing window
+                if (diagram.Windows.Count == 0)
+                {
+                    Window defaultWindow = new Window
+                    {
+                        WindowType = WindowTypeValue.Drawing,
+                        WindowState = WindowStateValue.Maximized,
+                        WindowWidth = 1100,
+                        WindowHeight = 700
+                    };
+                    diagram.Windows.Add(defaultWindow);
+                }
 
-        string outputPath = "output.vsdx";
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
-        }
+                // Iterate through each window and log before/after states of visibility-related properties
+                foreach (Window window in diagram.Windows)
+                {
+                    // Log before state
+                    Console.WriteLine($"Window ID: {window.ID}");
+                    Console.WriteLine($"  Before - ShowGrid: {window.ShowGrid}");
+                    Console.WriteLine($"  Before - ShowGuides: {window.ShowGuides}");
+                    Console.WriteLine($"  Before - ShowRulers: {window.ShowRulers}");
+                    Console.WriteLine($"  Before - ShowPageBreaks: {window.ShowPageBreaks}");
+                    Console.WriteLine($"  Before - ShowConnectionPoints: {window.ShowConnectionPoints}");
+                    Console.WriteLine($"  Before - DynamicGridEnabled: {window.DynamicGridEnabled}");
+
+                    // Apply bulk visibility changes (hide all)
+                    window.ShowGrid = BOOL.False;
+                    window.ShowGuides = BOOL.False;
+                    window.ShowRulers = BOOL.False;
+                    window.ShowPageBreaks = BOOL.False;
+                    window.ShowConnectionPoints = BOOL.False;
+                    window.DynamicGridEnabled = BOOL.False;
+
+                    // Log after state
+                    Console.WriteLine($"  After  - ShowGrid: {window.ShowGrid}");
+                    Console.WriteLine($"  After  - ShowGuides: {window.ShowGuides}");
+                    Console.WriteLine($"  After  - ShowRulers: {window.ShowRulers}");
+                    Console.WriteLine($"  After  - ShowPageBreaks: {window.ShowPageBreaks}");
+                    Console.WriteLine($"  After  - ShowConnectionPoints: {window.ShowConnectionPoints}");
+                    Console.WriteLine($"  After  - DynamicGridEnabled: {window.DynamicGridEnabled}");
+                    Console.WriteLine(); // Blank line for readability
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

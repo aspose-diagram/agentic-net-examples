@@ -5,35 +5,43 @@ class Program
     {
         static void Main(string[] args)
         {
+            // Example usage: pass the Visio file path as the first argument.
+            if (args.Length == 0)
+            {
+                Console.WriteLine("Please provide the path to a Visio file.");
+                return;
+            }
+
+            string visioPath = args[0];
             try
             {
-
-                // Path to the Visio file to be processed
-                string inputPath = "input.vsdx";
-
-                // Load the diagram from file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Toggle the ShowGrid setting for all open windows
-                ToggleShowGrid(diagram);
-
-                // Save the modified diagram (optional)
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                ToggleShowGrid(visioPath);
+                Console.WriteLine("ShowGrid property toggled for all windows.");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine($"Error: {ex.Message}");
             }
-    }
+        }
 
-        // Toggles the ShowGrid property for every window in the diagram
-        static void ToggleShowGrid(Diagram diagram)
+        /// <summary>
+        /// Loads a Visio diagram, toggles the ShowGrid flag for every open window,
+        /// and saves the diagram back to the same file.
+        /// </summary>
+        /// <param name="filePath">Path to the Visio document.</param>
+        static void ToggleShowGrid(string filePath)
         {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(filePath);
+
+            // Iterate through all windows and invert the ShowGrid setting.
             foreach (Window window in diagram.Windows)
             {
-                // ShowGrid uses the BOOL enum; flip its value
-                window.ShowGrid = window.ShowGrid == BOOL.True ? BOOL.False : BOOL.True;
+                // ShowGrid uses the BOOL enum (TRUE/FALSE). Flip its value.
+                window.ShowGrid = (window.ShowGrid == BOOL.True) ? BOOL.False : BOOL.True;
             }
+
+            // Save the modified diagram. Use Vsdx format as a common default.
+            diagram.Save(filePath, SaveFileFormat.Vsdx);
         }
     }

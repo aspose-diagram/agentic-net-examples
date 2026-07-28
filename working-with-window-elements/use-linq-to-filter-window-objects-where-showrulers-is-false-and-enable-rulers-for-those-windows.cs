@@ -1,46 +1,38 @@
-using System;
 using System.IO;
+using System;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
 
-        // Enable rulers for windows where they are currently hidden
-        foreach (Window win in diagram.Windows)
-        {
-            if (win.ShowRulers == BOOL.False)
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Find windows where rulers are hidden
+            var windowsToEnable = diagram.Windows
+                .Where(w => w.ShowRulers == BOOL.False)
+                .ToList();
+
+            // Enable rulers for those windows
+            foreach (var window in windowsToEnable)
             {
-                win.ShowRulers = BOOL.True;
+                window.ShowRulers = BOOL.True;
             }
-        }
 
-        string outputPath = "output.vsdx";
-        try
-        {
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,36 +1,36 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load an existing Visio diagram from file
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
+                string outputPath = "output_modified.vsdx";
+
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Ensure there is at least one window to modify
-                if (diagram.Windows.Count > 0)
+                // Update visibility properties for all windows in the diagram
+                foreach (Window window in diagram.Windows)
                 {
-                    // Iterate through all windows and update visibility properties
-                    foreach (Window window in diagram.Windows)
-                    {
-                        // Example: hide grid, guides, rulers, page breaks, connection points, and disable dynamic grid
-                        window.ShowGrid = BOOL.False;
-                        window.ShowGuides = BOOL.False;
-                        window.ShowRulers = BOOL.False;
-                        window.ShowPageBreaks = BOOL.False;
-                        window.ShowConnectionPoints = BOOL.False;
-                        window.DynamicGridEnabled = BOOL.False;
-                    }
+                    // Show or hide UI elements using BOOL enumeration
+                    window.ShowGrid = BOOL.True;                 // Show grid
+                    window.ShowGuides = BOOL.False;              // Hide guides
+                    window.ShowRulers = BOOL.True;               // Show rulers
+                    window.ShowPageBreaks = BOOL.False;          // Hide page breaks
+                    window.ShowConnectionPoints = BOOL.True;     // Show connection points
+                    window.DynamicGridEnabled = BOOL.True;       // Enable dynamic grid
+
+                    // Optionally set the window state (e.g., maximized)
+                    window.WindowState = WindowStateValue.Maximized;
                 }
 
-                // Save the modified diagram to a new file
-                string outputPath = "output.vsdx";
+                // Save the modified diagram to a new file using the correct overload
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

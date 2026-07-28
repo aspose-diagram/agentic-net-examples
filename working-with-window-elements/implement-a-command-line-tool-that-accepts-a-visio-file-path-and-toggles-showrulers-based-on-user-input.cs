@@ -1,81 +1,68 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Verify that a file path was provided
-        if (args.Length == 0)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: VisioRulerToggle <VisioFilePath>");
-            return;
-        }
-
-        string filePath = args[0];
-        if (!File.Exists(filePath))
-        {
-            Console.Error.WriteLine($"File not found: {filePath}");
-            return;
-        }
-
-        Diagram diagram;
-        try
-        {
-            // Load the Visio diagram
-            diagram = new Diagram(filePath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // Ensure there is at least one window; if not, create a default drawing window
-        if (diagram.Windows.Count == 0)
-        {
-            Window newWindow = new Window
+            // Get Visio file path from command‑line argument or prompt the user
+            string filePath;
+            if (args.Length > 0)
             {
-                WindowType = WindowTypeValue.Drawing,
-                // Use a defined enum value
-                WindowState = WindowStateValue.Maximized
-            };
-            diagram.Windows.Add(newWindow);
-        }
+                filePath = args[0];
+            }
+            else
+            {
+                Console.Write("Enter the path to the Visio file: ");
+                filePath = Console.ReadLine()?.Trim();
+            }
 
-        // Use the first window (typically the drawing window)
-        Window window = diagram.Windows[0];
+            if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
+            {
+                Console.WriteLine("File not found. Exiting.");
+                return;
+            }
 
-        // Prompt the user for the desired ruler visibility
-        Console.WriteLine("Enter 'show' to display rulers, 'hide' to hide rulers, or 'toggle' to invert the current setting:");
-        string input = Console.ReadLine()?.Trim().ToLowerInvariant();
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
 
-        // Apply the requested change
-        if (input == "show")
-        {
-            window.ShowRulers = BOOL.True;
-        }
-        else if (input == "hide")
-        {
-            window.ShowRulers = BOOL.False;
-        }
-        else // toggle or any other input
-        {
-            window.ShowRulers = (window.ShowRulers == BOOL.True) ? BOOL.False : BOOL.True;
-        }
+            // Ensure there is at least one window; if not, create a default drawing window
+            if (diagram.Windows.Count == 0)
+            {
+                Window newWindow = new Window();
+                newWindow.WindowType = WindowTypeValue.Drawing;
+                newWindow.WindowState = WindowStateValue.Maximized;
+                diagram.Windows.Add(newWindow);
+            }
 
-        try
-        {
-            // Save the diagram back to the same file (using VSDX format)
+            // Work with the first window (Visio uses the first window for UI settings)
+            Window window = diagram.Windows[0];
+
+            // Show current ruler state
+            Console.WriteLine($"Current ShowRulers setting: {(window.ShowRulers == BOOL.True ? "On" : "Off")}");
+
+            // Ask user for desired state
+            Console.Write("Enter 'on' to show rulers or 'off' to hide rulers: ");
+            string input = Console.ReadLine()?.Trim().ToLowerInvariant();
+
+            if (input == "on")
+            {
+                window.ShowRulers = BOOL.True;
+                Console.WriteLine("Rulers will be shown.");
+            }
+            else if (input == "off")
+            {
+                window.ShowRulers = BOOL.False;
+                Console.WriteLine("Rulers will be hidden.");
+            }
+            else
+            {
+                Console.WriteLine("Invalid input. No changes made.");
+                return;
+            }
+
+            // Save the diagram back to the same file (using Vsdx format)
             diagram.Save(filePath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved successfully.");
         }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
-            return;
-        }
-
-        Console.WriteLine($"ShowRulers is now set to {(window.ShowRulers == BOOL.True ? "True" : "False")} and the file has been saved.");
     }
-}

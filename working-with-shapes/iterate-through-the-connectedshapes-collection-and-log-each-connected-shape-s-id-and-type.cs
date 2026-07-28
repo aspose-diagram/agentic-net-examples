@@ -9,33 +9,30 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Choose a page (first page in this example)
+            Page page = diagram.Pages[0];
+
+            // Choose a shape to inspect (first shape in this example)
+            Shape shape = page.Shapes[0];
+
+            // Retrieve IDs of all shapes connected to the selected shape
+            long[] connectedShapeIds = shape.ConnectedShapes(
+                ConnectedShapesFlags.ConnectedShapesAllNodes,   // include incoming and outgoing connections
+                null                                            // no category filter
+            );
+
+            // Iterate through each connected shape ID
+            foreach (long id in connectedShapeIds)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Retrieve IDs of shapes connected to the current shape
-                    long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
-                    if (connectedIds == null) continue;
+                // Get the actual Shape object using its ID
+                Shape connectedShape = page.Shapes.GetShape(id);
 
-                    // Log each connected shape's ID and type
-                    foreach (long id in connectedIds)
-                    {
-                        Shape connectedShape = page.Shapes.GetShape(id);
-                        if (connectedShape != null)
-                        {
-                            Console.WriteLine($"Connected Shape ID: {connectedShape.ID}, Type: {connectedShape.Type}");
-                        }
-                    }
-                }
+                // Log the ID and the shape type (e.g., "Shape", "Connector", etc.)
+                Console.WriteLine($"Connected Shape ID: {connectedShape.ID}, Type: {connectedShape.Type}");
             }
-
-            // Save the diagram (unchanged) to demonstrate proper lifecycle usage
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

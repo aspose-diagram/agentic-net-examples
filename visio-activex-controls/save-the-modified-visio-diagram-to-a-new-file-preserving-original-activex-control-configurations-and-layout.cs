@@ -10,18 +10,35 @@ class Program
         try
         {
 
-            // Load the original Visio diagram (preserves all ActiveX controls and layout)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the original Visio file (could be VSDX, VDX, etc.)
+            string sourceFile = "input.vsdx";
+
+            // Path for the new file that will contain the saved diagram
+            string destinationFile = "output.vsdx";
+
+            // Load the existing diagram. This preserves all existing objects,
+            // including ActiveX controls and their configurations.
+            Diagram diagram = new Diagram(sourceFile);
 
             // -----------------------------------------------------------------
-            // Place any modifications to the diagram here (e.g., shape edits)
+            // Perform any required modifications to the diagram here.
+            // For this task we only need to preserve the original layout,
+            // so no changes are made.
             // -----------------------------------------------------------------
 
-            // Prepare save options to keep the same format (VSDX) and default settings
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
+            // Create save options that keep the page size unchanged.
+            // Setting AutoFitPageToDrawingContent to false ensures the layout
+            // (positions of shapes, connectors, and ActiveX controls) is not altered.
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx)
+            {
+                AutoFitPageToDrawingContent = false
+            };
 
-            // Save the modified diagram to a new file, preserving ActiveX controls and layout
-            diagram.Save("output.vsdx", saveOptions);
+            // Save the diagram to a new file using the specified options.
+            diagram.Save(destinationFile, saveOptions);
+
+            // Release resources.
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

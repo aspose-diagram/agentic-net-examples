@@ -9,7 +9,7 @@ class MergeOleObjects
         try
         {
 
-            // Paths of the source Visio files containing OLE objects
+            // Paths to the source Visio files containing OLE objects
             string[] sourceFiles = new string[]
             {
                 "Diagram1.vsdx",
@@ -18,21 +18,27 @@ class MergeOleObjects
             };
 
             // Create an empty master diagram
-            using (Diagram masterDiagram = new Diagram())
-            {
-                // Load each source diagram and combine it into the master diagram
-                foreach (string filePath in sourceFiles)
-                {
-                    using (Diagram sourceDiagram = new Diagram(filePath))
-                    {
-                        // Combine preserves the original positions of all shapes, including OLE objects
-                        masterDiagram.Combine(sourceDiagram);
-                    } // sourceDiagram disposed here
-                }
+            Diagram masterDiagram = new Diagram();
 
-                // Save the merged master diagram to a new file
-                masterDiagram.Save("MasterDiagram.vsdx", SaveFileFormat.Vsdx);
-            } // masterDiagram disposed here
+            // Iterate through each source diagram, load it, and combine into the master diagram
+            foreach (string filePath in sourceFiles)
+            {
+                // Load the source diagram from file
+                Diagram sourceDiagram = new Diagram(filePath);
+
+                // Combine the source diagram into the master diagram.
+                // This preserves the original positions of all shapes, including OLE objects.
+                masterDiagram.Combine(sourceDiagram);
+
+                // Dispose the source diagram to free resources
+                sourceDiagram.Dispose();
+            }
+
+            // Save the merged master diagram to a new file
+            masterDiagram.Save("MergedMasterDiagram.vsdx", SaveFileFormat.Vsdx);
+
+            // Clean up
+            masterDiagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

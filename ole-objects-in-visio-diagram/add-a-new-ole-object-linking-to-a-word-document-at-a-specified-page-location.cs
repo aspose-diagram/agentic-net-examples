@@ -10,50 +10,42 @@ class Program
             try
             {
 
-                // Paths for the Word document to embed and the output Visio file
-                string wordFilePath = "SampleDocument.docx";
-                string outputVisioPath = "DiagramWithOle.vsdx";
+                // Paths for the source Visio diagram, the Word document to embed, and the output diagram.
+                string visioPath = "input.vsdx";
+                string wordPath = "sample.docx";
+                string outputPath = "output.vsdx";
 
-                // Desired position and size of the OLE object on the page (in inches)
-                double pinX = 2.0;   // X coordinate of the shape's pin (center)
-                double pinY = 2.0;   // Y coordinate of the shape's pin (center)
-                double width = 3.0;  // Width of the OLE shape
-                double height = 2.0; // Height of the OLE shape
-
-                // Create a new empty diagram (contains a default page)
-                Diagram diagram = new Diagram();
-
-                // Get the first (default) page
-                Page page = diagram.Pages[0];
-
-                // Prepare streams:
-                // - An empty image stream is required by the overload (used as a placeholder preview).
-                // - The Word document stream provides the OLE binary data.
-                using (MemoryStream placeholderImage = new MemoryStream())
-                using (FileStream wordStream = new FileStream(wordFilePath, FileMode.Open, FileAccess.Read))
+                // Load the existing Visio diagram.
+                using (Diagram diagram = new Diagram(visioPath))
                 {
-                    // Add the OLE shape to the page.
-                    // The overload AddShape(pinX, pinY, width, height, imageStream, objectDataStream)
-                    // creates a foreign shape with the supplied OLE data.
-                    long shapeId = page.AddShape(pinX, pinY, width, height, placeholderImage, wordStream);
+                    // Access the first page (you can choose any page as needed).
+                    Page page = diagram.Pages[0];
 
-                    // Retrieve the shape instance to adjust additional properties.
-                    Shape oleShape = page.Shapes.GetShape(shapeId);
+                    // Add a rectangle shape that will host the OLE object.
+                    // Parameters: PinX, PinY, Width, Height (all in inches).
+                    long oleShapeId = page.DrawRectangle(5.0, 5.0, 2.0, 2.0);
 
-                    // Verify that the shape is a foreign (OLE) shape.
-                    if (oleShape != null && oleShape.Type == TypeValue.Foreign && oleShape.ForeignData != null)
-                    {
-                        // Ensure the foreign data represents an embedded object.
-                        if (oleShape.ForeignData.ForeignType == ForeignType.Object)
-                        {
-                            // Show the OLE object as an icon (optional).
-                            oleShape.ForeignData.ShowAsIcon = BOOL.True;
-                        }
-                    }
+                    // Retrieve the shape instance using the returned ID.
+                    Shape oleShape = page.Shapes.GetShape(oleShapeId);
+
+                    // Mark the shape as an OLE (Foreign) object.
+                    oleShape.Type = TypeValue.Foreign;
+
+                    // Set the source file name (used to identify the OLE type).
+                    oleShape.ForeignData.ObjectSourceFullName = Path.GetFileName(wordPath);
+
+                    // Load the Word document bytes and assign them to the OLE data.
+                    byte[] oleData = File.ReadAllBytes(wordPath);
+                    oleShape.ForeignData.ObjectData = oleData;
+
+                    // Optionally display the OLE object as an icon.
+                    oleShape.ForeignData.ShowAsIcon = BOOL.True;
+
+                    // Save the modified diagram to a new file.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                // Save the diagram in VSDX format.
-                diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("OLE object linked and diagram saved successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

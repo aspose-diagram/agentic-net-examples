@@ -10,14 +10,19 @@ class Program
         try
         {
 
-            // Load the source diagram
+            // Load the diagram file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create image save options and set a higher DPI (e.g., 300) for clearer OLE previews
+            // Create image save options for PNG format
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.Resolution = 300f; // DPI setting
 
-            // Save the diagram (or specific page) as an image using the custom DPI
+            // Set custom DPI (e.g., 300) to improve OLE object preview clarity
+            saveOptions.Resolution = 300f; // DPI
+
+            // Optional: keep the original scale
+            saveOptions.Scale = 1.0f;
+
+            // Save the rendered diagram (including OLE object previews) to an image file
             diagram.Save("output.png", saveOptions);
 
         }

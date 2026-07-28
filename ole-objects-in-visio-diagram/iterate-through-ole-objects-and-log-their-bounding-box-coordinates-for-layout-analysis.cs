@@ -1,54 +1,48 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using System.IO;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram (uses the provided load rule)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the input Visio file
-                string inputPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // OLE objects are represented by shapes that contain ForeignData with ObjectData
+                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null)
                     {
-                        // Verify the shape is an OLE object
-                        if (shape.Type == TypeValue.Foreign &&
-                            shape.ForeignData != null &&
-                            shape.ForeignData.ForeignType == ForeignType.Object &&
-                            shape.ForeignData.ObjectData != null &&
-                            shape.ForeignData.ObjectData.Length > 0)
-                        {
-                            // Retrieve bounding box coordinates
-                            double pinX = shape.XForm.PinX.Value;
-                            double pinY = shape.XForm.PinY.Value;
-                            double width = shape.XForm.Width.Value;
-                            double height = shape.XForm.Height.Value;
+                        // Retrieve position (PinX, PinY) and size (Width, Height) from the shape's XForm
+                        double pinX = shape.XForm.PinX.Value;
+                        double pinY = shape.XForm.PinY.Value;
+                        double width = shape.XForm.Width.Value;
+                        double height = shape.XForm.Height.Value;
 
-                            // Log the information
-                            Console.WriteLine($"Page ID: {page.ID}, Shape ID: {shape.ID}");
-                            Console.WriteLine($"  PinX: {pinX}, PinY: {pinY}, Width: {width}, Height: {height}");
-                        }
+                        // Calculate bounding box coordinates
+                        double left   = pinX - width / 2;
+                        double right  = pinX + width / 2;
+                        double top    = pinY + height / 2;
+                        double bottom = pinY - height / 2;
+
+                        // Log the bounding box for layout analysis
+                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, OLE Bounding Box => Left: {left}, Right: {right}, Top: {top}, Bottom: {bottom}");
                     }
                 }
-
-                // Optionally save the diagram (no modifications made)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

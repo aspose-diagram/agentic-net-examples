@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -11,53 +9,46 @@ class Program
             try
             {
 
-                // Input and output file paths
+                // Input and output Visio files
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages in the diagram
+                // Iterate through all pages and collect OLE shapes that embed Excel worksheets
+                List<Shape> shapesToDelete = new List<Shape>();
+
                 foreach (Page page in diagram.Pages)
                 {
-                    // Collect shapes that need to be removed to avoid modifying the collection during iteration
-                    List<Shape> shapesToRemove = new List<Shape>();
-
-                    // Examine each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape is a foreign (OLE) object and has foreign data
-                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
+                        // Verify the shape is an OLE object
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ObjectData != null)
                         {
-                            // Verify the foreign type is an OLE object
-                            if (shape.ForeignData.ForeignType == ForeignType.Object)
+                            // Identify the embedded object type via the source file name
+                            string sourceName = shape.ForeignData.ObjectSourceFullName;
+                            if (!string.IsNullOrEmpty(sourceName))
                             {
-                                // Check that the OLE object actually contains binary data
-                                if (shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
+                                string lowerSource = sourceName.ToLowerInvariant();
+                                // Check for Excel file extensions
+                                if (lowerSource.EndsWith(".xls") || lowerSource.EndsWith(".xlsx"))
                                 {
-                                    // Identify Excel OLE objects by examining the source name (file extension or application name)
-                                    string sourceName = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
-                                    string sourceNameLower = sourceName.ToLowerInvariant();
-
-                                    bool isExcel = sourceNameLower.EndsWith(".xls") ||
-                                                   sourceNameLower.EndsWith(".xlsx") ||
-                                                   sourceNameLower.Contains("excel");
-
-                                    if (isExcel)
-                                    {
-                                        // Mark this shape for removal
-                                        shapesToRemove.Add(shape);
-                                    }
+                                    shapesToDelete.Add(shape);
                                 }
                             }
                         }
                     }
+                }
 
-                    // Remove the identified OLE shapes from the page
-                    foreach (Shape shape in shapesToRemove)
+                // Remove the identified shapes from their respective pages
+                foreach (Shape shape in shapesToDelete)
+                {
+                    // The shape's parent page can be accessed via the Shape.Page property
+                    Page parentPage = shape.Page;
+                    if (parentPage != null)
                     {
-                        page.Shapes.Remove(shape);
+                        parentPage.Shapes.Remove(shape);
                     }
                 }
 

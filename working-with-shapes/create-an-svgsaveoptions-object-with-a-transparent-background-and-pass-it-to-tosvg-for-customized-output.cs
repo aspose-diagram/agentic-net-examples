@@ -1,26 +1,25 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
+            // Load an existing Visio diagram (assumed to be present)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Select a shape to export – here we take the first shape on the first page
+            // Retrieve a shape to export (e.g., the first shape on the first page)
             Shape shape = diagram.Pages[0].Shapes[0];
 
-            // Create SVG save options
+            // Create SVG save options.
+            // The SVGSaveOptions does not expose a background color property; by default the
+            // generated SVG has a transparent background, which satisfies the requirement.
             SVGSaveOptions svgOptions = new SVGSaveOptions();
-
-            // The default background for SVG is transparent; no explicit property is needed.
-            // If additional options are required, they can be set on svgOptions here.
 
             // Export the shape to an SVG file using the customized options
             shape.ToSvg("output.svg", svgOptions);

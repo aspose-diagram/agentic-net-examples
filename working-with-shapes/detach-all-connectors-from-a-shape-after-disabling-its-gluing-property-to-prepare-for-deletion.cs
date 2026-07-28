@@ -1,6 +1,8 @@
 using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,55 +11,67 @@ class Program
         try
         {
 
-            // Load the Visio diagram
+            // Input and output file paths
             string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (adjust if needed)
+            // Work with the first page (adjust if needed)
             Page page = diagram.Pages[0];
 
-            // Locate the shape to be removed (replace "TargetShape" with the actual shape name)
-            long targetShapeId = -1;
-            foreach (Shape s in page.Shapes)
+            // Locate the shape to be removed (by its universal name)
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-                if (s.NameU == "TargetShape")
+                if (shape.NameU == "TargetShape")
                 {
-                    targetShapeId = s.ID;
+                    targetShape = shape;
                     break;
                 }
             }
 
-            if (targetShapeId == -1)
+            if (targetShape == null)
             {
                 Console.WriteLine("Target shape not found.");
                 return;
             }
 
-            // Retrieve the shape instance
-            Shape targetShape = page.Shapes.GetShape(targetShapeId);
-
-            // Disable dynamic gluing for the shape
+            // Disable dynamic gluing for the target shape
             targetShape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
 
-            // Get all 1‑D connector shapes glued to this shape
-            long[] gluedConnectorIds = targetShape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
-
-            if (gluedConnectorIds != null)
+            // Collect IDs of all connector shapes attached to the target shape
+            List<long> connectorIds = new List<long>();
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (long connId in gluedConnectorIds)
+                // Connectors are 1‑D shapes
+                if (shape.OneD)
                 {
-                    // Retrieve each connector shape
-                    Shape connector = page.Shapes.GetShape(connId);
-                    // Mark the connector as deleted
-                    connector.Del = BOOL.True;
+                    // Get IDs of shapes connected to this connector
+                    long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
+                    foreach (long id in connectedIds)
+                    {
+                        if (id == targetShape.ID)
+                        {
+                            connectorIds.Add(shape.ID);
+                            break;
+                        }
+                    }
                 }
             }
 
-            // Optionally mark the target shape itself as deleted
+            // Mark each connector for deletion
+            foreach (long connId in connectorIds)
+            {
+                Shape connector = page.Shapes.GetShape(connId);
+                connector.Del = BOOL.True;
+            }
+
+            // Finally, mark the target shape for deletion
             targetShape.Del = BOOL.True;
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

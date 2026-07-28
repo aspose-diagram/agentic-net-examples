@@ -1,76 +1,45 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Paths to the input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Load an existing Visio diagram (replace with the actual load rule if defined elsewhere)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            // IDs of the shapes involved – adjust as needed
+            long sourceShapeId = 1;   // Shape that already has the hyperlink
+            long targetShapeId = 2;   // Shape to receive the cloned hyperlink
 
-            // Assume the shapes are on the first page
-            Page page = diagram.Pages[0];
+            // Retrieve the source shape
+            Shape sourceShape = diagram.Pages[0].Shapes.GetShape(sourceShapeId);
 
-            // Locate the source shape (the one that already has the hyperlink)
-            Shape sourceShape = null;
-            // Locate the target shape (the shape to receive the cloned hyperlink)
-            Shape targetShape = null;
-
-            foreach (Shape shape in page.Shapes)
+            // Ensure the source shape contains at least one hyperlink
+            if (sourceShape.Hyperlinks.Count > 0)
             {
-                if (shape.NameU == "SourceShape")
-                    sourceShape = shape;
-                if (shape.NameU == "TargetShape")
-                    targetShape = shape;
+                // Get the first hyperlink from the source shape
+                Hyperlink originalLink = sourceShape.Hyperlinks[0];
+
+                // Clone the hyperlink (deep copy)
+                Hyperlink clonedLink = (Hyperlink)originalLink.Clone();
+
+                // Modify the description – Aspose.Diagram exposes the description via the Name property
+                clonedLink.Name = "Modified description";
+
+                // Retrieve the target shape
+                Shape targetShape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+
+                // Attach the cloned (and modified) hyperlink to the target shape
+                targetShape.Hyperlinks.Add(clonedLink);
             }
 
-            if (sourceShape == null)
-            {
-                Console.WriteLine("Source shape not found.");
-                return;
-            }
-
-            if (targetShape == null)
-            {
-                Console.WriteLine("Target shape not found.");
-                return;
-            }
-
-            // Ensure the source shape actually has at least one hyperlink
-            if (sourceShape.Hyperlinks == null || sourceShape.Hyperlinks.Count == 0)
-            {
-                Console.WriteLine("Source shape does not contain any hyperlinks.");
-                return;
-            }
-
-            // Clone the first hyperlink from the source shape
-            Hyperlink originalLink = sourceShape.Hyperlinks[0];
-            Hyperlink clonedLink = new Hyperlink();
-
-            // Copy the essential fields
-            clonedLink.Name = originalLink.Name;                     // optional identifier
-            clonedLink.Address.Value = originalLink.Address.Value;   // external URL or file path
-            clonedLink.SubAddress.Value = originalLink.SubAddress.Value; // internal target (if any)
-
-            // Modify the description for the cloned hyperlink
-            clonedLink.Description.Value = "Modified description";
-
-            // Attach the cloned hyperlink to the target shape
-            targetShape.Hyperlinks.Add(clonedLink);
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Hyperlink cloned and attached to the target shape successfully.");
+            // Save the updated diagram (replace with the actual save rule if defined elsewhere)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

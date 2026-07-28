@@ -6,57 +6,66 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // File paths
+            string diagramPath = "input.vsdx";
+            string xmlPath = "data.xml";
+            string xsltPath = "transform.xslt";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Load the source XML document
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.Load(xmlPath);
+
+            // Load the XSLT stylesheet
+            XslCompiledTransform xslt = new XslCompiledTransform();
+            xslt.Load(xsltPath);
+
+            // Perform the transformation and capture the result as a string
+            string transformedXml;
+            using (StringWriter stringWriter = new StringWriter())
+            using (XmlWriter xmlWriter = XmlWriter.Create(stringWriter, xslt.OutputSettings))
             {
-
-                // Paths for the diagram, source XML, XSLT stylesheet, and output diagram
-                string diagramPath = "input.vsdx";
-                string xmlPath = "data.xml";
-                string xsltPath = "transform.xslt";
-                string outputPath = "output.vsdx";
-
-                try
-                {
-                    // Load the Visio diagram
-                    Diagram diagram = new Diagram(diagramPath);
-
-                    // Load and apply the XSLT transformation to the XML data
-                    XslCompiledTransform xslt = new XslCompiledTransform();
-                    xslt.Load(xsltPath);
-
-                    string transformedXml;
-                    using (StringWriter stringWriter = new StringWriter())
-                    {
-                        // Transform the XML file; the result is written to the StringWriter
-                        xslt.Transform(xmlPath, null, stringWriter);
-                        transformedXml = stringWriter.ToString();
-                    }
-
-                    // Access the first page and the first shape on that page
-                    Page page = diagram.Pages[0];
-                    Shape shape = page.Shapes[0];
-
-                    // Replace the shape's text with the transformed XML content
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt(transformedXml));
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-                catch (Exception ex)
-                {
-                    // Simple error handling – output the exception message
-                    Console.WriteLine("Error: " + ex.Message);
-                    throw;
-                }
-
+                xslt.Transform(xmlDoc, xmlWriter);
+                transformedXml = stringWriter.ToString();
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Locate the shape that will receive the transformed data
+            Page page = diagram.Pages.GetPage(0);
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                if (shape.NameU != null && shape.NameU.Equals("TargetShape", StringComparison.OrdinalIgnoreCase))
+                {
+                    targetShape = shape;
+                    break;
+                }
             }
+
+            if (targetShape == null)
+            {
+                throw new Exception("Target shape not found in the diagram.");
+            }
+
+            // Replace the shape's text with the transformed XML content
+            targetShape.Text.Value.Clear();
+            targetShape.Text.Value.Add(new Txt(transformedXml));
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

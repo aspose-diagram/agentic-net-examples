@@ -6,103 +6,101 @@ using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Path for the exported PDF
-        string outputPath = "output.pdf";
-
-        // Name of the custom font to apply (must be installed or located in a font folder)
-        string customFontName = "MyCustomFont";
-
-        try
-        {
-            // -----------------------------------------------------------------
-            // 1. Configure font directories and default font before loading diagram
-            // -----------------------------------------------------------------
-            // Add the system fonts folder (adjust the path as needed)
-            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
-            // Set the fallback font name used during rendering
-            FontConfigs.DefaultFontName = customFontName;
-
-            // -----------------------------------------------------------------
-            // 2. Verify that the custom font is available on the system
-            // -----------------------------------------------------------------
-            InstalledFontCollection installedFonts = new InstalledFontCollection();
-            bool fontExists = installedFonts.Families.Any(f => f.Name.Equals(customFontName, StringComparison.OrdinalIgnoreCase));
-            if (!fontExists)
+            try
             {
-                Console.Error.WriteLine($"Warning: The font \"{customFontName}\" is not installed on this machine. The default fallback font will be used.");
-            }
 
-            // -----------------------------------------------------------------
-            // 3. Load the Visio diagram
-            // -----------------------------------------------------------------
-            Diagram diagram = new Diagram(inputPath);
+                // Input Visio file path and output PDF path.
+                // You can replace these with your actual file locations or pass them via command‑line arguments.
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                string outputPath = args.Length > 1 ? args[1] : "output.pdf";
 
-            // -----------------------------------------------------------------
-            // 4. List fonts currently used in the diagram (for diagnostic purposes)
-            // -----------------------------------------------------------------
-            Console.WriteLine("Fonts referenced in the diagram before modification:");
-            foreach (Font font in diagram.Fonts)
-            {
-                Console.WriteLine($"- {font.Name}");
-            }
+                // -----------------------------------------------------------------
+                // 1. Configure font sources before loading the diagram.
+                // -----------------------------------------------------------------
+                // Add the system fonts folder (recursive) so Aspose.Diagram can locate fonts.
+                FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
 
-            // -----------------------------------------------------------------
-            // 5. Apply the custom font to every shape that contains text
-            // -----------------------------------------------------------------
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Define the custom font you want to apply to all text shapes.
+                string customFontName = "Calibri";
+
+                // Set the default fallback font for rendering (used when a font is missing).
+                FontConfigs.DefaultFontName = customFontName;
+
+                // -----------------------------------------------------------------
+                // 2. Load the Visio diagram.
+                // -----------------------------------------------------------------
+                Diagram diagram = new Diagram(inputPath);
+
+                // -----------------------------------------------------------------
+                // 3. Validate that the diagram's fonts are installed on the system.
+                // -----------------------------------------------------------------
+                var installedFontNames = new InstalledFontCollection()
+                                            .Families
+                                            .Select(f => f.Name)
+                                            .ToList();
+
+                foreach (Font font in diagram.Fonts)
                 {
-                    // Ensure the shape actually has text content
-                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
+                    if (!installedFontNames.Contains(font.Name))
                     {
-                        // If the shape has no character runs, create one covering the whole text
-                        if (shape.Chars.Count == 0)
+                        Console.WriteLine($"Warning: Font \"{font.Name}\" used in the diagram is not installed on this machine.");
+                    }
+                }
+
+                // -----------------------------------------------------------------
+                // 4. Apply the custom font to every shape that contains text.
+                // -----------------------------------------------------------------
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        // Ensure the shape actually has text.
+                        if (shape.Text != null && !string.IsNullOrEmpty(shape.Text.Value.Text))
                         {
-                            Aspose.Diagram.Char newChar = new Aspose.Diagram.Char();
-                            newChar.IX = 0; // start index
-                            newChar.FontName.Value = customFontName;
-                            shape.Chars.Add(newChar);
-                        }
-                        else
-                        {
-                            // Update all existing character runs
-                            foreach (Aspose.Diagram.Char ch in shape.Chars)
+                            // If the shape has no character formatting entries, create one.
+                            if (shape.Chars.Count == 0)
                             {
-                                ch.FontName.Value = customFontName;
+                                Aspose.Diagram.Char newChar = new Aspose.Diagram.Char();
+                                newChar.IX = 0; // start index
+                                newChar.FontName.Value = customFontName;
+                                shape.Chars.Add(newChar);
+                            }
+                            else
+                            {
+                                // Update existing character runs.
+                                foreach (Aspose.Diagram.Char ch in shape.Chars)
+                                {
+                                    ch.FontName.Value = customFontName;
+                                }
                             }
                         }
                     }
                 }
+
+                // -----------------------------------------------------------------
+                // 5. Save the diagram as PDF with embedded fonts.
+                // -----------------------------------------------------------------
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                {
+                    // Use the same custom font as the default for any missing glyphs.
+                    DefaultFont = customFontName,
+                    // Explicitly set the format (required for some scenarios).
+                    SaveFormat = SaveFileFormat.Pdf,
+                    // Export hidden pages if needed (set to false to exclude them).
+                    ExportHiddenPage = false
+                };
+
+                diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine($"Diagram has been saved to PDF at: {Path.GetFullPath(outputPath)}");
+
             }
-
-            // -----------------------------------------------------------------
-            // 6. Prepare PDF save options (fonts will be embedded automatically if found)
-            // -----------------------------------------------------------------
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = customFontName; // fallback font for missing glyphs
-
-            // -----------------------------------------------------------------
-            // 7. Save the diagram as PDF
-            // -----------------------------------------------------------------
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"Diagram has been saved to PDF with the font \"{customFontName}\" applied to all text shapes.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

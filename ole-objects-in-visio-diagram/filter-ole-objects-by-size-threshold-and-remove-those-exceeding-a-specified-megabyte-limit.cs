@@ -1,56 +1,55 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
-class Program
+class OleSizeFilter
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path to the output Visio file
+            string outputPath = "output.vsdx";
+
+            // Maximum allowed OLE object size in megabytes
+            double maxSizeMb = 5.0;
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path where the filtered Visio file will be saved
-                string outputPath = "output.vsdx";
-
-                // Size threshold in megabytes (e.g., 5 MB)
-                double sizeThresholdMb = 5.0;
-                long sizeThresholdBytes = (long)(sizeThresholdMb * 1024 * 1024);
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page
-                foreach (Page page in diagram.Pages)
+                // Iterate backwards to allow safe removal of shapes
+                for (int i = page.Shapes.Count - 1; i >= 0; i--)
                 {
-                    // Iterate through each shape on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Verify the shape is an OLE object
-                        if (shape.Type == TypeValue.Foreign &&
-                            shape.ForeignData != null &&
-                            shape.ForeignData.ForeignType == ForeignType.Object)
-                        {
-                            // Access the embedded OLE binary data
-                            byte[] oleData = shape.ForeignData.ObjectData;
+                    Shape shape = page.Shapes[i];
 
-                            // If data exists and exceeds the size limit, mark the shape for deletion
-                            if (oleData != null && oleData.Length > sizeThresholdBytes)
-                            {
-                                shape.Del = BOOL.True;
-                            }
+                    // Check if the shape contains foreign (OLE) data
+                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null)
+                    {
+                        // Calculate the size of the OLE object in megabytes
+                        double sizeMb = shape.ForeignData.ObjectData.Length / (1024.0 * 1024.0);
+
+                        // Remove the shape if it exceeds the size threshold
+                        if (sizeMb > maxSizeMb)
+                        {
+                            page.Shapes.Remove(shape);
                         }
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,66 +8,49 @@ class Program
             try
             {
 
-                // Paths to the source and destination Visio files
+                // Input and output file paths
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
-                // Load the existing diagram
+                // Load the existing Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Work with the first page (adjust index if needed)
+                // Access the first page (adjust index if needed)
                 Page page = diagram.Pages[0];
 
-                // Find the first shape on the page to duplicate
-                Shape originalShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    originalShape = shape;
-                    break;
-                }
+                // ID of the shape to duplicate (example uses shape with ID = 1)
+                long originalShapeId = 1;
 
+                // Retrieve the original shape
+                Shape originalShape = page.Shapes.GetShape(originalShapeId);
                 if (originalShape == null)
-                {
-                    Console.WriteLine("No shapes found on the page to duplicate.");
-                    return;
-                }
+                    throw new Exception($"Shape with ID {originalShapeId} not found.");
 
                 // Ensure the shape has an associated master
                 if (originalShape.Master == null)
-                {
-                    Console.WriteLine("The selected shape does not have a master and cannot be duplicated via master.");
-                    return;
-                }
+                    throw new Exception("The original shape does not have a master to duplicate from.");
 
-                // Retrieve the master name from the original shape
+                // Get the master name to use for the new shape
                 string masterName = originalShape.Master.Name;
 
-                // Get the original shape's position
+                // Get original position
                 double originalPinX = originalShape.XForm.PinX.Value;
                 double originalPinY = originalShape.XForm.PinY.Value;
 
-                // Define an offset for the duplicated shape's position
+                // Define offset for the duplicated shape
                 double offsetX = 2.0; // inches to the right
                 double offsetY = 2.0; // inches upward
 
-                double newPinX = originalPinX + offsetX;
-                double newPinY = originalPinY + offsetY;
+                // Add a new shape using the same master and adjusted position
+                long newShapeId = page.AddShape(originalPinX + offsetX, originalPinY + offsetY, masterName);
 
-                // Add a new shape using the same master name and the new position
-                long newShapeId = page.AddShape(newPinX, newPinY, masterName);
-
-                // Optionally retrieve the newly added shape for further modifications
+                // Optionally retrieve the new shape (e.g., to modify further)
                 Shape newShape = page.Shapes.GetShape(newShapeId);
-
-                // Example: copy the text from the original shape to the new shape
-                string originalText = originalShape.Text.Value.ToString();
-                newShape.Text.Value.Clear();
-                newShape.Text.Value.Add(new Txt(originalText));
+                if (newShape == null)
+                    throw new Exception("Failed to retrieve the newly added shape.");
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Shape duplicated successfully. New shape ID: {newShapeId}");
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -9,13 +9,13 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load the Visio diagram from a file
             var diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages in the diagram
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Log the page's ID, name, and whether it is a background page
+                // Log the page's ID, name, and background flag
                 Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}, IsBackground: {page.Background}");
             }
 

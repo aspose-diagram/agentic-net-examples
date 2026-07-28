@@ -10,21 +10,19 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Set the header margin to 0.5 inches (global setting)
+            // Set the global header margin to 0.5 inches
+            // HeaderMargin is a Margin type; use its Value property (in inches)
             diagram.HeaderFooter.HeaderMargin.Value = 0.5;
 
-            // Configure PDF save options
+            // Prepare PDF save options (optional: set a default font for missing fonts)
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
             pdfOptions.DefaultFont = "Arial";
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // ensure correct format
 
-            // Export the diagram to PDF
-            string outputPath = "output.pdf";
-            diagram.Save(outputPath, pdfOptions);
+            // Export the diagram to PDF using the configured options
+            diagram.Save("output.pdf", pdfOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

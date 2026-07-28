@@ -9,39 +9,43 @@ class Program
             try
             {
 
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
+                // Expect the diagram file path as the first command‑line argument
+                if (args.Length == 0)
+                {
+                    Console.WriteLine("Usage: DiagramPageWidthCollector <path-to-diagram>");
+                    return;
+                }
 
-                // List to store page widths
-                List<double> pageWidths = new List<double>();
+                string diagramPath = args[0];
 
-                // Load the diagram inside a using block to ensure proper disposal
+                // Load the Visio diagram inside a using block to ensure proper disposal
                 using (Diagram diagram = new Diagram(diagramPath))
                 {
-                    // Iterate over each page explicitly typed as Aspose.Diagram.Page
+                    // List to hold the width of each page (in inches)
+                    List<double> pageWidths = new List<double>();
+
+                    // Iterate over all pages explicitly typing the iterator as Page
                     foreach (Page page in diagram.Pages)
                     {
-                        // Retrieve the page width (in inches) from the PageProps cell
+                        // Retrieve the page width from the PageProps cell collection
                         double width = page.PageSheet.PageProps.PageWidth.Value;
-
-                        // Add the width to the collection
                         pageWidths.Add(width);
                     }
-                }
 
-                // Output the collected widths for verification
-                Console.WriteLine("Collected page widths:");
-                for (int i = 0; i < pageWidths.Count; i++)
-                {
-                    Console.WriteLine($"Page {i + 1}: {pageWidths[i]} inches");
-                }
+                    // Output the collected widths for verification or further analysis
+                    Console.WriteLine("Collected page widths (in inches):");
+                    for (int i = 0; i < pageWidths.Count; i++)
+                    {
+                        Console.WriteLine($"Page {i + 1}: {pageWidths[i]}");
+                    }
 
-                // Further analysis can be performed using the pageWidths list
+                    // The pageWidths list can now be used for any subsequent analysis
+                }
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

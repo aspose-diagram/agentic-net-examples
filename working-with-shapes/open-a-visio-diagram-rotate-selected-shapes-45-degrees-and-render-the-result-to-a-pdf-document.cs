@@ -1,76 +1,51 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine("Usage: <inputVisioPath> <outputPdfPath> [commaSeparatedShapeIds]");
-            return;
-        }
-
-        string inputPath = args[0];
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = args[1];
-
-        string shapeIdsArg = args.Length > 2 ? args[2] : null;
-
-        try
-        {
-            Diagram diagram = new Diagram(inputPath);
-
-            if (diagram.Pages.Count == 0)
+            try
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
 
-            Page page = diagram.Pages[0];
+                // Input Visio file path (adjust as needed)
+                string inputPath = "input.vsdx";
+                // Output PDF file path
+                string outputPath = "rotated_output.pdf";
 
-            if (shapeIdsArg != null && shapeIdsArg.Trim().Length > 0)
-            {
-                string[] parts = shapeIdsArg.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (string part in parts)
+                // Load the Visio diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    if (long.TryParse(part.Trim(), out long shapeId))
+                    // Rotate each non-deleted shape on every page by 45 degrees
+                    foreach (Page page in diagram.Pages)
                     {
-                        Shape shape = page.Shapes.GetShape(shapeId);
-                        if (shape != null && shape.Del != BOOL.True)
+                        foreach (Shape shape in page.Shapes)
                         {
-                            shape.XForm.Angle.Value = 45;
+                            // Skip shapes that are marked as deleted
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            // Get current rotation angle and add 45 degrees
+                            double currentAngle = shape.XForm.Angle.Value;
+                            shape.XForm.Angle.Value = currentAngle + 45.0;
                         }
                     }
+
+                    // Configure PDF save options (optional: set default font)
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.DefaultFont = "Arial";
+
+                    // Save the modified diagram as PDF
+                    diagram.Save(outputPath, pdfOptions);
                 }
+
+                Console.WriteLine($"Diagram has been rotated and saved to PDF at: {outputPath}");
+
             }
-            else
+            catch (System.IO.FileNotFoundException ex)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Del != BOOL.True)
-                    {
-                        shape.XForm.Angle.Value = 45;
-                    }
-                }
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-            diagram.Save(outputPath, pdfOptions);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
     }
-}
+    }

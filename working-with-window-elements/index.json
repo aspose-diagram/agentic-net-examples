@@ -1,11 +1,11 @@
 {
   "category": "working-with-window-elements",
   "display_name": "Working With Window Elements",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-06-12",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -37,7 +37,9 @@
       ],
       "key_apis": [
         "Diagram",
-        "Window"
+        "Window",
+        "diagram",
+        "window"
       ]
     },
     {
@@ -46,7 +48,8 @@
       "task": "Create a custom ui panel that reflects the current showgrid state of the active window",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -62,15 +65,14 @@
       "task": "Create a new window enable showgrid disable showguides then add it to the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
+        "Save",
         "Window",
         "Windows",
-        "diagram",
-        "window"
+        "diagram"
       ]
     },
     {
@@ -96,8 +98,8 @@
       "task": "Create a unit test verifying showpagebreaks changes persist after diagram serialization and reload",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -146,7 +148,6 @@
       "key_apis": [
         "Diagram",
         "Save",
-        "Window",
         "Windows",
         "diagram"
       ]
@@ -157,14 +158,15 @@
       "task": "Develop a plugin that automatically sets showguides to false when a diagram exceeds a specified page count",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Window",
-        "Windows"
+        "Windows",
+        "diagram"
       ]
     },
     {
@@ -173,8 +175,7 @@
       "task": "Develop a test harness that randomly flips showgrid and showguides flags to stress test the api",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -190,7 +191,6 @@
       "task": "Document the effect of showpagebreaks being true on printed output by generating a pdf preview",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Printing",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
@@ -231,7 +231,7 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
+        "Window",
         "Windows"
       ]
     },
@@ -241,8 +241,7 @@
       "task": "Implement a command line tool that accepts a visio file path and toggles showrulers based on user input",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -259,7 +258,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -338,8 +338,7 @@
       "task": "Log before and after states of each window property when applying bulk visibility changes",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -371,7 +370,6 @@
       "task": "Save the modified visio diagram to a new file after updating window visibility properties",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -387,8 +385,7 @@
       "task": "Set showrulers to true and showpagebreaks to false on the first retrieved window",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -404,7 +401,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -424,6 +422,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Windows",
         "diagram"
       ]
@@ -434,8 +433,7 @@
       "task": "Verify that changing showrulers on one page does not affect other pages within the same diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -466,8 +464,7 @@
       "task": "Write a script that restores default window settings grid guides rulers page breaks for a diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -487,6 +484,8 @@
       ],
       "key_apis": [
         "Diagram",
+        "Save",
+        "Window",
         "Windows",
         "diagram"
       ]

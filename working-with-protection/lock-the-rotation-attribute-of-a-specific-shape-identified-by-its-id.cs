@@ -1,42 +1,60 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Path to save the modified file
+            string outputPath = "output_locked.vsdx";
+
+            // ID of the shape whose rotation should be locked (replace with actual ID)
+            long targetShapeId = 5;
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Locate the shape by ID across all pages
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
-
-                // The ID of the shape whose rotation should be locked
-                long shapeId = 123; // replace with the actual shape ID
-
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Assume the shape is on the first page; adjust if necessary
-                Page page = diagram.Pages[0];
-
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Lock the rotation attribute
-                shape.Protection.LockRotate.Value = BOOL.True;
-
-                // Save the modified diagram
-                string outputPath = "output_locked.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Rotation locked for shape ID {shapeId}. Saved to {outputPath}");
-
+                try
+                {
+                    Shape shape = page.Shapes.GetShape(targetShapeId);
+                    if (shape != null)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+                catch
+                {
+                    // Shape not on this page; continue searching
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                throw new Exception($"Shape with ID {targetShapeId} not found in the diagram.");
             }
+
+            // Lock the rotation attribute of the shape
+            targetShape.Protection.LockRotate.Value = BOOL.True;
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

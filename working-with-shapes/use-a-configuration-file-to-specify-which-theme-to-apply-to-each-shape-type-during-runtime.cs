@@ -1,85 +1,89 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 namespace DiagramThemeApplier
 {
-    // Represents theme configuration for a specific shape master name
-    public class ThemeConfig
+    // Configuration model matching the JSON structure
+    public class ShapeThemeConfig
     {
-        public string Theme { get; set; } = string.Empty;          // PresetThemeValue name
-        public string Variant { get; set; } = string.Empty;        // PresetThemeVariantValue name
-        public string QuickStyle { get; set; } = string.Empty;    // PresetQuickStyleValue name
+        public string Theme { get; set; }
+        public int Style { get; set; }          // Corresponds to PresetStyleMatricsValue (1‑6)
+        public int Color { get; set; }          // Corresponds to PresetColorMatricsValue (200‑206)
     }
 
-    public class Program
+    class Program
     {
-        public static void Main(string[] args)
+        static void Main(string[] args)
         {
             try
             {
 
-                // Expected arguments: inputVisioPath configJsonPath outputVisioPath
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string configPath = args.Length > 1 ? args[1] : "themeConfig.json";
-                string outputPath = args.Length > 2 ? args[2] : "output.vsdx";
+                // Paths – adjust as needed
+                string diagramPath = "input.vsdx";
+                string configPath = "themeConfig.json";
+                string outputPath = "output.vsdx";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Load the diagram (lifecycle rule: load)
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Load theme configuration from JSON file
-                Dictionary<string, ThemeConfig> themeMap = new Dictionary<string, ThemeConfig>(StringComparer.OrdinalIgnoreCase);
-                if (File.Exists(configPath))
-                {
-                    string json = File.ReadAllText(configPath);
-                    var deserialized = JsonSerializer.Deserialize<Dictionary<string, ThemeConfig>>(json);
-                    if (deserialized != null)
-                    {
-                        themeMap = deserialized;
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Configuration file not found: {configPath}");
-                    return;
-                }
+                // Read and deserialize the configuration file
+                var configJson = File.ReadAllText(configPath);
+                var themeMap = JsonSerializer.Deserialize<Dictionary<string, ShapeThemeConfig>>(configJson);
 
-                // Apply themes to shapes based on their master name
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        if (shape.Master == null) continue; // Skip shapes without a master
-
-                        string masterName = shape.Master.Name;
-                        if (themeMap.TryGetValue(masterName, out ThemeConfig cfg))
+                        // Use the shape's universal name (NameU) as the key to look up its theme
+                        if (shape.NameU != null && themeMap.TryGetValue(shape.NameU, out ShapeThemeConfig cfg))
                         {
-                            try
+                            // Apply the preset theme
+                            if (Enum.TryParse<PresetThemeValue>(cfg.Theme, out var themeEnum))
                             {
-                                // Apply preset theme
-                                shape.PresetTheme = Enum.Parse<PresetThemeValue>(cfg.Theme, true);
-                                shape.PresetThemeVariant = Enum.Parse<PresetThemeVariantValue>(cfg.Variant, true);
-                                shape.PresetThemeQuickStyle = Enum.Parse<PresetQuickStyleValue>(cfg.QuickStyle, true);
+                                shape.PresetTheme = themeEnum;
                             }
-                            catch (Exception ex)
+
+                            // Apply the style matrix (style row + color column)
+                            // Convert integer values to the corresponding enum members
+                            PresetStyleMatricsValue styleEnum = cfg.Style switch
                             {
-                                Console.WriteLine($"Failed to apply theme to shape ID {shape.ID} (Master: {masterName}): {ex.Message}");
-                            }
+                                1 => PresetStyleMatricsValue.Style1,
+                                2 => PresetStyleMatricsValue.Style2,
+                                3 => PresetStyleMatricsValue.Style3,
+                                4 => PresetStyleMatricsValue.Style4,
+                                5 => PresetStyleMatricsValue.Style5,
+                                6 => PresetStyleMatricsValue.Style6,
+                                _ => PresetStyleMatricsValue.Style1
+                            };
+
+                            PresetColorMatricsValue colorEnum = cfg.Color switch
+                            {
+                                200 => PresetColorMatricsValue.Color1,
+                                201 => PresetColorMatricsValue.Color2,
+                                202 => PresetColorMatricsValue.Color3,
+                                203 => PresetColorMatricsValue.Color4,
+                                204 => PresetColorMatricsValue.Color5,
+                                205 => PresetColorMatricsValue.Color6,
+                                206 => PresetColorMatricsValue.Color7,
+                                _ => PresetColorMatricsValue.Color1
+                            };
+
+                            shape.SetPresetThemeStyleMatrics(styleEnum, colorEnum);
                         }
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram (lifecycle rule: save)
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to {outputPath}");
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

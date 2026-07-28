@@ -6,18 +6,23 @@ class Program
 {
     static void Main()
     {
-        // Create a new empty diagram (contains a default page)
+        // Create a new empty diagram
         Diagram diagram = new Diagram();
 
         // Add a new page to the diagram
-        Page page = new Page();
-        diagram.Pages.Add(page);
+        Page newPage = new Page();
+        diagram.Pages.Add(newPage);
 
-        // Set the page dimensions (width = 11 inches, height = 8.5 inches)
-        page.PageSheet.PageProps.PageWidth.Value = 11.0;
-        page.PageSheet.PageProps.PageHeight.Value = 8.5;
+        // Define the desired page dimensions (in inches)
+        double pageWidth = 11.0;   // Width of the page
+        double pageHeight = 8.5;   // Height of the page
 
-        // Save the diagram as VSDX
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+        // Apply the dimensions to the newly added page
+        newPage.PageSheet.PageProps.PageWidth.Value = pageWidth;
+        newPage.PageSheet.PageProps.PageHeight.Value = pageHeight;
+
+        // Save the diagram as a VSDX file
+        string outputPath = "output.vsdx";
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
 }

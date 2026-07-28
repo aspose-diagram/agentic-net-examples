@@ -7,10 +7,10 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect three arguments: input Visio file, mapping CSV file, output Visio file
-            if (args.Length != 3)
+            // Expect three arguments: input Visio file, CSV mapping file, output Visio file
+            if (args.Length < 3)
             {
-                Console.WriteLine("Usage: VisioBatchDataUpdater <inputVisioPath> <mappingCsvPath> <outputVisioPath>");
+                Console.WriteLine("Usage: VisioBatchUpdate <inputVisioPath> <mappingCsvPath> <outputVisioPath>");
                 return;
             }
 
@@ -18,81 +18,97 @@ class Program
             string csvPath = args[1];
             string outputVisioPath = args[2];
 
-            // Validate input files
-            if (!File.Exists(inputVisioPath))
-            {
-                Console.WriteLine($"Input Visio file not found: {inputVisioPath}");
-                return;
-            }
-
-            if (!File.Exists(csvPath))
-            {
-                Console.WriteLine($"Mapping CSV file not found: {csvPath}");
-                return;
-            }
-
-            // Load mapping CSV into a dictionary: ShapeNameU -> (Data1, Data2, Data3)
-            Dictionary<string, Tuple<string, string, string>> shapeDataMap = new Dictionary<string, Tuple<string, string, string>>(StringComparer.OrdinalIgnoreCase);
-
-            try
-            {
-                string[] csvLines = File.ReadAllLines(csvPath);
-                foreach (string line in csvLines)
-                {
-                    // Skip empty lines
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    // Assume CSV format: ShapeName,Data1,Data2,Data3
-                    string[] parts = line.Split(',');
-
-                    if (parts.Length < 1)
-                        continue; // No shape name, ignore
-
-                    string shapeName = parts[0].Trim();
-
-                    string data1 = parts.Length > 1 ? parts[1].Trim() : string.Empty;
-                    string data2 = parts.Length > 2 ? parts[2].Trim() : string.Empty;
-                    string data3 = parts.Length > 3 ? parts[3].Trim() : string.Empty;
-
-                    shapeDataMap[shapeName] = new Tuple<string, string, string>(data1, data2, data3);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error reading CSV file: {ex.Message}");
-                return;
-            }
+            // Load mapping definitions from CSV
+            List<Mapping> mappings = LoadMappings(csvPath);
 
             // Load the Visio diagram
-            try
+            using (Diagram diagram = new Diagram(inputVisioPath))
             {
-                using (Diagram diagram = new Diagram(inputVisioPath))
+                // Apply each mapping to the corresponding shape
+                foreach (Mapping map in mappings)
                 {
-                    // Iterate through all pages and shapes
-                    foreach (Page page in diagram.Pages)
+                    bool updated = UpdateShapeData(diagram, map);
+                    if (!updated)
                     {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Match shape by its universal name (NameU)
-                            if (shape.NameU != null && shapeDataMap.TryGetValue(shape.NameU, out Tuple<string, string, string> dataTuple))
-                            {
-                                // Assign Data1, Data2, Data3 directly (no .Value)
-                                shape.Data1 = dataTuple.Item1;
-                                shape.Data2 = dataTuple.Item2;
-                                shape.Data3 = dataTuple.Item3;
-                            }
-                        }
+                        Console.WriteLine($"Warning: Shape '{map.ShapeName}' not found.");
                     }
+                }
 
-                    // Save the updated diagram
-                    diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved successfully to: {outputVisioPath}");
+                // Save the updated diagram
+                diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputVisioPath}'.");
+            }
+        }
+
+        // Reads the CSV file and returns a list of mapping records
+        static List<Mapping> LoadMappings(string csvFile)
+        {
+            var list = new List<Mapping>();
+
+            foreach (string line in File.ReadLines(csvFile))
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                // Skip header line if present
+                if (line.StartsWith("ShapeName", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string[] parts = line.Split(',');
+                if (parts.Length < 3)
+                {
+                    Console.WriteLine($"Invalid CSV line (expected 3 columns): {line}");
+                    continue;
+                }
+
+                var map = new Mapping
+                {
+                    ShapeName = parts[0].Trim(),
+                    DataField = parts[1].Trim(),
+                    Value = parts[2].Trim()
+                };
+                list.Add(map);
+            }
+
+            return list;
+        }
+
+        // Finds the shape by universal name and updates the requested data field
+        static bool UpdateShapeData(Diagram diagram, Mapping map)
+        {
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (string.Equals(shape.NameU, map.ShapeName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        switch (map.DataField)
+                        {
+                            case "Data1":
+                                shape.Data1 = map.Value;
+                                break;
+                            case "Data2":
+                                shape.Data2 = map.Value;
+                                break;
+                            case "Data3":
+                                shape.Data3 = map.Value;
+                                break;
+                            default:
+                                Console.WriteLine($"Unsupported data field '{map.DataField}' for shape '{map.ShapeName}'.");
+                                break;
+                        }
+                        return true;
+                    }
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing Visio diagram: {ex.Message}");
-            }
+            return false;
+        }
+
+        // DTO representing a single CSV row
+        class Mapping
+        {
+            public string ShapeName { get; set; } = string.Empty;
+            public string DataField { get; set; } = string.Empty;
+            public string Value { get; set; } = string.Empty;
         }
     }

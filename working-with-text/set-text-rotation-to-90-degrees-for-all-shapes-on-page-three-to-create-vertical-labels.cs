@@ -1,35 +1,50 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access page three (zero‑based index)
-            Page pageThree = diagram.Pages[2];
-
-            // Iterate through all shapes on the page
-            foreach (Shape shape in pageThree.Shapes)
+            try
             {
-                // Set the text rotation angle to 90 degrees
-                shape.TextXForm.TxtAngle.Value = 90;
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path for the modified Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram inside a using block to ensure proper disposal
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Ensure the diagram has at least three pages (zero‑based index)
+                    if (diagram.Pages.Count < 3)
+                    {
+                        Console.WriteLine("The diagram does not contain a third page.");
+                        return;
+                    }
+
+                    // Retrieve the third page (page index 2)
+                    Page page = diagram.Pages[2];
+
+                    // Rotation angle of 90 degrees expressed in radians
+                    double rotationRadians = Math.PI / 2.0;
+
+                    // Iterate over all shapes on the third page and set their rotation
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Set the shape's rotation angle (radians)
+                        shape.XForm.Angle.Value = rotationRadians;
+                    }
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
+                }
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -3,15 +3,14 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace HyperlinkConfigurationExample
+namespace HyperlinkDefaultConfigExample
 {
     // Represents the default hyperlink settings loaded from a configuration file.
     public class HyperlinkConfig
     {
-        public string? Name { get; set; }
-        public string? Address { get; set; }
-        public string? Description { get; set; }
-        public string? SubAddress { get; set; }
+        public string Address { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string SubAddress { get; set; } = "";
     }
 
     class Program
@@ -21,61 +20,59 @@ namespace HyperlinkConfigurationExample
             try
             {
 
-                // Path to the JSON configuration file containing default hyperlink properties.
+                // Path to the JSON configuration file that defines default hyperlink properties.
                 const string configPath = "hyperlinkConfig.json";
 
-                // Load and deserialize the configuration.
+                // Load the configuration. If the file does not exist, create a default one.
                 HyperlinkConfig config;
-                try
+                if (File.Exists(configPath))
                 {
                     string json = File.ReadAllText(configPath);
                     config = JsonSerializer.Deserialize<HyperlinkConfig>(json) ?? new HyperlinkConfig();
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"Failed to load configuration: {ex.Message}");
-                    // Fallback to empty defaults if the file cannot be read.
-                    config = new HyperlinkConfig();
+                    // Create a default configuration and persist it for future runs.
+                    config = new HyperlinkConfig
+                    {
+                        Address = "https://example.com",
+                        Description = "Default hyperlink description",
+                        SubAddress = "" // No sub-address by default.
+                    };
+                    string defaultJson = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+                    File.WriteAllText(configPath, defaultJson);
                 }
 
                 // Create a new diagram.
                 Diagram diagram = new Diagram();
 
                 // Add a rectangle shape to the active page.
-                // Parameters: pinX, pinY, width, height, master name, page index.
-                long shapeId = diagram.AddShape(2.0, 2.0, 2.0, 1.0, "Rectangle", (int)diagram.ActivePage.ID);
-                Shape shape = diagram.ActivePage.Shapes.GetShape((int)shapeId);
+                // Parameters: pinX, pinY, masterName, pageIndex.
+                long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
 
-                // Ensure the shape's Hyperlinks collection is not null.
-                if (shape.Hyperlinks != null)
-                {
-                    // Create a new hyperlink using the default configuration.
-                    Hyperlink link = new Hyperlink();
+                // Retrieve the shape instance.
+                Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
 
-                    // Apply default properties; use null‑coalescing to avoid null reference exceptions.
-                    link.Name = config.Name ?? "DefaultLink";
-                    link.Address.Value = config.Address ?? "https://example.com";
-                    link.Description.Value = config.Description ?? "Default description";
-                    link.SubAddress.Value = config.SubAddress ?? "";
+                // Create a new hyperlink and apply the default properties from the config.
+                Hyperlink link = new Hyperlink();
+                link.Address.Value = config.Address;
+                link.Description.Value = config.Description;
+                link.SubAddress.Value = config.SubAddress;
+                // Optional: give the hyperlink a name for identification.
+                link.Name = "DefaultLink";
 
-                    // Add the hyperlink to the shape.
-                    shape.Hyperlinks.Add(link);
-                }
-                else
-                {
-                    Console.WriteLine("The shape does not support hyperlinks.");
-                }
+                // Add the hyperlink to the shape's collection.
+                shape.Hyperlinks.Add(link);
 
                 // Save the diagram to a VSDX file.
-                const string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
 
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+                Console.WriteLine("Diagram created and saved with default hyperlink applied.");
 
             }
-            catch (System.NullReferenceException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

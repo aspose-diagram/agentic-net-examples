@@ -1,6 +1,6 @@
 using System;
+using System.Globalization;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,55 +9,58 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram or create a new one.
-                // Here we create a new empty diagram.
+                // Create a new empty diagram
                 Diagram diagram = new Diagram();
 
-                // Ensure there is at least one page.
-                if (diagram.Pages.Count == 0)
-                {
-                    diagram.Pages.Add(new Page());
-                }
-
-                // Use the first page.
+                // Get the first (default) page
                 Page page = diagram.Pages[0];
 
-                // Add a rectangle shape.
-                // Parameters: PinX, PinY, Width, Height, MasterName
-                // The rectangle will be centered at (5,5) inches with size 2x1 inches.
-                long rectId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle");
+                // Add a rectangle shape at position (5,5) with size 4x2 inches
+                // The fourth parameter (isCalculate) must be a bool
+                long rectId = page.AddShape(5.0, 5.0, 4.0, 2.0, "Rectangle", false);
 
-                // Retrieve the shape object.
+                // Retrieve the shape object using the returned ID
                 Shape rect = page.Shapes.GetShape(rectId);
 
-                // Add connection points at the four corners.
-                // Corner formulas are based on LocPinX/Y, Width, and Height.
-                // Top‑Left corner
-                Connection topLeft = new Connection();
-                topLeft.X.Ufe.F = "-LocPinX";
-                topLeft.Y.Ufe.F = "-LocPinY";
-                rect.Connections.Add(topLeft);
+                // Extract necessary geometry values
+                double pinX = rect.XForm.PinX.Value;
+                double pinY = rect.XForm.PinY.Value;
+                double width = rect.XForm.Width.Value;
+                double height = rect.XForm.Height.Value;
+                double locPinX = rect.XForm.LocPinX.Value;
+                double locPinY = rect.XForm.LocPinY.Value;
 
-                // Top‑Right corner
-                Connection topRight = new Connection();
-                topRight.X.Ufe.F = "Width - LocPinX";
-                topRight.Y.Ufe.F = "-LocPinY";
-                rect.Connections.Add(topRight);
+                // Calculate corner coordinates based on LocPin values
+                // Top‑Left
+                double tlX = pinX - locPinX;
+                double tlY = pinY + (height - locPinY);
+                // Top‑Right
+                double trX = pinX + (width - locPinX);
+                double trY = tlY;
+                // Bottom‑Left
+                double blX = tlX;
+                double blY = pinY - locPinY;
+                // Bottom‑Right
+                double brX = trX;
+                double brY = blY;
 
-                // Bottom‑Left corner
-                Connection bottomLeft = new Connection();
-                bottomLeft.X.Ufe.F = "-LocPinX";
-                bottomLeft.Y.Ufe.F = "Height - LocPinY";
-                rect.Connections.Add(bottomLeft);
+                // Helper to add a connection point at a given coordinate
+                void AddConnection(double x, double y)
+                {
+                    Connection cp = new Connection();
+                    cp.X.Ufe.F = x.ToString(CultureInfo.InvariantCulture);
+                    cp.Y.Ufe.F = y.ToString(CultureInfo.InvariantCulture);
+                    rect.Connections.Add(cp);
+                }
 
-                // Bottom‑Right corner
-                Connection bottomRight = new Connection();
-                bottomRight.X.Ufe.F = "Width - LocPinX";
-                bottomRight.Y.Ufe.F = "Height - LocPinY";
-                rect.Connections.Add(bottomRight);
+                // Add connection points at the four corners
+                AddConnection(tlX, tlY);
+                AddConnection(trX, trY);
+                AddConnection(blX, blY);
+                AddConnection(brX, brY);
 
-                // Save the diagram to a VSDX file.
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the diagram to a VSDX file
+                diagram.Save("RectangleWithCorners.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (Aspose.Diagram.DiagramException ex)

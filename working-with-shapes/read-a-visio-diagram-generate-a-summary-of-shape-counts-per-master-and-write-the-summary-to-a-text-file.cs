@@ -1,59 +1,55 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Aspose.Diagram;
 
 class VisioShapeSummary
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Path to the source Visio file
-            string inputFile = "input.vsdx";
+            // Input Visio file path
+            string visioPath = "input.vsdx";
 
-            // Path to the output text file
-            string outputFile = "shape_summary.txt";
+            // Output summary text file path
+            string summaryPath = "shape_summary.txt";
 
-            // Load the Visio diagram (uses Diagram(string) constructor)
-            using (Diagram diagram = new Diagram(inputFile))
+            // Load the Visio diagram using the provided constructor (lifecycle rule)
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                // Dictionary to hold counts per master name
-                var masterCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                // Dictionary to hold shape counts per master name
+                Dictionary<string, int> masterShapeCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-                // Iterate through all pages and their shapes
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Determine the master name; if no master, categorize as "NoMaster"
-                        string masterName = shape.Master != null
-                            ? (!string.IsNullOrEmpty(shape.Master.NameU) ? shape.Master.NameU : shape.Master.Name)
+                        // Determine the master name; if the shape has no master, use a placeholder
+                        string masterName = shape.Master != null && !string.IsNullOrEmpty(shape.Master.NameU)
+                            ? shape.Master.NameU
                             : "NoMaster";
 
-                        if (string.IsNullOrEmpty(masterName))
-                            masterName = "UnnamedMaster";
-
-                        // Increment count
-                        if (masterCounts.ContainsKey(masterName))
-                            masterCounts[masterName]++;
+                        // Increment the count for this master
+                        if (masterShapeCounts.ContainsKey(masterName))
+                            masterShapeCounts[masterName]++;
                         else
-                            masterCounts[masterName] = 1;
+                            masterShapeCounts[masterName] = 1;
                     }
                 }
 
-                // Build the summary text
-                var sb = new StringBuilder();
-                sb.AppendLine("Shape Count per Master:");
-                foreach (var kvp in masterCounts)
+                // Write the summary to a text file (free‑form code, no specific rule needed)
+                using (StreamWriter writer = new StreamWriter(summaryPath))
                 {
-                    sb.AppendLine($"{kvp.Key}: {kvp.Value}");
+                    writer.WriteLine("Shape Count per Master:");
+                    foreach (var kvp in masterShapeCounts)
+                    {
+                        writer.WriteLine($"{kvp.Key}: {kvp.Value}");
+                    }
                 }
-
-                // Write the summary to a text file
-                File.WriteAllText(outputFile, sb.ToString());
             }
 
         }

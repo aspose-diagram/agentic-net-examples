@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,48 +9,58 @@ class Program
             try
             {
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path to the output Visio file after applying the theme
+                string outputPath = "output.vsdx";
 
-                // Assume we are working with the first page
-                Page page = diagram.Pages[0];
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // List of shape IDs that are expected to exist before applying themes
-                long[] expectedShapeIds = new long[] { 1, 2, 3, 4, 5 };
+                // Define the list of shape IDs that are expected to exist
+                long[] expectedShapeIds = new long[] { 1, 2, 3, 10, 20 };
 
-                // Track whether any missing shapes were found
-                bool missingFound = false;
-
+                // Check each expected ID across all pages
                 foreach (long shapeId in expectedShapeIds)
                 {
-                    try
+                    bool found = false;
+
+                    foreach (Page page in diagram.Pages)
                     {
                         // Attempt to retrieve the shape by ID
-                        Shape shape = page.Shapes.GetShape(shapeId);
+                        Shape shape = null;
+                        try
+                        {
+                            shape = page.Shapes.GetShape(shapeId);
+                        }
+                        catch
+                        {
+                            // GetShape throws if the ID is not present on this page
+                            shape = null;
+                        }
 
-                        // If retrieval succeeds, apply a preset theme to the shape
-                        shape.PresetTheme = PresetThemeValue.Bubble;
-                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                        if (shape != null)
+                        {
+                            found = true;
+                            break;
+                        }
                     }
-                    catch (Exception ex)
+
+                    if (!found)
                     {
-                        // If an exception occurs, the shape ID is missing
-                        missingFound = true;
-                        Console.WriteLine($"Missing shape with ID {shapeId}: {ex.Message}");
+                        Console.WriteLine($"[Warning] Shape with ID {shapeId} was not found in the diagram.");
                     }
                 }
 
-                if (missingFound)
+                // Apply a preset theme to each page after verification
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.WriteLine("One or more shapes were missing. Theme applied only to existing shapes.");
-                }
-                else
-                {
-                    Console.WriteLine("All expected shapes were found. Theme applied to all shapes.");
+                    page.PresetTheme = PresetThemeValue.Bubble;
+                    page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                 }
 
                 // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

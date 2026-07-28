@@ -3,42 +3,40 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+public class DiagramProcessor
 {
-    static void Main()
+    // Loads a diagram, applies a theme from another diagram, and returns the result in a memory stream.
+    public MemoryStream GetDiagramWithTheme(string diagramPath, string themePath)
     {
-        try
+        // Load the main diagram from file.
+        using (var diagram = new Diagram(diagramPath))
         {
-
-            // Load the diagram that contains the desired theme
-            using (Diagram sourceDiagram = new Diagram("source.vsdx"))
+            // Load the diagram that contains the desired theme.
+            using (var themeDiagram = new Diagram(themePath))
             {
-                // Create a new diagram (or load another one) to which the theme will be applied
-                using (Diagram targetDiagram = new Diagram())
-                {
-                    // Apply the theme from the source diagram
-                    targetDiagram.CopyTheme(sourceDiagram);
-
-                    // Prepare a memory stream for saving the diagram without touching the disk
-                    using (MemoryStream memoryStream = new MemoryStream())
-                    {
-                        // Save the diagram into the memory stream in VDX format
-                        targetDiagram.Save(memoryStream, SaveFileFormat.Vdx);
-
-                        // Reset the stream position if it will be read afterwards
-                        memoryStream.Position = 0;
-
-                        // The diagram data is now available in memoryStream (e.g., as a byte array)
-                        byte[] diagramBytes = memoryStream.ToArray();
-                        // Further processing can be done with diagramBytes here
-                    }
-                }
+                // Apply the theme from the source diagram.
+                diagram.CopyTheme(themeDiagram);
             }
 
+            // Prepare a memory stream to hold the saved diagram.
+            var memoryStream = new MemoryStream();
+
+            // Save the diagram to the memory stream using a specific format (e.g., VDX).
+            diagram.Save(memoryStream, SaveFileFormat.Vdx);
+
+            // Reset the stream position so it can be read from the beginning.
+            memoryStream.Position = 0;
+
+            // Return the stream to the caller for further processing.
+            return memoryStream;
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // See classes above
     }
 }

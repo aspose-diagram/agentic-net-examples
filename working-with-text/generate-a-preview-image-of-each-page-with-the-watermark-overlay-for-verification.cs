@@ -5,70 +5,70 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Expect two arguments: input Visio file path and output folder path
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: DiagramPreviewGenerator <inputVisioFile> <outputFolder>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputFolder = args[1];
+                // Input Visio file path
+                string inputPath = "input.vsdx";
 
-            if (!File.Exists(inputPath))
-            {
-                Console.WriteLine($"Input file not found: {inputPath}");
-                return;
-            }
+                // Output folder for preview images
+                string outputFolder = "PreviewImages";
 
-            if (!Directory.Exists(outputFolder))
-            {
-                Console.WriteLine($"Output folder does not exist. Creating: {outputFolder}");
+                // Ensure the output directory exists
                 Directory.CreateDirectory(outputFolder);
-            }
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Load the Visio diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Calculate position and size for the watermark (full page)
-                    double pinX = pageWidth / 2.0;   // center horizontally
-                    double pinY = pageHeight / 2.0; // center vertically
-                    double watermarkWidth = pageWidth;
-                    double watermarkHeight = pageHeight;
-
-                    // Add watermark text to the page
-                    // Font size is specified in inches (e.g., 0.2 inches ≈ 14.4 points)
-                    page.AddText(pinX, pinY, watermarkWidth, watermarkHeight,
-                                 "WATERMARK", "Arial", "#CCCCCC", 0.2);
-
-                    // Prepare image save options for the current page
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    // Iterate through each page in the diagram
+                    for (int i = 0; i < diagram.Pages.Count; i++)
                     {
-                        PageIndex = (int)page.ID, // Use the page's ID as index
-                        PageCount = 1,
-                        ExportHiddenPage = false
-                    };
+                        // Retrieve the current page
+                        Page page = diagram.Pages[i];
 
-                    // Build output file name
-                    string safePageName = string.IsNullOrWhiteSpace(page.Name) ? $"Page_{page.ID}" : page.Name;
-                    string outputPath = Path.Combine(outputFolder, $"{safePageName}_preview.png");
+                        // Get page dimensions (in inches)
+                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Save only the current page as an image
-                    diagram.Save(outputPath, imgOptions);
+                        // Calculate center position for the watermark
+                        double centerX = pageWidth / 2.0;
+                        double centerY = pageHeight / 2.0;
 
-                    Console.WriteLine($"Preview generated for page '{safePageName}' at: {outputPath}");
+                        // Add a semi‑transparent watermark that covers the whole page
+                        // Font size is specified in inches (0.5 inches ≈ 36 points)
+                        page.AddText(
+                            centerX,               // PinX (center X)
+                            centerY,               // PinY (center Y)
+                            pageWidth,             // Width of the text box (full page width)
+                            pageHeight,            // Height of the text box (full page height)
+                            "CONFIDENTIAL",        // Watermark text
+                            "Arial",               // Font name
+                            "#CCCCCC",             // Font color (light gray)
+                            0.5);                  // Font size in inches
+
+                        // Prepare image save options for PNG export of the current page only
+                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                        {
+                            PageIndex = i,   // Export this specific page
+                            PageCount = 1    // Export a single page
+                        };
+
+                        // Define the output image file name
+                        string outputPath = Path.Combine(outputFolder, $"Page_{i + 1}.png");
+
+                        // Save the page as an image with the watermark overlay
+                        diagram.Save(outputPath, imgOptions);
+                    }
                 }
-            }
 
-            Console.WriteLine("All previews generated successfully.");
-        }
+                Console.WriteLine("Preview images with watermarks have been generated successfully.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }

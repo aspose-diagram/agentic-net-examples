@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -11,48 +12,77 @@ class Program
                 // Paths to the source and target Visio files
                 string sourcePath = "source.vsdx";
                 string targetPath = "target.vsdx";
-                string outputPath = "merged.vsdx";
+                string outputPath = "target_synced.vsdx";
 
-                // Load the source and target diagrams
+                // Load the diagrams
                 Diagram sourceDiagram = new Diagram(sourcePath);
                 Diagram targetDiagram = new Diagram(targetPath);
 
-                // Assume both diagrams have the same number of pages and corresponding pages are in the same order
-                int pageCount = sourceDiagram.Pages.Count;
-                for (int i = 0; i < pageCount; i++)
+                // Iterate through each page in the source diagram
+                foreach (Page sourcePage in sourceDiagram.Pages)
                 {
-                    // Retrieve pages by index
-                    Page srcPage = sourceDiagram.Pages[i];
-                    Page tgtPage = targetDiagram.Pages[i];
-
-                    // Iterate all shapes on the source page
-                    foreach (Shape srcShape in srcPage.Shapes)
+                    // Try to find a page with the same name in the target diagram
+                    Page targetPage = targetDiagram.Pages.GetPage(sourcePage.Name);
+                    if (targetPage == null)
                     {
-                        // Find the matching shape on the target page by universal name (NameU)
-                        Shape tgtShape = FindShapeByNameU(tgtPage, srcShape.NameU);
-                        if (tgtShape == null)
+                        // If the page does not exist in the target, skip synchronization for this page
+                        continue;
+                    }
+
+                    // Iterate through each shape on the source page
+                    foreach (Shape sourceShape in sourcePage.Shapes)
+                    {
+                        // Find the corresponding shape in the target page by universal name
+                        Shape targetShape = null;
+                        foreach (Shape shp in targetPage.Shapes)
                         {
-                            // No matching shape found; skip to next shape
+                            if (shp.NameU == sourceShape.NameU)
+                            {
+                                targetShape = shp;
+                                break;
+                            }
+                        }
+
+                        if (targetShape == null)
+                        {
+                            // No matching shape found; skip this shape
                             continue;
                         }
 
-                        // Clear existing user-defined cells on the target shape
-                        tgtShape.Users.Clear();
-
-                        // Copy each user-defined cell from source shape to target shape
-                        foreach (User srcUser in srcShape.Users)
+                        // Synchronize each user‑defined cell from the source shape to the target shape
+                        foreach (User sourceUser in sourceShape.Users)
                         {
-                            User tgtUser = new User();
-                            tgtUser.Name = srcUser.Name;
-                            tgtUser.NameU = srcUser.NameU;
-                            tgtUser.Value.Val = srcUser.Value.Val;
-                            tgtUser.Prompt.Value = srcUser.Prompt.Value;
-                            tgtShape.Users.Add(tgtUser);
+                            // Look for an existing user cell with the same name in the target shape
+                            User targetUser = null;
+                            foreach (User u in targetShape.Users)
+                            {
+                                if (u.Name == sourceUser.Name)
+                                {
+                                    targetUser = u;
+                                    break;
+                                }
+                            }
+
+                            if (targetUser != null)
+                            {
+                                // Update the existing cell value
+                                targetUser.Value.Val = sourceUser.Value.Val;
+                            }
+                            else
+                            {
+                                // Create a new user‑defined cell and add it to the target shape
+                                User newUser = new User();
+                                newUser.Name = sourceUser.Name;
+                                newUser.NameU = sourceUser.NameU;
+                                newUser.Value.Val = sourceUser.Value.Val;
+                                newUser.Prompt.Value = sourceUser.Prompt.Value;
+                                targetShape.Users.Add(newUser);
+                            }
                         }
                     }
                 }
 
-                // Save the updated target diagram to the output file
+                // Save the updated target diagram
                 targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
@@ -61,17 +91,4 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
-
-        // Helper method to locate a shape on a page by its universal name (NameU)
-        private static Shape FindShapeByNameU(Page page, string nameU)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.NameU == nameU)
-                {
-                    return shape;
-                }
-            }
-            return null;
-        }
     }

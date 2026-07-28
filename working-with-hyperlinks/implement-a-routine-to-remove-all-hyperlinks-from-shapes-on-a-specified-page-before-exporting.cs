@@ -1,75 +1,63 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class DiagramHelper
+{
+    /// <summary>
+    /// Removes all hyperlinks from every shape on the specified page and saves the diagram.
+    /// </summary>
+    /// <param name="inputFile">Path to the source Visio file.</param>
+    /// <param name="pageName">Name of the page from which hyperlinks should be removed.</param>
+    /// <param name="outputFile">Path where the modified Visio file will be saved.</param>
+    public void RemoveHyperlinksFromPage(string inputFile, string pageName, string outputFile)
     {
-        static void Main(string[] args)
+        // Load the diagram (lifecycle rule: load)
+        Diagram diagram = new Diagram(inputFile);
+
+        // Find the target page by name
+        Page targetPage = null;
+        foreach (Page page in diagram.Pages)
         {
-            // Expect three arguments: input file path, page index (0‑based), output file path
-            if (args.Length != 3)
+            if (string.Equals(page.Name, pageName, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine("Usage: RemoveHyperlinksExample <inputVisio> <pageIndex> <outputVisio>");
-                return;
-            }
-
-            string inputPath = args[0];
-            int pageIndex;
-            string outputPath = args[2];
-
-            if (!int.TryParse(args[1], out pageIndex))
-            {
-                Console.WriteLine("Invalid page index.");
-                return;
-            }
-
-            try
-            {
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Validate page index
-                    if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
-                    {
-                        Console.WriteLine("Page index out of range.");
-                        return;
-                    }
-
-                    // Retrieve the specified page (do NOT use ActivePage)
-                    Page page = diagram.Pages[pageIndex];
-
-                    // Iterate over all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Ensure the Hyperlinks collection exists
-                        if (shape.Hyperlinks != null)
-                        {
-                            // Collect hyperlinks to remove (cannot modify collection while iterating)
-                            List<Hyperlink> linksToRemove = new List<Hyperlink>();
-                            foreach (Hyperlink link in shape.Hyperlinks)
-                            {
-                                linksToRemove.Add(link);
-                            }
-
-                            // Remove each hyperlink from the shape
-                            foreach (Hyperlink link in linksToRemove)
-                            {
-                                shape.Hyperlinks.Remove(link);
-                            }
-                        }
-                    }
-
-                    // Save the modified diagram (choose desired format, e.g., VSDX)
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-
-                Console.WriteLine("Hyperlinks removed and diagram saved successfully.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
-                throw;
+                targetPage = page;
+                break;
             }
         }
+
+        if (targetPage == null)
+        {
+            throw new ArgumentException($"Page '{pageName}' not found in the diagram.");
+        }
+
+        // Iterate through all shapes on the page and clear their hyperlink collections
+        foreach (Shape shape in targetPage.Shapes)
+        {
+            // The Hyperlinks property returns a HyperlinkCollection.
+            // Calling Clear removes all hyperlink elements from the shape.
+            shape.Hyperlinks.Clear();
+        }
+
+        // Save the modified diagram (lifecycle rule: save)
+        diagram.Save(outputFile, SaveFileFormat.Vdx);
     }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        try
+        {
+
+            var obj = new DiagramHelper();
+            obj.RemoveHyperlinksFromPage("", "", "");
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
+    }
+}

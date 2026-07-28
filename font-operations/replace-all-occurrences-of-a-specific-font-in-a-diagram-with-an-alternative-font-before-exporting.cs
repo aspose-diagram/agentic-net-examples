@@ -10,26 +10,27 @@ class Program
         try
         {
 
-            // Path to the source Visio diagram
-            string sourceFile = "input.vsdx";
+            // Paths to the source and destination diagram files
+            string sourcePath = "input.vsdx";
+            string destinationPath = "output.vsdx";
 
-            // Path for the exported diagram
-            string outputFile = "output.vdx";
+            // Font to be replaced and its substitute
+            string originalFont = "Arial";
+            string[] substituteFonts = new[] { "Calibri" };
 
-            // Original font name to be replaced
-            string originalFont = "Calibri";
-
-            // Substitute font name that will replace the original font
-            string[] substituteFonts = new[] { "Arial" };
-
-            // Register the font substitution globally
+            // Register the substitute font globally
             FontConfigs.SetFontSubstitutes(originalFont, substituteFonts);
 
             // Load the diagram using the provided constructor (lifecycle rule)
-            Diagram diagram = new Diagram(sourceFile);
+            using (Diagram diagram = new Diagram(sourcePath))
+            {
+                // Optional: ensure the default font for saving is the substitute
+                DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
+                saveOptions.DefaultFont = "Calibri";
 
-            // Save the diagram using the provided Save method (lifecycle rule)
-            diagram.Save(outputFile, SaveFileFormat.Vdx);
+                // Save the diagram with the specified options (lifecycle rule)
+                diagram.Save(destinationPath, saveOptions);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

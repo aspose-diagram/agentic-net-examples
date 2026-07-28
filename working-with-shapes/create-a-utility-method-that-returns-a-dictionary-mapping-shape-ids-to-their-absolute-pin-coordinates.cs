@@ -3,15 +3,14 @@ using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-public static class DiagramUtils
+public static class DiagramUtilities
 {
     /// <summary>
-    /// Retrieves a dictionary that maps each shape's unique ID to its absolute Pin coordinates (PinX, PinY).
+    /// Retrieves a mapping of shape IDs to their absolute Pin coordinates (PinX, PinY) for all shapes in the diagram.
     /// </summary>
     /// <param name="diagram">The Aspose.Diagram.Diagram instance to inspect.</param>
     /// <returns>
-    /// A dictionary where the key is the shape ID (long) and the value is a tuple containing
-    /// the PinX and PinY coordinates (both double) expressed in inches relative to the page.
+    /// A dictionary where the key is the shape's unique ID (long) and the value is a tuple containing the PinX and PinY coordinates.
     /// </returns>
     public static Dictionary<long, (double PinX, double PinY)> GetShapePinCoordinates(Diagram diagram)
     {
@@ -20,20 +19,20 @@ public static class DiagramUtils
 
         var result = new Dictionary<long, (double PinX, double PinY)>();
 
-        // Iterate through all pages in the diagram
+        // Iterate through each page in the diagram
         foreach (Page page in diagram.Pages)
         {
-            // Iterate through all shapes on the current page
+            // Iterate through each shape on the current page
             foreach (Shape shape in page.Shapes)
             {
-                // Shape.ID is a long identifier
-                long shapeId = shape.ID;
+                // Skip deleted shapes
+                if (shape.Del == BOOL.True)
+                    continue;
 
-                // PinX and PinY are stored in the XForm cell collection
+                long shapeId = shape.ID;
                 double pinX = shape.XForm.PinX.Value;
                 double pinY = shape.XForm.PinY.Value;
 
-                // Add to the dictionary (overwrites if duplicate IDs exist, which should not happen)
                 result[shapeId] = (pinX, pinY);
             }
         }

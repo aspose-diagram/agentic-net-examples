@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -12,28 +13,26 @@ class Program
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the plain text of the shape (concatenated Txt runs)
-                        string plainText = shape.Text?.Value?.Text ?? string.Empty;
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Check if the shape contains multiline text (contains line break characters)
-                        if (plainText.Contains("\n") || plainText.Contains("\r"))
+                        // Retrieve plain text of the shape
+                        string plainText = shape.Text.Value.Text;
+
+                        // Check if the shape contains multiline text (contains a line break)
+                        if (!string.IsNullOrEmpty(plainText) && plainText.Contains("\n"))
                         {
-                            // Ensure the TextBlock object exists before modifying it
-                            if (shape.TextBlock != null)
-                            {
-                                // Set a larger default tab stop (in inches) for better readability
-                                // Example: 0.5 inches between tab stops
-                                shape.TextBlock.DefaultTabStop.Value = 0.5;
-                            }
+                            // Set a larger default tab stop (in inches) for better readability
+                            shape.TextBlock.DefaultTabStop.Value = 0.5; // 0.5 inches
                         }
                     }
                 }

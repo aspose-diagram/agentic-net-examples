@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
@@ -14,46 +12,38 @@ class Program
                 string inputPath = "input.vsdx";
 
                 // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Choose the page where grouping will be performed (first page in this example)
-                    Page page = diagram.Pages[0];
+                Diagram diagram = new Diagram(inputPath);
 
-                    // IDs of the shapes to be grouped (replace with actual IDs as needed)
-                    long[] shapeIdsToGroup = new long[] { 1, 2, 3 };
+                // Choose the page where the shapes reside (e.g., first page)
+                Page page = diagram.Pages[0];
 
-                    // Collect the Shape objects corresponding to the IDs
-                    List<Shape> shapesToGroup = new List<Shape>();
-                    foreach (long shapeId in shapeIdsToGroup)
-                    {
-                        // Retrieve the shape by its ID
-                        Shape shape = page.Shapes.GetShape(shapeId);
-                        // Ensure the shape exists and is not marked as deleted
-                        if (shape != null && shape.Del == BOOL.False)
-                        {
-                            shapesToGroup.Add(shape);
-                        }
-                    }
+                // IDs of the shapes you want to group.
+                // These IDs should correspond to existing shapes on the page.
+                long shapeId1 = 1; // replace with actual shape ID
+                long shapeId2 = 2; // replace with actual shape ID
+                long shapeId3 = 3; // replace with actual shape ID
 
-                    // Verify that we have at least two shapes to form a group
-                    if (shapesToGroup.Count < 2)
-                    {
-                        Console.WriteLine("Not enough shapes to create a group.");
-                        return;
-                    }
+                // Retrieve the Shape objects by their IDs
+                Shape shape1 = page.Shapes.GetShape(shapeId1);
+                Shape shape2 = page.Shapes.GetShape(shapeId2);
+                Shape shape3 = page.Shapes.GetShape(shapeId3);
 
-                    // Create the group from the selected shapes
-                    Shape groupShape = page.Shapes.Group(shapesToGroup.ToArray());
+                // Group the selected shapes into a single group shape
+                Shape[] shapesToGroup = new Shape[] { shape1, shape2, shape3 };
+                Shape groupShape = page.Shapes.Group(shapesToGroup);
 
-                    // Optionally set a name for the new group
-                    groupShape.Name = "MyGroupedShape";
+                // Optional: set a name for the new group for easier identification
+                groupShape.Name = "MyGroup";
+                groupShape.NameU = "MyGroup";
 
-                    // Save the modified diagram
-                    string outputPath = "output.vsdx";
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                    Console.WriteLine($"Shapes grouped successfully and saved to '{outputPath}'.");
-                }
+                // Clean up resources
+                diagram.Dispose();
+
+                Console.WriteLine("Shapes have been grouped and diagram saved to: " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

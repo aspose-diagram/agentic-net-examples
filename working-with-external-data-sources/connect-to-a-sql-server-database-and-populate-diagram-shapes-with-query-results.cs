@@ -1,74 +1,52 @@
+using System.IO;
 using System;
-using System.Data.SqlClient;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Path to the Visio template or existing diagram file
-                string diagramPath = "template.vsdx";
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+            // -------------------------------------------------
+            // Create a DataConnection for SQL Server
+            // -------------------------------------------------
+            DataConnection sqlConnection = new DataConnection();
+            sqlConnection.ID = 1; // unique within the document
+            sqlConnection.ConnectionString = "Data Source=YOUR_SERVER;Initial Catalog=YOUR_DATABASE;Integrated Security=True;";
+            // The Command property of DataConnection is optional when using DataRecordSet
+            diagram.DataConnections.Add(sqlConnection);
 
-                // Get the first page (index 0)
-                Page page = diagram.Pages[0];
+            // -------------------------------------------------
+            // Create a DataRecordSet that uses the above connection
+            // -------------------------------------------------
+            DataRecordSet recordSet = new DataRecordSet();
+            recordSet.ID = 1; // unique within the document
+            recordSet.Name = "EmployeeData";
+            recordSet.ConnectionID = sqlConnection.ID;
+            recordSet.Command = "SELECT EmployeeID, Name, Title FROM Employees";
+            diagram.DataRecordSets.Add(recordSet);
 
-                // Database connection string (modify as needed)
-                string connectionString = "Data Source=YOUR_SERVER;Initial Catalog=YOUR_DATABASE;Integrated Security=True";
+            // -------------------------------------------------
+            // Refresh the DataRecordSet to pull data from SQL Server
+            // -------------------------------------------------
+            // This executes the query and updates any linked shapes automatically
+            recordSet.Refresh(DataConnectionType.SQL);
 
-                // SQL query to retrieve data
-                string query = "SELECT Id, Name FROM YourTable";
+            // -------------------------------------------------
+            // Save the updated diagram (replace with your desired output path)
+            // -------------------------------------------------
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-                // Starting position for shapes
-                double startX = 1.0; // inches from left
-                double startY = 1.0; // inches from top
-                double deltaY = 1.0; // vertical spacing between shapes
-
-                int rowIndex = 0;
-
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            // Calculate position for the current shape
-                            double pinY = startY + rowIndex * deltaY;
-
-                            // Add a rectangle shape; returns the shape ID (long)
-                            long shapeId = page.AddShape(startX, pinY, "Rectangle");
-
-                            // Retrieve the shape object using the ID
-                            Shape shape = page.Shapes.GetShape(shapeId);
-
-                            // Clear any existing text and add new text from the query result
-                            shape.Text.Value.Clear();
-                            string name = reader["Name"]?.ToString() ?? string.Empty;
-                            shape.Text.Value.Add(new Txt(name));
-
-                            // Store the Id value in Data1 (string property, assign directly)
-                            shape.Data1 = reader["Id"]?.ToString() ?? string.Empty;
-
-                            rowIndex++;
-                        }
-                    }
-                }
-
-                // Save the updated diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

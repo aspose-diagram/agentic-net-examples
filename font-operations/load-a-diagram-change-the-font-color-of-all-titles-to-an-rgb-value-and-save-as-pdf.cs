@@ -9,40 +9,52 @@ class Program
             try
             {
 
-                // Input and output file paths (adjust as needed)
+                // Input Visio file path
                 string inputPath = "input.vsdx";
+                // Output PDF file path
                 string outputPath = "output.pdf";
+                // Desired font color in hex (RGB)
+                string titleFontColor = "#FF0000"; // Red
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the desired font color in HEX (RGB) format
-                string titleFontColor = "#FF5733"; // Example RGB color
-
-                // Iterate through all pages and shapes to find title shapes
-                foreach (Page page in diagram.Pages)
+                try
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Load the diagram
+                    using (Diagram diagram = new Diagram(inputPath))
                     {
-                        // Identify title shapes by their universal name containing "Title"
-                        if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.Contains("Title"))
+                        // Iterate through all pages
+                        foreach (Page page in diagram.Pages)
                         {
-                            // Apply the font color to each character run in the shape
-                            foreach (Aspose.Diagram.Char ch in shape.Chars)
+                            // Iterate through all shapes on the page
+                            foreach (Shape shape in page.Shapes)
                             {
-                                ch.Color.Value = titleFontColor;
+                                // Identify title shapes (example: shape name contains "Title")
+                                if (!string.IsNullOrEmpty(shape.NameU) &&
+                                    shape.NameU.IndexOf("Title", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    // Apply the font color to each character in the shape
+                                    foreach (Aspose.Diagram.Char ch in shape.Chars)
+                                    {
+                                        ch.Color.Value = titleFontColor;
+                                    }
+                                }
                             }
                         }
+
+                        // Configure PDF save options (optional: set a default font)
+                        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                        pdfOptions.DefaultFont = "Arial";
+
+                        // Save the modified diagram as PDF
+                        diagram.Save(outputPath, pdfOptions);
                     }
+
+                    Console.WriteLine("Diagram processed and saved as PDF successfully.");
                 }
-
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial"; // Fallback font
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-                // Save the modified diagram as PDF
-                diagram.Save(outputPath, pdfOptions);
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error: {ex.Message}");
+                    throw;
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)

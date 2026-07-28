@@ -10,27 +10,26 @@ class Program
         try
         {
 
-            // Configure font directories for Aspose.Diagram.
-            // The SetFontFolder method requires the folder path and a recursive flag.
-            string fontFolder = @"C:\Windows\Fonts";
-            FontConfigs.SetFontFolder(fontFolder, true);
+            // NOTE: Aspose.Diagram does not expose a FontCacheSize property.
+            // The library manages font caching internally. We can configure
+            // default font handling and font folder locations to improve
+            // performance when processing large diagrams.
 
-            // Set a default fallback font to be used when a required font is missing.
+            // Set a fallback font to be used when a required font is missing.
             FontConfigs.DefaultFontName = "Arial";
 
-            // NOTE:
-            // Aspose.Diagram does not provide a public API to adjust the internal font cache size.
-            // Therefore, the cache size cannot be set directly via the library.
-            // If needed, cache behavior might be influenced through environment-specific settings
-            // outside the scope of the Aspose.Diagram API.
+            // Add a font folder (example path). The second argument enables
+            // recursive scanning of subfolders.
+            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
 
-            // Load a diagram (replace with your actual file path).
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram.
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Perform any diagram processing here.
-            // ...
+            // ... perform diagram processing here ...
 
-            // Save the diagram.
+            // Save the diagram. Use the two‑argument overload with a valid
+            // SaveFileFormat enum value.
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

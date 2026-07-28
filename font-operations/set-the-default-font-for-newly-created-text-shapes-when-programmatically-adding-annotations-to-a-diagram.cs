@@ -1,32 +1,32 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Set the global default font that will be used for any new text shape or annotation.
-        FontConfigs.DefaultFontName = "Calibri";
-
-        // Create a new empty diagram.
+        // Create a new diagram (lifecycle create rule)
         Diagram diagram = new Diagram();
 
-        // Add a blank page to the diagram (the default constructor creates no pages).
-        diagram.Pages.Add(new Page());
+        // Set the default font for the diagram – new text shapes will inherit this font
+        FontConfigs.DefaultFontName = "Arial";
 
-        // Retrieve the first (and only) page.
-        Page page = diagram.Pages[0];
+        // Add a page to the diagram (if the diagram has no pages)
+        Page page = new Page();
+        diagram.Pages.Add(page);
 
-        // Add an annotation (comment) at the specified coordinates.
-        // The annotation will use the default font defined above.
-        page.AddComment(2.0, 2.0, "This is an annotation with the default font.");
+        // Add a text shape without specifying a font name; it uses the default font set above
+        page.AddText(pinX: 5.0, pinY: 5.0, width: 2.0, height: 0.5, text: "Sample annotation");
 
-        // Optionally, add a visible text shape. Since we did not specify a font name,
-        // it will also inherit the default font set via FontConfigs.
-        page.AddText(4.0, 4.0, 2.0, 1.0, "Sample Text");
+        // Configure save options and also set DefaultFont for formats that require it (e.g., PDF)
+        PdfSaveOptions saveOptions = new PdfSaveOptions
+        {
+            DefaultFont = "Arial"
+        };
 
-        // Save the diagram to a VSDX file.
-        diagram.Save("AnnotatedDiagram.vsdx", SaveFileFormat.Vsdx);
+        // Save the diagram (lifecycle save rule)
+        diagram.Save("output.pdf", saveOptions);
     }
 }

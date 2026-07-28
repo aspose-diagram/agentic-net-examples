@@ -1,35 +1,32 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class EmbedMissingFontsToPdf
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the source Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram(@"C:\Input\sample.vsdx");
 
-            // Create PDF save options and set a fallback font.
-            // This font will be used when the original font is missing,
-            // ensuring characters are rendered correctly in the PDF.
+            // Create PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+            // Specify a default font to be used when the original font is missing.
+            // This ensures that Unicode characters are rendered correctly in the PDF.
             pdfOptions.DefaultFont = "Arial Unicode MS";
 
-            // Optionally define font substitutes for specific fonts that may be missing.
-            // If "Times New Roman" is not available, the substitutes will be tried in order.
-            FontConfigs.SetFontSubstitutes("Times New Roman", new[] { "Liberation Serif", "Arial Unicode MS" });
-
-            // Save the diagram as PDF using the configured options.
-            diagram.Save("output.pdf", pdfOptions);
+            // Save the diagram as PDF using the configured options
+            diagram.Save(@"C:\Output\sample.pdf", pdfOptions);
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

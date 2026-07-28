@@ -3,35 +3,37 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class FontSubstitutionBatchProcessor
 {
+    // Path to the folder containing VSD files
+    private const string InputFolder = @"C:\VisioFiles";
+
+    // Original (deprecated) font name to replace
+    private const string DeprecatedFont = "OldFontName";
+
+    // Modern substitute fonts (ordered by preference)
+    private static readonly string[] SubstituteFonts = new[] { "NewFont1", "NewFont2" };
+
     static void Main()
     {
-        // Define the deprecated font and its modern substitutes
-        string deprecatedFont = "OldFontName";
-        string[] substituteFonts = new string[] { "NewFontA", "NewFontB" };
+        // Get all VSD files in the specified folder
+        string[] vsdFiles = Directory.GetFiles(InputFolder, "*.vsd", SearchOption.TopDirectoryOnly);
 
-        // Register the font substitution globally
-        FontConfigs.SetFontSubstitutes(deprecatedFont, substituteFonts);
-
-        // Input directory containing VSD files
-        string inputDirectory = @"C:\VisioFiles";
-        // Output directory for processed files
-        string outputDirectory = @"C:\VisioFiles\Processed";
-
-        Directory.CreateDirectory(outputDirectory);
-
-        // Process each VSD file in the input directory
-        foreach (string filePath in Directory.GetFiles(inputDirectory, "*.vsd"))
+        foreach (string filePath in vsdFiles)
         {
-            // Load the diagram
+            // Load the Visio diagram from file
             using (Diagram diagram = new Diagram(filePath))
             {
-                // Save the diagram back (overwrites or writes to output folder)
-                string fileName = Path.GetFileName(filePath);
-                string outputPath = Path.Combine(outputDirectory, fileName);
-                diagram.Save(outputPath, SaveFileFormat.Vsd);
+                // Register font substitutes for the deprecated font
+                FontConfigs.SetFontSubstitutes(DeprecatedFont, SubstituteFonts);
+
+                // Save the diagram back, overwriting the original file
+                diagram.Save(filePath, SaveFileFormat.Vsd);
             }
+
+            Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
         }
+
+        Console.WriteLine("Batch font substitution completed.");
     }
 }

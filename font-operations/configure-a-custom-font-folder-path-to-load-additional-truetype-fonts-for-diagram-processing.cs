@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
@@ -10,21 +10,21 @@ class Program
         {
 
             // Path to the folder that contains additional TrueType fonts
-            string customFontFolder = @"C:\MyCustomFonts";
+            string customFontFolder = @"C:\MyFonts";
 
-            // Set to true if you want to include subfolders in the scan
-            bool recursive = true;
+            // Set the folder for the whole Aspose.Diagram library (recursive scan of subfolders)
+            FontConfigs.SetFontFolder(customFontFolder, true);
 
-            // Apply the font folder globally for all Diagram objects
-            FontConfigs.SetFontFolder(customFontFolder, recursive);
-
-            // Example: load a diagram after configuring the font folder
+            // Load a diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // (Optional) Set the font folder for this specific diagram instance
-            diagram.FontDirs = new string[] { customFontFolder };
+            // Optionally, set the font directories for this specific diagram instance
+            diagram.FontDirs = new[] { customFontFolder };
 
-            // Continue with diagram processing...
+            // Perform diagram processing here...
+
+            // Save the diagram (replace with your desired output path and format)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

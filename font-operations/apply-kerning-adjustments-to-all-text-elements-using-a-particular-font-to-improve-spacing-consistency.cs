@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,38 +9,39 @@ class Program
             try
             {
 
-                // Path to the source Visio file
+                // Input and output Visio files
                 string inputPath = "input.vsdx";
-                // Path to the output Visio file
                 string outputPath = "output.vsdx";
+
+                // Font to target and desired kerning (letterspacing) value
+                string targetFontName = "Calibri";
+                double desiredLetterspace = 0.5; // value in points (adjust as needed)
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Define the target font name for which kerning will be adjusted
-                string targetFontName = "Calibri";
-                // Desired kerning value (Letterspace) in 1/20th point increments.
-                // 0 means default spacing; positive values increase spacing, negative decrease.
-                double desiredLetterspace = 0;
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                // Iterate through all pages
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through all shapes on the page
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
+                        // Skip deleted shapes
+                        if (shape.Del == Aspose.Diagram.BOOL.True)
+                            continue;
+
                         // Ensure the shape contains text
-                        if (shape.Text != null && !string.IsNullOrEmpty(shape.Text.Value.Text))
+                        if (shape.Text == null)
+                            continue;
+
+                        // Iterate through character formatting runs
+                        foreach (Aspose.Diagram.Char ch in shape.Chars)
                         {
-                            // Iterate through each character formatting run in the shape
-                            foreach (Aspose.Diagram.Char ch in shape.Chars)
+                            // Check if the character run uses the target font
+                            if (ch.FontName != null && ch.FontName.Value == targetFontName)
                             {
-                                // Check if the character run uses the target font
-                                if (ch.FontName != null && ch.FontName.Value == targetFontName)
-                                {
-                                    // Apply the kerning adjustment by setting Letterspace
-                                    ch.Letterspace.Value = desiredLetterspace;
-                                }
+                                // Apply the kerning (letterspacing) adjustment
+                                ch.Letterspace.Value = desiredLetterspace;
                             }
                         }
                     }

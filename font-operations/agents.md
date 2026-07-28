@@ -4,10 +4,10 @@ display_name: Font Operations
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.5.0
+version: 26.7.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-06-23
+generated: 2026-07-28
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.5.0 |
+| Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-28 |
 
 ## Persona
 
@@ -63,11 +63,12 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 30 | Core diagram API |
 | `System` | 30 | Console, Math, DateTime, Exception |
-| `System.IO` | 21 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 20 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `Aspose.Drawing.Text` | 5 | Font enumeration via InstalledFontCollection |
+| `Aspose.Diagram.Saving` | 23 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.IO` | 22 | File, Stream, Path, Directory operations |
+| `Aspose.Drawing.Text` | 4 | Font enumeration via InstalledFontCollection |
 | `System.Collections.Generic` | 4 | List, Dictionary, HashSet |
-| `System.Linq` | 4 | LINQ queries on collections |
+| `System.Linq` | 3 | LINQ queries on collections |
+| `System.Reflection` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -103,18 +104,18 @@ class Program
 | [apply-kerning-adjustments-to-all-text-elements-using-a-particular-font-to-improve-spacing-consistency.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/apply-kerning-adjustments-to-all-text-elements-using-a-particular-font-to-improve-spacing-consistency.cs) | `Diagram`, `Pages`, `Save` | Apply kerning adjustments to all text elements using a particular font to improve spacing consistency |
 | [batch-convert-a-collection-of-vdx-files-to-pdf-ensuring-that-each-document-embeds-its-required-fonts.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/batch-convert-a-collection-of-vdx-files-to-pdf-ensuring-that-each-document-embeds-its-required-fonts.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Batch convert a collection of vdx files to pdf ensuring that each document embeds its required fonts |
 | [batch-process-multiple-vsd-files-substituting-a-deprecated-font-with-a-modern-equivalent-in-each.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/batch-process-multiple-vsd-files-substituting-a-deprecated-font-with-a-modern-equivalent-in-each.cs) | `Diagram`, `Save`, `diagram` | Batch process multiple vsd files substituting a deprecated font with a modern equivalent in each |
-| [configure-a-custom-font-folder-path-to-load-additional-truetype-fonts-for-diagram-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/configure-a-custom-font-folder-path-to-load-additional-truetype-fonts-for-diagram-processing.cs) | `Diagram` | Configure a custom font folder path to load additional truetype fonts for diagram processing |
+| [configure-a-custom-font-folder-path-to-load-additional-truetype-fonts-for-diagram-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/configure-a-custom-font-folder-path-to-load-additional-truetype-fonts-for-diagram-processing.cs) | `Diagram`, `Save`, `diagram` | Configure a custom font folder path to load additional truetype fonts for diagram processing |
 | [configure-the-library-to-use-a-specific-font-cache-size-to-improve-performance-when-processing-large-diagrams.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/configure-the-library-to-use-a-specific-font-cache-size-to-improve-performance-when-processing-large-diagrams.cs) | `Diagram`, `Save`, `diagram` | Configure the library to use a specific font cache size to improve performance when processing large diagrams |
 | [convert-a-diagram-to-pdf-while-embedding-only-the-fonts-that-are-actually-used-in-the-document.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/convert-a-diagram-to-pdf-while-embedding-only-the-fonts-that-are-actually-used-in-the-document.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Convert a diagram to pdf while embedding only the fonts that are actually used in the document |
 | [create-a-custom-font-substitution-map-to-replace-unavailable-fonts-with-user-defined-alternatives-during-rendering.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/create-a-custom-font-substitution-map-to-replace-unavailable-fonts-with-user-defined-alternatives-during-rendering.cs) | `Diagram`, `ImageSaveOptions`, `Save` | Create a custom font substitution map to replace unavailable fonts with user defined alternatives during rendering |
-| [detect-and-report-any-text-shapes-that-use-fonts-not-supported-by-the-target-output-format.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/detect-and-report-any-text-shapes-that-use-fonts-not-supported-by-the-target-output-format.cs) | `Diagram`, `Fonts`, `Pages` | Detect and report any text shapes that use fonts not supported by the target output format |
+| [detect-and-report-any-text-shapes-that-use-fonts-not-supported-by-the-target-output-format.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/detect-and-report-any-text-shapes-that-use-fonts-not-supported-by-the-target-output-format.cs) | `Diagram`, `Pages`, `Shapes` | Detect and report any text shapes that use fonts not supported by the target output format |
 | [embed-missing-fonts-into-the-output-pdf-to-ensure-visual-fidelity-across-different-devices.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/embed-missing-fonts-into-the-output-pdf-to-ensure-visual-fidelity-across-different-devices.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Embed missing fonts into the output pdf to ensure visual fidelity across different devices |
 | [export-a-diagram-to-html-embedding-web-safe-fonts-to-ensure-consistent-appearance-across-browsers.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/export-a-diagram-to-html-embedding-web-safe-fonts-to-ensure-consistent-appearance-across-browsers.cs) | `Diagram`, `HTMLSaveOptions`, `Save` | Export a diagram to html embedding web safe fonts to ensure consistent appearance across browsers |
 | [export-the-diagram-to-an-emf-file-that-all-text-is-converted-to-outlines-to-avoid-font-dependencies.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/export-the-diagram-to-an-emf-file-that-all-text-is-converted-to-outlines-to-avoid-font-dependencies.cs) | `Diagram`, `Save`, `diagram` | Export the diagram to an emf file that all text is converted to outlines to avoid font dependencies |
 | [extract-a-list-of-unique-font-names-from-a-visio-file-and-export-them-to-a-csv-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/extract-a-list-of-unique-font-names-from-a-visio-file-and-export-them-to-a-csv-file.cs) | `Diagram`, `Fonts`, `diagram` | Extract a list of unique font names from a visio file and export them to a csv file |
 | [extract-font-metadata-such-as-family-name-style-and-version-from-each-text-shape-in-a-visio-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/extract-font-metadata-such-as-family-name-style-and-version-from-each-text-shape-in-a-visio-file.cs) | `Diagram`, `Fonts`, `Pages` | Extract font metadata such as family name style and version from each text shape in a visio file |
-| [generate-a-preview-image-of-a-diagram-with-a-user-specified-font-applied-to-all-captions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/generate-a-preview-image-of-a-diagram-with-a-user-specified-font-applied-to-all-captions.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Generate a preview image of a diagram with a user specified font applied to all captions |
-| [generate-a-report-listing-each-font-used-in-a-diagram-along-with-the-number-of-occurrences-per-page.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/generate-a-report-listing-each-font-used-in-a-diagram-along-with-the-number-of-occurrences-per-page.cs) | `Diagram`, `Pages`, `Shapes` | Generate a report listing each font used in a diagram along with the number of occurrences per page |
+| [generate-a-preview-image-of-a-diagram-with-a-user-specified-font-applied-to-all-captions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/generate-a-preview-image-of-a-diagram-with-a-user-specified-font-applied-to-all-captions.cs) | `Diagram`, `Save`, `diagram` | Generate a preview image of a diagram with a user specified font applied to all captions |
+| [generate-a-report-listing-each-font-used-in-a-diagram-along-with-the-number-of-occurrences-per-page.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/generate-a-report-listing-each-font-used-in-a-diagram-along-with-the-number-of-occurrences-per-page.cs) | `Diagram`, `Fonts`, `Pages` | Generate a report listing each font used in a diagram along with the number of occurrences per page |
 | [load-a-diagram-change-the-font-color-of-all-titles-to-an-rgb-value-and-save-as-pdf.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/load-a-diagram-change-the-font-color-of-all-titles-to-an-rgb-value-and-save-as-pdf.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Load a diagram change the font color of all titles to an rgb value and save as pdf |
 | [load-a-diagram-iterate-through-its-pages-and-replace-the-font-of-header-shapes-with-a-localized-version.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/load-a-diagram-iterate-through-its-pages-and-replace-the-font-of-header-shapes-with-a-localized-version.cs) | `Diagram`, `Pages`, `Save` | Load a diagram iterate through its pages and replace the font of header shapes with a localized version |
 | [load-a-diagram-set-the-line-spacing-for-all-paragraphs-using-a-specific-font-and-save-as-docx.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/load-a-diagram-set-the-line-spacing-for-all-paragraphs-using-a-specific-font-and-save-as-docx.cs) | `Diagram`, `Pages`, `Save` | Load a diagram set the line spacing for all paragraphs using a specific font and save as docx |
@@ -122,12 +123,12 @@ class Program
 | [render-a-diagram-to-a-high-resolution-tiff-image-while-preserving-original-font-styles-and-weights.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/render-a-diagram-to-a-high-resolution-tiff-image-while-preserving-original-font-styles-and-weights.cs) | `Diagram`, `ImageSaveOptions`, `Save` | Render a diagram to a high resolution tiff image while preserving original font styles and weights |
 | [render-a-diagram-to-png-format-while-forcing-the-use-of-a-specified-fallback-font-for-missing-glyphs.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/render-a-diagram-to-png-format-while-forcing-the-use-of-a-specified-fallback-font-for-missing-glyphs.cs) | `Diagram`, `Save`, `diagram` | Render a diagram to png format while forcing the use of a specified fallback font for missing glyphs |
 | [replace-all-occurrences-of-a-specific-font-in-a-diagram-with-an-alternative-font-before-exporting.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/replace-all-occurrences-of-a-specific-font-in-a-diagram-with-an-alternative-font-before-exporting.cs) | `Diagram`, `Save`, `diagram` | Replace all occurrences of a specific font in a diagram with an alternative font before exporting |
-| [replace-unicode-characters-in-text-shapes-with-equivalent-glyphs-from-a-fallback-font-to-avoid-missing-symbols.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/replace-unicode-characters-in-text-shapes-with-equivalent-glyphs-from-a-fallback-font-to-avoid-missing-symbols.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Replace unicode characters in text shapes with equivalent glyphs from a fallback font to avoid missing symbols |
+| [replace-unicode-characters-in-text-shapes-with-equivalent-glyphs-from-a-fallback-font-to-avoid-missing-symbols.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/replace-unicode-characters-in-text-shapes-with-equivalent-glyphs-from-a-fallback-font-to-avoid-missing-symbols.cs) | `Diagram`, `Pages`, `Save` | Replace unicode characters in text shapes with equivalent glyphs from a fallback font to avoid missing symbols |
 | [retrieve-the-font-size-of-each-text-block-in-a-diagram-and-log-the-values-for-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/retrieve-the-font-size-of-each-text-block-in-a-diagram-and-log-the-values-for-analysis.cs) | `Diagram`, `Pages`, `Shapes` | Retrieve the font size of each text block in a diagram and log the values for analysis |
 | [set-the-default-font-for-newly-created-text-shapes-when-programmatically-adding-annotations-to-a-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/set-the-default-font-for-newly-created-text-shapes-when-programmatically-adding-annotations-to-a-diagram.cs) | `Diagram`, `Page`, `Pages` | Set the default font for newly created text shapes when programmatically adding annotations to a diagram |
-| [set-the-font-rendering-mode-to-anti-aliased-for-higher-quality-output-when-saving-as-svg.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/set-the-font-rendering-mode-to-anti-aliased-for-higher-quality-output-when-saving-as-svg.cs) | `Diagram`, `SVGSaveOptions`, `Save` | Set the font rendering mode to anti aliased for higher quality output when saving as svg |
+| [set-the-font-rendering-mode-to-anti-aliased-for-higher-quality-output-when-saving-as-svg.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/set-the-font-rendering-mode-to-anti-aliased-for-higher-quality-output-when-saving-as-svg.cs) | `Diagram`, `ImageSaveOptions`, `Save` | Set the font rendering mode to anti aliased for higher quality output when saving as svg |
 | [validate-that-all-fonts-used-in-a-loaded-diagram-are-available-on-the-system-before-rendering.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/validate-that-all-fonts-used-in-a-loaded-diagram-are-available-on-the-system-before-rendering.cs) | `Diagram`, `Fonts`, `PdfSaveOptions` | Validate that all fonts used in a loaded diagram are available on the system before rendering |
-| [validate-that-font-sizes-in-a-diagram-meet-accessibility-guidelines-before-exporting-to-pdf-a.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/validate-that-font-sizes-in-a-diagram-meet-accessibility-guidelines-before-exporting-to-pdf-a.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Validate that font sizes in a diagram meet accessibility guidelines before exporting to pdf a |
+| [validate-that-font-sizes-in-a-diagram-meet-accessibility-guidelines-before-exporting-to-pdf-a.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/font-operations/validate-that-font-sizes-in-a-diagram-meet-accessibility-guidelines-before-exporting-to-pdf-a.cs) | `Diagram`, `Fonts`, `Pages` | Validate that font sizes in a diagram meet accessibility guidelines before exporting to pdf a |
 
 ## Command Reference
 
@@ -220,7 +221,6 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - `Page`
 - `Pages`
 - `PdfSaveOptions`
-- `SVGSaveOptions`
 - `Save`
 - `Shapes`
 - `diagram`
@@ -240,7 +240,7 @@ Frequently asked questions about **Font Operations** in **Aspose.Diagram for .NE
 
 **Q: How do I get started with Font Operations in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.5.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -271,4 +271,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-06-23 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-07-28 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

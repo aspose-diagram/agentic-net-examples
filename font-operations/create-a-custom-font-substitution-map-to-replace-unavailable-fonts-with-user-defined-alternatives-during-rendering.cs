@@ -10,21 +10,25 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (uses the provided load rule)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Define custom font substitutes for fonts that may be missing
-            // Example: if "Arial" is not available, try "Liberation Sans" then "Helvetica"
-            FontConfigs.SetFontSubstitutes("Arial", new string[] { "Liberation Sans", "Helvetica" });
+            // Define custom font substitution:
+            // If the diagram contains "Comic Sans MS" and it is not installed,
+            // Aspose.Diagram will try "Arial" first, then "Times New Roman".
+            FontConfigs.SetFontSubstitutes(
+                "Comic Sans MS",
+                new string[] { "Arial", "Times New Roman" }
+            );
 
-            // Optionally, control whether system substitutes are preferred
-            FontConfigs.PreferSystemFontSubstitutes = false;
+            // Optionally set a default font for rendering when no substitute is found.
+            // Here we use PNG image output as an example.
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+            {
+                DefaultFont = "Arial"
+            };
 
-            // Set a default font to be used during rendering/saving (fallback)
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.DefaultFont = "Liberation Sans";
-
-            // Save the diagram with the specified options
+            // Save the diagram with the specified options (uses the provided save rule)
             diagram.Save("output.png", saveOptions);
 
         }

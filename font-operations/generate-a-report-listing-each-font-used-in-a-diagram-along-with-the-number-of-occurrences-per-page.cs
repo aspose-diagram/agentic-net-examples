@@ -4,12 +4,12 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the Visio diagram file
+                // Path to the Visio file (adjust as needed)
                 string filePath = "input.vsdx";
 
                 // Load the diagram
@@ -18,41 +18,47 @@ class Program
                 // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Dictionary to hold font name and its occurrence count on the current page
-                    Dictionary<string, int> fontUsage = new Dictionary<string, int>();
+                    // Dictionary to store font usage counts for the current page
+                    Dictionary<string, int> fontCount = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
                     // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Iterate through character formatting runs of the shape
+                        // Count fonts used in character formatting of the shape
                         foreach (Aspose.Diagram.Char ch in shape.Chars)
                         {
-                            // Retrieve the font name used in this character run
                             string fontName = ch.FontName.Value;
-
-                            // Ignore empty font names
-                            if (string.IsNullOrEmpty(fontName))
-                                continue;
-
-                            // Increment the count for this font
-                            if (fontUsage.ContainsKey(fontName))
-                                fontUsage[fontName]++;
-                            else
-                                fontUsage[fontName] = 1;
+                            if (!string.IsNullOrEmpty(fontName))
+                            {
+                                if (fontCount.ContainsKey(fontName))
+                                    fontCount[fontName]++;
+                                else
+                                    fontCount[fontName] = 1;
+                            }
                         }
                     }
 
-                    // Output the font usage report for the current page
-                    Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) font usage:");
-                    foreach (KeyValuePair<string, int> entry in fontUsage)
+                    // Output the font usage for the current page
+                    Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
+                    if (fontCount.Count == 0)
                     {
-                        Console.WriteLine($"  Font: {entry.Key}, Count: {entry.Value}");
+                        Console.WriteLine("  No fonts found on this page.");
+                    }
+                    else
+                    {
+                        foreach (KeyValuePair<string, int> kvp in fontCount)
+                        {
+                            Console.WriteLine($"  Font: {kvp.Key}, Occurrences: {kvp.Value}");
+                        }
                     }
                     Console.WriteLine();
+                }
+
+                // Optional: list all fonts defined in the diagram
+                Console.WriteLine("Fonts defined in the diagram:");
+                foreach (Aspose.Diagram.Font font in diagram.Fonts)
+                {
+                    Console.WriteLine($"  {font.Name}");
                 }
 
             }

@@ -13,57 +13,50 @@ class Program
         try
         {
 
-            // Path to the Visio file to be loaded
+            // Path to the input Visio file
             string inputPath = "input.vsdx";
+            // Path to the output PDF file (rendering target)
+            string outputPath = "output.pdf";
 
             // Load the diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Retrieve the collection of installed system fonts
-                var installedFontCollection = new InstalledFontCollection();
-
-                // Build a hash set of installed font names for fast lookup (case‑insensitive)
-                var installedFontNames = installedFontCollection.Families
+                // Collect system-installed font names
+                InstalledFontCollection installedFonts = new InstalledFontCollection();
+                var systemFontNames = installedFonts.Families
                     .Select(f => f.Name)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                // List to hold any fonts used in the diagram that are not installed
-                var missingFonts = new List<string>();
+                // List to hold any missing fonts
+                List<string> missingFonts = new List<string>();
 
-                // Iterate over fonts used in the diagram (explicit type required)
+                // Iterate over fonts used in the diagram (explicit typing required)
                 foreach (Font font in diagram.Fonts)
                 {
-                    string fontName = font.Name;
-                    if (!installedFontNames.Contains(fontName))
+                    if (!systemFontNames.Contains(font.Name))
                     {
-                        missingFonts.Add(fontName);
+                        missingFonts.Add(font.Name);
                     }
                 }
 
-                // If any missing fonts are found, report and abort rendering
+                // If there are missing fonts, report and abort rendering
                 if (missingFonts.Count > 0)
                 {
-                    Console.WriteLine("Missing fonts detected:");
-                    foreach (string f in missingFonts)
+                    Console.WriteLine("The following fonts are used in the diagram but are not installed on the system:");
+                    foreach (string name in missingFonts)
                     {
-                        Console.WriteLine($"- {f}");
+                        Console.WriteLine($"- {name}");
                     }
-
-                    // Optionally set a fallback font for rendering
-                    FontConfigs.DefaultFontName = "Arial";
-
-                    // Abort further processing
-                    throw new Exception("Required fonts are missing. Rendering aborted.");
-                }
-                else
-                {
-                    Console.WriteLine("All fonts used in the diagram are available on the system.");
+                    throw new Exception("Missing required fonts. Rendering aborted.");
                 }
 
-                // Example rendering: save the diagram as PDF
-                var pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial"; // fallback font for any unexpected substitutions
-                diagram.Save("output.pdf", pdfOptions);
+                // All fonts are available; proceed to render (save as PDF)
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Set a fallback font just in case
+                pdfOptions.DefaultFont = "Arial";
+
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram rendered successfully to '{outputPath}'.");
             }
 
         }

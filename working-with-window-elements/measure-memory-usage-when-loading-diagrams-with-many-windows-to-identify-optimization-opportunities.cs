@@ -1,50 +1,53 @@
+using System.IO;
 using System;
 using System.Diagnostics;
-using System.IO;
 using Aspose.Diagram;
 
-class MemoryUsageDemo
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Path to the Visio file that contains many windows
-            string filePath = @"C:\Diagrams\LargeWindowsDiagram.vsdx";
+            // Path to the Visio file that contains many windows.
+            string filePath = args.Length > 0 ? args[0] : "LargeDiagram.vsdx";
 
-            // Force garbage collection and get baseline memory usage (in bytes)
+            // Force a full garbage collection and get the memory usage before loading.
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            long beforeLoad = GC.GetTotalMemory(forceFullCollection: true);
+            long memoryBefore = GC.GetTotalMemory(true);
 
-            // Load the diagram using the provided constructor (Diagram(string))
+            // Load the diagram using the provided constructor (load rule).
             Diagram diagram = new Diagram(filePath);
 
-            // Measure memory after loading
+            // Force a full garbage collection and get the memory usage after loading.
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            long afterLoad = GC.GetTotalMemory(forceFullCollection: true);
+            long memoryAfter = GC.GetTotalMemory(true);
 
-            // Calculate memory delta
-            long memoryUsed = afterLoad - beforeLoad;
+            // Calculate the memory consumed by loading the diagram.
+            long memoryUsed = memoryAfter - memoryBefore;
 
-            // Retrieve the number of Window elements in the document
-            int windowCount = diagram.Windows.Count;
+            // Retrieve the number of windows in the loaded diagram.
+            int windowCount = diagram.Windows?.Count ?? 0;
 
-            // Output the results
-            Console.WriteLine($"Memory used to load diagram: {memoryUsed:N0} bytes");
-            Console.WriteLine($"Number of windows in the diagram: {windowCount}");
+            // Output the results.
+            Console.WriteLine($"File: {filePath}");
+            Console.WriteLine($"Memory before load: {memoryBefore:N0} bytes");
+            Console.WriteLine($"Memory after load : {memoryAfter:N0} bytes");
+            Console.WriteLine($"Memory used by load: {memoryUsed:N0} bytes");
+            Console.WriteLine($"Number of windows  : {windowCount}");
 
-            // Clean up
+            // Clean up.
             diagram.Dispose();
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

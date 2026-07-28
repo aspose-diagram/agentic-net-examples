@@ -12,29 +12,23 @@ class ThemeStandardizer
             // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Remove any existing theme settings from pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                page.PresetTheme = PresetThemeValue.NoTheme;
-
-                foreach (Shape shape in page.Shapes)
-                {
-                    shape.PresetTheme = PresetThemeValue.NoTheme;
-                    // Optional: clear quick style and variant if they were set
-                    // shape.PresetThemeQuickStyle = 0;
-                    // shape.PresetThemeVariant = 0;
-                }
-            }
-
-            // Apply a fresh preset theme (e.g., Office) to all pages and shapes
+            // Define the fresh preset theme to apply
             PresetThemeValue freshTheme = PresetThemeValue.Office;
 
+            // Remove existing theme settings and apply the fresh theme to each page
             foreach (Page page in diagram.Pages)
             {
+                // Clear any existing theme by setting to NoTheme
+                page.PresetTheme = PresetThemeValue.NoTheme;
+                // Apply the fresh preset theme to the page
                 page.PresetTheme = freshTheme;
 
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Clear existing theme settings on the shape
+                    shape.PresetTheme = PresetThemeValue.NoTheme;
+                    // Apply the fresh preset theme to the shape
                     shape.PresetTheme = freshTheme;
                 }
             }

@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -14,6 +12,9 @@ class Program
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
                 // Define a palette of solid colors (hex strings)
                 string[] palette = new string[]
                 {
@@ -25,38 +26,32 @@ class Program
                     "#00FFFF"  // Cyan
                 };
 
-                try
-                {
-                    // Load the Visio diagram
-                    Diagram diagram = new Diagram(inputPath);
+                int paletteCount = palette.Length;
+                int colorIndex = 0;
 
-                    // Iterate through all pages and shapes
-                    foreach (Page page in diagram.Pages)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip shapes that are marked as deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                            // Set fill pattern to solid (value 1)
-                            shape.Fill.FillPattern.Value = 1;
+                        // Set fill pattern to solid (1)
+                        shape.Fill.FillPattern.Value = 1;
 
-                            // Choose a color from the palette based on shape ID
-                            int colorIndex = (int)(shape.ID % palette.Length);
-                            shape.Fill.FillForegnd.Value = palette[colorIndex];
-                        }
+                        // Assign a solid foreground color from the palette (cycle through)
+                        shape.Fill.FillForegnd.Value = palette[colorIndex];
+
+                        // Move to next color in the palette
+                        colorIndex = (colorIndex + 1) % paletteCount;
                     }
+                }
 
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-                catch (Exception ex)
-                {
-                    // Simple error handling
-                    Console.WriteLine("Error: " + ex.Message);
-                    throw;
-                }
+                // Save the modified diagram in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

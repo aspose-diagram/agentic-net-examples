@@ -2,48 +2,57 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class RetrieveGluedShapes
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Identify the master shape instance.
-            // For this example we assume the master shape is on the first page with a known ID.
-            // Replace 1 with the actual shape ID of the master shape instance.
-            const long masterShapeId = 1;
-            Shape masterShape = diagram.Pages[0].Shapes.GetShape(masterShapeId);
-
-            // Retrieve IDs of all shapes glued to the master shape.
-            // Using GluedShapesAll2D to get both incoming and outgoing 2‑D connections.
-            long[] gluedShapeIds = masterShape.GluedShapes(
-                GluedShapesFlags.GluedShapesAll2D,   // flag
-                null,                               // no category filter
-                null);                              // no additional shape filter
-
-            // Write the identifiers to a CSV file.
-            using (StreamWriter writer = new StreamWriter("glued_shapes.csv"))
+            try
             {
-                // Header (optional)
-                writer.WriteLine("GluedShapeId");
 
-                foreach (long id in gluedShapeIds)
+                // Path to the source Visio diagram
+                string diagramPath = "input.vsdx";
+
+                // Name of the master shape whose glued shapes we want to list
+                string masterShapeName = "MasterShape";
+
+                // Output CSV file path
+                string csvPath = "glued_shapes.csv";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Prepare the CSV file with a header
+                using (StreamWriter writer = new StreamWriter(csvPath, false))
                 {
-                    writer.WriteLine(id);
+                    writer.WriteLine("ShapeId");
+
+                    // Iterate through all pages and shapes
+                    foreach (Page page in diagram.Pages)
+                    {
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Identify shapes that are instances of the specified master
+                            if (shape.Master != null && shape.Master.Name == masterShapeName)
+                            {
+                                // Retrieve IDs of all shapes glued to this master shape
+                                long[] gluedIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+
+                                // Write each glued shape ID to the CSV
+                                foreach (long id in gluedIds)
+                                {
+                                    writer.WriteLine(id);
+                                }
+                            }
+                        }
+                    }
                 }
+
+                Console.WriteLine($"Glued shape IDs have been written to '{csvPath}'.");
+
             }
-
-            // Optionally save the diagram if any modifications were made.
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

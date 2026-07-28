@@ -1,43 +1,40 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages in the diagram
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            try
             {
-                Page page = diagram.Pages[i];
 
-                // Position for the footer text (centered near the bottom of the page)
-                // PinX is the X coordinate of the text's center, PinY is the Y coordinate.
-                double pinX = 5.0;   // adjust as needed for your page width
-                double pinY = 0.5;   // distance from the bottom edge
-                double width = 2.0;  // width of the text box
-                double height = 0.5; // height of the text box
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Create the footer text displaying the page number
-                string footerText = $"Page {i + 1}";
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Add the text shape to the current page
-                page.AddText(pinX, pinY, width, height, footerText);
+                // Configure the global footer to show the page number dynamically
+                // '&p' is the Visio field code for the current page number
+                diagram.HeaderFooter.FooterRight = "Page: &p";
+
+                // Optional: adjust footer margin (in inches) from the page edge
+                diagram.HeaderFooter.FooterMargin.Value = 0.5;
+
+                // Optional: set footer font properties
+                diagram.HeaderFooter.HeaderFooterFont.FaceName = "Arial";
+                diagram.HeaderFooter.HeaderFooterFont.Height = 12;          // point size
+                diagram.HeaderFooter.HeaderFooterFont.Weight = 700;        // 700 = bold
+                diagram.HeaderFooter.HeaderFooterFont.Underline = BOOL.False;
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,44 +9,62 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Configure print options
-            PrintSaveOptions printOptions = new PrintSaveOptions
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Print only foreground pages (background pages are ignored)
-                SaveForegroundPagesOnly = true
-            };
+                // Iterate through each page explicitly typed as Page
+                foreach (Page page in diagram.Pages)
+                {
+                    // Skip pages that do not have a PageSheet
+                    if (page.PageSheet == null)
+                    {
+                        Console.WriteLine($"Skipping page '{page.Name}' (ID: {page.ID}) because PageSheet is missing.");
+                        continue;
+                    }
 
-            // Iterate through all pages and ensure they have a PageSheet.
-            // If a page lacks a PageSheet, it is skipped.
-            for (int i = 0; i < diagram.Pages.Count; i++)
-            {
-                try
-                {
-                    // Access the PageSheet; if it is null an exception will be thrown
-                    PageSheet pageSheet = diagram.Pages[i].PageSheet;
+                    try
+                    {
+                        // Access the print properties of the page
+                        var printProps = page.PageSheet.PrintProps;
 
-                    // Example of accessing print properties (optional)
-                    // var printProps = pageSheet.PrintProps;
-                    // Modify printProps here if needed
+                        // Example print settings
+                        // 1. Set orientation to Landscape
+                        printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+
+                        // 2. Set scaling to 75%
+                        printProps.ScaleX.Value = 0.75;
+                        printProps.ScaleY.Value = 0.75;
+
+                        // 3. Fit to a single sheet (1 page across, 1 page down)
+                        printProps.OnPage.Value = BOOL.True;
+                        printProps.PagesX.Value = 1;
+                        printProps.PagesY.Value = 1;
+
+                        // 4. Set uniform margins (0.5 inch)
+                        double marginInches = 0.5;
+                        printProps.PageTopMargin.Value = marginInches;
+                        printProps.PageBottomMargin.Value = marginInches;
+                        printProps.PageLeftMargin.Value = marginInches;
+                        printProps.PageRightMargin.Value = marginInches;
+
+                        Console.WriteLine($"Applied print settings to page '{page.Name}' (ID: {page.ID}).");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log any errors but continue processing other pages
+                        Console.WriteLine($"Error applying print settings to page '{page.Name}': {ex.Message}");
+                    }
                 }
-                catch (NullReferenceException)
-                {
-                    // PageSheet is missing – skip this page
-                    continue;
-                }
-                catch (Exception ex)
-                {
-                    // Log unexpected errors and continue with the next page
-                    Console.WriteLine($"Error processing page {i}: {ex.Message}");
-                    continue;
-                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Print the diagram using the prepared options
-            diagram.Print(printOptions);
+            Console.WriteLine("Diagram processing completed.");
 
         }
         catch (System.IO.FileNotFoundException ex)

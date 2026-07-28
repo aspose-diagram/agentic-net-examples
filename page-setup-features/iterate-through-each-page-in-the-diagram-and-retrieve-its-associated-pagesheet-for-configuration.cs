@@ -9,7 +9,7 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
             // Iterate through each page in the diagram
@@ -18,14 +18,18 @@ class Program
                 // Retrieve the PageSheet associated with the current page
                 PageSheet pageSheet = page.PageSheet;
 
-                // Example: access the PageLayout for configuration or inspection
-                PageLayout layout = pageSheet.PageLayout;
+                // Example: access page layout or page properties from the PageSheet
+                // (Here we just demonstrate accessing the PageProps object)
+                PageProps props = pageSheet.PageProps;
 
-                // (Optional) Output some layout information for demonstration
-                Console.WriteLine($"Page: {page.Name} - Layout: {layout?.ToString() ?? "None"}");
+                // Output some basic information about the page
+                Console.WriteLine($"Page Name: {page.Name}");
+                // If needed, you can further inspect properties such as width/height from props
+                // Console.WriteLine($"Page Width: {props.Width}, Height: {props.Height}");
             }
 
-            // No saving is performed as the task only requires retrieval of PageSheets
+            // Save the diagram (if any modifications were made to the PageSheets)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

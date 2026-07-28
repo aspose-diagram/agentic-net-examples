@@ -12,48 +12,45 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Access the first page of the diagram
-            Page page = diagram.Pages[0];
+            // Get the first page (active page)
+            Page page = diagram.ActivePage;
 
-            // Add a rectangle shape at position (2,2)
+            // Add a rectangle shape to the page
+            // Parameters: PinX, PinY, master name
             long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
 
-            // Retrieve the shape object using its ID
+            // Retrieve the shape object using the returned ID
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Clear any existing text and paragraph collections
+            // Clear any existing text
             shape.Text.Value.Clear();
-            shape.Paras.Clear();
 
-            // Paragraph 1 – normal text
-            Para para1 = new Para();
-            shape.Paras.Add(para1);
-            shape.Text.Value.Add(new Txt("First line"));
+            // Add text runs (each line ends with a newline character)
+            shape.Text.Value.Add(new Txt("First bullet point"));
+            shape.Text.Value.Add(new Txt("\n"));
+            shape.Text.Value.Add(new Txt("Second bullet point"));
+            shape.Text.Value.Add(new Txt("\n"));
+            shape.Text.Value.Add(new Txt("A normal paragraph without bullet"));
 
-            // Paragraph 2 – normal text
-            Para para2 = new Para();
-            shape.Paras.Add(para2);
-            shape.Text.Value.Add(new Txt("Second line"));
+            // Ensure there are enough paragraphs (one per line)
+            // The first paragraph already exists; add two more
+            while (shape.Paras.Count < 3)
+            {
+                shape.Paras.Add(new Para());
+            }
 
-            // Paragraph 3 – bullet point
-            Para para3 = new Para();
-            para3.Bullet.Value = BulletValue.Style1;
-            shape.Paras.Add(para3);
-            shape.Text.Value.Add(new Txt("Bullet point 1"));
-
-            // Paragraph 4 – bullet point
-            Para para4 = new Para();
-            para4.Bullet.Value = BulletValue.Style1;
-            shape.Paras.Add(para4);
-            shape.Text.Value.Add(new Txt("Bullet point 2"));
+            // Set bullet style for the first two paragraphs
+            shape.Paras[0].Bullet.Value = BulletValue.Style1;      // First bullet
+            shape.Paras[1].Bullet.Value = BulletValue.Style1;      // Second bullet
+            // No bullet for the third paragraph (default)
 
             // Save the diagram to a VSDX file
             diagram.Save("MultilineBulletShape.vsdx", SaveFileFormat.Vsdx);
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.NullReferenceException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
 }

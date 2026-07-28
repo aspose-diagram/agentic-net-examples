@@ -1,88 +1,79 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
+        // Placeholder for the provided load rule
+        static Diagram LoadDiagram(string path)
+        {
+            // The actual implementation is supplied by the rule set.
+            return new Diagram(path);
+        }
+
+        // Placeholder for the provided save rule
+        static void SaveDiagram(Diagram diagram, string path)
+        {
+            // The actual implementation is supplied by the rule set.
+            diagram.Save(path, SaveFileFormat.Vsdx);
+        }
+
         static void Main(string[] args)
         {
             try
             {
 
-                // Paths – adjust as needed
-                string diagramPath = "input.vsdx";
-                string thresholdsPath = "thresholds.csv"; // Format: ShapeName,Value
-                string outputPath = "output.vsdx";
+                // Load the Visio diagram using the rule‑provided method.
+                Diagram diagram = LoadDiagram("input.vsdx");
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Load thresholds from external CSV file into a dictionary
-                var thresholds = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
-                if (File.Exists(thresholdsPath))
+                // Define thresholds (could be read from an external file).
+                // For illustration we use hard‑coded values.
+                var thresholds = new Dictionary<string, double>
                 {
-                    foreach (var line in File.ReadAllLines(thresholdsPath))
-                    {
-                        // Skip empty lines
-                        if (string.IsNullOrWhiteSpace(line))
-                            continue;
+                    { "High",   80.0 },
+                    { "Medium", 50.0 }
+                };
 
-                        var parts = line.Split(',');
-                        if (parts.Length != 2)
-                            continue; // Invalid line, ignore
-
-                        string shapeName = parts[0].Trim();
-                        if (double.TryParse(parts[1].Trim(), out double value))
-                        {
-                            thresholds[shapeName] = value;
-                        }
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Threshold file not found: {thresholdsPath}");
-                    return;
-                }
-
-                // Define a simple threshold value for demonstration
-                double highThreshold = 100.0;
-
-                // Iterate through all pages and shapes
+                // Iterate through all pages and shapes.
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Check if the shape name exists in the thresholds dictionary
-                        if (shape.NameU != null && thresholds.TryGetValue(shape.NameU, out double shapeValue))
+                        // Assume the shape's Data1 cell contains the numeric value to evaluate.
+                        if (double.TryParse(shape.Data1, out double shapeValue))
                         {
-                            // Apply conditional fill color based on the value
-                            if (shapeValue > highThreshold)
+                            // Apply conditional formatting based on the thresholds.
+                            if (shapeValue >= thresholds["High"])
                             {
-                                // High value – fill red
-                                shape.Fill.FillForegnd.Value = "#FF0000";
+                                // High values – apply a red style.
+                                shape.SetPresetThemeStyleMatrics(
+                                    PresetStyleMatricsValue.Style3,
+                                    PresetColorMatricsValue.Color3);
+                            }
+                            else if (shapeValue >= thresholds["Medium"])
+                            {
+                                // Medium values – apply an orange style.
+                                shape.SetPresetThemeStyleMatrics(
+                                    PresetStyleMatricsValue.Style2,
+                                    PresetColorMatricsValue.Color2);
                             }
                             else
                             {
-                                // Low or equal – fill green
-                                shape.Fill.FillForegnd.Value = "#00FF00";
+                                // Low values – apply a green style.
+                                shape.SetPresetThemeStyleMatrics(
+                                    PresetStyleMatricsValue.Style1,
+                                    PresetColorMatricsValue.Color1);
                             }
 
-                            // Optionally, change line color to black for visibility
-                            shape.Line.LineColor.Value = "#000000";
+                            // Refresh the shape to ensure the visual changes take effect.
+                            shape.RefreshData();
                         }
                     }
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Diagram saved to {outputPath}");
+                // Save the modified diagram using the rule‑provided method.
+                SaveDiagram(diagram, "output.vsdx");
 
             }
             catch (System.IO.FileNotFoundException ex)

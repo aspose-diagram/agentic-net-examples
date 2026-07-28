@@ -1,67 +1,62 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Rename each page (example: prepend "Renamed_" to the original name)
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-
-                // Paths to the source and destination Visio files
-                string sourcePath = "input.vsdx";
-                string destinationPath = "output.vsdx";
-
-                try
-                {
-                    // Load the diagram from file
-                    Diagram diagram = new Diagram(sourcePath);
-
-                    // Example renaming: assign a new name to each page based on its index
-                    for (int i = 0; i < diagram.Pages.Count; i++)
-                    {
-                        Page page = diagram.Pages[i];
-                        page.Name = $"Page_{i + 1}";
-                    }
-
-                    // Validate that all page names are unique after renaming
-                    ValidateUniquePageNames(diagram);
-
-                    // Save the updated diagram
-                    diagram.Save(destinationPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine("Diagram saved successfully with unique page names.");
-                }
-                catch (Exception ex)
-                {
-                    // Report any validation or processing errors
-                    Console.WriteLine($"Error: {ex.Message}");
-                    throw;
-                }
-
+                Page page = diagram.Pages[i];
+                page.Name = "Renamed_" + page.Name;
+                // Also update the universal name to keep consistency
+                page.NameU = page.Name;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
 
-        /// <summary>
-        /// Checks that each page in the diagram has a distinct name.
-        /// Throws an exception if a duplicate name is found.
-        /// </summary>
-        /// <param name="diagram">The diagram to validate.</param>
-        private static void ValidateUniquePageNames(Diagram diagram)
-        {
-            var nameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // Validate that all page names are unique after renaming
+            HashSet<string> pageNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            bool duplicateFound = false;
 
             foreach (Page page in diagram.Pages)
             {
-                if (!nameSet.Add(page.Name))
+                if (!pageNames.Add(page.Name))
                 {
-                    // Duplicate detected
-                    throw new Exception($"Duplicate page name detected: \"{page.Name}\"");
+                    Console.WriteLine($"Duplicate page name detected: {page.Name}");
+                    duplicateFound = true;
                 }
             }
+
+            if (duplicateFound)
+            {
+                Console.WriteLine("Page name validation failed: duplicates exist.");
+            }
+            else
+            {
+                Console.WriteLine("All page names are unique.");
+            }
+
+            // Save the modified diagram
+            PdfSaveOptions saveOptions = new PdfSaveOptions
+            {
+                // Ensure each Visio page is saved as a separate PDF page
+                SplitMultiPages = true
+            };
+            diagram.Save("output.pdf", saveOptions);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

@@ -1,81 +1,77 @@
-using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
+using System;
+using System.Collections.Generic;
 
-class Program
+class AutoSpaceValidator
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Work with the first page
+            Page page = diagram.Pages[0];
+
+            // Get all shapes on the page
+            ShapeCollection shapes = page.Shapes;
+
+            // Define auto‑spacing options (distance in inches)
+            AutoSpaceOptions options = new AutoSpaceOptions
             {
+                DistanceInHorizontal = 0.5f, // horizontal spacing
+                DistanceInVertical = 0.5f    // vertical spacing
+            };
 
-                // Load the Visio diagram (replace with actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+            // Apply auto‑spacing to the shapes
+            page.AutoSpaceShapes(shapes, options);
 
-                // Get the first page (adjust index if needed)
-                Page page = diagram.Pages[0];
+            // Refresh each shape so its position data is up‑to‑date
+            foreach (Shape shape in shapes)
+            {
+                shape.RefreshData();
+            }
 
-                // Configure auto‑spacing options
-                AutoSpaceOptions options = new AutoSpaceOptions
+            // Expected positions (in inches) for shapes identified by their IDs
+            var expectedPositions = new Dictionary<long, (double X, double Y)>
+            {
+                { 1, (1.0, 1.0) },
+                { 2, (1.5, 1.0) },
+                { 3, (2.0, 1.0) }
+                // Add additional expected values as required
+            };
+
+            // Tolerance for comparison (in inches)
+            const double tolerance = 0.01;
+
+            // Validate actual positions against expected values
+            foreach (Shape shape in shapes)
+            {
+                if (expectedPositions.TryGetValue(shape.ID, out var expected))
                 {
-                    DistanceInHorizontal = 1.0, // example horizontal spacing
-                    DistanceInVertical = 1.0    // example vertical spacing
-                };
+                    double actualX = shape.XForm.PinX.Value;
+                    double actualY = shape.XForm.PinY.Value;
 
-                // Apply auto‑spacing to all shapes on the page
-                page.AutoSpaceShapes(page.Shapes, options);
+                    bool xOk = Math.Abs(actualX - expected.X) <= tolerance;
+                    bool yOk = Math.Abs(actualY - expected.Y) <= tolerance;
 
-                // Expected positions after auto‑spacing (shape ID -> (PinX, PinY))
-                // Populate with the IDs and coordinates you expect.
-                var expectedPositions = new Dictionary<long, (double X, double Y)>
-                {
-                    // Example entries:
-                    // { 1, (2.5, 3.0) },
-                    // { 2, (5.0, 3.0) }
-                };
-
-                const double tolerance = 0.001; // allowable deviation
-
-                // Validate each shape's position against the expected values
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (expectedPositions.TryGetValue(shape.ID, out var expected))
-                    {
-                        double actualX = shape.XForm.PinX.Value;
-                        double actualY = shape.XForm.PinY.Value;
-
-                        bool xMatch = Math.Abs(actualX - expected.X) <= tolerance;
-                        bool yMatch = Math.Abs(actualY - expected.Y) <= tolerance;
-
-                        if (!xMatch || !yMatch)
-                        {
-                            throw new Exception(
-                                $"Shape ID {shape.ID} position mismatch. " +
-                                $"Expected (X={expected.X}, Y={expected.Y}), " +
-                                $"Actual (X={actualX}, Y={actualY}).");
-                        }
-                        else
-                        {
-                            Console.WriteLine(
-                                $"Shape ID {shape.ID} position validated: " +
-                                $"X={actualX}, Y={actualY}");
-                        }
-                    }
-                    else
-                    {
-                        // No expected position defined for this shape; skip or log as needed
-                        Console.WriteLine($"Shape ID {shape.ID} has no expected position defined.");
-                    }
+                    Console.WriteLine(
+                        $"Shape ID {shape.ID}: X {(xOk ? "OK" : "FAIL")} (actual {actualX:F3}, expected {expected.X:F3}), " +
+                        $"Y {(yOk ? "OK" : "FAIL")} (actual {actualY:F3}, expected {expected.Y:F3})");
                 }
-
-                Console.WriteLine("All defined shape positions validated successfully.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the diagram after auto‑spacing (optional)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

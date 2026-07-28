@@ -3,63 +3,49 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class WatermarkExample
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Path to the watermark image (PNG, JPG, etc.)
+            string watermarkPath = "watermark.png";
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file and watermark image paths
-                string inputVisioPath = "input.vsdx";
-                string watermarkImagePath = "watermark.png";
-                string outputVisioPath = "output_with_watermark.vsdx";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputVisioPath))
+                // Open a fresh stream for the image on each iteration
+                using (FileStream imgStream = new FileStream(watermarkPath, FileMode.Open, FileAccess.Read))
                 {
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Retrieve page dimensions (in inches)
-                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    // Define position and size for the watermark.
+                    // PinX and PinY represent the center of the shape (in inches).
+                    // Width and Height define the size of the shape (in inches).
+                    // Adjust these values as needed to fit the page.
+                    double pinX = 5.0;    // example center X
+                    double pinY = 5.0;    // example center Y
+                    double width = 10.0; // example width
+                    double height = 7.5; // example height
 
-                        // Center position for the watermark shape
-                        double centerX = pageWidth / 2.0;
-                        double centerY = pageHeight / 2.0;
+                    // Add the image as a shape to the current page
+                    long shapeId = page.AddShape(pinX, pinY, width, height, imgStream);
 
-                        // Add the image as a shape covering the whole page
-                        using (FileStream imageStream = new FileStream(watermarkImagePath, FileMode.Open, FileAccess.Read))
-                        {
-                            long shapeId = page.AddShape(
-                                centerX,               // PinX (center X)
-                                centerY,               // PinY (center Y)
-                                pageWidth,             // Width (full page width)
-                                pageHeight,            // Height (full page height)
-                                imageStream);          // Image stream
-
-                            // Retrieve the newly added shape
-                            Shape watermarkShape = page.Shapes.GetShape(shapeId);
-
-                            // Send the watermark to the back so it appears behind other shapes
-                            watermarkShape.SendToBack();
-
-                            // Make the watermark non‑selectable
-                            watermarkShape.Protection.LockSelect.Value = BOOL.True;
-                        }
-                    }
-
-                    // Save the modified diagram
-                    diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
+                    // Send the newly added shape to the back so it appears behind existing shapes
+                    page.SendToBack(shapeId);
                 }
-
-                Console.WriteLine("Watermark added and diagram saved to: " + outputVisioPath);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

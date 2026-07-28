@@ -4,7 +4,7 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace DiagramExport
+namespace DiagramShapeExport
 {
     // DTO for JSON serialization
     public class ShapeInfo
@@ -16,57 +16,59 @@ namespace DiagramExport
 
     public class Program
     {
-        public static void Main(string[] args)
+        public static void Main()
         {
-            // Validate arguments
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: DiagramExport <inputVisioFile> <outputJsonFile>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+                // Path to the source Visio file
+                const string inputPath = "input.vsdx";
+                // Path for the output JSON file
+                const string outputPath = "shapes.json";
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            var shapeInfos = new List<ShapeInfo>();
+                // List to hold extracted shape information
+                List<ShapeInfo> shapesData = new List<ShapeInfo>();
 
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
-            {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Retrieve theme color (foreground fill color) if available
-                    string color = null;
-                    if (shape.Fill != null && shape.Fill.FillForegnd != null && shape.Fill.FillForegnd.Value != null)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        color = shape.Fill.FillForegnd.Value;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve ID, Name, and theme color (foreground fill)
+                        long id = shape.ID;
+                        string name = shape.Name ?? string.Empty;
+                        string themeColor = shape.Fill?.FillForegnd?.Value ?? string.Empty;
+
+                        shapesData.Add(new ShapeInfo
+                        {
+                            ID = id,
+                            Name = name,
+                            ThemeColor = themeColor
+                        });
                     }
-
-                    shapeInfos.Add(new ShapeInfo
-                    {
-                        ID = shape.ID,
-                        Name = shape.Name,
-                        ThemeColor = color
-                    });
                 }
+
+                // Serialize the list to JSON with indentation for readability
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(shapesData, jsonOptions);
+
+                // Write JSON to the output file
+                File.WriteAllText(outputPath, json);
+
+                Console.WriteLine($"Exported {shapesData.Count} shapes to '{outputPath}'.");
+
             }
-
-            // Serialize to JSON with indentation
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(shapeInfos, options);
-
-            // Write JSON to file
-            File.WriteAllText(outputPath, json);
-
-            Console.WriteLine($"Export completed. {shapeInfos.Count} shapes written to '{outputPath}'.");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

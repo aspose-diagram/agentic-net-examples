@@ -1,62 +1,68 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // Required for shape operations per global rule
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Path to the Visio file to be inspected
+        string inputPath = "input.vsdx";
+
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Define the expected alignment values according to the style guide
+            VerticalAlignValue expectedVertical = VerticalAlignValue.Middle;
+            HorzAlignValue expectedHorizontal = HorzAlignValue.Center; // Correct enum member
+
+            // Iterate through all pages and shapes in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the style guide (expected alignments)
-                // For simplicity, the guide expects all shapes to be centered horizontally and middle vertically.
-                HorzAlignValue expectedHorz = HorzAlignValue.Center;
-                VerticalAlignValue expectedVert = VerticalAlignValue.Middle;
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Check vertical alignment of the shape's text block
+                    if (shape.TextBlock.VerticalAlign.Value != expectedVertical)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        Console.WriteLine($"[Mismatch] Shape ID {shape.ID} ('{shape.NameU}') has vertical alignment '{shape.TextBlock.VerticalAlign.Value}', expected '{expectedVertical}'.");
+                    }
 
-                        // Ensure the shape has at least one paragraph to check horizontal alignment
-                        if (shape.Paras.Count == 0)
-                            continue;
-
-                        // Retrieve current alignments
-                        HorzAlignValue currentHorz = shape.Paras[0].HorzAlign.Value;
-                        VerticalAlignValue currentVert = shape.TextBlock.VerticalAlign.Value;
-
-                        // Compare with the style guide and log mismatches
-                        if (currentHorz != expectedHorz)
+                    // Check horizontal alignment of the first paragraph, if any
+                    if (shape.Paras.Count > 0)
+                    {
+                        if (shape.Paras[0].HorzAlign.Value != expectedHorizontal)
                         {
-                            Console.WriteLine($"[Mismatch] Shape ID {shape.ID} ({shape.NameU}) - Horizontal alignment is {currentHorz}, expected {expectedHorz}.");
-                        }
-
-                        if (currentVert != expectedVert)
-                        {
-                            Console.WriteLine($"[Mismatch] Shape ID {shape.ID} ({shape.NameU}) - Vertical alignment is {currentVert}, expected {expectedVert}.");
+                            Console.WriteLine($"[Mismatch] Shape ID {shape.ID} ('{shape.NameU}') has horizontal alignment '{shape.Paras[0].HorzAlign.Value}', expected '{expectedHorizontal}'.");
                         }
                     }
+                    else
+                    {
+                        // No paragraph information – treat as informational note
+                        Console.WriteLine($"[Info] Shape ID {shape.ID} ('{shape.NameU}') has no paragraph data to evaluate horizontal alignment.");
+                    }
                 }
-
-                // Optionally, save the diagram (no changes made here)
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("Alignment check completed.");
+        }
+        catch (Exception ex)
+        {
+            // Log any unexpected errors during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

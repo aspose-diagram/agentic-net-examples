@@ -1,58 +1,73 @@
 using System;
-using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = "output.vsdx";
-        string keyword = "TODO";
-
-        try
-        {
-            Diagram diagram = new Diagram(inputPath);
-
-            foreach (Page page in diagram.Pages)
+            try
             {
-                for (int i = page.PageSheet.Annotations.Count - 1; i >= 0; i--)
-                {
-                    Annotation annotation = page.PageSheet.Annotations[i];
-                    string commentText = annotation.Comment.Value ?? string.Empty;
 
-                    if (commentText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                // Input Visio file, output file and the keyword to search for in comments
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+                string keyword = "TODO";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and collect annotations that contain the keyword
+                foreach (Page page in diagram.Pages)
+                {
+                    var annotations = page.PageSheet.Annotations;
+                    var toRemove = new List<Annotation>();
+
+                    foreach (Annotation ann in annotations)
                     {
-                        page.PageSheet.Annotations.Remove(annotation);
+                        // Ensure the comment text is not null before checking
+                        if (ann.Comment.Value != null && ann.Comment.Value.Contains(keyword))
+                        {
+                            toRemove.Add(ann);
+                        }
+                    }
+
+                    // Remove the collected annotations from the page
+                    foreach (Annotation ann in toRemove)
+                    {
+                        // AnnotationCollection supports removal by object
+                        annotations.Remove(ann);
                     }
                 }
-            }
 
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Annotation annotation in page.PageSheet.Annotations)
+                // Verify that no remaining annotation contains the keyword
+                bool stillExists = false;
+                foreach (Page page in diagram.Pages)
                 {
-                    string commentText = annotation.Comment.Value ?? string.Empty;
-                    if (commentText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                    foreach (Annotation ann in page.PageSheet.Annotations)
                     {
-                        throw new Exception($"Comment with keyword '{keyword}' still exists after deletion.");
+                        if (ann.Comment.Value != null && ann.Comment.Value.Contains(keyword))
+                        {
+                            stillExists = true;
+                            break;
+                        }
                     }
+                    if (stillExists) break;
                 }
-            }
 
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Comments containing the keyword have been removed and the diagram saved successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+                if (stillExists)
+                {
+                    throw new Exception($"Comment with keyword '{keyword}' still exists after deletion.");
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

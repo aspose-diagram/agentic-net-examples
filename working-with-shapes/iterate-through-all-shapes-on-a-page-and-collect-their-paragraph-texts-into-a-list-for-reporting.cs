@@ -10,33 +10,33 @@ class Program
         try
         {
 
-            // Load the Visio diagram
+            // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // List to store paragraph texts from all shapes
+            // Select the first page (or any specific page you need)
+            Page page = diagram.Pages[0];
+
+            // List to store paragraph texts from all shapes on the page
             List<string> paragraphTexts = new List<string>();
 
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Iterate through each shape on the page
+            foreach (Shape shape in page.Shapes)
             {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Retrieve the plain text of the shape (includes all paragraphs)
-                    string text = shape.GetPureText();
+                // Retrieve the plain text of the shape (includes all paragraphs)
+                string pureText = shape.GetPureText();
 
-                    // Add non‑empty texts to the collection
-                    if (!string.IsNullOrEmpty(text))
-                    {
-                        paragraphTexts.Add(text);
-                    }
+                // If the shape contains text, add it to the collection
+                if (!string.IsNullOrEmpty(pureText))
+                {
+                    paragraphTexts.Add(pureText);
                 }
             }
 
-            // Example reporting: write collected texts to console
-            foreach (string txt in paragraphTexts)
+            // Example reporting: output the collected paragraph texts
+            Console.WriteLine("Collected Paragraph Texts:");
+            foreach (string text in paragraphTexts)
             {
-                Console.WriteLine(txt);
+                Console.WriteLine("- " + text);
             }
 
         }

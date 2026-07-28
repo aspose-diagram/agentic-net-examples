@@ -1,72 +1,84 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main()
         {
-
-            // Input Visio file path (replace with actual path or pass via args)
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Preserve original visibility states of layers
-                var originalVisibility = new System.Collections.Generic.Dictionary<long, BOOL>();
-                foreach (Layer layer in page.PageSheet.Layers)
+
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+
+                // Output directory for PDFs
+                string outputDir = "LayerPdfs";
+                Directory.CreateDirectory(outputDir);
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Assume processing the first page (index 0)
+                if (diagram.Pages.Count == 0)
                 {
-                    originalVisibility[layer.IX] = layer.Visible.Value;
+                    Console.WriteLine("The diagram contains no pages.");
+                    return;
                 }
 
-                // Iterate over each layer on the current page
+                Page page = diagram.Pages[0];
+
+                // Capture original visibility of all layers
+                List<BOOL> originalVisibilities = new List<BOOL>();
+                foreach (Layer layer in page.PageSheet.Layers)
+                {
+                    originalVisibilities.Add(layer.Visible.Value);
+                }
+
+                // Iterate over each layer
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
                     // Process only layers that are originally visible
-                    if (layer.Visible.Value == BOOL.True)
+                    if (layer.Visible.Value != BOOL.True)
+                        continue;
+
+                    // Hide all layers
+                    foreach (Layer l in page.PageSheet.Layers)
                     {
-                        // Hide all layers except the current one
-                        foreach (Layer otherLayer in page.PageSheet.Layers)
-                        {
-                            otherLayer.Visible.Value = (otherLayer == layer) ? BOOL.True : BOOL.False;
-                        }
+                        l.Visible.Value = BOOL.False;
+                    }
 
-                        // Prepare output PDF file name using the layer name
-                        string safeLayerName = layer.Name.Value.Replace(" ", "_");
-                        string outputFileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_Layer_{safeLayerName}.pdf";
+                    // Show the current layer
+                    layer.Visible.Value = BOOL.True;
 
-                        // Configure PDF save options
-                        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    // Prepare output file name (use layer index to avoid illegal characters)
+                    string outputPath = Path.Combine(outputDir, $"Layer_{layer.IX}.pdf");
 
-                        // Save the diagram as PDF with only the current layer visible
-                        diagram.Save(outputFileName, pdfOptions);
+                    // Export the diagram as PDF with the current layer visibility
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    diagram.Save(outputPath, pdfOptions);
+
+                    Console.WriteLine($"Exported visible layer '{layer.Name.Value}' to '{outputPath}'.");
+
+                    // Restore original visibility for all layers
+                    int idx = 0;
+                    foreach (Layer l in page.PageSheet.Layers)
+                    {
+                        l.Visible.Value = originalVisibilities[idx];
+                        idx++;
                     }
                 }
 
-                // Restore original visibility for all layers
-                foreach (Layer layer in page.PageSheet.Layers)
-                {
-                    if (originalVisibility.TryGetValue(layer.IX, out BOOL originalValue))
-                    {
-                        layer.Visible.Value = originalValue;
-                    }
-                }
+                // Cleanup
+                diagram.Dispose();
+                Console.WriteLine("Layer export completed.");
+
             }
-
-            // Dispose diagram resources
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

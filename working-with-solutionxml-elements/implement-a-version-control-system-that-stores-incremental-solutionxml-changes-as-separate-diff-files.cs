@@ -1,131 +1,128 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-namespace SolutionXmlVersionControlDemo
+public class SolutionXmlDto
 {
-    // Simple version control for Diagram.SolutionXMLs.
-    // Each commit creates a diff file that contains only the changed SolutionXML entries.
-    public class SolutionXmlVersionControl
+    public string Name { get; set; } = string.Empty;
+    public string XmlValue { get; set; } = string.Empty;
+}
+
+public static class SolutionXmlVersionControl
+{
+    // Load the diagram from a file path
+    public static Diagram LoadDiagram(string diagramPath)
     {
-        private readonly Diagram _diagram;
-        // Keeps the last committed state of each SolutionXML by its Name.
-        private readonly Dictionary<string, string> _lastCommittedXml = new Dictionary<string, string>();
+        if (!File.Exists(diagramPath))
+            throw new FileNotFoundException($"Diagram file not found: {diagramPath}");
 
-        public SolutionXmlVersionControl(string diagramPath)
+        return new Diagram(diagramPath);
+    }
+
+    // Convert Aspose.Diagram.SolutionXML collection to DTO list for easier processing/serialization
+    public static List<SolutionXmlDto> GetCurrentSolutionXmls(Diagram diagram)
+    {
+        var list = new List<SolutionXmlDto>();
+        foreach (SolutionXML solXml in diagram.SolutionXMLs)
         {
-            // Load the diagram from file.
-            _diagram = new Diagram(diagramPath);
+            list.Add(new SolutionXmlDto
+            {
+                Name = solXml.Name,
+                XmlValue = solXml.XmlValue
+            });
         }
+        return list;
+    }
 
-        // Adds or updates a SolutionXML entry in the diagram.
-        public void AddOrUpdateSolutionXml(string name, string xmlContent)
+    // Load previously saved snapshot (if any)
+    public static List<SolutionXmlDto> LoadSnapshot(string snapshotPath)
+    {
+        if (!File.Exists(snapshotPath))
+            return new List<SolutionXmlDto>();
+
+        string json = File.ReadAllText(snapshotPath);
+        return JsonSerializer.Deserialize<List<SolutionXmlDto>>(json) ?? new List<SolutionXmlDto>();
+    }
+
+    // Save snapshot for next run
+    public static void SaveSnapshot(string snapshotPath, List<SolutionXmlDto> current)
+    {
+        string json = JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(snapshotPath, json);
+    }
+
+    // Write diff files for added or modified SolutionXML entries
+    public static void WriteDiffs(string diffFolder, List<SolutionXmlDto> previous, List<SolutionXmlDto> current)
+    {
+        // Ensure diff folder exists
+        Directory.CreateDirectory(diffFolder);
+
+        // Build lookup for previous entries
+        var prevLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in previous)
+            prevLookup[item.Name] = item.XmlValue;
+
+        foreach (var cur in current)
         {
-            // Try to find an existing entry with the same name.
-            SolutionXML existing = null;
-            foreach (SolutionXML sx in _diagram.SolutionXMLs)
-            {
-                if (sx.Name == name)
-                {
-                    existing = sx;
-                    break;
-                }
-            }
+            bool isNew = !prevLookup.ContainsKey(cur.Name);
+            bool isModified = prevLookup.TryGetValue(cur.Name, out string prevValue) && prevValue != cur.XmlValue;
 
-            if (existing != null)
-            {
-                // Update existing entry.
-                existing.XmlValue = xmlContent;
-            }
-            else
-            {
-                // Add new entry.
-                var newSolutionXml = new SolutionXML(name, xmlContent);
-                _diagram.SolutionXMLs.Add(newSolutionXml);
-            }
-        }
-
-        // Commits the current state of SolutionXMLs to a diff file.
-        // Only entries that have changed since the last commit are written.
-        public void Commit(string diffFolder)
-        {
-            if (!Directory.Exists(diffFolder))
-                Directory.CreateDirectory(diffFolder);
-
-            // Build diff content.
-            var diffLines = new List<string>();
-            foreach (SolutionXML sx in _diagram.SolutionXMLs)
-            {
-                string currentXml = sx.XmlValue ?? string.Empty;
-                if (_lastCommittedXml.TryGetValue(sx.Name, out string previousXml))
-                {
-                    if (previousXml != currentXml)
-                    {
-                        diffLines.Add($"--- {sx.Name}");
-                        diffLines.Add(currentXml);
-                    }
-                }
-                else
-                {
-                    // New entry.
-                    diffLines.Add($"+++ {sx.Name}");
-                    diffLines.Add(currentXml);
-                }
-            }
-
-            // If there are changes, write them to a new diff file.
-            if (diffLines.Count > 0)
+            if (isNew || isModified)
             {
                 string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmssfff");
-                string diffFilePath = Path.Combine(diffFolder, $"SolutionXmlDiff_{timestamp}.txt");
-                File.WriteAllLines(diffFilePath, diffLines);
+                string safeName = string.Join("_", cur.Name.Split(Path.GetInvalidFileNameChars()));
+                string diffFileName = $"{safeName}_{timestamp}.xml";
+                string diffPath = Path.Combine(diffFolder, diffFileName);
+                File.WriteAllText(diffPath, cur.XmlValue);
             }
-
-            // Update the last committed snapshot.
-            _lastCommittedXml.Clear();
-            foreach (SolutionXML sx in _diagram.SolutionXMLs)
-            {
-                _lastCommittedXml[sx.Name] = sx.XmlValue ?? string.Empty;
-            }
-        }
-
-        // Saves the diagram back to a file.
-        public void SaveDiagram(string outputPath)
-        {
-            _diagram.Save(outputPath, SaveFileFormat.Vdx);
         }
     }
+}
 
-    // Example usage.
-    class Program
+public class Program
+{
+    // Expected arguments:
+    // args[0] - path to the Visio diagram file
+    // args[1] - folder where diff files will be stored
+    // args[2] - path to snapshot file (JSON) that holds previous SolutionXML state
+    public static void Main(string[] args)
     {
-        static void Main()
+        if (args.Length < 3)
         {
-            try
-            {
+            Console.WriteLine("Usage: <program> <diagramPath> <diffFolder> <snapshotPath>");
+            return;
+        }
 
-                string diagramPath = @"C:\Diagrams\sample.vdx";
-                string diffFolder = @"C:\Diagrams\Diffs";
-                string outputDiagramPath = @"C:\Diagrams\sample_updated.vdx";
+        string diagramPath = args[0];
+        string diffFolder = args[1];
+        string snapshotPath = args[2];
 
-                var vc = new SolutionXmlVersionControl(diagramPath);
+        try
+        {
+            // Load diagram
+            Diagram diagram = SolutionXmlVersionControl.LoadDiagram(diagramPath);
 
-                // Add or modify SolutionXML entries.
-                vc.AddOrUpdateSolutionXml("CustomData", "<root><value>123</value></root>");
-                vc.AddOrUpdateSolutionXml("Metadata", "<meta><author>John Doe</author></meta>");
+            // Get current SolutionXML collection
+            List<SolutionXmlDto> current = SolutionXmlVersionControl.GetCurrentSolutionXmls(diagram);
 
-                // Commit changes – creates a diff file with the modifications.
-                vc.Commit(diffFolder);
+            // Load previous snapshot (if any)
+            List<SolutionXmlDto> previous = SolutionXmlVersionControl.LoadSnapshot(snapshotPath);
 
-                // Save the updated diagram.
-                vc.SaveDiagram(outputDiagramPath);
+            // Write diffs for added/changed entries
+            SolutionXmlVersionControl.WriteDiffs(diffFolder, previous, current);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+            // Update snapshot for next execution
+            SolutionXmlVersionControl.SaveSnapshot(snapshotPath, current);
+
+            Console.WriteLine("Version control processing completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            // In a real scenario you might want to rethrow or handle differently
+        }
     }
 }

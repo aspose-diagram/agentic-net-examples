@@ -1,37 +1,34 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
                 // Path to the source Visio file
-                const string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                const string outputPath = "output.vsdx";
+                string inputPath = "input.vsdx";
+                // Path for the modified Visio file
+                string outputPath = "output.vsdx";
 
                 // Load the diagram
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Desired fixed page size (A4 in inches)
-                    const double pageWidthInches = 8.27;
-                    const double pageHeightInches = 11.69;
-
-                    // Iterate through all pages and apply settings
+                    // Iterate through all pages in the diagram
                     foreach (Page page in diagram.Pages)
                     {
-                        // Disable automatic page expansion (auto‑expand)
+                        // Disable auto‑expand (prevent automatic page resizing)
                         page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
 
-                        // Set a fixed page width and height
-                        page.PageSheet.PageProps.PageWidth.Value = pageWidthInches;
-                        page.PageSheet.PageProps.PageHeight.Value = pageHeightInches;
+                        // Set a fixed page size (A4: 8.27 x 11.69 inches)
+                        page.PageSheet.PageProps.PageWidth.Value = 8.27;
+                        page.PageSheet.PageProps.PageHeight.Value = 11.69;
                     }
 
-                    // Save the modified diagram
+                    // Save the modified diagram back to Visio format
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 

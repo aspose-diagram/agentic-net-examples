@@ -13,56 +13,57 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Name of the target layer
-            const string targetLayerName = "Watermark";
-
-            // Iterate through all pages in the diagram
+            // Iterate through each page in the document
             foreach (Page page in diagram.Pages)
             {
-                // Find the layer with the specified name on the current page
-                int watermarkLayerIndex = -1;
+                // Locate the layer named "Watermark" on the current page
+                Layer watermarkLayer = null;
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    if (layer.Name.Value == targetLayerName)
+                    if (layer.Name.Value == "Watermark")
                     {
-                        // Layer index (IX) is the identifier used in shape layer membership strings
-                        watermarkLayerIndex = layer.IX;
+                        watermarkLayer = layer;
                         break;
                     }
                 }
 
-                // If the layer does not exist on this page, skip to the next page
-                if (watermarkLayerIndex == -1)
+                // If the Watermark layer does not exist on this page, skip to the next page
+                if (watermarkLayer == null)
                     continue;
 
-                // Process each shape on the page
+                int watermarkIndex = watermarkLayer.IX; // Index of the Watermark layer
+
+                // Process every shape on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the layer membership string (e.g., "0;2;5")
-                    string layerMember = shape.LayerMem.LayerMember.Value;
+                    // Ensure the shape has layer membership information
+                    if (shape.LayerMem == null)
+                        continue;
 
+                    string layerMember = shape.LayerMem.LayerMember.Value;
                     if (string.IsNullOrEmpty(layerMember))
                         continue;
 
-                    // Split the membership string and check if the shape belongs to the watermark layer
+                    // Check if the shape belongs to the Watermark layer
                     string[] members = layerMember.Split(';');
+                    bool belongsToWatermark = false;
                     foreach (string member in members)
                     {
-                        if (int.TryParse(member, out int idx) && idx == watermarkLayerIndex)
+                        if (int.TryParse(member, out int idx) && idx == watermarkIndex)
                         {
-                            // Set fill foreground transparency to 50%
-                            shape.Fill.FillForegndTrans.Value = 50;
-
-                            // Set line color transparency to 50%
-                            shape.Line.LineColorTrans.Value = 50;
-
-                            // Optional: set text background transparency if needed
-                            // shape.TextBlock.TextBkgndTrans.Value = 50;
-
-                            // No need to check other members once matched
+                            belongsToWatermark = true;
                             break;
                         }
                     }
+
+                    if (!belongsToWatermark)
+                        continue;
+
+                    // Set fill foreground transparency to 50%
+                    shape.Fill.FillForegndTrans.Value = 50;
+
+                    // Set line color transparency to 50%
+                    shape.Line.LineColorTrans.Value = 50;
                 }
             }
 

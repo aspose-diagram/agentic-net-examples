@@ -1,52 +1,50 @@
-using System.IO;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Define the RGB color to match (foreground fill) and the new color to apply
-            string targetColor = "#FF0000"; // Red in hex
-            string newColor = "#00FF00";    // Green in hex
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Select shapes whose FillForegnd matches the target color and are not deleted
-                var shapesToUpdate = page.Shapes
-                    .Cast<Shape>()
-                    .Where(s => s.Del == BOOL.False &&
-                                string.Equals(s.Fill.FillForegnd.Value, targetColor, StringComparison.OrdinalIgnoreCase))
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Define the target fill foreground color (hex format)
+                string targetColor = "#FF0000"; // Red
+
+                // Find all non‑deleted shapes whose FillForegnd matches the target color
+                List<Shape> matchingShapes = diagram.Pages
+                    .Cast<Page>()
+                    .SelectMany(page => page.Shapes.Cast<Shape>())
+                    .Where(shape =>
+                        shape.Del == BOOL.False &&                                   // Exclude deleted shapes
+                        string.Equals(shape.Fill.FillForegnd.Value, targetColor, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
-                // Update the fill foreground color for each matched shape
-                foreach (Shape shape in shapesToUpdate)
+                // Apply the desired update – change the fill foreground color to green
+                foreach (Shape shape in matchingShapes)
                 {
-                    shape.Fill.FillForegnd.Value = newColor;
-                    Console.WriteLine($"Updated Shape ID {shape.ID} on page '{page.Name}' to color {newColor}");
+                    shape.Fill.FillForegnd.Value = "#00FF00"; // Green
                 }
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Updated {matchingShapes.Count} shape(s) and saved to '{outputPath}'.");
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

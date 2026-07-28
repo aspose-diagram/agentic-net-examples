@@ -8,30 +8,30 @@ class BatchVsdxToPdf
     static void Main(string[] args)
     {
         // Folder containing VSDX files – change as needed
-        string sourceFolder = @"C:\VisioFiles";
+        string inputFolder = @"C:\VisioFiles";
         // Destination folder for PDFs – change as needed
         string outputFolder = @"C:\VisioPdf";
 
-        // Ensure output folder exists
+        // Ensure output directory exists
         Directory.CreateDirectory(outputFolder);
 
-        // Process each VSDX file in the source folder
-        foreach (string vsdxPath in Directory.GetFiles(sourceFolder, "*.vsdx"))
+        // Process each .vsdx file in the input folder
+        foreach (string vsdxPath in Directory.GetFiles(inputFolder, "*.vsdx"))
         {
-            // Load the diagram using the constructor that accepts a file path
+            // Load the Visio diagram from file
             using (Diagram diagram = new Diagram(vsdxPath))
             {
                 // Remove hidden information (personal info, shapes, masters, styles, data record sets)
-                int removeMask = (int)(
-                    RemoveHiddenInfoItem.PersonalInfo |
-                    RemoveHiddenInfoItem.Shapes |
-                    RemoveHiddenInfoItem.Masters |
-                    RemoveHiddenInfoItem.Styles |
-                    RemoveHiddenInfoItem.DataRecordSets);
+                int hiddenInfoFlags =
+                    (int)RemoveHiddenInfoItem.PersonalInfo |
+                    (int)RemoveHiddenInfoItem.Shapes |
+                    (int)RemoveHiddenInfoItem.Masters |
+                    (int)RemoveHiddenInfoItem.Styles |
+                    (int)RemoveHiddenInfoItem.DataRecordSets;
 
-                diagram.RemoveHiddenInformation(removeMask);
+                diagram.RemoveHiddenInformation(hiddenInfoFlags);
 
-                // Remove any VBA/macros that may be present
+                // Remove any VBA macros
                 diagram.RemoveMacro();
 
                 // Prepare PDF save options – do not export hidden pages
@@ -40,13 +40,15 @@ class BatchVsdxToPdf
                     ExportHiddenPage = false
                 };
 
-                // Build output PDF file path (same name, .pdf extension)
+                // Build output PDF file path
                 string pdfFileName = Path.GetFileNameWithoutExtension(vsdxPath) + ".pdf";
                 string pdfPath = Path.Combine(outputFolder, pdfFileName);
 
-                // Save the diagram as PDF using the Save method with SaveOptions
+                // Save the diagram as PDF using the specified options
                 diagram.Save(pdfPath, pdfOptions);
             }
         }
+
+        Console.WriteLine("Batch conversion completed.");
     }
 }

@@ -1,49 +1,50 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path for the processed output file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Check if the shape's line pattern is solid
-                    // LinePatternValue.Solid represents a solid line
-                    if (shape.Line.LinePattern.Value == LinePatternValue.Solid)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Example customization: change the line color to red
-                        shape.Line.LineColor.Value = "#FF0000";
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Additional custom logic can be placed here
-                        Console.WriteLine($"Processed shape ID {shape.ID} with solid line.");
+                        // Check if the shape's line pattern is solid
+                        if (shape.Line.LinePattern.Value == LinePatternValue.Solid)
+                        {
+                            // Example customization: set the line color to red
+                            shape.Line.LineColor.Value = "#FF0000";
+
+                            // Additional customizations can be added here
+                        }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

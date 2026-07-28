@@ -1,91 +1,74 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Add a rectangle shape to the active page
+            // Parameters: PinX, PinY, master name, isCalculate (bool)
+            long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle", false);
+
+            // Retrieve the shape instance
+            Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
+
+            // -------------------------------------------------
+            // Create a custom StyleSheet that defines paragraph spacing
+            // -------------------------------------------------
+            StyleSheet customStyle = new StyleSheet();
+            customStyle.ID = diagram.StyleSheets.Count + 1; // assign a unique ID
+
+            // Define paragraph spacing (in inches)
+            Para para = new Para();
+            para.SpBefore.Value = 0.1;   // space before paragraph
+            para.SpAfter.Value = 0.1;    // space after paragraph
+            para.SpLine.Value = 0.2;     // line spacing
+
+            // Add the paragraph definition to the stylesheet
+            customStyle.Paras.Add(para);
+
+            // Add the stylesheet to the diagram's collection
+            diagram.StyleSheets.Add(customStyle);
+
+            // Apply the stylesheet to the shape's text formatting
+            shape.TextStyle = customStyle;
+
+            // -------------------------------------------------
+            // Verify that the paragraph spacing has been applied
+            // -------------------------------------------------
+            if (shape.Paras.Count == 0)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx"; // replace with actual path
-                Diagram diagram = new Diagram(inputPath);
-
-                // Create a custom StyleSheet (can be used for other formatting)
-                StyleSheet customStyle = new StyleSheet();
-                customStyle.ID = diagram.StyleSheets.Count + 1;
-                customStyle.Name = "CustomParagraphStyle";
-                // Add the stylesheet to the diagram
-                diagram.StyleSheets.Add(customStyle);
-
-                // Apply the stylesheet to the first page (full page style application)
-                Page page = diagram.Pages[0];
-                page.ApplyStyle(customStyle.ID, customStyle.ID, customStyle.ID);
-
-                // Define the target shape name (adjust as needed)
-                string targetShapeName = "TargetShape";
-
-                // Locate the target shape on the page
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.NameU != null && shape.NameU.Equals(targetShapeName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-
-                if (targetShape == null)
-                {
-                    throw new Exception($"Shape with NameU '{targetShapeName}' not found.");
-                }
-
-                // Ensure the shape has at least one paragraph
-                if (targetShape.Paras.Count == 0)
-                {
-                    // Add a default paragraph if none exists
-                    targetShape.Paras.Add(new Para());
-                }
-
-                // Set paragraph spacing values (in inches)
-                double spBefore = 0.2; // space before paragraph
-                double spAfter = 0.3;  // space after paragraph
-                double spLine = 1.0;   // line spacing multiplier
-
-                targetShape.Paras[0].SpBefore.Value = spBefore;
-                targetShape.Paras[0].SpAfter.Value = spAfter;
-                targetShape.Paras[0].SpLine.Value = spLine;
-
-                // Verify that the spacing values were applied correctly
-                bool spacingCorrect = true;
-
-                if (Math.Abs(targetShape.Paras[0].SpBefore.Value - spBefore) > 0.0001)
-                    spacingCorrect = false;
-                if (Math.Abs(targetShape.Paras[0].SpAfter.Value - spAfter) > 0.0001)
-                    spacingCorrect = false;
-                if (Math.Abs(targetShape.Paras[0].SpLine.Value - spLine) > 0.0001)
-                    spacingCorrect = false;
-
-                if (!spacingCorrect)
-                {
-                    throw new Exception("Paragraph spacing verification failed.");
-                }
-                else
-                {
-                    Console.WriteLine("Paragraph spacing applied and verified successfully.");
-                }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx"; // replace with desired output path
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                throw new Exception("Paragraph collection is empty; style was not applied.");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Para appliedPara = shape.Paras[0];
+
+            if (Math.Abs(appliedPara.SpBefore.Value - 0.1) > 0.0001)
+                throw new Exception($"SpBefore mismatch. Expected 0.1, got {appliedPara.SpBefore.Value}");
+
+            if (Math.Abs(appliedPara.SpAfter.Value - 0.1) > 0.0001)
+                throw new Exception($"SpAfter mismatch. Expected 0.1, got {appliedPara.SpAfter.Value}");
+
+            if (Math.Abs(appliedPara.SpLine.Value - 0.2) > 0.0001)
+                throw new Exception($"SpLine mismatch. Expected 0.2, got {appliedPara.SpLine.Value}");
+
+            Console.WriteLine("Paragraph spacing applied and verified successfully.");
+
+            // Save the diagram to a VSDX file
+            diagram.Save("StyledDiagram.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+        }
     }
-    }
+}

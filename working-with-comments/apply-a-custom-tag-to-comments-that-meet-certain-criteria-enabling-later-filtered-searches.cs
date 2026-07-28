@@ -16,24 +16,30 @@ class Program
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
+                // Define the keyword to search for and the tag to apply
+                string keyword = "TODO";
+                string tag = "[Reviewed] ";
+
                 // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the annotations collection via the PageSheet
+                    // Access the annotations (comments) on the page
                     var annotations = page.PageSheet.Annotations;
 
-                    // Process each annotation (comment)
+                    // Iterate over each annotation
                     foreach (Annotation annotation in annotations)
                     {
-                        // Retrieve the current comment text
+                        // Get the current comment text
                         string currentText = annotation.Comment.Value ?? string.Empty;
 
-                        // Example criteria: comment contains the word "TODO"
-                        if (currentText.Contains("TODO", StringComparison.OrdinalIgnoreCase))
+                        // Check if the comment meets the criteria (contains the keyword)
+                        if (currentText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Apply a custom tag by prefixing the comment text
-                            string taggedText = "[Review] " + currentText;
-                            annotation.Comment.Value = taggedText;
+                            // Apply the custom tag if it's not already present
+                            if (!currentText.StartsWith(tag, StringComparison.Ordinal))
+                            {
+                                annotation.Comment.Value = tag + currentText;
+                            }
                         }
                     }
                 }

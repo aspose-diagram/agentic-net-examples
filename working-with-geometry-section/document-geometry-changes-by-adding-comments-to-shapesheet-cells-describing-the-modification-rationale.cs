@@ -1,43 +1,66 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram (no LoadOptions needed)
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page in the document
+            Page page = diagram.Pages[0];
+
+            // Locate the first shape that is not marked as deleted
+            Shape targetShape = null;
+            foreach (Shape shp in page.Shapes)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Work with the first page
-                Page page = diagram.Pages[0];
-
-                // Add a rectangle shape at (2,2) inches
-                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Modify geometry: move to (5,5) and resize to 2" width x 1" height
-                shape.XForm.PinX.Value = 5.0;
-                shape.XForm.PinY.Value = 5.0;
-                shape.XForm.Width.Value = 2.0;
-                shape.XForm.Height.Value = 1.0;
-
-                // Add a comment (annotation) to document the change rationale
-                string commentText = "Moved shape to (5,5) and resized to 2\" x 1\" (inches).";
-                page.AddComment(shape, commentText);
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                if (shp.Del == BOOL.False)
+                {
+                    targetShape = shp;
+                    break;
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("No editable shape found on the page.");
+                return;
             }
+
+            // Store original geometry values for the comment
+            double originalWidth = targetShape.XForm.Width.Value;
+            double originalHeight = targetShape.XForm.Height.Value;
+
+            // Modify geometry: increase width by 1 inch and height by 0.5 inch
+            targetShape.XForm.Width.Value = originalWidth + 1.0;
+            targetShape.XForm.Height.Value = originalHeight + 0.5;
+
+            // Create a comment that explains the modification rationale
+            string commentText = $"Width changed from {originalWidth} to {targetShape.XForm.Width.Value} inches; " +
+                                 $"Height changed from {originalHeight} to {targetShape.XForm.Height.Value} inches " +
+                                 $"to accommodate additional content.";
+
+            // Attach the comment to the shape's ShapeSheet
+            page.AddComment(targetShape, commentText);
+
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

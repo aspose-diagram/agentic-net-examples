@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,27 +9,35 @@ class Program
             try
             {
 
-                // Input and output file paths
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
                 // Load the Visio diagram
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate through each page
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through each page in the diagram
+                    for (int i = 0; i < diagram.Pages.Count; i++)
                     {
-                        // If the page is in Landscape orientation, convert it to Portrait
-                        if (page.PageSheet.PrintProps.PrintPageOrientation.Value == PrintPageOrientationValue.Landscape)
+                        Page page = diagram.Pages[i];
+
+                        // Retrieve current page dimensions (in inches)
+                        double width = page.PageSheet.PageProps.PageWidth.Value;
+                        double height = page.PageSheet.PageProps.PageHeight.Value;
+
+                        // Determine if the page is landscape (width greater than height)
+                        if (width > height)
                         {
-                            // Swap width and height to achieve portrait dimensions
-                            double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
-                            double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
+                            // Set print orientation to Portrait
+                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
 
-                            page.PageSheet.PageProps.PageWidth.Value = originalHeight;
-                            page.PageSheet.PageProps.PageHeight.Value = originalWidth;
-
-                            // Update the orientation flag to Portrait
+                            // Swap width and height to rotate the page dimensions
+                            page.PageSheet.PageProps.PageWidth.Value = height;
+                            page.PageSheet.PageProps.PageHeight.Value = width;
+                        }
+                        else
+                        {
+                            // Ensure portrait pages retain Portrait orientation
                             page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
                         }
                     }
@@ -36,6 +45,8 @@ class Program
                     // Save the modified diagram
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
+
+                Console.WriteLine("Page orientation adjustment completed.");
 
             }
             catch (System.IO.FileNotFoundException ex)

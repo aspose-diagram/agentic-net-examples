@@ -1,70 +1,69 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace ParagraphSerializationExample
+class SerializeShapeParas
 {
-    // DTO representing the data we want to export for each paragraph
-    public class ParagraphInfo
+    static void Main()
     {
-        public string HorzAlign { get; set; }
-        public double IndLeft { get; set; }
-        public double IndRight { get; set; }
-        public double IndFirst { get; set; }
-        public double SpBefore { get; set; }
-        public double SpAfter { get; set; }
-        public double SpLine { get; set; }
-        public string Bullet { get; set; }
-        public string BulletStr { get; set; }
-    }
-
-    public class Program
-    {
-        public static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram (replace with your file path)
+            var diagram = new Diagram("input.vsdx");
+
+            // Retrieve a shape – here we use the first shape on the first page as an example
+            // Adjust the index or use GetShape(id) / GetShape(name) as needed
+            Shape shape = diagram.Pages[0].Shapes[0];
+
+            // Access the paragraph collection of the shape
+            ParaCollection paras = shape.Paras;
+
+            // Prepare a list to hold serializable representations of each paragraph
+            var paraDtoList = new List<object>();
+
+            foreach (Para para in paras)
             {
-
-                // Load the Visio diagram (adjust the path as needed)
-                string diagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Choose the page and shape you want to serialize
-                // Here we take the first page and the first shape on that page
-                Page page = diagram.Pages[0];
-                Shape shape = page.Shapes.GetShape(1);
-
-                // Collect paragraph information
-                List<ParagraphInfo> paragraphs = new List<ParagraphInfo>();
-                foreach (Para para in shape.Paras)
+                // Create an anonymous object with the properties you want to expose
+                var paraDto = new
                 {
-                    ParagraphInfo info = new ParagraphInfo
-                    {
-                        HorzAlign = para.HorzAlign.Value.ToString(),
-                        IndLeft = para.IndLeft.Value,
-                        IndRight = para.IndRight.Value,
-                        IndFirst = para.IndFirst.Value,
-                        SpBefore = para.SpBefore.Value,
-                        SpAfter = para.SpAfter.Value,
-                        SpLine = para.SpLine.Value,
-                        Bullet = para.Bullet.Value.ToString(),
-                        BulletStr = para.BulletStr.Value
-                    };
-                    paragraphs.Add(info);
-                }
+                    IX = para.IX,
+                    Bullet = para.Bullet,
+                    BulletStr = para.BulletStr,
+                    BulletFont = para.BulletFont,
+                    BulletFontSize = para.BulletFontSize,
+                    LocalizeBulletFont = para.LocalizeBulletFont,
+                    HorzAlign = para.HorzAlign,
+                    IndFirst = para.IndFirst,
+                    IndLeft = para.IndLeft,
+                    IndRight = para.IndRight,
+                    SpAfter = para.SpAfter,
+                    SpBefore = para.SpBefore,
+                    SpLine = para.SpLine,
+                    TextPosAfterBullet = para.TextPosAfterBullet,
+                    Flags = para.Flags,
+                    Del = para.Del
+                };
 
-                // Serialize to JSON
-                string json = JsonSerializer.Serialize(paragraphs, new JsonSerializerOptions { WriteIndented = true });
-
-                // Output JSON to console (or write to a file if desired)
-                Console.WriteLine(json);
-
+                paraDtoList.Add(paraDto);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Serialize the list to JSON with indentation for readability
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            string json = JsonSerializer.Serialize(paraDtoList, jsonOptions);
+
+            // Output JSON to a file (replace with your desired output path)
+            File.WriteAllText("shape_paras.json", json);
+
+            // Optionally, write to console for quick verification
+            Console.WriteLine(json);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

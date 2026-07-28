@@ -1,40 +1,37 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+                // Load an existing Visio diagram (replace with your actual file path)
+                Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
+                // Access the first page of the diagram
+                Page page = diagram.Pages[0];
 
-            // Identify the target shape (replace with the actual shape ID)
-            long shapeId = 1; // example ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+                // Retrieve a specific shape by its ID (replace 1 with the target shape ID)
+                Shape shape = page.Shapes.GetShape(1);
 
-            // Disable line inheritance by explicitly setting line properties
-            // Set a new line weight (thickness) in inches
-            shape.Line.LineWeight.Value = 0.05; // 0.05 inches
+                // Disable line inheritance by explicitly setting a line color.
+                // This overrides any inherited line color from the master or style.
+                shape.Line.LineColor.Value = "#FF0000";
 
-            // Optionally set a line color to ensure the line properties are no longer inherited
-            shape.Line.LineColor.Value = "#FF0000";
+                // Assign a new line weight (thickness) in inches.
+                shape.Line.LineWeight.Value = 0.05; // 0.05 inches
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram to a new file
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -3,42 +3,41 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Path to the Visio file. Adjust as needed or pass as a command‑line argument.
-                string filePath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Path to the Visio file (replace with actual file path)
+                string diagramPath = "input.vsdx";
 
-                // Load the diagram.
-                Diagram diagram = new Diagram(filePath);
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-                Console.WriteLine("Connector ID | Line Jump Style");
-                Console.WriteLine("-----------------------------");
-
-                // Iterate through all pages.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page.
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Filter only 1‑D connector shapes that are not deleted.
-                        if (shape.OneD && shape.Del == BOOL.False)
+                        // Connectors are 1‑D shapes
+                        if (shape.OneD)
                         {
-                            // Retrieve the line jump style from the shape's layout.
-                            var jumpStyle = shape.Layout.ConLineJumpStyle.Value;
+                            long connectorId = shape.ID;
 
-                            // Output the connector ID and its line jump style.
-                            Console.WriteLine($"{shape.ID,12} | {jumpStyle}");
+                            // Retrieve the line jump style from the connector's layout
+                            ConLineJumpStyleValue jumpStyle = shape.Layout.ConLineJumpStyle.Value;
+
+                            // Output the connector ID and its line jump style
+                            Console.WriteLine($"Connector ID: {connectorId}, Line Jump Style: {jumpStyle}");
                         }
                     }
                 }
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

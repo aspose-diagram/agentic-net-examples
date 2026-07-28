@@ -17,10 +17,10 @@ class Program
             // Apply custom print layout to each page
             foreach (Page page in diagram.Pages)
             {
-                // Set page orientation to Landscape
+                // Set orientation to Landscape
                 page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                // Set horizontal scaling factor to 90%
+                // Set horizontal scaling to 90%
                 page.PageSheet.PrintProps.ScaleX.Value = 0.9;
             }
 

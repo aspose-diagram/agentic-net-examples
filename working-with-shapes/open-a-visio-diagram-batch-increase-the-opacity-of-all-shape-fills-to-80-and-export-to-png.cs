@@ -6,46 +6,49 @@ class Program
     {
         static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output PNG file path
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: VisioOpacityBatch <inputVisioPath> <outputPngPath>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputPath = args[1];
+
             try
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output PNG file path
-                string outputPath = "output.png";
-
                 // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip deleted shapes
-                            if (shape.Del == BOOL.False)
-                            {
-                                // Set fill foreground and background transparency to 20%
-                                // (80% opacity = 20% transparency)
-                                shape.Fill.FillForegndTrans.Value = 20;
-                                shape.Fill.FillBkgndTrans.Value = 20;
-                            }
-                        }
-                    }
+                Diagram diagram = new Diagram(inputPath);
 
-                    // Configure PNG export options
-                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    // Export the diagram to PNG
-                    diagram.Save(outputPath, pngOptions);
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Set fill foreground and background transparency to 20%
+                        // Transparency value: 0 = opaque, 100 = fully transparent
+                        shape.Fill.FillForegndTrans.Value = 20;
+                        shape.Fill.FillBkgndTrans.Value = 20;
+                    }
                 }
 
-                Console.WriteLine("Diagram processed and saved as PNG successfully.");
+                // Configure PNG export options
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
+                // Save the diagram as PNG
+                diagram.Save(outputPath, pngOptions);
+
+                Console.WriteLine($"Diagram saved to PNG at: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine($"Error: {ex.Message}");
+                throw;
             }
-    }
+        }
     }

@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -11,21 +11,21 @@ class Program
         {
 
             // Load the first Visio diagram
-            Diagram firstDiagram = new Diagram("Diagram1.vsdx");
+            var diagram1 = new Diagram("FirstDiagram.vsdx");
 
             // Load the second Visio diagram
-            Diagram secondDiagram = new Diagram("Diagram2.vsdx");
+            var diagram2 = new Diagram("SecondDiagram.vsdx");
 
-            // Merge the second diagram into the first one.
-            // This preserves all shape layers, connections, and other document data.
-            firstDiagram.Combine(secondDiagram);
+            // Merge the second diagram into the first.
+            // Combine preserves all shape layers, connections, masters, etc.
+            diagram1.Combine(diagram2);
 
-            // Save the combined diagram to a new file.
-            firstDiagram.Save("MergedDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Save the merged diagram to a new file
+            diagram1.Save("MergedDiagram.vsdx", SaveFileFormat.Vsdx);
 
-            // Release resources
-            firstDiagram.Dispose();
-            secondDiagram.Dispose();
+            // Clean up resources
+            diagram1.Dispose();
+            diagram2.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -2,6 +2,7 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,44 +11,47 @@ class Program
         try
         {
 
-            // Path to the source Visio file
+            // Paths for input and output diagrams
             string inputPath = "input.vsdx";
-            // Path where the modified file will be saved
             string outputPath = "output.vsdx";
 
-            // Load the diagram using the constructor that accepts a file path
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Dictionary to track occurrences of each shape name (case‑insensitive)
+            Dictionary<string, int> nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            // Iterate over all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Dictionary to keep track of how many times each name appears
-                var nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                // Iterate over all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        string name = shape.Name;
-                        if (string.IsNullOrEmpty(name))
-                            continue; // Skip shapes without a name
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        if (nameCounts.ContainsKey(name))
-                        {
-                            // Duplicate detected – increment the counter and rename
-                            int index = ++nameCounts[name];
-                            shape.Name = $"{name}_{index}";
-                        }
-                        else
-                        {
-                            // First occurrence of this name
-                            nameCounts[name] = 1;
-                        }
+                    // Use the universal name (NameU) as the base name; treat null as empty string
+                    string baseName = shape.NameU ?? string.Empty;
+
+                    if (nameCounts.ContainsKey(baseName))
+                    {
+                        // Duplicate found – increment counter and rename
+                        nameCounts[baseName] += 1;
+                        string newName = $"{baseName}_{nameCounts[baseName]}";
+                        shape.NameU = newName;
+                        shape.Name = newName;
+                    }
+                    else
+                    {
+                        // First occurrence of this name
+                        nameCounts[baseName] = 1;
                     }
                 }
-
-                // Save the modified diagram using the Save method that accepts a file path and format
-                diagram.Save(outputPath, SaveFileFormat.Vdx);
             }
+
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

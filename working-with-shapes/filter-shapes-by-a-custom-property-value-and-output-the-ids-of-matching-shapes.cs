@@ -3,20 +3,22 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the Visio file to be processed
+                // Input Visio file path
                 string inputPath = "input.vsdx";
+
+                // Name of the custom property to filter by
+                string customPropertyName = "MyCustomProp";
+
+                // Desired value of the custom property
+                string targetValue = "TargetValue";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
-
-                // Define the custom property name and the value to filter by
-                const string targetPropName = "MyProp";
-                const string targetPropValue = "TargetValue";
 
                 // Iterate through all pages
                 foreach (Page page in diagram.Pages)
@@ -24,19 +26,16 @@ class Program
                     // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has a Props collection
-                        if (shape.Props != null)
+                        // Check each custom property (Prop) of the shape
+                        foreach (Prop prop in shape.Props)
                         {
-                            // Search for the custom property with the specified name
-                            foreach (Prop prop in shape.Props)
+                            // Compare property name and value
+                            if (prop.Name == customPropertyName && prop.Value.Val == targetValue)
                             {
-                                if (prop.Name == targetPropName && prop.Value.Val == targetPropValue)
-                                {
-                                    // Output the matching shape's ID
-                                    Console.WriteLine($"Matching Shape ID: {shape.ID}");
-                                    // No need to check other properties for this shape
-                                    break;
-                                }
+                                // Output the shape ID
+                                Console.WriteLine($"Matching Shape ID: {shape.ID}");
+                                // No need to check other properties of this shape
+                                break;
                             }
                         }
                     }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
 
 class Program
@@ -9,44 +10,49 @@ class Program
             try
             {
 
-                // Input Visio file path (change as needed or pass via command line)
-                string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Input Visio file path (first argument) or default.
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-                // Output CSV file path
-                string csvPath = args.Length > 1 ? args[1] : "output.csv";
+                // Output CSV file path (second argument) or default.
+                string outputCsv = args.Length > 1 ? args[1] : "output.csv";
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(inputPath);
 
-                // Prepare the CSV writer
-                using (StreamWriter writer = new StreamWriter(csvPath))
+                // Create a CSV writer.
+                using (var writer = new StreamWriter(outputCsv, false, Encoding.UTF8))
                 {
-                    // Write CSV header
+                    // Write CSV header.
                     writer.WriteLine("ShapeID,Text");
 
-                    // Iterate through all pages
+                    // Iterate through all pages.
                     foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through all shapes on the page
+                        // Iterate through all shapes on the page.
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Skip shapes that are marked as deleted
+                            // Skip shapes that are marked as deleted.
                             if (shape.Del == BOOL.True)
                                 continue;
 
-                            // Retrieve plain text from the shape
+                            // Retrieve plain text from the shape.
                             string text = shape.Text.Value.Text ?? string.Empty;
 
-                            // Escape double quotes in text and wrap the field in quotes
-                            string escapedText = $"\"{text.Replace("\"", "\"\"")}\"";
+                            // Clean text to avoid breaking CSV format.
+                            text = text.Replace("\r", " ")
+                                       .Replace("\n", " ")
+                                       .Replace(",", " ");
 
-                            // Write Shape ID and text to CSV
-                            writer.WriteLine($"{shape.ID},{escapedText}");
+                            // Write shape ID and text to CSV.
+                            writer.WriteLine($"{shape.ID},{text}");
                         }
                     }
                 }
 
-                Console.WriteLine($"Extraction completed. CSV saved to: {csvPath}");
+                // Dispose the diagram (optional, as Diagram implements IDisposable).
+                diagram.Dispose();
+
+                Console.WriteLine($"Extraction completed. CSV saved to '{outputCsv}'.");
 
             }
             catch (Aspose.Diagram.DiagramException ex)

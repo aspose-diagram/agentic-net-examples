@@ -1,6 +1,7 @@
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,43 +10,61 @@ class Program
             try
             {
 
-                // Load an existing diagram or create a new one
-                Diagram diagram = new Diagram(); // empty diagram
+                // Create a new diagram (empty Visio document)
+                Diagram diagram = new Diagram();
 
-                // Ensure there is at least one page
+                // Ensure there is at least one page to work with
                 if (diagram.Pages.Count == 0)
+                {
                     diagram.Pages.Add(new Page());
+                }
 
+                // Reference the first page
                 Page page = diagram.Pages[0];
 
-                // Add first shape (Rectangle master)
+                // Add two rectangle shapes (using a built‑in master name)
+                // Parameters: pinX, pinY, masterName, pageIndex
                 long shapeId1 = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
-                Shape shape1 = page.Shapes.GetShape(shapeId1);
-
-                // Add second shape (Rectangle master)
                 long shapeId2 = diagram.AddShape(5.0, 5.0, "Rectangle", 0);
+
+                // Retrieve the shape objects for further inspection
+                Shape shape1 = page.Shapes.GetShape(shapeId1);
                 Shape shape2 = page.Shapes.GetShape(shapeId2);
 
                 // Add a dynamic connector shape
-                long connectorId = diagram.AddShape(3.5, 3.5, "Dynamic connector", 0);
+                long connectorId = diagram.AddShape(0.0, 0.0, "Dynamic connector", 0);
                 Shape connector = page.Shapes.GetShape(connectorId);
 
-                // Disable dynamic glue on the first shape (simulate gluing disabled)
-                shape1.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
-
-                // Attempt to connect shapes with error handling
-                try
+                // Function to verify whether a shape allows dynamic glue
+                bool IsGluingEnabled(Shape s)
                 {
-                    ConnectShapesWithGlueCheck(page, shape1, shape2, connector);
-                    Console.WriteLine("Connector attached successfully.");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error: {ex.Message}");
+                    // GlueTypeValue.AllowDynamicGlue means glue is enabled
+                    // GlueTypeValue.NoAllowDynamicGlue means glue is disabled
+                    return s.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
                 }
 
-                // Save the diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Check glue settings for both source and target shapes
+                if (!IsGluingEnabled(shape1))
+                {
+                    throw new Exception($"Gluing is disabled for shape ID {shape1.ID} (source shape).");
+                }
+
+                if (!IsGluingEnabled(shape2))
+                {
+                    throw new Exception($"Gluing is disabled for shape ID {shape2.ID} (target shape).");
+                }
+
+                // If both shapes allow gluing, attach the connector
+                // Use ConnectionPointPlace.Bottom for the source and ConnectionPointPlace.Top for the target
+                page.ConnectShapesViaConnector(shapeId1, ConnectionPointPlace.Bottom,
+                                              shapeId2, ConnectionPointPlace.Top,
+                                              connectorId);
+
+                // Save the diagram to a VSDX file
+                string outputPath = "ConnectorGluingDemo.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Diagram saved successfully to " + outputPath);
 
             }
             catch (Aspose.Diagram.DiagramException ex)
@@ -53,27 +72,4 @@ class Program
                 Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
-
-        /// <summary>
-        /// Connects two shapes via a connector after verifying that both shapes allow dynamic glue.
-        /// Throws an exception if gluing is disabled on either shape.
-        /// </summary>
-        static void ConnectShapesWithGlueCheck(Page page, Shape fromShape, Shape toShape, Shape connectorShape)
-        {
-            // Check glue settings on the source shape
-            if (fromShape.Misc.GlueType.Value == GlueTypeValue.NoAllowDynamicGlue)
-                throw new Exception($"Gluing is disabled for source shape ID {fromShape.ID}.");
-
-            // Check glue settings on the target shape
-            if (toShape.Misc.GlueType.Value == GlueTypeValue.NoAllowDynamicGlue)
-                throw new Exception($"Gluing is disabled for target shape ID {toShape.ID}.");
-
-            // Both shapes allow glue; perform the connection
-            page.ConnectShapesViaConnector(
-                fromShape.ID,
-                ConnectionPointPlace.Bottom,
-                toShape.ID,
-                ConnectionPointPlace.Top,
-                connectorShape.ID);
-        }
     }

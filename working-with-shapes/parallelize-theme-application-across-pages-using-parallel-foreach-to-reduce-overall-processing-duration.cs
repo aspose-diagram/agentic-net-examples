@@ -1,6 +1,5 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
@@ -12,31 +11,25 @@ class Program
         try
         {
 
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Load the source diagram (replace with actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Define the preset quick style to apply to each page
+            PresetQuickStyleValue quickStyle = PresetQuickStyleValue.VariantStyle1;
+
+            // Apply the preset quick style to all pages in parallel
+            Parallel.ForEach(diagram.Pages, page =>
             {
-                // Convert the PageCollection to a List<Page> for Parallel.ForEach
-                List<Page> pages = new List<Page>();
-                foreach (Page p in diagram.Pages)
-                {
-                    pages.Add(p);
-                }
+                // Set the preset theme quick style for the current page
+                page.PresetThemeQuickStyle = quickStyle;
 
-                // Apply a preset theme to each page concurrently
-                Parallel.ForEach(pages, page =>
-                {
-                    // Example: apply the Bubble theme with Variant1
-                    page.PresetTheme = PresetThemeValue.Bubble;
-                    page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                });
+                // Optionally apply additional style settings (text, line, fill)
+                // Using -1 retains default values; adjust as needed
+                page.ApplyStyle(-1, -1, -1);
+            });
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
+            // Save the modified diagram (replace with desired output path)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

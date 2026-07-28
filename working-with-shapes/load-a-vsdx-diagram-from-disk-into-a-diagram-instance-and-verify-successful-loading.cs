@@ -1,37 +1,37 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the VSDX file on disk
+            string filePath = "sample.vsdx";
+
+            // Load the diagram using the constructor that accepts a file name
+            Diagram diagram = new Diagram(filePath);
+
+            // Verify that the diagram was loaded successfully
+            if (diagram != null && diagram.Pages.Count > 0)
             {
-
-                // Path to the VSDX file. Adjust as needed or pass as a command‑line argument.
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-                // Load the diagram from the specified file.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Verify that the diagram was loaded successfully.
-                if (diagram == null)
-                {
-                    throw new Exception("Failed to create Diagram instance.");
-                }
-
-                // At least one page should be present in a valid Visio file.
-                if (diagram.Pages == null || diagram.Pages.Count == 0)
-                {
-                    throw new Exception($"Diagram loaded but contains no pages. File: {inputPath}");
-                }
-
-                Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
-
+                Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            else
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.WriteLine("Failed to load the diagram.");
             }
+
+            // Clean up resources
+            diagram.Dispose();
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

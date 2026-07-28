@@ -1,51 +1,50 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Path where the HTML of the selected shape will be saved
-            string outputPath = "shape.html";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Get the first page (you can change the index as needed)
-            Page page = diagram.Pages[0];
-
-            // Select a shape by its ID (replace 1 with the desired shape ID)
-            Shape shape = null;
             try
             {
-                shape = page.Shapes.GetShape(1);
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+
+                // Path where the HTML file will be saved
+                string outputHtmlPath = "shape.html";
+
+                // Identifier of the shape to export (adjust as needed)
+                long shapeId = 1;
+
+                // Load the diagram from the file
+                Diagram diagram = new Diagram(inputPath);
+
+                // Verify that the diagram contains at least one page
+                if (diagram.Pages.Count == 0)
+                    throw new Exception("The diagram does not contain any pages.");
+
+                // Use the first page (or select a specific page by name/index)
+                Page page = diagram.Pages[0];
+
+                // Retrieve the shape by its ID (cast to int as required by GetShape)
+                Shape shape = page.Shapes.GetShape((int)shapeId);
+                if (shape == null)
+                    throw new Exception($"Shape with ID {shapeId} was not found on page '{page.NameU}'.");
+
+                // Configure HTML export options (default settings preserve geometry and style)
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+
+                // Export the selected shape to HTML
+                shape.ToHTML(outputHtmlPath, htmlOptions);
+
+                Console.WriteLine($"Shape {shapeId} successfully exported to HTML at '{outputHtmlPath}'.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Error retrieving shape: {ex.Message}");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Create default HTML save options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-
-            // Export the selected shape to HTML, preserving geometry and style
-            shape.ToHTML(outputPath, htmlOptions);
-
-            Console.WriteLine("Shape exported to HTML successfully.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

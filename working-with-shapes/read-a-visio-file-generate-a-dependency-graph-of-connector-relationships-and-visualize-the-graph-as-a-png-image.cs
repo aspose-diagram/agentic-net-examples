@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.Manipulation;
@@ -9,104 +9,114 @@ class Program
 {
     static void Main(string[] args)
     {
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Expect two arguments: input Visio file path and output PNG file path
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: <program> <inputVisioPath> <outputPngPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard to ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string outputPath = args.Length > 1 ? args[1] : "graph.png";
-
         try
         {
-            // Load the source diagram
-            Diagram srcDiagram = new Diagram(inputPath);
+            // Load the source Visio diagram
+            Diagram sourceDiagram = new Diagram(inputPath);
 
-            // Build a directed graph: node ID -> list of target node IDs
-            Dictionary<long, List<long>> graph = new Dictionary<long, List<long>>();
-
-            foreach (Page page in srcDiagram.Pages)
+            // Collect all unique shape IDs (nodes) from the first page
+            Page sourcePage = sourceDiagram.Pages[0];
+            var nodeIds = new HashSet<long>();
+            foreach (Shape shape in sourcePage.Shapes)
             {
-                foreach (Connect conn in page.Connects)
+                // Exclude connector shapes (1-D) from node collection
+                if (!shape.OneD)
                 {
-                    long fromId = conn.FromSheet;
-                    long toId = conn.ToSheet;
-
-                    Shape fromShape = page.Shapes.GetShape(fromId);
-                    Shape toShape = page.Shapes.GetShape(toId);
-                    if (fromShape == null || toShape == null) continue;
-                    if (fromShape.Del == BOOL.True || toShape.Del == BOOL.True) continue;
-
-                    if (!graph.ContainsKey(fromId))
-                        graph[fromId] = new List<long>();
-                    graph[fromId].Add(toId);
-
-                    if (!graph.ContainsKey(toId))
-                        graph[toId] = new List<long>();
+                    nodeIds.Add(shape.ID);
                 }
             }
 
-            // Create a new diagram to visualize the graph
-            Diagram visDiagram = new Diagram();
-            Page visPage = new Page();
-            visDiagram.Pages.Add(visPage);
-
-            // Simple grid layout for node shapes
-            Dictionary<long, long> nodeShapeIds = new Dictionary<long, long>();
-            double startX = 2.0;
-            double startY = 2.0;
-            double stepX = 4.0;
-            double stepY = 3.0;
-            int columns = 5;
-            int index = 0;
-
-            foreach (long nodeId in graph.Keys)
+            // Collect connector relationships (edges) from the Connects collection
+            var edges = new List<(long From, long To)>();
+            foreach (Connect connect in sourcePage.Connects)
             {
-                int col = index % columns;
-                int row = index / columns;
-                double pinX = startX + col * stepX;
-                double pinY = startY + row * stepY;
+                // Only consider connections where both ends are non-connector shapes
+                if (nodeIds.Contains(connect.FromSheet) && nodeIds.Contains(connect.ToSheet))
+                {
+                    edges.Add((connect.FromSheet, connect.ToSheet));
+                }
+            }
+
+            // Create a new diagram to visualize the dependency graph
+            Diagram graphDiagram = new Diagram();
+            Page graphPage = new Page();
+            graphDiagram.Pages.Add(graphPage);
+
+            // Layout nodes in a simple circle
+            int nodeCount = nodeIds.Count;
+            double centerX = 5.0; // inches
+            double centerY = 5.0; // inches
+            double radius = 4.0;  // inches
+            double nodeWidth = 1.0; // inches
+            double nodeHeight = 0.5; // inches
+
+            var nodeIdToShapeId = new Dictionary<long, long>();
+            int index = 0;
+            foreach (long originalId in nodeIds)
+            {
+                double angle = 2 * Math.PI * index / nodeCount;
+                double pinX = centerX + radius * Math.Cos(angle);
+                double pinY = centerY + radius * Math.Sin(angle);
 
                 // Draw a rectangle representing the node
-                long shapeId = visPage.DrawRectangle(pinX, pinY, 2.0, 1.0);
-                Shape shape = visPage.Shapes.GetShape(shapeId);
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt(nodeId.ToString()));
-                nodeShapeIds[nodeId] = shapeId;
+                long shapeId = graphPage.DrawRectangle(pinX, pinY, nodeWidth, nodeHeight);
+                Shape nodeShape = graphPage.Shapes.GetShape(shapeId); // retrieve shape by long ID
 
+                // Add label (use original shape ID as simple label)
+                nodeShape.Text.Value.Clear();
+                nodeShape.Text.Value.Add(new Txt($"ID:{originalId}"));
+
+                nodeIdToShapeId[originalId] = shapeId;
                 index++;
             }
 
-            // Add connectors between node shapes
-            foreach (var kvp in graph)
+            // Add connectors for each edge
+            foreach (var edge in edges)
             {
-                long fromNodeId = kvp.Key;
-                foreach (long toNodeId in kvp.Value)
-                {
-                    long fromShapeId = nodeShapeIds[fromNodeId];
-                    long toShapeId = nodeShapeIds[toNodeId];
+                if (!nodeIdToShapeId.ContainsKey(edge.From) || !nodeIdToShapeId.ContainsKey(edge.To))
+                    continue;
 
-                    // Create a connector shape
-                    long connectorId = visPage.AddShape(0, 0, 0, 0, "Dynamic connector");
-                    // Connect the shapes
-                    visPage.ConnectShapesViaConnector(
-                        fromShapeId, ConnectionPointPlace.Bottom,
-                        toShapeId, ConnectionPointPlace.Top,
-                        connectorId);
+                long fromShapeId = nodeIdToShapeId[edge.From];
+                long toShapeId = nodeIdToShapeId[edge.To];
 
-                    // Optional: set routing style
-                    Shape connector = visPage.Shapes.GetShape(connectorId);
-                    connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-                }
+                // Create a dynamic connector shape (isCalculate = false)
+                long connectorId = graphPage.AddShape(0, 0, "Dynamic connector", false);
+
+                // Connect the two node shapes via the connector
+                graphPage.ConnectShapesViaConnector(
+                    fromShapeId,
+                    ConnectionPointPlace.Bottom,
+                    toShapeId,
+                    ConnectionPointPlace.Top,
+                    connectorId);
             }
 
-            // Save the visualization as PNG
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            visDiagram.Save(outputPath, saveOptions);
+            // Export the visualized graph as PNG
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            graphDiagram.Save(outputPath, pngOptions);
+
+            Console.WriteLine($"Graph saved to {outputPath}");
         }
         catch (Exception ex)
         {
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

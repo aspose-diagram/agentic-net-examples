@@ -1,6 +1,6 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
 {
@@ -9,37 +9,29 @@ class Program
         try
         {
 
-            // Load the VSDX file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the VSDX file
+            string filePath = "input.vsdx";
 
-            // ID of the sub‑shape whose absolute PinX we need
-            int targetShapeId = 123; // replace with the actual ID
+            // Load the diagram (uses the provided load rule)
+            Diagram diagram = new Diagram(filePath);
 
-            // Locate the shape (including any child shapes) by its ID
-            Shape shape = diagram.Pages[0].Shapes.GetShapeIncludingChild(targetShapeId);
+            // ID of the sub‑shape whose absolute PinX we want
+            int subShapeId = 123; // replace with the actual ID
 
-            // Compute the absolute PinX coordinate
-            double absolutePinX = CalculateAbsolutePinX(shape);
+            // Retrieve the shape including its children (uses the provided GetShapeIncludingChild rule)
+            Shape subShape = diagram.Pages[0].Shapes.GetShapeIncludingChild(subShapeId);
 
-            Console.WriteLine($"Absolute PinX of shape ID {targetShapeId}: {absolutePinX}");
+            // Calculate the absolute PinX coordinate.
+            // For a shape, XForm.PinX gives the absolute position of the shape's pin on the page.
+            double absolutePinX = subShape.XForm.PinX.Value;
+
+            // Output the result
+            Console.WriteLine($"Absolute PinX of shape ID {subShapeId}: {absolutePinX}");
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-    }
-
-    // Recursively adds the PinX of each parent shape to obtain the absolute value
-    static double CalculateAbsolutePinX(Shape shape)
-    {
-        double pinX = shape.XForm.PinX.Value; // shape's PinX relative to its parent
-        Shape parent = shape.ParentShape;
-        while (parent != null)
-        {
-            pinX += parent.XForm.PinX.Value; // add parent's offset
-            parent = parent.ParentShape;
-        }
-        return pinX;
     }
 }

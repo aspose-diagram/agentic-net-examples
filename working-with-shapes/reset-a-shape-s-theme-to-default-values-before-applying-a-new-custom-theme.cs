@@ -9,38 +9,35 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the output Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Access the first page (index 0)
+                // Choose the page (first page in this example)
                 Page page = diagram.Pages[0];
 
-                // Retrieve a shape by its ID (example ID = 1)
-                // Adjust the ID as needed for your diagram
-                Shape shape = page.Shapes.GetShape(1);
+                // Identify the shape to reset (using shape ID 1 as an example)
+                long targetShapeId = 1;
+                Shape shape = page.Shapes.GetShape(targetShapeId);
                 if (shape == null)
-                {
-                    throw new Exception("Shape with ID 1 not found.");
-                }
+                    throw new Exception($"Shape with ID {targetShapeId} not found.");
 
-                // -------------------------------------------------
-                // Reset the shape's theme to default (no theme)
-                // Since the theme properties are write‑only, we assign
-                // the default values defined by the library.
-                // -------------------------------------------------
-                shape.PresetTheme = PresetThemeValue.Clouds;               // default theme placeholder
-                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1; // default variant
-                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1; // default quick style
+                // ---------- Reset theme to default values ----------
+                // Apply a known default preset theme (Bubble) and its default variant/quickstyle.
+                // This effectively clears any previously applied custom theme settings.
+                shape.PresetTheme = PresetThemeValue.Bubble;
+                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
 
-                // -------------------------------------------------
-                // Apply a new custom theme to the shape
-                // Example: use style matrix 2 and color matrix 5
-                // -------------------------------------------------
-                shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2, PresetColorMatricsValue.Color5);
+                // ---------- Apply a new custom theme ----------
+                // Example: use style matrix 3 and color matrix 4.
+                shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style3, PresetColorMatricsValue.Color4);
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

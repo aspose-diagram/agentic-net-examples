@@ -1,76 +1,91 @@
 using System;
+using System.IO;
 using System.Data.SqlClient;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (first argument or default)
+        string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Verify the Visio file exists before attempting to load
+        if (!File.Exists(visioPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {visioPath}");
+            return;
+        }
+
+        // Database connection string (second argument or placeholder)
+        string connectionString = args.Length > 1 ? args[1] : "Server=YOUR_SERVER;Database=YOUR_DB;Trusted_Connection=True;";
+
+        // Load the Visio diagram
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(visioPath);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Failed to load Visio file '{visioPath}': {ex.Message}");
+        }
+
+        // Prepare SQL insert command
+        const string insertSql = @"
+            INSERT INTO ShapeProperties (ShapeId, ShapeName, PropName, PropValue)
+            VALUES (@ShapeId, @ShapeName, @PropName, @PropValue)";
+
+        using (SqlConnection conn = new SqlConnection(connectionString))
+        {
+            conn.Open();
+
+            using (SqlCommand cmd = new SqlCommand(insertSql, conn))
             {
+                // Define parameters once
+                cmd.Parameters.Add("@ShapeId", System.Data.SqlDbType.BigInt);
+                cmd.Parameters.Add("@ShapeName", System.Data.SqlDbType.NVarChar, 255);
+                cmd.Parameters.Add("@PropName", System.Data.SqlDbType.NVarChar, 255);
+                cmd.Parameters.Add("@PropValue", System.Data.SqlDbType.NVarChar, -1); // -1 = MAX
 
-                // Path to the Visio file to be processed
-                string visioPath = @"C:\Input\diagram.vsdx";
-
-                // Database connection string (replace with actual values)
-                string connectionString = @"Server=YOUR_SERVER;Database=YOUR_DATABASE;Trusted_Connection=True;";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Open a SQL connection once and reuse it for all inserts
-                using (SqlConnection sqlConnection = new SqlConnection(connectionString))
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    sqlConnection.Open();
-
-                    // Prepare an INSERT command with parameters
-                    using (SqlCommand cmd = new SqlCommand(
-                        "INSERT INTO ShapeCustomProperties (ShapeId, PropertyName, PropertyValue) VALUES (@ShapeId, @PropName, @PropValue)",
-                        sqlConnection))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Define parameters (will be reused)
-                        SqlParameter shapeIdParam = cmd.Parameters.Add("@ShapeId", System.Data.SqlDbType.BigInt);
-                        SqlParameter propNameParam = cmd.Parameters.Add("@PropName", System.Data.SqlDbType.NVarChar, 200);
-                        SqlParameter propValueParam = cmd.Parameters.Add("@PropValue", System.Data.SqlDbType.NVarChar, -1);
-
-                        // Iterate through all pages
-                        foreach (Page page in diagram.Pages)
+                        // Ensure the shape has custom properties (Props collection)
+                        if (shape.Props != null && shape.Props.Count > 0)
                         {
-                            // Iterate through all shapes on the page
-                            foreach (Shape shape in page.Shapes)
+                            foreach (Prop prop in shape.Props)
                             {
-                                // Skip deleted shapes
-                                if (shape.Del == BOOL.True)
-                                    continue;
+                                // Retrieve property name and value
+                                string propName = prop.Name;
+                                string propValue = prop.Value?.Val ?? string.Empty;
 
-                                // Iterate through custom properties (Props) of the shape
-                                foreach (Prop prop in shape.Props)
+                                // Set parameter values
+                                cmd.Parameters["@ShapeId"].Value = shape.ID;
+                                cmd.Parameters["@ShapeName"].Value = shape.Name ?? string.Empty;
+                                cmd.Parameters["@PropName"].Value = propName ?? string.Empty;
+                                cmd.Parameters["@PropValue"].Value = propValue;
+
+                                // Execute insert
+                                try
                                 {
-                                    // Retrieve property name and value
-                                    string propName = prop.Name;
-                                    string propValue = prop.Value.Val ?? string.Empty;
-
-                                    // Assign parameter values
-                                    shapeIdParam.Value = shape.ID;
-                                    propNameParam.Value = propName;
-                                    propValueParam.Value = propValue;
-
-                                    // Execute the INSERT command
                                     cmd.ExecuteNonQuery();
+                                }
+                                catch (Exception dbEx)
+                                {
+                                    // Log database insertion errors
+                                    Console.WriteLine($"Failed to insert property for shape ID {shape.ID}: {dbEx.Message}");
                                 }
                             }
                         }
                     }
-
-                    sqlConnection.Close();
                 }
-
-                Console.WriteLine("Custom properties extraction and database insertion completed.");
-
             }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
+
+            conn.Close();
+        }
+
+        Console.WriteLine("Custom property extraction and database insertion completed.");
     }
-    }
+}

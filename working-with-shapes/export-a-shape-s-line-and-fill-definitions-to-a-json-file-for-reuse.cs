@@ -5,72 +5,99 @@ using Aspose.Diagram;
 
 namespace ShapeStyleExport
 {
-    // DTO for serializing line and fill properties
+    // DTO for serializing line and fill definitions
     public class ShapeStyle
     {
-        public string LineColor { get; set; }
-        public double LineWeight { get; set; }
-        public int LinePattern { get; set; }
-        public string FillForegnd { get; set; }
-        public string FillBkgnd { get; set; }
-        public int FillPattern { get; set; }
+        public LineStyle Line { get; set; } = new();
+        public FillStyle Fill { get; set; } = new();
+
+        public class LineStyle
+        {
+            public string Color { get; set; } = "";
+            public double Weight { get; set; }
+            public int Pattern { get; set; }
+            public int BeginArrow { get; set; }
+            public int EndArrow { get; set; }
+        }
+
+        public class FillStyle
+        {
+            public string ForegroundColor { get; set; } = "";
+            public string BackgroundColor { get; set; } = "";
+            public int Pattern { get; set; }
+            public double ForegroundTransparency { get; set; }
+            public double BackgroundTransparency { get; set; }
+        }
     }
 
-    public class Program
+    class Program
     {
-        public static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load the Visio diagram (replace with your file path)
-                Diagram diagram = new Diagram("input.vsdx");
+                // Path to the Visio file (adjust as needed)
+                string visioPath = "input.vsdx";
 
-                // Get the first page
+                // Load the diagram
+                Diagram diagram = new Diagram(visioPath);
+
+                // Access the first page
                 Page page = diagram.Pages[0];
 
-                // Find the first non-deleted shape on the page
-                Shape shape = null;
-                foreach (Shape s in page.Shapes)
+                // Find the first non‑deleted shape on the page
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    if (s.Del == BOOL.False)
+                    if (shape.Del == BOOL.False)
                     {
-                        shape = s;
+                        targetShape = shape;
                         break;
                     }
                 }
 
-                if (shape == null)
-                    throw new Exception("No visible shape found on the first page.");
+                if (targetShape == null)
+                {
+                    Console.WriteLine("No suitable shape found.");
+                    return;
+                }
 
                 // Extract line properties
-                string lineColor = shape.Line.LineColor.Value;
-                double lineWeight = shape.Line.LineWeight.Value;
-                int linePattern = (int)shape.Line.LinePattern.Value; // enum to int
-
-                // Extract fill properties
-                string fillForegnd = shape.Fill.FillForegnd.Value;
-                string fillBkgnd = shape.Fill.FillBkgnd.Value;
-                int fillPattern = shape.Fill.FillPattern.Value;
-
-                // Create DTO instance
-                ShapeStyle style = new ShapeStyle
+                var line = new ShapeStyle.LineStyle
                 {
-                    LineColor = lineColor,
-                    LineWeight = lineWeight,
-                    LinePattern = linePattern,
-                    FillForegnd = fillForegnd,
-                    FillBkgnd = fillBkgnd,
-                    FillPattern = fillPattern
+                    Color = targetShape.Line.LineColor.Value,
+                    Weight = targetShape.Line.LineWeight.Value,
+                    Pattern = (int)targetShape.Line.LinePattern.Value,
+                    BeginArrow = (int)targetShape.Line.BeginArrow.Value,
+                    EndArrow = (int)targetShape.Line.EndArrow.Value
                 };
 
-                // Serialize to JSON with indentation
+                // Extract fill properties
+                var fill = new ShapeStyle.FillStyle
+                {
+                    ForegroundColor = targetShape.Fill.FillForegnd.Value,
+                    BackgroundColor = targetShape.Fill.FillBkgnd.Value,
+                    Pattern = targetShape.Fill.FillPattern.Value,
+                    ForegroundTransparency = targetShape.Fill.FillForegndTrans.Value,
+                    BackgroundTransparency = targetShape.Fill.FillBkgndTrans.Value
+                };
+
+                // Combine into a single style object
+                var style = new ShapeStyle
+                {
+                    Line = line,
+                    Fill = fill
+                };
+
+                // Serialize the style to JSON with indentation
                 string json = JsonSerializer.Serialize(style, new JsonSerializerOptions { WriteIndented = true });
 
-                // Write JSON to file
-                File.WriteAllText("shapeStyle.json", json);
+                // Write the JSON to a file
+                string jsonPath = "shapeStyle.json";
+                File.WriteAllText(jsonPath, json);
 
-                Console.WriteLine("Shape style exported to shapeStyle.json");
+                Console.WriteLine($"Shape style exported to {jsonPath}");
 
             }
             catch (System.IO.FileNotFoundException ex)

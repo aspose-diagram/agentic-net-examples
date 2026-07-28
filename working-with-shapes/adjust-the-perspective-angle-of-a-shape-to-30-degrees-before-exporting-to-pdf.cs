@@ -1,61 +1,52 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Ensure there is at least one page and one shape
+            if (diagram.Pages.Count > 0)
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output PDF file path
-                string outputPath = "output.pdf";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page
                 Page page = diagram.Pages[0];
-
-                // Find the first non‑deleted shape on the page
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
+                if (page.Shapes.Count > 0)
                 {
-                    if (shape.Del == BOOL.False)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
+                    // Get the first shape on the page
+                    Shape shape = page.Shapes.GetShape(1);
+
+                    // Set the perspective angle to 30 degrees
+                    shape.ThreeDFormat.Perspective.Value = 30.0;
+
+                    // Prepare PDF save options (optional: set default font)
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.DefaultFont = "Arial";
+
+                    // Export the diagram to PDF
+                    diagram.Save("output.pdf", pdfOptions);
+                    Console.WriteLine("Diagram exported to PDF with perspective angle set to 30 degrees.");
                 }
-
-                if (targetShape == null)
+                else
                 {
-                    throw new Exception("No visible shape found on the first page.");
+                    Console.WriteLine("No shapes found on the first page.");
                 }
-
-                // Adjust the perspective angle to 30 degrees
-                // ThreeDFormat.Perspective is a double value representing the perspective depth
-                targetShape.ThreeDFormat.Perspective.Value = 30;
-
-                // Prepare PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    // Optional: set a fallback font in case the diagram uses missing fonts
-                    DefaultFont = "Arial"
-                };
-
-                // Export the diagram to PDF
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine($"Diagram exported to PDF with perspective set to 30 degrees: {outputPath}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+            else
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("The diagram contains no pages.");
             }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -2,66 +2,53 @@ using System;
 using System.IO;
 using System.Threading;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+        const string inputPath = "input.vsdx";
+        const string outputPath = "output.vsdx";
+        const int maxRetry = 3;
+        const int delayMs = 1000;
 
-        string outputPath = "output.vsdx";
-
-        // Retry parameters
-        const int maxRetries = 3;
-        const int delayMilliseconds = 1000;
-        int attempt = 0;
         Diagram diagram = null;
-
-        // Attempt to load the diagram with retry on file lock (IOException)
-        while (attempt < maxRetries)
+        int attempt = 0;
+        while (attempt < maxRetry)
         {
             try
             {
+                // Attempt to load the diagram
                 diagram = new Diagram(inputPath);
                 break; // Success, exit loop
             }
             catch (IOException ex)
             {
+                // Likely a file lock; wait and retry
                 attempt++;
-                if (attempt >= maxRetries)
+                if (attempt >= maxRetry)
                 {
-                    Console.Error.WriteLine($"Failed to load diagram after {maxRetries} attempts: {ex.Message}");
+                    Console.WriteLine($"Failed to load diagram after {maxRetry} attempts: {ex.Message}");
                     return;
                 }
-                Thread.Sleep(delayMilliseconds);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Unexpected error while loading diagram: {ex.Message}");
-                return;
+                Console.WriteLine($"Attempt {attempt} failed due to file lock. Retrying in {delayMs} ms...");
+                Thread.Sleep(delayMs);
             }
         }
 
         if (diagram == null)
         {
-            Console.Error.WriteLine("Diagram could not be loaded.");
+            Console.WriteLine("Diagram could not be loaded.");
             return;
         }
 
-        // Access the first page
+        // Find the first non-deleted shape on the first page
         Page page = diagram.Pages[0];
-
-        // Find the first shape on the page (skip deleted shapes)
         Shape targetShape = null;
         foreach (Shape shape in page.Shapes)
         {
-            if (shape.Del == BOOL.False) // ignore logically deleted shapes
+            if (shape.Del == BOOL.False)
             {
                 targetShape = shape;
                 break;
@@ -70,22 +57,16 @@ class Program
 
         if (targetShape == null)
         {
-            Console.Error.WriteLine("No suitable shape found on the first page.");
+            Console.WriteLine("No suitable shape found to update text.");
             return;
         }
 
         // Clear existing text and set new paragraph text
         targetShape.Text.Value.Clear();
-        targetShape.Text.Value.Add(new Txt("This is the new paragraph text."));
+        targetShape.Text.Value.Add(new Txt("Updated paragraph text"));
 
         // Save the modified diagram
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
-        }
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
     }
 }

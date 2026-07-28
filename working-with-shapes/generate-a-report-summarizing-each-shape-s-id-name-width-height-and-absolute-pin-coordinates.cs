@@ -1,54 +1,58 @@
 using System;
-using System.Text;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class ShapeReportGenerator
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Prepare a StringBuilder to collect report lines
-            StringBuilder reportBuilder = new StringBuilder();
-            // Header line
-            reportBuilder.AppendLine("ShapeID,Name,Width,Height,PinX,PinY");
-
-            // Iterate through all pages and their shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Determine the input Visio file path.
+                // If a path is passed as a command‑line argument, use it; otherwise use a default placeholder.
+                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+                // Load the diagram.
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve required properties
-                    long shapeId = shape.ID;
-                    string shapeName = shape.Name ?? string.Empty;
+                    Console.WriteLine($"Page: {page.Name} (ID: {page.ID})");
+                    Console.WriteLine(new string('-', 60));
 
-                    // XForm contains positioning information
-                    double width = shape.XForm.Width.Value;
-                    double height = shape.XForm.Height.Value;
-                    double pinX = shape.XForm.PinX.Value;
-                    double pinY = shape.XForm.PinY.Value;
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked as deleted.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Append a CSV line for the current shape
-                    reportBuilder.AppendLine($"{shapeId},{shapeName},{width},{height},{pinX},{pinY}");
+                        // Retrieve required properties.
+                        long shapeId = shape.ID;
+                        string shapeName = shape.Name;
+                        double width = shape.XForm.Width.Value;
+                        double height = shape.XForm.Height.Value;
+                        double pinX = shape.XForm.PinX.Value;
+                        double pinY = shape.XForm.PinY.Value;
+
+                        // Output the shape information.
+                        Console.WriteLine($"ID: {shapeId}");
+                        Console.WriteLine($"Name: {shapeName}");
+                        Console.WriteLine($"Width: {width} in");
+                        Console.WriteLine($"Height: {height} in");
+                        Console.WriteLine($"PinX (absolute): {pinX} in");
+                        Console.WriteLine($"PinY (absolute): {pinY} in");
+                        Console.WriteLine(new string('-', 30));
+                    }
+
+                    Console.WriteLine(); // Blank line between pages.
                 }
+
             }
-
-            // Write the report to a CSV file
-            File.WriteAllText("ShapeReport.csv", reportBuilder.ToString());
-
-            // Save the diagram (if any modifications were made)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

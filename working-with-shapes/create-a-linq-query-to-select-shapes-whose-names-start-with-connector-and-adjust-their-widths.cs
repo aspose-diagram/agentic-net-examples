@@ -1,40 +1,40 @@
-using System;
 using System.IO;
+using System;
 using System.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
-            Page page = diagram.Pages[0];
 
-            var connectorShapes = page.Shapes
+            // Define the new width (in inches) to apply to matching connectors
+            double newWidth = 2.0;
+
+            // Select shapes whose universal name starts with "Connector"
+            var connectorShapes = diagram.Pages[0].Shapes
                 .Cast<Shape>()
-                .Where(s => !string.IsNullOrEmpty(s.NameU) && s.NameU.StartsWith("Connector"))
-                .ToList();
+                .Where(s => !string.IsNullOrEmpty(s.NameU) && s.NameU.StartsWith("Connector"));
 
+            // Adjust the width of each selected shape
             foreach (var shape in connectorShapes)
             {
-                shape.XForm.Width.Value = shape.XForm.Width.Value + 0.5;
+                shape.XForm.Width.Value = newWidth;
             }
 
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

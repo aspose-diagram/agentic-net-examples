@@ -9,84 +9,75 @@ class Program
             try
             {
 
-                // Path to the source Visio file (must contain a master named "GradientMaster")
-                string sourcePath = "input.vsdx";
+                // Paths – adjust as needed
+                string stencilPath = "basic.vssx"; // stencil containing the master (e.g., Rectangle)
+                string masterName = "Rectangle";
+                string outputPdf = "output.pdf";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
 
-                // Ensure the diagram has at least one page
+                // Ensure there is at least one page
                 if (diagram.Pages.Count == 0)
-                    throw new Exception("Diagram contains no pages.");
+                    diagram.Pages.Add(new Page());
 
-                // Get the first page
                 Page page = diagram.Pages[0];
 
-                // Find the master that will provide the gradient fill
-                string masterName = "GradientMaster";
-                Master master = null;
-                foreach (Master m in diagram.Masters)
-                {
-                    if (m.Name == masterName || m.NameU == masterName)
-                    {
-                        master = m;
-                        break;
-                    }
-                }
+                // Import the master from the stencil
+                int masterId = diagram.AddMaster(stencilPath, masterName);
+                Master master = diagram.Masters.GetMaster(masterId);
 
                 if (master == null)
-                    throw new Exception($"Master '{masterName}' not found in the diagram.");
+                    throw new Exception($"Master '{masterName}' could not be loaded from stencil '{stencilPath}'.");
 
-                // Apply a gradient fill to the master
-                // Fill pattern 25 corresponds to gradient fill
-                master.Shapes[0].Fill.FillPattern.Value = 25;
-                master.Shapes[0].Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-                master.Shapes[0].Fill.GradientFill.GradientDir.Value = 0; // Left to Right
+                // Retrieve the shape inside the master (the first shape usually has ID = 1)
+                Shape masterShape = master.Shapes.GetShape(1);
+                if (masterShape == null)
+                    throw new Exception("Master shape not found.");
 
-                // Clear any existing gradient stops and add two stops (blue to green)
-                master.Shapes[0].Fill.GradientFill.GradientStops.Clear();
-                master.Shapes[0].Fill.GradientFill.GradientStops.Add(
+                // Configure a gradient fill on the master shape
+                masterShape.Fill.FillPattern.Value = 25; // Gradient pattern
+                masterShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+                masterShape.Fill.GradientFill.GradientDir.Value = 0; // Left‑to‑right
+                masterShape.Fill.GradientFill.GradientStops.Clear();
+                masterShape.Fill.GradientFill.GradientStops.Add(
                     new DoubleValue(0, MeasureConst.NUM),
-                    new ColorValue("#0000FF", MeasureConst.Undefined));
-                master.Shapes[0].Fill.GradientFill.GradientStops.Add(
+                    new ColorValue("#FF0000", MeasureConst.Undefined)); // Red at start
+                masterShape.Fill.GradientFill.GradientStops.Add(
                     new DoubleValue(1, MeasureConst.NUM),
-                    new ColorValue("#00FF00", MeasureConst.Undefined));
+                    new ColorValue("#00FF00", MeasureConst.Undefined)); // Green at end
 
                 // Add a shape that uses the master (inherits the gradient)
-                double pinX = 2.0;
-                double pinY = 2.0;
-                long shapeId = page.AddShape(pinX, pinY, masterName);
-
-                // Retrieve the newly added shape
+                long shapeId = page.AddShape(2.0, 2.0, masterName);
                 Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
+                    throw new Exception("Failed to retrieve the shape created from the master.");
 
-                // Validate that the shape inherits the gradient fill from the master
-                bool isGradientPattern = shape.Fill.FillPattern.Value == 25;
-                bool isGradientEnabled = shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True;
-                bool hasTwoStops = shape.Fill.GradientFill.GradientStops.Count == 2;
+                // Validate inheritance: compare gradient stops between shape and master
+                var masterStops = masterShape.Fill.GradientFill.GradientStops;
+                var shapeStops = shape.InheritFill.GradientFill.GradientStops;
 
-                // Validate first stop color
-                GradientStop firstStop = shape.Fill.GradientFill.GradientStops[0];
-                bool firstStopIsBlue = firstStop.Color.Value == "#0000FF";
+                if (masterStops.Count != shapeStops.Count)
+                    throw new Exception("Gradient stop count mismatch between master and shape.");
 
-                // Validate second stop color
-                GradientStop secondStop = shape.Fill.GradientFill.GradientStops[1];
-                bool secondStopIsGreen = secondStop.Color.Value == "#00FF00";
-
-                if (!isGradientPattern || !isGradientEnabled || !hasTwoStops ||
-                    !firstStopIsBlue || !secondStopIsGreen)
+                for (int i = 0; i < masterStops.Count; i++)
                 {
-                    throw new Exception("Shape does not correctly inherit the master's gradient fill.");
-                }
+                    GradientStop masterStop = masterStops[i];
+                    GradientStop shapeStop = shapeStops[i];
 
-                Console.WriteLine("Gradient inheritance validation passed.");
+                    if (masterStop.Position.Value != shapeStop.Position.Value ||
+                        masterStop.Color.Value != shapeStop.Color.Value)
+                    {
+                        throw new Exception($"Gradient stop {i} does not match between master and shape.");
+                    }
+                }
 
                 // Export the diagram to PDF
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
                 pdfOptions.DefaultFont = "Arial";
-                diagram.Save("output.pdf", pdfOptions);
+                diagram.Save(outputPdf, pdfOptions);
 
-                Console.WriteLine("Diagram exported to PDF successfully.");
+                Console.WriteLine("Gradient inheritance validated and PDF exported successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

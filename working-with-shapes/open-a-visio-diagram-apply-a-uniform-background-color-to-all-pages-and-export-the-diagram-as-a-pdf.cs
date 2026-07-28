@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,78 +7,68 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output PDF file path
-        string outputPath = "output.pdf";
-
         try
         {
-            // Load the Visio diagram
+
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output PDF file path
+            string outputPath = "output.pdf";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Store the original number of pages to avoid processing newly added background pages
-            int originalPageCount = diagram.Pages.Count;
+            // Create a background page (if not already present)
+            Page backgroundPage = new Page();
+            backgroundPage.Background = BOOL.True;
+            diagram.Pages.Add(backgroundPage);
 
-            // Process each original page
-            for (int i = 0; i < originalPageCount; i++)
+            // Use the dimensions of the first foreground page to size the background rectangle
+            Page referencePage = diagram.Pages[0];
+            double pageWidth = referencePage.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = referencePage.PageSheet.PageProps.PageHeight.Value;
+
+            // Add a rectangle shape that covers the entire page
+            // AddShape(pinX, pinY, width, height, masterName) where masterName "Rectangle" is a built‑in master
+            long rectShapeId = backgroundPage.AddShape(pageWidth / 2, pageHeight / 2, pageWidth, pageHeight, "Rectangle");
+            Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
+
+            // Set solid fill pattern and desired background color (e.g., light blue)
+            rectShape.Fill.FillPattern.Value = 1;               // Solid fill
+            rectShape.Fill.FillForegnd.Value = "#ADD8E6";       // Hex color code
+
+            // Remove outline stroke
+            rectShape.Line.LinePattern.Value = 0;               // No line
+
+            // Send the rectangle to the back so other shapes appear above it
+            rectShape.SendToBack();
+
+            // Make the background shape non‑selectable
+            rectShape.Protection.LockSelect.Value = BOOL.True;
+
+            // Assign the background page to every foreground page
+            foreach (Page page in diagram.Pages)
             {
-                // Retrieve the foreground page
-                Page foregroundPage = diagram.Pages[i];
+                // Skip the background page itself
+                if (page.Background == BOOL.True)
+                    continue;
 
-                // Get page dimensions (in inches)
-                double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
-
-                // Create a new background page
-                Page backgroundPage = new Page();
-                backgroundPage.Background = BOOL.True;               // Mark as background
-                backgroundPage.Name = $"Background_{foregroundPage.Name}";
-
-                // Add the background page to the diagram
-                diagram.Pages.Add(backgroundPage);
-
-                // Add a rectangle shape that spans the entire page
-                // PinX and PinY are the center coordinates of the shape
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-                long bgShapeId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle");
-                Shape bgShape = backgroundPage.Shapes.GetShape(bgShapeId);
-
-                // Set solid fill pattern
-                bgShape.Fill.FillPattern.Value = 1;                     // Solid fill
-                bgShape.Fill.FillForegnd.Value = "#ADD8E6";            // Light blue background color
-
-                // Remove outline
-                bgShape.Line.LinePattern.Value = LinePatternValue.None; // No border
-
-                // Send the shape to the back so other content appears above it
-                bgShape.SendToBack();
-
-                // Make the background shape non‑selectable
-                bgShape.Protection.LockSelect.Value = BOOL.True;
-
-                // Link the foreground page to its background page
-                foregroundPage.BackPage = backgroundPage;
+                page.BackPage = backgroundPage;
             }
 
-            // Configure PDF save options
+            // Configure PDF save options (optional: set default font)
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";          // Fallback font
-            pdfOptions.ExportHiddenPage = false;       // Do not export hidden pages
+            pdfOptions.DefaultFont = "Arial";
 
             // Save the diagram as PDF
             diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine("Diagram exported to PDF with uniform background color.");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

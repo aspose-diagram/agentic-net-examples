@@ -1,52 +1,58 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Load an existing Visio diagram (replace with your actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram (replace with actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
+            // Access the first page
+            Page page = diagram.Pages[0];
 
-                // Retrieve an existing shape to clone (here we take the first shape on the page)
-                // Adjust the ID as needed for your specific diagram
-                Shape originalShape = page.Shapes.GetShape(1);
+            // Retrieve the shape to be cloned (replace with actual shape ID)
+            Shape originalShape = page.Shapes.GetShape(1);
+            if (originalShape == null)
+                throw new Exception("Original shape not found.");
 
-                // Determine the master name of the original shape; fallback to a basic master if null
-                string masterName = originalShape.Master != null ? originalShape.Master.Name : "Rectangle";
+            // Ensure the shape has an associated master (required for adding a new shape)
+            if (originalShape.Master == null)
+                throw new Exception("Original shape does not have a master.");
 
-                // Add a new shape on the same page, offsetting its position slightly
-                double offsetX = 2.0; // inches to the right
-                double newPinX = originalShape.XForm.PinX.Value + offsetX;
-                double newPinY = originalShape.XForm.PinY.Value;
+            string masterName = originalShape.Master.Name;
 
-                long clonedShapeId = page.AddShape(newPinX, newPinY, masterName);
-                Shape clonedShape = page.Shapes.GetShape(clonedShapeId);
+            // Add a new shape on the same page using the same master.
+            // Position it slightly offset from the original shape.
+            double offsetX = 2.0; // inches offset on X axis
+            double newPinX = originalShape.XForm.PinX.Value + offsetX;
+            double newPinY = originalShape.XForm.PinY.Value;
 
-                // Inherit fill settings from the original shape
-                clonedShape.Fill.FillForegnd.Value = originalShape.Fill.FillForegnd.Value;
-                clonedShape.Fill.FillBkgnd.Value = originalShape.Fill.FillBkgnd.Value;
-                clonedShape.Fill.FillPattern.Value = originalShape.Fill.FillPattern.Value;
-                clonedShape.Fill.FillForegndTrans.Value = originalShape.Fill.FillForegndTrans.Value;
-                clonedShape.Fill.FillBkgndTrans.Value = originalShape.Fill.FillBkgndTrans.Value;
+            long newShapeId = page.AddShape(newPinX, newPinY, masterName);
+            Shape clonedShape = page.Shapes.GetShape(newShapeId);
+            if (clonedShape == null)
+                throw new Exception("Failed to create cloned shape.");
 
-                // Modify the line inheritance flag by setting a distinct line color
-                // This breaks line inheritance and applies the new color to the cloned shape
-                clonedShape.Line.LineColor.Value = "#FF0000"; // Red line
+            // Inherit fill settings from the original shape
+            clonedShape.Fill.FillPattern.Value = originalShape.Fill.FillPattern.Value;
+            clonedShape.Fill.FillForegnd.Value = originalShape.Fill.FillForegnd.Value;
+            clonedShape.Fill.FillBkgnd.Value = originalShape.Fill.FillBkgnd.Value;
 
-                // Save the modified diagram to a new file
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Modify the line inheritance flag by overriding the line color
+            // (setting a value breaks inheritance and applies the new color)
+            clonedShape.Line.LineColor.Value = "#FF0000"; // red line
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

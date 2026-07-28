@@ -1,98 +1,89 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths to the two Visio diagram files to compare
-            string diagramPath1 = "DiagramVersion1.vsdx";
-            string diagramPath2 = "DiagramVersion2.vsdx";
-
-            // Load the diagrams
-            Diagram diagram1 = new Diagram(diagramPath1);
-            Diagram diagram2 = new Diagram(diagramPath2);
-
-            // Collect connector line jump styles from the first diagram
-            var connectorStyles1 = new Dictionary<(int pageId, long shapeId), ConLineJumpStyleValue>();
-            foreach (Page page in diagram1.Pages)
+            // Expect two file paths: first diagram version, second diagram version
+            if (args.Length < 2)
             {
-                foreach (Shape shape in page.Shapes)
+                Console.WriteLine("Usage: DiagramComparison <DiagramPath1> <DiagramPath2>");
+                return;
+            }
+
+            string diagramPath1 = args[0];
+            string diagramPath2 = args[1];
+
+            try
+            {
+                // Load the two diagram versions
+                Diagram diagram1 = new Diagram(diagramPath1);
+                Diagram diagram2 = new Diagram(diagramPath2);
+
+                // Simple validation: ensure both diagrams have the same number of pages
+                if (diagram1.Pages.Count != diagram2.Pages.Count)
                 {
-                    // Only 1‑D shapes are connectors
-                    if (shape.OneD)
+                    Console.WriteLine("The diagrams have a different number of pages.");
+                    return;
+                }
+
+                // Iterate through each page
+                for (int pageIndex = 0; pageIndex < diagram1.Pages.Count; pageIndex++)
+                {
+                    Page page1 = diagram1.Pages[pageIndex];
+                    Page page2 = diagram2.Pages[pageIndex];
+
+                    // Iterate through shapes on the page and focus on connectors (OneD == true)
+                    foreach (Shape shape1 in page1.Shapes)
                     {
-                        // Retrieve the line jump style; default to PageDefault if not set
-                        ConLineJumpStyleValue style = shape.Layout.ConLineJumpStyle.Value;
-                        connectorStyles1[(page.ID, shape.ID)] = style;
+                        if (!shape1.OneD) continue; // Skip non‑connector shapes
+
+                        // Attempt to find the corresponding shape in the second diagram by ID
+                        Shape shape2 = null;
+                        try
+                        {
+                            shape2 = page2.Shapes.GetShape(shape1.ID);
+                        }
+                        catch
+                        {
+                            // Shape with this ID does not exist in the second diagram
+                            Console.WriteLine($"Connector ID {shape1.ID} exists in diagram 1 but not in diagram 2 (page {pageIndex}).");
+                            continue;
+                        }
+
+                        // Retrieve line‑jump style values
+                        var jumpStyle1 = shape1.Layout.ConLineJumpStyle.Value;
+                        var jumpStyle2 = shape2.Layout.ConLineJumpStyle.Value;
+
+                        // Compare the styles
+                        if (jumpStyle1 != jumpStyle2)
+                        {
+                            Console.WriteLine($"Page {pageIndex}, Connector ID {shape1.ID}:");
+                            Console.WriteLine($"  Diagram 1 Jump Style = {jumpStyle1}");
+                            Console.WriteLine($"  Diagram 2 Jump Style = {jumpStyle2}");
+                        }
+
+                        // Optionally compare the jump code (routing behavior)
+                        var jumpCode1 = shape1.Layout.ConLineJumpCode.Value;
+                        var jumpCode2 = shape2.Layout.ConLineJumpCode.Value;
+
+                        if (jumpCode1 != jumpCode2)
+                        {
+                            Console.WriteLine($"Page {pageIndex}, Connector ID {shape1.ID}:");
+                            Console.WriteLine($"  Diagram 1 Jump Code = {jumpCode1}");
+                            Console.WriteLine($"  Diagram 2 Jump Code = {jumpCode2}");
+                        }
                     }
                 }
-            }
 
-            // Collect connector line jump styles from the second diagram
-            var connectorStyles2 = new Dictionary<(int pageId, long shapeId), ConLineJumpStyleValue>();
-            foreach (Page page in diagram2.Pages)
+                Console.WriteLine("Comparison completed.");
+            }
+            catch (Exception ex)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.OneD)
-                    {
-                        ConLineJumpStyleValue style = shape.Layout.ConLineJumpStyle.Value;
-                        connectorStyles2[(page.ID, shape.ID)] = style;
-                    }
-                }
+                // Any unexpected error is reported and re‑thrown to signal failure
+                Console.WriteLine($"Error during comparison: {ex.Message}");
+                throw;
             }
-
-            bool differencesFound = false;
-
-            // Compare connectors present in the first diagram against the second
-            foreach (var kvp in connectorStyles1)
-            {
-                var key = kvp.Key;
-                ConLineJumpStyleValue style1 = kvp.Value;
-
-                if (connectorStyles2.TryGetValue(key, out ConLineJumpStyleValue style2))
-                {
-                    if (style1 != style2)
-                    {
-                        differencesFound = true;
-                        Console.WriteLine($"Difference in connector (Page ID: {key.pageId}, Shape ID: {key.shapeId}):");
-                        Console.WriteLine($"  Diagram 1 style: {style1}");
-                        Console.WriteLine($"  Diagram 2 style: {style2}");
-                    }
-                }
-                else
-                {
-                    differencesFound = true;
-                    Console.WriteLine($"Connector (Page ID: {key.pageId}, Shape ID: {key.shapeId}) exists in Diagram 1 but not in Diagram 2.");
-                }
-            }
-
-            // Check for connectors that exist only in the second diagram
-            foreach (var kvp in connectorStyles2)
-            {
-                var key = kvp.Key;
-                if (!connectorStyles1.ContainsKey(key))
-                {
-                    differencesFound = true;
-                    Console.WriteLine($"Connector (Page ID: {key.pageId}, Shape ID: {key.shapeId}) exists in Diagram 2 but not in Diagram 1.");
-                }
-            }
-
-            if (!differencesFound)
-            {
-                Console.WriteLine("No line jump style differences detected between the two diagrams.");
-            }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
-}

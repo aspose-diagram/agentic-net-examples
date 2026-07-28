@@ -11,47 +11,39 @@ class VisioShapeToTiffBatch
         {
 
             // Path to the source Visio file
-            string sourceVisioPath = @"C:\VisioFiles\sample.vsdx";
+            string visioFilePath = @"C:\Input\diagram.vsdx";
 
             // Load the Visio diagram using the Diagram constructor (load rule)
-            Diagram diagram = new Diagram(sourceVisioPath);
-
-            // Create a folder named with the current date (yyyyMMdd) inside an "Output" directory
-            string dateFolderName = DateTime.Now.ToString("yyyyMMdd");
-            string outputRoot = Path.Combine(@"C:\VisioFiles\Output", dateFolderName);
-            Directory.CreateDirectory(outputRoot);
-
-            // Iterate through all pages and shapes
-            int pageIndex = 0;
-            foreach (Page page in diagram.Pages)
+            using (Diagram diagram = new Diagram(visioFilePath))
             {
-                int shapeIndex = 0;
-                foreach (Shape shape in page.Shapes)
+                // Create a folder named with the current date (yyyyMMdd)
+                string dateFolder = DateTime.Now.ToString("yyyyMMdd");
+                string outputFolder = Path.Combine(@"C:\Output", dateFolder);
+                Directory.CreateDirectory(outputFolder);
+
+                // Prepare image save options for high‑resolution TIFF
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
+                saveOptions.Resolution = 300; // 300 DPI for high resolution
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Build a unique file name for each shape
-                    string tiffFilePath = Path.Combine(
-                        outputRoot,
-                        $"Page{pageIndex}_Shape{shapeIndex}.tiff");
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Build a unique file name for each shape
+                        string shapeFileName = $"Shape_{shape.ID}.tiff";
+                        string shapeFilePath = Path.Combine(outputFolder, shapeFileName);
 
-                    // Configure high‑resolution image options (300 DPI)
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
-                    saveOptions.Resolution = 300; // high‑resolution DPI
-
-                    // Export the shape to TIFF using the ToImage method (save rule)
-                    shape.ToImage(tiffFilePath, saveOptions);
-
-                    shapeIndex++;
+                        // Export the shape to a TIFF file using the ToImage method (shape conversion rule)
+                        shape.ToImage(shapeFilePath, saveOptions);
+                    }
                 }
-                pageIndex++;
             }
 
-            // Release resources
-            diagram.Dispose();
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

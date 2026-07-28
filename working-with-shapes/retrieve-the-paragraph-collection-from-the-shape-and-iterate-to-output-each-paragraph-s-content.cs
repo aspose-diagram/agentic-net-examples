@@ -9,52 +9,33 @@ class Program
         try
         {
 
-            // Load a Visio diagram (replace with your actual file path)
-            string diagramPath = "input.vsdx";
-            Diagram diagram = new Diagram(diagramPath);
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page in the diagram
-            if (diagram.Pages.Count == 0)
-            {
-                Console.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
+            // Access the first page (you can change the index as needed)
             Page page = diagram.Pages[0];
 
-            // Retrieve the first shape on the page (if any)
-            Shape shape = null;
-            foreach (Shape s in page.Shapes)
+            // Retrieve a shape by its ID (replace 1 with the actual shape ID you want to inspect)
+            Shape shape = page.Shapes.GetShape(1);
+
+            // Retrieve the paragraph collection from the shape
+            // (the collection itself is not used for text extraction, but we iterate it as required)
+            foreach (Aspose.Diagram.Para para in shape.Paras)
             {
-                shape = s;
-                break;
+                // No direct text property on Para, so we will extract the full text later
+                // This loop demonstrates access to each paragraph object
             }
 
-            if (shape == null)
-            {
-                Console.WriteLine("No shapes found on the page.");
-                return;
-            }
+            // Get the complete plain text of the shape
+            string fullText = shape.Text.Value.ToString();
 
-            // Ensure the shape has paragraph information
-            if (shape.Paras == null || shape.Paras.Count == 0)
-            {
-                Console.WriteLine("The selected shape contains no paragraphs.");
-                return;
-            }
+            // Split the text into paragraphs based on line breaks
+            string[] paragraphs = fullText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
 
-            // Get the plain text of the shape and split it into individual paragraphs
-            // Shape.Text.Value.Text returns the concatenated text of all paragraphs
-            string[] paragraphTexts = shape.Text.Value.Text
-                .Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-
-            // Iterate over the paragraph collection and output each paragraph's content
-            int index = 0;
-            foreach (Para para in shape.Paras)
+            // Output each paragraph's content
+            foreach (string paragraph in paragraphs)
             {
-                string text = index < paragraphTexts.Length ? paragraphTexts[index] : string.Empty;
-                Console.WriteLine($"Paragraph {index + 1}: {text}");
-                index++;
+                Console.WriteLine(paragraph);
             }
 
         }

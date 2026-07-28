@@ -1,37 +1,37 @@
 using System;
 using System.IO;
+using Aspose.Diagram;
 
-class Program
+class ShapeIdComparer
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            // Load the Visio diagram (use the provided load rule in your environment)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Define the shape name you want to locate and the expected identifier
+            // Define the shape name to locate and the expected identifier
             string targetShapeName = "MyShape";
-            long expectedShapeId = 12345;
+            long expectedShapeId = 12345L;
 
-            // Retrieve the shape by its name from the first page (adjust page index if needed)
-            Aspose.Diagram.Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeName);
+            // Access the shape by its name from the first page
+            Shape targetShape = diagram.Pages[0].Shapes.GetShape(targetShapeName);
 
             // Compare the retrieved shape's ID with the expected identifier
-            if (shape != null && shape.ID == expectedShapeId)
+            if (targetShape != null && targetShape.ID == expectedShapeId)
             {
-                // The shape was found and its ID matches the expected value
-                System.Console.WriteLine($"Shape '{targetShapeName}' has the expected ID: {expectedShapeId}.");
+                System.Console.WriteLine("Shape ID matches the expected identifier.");
             }
             else
             {
-                // Either the shape was not found or its ID does not match
-                System.Console.WriteLine($"Shape '{targetShapeName}' not found or ID mismatch.");
+                string actualId = targetShape != null ? targetShape.ID.ToString() : "null";
+                System.Console.WriteLine($"Shape ID does not match. Actual ID: {actualId}");
             }
 
-            // (Optional) Save the diagram if any modifications were made
-            // diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            // Save the diagram if further processing is required (use the provided save rule)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -3,7 +3,7 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VisioBatchResize
+class Program
 {
     static void Main()
     {
@@ -11,21 +11,21 @@ class VisioBatchResize
         {
 
             // Path to the source Visio file
-            string sourceFile = @"C:\Path\To\InputDiagram.vsdx";
+            string sourcePath = @"C:\Input\diagram.vsdx";
 
-            // Path where the updated Visio file will be saved
-            string outputFile = @"C:\Path\To\ResizedDiagram.vsdx";
+            // Path to the output Visio file
+            string outputPath = @"C:\Output\diagram_resized.vsdx";
 
-            // Desired uniform width for all shapes (in inches)
+            // Desired uniform width (in inches)
             double uniformWidth = 2.0;
 
-            // Load the Visio document using the Diagram constructor (lifecycle rule)
-            using (Diagram diagram = new Diagram(sourceFile))
+            // Load the Visio document using the Diagram(string) constructor
+            using (Diagram diagram = new Diagram(sourcePath))
             {
-                // Iterate through each page in the document
+                // Iterate through all pages in the document
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the current page
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Set the shape's width to the uniform value
@@ -33,8 +33,9 @@ class VisioBatchResize
                     }
                 }
 
-                // Save the modified document using the Save method (lifecycle rule)
-                diagram.Save(outputFile, SaveFileFormat.Vsdx);
+                // Save the modified diagram back to a file
+                // Using SaveFileFormat.Vsdx to keep the same format as the source
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
         }

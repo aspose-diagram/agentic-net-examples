@@ -1,42 +1,53 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Path for the generated PDF
+            string outputPath = "output.pdf";
+
+            // Configure font folder (required before loading the diagram)
+            // The second argument indicates whether to search sub‑folders recursively.
+            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
+
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output PDF file path
-                string outputPath = "output.pdf";
-
-                // Configure font folder(s) so that fonts used in the diagram can be found.
-                // The second parameter indicates whether to search subfolders recursively.
-                FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
-
-                // Load the Visio diagram from file.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Create PDF save options.
+                // Prepare PDF save options
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-                // Set the fallback font to use when a required font is missing.
-                pdfOptions.DefaultFont = "Arial";
-
-                // Explicitly set the save format (required for PDF export).
+                // Ensure the format is explicitly set (required to avoid ambiguity)
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the diagram as a PDF with the specified options.
-                diagram.Save(outputPath, pdfOptions);
+                // Set a default fallback font in case a diagram font is missing
+                pdfOptions.DefaultFont = "Arial";
 
+                // Use lossless Flate compression for PDF content streams (including text)
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
+
+                // Do not export hidden pages (optional, improves file size)
+                pdfOptions.ExportHiddenPage = false;
+
+                // Save the diagram as PDF with the configured options
+                diagram.Save(outputPath, pdfOptions);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("PDF generated successfully at: " + outputPath);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

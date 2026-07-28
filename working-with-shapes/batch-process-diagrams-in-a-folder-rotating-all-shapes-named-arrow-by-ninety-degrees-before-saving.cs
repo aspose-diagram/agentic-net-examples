@@ -3,25 +3,30 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Determine the folder to process: argument or current directory
-            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
 
-            if (!Directory.Exists(folderPath))
+            // Folder containing the source Visio files
+            string inputFolder = @"C:\Visio\Input";
+            // Folder where the modified files will be saved
+            string outputFolder = @"C:\Visio\Output";
+
+            // Ensure the output directory exists
+            if (!Directory.Exists(outputFolder))
             {
-                Console.WriteLine($"Folder does not exist: {folderPath}");
-                return;
+                Directory.CreateDirectory(outputFolder);
             }
 
-            // Process each Visio file in the folder (common extensions)
-            string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (string filePath in visioFiles)
+            // Process all Visio files in the input folder (supports .vsdx, .vsd, .vdx, etc.)
+            string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (string filePath in files)
             {
-                // Simple filter for Visio file extensions
-                string ext = Path.GetExtension(filePath).ToLowerInvariant();
-                if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx")
+                // Only handle files with Visio extensions
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
                 {
                     continue;
                 }
@@ -31,30 +36,47 @@ class Program
                     // Load the diagram
                     using (Diagram diagram = new Diagram(filePath))
                     {
-                        // Iterate through all pages and shapes
+                        // Iterate through each page
                         foreach (Page page in diagram.Pages)
                         {
+                            // Iterate through each shape on the page
                             foreach (Shape shape in page.Shapes)
                             {
-                                // Check for shapes named "Arrow"
-                                if (shape.NameU == "Arrow")
+                                // Skip deleted shapes
+                                if (shape.Del == BOOL.True)
+                                    continue;
+
+                                // Check if the shape's universal name is "Arrow"
+                                if (string.Equals(shape.NameU, "Arrow", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    // Rotate 90 degrees (π/2 radians)
-                                    shape.SetAngle(Math.PI / 2);
+                                    // Rotate the shape by 90 degrees (π/2 radians)
+                                    double currentAngle = shape.XForm.Angle.Value;
+                                    shape.XForm.Angle.Value = currentAngle + (Math.PI / 2);
                                 }
                             }
                         }
 
-                        // Save back to the same file, preserving format
-                        // Use Vsdx as default; Visio will handle other formats similarly
-                        diagram.Save(filePath, SaveFileFormat.Vsdx);
-                        Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
+                        // Determine output file path (preserve original name)
+                        string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+
+                        // Save the modified diagram in VSDX format
+                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
                     }
+
+                    Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
                 }
             }
+
+            Console.WriteLine("Batch processing completed.");
+
+        }
+        catch (System.IO.DirectoryNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
+}

@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,75 +9,62 @@ class Program
         try
         {
 
-            // Create a new diagram
-            Diagram diagram = new Diagram();
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Add a rectangle shape to the active page
-            long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle");
-            Shape shape = diagram.ActivePage.Shapes.GetShape((int)shapeId);
+            // Access the first page
+            Page page = diagram.Pages[0];
 
-            // Apply protection: lock most editing actions, but allow text editing and formatting
-            shape.Protection.LockMoveX.Value = BOOL.True;
-            shape.Protection.LockMoveY.Value = BOOL.True;
-            shape.Protection.LockWidth.Value = BOOL.True;
-            shape.Protection.LockHeight.Value = BOOL.True;
-            shape.Protection.LockRotate.Value = BOOL.True;
-            shape.Protection.LockDelete.Value = BOOL.True;
-            shape.Protection.LockGroup.Value = BOOL.True;
-            shape.Protection.LockAspect.Value = BOOL.True;
-            shape.Protection.LockBegin.Value = BOOL.True;
-            shape.Protection.LockEnd.Value = BOOL.True;
-            shape.Protection.LockCalcWH.Value = BOOL.True;
-            shape.Protection.LockCrop.Value = BOOL.True;
-            shape.Protection.LockCustProp.Value = BOOL.True;
-            shape.Protection.LockFormat.Value = BOOL.False;      // allow formatting (paragraph changes)
-            shape.Protection.LockTextEdit.Value = BOOL.False;   // allow text editing
-            shape.Protection.LockSelect.Value = BOOL.True;
-            shape.Protection.LockThemeColors.Value = BOOL.True;
-            shape.Protection.LockThemeEffects.Value = BOOL.True;
-            shape.Protection.LockVtxEdit.Value = BOOL.True;
+            // Find the first non‑deleted shape on the page
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.Del == BOOL.False) // ensure the shape is not marked as deleted
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
 
-            // Verify protection settings
-            Verify(shape.Protection.LockMoveX.Value == BOOL.True, "LockMoveX");
-            Verify(shape.Protection.LockMoveY.Value == BOOL.True, "LockMoveY");
-            Verify(shape.Protection.LockWidth.Value == BOOL.True, "LockWidth");
-            Verify(shape.Protection.LockHeight.Value == BOOL.True, "LockHeight");
-            Verify(shape.Protection.LockRotate.Value == BOOL.True, "LockRotate");
-            Verify(shape.Protection.LockDelete.Value == BOOL.True, "LockDelete");
-            Verify(shape.Protection.LockGroup.Value == BOOL.True, "LockGroup");
-            Verify(shape.Protection.LockAspect.Value == BOOL.True, "LockAspect");
-            Verify(shape.Protection.LockBegin.Value == BOOL.True, "LockBegin");
-            Verify(shape.Protection.LockEnd.Value == BOOL.True, "LockEnd");
-            Verify(shape.Protection.LockCalcWH.Value == BOOL.True, "LockCalcWH");
-            Verify(shape.Protection.LockCrop.Value == BOOL.True, "LockCrop");
-            Verify(shape.Protection.LockCustProp.Value == BOOL.True, "LockCustProp");
-            Verify(shape.Protection.LockFormat.Value == BOOL.False, "LockFormat (should be false)");
-            Verify(shape.Protection.LockTextEdit.Value == BOOL.False, "LockTextEdit (should be false)");
-            Verify(shape.Protection.LockSelect.Value == BOOL.True, "LockSelect");
-            Verify(shape.Protection.LockThemeColors.Value == BOOL.True, "LockThemeColors");
-            Verify(shape.Protection.LockThemeEffects.Value == BOOL.True, "LockThemeEffects");
-            Verify(shape.Protection.LockVtxEdit.Value == BOOL.True, "LockVtxEdit");
+            if (targetShape == null)
+            {
+                Console.WriteLine("No shape found to protect.");
+                return;
+            }
 
-            // Save the diagram to a file
-            diagram.Save("ProtectedShape.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved successfully with protection applied.");
+            // Apply protection: lock movement, size, rotation, and vertex editing
+            // but keep text editing unlocked
+            targetShape.Protection.LockMoveX.Value   = BOOL.True;
+            targetShape.Protection.LockMoveY.Value   = BOOL.True;
+            targetShape.Protection.LockWidth.Value   = BOOL.True;
+            targetShape.Protection.LockHeight.Value  = BOOL.True;
+            targetShape.Protection.LockRotate.Value  = BOOL.True;
+            targetShape.Protection.LockVtxEdit.Value = BOOL.True;
+            targetShape.Protection.LockTextEdit.Value = BOOL.False; // allow paragraph text changes
+
+            // Verify that the protection flags are set as intended
+            bool protectionOk = targetShape.Protection.LockMoveX.Value   == BOOL.True &&
+                                targetShape.Protection.LockMoveY.Value   == BOOL.True &&
+                                targetShape.Protection.LockWidth.Value   == BOOL.True &&
+                                targetShape.Protection.LockHeight.Value  == BOOL.True &&
+                                targetShape.Protection.LockRotate.Value  == BOOL.True &&
+                                targetShape.Protection.LockVtxEdit.Value == BOOL.True &&
+                                targetShape.Protection.LockTextEdit.Value == BOOL.False;
+
+            Console.WriteLine(protectionOk
+                ? "Shape protection applied successfully."
+                : "Shape protection verification failed.");
+
+            // Save the modified diagram
+            string outputPath = "protected_output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
 
         }
-        catch (System.NullReferenceException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-        }
-    }
-
-    static void Verify(bool condition, string propertyName)
-    {
-        if (!condition)
-        {
-            throw new Exception($"Verification failed for protection property: {propertyName}");
-        }
-        else
-        {
-            Console.WriteLine($"Verified: {propertyName}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -9,43 +9,41 @@ class ReplaceMasterExample
         try
         {
 
-            // Paths to the source diagram, the stencil that contains the updated master,
-            // and the output diagram.
+            // Paths to the source diagram, the stencil containing the updated master, and the output file
             string sourceDiagramPath = "input.vsdx";
-            string updatedMasterStencilPath = "updatedMasters.vssx";
+            string updatedStencilPath = "updatedStencil.vssx";
             string outputDiagramPath = "output.vsdx";
 
-            // Names of the deprecated master and the replacement master.
+            // Names of the deprecated master and the updated master within the stencil
             string deprecatedMasterName = "OldMaster";
-            string replacementMasterName = "NewMaster";
+            string updatedMasterName = "NewMaster";
 
-            // Load the Visio diagram.
-            using (Diagram diagram = new Diagram(sourceDiagramPath))
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(sourceDiagramPath);
+
+            // Add the updated master to the diagram from the stencil file
+            // The method returns the unique ID of the added master in the diagram's Masters collection
+            int newMasterId = diagram.AddMaster(updatedStencilPath, updatedMasterName);
+
+            // Retrieve the newly added master using its ID
+            Master newMaster = diagram.Masters[newMasterId];
+
+            // Iterate through all pages and shapes, replacing the deprecated master with the new one
+            foreach (Page page in diagram.Pages)
             {
-                // Add the replacement master from the stencil file to the diagram.
-                // The method returns the unique ID of the master inside the diagram.
-                int replacementMasterId = diagram.AddMaster(updatedMasterStencilPath, replacementMasterName);
-
-                // Retrieve the Master object that was just added.
-                Master replacementMaster = diagram.Masters[replacementMasterId];
-
-                // Iterate through all pages and shapes, replacing the master where needed.
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Check if the shape is based on a master and if that master matches the deprecated name
+                    if (shape.Master != null && shape.Master.NameU == deprecatedMasterName)
                     {
-                        // Ensure the shape is based on a master and compare its universal name.
-                        if (shape.Master != null && shape.Master.NameU == deprecatedMasterName)
-                        {
-                            // Replace the master reference with the new master.
-                            shape.Master = replacementMaster;
-                        }
+                        // Replace the master reference with the updated master
+                        shape.Master = newMaster;
                     }
                 }
-
-                // Save the modified diagram to a new file.
-                diagram.Save(outputDiagramPath, SaveFileFormat.Vdx);
             }
+
+            // Save the modified diagram to the specified output file (VDX format)
+            diagram.Save(outputDiagramPath, SaveFileFormat.Vdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,62 +1,51 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect three arguments: input Visio file, shape ID, output PNG path
-            if (args.Length != 3)
-            {
-                Console.WriteLine("Usage: ExportShapeToPng <inputVisioFile> <shapeId> <outputPngFile>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string shapeIdArg = args[1];
-            string outputPath = args[2];
+            // Path to the Visio file to load
+            string sourcePath = "input.vsdx";
 
-            if (!long.TryParse(shapeIdArg, out long shapeId))
-            {
-                Console.WriteLine("Invalid shape ID.");
-                return;
-            }
+            // Load the diagram
+            Diagram diagram = new Diagram(sourcePath);
 
-            // Load the Visio diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
-
-            // Assume the shape is on the first page; adjust if needed
+            // Get the first page (adjust index if needed)
             Page page = diagram.Pages[0];
+
+            // Identify the shape to export.
+            // Replace the ID with the actual shape ID you want to export.
+            long shapeId = 1;
             Shape shape = page.Shapes.GetShape(shapeId);
+
             if (shape == null)
             {
-                Console.WriteLine($"Shape with ID {shapeId} not found on page '{page.Name}'.");
+                Console.WriteLine($"Shape with ID {shapeId} not found.");
                 return;
             }
 
             // Configure high‑resolution PNG export options
             ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            pngOptions.Resolution = 300f; // DPI – increase for higher quality
+            pngOptions.Resolution = 300f; // 300 DPI for high resolution
+
+            // Output file path
+            string outputPath = "exported_shape.png";
 
             // Export the selected shape to PNG
-            try
-            {
-                shape.ToImage(outputPath, pngOptions);
-                Console.WriteLine($"Shape {shapeId} exported successfully to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to export shape: {ex.Message}");
-            }
+            shape.ToImage(outputPath, pngOptions);
+
+            Console.WriteLine($"Shape exported successfully to '{outputPath}' with resolution {pngOptions.Resolution} DPI.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

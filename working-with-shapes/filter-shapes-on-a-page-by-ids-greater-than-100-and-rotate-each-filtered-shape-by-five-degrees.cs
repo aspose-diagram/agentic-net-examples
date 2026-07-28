@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,29 +9,34 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            const string inputPath = "input.vsdx";
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the first page (adjust index if needed)
+                // Get the first page (index 0)
                 Page page = diagram.Pages[0];
 
                 // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    long shapeId = shape.ID; // Shape IDs are of type long
-
-                    // Filter shapes with IDs greater than 100
-                    if (shapeId > 100)
+                    // Process only shapes with an ID greater than 100
+                    if (shape.ID > 100L)
                     {
-                        // Get current rotation angle (in degrees) and add 5 degrees
+                        // Current rotation angle is stored in radians
                         double currentAngle = shape.XForm.Angle.Value;
-                        shape.XForm.Angle.Value = currentAngle + 5;
+
+                        // Convert 5 degrees to radians
+                        double delta = 5.0 * Math.PI / 180.0;
+
+                        // Apply the additional rotation
+                        shape.XForm.Angle.Value = currentAngle + delta;
                     }
                 }
 
                 // Save the modified diagram
-                const string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 

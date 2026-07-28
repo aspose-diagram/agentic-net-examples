@@ -4,57 +4,51 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Folder where individual shape PNGs will be saved
+            string outputFolder = "ShapeImages";
+
+            // Ensure the output directory exists
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path (change as needed)
-                string inputPath = "input.vsdx";
-
-                // Output directory for PNG files
-                string outputDir = "ExportedShapes";
-                Directory.CreateDirectory(outputDir);
-
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Configure PNG export options (lossless by default)
-                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.False)
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip deleted shapes
-                            if (shape.Del == BOOL.True)
-                                continue;
+                        // Build a unique file name for each shape
+                        string fileName = $"shape_{shape.ID}.png";
+                        string outPath = Path.Combine(outputFolder, fileName);
 
-                            // Build a safe file name using shape ID and optional name
-                            string safeName = string.IsNullOrWhiteSpace(shape.NameU) ? "Shape" : shape.NameU;
-                            // Replace any invalid filename characters
-                            foreach (char c in Path.GetInvalidFileNameChars())
-                                safeName = safeName.Replace(c, '_');
-
-                            string outputPath = Path.Combine(
-                                outputDir,
-                                $"Page{page.ID}_Shape{shape.ID}_{safeName}.png");
-
-                            // Export the shape to PNG
-                            shape.ToImage(outputPath, pngOptions);
-                        }
+                        // Export the shape as a lossless PNG
+                        ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+                        shape.ToImage(outPath, options);
                     }
                 }
-
-                Console.WriteLine("Shape export completed.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // (Optional) Save the diagram back if any modifications were made
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

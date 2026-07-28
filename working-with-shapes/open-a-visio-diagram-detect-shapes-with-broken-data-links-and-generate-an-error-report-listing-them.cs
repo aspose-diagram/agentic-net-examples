@@ -1,60 +1,69 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // Required for SaveFileFormat enum (if needed later)
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Path to the Visio file (adjust as needed)
+        string inputPath = "input.vsdx";
+
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            Console.WriteLine("Broken Data Link Report");
+            Console.WriteLine("=======================");
+
+            bool anyBroken = false;
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file. Use first command‑line argument if provided.
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-                // Load the diagram.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Prepare a flag to indicate whether any broken links were found.
-                bool hasBrokenLinks = false;
-
-                // Iterate through all pages.
-                foreach (Page page in diagram.Pages)
+                // Iterate through each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // Check if the shape contains a data link identifier in Data1
+                    if (!string.IsNullOrWhiteSpace(shape.Data1))
                     {
-                        // Check the three generic data fields (Data1, Data2, Data3).
-                        // If any of them contain a non‑empty value, we treat it as a data link.
-                        // In a real scenario you would verify the link against diagram.DataRecordSets,
-                        // but for this example we simply report the presence of the data value.
-                        if (!string.IsNullOrWhiteSpace(shape.Data1) ||
-                            !string.IsNullOrWhiteSpace(shape.Data2) ||
-                            !string.IsNullOrWhiteSpace(shape.Data3))
+                        bool linkFound = false;
+
+                        // If any DataConnection objects are defined, assume a link exists.
+                        // Detailed matching is omitted because DataConnection does not expose a Name property.
+                        if (diagram.DataConnections != null && diagram.DataConnections.Count > 0)
                         {
-                            // Here we assume the link is broken (e.g., the referenced record set is missing).
-                            // Report the shape information.
-                            hasBrokenLinks = true;
-                            Console.WriteLine("Broken data link detected:");
-                            Console.WriteLine($"  Page Name : {page.Name}");
-                            Console.WriteLine($"  Shape ID  : {shape.ID}");
-                            Console.WriteLine($"  Shape Name: {shape.Name}");
-                            Console.WriteLine($"  Data1     : {shape.Data1}");
-                            Console.WriteLine($"  Data2     : {shape.Data2}");
-                            Console.WriteLine($"  Data3     : {shape.Data3}");
-                            Console.WriteLine();
+                            linkFound = true;
+                        }
+
+                        // If no matching connection is found, report the shape as having a broken link
+                        if (!linkFound)
+                        {
+                            anyBroken = true;
+                            Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, NameU: {shape.NameU}, Data1: {shape.Data1}");
                         }
                     }
                 }
-
-                if (!hasBrokenLinks)
-                {
-                    Console.WriteLine("No shapes with broken data links were found.");
-                }
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
+
+            if (!anyBroken)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.WriteLine("No broken data links found.");
             }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

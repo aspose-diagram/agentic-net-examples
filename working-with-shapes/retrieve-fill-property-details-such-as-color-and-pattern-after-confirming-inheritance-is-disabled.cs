@@ -1,52 +1,57 @@
 using System;
-using System.IO;
+using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (uses the provided load rule)
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
-
-            // Choose a shape to inspect – here we take the first shape on the first page
-            Aspose.Diagram.Page page = diagram.Pages[0];
-            Aspose.Diagram.Shape shape = page.Shapes[0];
-
-            // Verify that the shape does NOT inherit fill formatting from a style or master shape
-            // Inheritance is considered disabled when the shape's FillStyle is null
-            if (shape.FillStyle == null)
+            try
             {
-                // Retrieve fill details from the shape's own Fill object
-                Aspose.Diagram.Fill fill = shape.Fill;
 
-                // Foreground (stroke) color
-                string foreColor = fill.FillForegnd?.Value?.ToString() ?? "None";
+                // Path to the source Visio file
+                string inputPath = "sample.vsdx";
 
-                // Background color
-                string backColor = fill.FillBkgnd?.Value?.ToString() ?? "None";
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Fill pattern (integer enum value)
-                int? pattern = fill.FillPattern?.Value;
+                // Access the first page
+                Page page = diagram.Pages[0];
 
-                // Output the retrieved values (replace with your own handling as needed)
-                System.Console.WriteLine($"Foreground Color: {foreColor}");
-                System.Console.WriteLine($"Background Color: {backColor}");
-                System.Console.WriteLine($"Fill Pattern: {(pattern.HasValue ? pattern.Value.ToString() : "None")}");
+                // Get the first shape on the page
+                Shape shape = page.Shapes[0];
+
+                // Check if fill inheritance is disabled.
+                // Inheritance is considered disabled when the local fill pattern differs from the inherited one.
+                bool inheritanceDisabled = shape.Fill.FillPattern.Value != shape.InheritFill.FillPattern.Value;
+
+                if (!inheritanceDisabled)
+                {
+                    // Disable inheritance by assigning explicit fill values.
+                    // Example: solid fill (pattern 1) with red foreground and green background.
+                    shape.Fill.FillPattern.Value = 1;               // Solid fill
+                    shape.Fill.FillForegnd.Value = "#FF0000";       // Red foreground
+                    shape.Fill.FillBkgnd.Value = "#00FF00";         // Green background
+                }
+
+                // Retrieve fill details
+                string foregroundColor = shape.Fill.FillForegnd.Value;
+                string backgroundColor = shape.Fill.FillBkgnd.Value;
+                int fillPattern = shape.Fill.FillPattern.Value;
+
+                // Output the fill properties
+                Console.WriteLine("Fill Inheritance Disabled: " + inheritanceDisabled);
+                Console.WriteLine("Foreground Color: " + foregroundColor);
+                Console.WriteLine("Background Color: " + backgroundColor);
+                Console.WriteLine("Fill Pattern (numeric code): " + fillPattern);
+
+                // Save the modified diagram to a new file
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-            else
+            catch (System.IO.FileNotFoundException ex)
             {
-                System.Console.WriteLine("Shape inherits fill formatting; inheritance is enabled.");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // No saving required – only reading values (uses the provided lifecycle rules)
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

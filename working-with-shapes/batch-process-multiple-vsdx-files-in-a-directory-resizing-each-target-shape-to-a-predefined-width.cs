@@ -5,53 +5,54 @@ using Aspose.Diagram.Saving;
 
 class BatchResizeShapes
 {
+    // Predefined width in inches for the target shapes
+    const double TargetWidthInches = 2.0;
+
+    // Name (or universal name) of the shape to resize
+    const string TargetShapeName = "MyTargetShape";
+
     static void Main()
     {
         try
         {
 
-            // Folder containing the source VSDX files
-            string inputFolder = @"C:\InputVsdx";
-            // Folder where the modified files will be saved
-            string outputFolder = @"C:\OutputVsdx";
+            // Directory containing the source VSDX files
+            string sourceDirectory = @"C:\Visio\Source";
+
+            // Directory where the modified files will be saved
+            string outputDirectory = @"C:\Visio\Processed";
 
             // Ensure the output directory exists
-            Directory.CreateDirectory(outputFolder);
+            Directory.CreateDirectory(outputDirectory);
 
-            // Width (in inches) to set for each target shape
-            double targetWidth = 2.0;
-
-            // Name (or universal name) of the shape to resize
-            string targetShapeName = "MyShape";
-
-            // Process every VSDX file in the input directory
-            foreach (string filePath in Directory.GetFiles(inputFolder, "*.vsdx"))
+            // Process each VSDX file in the source directory
+            foreach (string filePath in Directory.GetFiles(sourceDirectory, "*.vsdx"))
             {
-                // Load the diagram using the provided constructor
-                Diagram diagram = new Diagram(filePath);
-
-                // Iterate through all pages and their shapes
-                foreach (Page page in diagram.Pages)
+                // Load the diagram using the constructor that accepts a file path
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through all pages in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Identify the shape by Name or NameU
-                        if (shape.Name == targetShapeName || shape.NameU == targetShapeName)
+                        // Iterate through all shapes on the current page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Resize the shape to the predefined width
-                            shape.SetWidth(targetWidth);
+                            // Check if the shape matches the target name (Name or NameU)
+                            if (string.Equals(shape.Name, TargetShapeName, StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(shape.NameU, TargetShapeName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Resize the shape to the predefined width (height remains unchanged)
+                                shape.SetWidth(TargetWidthInches);
+                            }
                         }
                     }
+
+                    // Build the output file path (same file name, different folder)
+                    string outputPath = Path.Combine(outputDirectory, Path.GetFileName(filePath));
+
+                    // Save the modified diagram back to VSDX format using the Save method
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-
-                // Build the output file path (overwrite with same name)
-                string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-
-                // Save the modified diagram using the provided Save method
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Release resources
-                diagram.Dispose();
             }
 
         }

@@ -1,56 +1,55 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output_customized.vsdx";
-
-                // Load the diagram from file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Process shapes on the first page (index 0)
-                if (diagram.Pages.Count > 0)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    var page = diagram.Pages[0];
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    // Read inherited fill properties
+                    string inheritedForeColor = shape.InheritFill.FillForegnd.Value;
+                    string inheritedBackColor = shape.InheritFill.FillBkgnd.Value;
+                    int inheritedPattern = shape.InheritFill.FillPattern.Value;
 
-                        // Read inherited fill properties
-                        string inheritedFore = shape.InheritFill.FillForegnd.Value;
-                        string inheritedBack = shape.InheritFill.FillBkgnd.Value;
-                        int inheritedPattern = shape.InheritFill.FillPattern.Value;
+                    Console.WriteLine($"Shape ID {shape.ID} inherited fill - Foreground: {inheritedForeColor}, Background: {inheritedBackColor}, Pattern: {inheritedPattern}");
 
-                        // Example: Log inherited values (could be replaced with any logic)
-                        Console.WriteLine($"Shape ID {shape.ID}: Inherited Foreground = {inheritedFore}, Background = {inheritedBack}, Pattern = {inheritedPattern}");
-
-                        // Customize the fill based on inherited values
-                        // Here we simply set a solid red foreground and keep the background unchanged
-                        shape.Fill.FillPattern.Value = 1; // Solid fill pattern
-                        shape.Fill.FillForegnd.Value = "#FF0000"; // Red foreground
-                        // Optionally modify background if needed
-                        // shape.Fill.FillBkgnd.Value = "#FFFFFF"; // White background
-                    }
+                    // Customize the shape's fill:
+                    // 1. Set a solid fill pattern (value 1)
+                    // 2. Assign new foreground and background colors
+                    shape.Fill.FillPattern.Value = 1;               // Solid fill
+                    shape.Fill.FillForegnd.Value = "#00FF00";       // Green foreground
+                    shape.Fill.FillBkgnd.Value = "#0000FF";         // Blue background
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

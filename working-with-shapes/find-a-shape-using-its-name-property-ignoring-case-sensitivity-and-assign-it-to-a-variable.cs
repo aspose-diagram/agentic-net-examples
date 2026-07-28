@@ -1,47 +1,33 @@
 using System.IO;
 using System;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram (adjust the file path as needed)
+            // Load the Visio diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Name of the shape to locate (case‑insensitive)
+            // Name of the shape to find (case‑insensitive)
             string targetName = "MyShape";
 
-            // Variable to hold the found shape
-            Shape foundShape = null;
+            // Search the first page (adjust index if needed) for a shape whose Name matches ignoring case
+            Shape foundShape = diagram.Pages[0].Shapes
+                .FirstOrDefault(s => string.Equals(s.Name, targetName, StringComparison.OrdinalIgnoreCase));
 
-            // Search through all pages and their shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Name != null && 
-                        string.Equals(shape.Name, targetName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        foundShape = shape;
-                        break; // Exit inner loop once found
-                    }
-                }
-                if (foundShape != null)
-                    break; // Exit outer loop if shape is already found
-            }
-
-            // Report the result
+            // foundShape now holds the matching shape or null if not found
             if (foundShape != null)
             {
-                Console.WriteLine($"Shape found: ID = {foundShape.ID}, Name = {foundShape.Name}");
+                // Shape was found – you can work with foundShape here
             }
             else
             {
-                Console.WriteLine("Shape not found.");
+                // No shape with the specified name exists (ignoring case)
             }
 
         }

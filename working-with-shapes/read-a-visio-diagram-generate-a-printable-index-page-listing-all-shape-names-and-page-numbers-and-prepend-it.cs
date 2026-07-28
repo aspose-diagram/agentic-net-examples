@@ -11,54 +11,54 @@ class VisioIndexGenerator
         {
 
             // Paths to the source and destination Visio files
-            const string inputPath = "input.vsdx";
-            const string outputPath = "output.vsdx";
+            string sourcePath = "input.vsdx";
+            string destinationPath = "output.vsdx";
 
-            // Load the existing diagram
-            using (var diagram = new Diagram(inputPath))
+            // Load the existing Visio diagram
+            using (Diagram diagram = new Diagram(sourcePath))
             {
-                // Create a new page that will hold the index
-                var indexPage = new Page();
+                // Create a new page that will serve as the index
+                Page indexPage = new Page();
                 indexPage.Name = "Index";
 
-                // Add the index page to the document and move it to the first position
+                // Add the index page to the document
                 diagram.Pages.Add(indexPage);
-                indexPage.MoveTo(0); // ensures the index page is the first page
 
-                // Prepare layout parameters for the index entries
-                double startX = 1.0;          // inches from the left edge
-                double startY = 1.0;          // inches from the top edge
-                double lineHeight = 0.25;     // vertical spacing between entries
-                double entryWidth = 5.0;      // width of the text shape
-                double entryHeight = 0.2;     // height of the text shape
+                // Move the newly added page to the first position (prepend)
+                // Page indices are zero‑based; MoveTo(0) places it at the front
+                indexPage.MoveTo(0);
 
-                double currentY = startY;
+                // Add a title text shape to the index page
+                // Parameters: pinX, pinY, width, height, text
+                indexPage.AddText(1.0, 10.0, 5.0, 0.5, "Index of Shapes");
 
-                // Iterate through all pages (skip the newly added index page)
-                for (int p = 1; p < diagram.Pages.Count; p++) // pages are 0‑based; index page is at 0
+                // Vertical offset for subsequent entries
+                double currentY = 9.0;
+                double lineHeight = 0.4;
+                double startX = 1.0;
+
+                // Iterate through all pages and their shapes to build the index
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    var page = diagram.Pages[p];
-                    string pageName = page.Name;
-
-                    // Iterate through all shapes on the current page
+                    Page page = diagram.Pages[pageIndex];
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the shape's universal name; fallback to ID if name is empty
-                        string shapeName = !string.IsNullOrEmpty(shape.NameU) ? shape.NameU : $"Shape_{shape.ID}";
+                        // Retrieve the shape's name (use NameU for universal name)
+                        string shapeName = shape.NameU;
 
-                        // Build the index line: "ShapeName - Page PageName"
-                        string entryText = $"{shapeName} - Page {pageName}";
+                        // Compose the index line: "ShapeName - Page N"
+                        string line = $"{shapeName} - Page {pageIndex + 1}";
 
-                        // Add a text shape to the index page
-                        indexPage.AddText(startX, currentY, entryWidth, entryHeight, entryText);
+                        // Add the line as a text shape on the index page
+                        indexPage.AddText(startX, currentY, 5.0, lineHeight, line);
 
-                        // Move to the next line
-                        currentY += lineHeight;
+                        // Move down for the next entry
+                        currentY -= lineHeight;
                     }
                 }
 
                 // Save the modified diagram back to a file (VDX format)
-                diagram.Save(outputPath, SaveFileFormat.Vdx);
+                diagram.Save(destinationPath, SaveFileFormat.Vdx);
             }
 
         }

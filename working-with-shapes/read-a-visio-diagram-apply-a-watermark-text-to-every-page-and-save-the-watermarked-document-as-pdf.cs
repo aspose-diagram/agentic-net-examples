@@ -9,40 +9,49 @@ class Program
             try
             {
 
-                // Input Visio file path
+                // Input Visio file path (you can modify or pass via command line)
                 string inputPath = "input.vsdx";
                 // Output PDF file path
-                string outputPath = "output.pdf";
+                string outputPdfPath = "output.pdf";
 
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through each page and add a watermark text
+                // Watermark settings
+                string watermarkText = "CONFIDENTIAL";
+                string fontName = "Calibri";
+                string fontColor = "#A0A0A0"; // light gray
+                double fontSizeInPoints = 72; // 1 inch (72 points)
+                double fontSizeInInches = fontSizeInPoints / 72.0;
+
+                // Apply watermark to each page
                 foreach (Page page in diagram.Pages)
                 {
                     // Retrieve page dimensions (in inches)
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Center position for the watermark
+                    // Position the watermark at the center of the page
                     double pinX = pageWidth / 2.0;
                     double pinY = pageHeight / 2.0;
 
-                    // Add watermark text covering the full page
-                    // Font size is specified in inches (e.g., 0.5 inches ≈ 36 points)
-                    page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                 "CONFIDENTIAL",          // watermark text
-                                 "Arial",                // font name
-                                 "#C0C0C0",              // light gray color in hex
-                                 0.5);                   // font size in inches
+                    // Use the full page size for the text box so the text can be centered
+                    double textBoxWidth = pageWidth;
+                    double textBoxHeight = pageHeight;
+
+                    // Add the watermark text shape
+                    // AddText(pinX, pinY, width, height, text, fontName, fontColor, fontSize)
+                    page.AddText(pinX, pinY, textBoxWidth, textBoxHeight, watermarkText, fontName, fontColor, fontSizeInInches);
                 }
 
-                // Configure PDF save options
+                // Prepare PDF save options
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
+                pdfOptions.DefaultFont = "Arial"; // fallback font if needed
 
-                // Save the diagram as a PDF with the watermarks applied
-                diagram.Save(outputPath, pdfOptions);
+                // Save the diagram as PDF
+                diagram.Save(outputPdfPath, pdfOptions);
+
+                Console.WriteLine($"Watermarked PDF saved to: {outputPdfPath}");
 
             }
             catch (System.IO.FileNotFoundException ex)

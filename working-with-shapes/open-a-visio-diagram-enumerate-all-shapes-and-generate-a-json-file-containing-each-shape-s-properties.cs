@@ -1,12 +1,12 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
 namespace VisioShapeExport
 {
-    // DTO to hold shape information for JSON serialization
+    // Simple DTO to hold shape information for JSON serialization
     public class ShapeInfo
     {
         public long Id { get; set; }
@@ -18,37 +18,47 @@ namespace VisioShapeExport
         public double PinY { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }
+        public double Angle { get; set; }
         public string Text { get; set; }
-        public bool IsDeleted { get; set; }
     }
 
     public class Program
     {
         public static void Main(string[] args)
         {
-            // Validate arguments
+            // Expect two arguments: input Visio file path and output JSON file path
             if (args.Length < 2)
             {
-                Console.WriteLine("Usage: VisioShapeExport <inputVisioFile> <outputJsonFile>");
+                Console.WriteLine("Usage: VisioShapeExport <inputVisioPath> <outputJsonPath>");
                 return;
             }
 
             string inputPath = args[0];
             string outputPath = args[1];
 
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            if (!File.Exists(inputPath))
             {
-                var shapesList = new List<ShapeInfo>();
+                Console.WriteLine($"Error: Input file not found: {inputPath}");
+                return;
+            }
 
-                // Iterate through all pages
+            try
+            {
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Collect shape information from all pages
+                List<ShapeInfo> shapesInfo = new List<ShapeInfo>();
+
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Gather required properties
-                        var info = new ShapeInfo
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        ShapeInfo info = new ShapeInfo
                         {
                             Id = shape.ID,
                             Name = shape.Name,
@@ -59,21 +69,25 @@ namespace VisioShapeExport
                             PinY = shape.XForm.PinY.Value,
                             Width = shape.XForm.Width.Value,
                             Height = shape.XForm.Height.Value,
-                            Text = shape.Text.Value.Text,
-                            IsDeleted = shape.Del == BOOL.True
+                            Angle = shape.XForm.Angle.Value,
+                            Text = shape.Text.Value.Text
                         };
 
-                        shapesList.Add(info);
+                        shapesInfo.Add(info);
                     }
                 }
 
                 // Serialize the list to JSON with indentation
-                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                string json = JsonSerializer.Serialize(shapesList, jsonOptions);
+                string json = JsonSerializer.Serialize(shapesInfo, new JsonSerializerOptions { WriteIndented = true });
 
                 // Write JSON to the specified output file
                 File.WriteAllText(outputPath, json);
-                Console.WriteLine($"Export completed. JSON saved to: {outputPath}");
+
+                Console.WriteLine($"Successfully exported {shapesInfo.Count} shapes to JSON file: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
             }
         }
     }

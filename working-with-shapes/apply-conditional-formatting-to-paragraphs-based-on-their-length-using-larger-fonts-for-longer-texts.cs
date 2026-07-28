@@ -1,90 +1,61 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Skip shapes without text
+                    string fullText = shape.Text.Value.Text;
+                    if (string.IsNullOrWhiteSpace(fullText))
+                        continue;
+
+                    // Split the shape's text into paragraphs (lines)
+                    string[] paragraphs = fullText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+                    // Clear any existing character formatting
+                    shape.Chars.Clear();
+
+                    // Apply font size based on paragraph length
+                    int charIndex = 0;
+                    foreach (string para in paragraphs)
                     {
-                        // Ensure the shape contains text
-                        if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
-                        {
-                            // Get the full plain text of the shape
-                            string fullText = shape.Text.Value.Text;
+                        int length = para.Length;
 
-                            // Split the text into paragraphs (lines)
-                            string[] paragraphs = fullText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                        // Base font size 12pt, increase 1pt for each 10 characters
+                        double fontSizePoints = 12 + (length / 10);
+                        double fontSizeInches = fontSizePoints / 72.0; // Aspose.Diagram uses inches for size
 
-                            // Clear existing text runs and character formatting
-                            shape.Text.Value.Clear();
-                            shape.Chars.Clear();
+                        Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+                        ch.IX = charIndex++;                     // character run index
+                        ch.FontName.Value = "Calibri";           // choose a common font
+                        ch.Size.Value = fontSizeInches;          // set calculated size
+                        ch.Color.Value = "#000000";              // black text
 
-                            int charPos = 0; // Tracks the character index within the shape's text
-
-                            for (int i = 0; i < paragraphs.Length; i++)
-                            {
-                                string paragraph = paragraphs[i];
-
-                                // Determine font size based on paragraph length
-                                // Base size 10pt, increase 2pt for each 20 characters
-                                double baseSizePt = 10.0;
-                                double sizePt = baseSizePt + (paragraph.Length / 20) * 2.0;
-                                double sizeInches = sizePt / 72.0; // Convert points to inches
-
-                                // Insert a character position marker (Cp) at the start of the paragraph
-                                shape.Text.Value.Add(new Cp(charPos));
-
-                                // Add the paragraph text as a Txt run
-                                shape.Text.Value.Add(new Txt(paragraph));
-
-                                // If not the last paragraph, add a line break
-                                if (i < paragraphs.Length - 1)
-                                {
-                                    shape.Text.Value.Add(new Txt("\n"));
-                                }
-
-                                // Create a Char object to apply font size (and optional font name) to this paragraph
-                                Aspose.Diagram.Char ch = new Aspose.Diagram.Char
-                                {
-                                    IX = charPos,                     // Index of the first character of the paragraph
-                                    Size = { Value = sizeInches },    // Font size in inches
-                                    FontName = { Value = "Calibri" } // Example font name
-                                };
-
-                                // Add the Char formatting to the shape
-                                shape.Chars.Add(ch);
-
-                                // Update the character position for the next paragraph
-                                // +1 accounts for the line break added (if any)
-                                charPos += paragraph.Length + (i < paragraphs.Length - 1 ? 1 : 0);
-                            }
-
-                            // Refresh shape data to apply changes
-                            shape.RefreshData();
-                        }
+                        shape.Chars.Add(ch);
                     }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

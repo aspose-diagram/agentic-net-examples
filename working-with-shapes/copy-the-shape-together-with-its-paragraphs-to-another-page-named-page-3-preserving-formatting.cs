@@ -10,66 +10,81 @@ class Program
             {
 
                 // Load the source Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
                 // -------------------------------------------------
-                // 1. Locate the shape to copy (first shape on first page)
+                // 1. Ensure the target page "Page-3" exists
                 // -------------------------------------------------
-                Page sourcePage = diagram.Pages[0];
-                Shape sourceShape = null;
-                foreach (Shape shp in sourcePage.Shapes)
-                {
-                    sourceShape = shp;
-                    break; // take the first shape found
-                }
+                string targetPageName = "Page-3";
+                Page targetPage = diagram.Pages.GetPage(targetPageName);
 
-                if (sourceShape == null)
-                {
-                    throw new Exception("No shape found on the source page.");
-                }
-
-                // -------------------------------------------------
-                // 2. Ensure a target page named "Page-3" exists
-                // -------------------------------------------------
-                Page targetPage = diagram.Pages.GetPage("Page-3");
                 if (targetPage == null)
                 {
                     // Determine a new unique page ID
                     int maxId = 0;
-                    foreach (Page pg in diagram.Pages)
+                    foreach (Page p in diagram.Pages)
                     {
-                        if (pg.ID > maxId)
-                            maxId = pg.ID;
+                        if (p.ID > maxId)
+                            maxId = p.ID;
                     }
 
                     // Create and add the new page
-                    targetPage = new Page();
-                    targetPage.ID = maxId + 1;
-                    targetPage.Name = "Page-3";
+                    targetPage = new Page(maxId + 1);
+                    targetPage.Name = targetPageName;
                     diagram.Pages.Add(targetPage);
                 }
 
                 // -------------------------------------------------
-                // 3. Add a new shape on the target page using the same master as the source shape
+                // 2. Locate the shape to copy (example: first shape on the first page)
                 // -------------------------------------------------
-                string masterName = sourceShape.Master?.Name ?? throw new Exception("Source shape has no master.");
+                Page sourcePage = diagram.Pages[0]; // assuming at least one page exists
+                if (sourcePage.Shapes.Count == 0)
+                {
+                    Console.WriteLine("No shapes found on the source page.");
+                    return;
+                }
+
+                // Get the first shape as the source shape
+                Shape sourceShape = sourcePage.Shapes.GetShape(0);
+
+                // -------------------------------------------------
+                // 3. Add a new shape on the target page using the same master and position
+                // -------------------------------------------------
+                // Retrieve master name (must exist)
+                if (sourceShape.Master == null)
+                {
+                    Console.WriteLine("Source shape does not have an associated master.");
+                    return;
+                }
+
+                string masterName = sourceShape.Master.Name;
+
+                // Add shape on target page at the same PinX/PinY coordinates
                 long newShapeId = targetPage.AddShape(
-                    sourceShape.XForm.PinX.Value,   // preserve X position
-                    sourceShape.XForm.PinY.Value,   // preserve Y position
-                    masterName);                    // master name
+                    sourceShape.XForm.PinX.Value,
+                    sourceShape.XForm.PinY.Value,
+                    masterName);
 
                 // Retrieve the newly added shape instance
                 Shape newShape = targetPage.Shapes.GetShape(newShapeId);
 
                 // -------------------------------------------------
-                // 4. Copy all shape data (including text, paragraphs, formatting) from source to target
+                // 4. Copy formatting, text, and paragraphs from source to new shape
                 // -------------------------------------------------
+                // The Copy method copies most of the shape's properties, including paragraphs.
                 sourceShape.Copy(newShape);
 
                 // -------------------------------------------------
                 // 5. Save the modified diagram
                 // -------------------------------------------------
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                // Clean up
+                diagram.Dispose();
+
+                Console.WriteLine("Shape copied to Page-3 and diagram saved successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

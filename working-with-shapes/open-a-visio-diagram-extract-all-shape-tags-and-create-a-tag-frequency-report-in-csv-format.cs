@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and output CSV file path.
-            if (args.Length != 2)
+            // Expect two arguments: input Visio file path and output CSV file path
+            if (args.Length < 2)
             {
                 Console.WriteLine("Usage: VisioTagFrequencyReport <inputVisioPath> <outputCsvPath>");
                 return;
@@ -17,57 +18,55 @@ class Program
             string inputPath = args[0];
             string outputCsvPath = args[1];
 
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Dictionary to hold tag (custom property) name frequencies.
-            Dictionary<string, int> tagFrequencies = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-            // Iterate through all pages.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the page.
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Iterate through all custom properties (Props) of the shape.
-                    foreach (Prop prop in shape.Props)
-                    {
-                        string tagName = prop.Name ?? string.Empty;
+                // Dictionary to hold tag (custom property) name frequencies
+                Dictionary<string, int> tagFrequencies = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-                        if (tagFrequencies.ContainsKey(tagName))
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Iterate through custom properties (Props) of the shape
+                        foreach (Prop prop in shape.Props)
                         {
-                            tagFrequencies[tagName] += 1;
-                        }
-                        else
-                        {
-                            tagFrequencies[tagName] = 1;
+                            string tagName = prop.Name ?? string.Empty;
+
+                            if (tagFrequencies.ContainsKey(tagName))
+                            {
+                                tagFrequencies[tagName]++;
+                            }
+                            else
+                            {
+                                tagFrequencies[tagName] = 1;
+                            }
                         }
                     }
                 }
-            }
 
-            // Write the frequency report to a CSV file.
-            try
-            {
-                using (StreamWriter writer = new StreamWriter(outputCsvPath, false))
+                // Build CSV content
+                StringBuilder csvBuilder = new StringBuilder();
+                csvBuilder.AppendLine("Tag,Count"); // Header
+
+                foreach (KeyValuePair<string, int> entry in tagFrequencies)
                 {
-                    // Header row.
-                    writer.WriteLine("TagName,Frequency");
-
-                    // Data rows.
-                    foreach (KeyValuePair<string, int> entry in tagFrequencies)
-                    {
-                        // Escape commas in tag names if necessary.
-                        string escapedTagName = entry.Key.Contains(",") ? $"\"{entry.Key}\"" : entry.Key;
-                        writer.WriteLine($"{escapedTagName},{entry.Value}");
-                    }
+                    // Escape commas in tag names if necessary
+                    string escapedTag = entry.Key.Contains(",") ? $"\"{entry.Key}\"" : entry.Key;
+                    csvBuilder.AppendLine($"{escapedTag},{entry.Value}");
                 }
 
-                Console.WriteLine($"Tag frequency report generated successfully at: {outputCsvPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error writing CSV file: {ex.Message}");
+                // Write CSV to file
+                try
+                {
+                    File.WriteAllText(outputCsvPath, csvBuilder.ToString(), Encoding.UTF8);
+                    Console.WriteLine($"Tag frequency report generated successfully at: {outputCsvPath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error writing CSV file: {ex.Message}");
+                }
             }
         }
     }

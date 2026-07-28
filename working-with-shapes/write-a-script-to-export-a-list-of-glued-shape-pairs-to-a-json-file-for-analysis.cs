@@ -6,13 +6,11 @@ using Aspose.Diagram;
 
 namespace GluedShapesExport
 {
-    // Simple DTO to hold a glued shape pair
+    // Simple DTO to hold a pair of glued shape identifiers
     public class GluedPair
     {
-        public long FromShapeId { get; set; }
-        public string FromShapeName { get; set; }
-        public long ToShapeId { get; set; }
-        public string ToShapeName { get; set; }
+        public long ShapeId { get; set; }
+        public long GluedShapeId { get; set; }
     }
 
     class Program
@@ -22,66 +20,52 @@ namespace GluedShapesExport
             try
             {
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
+                // Input Visio file path (adjust as needed)
+                string visioFilePath = @"C:\Diagrams\sample.vsdx";
 
-                // Load the diagram using Aspose.Diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Output JSON file path
+                string jsonOutputPath = @"C:\Diagrams\glued_shapes.json";
 
-                // Collection to store unique glued pairs
-                var pairs = new List<GluedPair>();
-                var seenPairs = new HashSet<string>(); // key format: "minId_maxId"
+                // Load the Visio diagram using Aspose.Diagram (lifecycle rule)
+                Diagram diagram = new Diagram(visioFilePath);
 
-                // Iterate through all pages and shapes
+                // List to collect all glued shape pairs
+                List<GluedPair> gluedPairs = new List<GluedPair>();
+
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through each shape on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve IDs of all shapes glued to the current shape (both 1‑D and 2‑D)
-                        long[] gluedIds = shape.GluedShapes(
-                            GluedShapesFlags.GluedShapesAll2D,   // return all glued shapes
+                        // Retrieve IDs of shapes glued to the current shape.
+                        // Using GluedShapesAll2D to capture all 2‑D glue relationships.
+                        long[] gluedShapeIds = shape.GluedShapes(
+                            GluedShapesFlags.GluedShapesAll2D,   // flag
                             null,                               // no category filter
                             null);                              // no additional shape filter
 
-                        if (gluedIds == null) continue;
-
-                        foreach (long gluedId in gluedIds)
+                        // Record each glue relationship as a pair (shape -> gluedShape)
+                        foreach (long gluedId in gluedShapeIds)
                         {
-                            // Avoid self‑gluing
-                            if (gluedId == shape.ID) continue;
-
-                            // Create a deterministic key to prevent duplicate entries (A‑B and B‑A)
-                            long minId = Math.Min(shape.ID, gluedId);
-                            long maxId = Math.Max(shape.ID, gluedId);
-                            string pairKey = $"{minId}_{maxId}";
-
-                            if (seenPairs.Contains(pairKey)) continue;
-                            seenPairs.Add(pairKey);
-
-                            // Find the glued shape object (search across all pages)
-                            Shape gluedShape = FindShapeById(diagram, gluedId);
-                            if (gluedShape == null) continue; // safety check
-
-                            // Add the pair to the result list
-                            pairs.Add(new GluedPair
+                            gluedPairs.Add(new GluedPair
                             {
-                                FromShapeId = shape.ID,
-                                FromShapeName = shape.Name,
-                                ToShapeId = gluedShape.ID,
-                                ToShapeName = gluedShape.Name
+                                ShapeId = shape.ID,
+                                GluedShapeId = gluedId
                             });
                         }
                     }
                 }
 
-                // Serialize the list to JSON with indentation for readability
-                string json = JsonSerializer.Serialize(pairs, new JsonSerializerOptions { WriteIndented = true });
+                // Serialize the list of pairs to JSON with indentation for readability
+                string json = JsonSerializer.Serialize(
+                    gluedPairs,
+                    new JsonSerializerOptions { WriteIndented = true });
 
-                // Write JSON to file
-                string outputPath = "glued_pairs.json";
-                File.WriteAllText(outputPath, json);
+                // Write JSON to the specified file (save rule)
+                File.WriteAllText(jsonOutputPath, json);
 
-                Console.WriteLine($"Exported {pairs.Count} glued shape pairs to '{outputPath}'.");
+                Console.WriteLine($"Exported {gluedPairs.Count} glued shape pairs to '{jsonOutputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -89,19 +73,5 @@ namespace GluedShapesExport
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
-
-        // Helper method to locate a shape by its ID across all pages
-        private static Shape FindShapeById(Diagram diagram, long id)
-        {
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.ID == id)
-                        return shape;
-                }
-            }
-            return null;
-        }
     }
 }

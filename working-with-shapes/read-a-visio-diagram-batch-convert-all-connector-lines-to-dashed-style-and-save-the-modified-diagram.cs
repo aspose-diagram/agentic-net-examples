@@ -5,35 +5,37 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and output Visio file path.
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: VisioConnectorStyler <inputFilePath> <outputFilePath>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes.
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify connector shapes (1‑D shapes) and set their line pattern to dashed.
-                    if (shape.OneD)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                        // Identify connector shapes (1‑D shapes)
+                        if (shape.OneD)
+                        {
+                            // Set the line pattern to dashed
+                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                        }
                     }
                 }
+
+                // Save the modified diagram in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram. Using VSDX format as an example.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved with dashed connectors to: {outputPath}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }

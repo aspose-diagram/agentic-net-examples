@@ -11,26 +11,29 @@ class Program
                 // Create a new empty diagram
                 Diagram diagram = new Diagram();
 
-                // Access the first (default) page
+                // Get the first (and only) page of the diagram
                 Page page = diagram.Pages[0];
 
-                // Add a rectangle shape to the page
-                // Parameters: pinX, pinY, width, height, master name
-                long shapeId = page.AddShape(2.0, 2.0, 1.0, 0.5, "Rectangle");
+                // Add a rectangle shape to the page at position (2,2) inches
+                // The AddShape method returns the shape's unique ID (long)
+                long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
 
-                // Retrieve the shape object using its ID
+                // Retrieve the shape instance using the returned ID
                 Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Apply a scaling factor of 1.2 to width and height
-                double scaledWidth = shape.XForm.Width.Value * 1.2;
-                double scaledHeight = shape.XForm.Height.Value * 1.2;
+                // Apply a scaling factor of 1.2 to both width and height
+                double scaleFactor = 1.2;
 
-                // Use the SetWidth and SetHeight methods as required
-                shape.SetWidth(scaledWidth);
-                shape.SetHeight(scaledHeight);
+                // Current dimensions are stored in the XForm cell collection
+                double currentWidth = shape.XForm.Width.Value;
+                double currentHeight = shape.XForm.Height.Value;
 
-                // Save the modified diagram
-                diagram.Save("ScaledShapeOutput.vsdx", SaveFileFormat.Vsdx);
+                // Set the new dimensions using the SetWidth and SetHeight methods
+                shape.SetWidth(currentWidth * scaleFactor);
+                shape.SetHeight(currentHeight * scaleFactor);
+
+                // Save the modified diagram to a VSDX file
+                diagram.Save("scaled.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (Aspose.Diagram.DiagramException ex)

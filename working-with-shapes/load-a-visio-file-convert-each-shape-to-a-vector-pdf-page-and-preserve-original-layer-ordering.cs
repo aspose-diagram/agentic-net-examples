@@ -1,80 +1,44 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+class ShapeToPdfConverter
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Input Visio file path
-            string inputVisioPath = "input.vsdx";
+            // Path to the source Visio file
+            string visioFile = "input.vsdx";
 
-            // Temporary folder to store individual shape PDFs
-            string tempFolder = Path.Combine(Path.GetTempPath(), "ShapePdfExport");
-            Directory.CreateDirectory(tempFolder);
+            // Folder where individual shape PDFs will be saved
+            string outputFolder = "ShapePdfPages";
+            Directory.CreateDirectory(outputFolder);
 
-            // Load the source Visio diagram
-            Diagram sourceDiagram = new Diagram(inputVisioPath);
-
-            // List to keep track of generated shape PDF file paths in order
-            List<string> shapePdfFiles = new List<string>();
-
-            // Iterate pages preserving original order
-            foreach (Page srcPage in sourceDiagram.Pages)
+            // Load the Visio diagram (uses Diagram(string) constructor)
+            using (Diagram diagram = new Diagram(visioFile))
             {
-                // Iterate shapes preserving original order
-                foreach (Aspose.Diagram.Shape srcShape in srcPage.Shapes)
+                // Iterate through each page in the document
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (srcShape.Del == BOOL.True)
-                        continue;
+                    // Shapes are enumerated in the order they appear on the page,
+                    // which preserves the original layer ordering.
+                    int shapeCounter = 0;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Construct a unique PDF file name for the shape
+                        string pdfFile = Path.Combine(
+                            outputFolder,
+                            $"{page.Name}_Shape{shape.ID}_{shapeCounter}.pdf");
 
-                    // Generate a unique file name for the shape PDF
-                    string shapePdfPath = Path.Combine(
-                        tempFolder,
-                        $"Page{srcPage.ID}_Shape{srcShape.ID}.pdf");
+                        // Convert the shape to a vector PDF page (uses Shape.ToPdf(string))
+                        shape.ToPdf(pdfFile);
 
-                    // Export the shape to a vector PDF page
-                    srcShape.ToPdf(shapePdfPath);
-
-                    shapePdfFiles.Add(shapePdfPath);
+                        shapeCounter++;
+                    }
                 }
             }
-
-            // Combine all shape PDFs into a single PDF document
-            // Use fully qualified Aspose.Pdf types to avoid namespace conflicts
-            Aspose.Pdf.Document finalPdf = new Aspose.Pdf.Document();
-
-            foreach (string shapePdfPath in shapePdfFiles)
-            {
-                // Load the individual shape PDF
-                Aspose.Pdf.Document shapeDoc = new Aspose.Pdf.Document(shapePdfPath);
-
-                // Add its first (and only) page to the final document
-                finalPdf.Pages.Add(shapeDoc.Pages[1]);
-            }
-
-            // Save the combined PDF
-            string outputPdfPath = "AllShapes.pdf";
-            finalPdf.Save(outputPdfPath);
-
-            // Cleanup temporary files
-            foreach (string file in shapePdfFiles)
-            {
-                try { File.Delete(file); } catch { /* ignore */ }
-            }
-            try { Directory.Delete(tempFolder, true); } catch { /* ignore */ }
-
-            // Dispose diagrams
-            sourceDiagram.Dispose();
-            finalPdf.Dispose();
-
-            Console.WriteLine($"Export completed. Combined PDF saved to: {outputPdfPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -4,37 +4,39 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input and output file paths (adjust as needed)
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Input and output file paths
+            const string inputPath = "input.vsdx";
+            const string outputPath = "output.vsdx";
 
-            // Area threshold in square inches
+            // Area threshold in square inches (adjust as needed)
             double areaThreshold = 2.0;
 
             // Load the Visio diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages
+                // Iterate over all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    // Iterate over all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip shapes that are marked as deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Calculate shape area (width * height)
+                        // Retrieve shape dimensions
                         double width = shape.XForm.Width.Value;
                         double height = shape.XForm.Height.Value;
+
+                        // Compute shape area
                         double area = width * height;
 
-                        // Apply gradient fill if area exceeds the threshold
+                        // Apply gradient fill if the area exceeds the threshold
                         if (area > areaThreshold)
                         {
                             // Set fill pattern to gradient (value 25)
@@ -43,18 +45,17 @@ class Program
                             // Enable gradient fill
                             shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-                            // Set gradient direction (0 = horizontal, adjust as needed)
+                            // Set gradient direction (0 = left to right)
                             shape.Fill.GradientFill.GradientDir.Value = 0;
 
-                            // Clear any existing gradient stops
+                            // Remove any existing gradient stops
                             shape.Fill.GradientFill.GradientStops.Clear();
 
-                            // Add gradient stop at position 0 (start) with blue color
+                            // Add gradient stops (blue at start, green at end)
                             shape.Fill.GradientFill.GradientStops.Add(
                                 new DoubleValue(0, MeasureConst.NUM),
                                 new ColorValue("#0000FF", MeasureConst.Undefined));
 
-                            // Add gradient stop at position 1 (end) with green color
                             shape.Fill.GradientFill.GradientStops.Add(
                                 new DoubleValue(1, MeasureConst.NUM),
                                 new ColorValue("#00FF00", MeasureConst.Undefined));
@@ -65,6 +66,8 @@ class Program
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine("Gradient fill applied to qualifying shapes.");
 
         }
         catch (System.IO.FileNotFoundException ex)

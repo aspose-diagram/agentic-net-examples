@@ -10,27 +10,32 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram (replace with actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Identify connector shapes (1‑D shapes)
-                    if (shape.OneD)
-                    {
-                        // Set the line jump style to Square for better intersection handling
-                        shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Square;
-                    }
-                }
-            }
+            // Access the first page
+            Page page = diagram.Pages[0];
+
+            // Add two rectangle shapes to the page
+            long shapeId1 = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+            long shapeId2 = diagram.AddShape(5.0, 5.0, "Rectangle", 0);
+
+            // Retrieve the shape objects
+            Shape shape1 = page.Shapes.GetShape(shapeId1);
+            Shape shape2 = page.Shapes.GetShape(shapeId2);
+
+            // Add a dynamic connector shape
+            long connectorId = diagram.AddShape(3.5, 3.5, "Dynamic connector", 0);
+            Shape connector = page.Shapes.GetShape(connectorId);
+
+            // Set the connector's line jump style to Square
+            connector.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Square;
+
+            // (Optional) Connect the shapes using the connector
+            // page.ConnectShapesViaConnector(shapeId1, ConnectionPointPlace.Bottom, shapeId2, ConnectionPointPlace.Top, connectorId);
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

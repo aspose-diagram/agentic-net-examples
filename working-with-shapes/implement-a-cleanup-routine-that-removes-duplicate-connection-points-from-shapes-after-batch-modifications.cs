@@ -1,64 +1,68 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+            // Expect two arguments: input Visio file path and output file path.
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramCleanup <inputFilePath> <outputFilePath>");
+                return;
+            }
 
-        string outputPath = "output_cleaned.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-        try
-        {
+            // Load the diagram.
             Diagram diagram = new Diagram(inputPath);
 
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.Connections != null && shape.Connections.Count > 1)
+                    // Ensure the shape has a Connections collection.
+                    if (shape.Connections == null || shape.Connections.Count <= 1)
+                        continue;
+
+                    // Track unique connection point definitions.
+                    HashSet<string> uniquePoints = new HashSet<string>();
+                    List<int> indicesToRemove = new List<int>();
+
+                    // Examine each connection point.
+                    for (int i = 0; i < shape.Connections.Count; i++)
                     {
-                        var connections = shape.Connections;
-                        var seen = new List<(string X, string Y)>();
-                        var duplicates = new List<Connection>();
+                        Connection conn = shape.Connections[i];
+                        // Build a key based on the X and Y formulas.
+                        string key = $"{conn.X.Ufe.F}|{conn.Y.Ufe.F}";
 
-                        for (int i = 0; i < connections.Count; i++)
+                        if (uniquePoints.Contains(key))
                         {
-                            var conn = connections[i];
-                            string xFormula = conn.X.Ufe.F;
-                            string yFormula = conn.Y.Ufe.F;
-
-                            if (seen.Exists(s => s.X == xFormula && s.Y == yFormula))
-                            {
-                                duplicates.Add(conn);
-                            }
-                            else
-                            {
-                                seen.Add((xFormula, yFormula));
-                            }
+                            // Duplicate found – mark for removal.
+                            indicesToRemove.Add(i);
                         }
-
-                        foreach (var dup in duplicates)
+                        else
                         {
-                            connections.Remove(dup);
+                            uniquePoints.Add(key);
                         }
+                    }
+
+                    // Remove duplicates in reverse order to keep indices valid.
+                    for (int i = indicesToRemove.Count - 1; i >= 0; i--)
+                    {
+                        int index = indicesToRemove[i];
+                        shape.Connections.RemoveAt(index);
                     }
                 }
             }
 
+            // Save the cleaned diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.WriteLine($"Diagram saved after cleanup to: {outputPath}");
         }
     }
-}

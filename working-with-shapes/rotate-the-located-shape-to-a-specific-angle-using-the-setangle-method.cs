@@ -16,14 +16,14 @@ class Program
             // Here we assume the shape has ID = 1 on the first page.
             Shape shape = diagram.Pages[0].Shapes.GetShape(1);
 
-            // Desired rotation angle in degrees.
-            double angleDegrees = 45;
+            // Define the desired rotation angle in degrees.
+            double angleInDegrees = 45;
 
             // Convert degrees to radians because SetAngle expects radians.
-            double angleRadians = angleDegrees * Math.PI / 180.0;
+            double angleInRadians = angleInDegrees * Math.PI / 180.0;
 
-            // Rotate the shape to the specified angle.
-            shape.SetAngle(angleRadians);
+            // Rotate the shape using the SetAngle method.
+            shape.SetAngle(angleInRadians);
 
             // Save the modified diagram (replace with your desired output path).
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);

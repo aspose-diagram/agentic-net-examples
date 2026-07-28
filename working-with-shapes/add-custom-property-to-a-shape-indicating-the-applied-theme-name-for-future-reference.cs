@@ -9,16 +9,24 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access a specific shape (e.g., first shape on the first page)
-            Shape shape = diagram.Pages[0].Shapes[1];
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Example: apply a preset theme to the shape
+                    // shape.PresetTheme = PresetThemeValue.Theme1; // uncomment and set as needed
 
-            // Store the applied theme name in a custom property (using Data1)
-            shape.Data1 = "MyCustomTheme";
+                    // Store the name of the applied theme in a custom property.
+                    // Here we use Data1 (an arbitrary string field) to keep the theme name.
+                    shape.Data1 = "Theme1"; // replace "Theme1" with the actual theme identifier
+                }
+            }
 
-            // Save the modified diagram
+            // Save the modified diagram (replace with your desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

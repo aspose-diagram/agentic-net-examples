@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.Manipulation;
 
 class Program
@@ -10,21 +9,27 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the output Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Use the first page (adjust if needed)
+                // Work with the first page
                 Page page = diagram.Pages[0];
 
-                // Identify a source shape (first non‑connector, non‑deleted shape)
+                // Find a source shape (first non‑connector shape)
                 Shape sourceShape = null;
                 foreach (Shape shp in page.Shapes)
                 {
-                    if (shp.OneD) continue;                 // Skip connectors
-                    if (shp.Del == BOOL.True) continue;     // Skip deleted shapes
-                    sourceShape = shp;
-                    break;
+                    // Exclude 1‑D connector shapes
+                    if (!shp.OneD)
+                    {
+                        sourceShape = shp;
+                        break;
+                    }
                 }
 
                 if (sourceShape == null)
@@ -33,23 +38,29 @@ class Program
                     return;
                 }
 
-                // Find the nearest gluing‑enabled shape (excluding the source shape)
+                // Locate the nearest gluing‑enabled shape (excluding the source)
                 Shape nearestShape = null;
                 double minDistance = double.MaxValue;
 
                 foreach (Shape candidate in page.Shapes)
                 {
-                    if (candidate.ID == sourceShape.ID) continue; // Skip the source itself
-                    if (candidate.Del == BOOL.True) continue;    // Skip deleted shapes
+                    // Skip the source shape itself
+                    if (candidate.ID == sourceShape.ID)
+                        continue;
 
-                    // Check if the shape allows dynamic glue
-                    // GlueTypeValue.AllowDynamicGlue indicates gluing is enabled
+                    // Ensure the shape is not a connector and has gluing enabled
+                    if (candidate.OneD)
+                        continue;
+
+                    if (candidate.Misc == null || candidate.Misc.GlueType == null)
+                        continue;
+
                     if (candidate.Misc.GlueType.Value != GlueTypeValue.AllowDynamicGlue)
                         continue;
 
                     // Compute Euclidean distance between shape centers (PinX, PinY)
-                    double dx = sourceShape.XForm.PinX.Value - candidate.XForm.PinX.Value;
-                    double dy = sourceShape.XForm.PinY.Value - candidate.XForm.PinY.Value;
+                    double dx = candidate.XForm.PinX.Value - sourceShape.XForm.PinX.Value;
+                    double dy = candidate.XForm.PinY.Value - sourceShape.XForm.PinY.Value;
                     double distance = Math.Sqrt(dx * dx + dy * dy);
 
                     if (distance < minDistance)
@@ -65,25 +76,25 @@ class Program
                     return;
                 }
 
-                // Add a dynamic connector shape to the page
-                // Master name for a connector is typically "Dynamic connector"
-                long connectorId = diagram.AddShape(0, 0, "Dynamic connector", 0);
-                Shape connectorShape = page.Shapes.GetShape(connectorId);
+                // Add a dynamic connector shape at the source position
+                long connectorId = page.AddShape(
+                    sourceShape.XForm.PinX.Value,
+                    sourceShape.XForm.PinY.Value,
+                    "Dynamic connector");
 
-                // Connect source shape to the nearest shape using the connector
+                // Connect the source shape to the nearest shape using the connector
                 // Choose connection points (e.g., Bottom of source, Top of target)
                 page.ConnectShapesViaConnector(
                     sourceShape.ID,
                     ConnectionPointPlace.Bottom,
                     nearestShape.ID,
                     ConnectionPointPlace.Top,
-                    connectorShape.ID);
+                    connectorId);
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                Console.WriteLine($"Connector added between shape {sourceShape.ID} and shape {nearestShape.ID}.");
+                Console.WriteLine($"Connector attached between shape {sourceShape.ID} and shape {nearestShape.ID}.");
 
             }
             catch (System.IO.FileNotFoundException ex)

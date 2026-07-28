@@ -9,31 +9,23 @@ class Program
         try
         {
 
-            // Load VSDX binary data into a byte array (replace with actual data source)
-            byte[] vsdxData = File.ReadAllBytes("sample.vsdx");
+            // Load VSDX file bytes (replace with your actual VSDX data source)
+            byte[] vsdxBytes = File.ReadAllBytes("sample.vsdx");
 
-            // Initialize a memory stream with the VSDX data
-            using (MemoryStream ms = new MemoryStream(vsdxData))
+            // Create a memory stream containing the VSDX data
+            using (MemoryStream memoryStream = new MemoryStream(vsdxBytes))
             {
-                try
-                {
-                    // Create Diagram object from the memory stream
-                    Diagram diagram = new Diagram(ms);
+                // Initialize Diagram object from the memory stream
+                Diagram diagram = new Diagram(memoryStream);
 
-                    // Simple validation to confirm parsing succeeded
-                    if (diagram != null && diagram.Pages.Count > 0)
-                    {
-                        Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Diagram loaded, but no pages were found.");
-                    }
-                }
-                catch (Exception ex)
+                // Confirm parsing succeeded by checking that at least one page is present
+                if (diagram.Pages != null && diagram.Pages.Count > 0)
                 {
-                    // If parsing fails, an exception will be thrown
-                    Console.WriteLine("Failed to load diagram: " + ex.Message);
+                    Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
+                }
+                else
+                {
+                    Console.WriteLine("Diagram loaded, but no pages were found.");
                 }
             }
 

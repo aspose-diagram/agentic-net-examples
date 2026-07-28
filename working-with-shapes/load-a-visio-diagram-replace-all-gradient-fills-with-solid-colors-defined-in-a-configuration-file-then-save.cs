@@ -9,77 +9,73 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect three arguments: input Visio file, configuration JSON, output Visio file
-            if (args.Length < 3)
-            {
-                Console.WriteLine("Usage: GradientToSolid <input.vsdx> <config.json> <output.vsdx>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string configPath = args[1];
-            string outputPath = args[2];
-
-            // Load configuration: mapping of shape ID (as string) to solid fill color (hex string)
-            Dictionary<string, string> colorMap = new Dictionary<string, string>();
             try
             {
-                string json = File.ReadAllText(configPath);
-                colorMap = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to read configuration file: {ex.Message}");
-                return;
-            }
 
-            // Load the Visio diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+                // Output Visio file path
+                string outputPath = "output.vsdx";
+                // Configuration file path (JSON: { "shapeId": "#FF0000", ... })
+                string configPath = "config.json";
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Load color configuration
+                Dictionary<string, string> colorMap = LoadColorConfiguration(configPath);
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Check if the shape uses a gradient fill (FillPattern value 25)
-                    if (shape.Fill != null && shape.Fill.FillPattern != null && shape.Fill.FillPattern.Value == 25)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Determine the solid color to apply
-                        string shapeIdKey = shape.ID.ToString();
-                        string solidColor;
-                        if (!colorMap.TryGetValue(shapeIdKey, out solidColor))
-                        {
-                            // Default to white if no mapping is found
-                            solidColor = "#FFFFFF";
-                        }
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Replace gradient with solid fill
-                        shape.Fill.FillPattern.Value = 1; // Solid fill pattern
-                        shape.Fill.FillForegnd.Value = solidColor; // Set solid color
-                        shape.Fill.GradientFill.GradientEnabled.Value = BOOL.False; // Disable gradient
-                        shape.Fill.GradientFill.GradientStops.Clear(); // Remove any gradient stops
+                        // Check if the shape uses a gradient fill (pattern value 25)
+                        if (shape.Fill.FillPattern.Value == 25)
+                        {
+                            string shapeKey = shape.ID.ToString();
+
+                            // Determine the replacement solid color
+                            if (colorMap.TryGetValue(shapeKey, out string solidColor))
+                            {
+                                // Replace gradient with solid fill
+                                shape.Fill.FillPattern.Value = 1; // Solid fill pattern
+                                shape.Fill.FillForegnd.Value = solidColor; // Hex color string
+
+                                // Disable gradient and clear any existing gradient stops
+                                shape.Fill.GradientFill.GradientEnabled.Value = BOOL.False;
+                                shape.Fill.GradientFill.GradientStops.Clear();
+                            }
+                        }
                     }
                 }
-            }
 
-            // Save the modified diagram
-            try
-            {
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
+    }
+
+        // Helper method to read the JSON configuration file into a dictionary
+        private static Dictionary<string, string> LoadColorConfiguration(string configPath)
+        {
+            if (!File.Exists(configPath))
+                throw new FileNotFoundException($"Configuration file not found: {configPath}");
+
+            string jsonContent = File.ReadAllText(configPath);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            return JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent, options)
+                   ?? new Dictionary<string, string>();
         }
     }

@@ -9,25 +9,26 @@ class Program
         try
         {
 
-            // Path to the Visio file
-            string filePath = "input.vsdx";
+            // Path to the Visio file to be loaded
+            string inputPath = "input.vsdx";
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(filePath);
+            // Load the Visio diagram (uses the provided load rule)
+            Diagram diagram = new Diagram(inputPath);
 
-            // Choose the page (e.g., the first page)
+            // Specify the shape ID you want to locate
+            long shapeId = 5; // replace with the actual ID
+
+            // Access the first page (or any specific page)
             Page page = diagram.Pages[0];
 
-            // ID of the shape to locate
-            long shapeId = 5; // replace with the actual shape ID
-
-            // Locate the shape using ShapeCollection.GetShape(long ID)
+            // Locate the shape on the page using GetShape with the shape ID
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Output some information about the found shape
-            Console.WriteLine($"Shape ID: {shape.ID}");
-            Console.WriteLine($"Shape Name: {shape.Name}");
-            Console.WriteLine($"Shape Type: {shape.Type}");
+            // Example usage: display some properties of the found shape
+            Console.WriteLine($"Found Shape - ID: {shape.ID}, Name: {shape.Name}");
+
+            // Save the diagram if any modifications were made (uses the provided save rule)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

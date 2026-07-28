@@ -1,48 +1,37 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Load or create a new diagram
-                Diagram diagram = new Diagram(); // empty diagram
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Ensure there is at least one page to work with
-                if (diagram.Pages.Count == 0)
-                    diagram.Pages.Add(new Page());
+            // Add a new page to the diagram
+            diagram.Pages.Add(new Page());
 
-                // Load a master shape (e.g., Rectangle) from a Visio stencil
-                // Adjust the stencil path to a valid .vss/.vssx file on your system
-                string stencilPath = @"C:\VisioStencils\basic_u.vss";
-                string masterName = "Rectangle";
-                diagram.AddMaster(stencilPath, masterName);
+            // Reference the first page (index 0)
+            Page page = diagram.Pages[0];
 
-                // Add a new shape using the master; AddShape returns the automatically assigned ID (long)
-                double pinX = 2.0;   // X position in inches
-                double pinY = 2.0;   // Y position in inches
-                long newShapeId = diagram.Pages[0].AddShape(pinX, pinY, masterName);
+            // Add a shape using a master name (e.g., "Rectangle")
+            // The AddShape method returns the automatically assigned shape ID (long)
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
 
-                // Output the assigned ID
-                Console.WriteLine($"New shape ID: {newShapeId}");
+            // Retrieve the shape instance using the returned ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Retrieve the concrete Shape object for further manipulation
-                Shape newShape = diagram.Pages[0].Shapes.GetShape(newShapeId);
+            // Output the ID for verification or further processing
+            Console.WriteLine($"New shape ID: {shapeId}");
 
-                // Example: set some text on the newly added shape
-                newShape.Text.Value.Clear();
-                newShape.Text.Value.Add(new Txt("Hello Aspose.Diagram!"));
-
-                // (Optional) Save the diagram to verify the changes
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

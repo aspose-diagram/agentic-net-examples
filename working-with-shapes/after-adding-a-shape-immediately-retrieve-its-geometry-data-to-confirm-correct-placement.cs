@@ -11,62 +11,44 @@ class Program
                 // Create a new empty diagram
                 Diagram diagram = new Diagram();
 
-                // Ensure there is at least one page (default diagram has one)
-                Page page = diagram.Pages[0];
+                // Define shape parameters
+                double pinX = 2.0; // X coordinate of the shape's pin (center) in inches
+                double pinY = 3.0; // Y coordinate of the shape's pin (center) in inches
+                string masterName = "Rectangle"; // Use a built‑in master name
 
-                // Define desired position for the new shape
-                double targetPinX = 2.0; // inches
-                double targetPinY = 2.0; // inches
-
-                // Add a rectangle shape to the first page.
-                // The master name "Rectangle" is a standard Visio master.
-                // The fourth parameter is the page index (0‑based).
-                long shapeId = diagram.AddShape(targetPinX, targetPinY, "Rectangle", 0);
+                // Add the shape to the active page; AddShape returns the shape's unique ID (long)
+                long shapeId = diagram.ActivePage.AddShape(pinX, pinY, masterName);
 
                 // Retrieve the concrete Shape object using the returned ID
-                Shape shape = page.Shapes.GetShape(shapeId);
+                // GetShape expects an int, so cast the long ID accordingly
+                Shape shape = diagram.ActivePage.Shapes.GetShape((int)shapeId);
 
-                // Verify that the shape's position matches the requested coordinates
+                // Access geometry data from the shape's XForm section
                 double actualPinX = shape.XForm.PinX.Value;
                 double actualPinY = shape.XForm.PinY.Value;
-                const double tolerance = 0.0001;
+                double actualWidth = shape.XForm.Width.Value;
+                double actualHeight = shape.XForm.Height.Value;
 
-                if (Math.Abs(actualPinX - targetPinX) > tolerance || Math.Abs(actualPinY - targetPinY) > tolerance)
+                // Output the geometry data to verify correct placement
+                Console.WriteLine($"Shape ID: {shapeId}");
+                Console.WriteLine($"PinX: {actualPinX} inches");
+                Console.WriteLine($"PinY: {actualPinY} inches");
+                Console.WriteLine($"Width: {actualWidth} inches");
+                Console.WriteLine($"Height: {actualHeight} inches");
+
+                // Simple validation: ensure the retrieved PinX/Y match the values we set
+                if (Math.Abs(actualPinX - pinX) > 0.001 || Math.Abs(actualPinY - pinY) > 0.001)
                 {
-                    throw new Exception($"Shape placement verification failed. Expected PinX={targetPinX}, PinY={targetPinY} but got PinX={actualPinX}, PinY={actualPinY}.");
-                }
-                else
-                {
-                    Console.WriteLine($"Shape placed correctly at PinX={actualPinX}, PinY={actualPinY}.");
-                }
-
-                // Retrieve geometry information
-                int geomCount = shape.Geoms.Count;
-                Console.WriteLine($"Shape contains {geomCount} geometry section(s).");
-
-                // Example: output the first coordinate of the first geometry (if any)
-                if (geomCount > 0)
-                {
-                    // Each Geom has a CoordinateCol collection of drawing commands (MoveTo, LineTo, etc.)
-                    var firstGeom = shape.Geoms[0];
-                    int coordCount = firstGeom.CoordinateCol.Count;
-                    Console.WriteLine($"First geometry has {coordCount} coordinate command(s).");
-
-                    if (coordCount > 0)
-                    {
-                        // Show the type of the first command
-                        var firstCommand = firstGeom.CoordinateCol[0];
-                        Console.WriteLine($"First command type: {firstCommand.GetType().Name}");
-                    }
+                    throw new Exception("Shape position does not match the expected coordinates.");
                 }
 
                 // Optional: save the diagram to verify visually (not required by the task)
                 // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.NullReferenceException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
             }
     }
     }

@@ -1,78 +1,65 @@
 using System;
 using Aspose.Diagram;
 
-namespace DiagramDimensionLogger
+public static class ShapeLogger
 {
-    // Helper class providing logging wrappers for dimension changes
-    public static class ShapeDimensionLogger
+    // Wrapper for SetWidth that logs old and new values
+    public static void SetWidthLogged(this Shape shape, double newWidth)
     {
-        // Logs old and new width values, then applies the new width
-        public static void SetWidthWithLog(Shape shape, double newWidth)
-        {
-            if (shape == null) throw new ArgumentNullException(nameof(shape));
-
-            double oldWidth = shape.XForm.Width.Value;
-            shape.SetWidth(newWidth);
-            Console.WriteLine($"Shape ID {shape.ID}: Width changed from {oldWidth} to {newWidth}");
-        }
-
-        // Logs old and new height values, then applies the new height
-        public static void SetHeightWithLog(Shape shape, double newHeight)
-        {
-            if (shape == null) throw new ArgumentNullException(nameof(shape));
-
-            double oldHeight = shape.XForm.Height.Value;
-            shape.SetHeight(newHeight);
-            Console.WriteLine($"Shape ID {shape.ID}: Height changed from {oldHeight} to {newHeight}");
-        }
+        double oldWidth = shape.XForm.Width.Value;
+        Console.WriteLine($"SetWidth: Old Width = {oldWidth}, New Width = {newWidth}");
+        shape.SetWidth(newWidth);
     }
 
-    class Program
+    // Wrapper for SetHeight that logs old and new values
+    public static void SetHeightLogged(this Shape shape, double newHeight)
     {
-        static void Main(string[] args)
+        double oldHeight = shape.XForm.Height.Value;
+        Console.WriteLine($"SetHeight: Old Height = {oldHeight}, New Height = {newHeight}");
+        shape.SetHeight(newHeight);
+    }
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        try
         {
-            try
+
+            // Load an existing diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Ensure the diagram has at least one page and one shape
+            if (diagram.Pages.Count > 0)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Ensure there is at least one page and one shape
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
                 var page = diagram.Pages[0];
-
-                if (page.Shapes.Count == 0)
+                if (page.Shapes.Count > 0)
                 {
-                    Console.WriteLine("The first page contains no shapes.");
-                    return;
+                    // Retrieve the first shape on the page
+                    Shape shape = page.Shapes[0];
+
+                    // Apply the logging wrappers
+                    shape.SetWidthLogged(5.0);   // Set new width to 5 inches
+                    shape.SetHeightLogged(3.0); // Set new height to 3 inches
                 }
-
-                // Retrieve the first shape on the page
-                Shape shape = page.Shapes[0];
-
-                // Example dimension changes with logging
-                ShapeDimensionLogger.SetWidthWithLog(shape, 2.5);   // Set new width to 2.5 inches
-                ShapeDimensionLogger.SetHeightWithLog(shape, 1.8); // Set new height to 1.8 inches
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Diagram saved successfully.");
-
+                else
+                {
+                    Console.WriteLine("No shapes found on the first page.");
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
+            else
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("The diagram contains no pages.");
             }
-    }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

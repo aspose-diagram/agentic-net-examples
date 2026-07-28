@@ -8,59 +8,66 @@ class Program
             try
             {
 
-                // Input and output Visio files
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the resulting Visio file
                 string outputPath = "output.vsdx";
 
-                // Offset values (in inches) for the new shape location
-                double offsetX = 2.0;
-                double offsetY = 1.0;
-
                 // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                Diagram diagram = new Diagram(inputPath);
+
+                // Access the first page (adjust index if needed)
+                Page page = diagram.Pages[0];
+
+                // Locate the first hexagon shape on the page
+                Shape hexagon = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Access the first page (adjust index if needed)
-                    Page page = diagram.Pages[0];
-
-                    // Locate the first hexagon shape on the page
-                    Shape hexShape = null;
-                    foreach (Shape shape in page.Shapes)
+                    if (shape.Master != null && shape.Master.Name == "Hexagon")
                     {
-                        if (shape.Master != null && shape.Master.Name == "Hexagon")
-                        {
-                            hexShape = shape;
-                            break;
-                        }
+                        hexagon = shape;
+                        break;
                     }
+                }
 
-                    if (hexShape == null)
-                    {
-                        Console.WriteLine("Hexagon shape not found on the page.");
-                        return;
-                    }
+                if (hexagon == null)
+                {
+                    Console.WriteLine("Hexagon shape not found on the page.");
+                    return;
+                }
 
-                    // Calculate new position using the offset
-                    double newPinX = hexShape.XForm.PinX.Value + offsetX;
-                    double newPinY = hexShape.XForm.PinY.Value + offsetY;
+                // Define offset values (in inches)
+                double offsetX = 2.0; // move 2 inches to the right
+                double offsetY = 1.0; // move 1 inch up
 
-                    // Add a new shape with the same master (hexagon) at the new location
-                    long newShapeId = page.AddShape(newPinX, newPinY, hexShape.Master.Name);
-                    Shape newShape = page.Shapes.GetShape(newShapeId);
+                // Calculate new position based on original PinX/PinY
+                double newPinX = hexagon.XForm.PinX.Value + offsetX;
+                double newPinY = hexagon.XForm.PinY.Value + offsetY;
 
-                    // Copy text content from the original shape to the new shape
-                    newShape.Text.Value.Clear();
-                    foreach (var item in hexShape.Text.Value)
+                // Add a new shape using the same master (hexagon) at the new location
+                long newShapeId = page.AddShape(newPinX, newPinY, hexagon.Master.Name);
+                Shape newHexagon = page.Shapes.GetShape(newShapeId);
+
+                // Optional: copy the text from the original shape to the new one
+                if (hexagon.Text != null && hexagon.Text.Value != null)
+                {
+                    newHexagon.Text.Value.Clear();
+                    foreach (var item in hexagon.Text.Value)
                     {
                         if (item is Txt txt)
                         {
-                            newShape.Text.Value.Add(new Txt(txt.Text));
+                            newHexagon.Text.Value.Add(new Txt(txt.Text));
                         }
                     }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Hexagon shape copied to new location and saved as '{outputPath}'.");
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                // Clean up
+                diagram.Dispose();
+
+                Console.WriteLine("Hexagon shape copied successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

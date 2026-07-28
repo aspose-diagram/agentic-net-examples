@@ -1,40 +1,46 @@
-using System;
+using System.IO;
 using Aspose.Diagram;
+using System;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // The shape ID we want to retrieve
+            long shapeId = 12345; // replace with the actual ID
+
             try
             {
+                // Attempt to get the shape by its ID
+                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-                // Load a Visio diagram (replace with actual file path)
-                Diagram diagram = new Diagram("sample.vsdx");
-
-                // Access the first page (adjust index as needed)
-                Page page = diagram.Pages[0];
-
-                // Example shape ID to retrieve
-                long shapeId = 12345;
-
-                try
-                {
-                    // Attempt to get the shape by its ID
-                    Shape shape = page.Shapes.GetShape(shapeId);
-
-                    // If successful, output some basic information
-                    Console.WriteLine($"Shape found: ID = {shape.ID}, Name = {shape.Name}");
-                }
-                catch (Exception ex)
-                {
-                    // Handle the case where the shape ID does not exist
-                    Console.WriteLine($"Error: Shape with ID {shapeId} was not found. Details: {ex.Message}");
-                }
-
+                // If successful, work with the shape (example: output its name)
+                Console.WriteLine($"Shape found: ID = {shape.ID}, Name = {shape.Name}");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (ArgumentException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Thrown when the shape ID does not exist in the collection
+                Console.WriteLine($"Shape with ID {shapeId} was not found. Details: {ex.Message}");
             }
+            catch (Exception ex)
+            {
+                // Catch any other unexpected errors
+                Console.WriteLine($"An error occurred while retrieving the shape: {ex.Message}");
+            }
+
+            // Save the diagram (optional, depending on further processing)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

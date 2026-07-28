@@ -7,41 +7,39 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Prompt user for input Visio file path
+        Console.Write("Enter the path to the Visio file: ");
+        string inputPath = Console.ReadLine();
+
+        // Prompt user for output PDF file path
+        Console.Write("Enter the desired output PDF path: ");
+        string outputPath = Console.ReadLine();
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Paths to the input Visio file and the output PDF file
-            string inputPath = "input.vsdx";
-            string outputPath = "output.pdf";
+            // Set the footer to display the page number on each page
+            // '&p' is the Visio field code for the current page number
+            diagram.HeaderFooter.FooterRight = "Page: &p";
 
-            try
-            {
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Optional: adjust footer margin if needed (in inches)
+            diagram.HeaderFooter.FooterMargin.Value = 0.2;
 
-                // Add page numbers to the footer (Visio field code &p inserts the current page number)
-                diagram.HeaderFooter.FooterRight = "Page: &p";
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set the format
+            // Save the diagram as PDF
+            diagram.Save(outputPath, pdfOptions);
 
-                // Export the diagram to PDF
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine("Export completed successfully.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("An error occurred: " + ex.Message);
-                throw;
-            }
-
+            Console.WriteLine("PDF exported successfully.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine("An error occurred: " + ex.Message);
         }
     }
 }

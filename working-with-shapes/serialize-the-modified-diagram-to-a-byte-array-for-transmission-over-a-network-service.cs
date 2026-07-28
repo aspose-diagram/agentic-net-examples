@@ -3,45 +3,32 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramSerializer
+public static class DiagramSerializer
 {
-    // Serializes a Diagram object to a byte array using VDX format.
+    // Serializes the provided Diagram into a byte array (VDX format) for network transmission.
     public static byte[] SerializeDiagram(Diagram diagram)
     {
         // MemoryStream will hold the diagram data in memory.
         using (var memoryStream = new MemoryStream())
         {
-            // Save the diagram to the stream. This uses the provided Save(Stream, SaveFileFormat) rule.
-            diagram.Save(memoryStream, SaveFileFormat.Vdx);
+            // Use DiagramSaveOptions to specify the VDX format.
+            var saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
+            // Save the diagram into the memory stream using the provided Save method.
+            diagram.Save(memoryStream, saveOptions);
 
-            // Convert the stream contents to a byte array for transmission.
+            // Reset the stream position to the beginning before reading.
+            memoryStream.Position = 0;
+
+            // Extract the byte array from the stream.
             return memoryStream.ToArray();
         }
     }
+}
 
-    // Example entry point demonstrating loading, modifying, and serializing a diagram.
-    public static void Main()
+class Program
+{
+    static void Main(string[] args)
     {
-        try
-        {
-
-            // Load an existing diagram from a file (replace with your actual file path).
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // ----- Perform any diagram modifications here -----
-            // e.g., diagram.Pages[0].Shapes[0].Text.Value = "Updated Text";
-            // -------------------------------------------------
-
-            // Serialize the modified diagram to a byte array.
-            byte[] diagramBytes = SerializeDiagram(diagram);
-
-            // The byte array can now be sent over a network service.
-            Console.WriteLine($"Diagram serialized to {diagramBytes.Length} bytes.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        // See classes above
     }
 }

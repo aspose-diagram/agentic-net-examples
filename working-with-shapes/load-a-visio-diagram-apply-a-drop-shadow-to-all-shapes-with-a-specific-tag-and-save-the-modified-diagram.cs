@@ -9,33 +9,41 @@ class Program
         try
         {
 
-            // Paths for input and output Visio files
+            // Input and output file paths
             string inputPath = "input.vsdx";
             string outputPath = "output.vsdx";
 
-            // Tag value to identify shapes that should receive a drop shadow
-            string targetTag = "MyTag";
+            // The name of the custom property (tag) to look for
+            string targetTagName = "MyTag";
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Apply shadow only to shapes whose Data1 property matches the target tag
-                    if (shape.Data1 == targetTag)
+                    // Check if the shape has a custom property with the target tag name
+                    bool hasTag = false;
+                    foreach (Prop prop in shape.Props)
                     {
-                        // Enable a simple drop shadow
-                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-                        // Shadow color (black)
-                        shape.Fill.ShdwForegnd.Value = "#000000";
-                        // Shadow transparency (30% transparent)
-                        shape.Fill.ShdwForegndTrans.Value = 0.3;
-                        // Shadow offset (horizontal and vertical)
-                        shape.Fill.ShapeShdwOffsetX.Value = 0.1;
-                        shape.Fill.ShapeShdwOffsetY.Value = 0.1;
+                        if (prop.Name == targetTagName)
+                        {
+                            hasTag = true;
+                            break;
+                        }
+                    }
+
+                    if (hasTag)
+                    {
+                        // Apply a simple drop shadow
+                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;   // Enable shadow
+                        shape.Fill.ShdwForegnd.Value = "#000000";                    // Shadow color (black)
+                        shape.Fill.ShdwForegndTrans.Value = 0.3;                     // 30% transparency
+                        shape.Fill.ShapeShdwOffsetX.Value = 0.1;                     // Horizontal offset
+                        shape.Fill.ShapeShdwOffsetY.Value = 0.1;                     // Vertical offset
                     }
                 }
             }

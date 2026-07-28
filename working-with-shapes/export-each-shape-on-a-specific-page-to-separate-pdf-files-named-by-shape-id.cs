@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class ExportShapesToPdf
@@ -10,26 +10,44 @@ class ExportShapesToPdf
         {
 
             // Path to the source Visio diagram
-            string sourceFile = "input.vsdx";
+            string sourceFile = @"C:\Diagrams\sample.vsdx";
 
-            // Index of the page to process (0‑based)
+            // Folder where individual shape PDFs will be saved
+            string outputFolder = @"C:\Diagrams\ShapePdfs";
+
+            // Index of the page to process (0‑based). Change as needed.
             int pageIndex = 0;
 
-            // Load the diagram
+            // Ensure the output directory exists
+            Directory.CreateDirectory(outputFolder);
+
+            // Load the Visio diagram
             Diagram diagram = new Diagram(sourceFile);
 
-            // Get the specified page
+            // Validate page index
+            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+            {
+                Console.WriteLine("Invalid page index.");
+                return;
+            }
+
+            // Get the specific page
             Page page = diagram.Pages[pageIndex];
 
-            // Export each shape on the page to a separate PDF file named by its ID
+            // Iterate through each shape on the page
             foreach (Shape shape in page.Shapes)
             {
-                // Build the output file name using the shape's ID
-                string outputFile = $"Shape_{shape.ID}.pdf";
+                // Shape ID is unique within the page
+                long shapeId = shape.ID;
 
-                // Save the shape as a PDF
-                shape.ToPdf(outputFile);
+                // Build the PDF file name using the shape ID
+                string pdfPath = Path.Combine(outputFolder, $"Shape_{shapeId}.pdf");
+
+                // Export the shape to a PDF file
+                shape.ToPdf(pdfPath);
             }
+
+            Console.WriteLine("Export completed.");
 
         }
         catch (System.IO.FileNotFoundException ex)

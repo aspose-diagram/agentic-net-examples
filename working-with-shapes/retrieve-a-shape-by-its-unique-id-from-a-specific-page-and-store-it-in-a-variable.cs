@@ -1,35 +1,27 @@
-using System.IO;
 using System;
-using Aspose.Diagram;
+using System.IO;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram
-            string diagramPath = "input.vsdx"; // replace with your file path
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the Visio diagram (replace the path with your file)
+            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
 
-            // Specify the page index (0‑based) from which to retrieve the shape
-            int pageIndex = 0; // change as needed
-            Page page = diagram.Pages[pageIndex];
+            // Define the page index (zero‑based) and the unique shape ID you want to retrieve
+            int pageIndex = 0;          // e.g., first page
+            long shapeId = 12345;       // the unique ID of the shape on that page
 
-            // Unique identifier of the shape to retrieve
-            long shapeId = 12345; // replace with the actual shape ID
+            // Get the specific page from the diagram
+            Aspose.Diagram.Page page = diagram.Pages.GetPage(pageIndex);
 
-            // Retrieve the shape by its ID from the specified page
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Retrieve the shape by its unique ID from the page's shape collection
+            Aspose.Diagram.Shape targetShape = page.Shapes.GetShape(shapeId);
 
-            // Example: output some basic information about the shape
-            Console.WriteLine($"Shape ID: {shape.ID}");
-            Console.WriteLine($"Shape Name: {shape.Name}");
-            Console.WriteLine($"Shape Master: {shape.Master?.Name ?? "None"}");
-
-            // Clean up resources
-            diagram.Dispose();
+            // Now 'targetShape' holds the reference to the requested shape and can be used further.
 
         }
         catch (System.IO.FileNotFoundException ex)

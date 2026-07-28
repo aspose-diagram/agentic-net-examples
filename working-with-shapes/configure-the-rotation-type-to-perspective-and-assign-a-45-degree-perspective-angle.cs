@@ -1,40 +1,40 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+            // Create a new diagram
+            Diagram diagram = new Diagram();
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Access the first page
+            Page page = diagram.Pages[0];
 
-                // Access the first page (or iterate all pages if needed)
-                Page page = diagram.Pages[0];
+            // Add a rectangle shape (master name "Rectangle") at (2,2) with size 1x1 on page index 0
+            long shapeId = diagram.AddShape(2.0, 2.0, 1.0, 1.0, "Rectangle", 0);
 
-                // Apply Perspective rotation type and set a 45‑degree perspective angle
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Set rotation type to Perspective
-                    shape.ThreeDFormat.RotationType.Value = RotationTypeValue.Perspective;
+            // Retrieve the shape object using its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                    // Assign a 45‑degree perspective angle
-                    shape.ThreeDFormat.Perspective.Value = 45;
-                }
+            // Configure the 3D rotation type to Perspective
+            shape.ThreeDFormat.RotationType.Value = RotationTypeValue.Perspective;
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Assign a 45‑degree perspective angle
+            shape.ThreeDFormat.Perspective.Value = 45;
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the diagram to a VSDX file
+            diagram.Save("RotatedShape.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

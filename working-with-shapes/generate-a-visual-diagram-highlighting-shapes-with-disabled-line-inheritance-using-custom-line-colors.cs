@@ -4,41 +4,52 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Load an existing Visio diagram (replace with your file path)
-                Diagram diagram = new Diagram("input.vsdx");
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
 
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Get the first (default) page
+                Page page = diagram.Pages[0];
+
+                // Add a rectangle shape (inherits line formatting from its master)
+                long rectId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+                Shape rectShape = page.Shapes.GetShape(rectId);
+
+                // Add another rectangle shape and explicitly set its line color
+                // This disables line inheritance for this shape
+                long customRectId = diagram.AddShape(5.0, 2.0, "Rectangle", 0);
+                Shape customRectShape = page.Shapes.GetShape(customRectId);
+                // Disable inheritance by assigning a different line color
+                customRectShape.Line.LineColor.Value = "#00FF00"; // green line
+
+                // Iterate all shapes on the page and highlight those with disabled line inheritance
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Compare the shape's line color with its inherited line color
+                    // If they differ, inheritance is disabled
+                    if (shape.Line.LineColor.Value != shape.InheritLine.LineColor.Value)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Determine if the shape has a custom line (line inheritance disabled)
-                        // Compare the shape's line color with the inherited line color
-                        // If they differ, the line is not inherited
-                        if (shape.Line.LineColor.Value != shape.InheritLine.LineColor.Value)
-                        {
-                            // Apply a custom highlight color (e.g., bright red)
-                            shape.Line.LineColor.Value = "#FF0000";
-                        }
+                        // Apply a custom highlight color (red) to the shape's line
+                        shape.Line.LineColor.Value = "#FF0000";
+                        // Optionally, make the line thicker for visibility
+                        shape.Line.LineWeight.Value = 0.05; // inches
                     }
                 }
 
-                // Save the modified diagram to a new file
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the diagram to a VSDX file
+                string outputPath = "HighlightedDiagram.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Diagram saved to {outputPath}");
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

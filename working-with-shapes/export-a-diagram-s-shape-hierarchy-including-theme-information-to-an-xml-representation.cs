@@ -1,110 +1,135 @@
 using System;
 using System.IO;
 using System.Xml;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
-class DiagramShapeHierarchyExporter
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Input Visio file path
-            string inputVisioPath = "input.vsdx";
-
-            // Output XML file path
-            string outputXmlPath = "shape_hierarchy.xml";
-
-            // Load the Visio diagram using the provided constructor
-            using (Diagram diagram = new Diagram(inputVisioPath))
+            try
             {
-                // Configure XML writer for pretty output
-                XmlWriterSettings xmlSettings = new XmlWriterSettings
+
+                // Input Visio file path (adjust as needed)
+                string inputPath = "input.vsdx";
+                // Output XML file path
+                string outputPath = "diagram_hierarchy.xml";
+
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    Indent = true,
-                    IndentChars = "  "
-                };
-
-                // Create the XML file and start writing
-                using (XmlWriter writer = XmlWriter.Create(outputXmlPath, xmlSettings))
-                {
-                    writer.WriteStartDocument();
-                    writer.WriteStartElement("Diagram");
-
-                    // Export theme information (StyleSheets collection)
-                    writer.WriteStartElement("StyleSheets");
-                    foreach (StyleSheet styleSheet in diagram.StyleSheets)
+                    // Prepare XML writer settings for readability
+                    XmlWriterSettings settings = new XmlWriterSettings
                     {
-                        writer.WriteStartElement("StyleSheet");
-                        writer.WriteAttributeString("Name", styleSheet.Name);
-                        writer.WriteEndElement(); // StyleSheet
-                    }
-                    writer.WriteEndElement(); // StyleSheets
+                        Indent = true,
+                        IndentChars = "  ",
+                        NewLineOnAttributes = false
+                    };
 
-                    // Export each page and its shape hierarchy
-                    writer.WriteStartElement("Pages");
-                    foreach (Page page in diagram.Pages)
+                    using (XmlWriter writer = XmlWriter.Create(outputPath, settings))
                     {
-                        writer.WriteStartElement("Page");
-                        writer.WriteAttributeString("ID", page.ID.ToString());
-                        writer.WriteAttributeString("Name", page.Name);
+                        writer.WriteStartDocument();
+                        writer.WriteStartElement("Diagram");
 
-                        writer.WriteStartElement("Shapes");
-                        foreach (Shape shape in page.Shapes)
+                        // Export pages and their shapes
+                        writer.WriteStartElement("Pages");
+                        foreach (Page page in diagram.Pages)
                         {
-                            WriteShapeRecursive(writer, shape);
+                            writer.WriteStartElement("Page");
+                            writer.WriteAttributeString("ID", page.ID.ToString());
+                            writer.WriteAttributeString("Name", page.Name ?? string.Empty);
+                            writer.WriteAttributeString("NameU", page.NameU ?? string.Empty);
+
+                            // Theme information (if set previously, cannot be read back; placeholder)
+                            // Since PresetTheme properties are write‑only, we include a placeholder node.
+                            writer.WriteStartElement("ThemeInfo");
+                            writer.WriteAttributeString("PresetTheme", "NotReadable");
+                            writer.WriteAttributeString("PresetThemeVariant", "NotReadable");
+                            writer.WriteEndElement(); // ThemeInfo
+
+                            // Shapes within the page
+                            writer.WriteStartElement("Shapes");
+                            foreach (Shape shape in page.Shapes)
+                            {
+                                // Skip deleted shapes
+                                if (shape.Del == BOOL.True)
+                                    continue;
+
+                                writer.WriteStartElement("Shape");
+                                writer.WriteAttributeString("ID", shape.ID.ToString());
+                                writer.WriteAttributeString("Name", shape.Name ?? string.Empty);
+                                writer.WriteAttributeString("NameU", shape.NameU ?? string.Empty);
+                                writer.WriteAttributeString("MasterName", shape.Master?.Name ?? string.Empty);
+                                writer.WriteAttributeString("Type", shape.Type.ToString());
+
+                                // Position and size
+                                writer.WriteStartElement("Geometry");
+                                writer.WriteElementString("PinX", shape.XForm.PinX.Value.ToString());
+                                writer.WriteElementString("PinY", shape.XForm.PinY.Value.ToString());
+                                writer.WriteElementString("Width", shape.XForm.Width.Value.ToString());
+                                writer.WriteElementString("Height", shape.XForm.Height.Value.ToString());
+                                writer.WriteEndElement(); // Geometry
+
+                                // Custom properties (Props)
+                                if (shape.Props != null && shape.Props.Count > 0)
+                                {
+                                    writer.WriteStartElement("CustomProperties");
+                                    foreach (Prop prop in shape.Props)
+                                    {
+                                        writer.WriteStartElement("Property");
+                                        writer.WriteAttributeString("Name", prop.Name ?? string.Empty);
+                                        writer.WriteAttributeString("Label", prop.Label?.Value ?? string.Empty);
+                                        writer.WriteAttributeString("Value", prop.Value?.Val ?? string.Empty);
+                                        writer.WriteEndElement(); // Property
+                                    }
+                                    writer.WriteEndElement(); // CustomProperties
+                                }
+
+                                // Hyperlinks
+                                if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                                {
+                                    writer.WriteStartElement("Hyperlinks");
+                                    foreach (Hyperlink link in shape.Hyperlinks)
+                                    {
+                                        writer.WriteStartElement("Hyperlink");
+                                        writer.WriteElementString("Address", link.Address?.Value ?? string.Empty);
+                                        writer.WriteElementString("SubAddress", link.SubAddress?.Value ?? string.Empty);
+                                        writer.WriteElementString("Description", link.Description?.Value ?? string.Empty);
+                                        writer.WriteEndElement(); // Hyperlink
+                                    }
+                                    writer.WriteEndElement(); // Hyperlinks
+                                }
+
+                                writer.WriteEndElement(); // Shape
+                            }
+                            writer.WriteEndElement(); // Shapes
+                            writer.WriteEndElement(); // Page
                         }
-                        writer.WriteEndElement(); // Shapes
+                        writer.WriteEndElement(); // Pages
 
-                        writer.WriteEndElement(); // Page
+                        // Export style sheets (theme related information)
+                        writer.WriteStartElement("StyleSheets");
+                        foreach (StyleSheet ss in diagram.StyleSheets)
+                        {
+                            writer.WriteStartElement("StyleSheet");
+                            writer.WriteAttributeString("ID", ss.ID.ToString());
+                            writer.WriteAttributeString("Name", ss.Name ?? string.Empty);
+                            writer.WriteEndElement(); // StyleSheet
+                        }
+                        writer.WriteEndElement(); // StyleSheets
+
+                        writer.WriteEndElement(); // Diagram
+                        writer.WriteEndDocument();
                     }
-                    writer.WriteEndElement(); // Pages
-
-                    writer.WriteEndElement(); // Diagram
-                    writer.WriteEndDocument();
                 }
+
+                Console.WriteLine($"Diagram hierarchy exported to '{outputPath}'.");
+
             }
-
-            Console.WriteLine("Shape hierarchy exported to: " + Path.GetFullPath(outputXmlPath));
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    // Recursively writes a shape and its sub‑shapes (if any) to the XML writer
-    private static void WriteShapeRecursive(XmlWriter writer, Shape shape)
-    {
-        writer.WriteStartElement("Shape");
-        writer.WriteAttributeString("ID", shape.ID.ToString());
-        writer.WriteAttributeString("Name", shape.Name ?? string.Empty);
-
-        // Master (template) information, if the shape is based on a master
-        if (shape.Master != null)
-        {
-            writer.WriteAttributeString("MasterName", shape.Master.Name ?? string.Empty);
-        }
-
-        // Example of additional properties you might want to include
-        writer.WriteAttributeString("PinX", shape.XForm.PinX.ToString());
-        writer.WriteAttributeString("PinY", shape.XForm.PinY.ToString());
-        writer.WriteAttributeString("Width", shape.XForm.Width.ToString());
-        writer.WriteAttributeString("Height", shape.XForm.Height.ToString());
-
-        // If the shape is a group, it contains sub‑shapes
-        if (shape.Shapes != null && shape.Shapes.Count > 0)
-        {
-            writer.WriteStartElement("SubShapes");
-            foreach (Shape subShape in shape.Shapes)
+            catch (System.IO.FileNotFoundException ex)
             {
-                WriteShapeRecursive(writer, subShape);
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-            writer.WriteEndElement(); // SubShapes
-        }
-
-        writer.WriteEndElement(); // Shape
     }
-}
+    }

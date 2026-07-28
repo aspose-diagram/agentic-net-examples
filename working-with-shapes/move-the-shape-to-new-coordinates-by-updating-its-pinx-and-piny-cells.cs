@@ -8,43 +8,38 @@ class Program
             try
             {
 
-                // Load the existing Visio diagram
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // New coordinates for the shape (in inches)
-                double newPinX = 5.0;
-                double newPinY = 3.0;
-
-                // Access the first page of the diagram
+                // Choose the page (first page in this example)
                 Page page = diagram.Pages[0];
 
-                // Locate the shape to move (example: by its universal name)
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
+                // ID of the shape to move (replace with the actual shape ID)
+                long shapeId = 5;
+
+                // Retrieve the shape; GetShape expects an int, so cast the long ID
+                Shape shape = page.Shapes.GetShape((int)shapeId);
+                if (shape == null)
                 {
-                    if (shape.NameU == "MyShape")
-                    {
-                        targetShape = shape;
-                        break;
-                    }
+                    throw new Exception($"Shape with ID {shapeId} not found on page '{page.Name}'.");
                 }
 
-                if (targetShape == null)
-                {
-                    Console.WriteLine("Shape 'MyShape' not found.");
-                    return;
-                }
+                // New coordinates (in inches)
+                double newPinX = 5.0;
+                double newPinY = 7.0;
 
-                // Update the shape's position by setting PinX and PinY cells
-                targetShape.XForm.PinX.Value = newPinX;
-                targetShape.XForm.PinY.Value = newPinY;
+                // Update the shape's position
+                shape.XForm.PinX.Value = newPinX;
+                shape.XForm.PinY.Value = newPinY;
 
                 // Save the modified diagram
                 string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                Console.WriteLine($"Shape moved to ({newPinX}, {newPinY}) and saved to {outputPath}");
+                Console.WriteLine($"Shape {shapeId} moved to ({newPinX}, {newPinY}) and saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

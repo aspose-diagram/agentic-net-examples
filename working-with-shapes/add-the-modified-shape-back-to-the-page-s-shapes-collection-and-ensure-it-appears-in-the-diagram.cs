@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,40 +11,28 @@ class Program
         {
 
             // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page in the diagram
+            // Access the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape to modify (example: the first shape on the page)
-            Shape originalShape = page.Shapes[0];
-            long shapeId = originalShape.ID;
+            // Add a new rectangle shape to the diagram (master name: "Rectangle")
+            // The AddShape method returns the shape's unique ID (type long)
+            long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
 
-            // Get the shape instance by its ID (ensures we have the latest reference)
+            // Retrieve the newly created shape from the page's Shapes collection
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Example modification: change the fill foreground color to red
-            shape.Fill.FillForegnd.Value = "#FF0000";
+            // Modify the shape's properties (e.g., text and formatting)
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt("Hello Aspose"));
+            shape.Fill.FillForegnd.Value = "#FFCC00";   // Fill color
+            shape.Line.LineColor.Value = "#000000";    // Line color
 
-            // Ensure the modified shape is present in the page's Shapes collection
-            // (avoid duplicate addition if it already exists)
-            bool alreadyExists = false;
-            foreach (Shape s in page.Shapes)
-            {
-                if (s.ID == shape.ID)
-                {
-                    alreadyExists = true;
-                    break;
-                }
-            }
+            // The shape is already part of the page's Shapes collection because
+            // it was added via diagram.AddShape. No further action is required.
 
-            if (!alreadyExists)
-            {
-                page.Shapes.Add(shape);
-            }
-
-            // Save the updated diagram
+            // Save the diagram to verify that the modified shape appears
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

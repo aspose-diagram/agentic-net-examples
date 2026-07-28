@@ -9,22 +9,29 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the Visio file
+            string filePath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the line pattern enum value
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Retrieve the dash pattern enum value
                     LinePatternValue pattern = shape.Line.LinePattern.Value;
 
                     // Convert the enum to a readable description
-                    string description = GetLinePatternDescription(pattern);
+                    string description = GetDashStyleDescription(pattern);
 
-                    // Display the shape ID and its line style
-                    Console.WriteLine($"Shape ID {shape.ID}: {description}");
+                    // Output the shape ID and its dash style
+                    Console.WriteLine($"Shape ID {shape.ID} dash style: {description}");
                 }
             }
 
@@ -35,8 +42,8 @@ class Program
         }
     }
 
-    // Maps LinePatternValue enum members to human‑readable strings
-    static string GetLinePatternDescription(LinePatternValue pattern)
+    // Maps LinePatternValue enum members to descriptive strings
+    static string GetDashStyleDescription(LinePatternValue pattern)
     {
         switch (pattern)
         {
@@ -47,9 +54,9 @@ class Program
             case LinePatternValue.Dot:
                 return "Dot";
             case LinePatternValue.DashDot:
-                return "Dash‑Dot";
+                return "DashDot";
             case LinePatternValue.DashDotDot:
-                return "Dash‑Dot‑Dot";
+                return "DashDotDot";
             default:
                 return "Unknown";
         }

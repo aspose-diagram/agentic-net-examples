@@ -9,37 +9,25 @@ class Program
             try
             {
 
-                // Load the Visio diagram (replace with your actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+                // Load an existing Visio diagram (replace with actual file path)
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Iterate through each page and filter shapes that inherit both fill and line formatting
-                foreach (Page page in diagram.Pages)
+                // Query all shapes across all pages that inherit BOTH fill and line formatting from their master
+                var inheritedShapes = diagram.Pages
+                    .SelectMany(page => page.Shapes.Cast<Shape>()) // flatten shapes from all pages
+                    .Where(shape =>
+                        // Compare a representative fill property with its inherited counterpart
+                        shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value &&
+                        // Compare a representative line property with its inherited counterpart
+                        shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value)
+                    .ToList();
+
+                // Output the results
+                Console.WriteLine($"Found {inheritedShapes.Count} shape(s) inheriting both fill and line formatting from masters:");
+                foreach (var shape in inheritedShapes)
                 {
-                    var inheritedShapes = page.Shapes
-                        .Cast<Shape>()
-                        .Where(shape =>
-                            // Exclude deleted shapes
-                            shape.Del == BOOL.False &&
-                            // Fill inheritance: foreground color and pattern match inherited values
-                            shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value &&
-                            shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value &&
-                            // Line inheritance: line color and pattern match inherited values
-                            shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value &&
-                            shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value)
-                        .ToList();
-
-                    // Output information about the filtered shapes
-                    Console.WriteLine($"Page \"{page.Name}\" contains {inheritedShapes.Count} shape(s) inheriting both fill and line formatting:");
-                    foreach (Shape shape in inheritedShapes)
-                    {
-                        Console.WriteLine($"  Shape ID: {shape.ID}, NameU: {shape.NameU}");
-                    }
+                    Console.WriteLine($"- Shape ID: {shape.ID}, NameU: {shape.NameU}");
                 }
-
-                // Optional: keep console window open when running outside debugger
-                Console.WriteLine("Processing complete. Press any key to exit.");
-                Console.ReadKey();
 
             }
             catch (System.IO.FileNotFoundException ex)

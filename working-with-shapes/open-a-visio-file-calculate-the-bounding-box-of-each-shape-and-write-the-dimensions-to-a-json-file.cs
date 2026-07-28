@@ -1,44 +1,49 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
 namespace VisioBoundingBoxExporter
 {
-    // Simple DTO for JSON serialization
-    public class ShapeInfo
+    // Represents the bounding box information for a shape.
+    public class ShapeBoundingBox
     {
         public string PageName { get; set; }
         public long ShapeId { get; set; }
+        public string ShapeName { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }
+        public double PinX { get; set; }
+        public double PinY { get; set; }
     }
 
     public class Program
     {
-        public static void Main(string[] args)
+        public static void Main()
         {
             try
             {
 
-                // Input Visio file path (first argument) or default
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Input Visio file path (adjust as needed)
+                string inputPath = "input.vsdx";
 
-                // Output JSON file path (second argument) or default
-                string outputPath = args.Length > 1 ? args[1] : "shapes-bounding-box.json";
+                // Output JSON file path
+                string outputPath = "shape_bounding_boxes.json";
 
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                var shapesInfo = new List<ShapeInfo>();
+                // List to hold bounding box data for all shapes
+                List<ShapeBoundingBox> boxes = new List<ShapeBoundingBox>();
 
-                // Iterate through all pages and shapes
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes marked as deleted
+                        // Skip shapes that are marked as deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
@@ -46,28 +51,39 @@ namespace VisioBoundingBoxExporter
                         double width = shape.XForm.Width.Value;
                         double height = shape.XForm.Height.Value;
 
-                        shapesInfo.Add(new ShapeInfo
+                        // Retrieve the pin (center) coordinates
+                        double pinX = shape.XForm.PinX.Value;
+                        double pinY = shape.XForm.PinY.Value;
+
+                        // Create a bounding box record
+                        ShapeBoundingBox box = new ShapeBoundingBox
                         {
                             PageName = page.Name,
                             ShapeId = shape.ID,
+                            ShapeName = shape.Name,
                             Width = width,
-                            Height = height
-                        });
+                            Height = height,
+                            PinX = pinX,
+                            PinY = pinY
+                        };
+
+                        boxes.Add(box);
                     }
                 }
 
                 // Serialize the list to JSON with indentation for readability
-                string json = JsonSerializer.Serialize(shapesInfo, new JsonSerializerOptions { WriteIndented = true });
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(boxes, jsonOptions);
 
-                // Write JSON to the specified output file
+                // Write JSON to the output file
                 File.WriteAllText(outputPath, json);
 
-                Console.WriteLine($"Bounding box data for {shapesInfo.Count} shapes written to '{outputPath}'.");
+                Console.WriteLine($"Bounding box data for {boxes.Count} shapes written to '{outputPath}'.");
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

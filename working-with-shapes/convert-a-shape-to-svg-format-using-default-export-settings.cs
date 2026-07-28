@@ -13,7 +13,7 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Retrieve a shape (for example, the first shape on the first page)
+            // Retrieve a shape (e.g., the first shape on the first page)
             Shape shape = diagram.Pages[0].Shapes[0];
 
             // Initialize SVG save options with default settings

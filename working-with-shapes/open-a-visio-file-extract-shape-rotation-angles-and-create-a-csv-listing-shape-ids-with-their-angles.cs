@@ -6,53 +6,44 @@ class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Expect two arguments: input Visio file path and output CSV file path
+            if (args.Length < 2)
             {
+                Console.WriteLine("Usage: VisioShapeRotationExtractor <inputVisioPath> <outputCsvPath>");
+                return;
+            }
 
-                // Input Visio file path
-                string visioPath = "input.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-                // Output CSV file path
-                string csvPath = "shape_rotations.csv";
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
+            // Prepare to write CSV
+            using (StreamWriter writer = new StreamWriter(outputPath))
+            {
+                // Write CSV header
+                writer.WriteLine("ShapeID,AngleDegrees");
 
-                // Prepare to write CSV
-                using (StreamWriter writer = new StreamWriter(csvPath, false, System.Text.Encoding.UTF8))
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Write CSV header
-                    writer.WriteLine("ShapeID,AngleDegrees");
-
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip deleted shapes
-                            if (shape.Del == BOOL.True)
-                                continue;
+                        // Retrieve the shape's unique ID
+                        long shapeId = shape.ID;
 
-                            // Retrieve shape ID
-                            long shapeId = shape.ID;
+                        // Retrieve the rotation angle (stored in radians) and convert to degrees
+                        double angleRadians = shape.XForm.Angle.Value;
+                        double angleDegrees = angleRadians * (180.0 / Math.PI);
 
-                            // Retrieve rotation angle (in radians) and convert to degrees
-                            double angleRadians = shape.XForm.Angle.Value;
-                            double angleDegrees = angleRadians * 180.0 / Math.PI;
-
-                            // Write to CSV
-                            writer.WriteLine($"{shapeId},{angleDegrees}");
-                        }
+                        // Write the ID and angle to the CSV
+                        writer.WriteLine($"{shapeId},{angleDegrees}");
                     }
                 }
-
-                Console.WriteLine($"Shape rotation angles have been exported to '{csvPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            Console.WriteLine($"Shape rotation angles have been exported to '{outputPath}'.");
+        }
     }

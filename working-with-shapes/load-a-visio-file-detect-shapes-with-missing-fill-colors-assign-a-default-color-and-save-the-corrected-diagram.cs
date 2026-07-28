@@ -1,55 +1,54 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths for input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output_corrected.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Default fill color to apply (hex string)
+            const string defaultColor = "#FFCC00";
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input and output file paths.
-                // You can modify these paths as needed or pass them via command‑line arguments.
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = args.Length > 1 ? args[1] : "output_fixed.vsdx";
-
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Default fill color to apply when a shape has no fill color.
-                const string defaultFillColor = "#FF0000"; // Red
-
-                // Iterate through all pages and shapes.
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Determine if the shape lacks a fill color
+                    bool missingFill = shape.Fill.FillPattern.Value == 0 ||
+                                       string.IsNullOrWhiteSpace(shape.Fill.FillForegnd.Value);
+
+                    if (missingFill)
                     {
-                        // Skip shapes that are marked as deleted.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve the current fill foreground color.
-                        string currentFill = shape.Fill.FillForegnd.Value;
-
-                        // If the fill color is missing or empty, assign the default color.
-                        if (string.IsNullOrWhiteSpace(currentFill))
-                        {
-                            // Ensure the fill pattern is solid (value 1).
-                            shape.Fill.FillPattern.Value = 1;
-                            // Assign the default fill color (hex string).
-                            shape.Fill.FillForegnd.Value = defaultFillColor;
-                        }
+                        // Set a solid fill pattern and assign the default color
+                        shape.Fill.FillPattern.Value = 1; // Solid fill
+                        shape.Fill.FillForegnd.Value = defaultColor;
                     }
                 }
-
-                // Save the corrected diagram using a valid SaveFileFormat overload.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+            // Save the corrected diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

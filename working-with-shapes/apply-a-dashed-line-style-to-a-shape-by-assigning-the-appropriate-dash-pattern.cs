@@ -8,34 +8,45 @@ class Program
             try
             {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+                // Load an existing Visio diagram.
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Get the first page (index 0) of the diagram
+                // Access the first page of the diagram.
                 Page page = diagram.Pages[0];
 
-                // Add a rectangle shape to the page
-                // Parameters: pinX, pinY, width, height, master name, isCalculate (bool)
-                long shapeId = page.AddShape(2.0, 2.0, 1.5, 1.0, "Rectangle", false);
+                // Find the first shape on the page.
+                Shape targetShape = null;
+                foreach (Shape s in page.Shapes)
+                {
+                    targetShape = s;
+                    break;
+                }
 
-                // Retrieve the Shape object using the returned ID
-                Shape shape = page.Shapes.GetShape((int)shapeId);
+                if (targetShape == null)
+                {
+                    Console.WriteLine("No shapes were found on the first page.");
+                    return;
+                }
 
-                // Apply a dashed line pattern to the shape
-                shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                // Ensure the shape is not marked as deleted.
+                if (targetShape.Del == BOOL.True)
+                {
+                    Console.WriteLine("The selected shape is marked as deleted and cannot be modified.");
+                    return;
+                }
 
-                // (Optional) Set a visible line color for demonstration
-                shape.Line.LineColor.Value = "#FF0000";
+                // Apply a dashed line pattern to the shape.
+                targetShape.Line.LinePattern.Value = LinePatternValue.Dash;
 
-                // Save the diagram to a VSDX file
-                diagram.Save("DashedShape.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram.
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-                Console.WriteLine("Diagram saved with a dashed line style applied to the shape.");
+                Console.WriteLine("Dashed line style applied and diagram saved as output.vsdx.");
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

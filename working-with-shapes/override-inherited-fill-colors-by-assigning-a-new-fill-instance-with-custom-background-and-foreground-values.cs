@@ -1,51 +1,47 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Guard: ensure the source file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Path for the modified Visio file
+        string outputPath = "output.vsdx";
+
+        try
+        {
+            // Load the diagram from the file system
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                // Get the first page
-                Page page = diagram.Pages[0];
-
-                // Iterate through all shapes on the page and override fill colors
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Set a solid fill pattern (optional, 1 = solid)
-                    shape.Fill.FillPattern.Value = 1;
-
-                    // Override foreground (fill) color
-                    shape.Fill.FillForegnd.Value = "#FF0000"; // Red
-
-                    // Override background color
-                    shape.Fill.FillBkgnd.Value = "#00FF00"; // Green
+                    // Override inherited fill colors by setting the shape's Fill cells directly
+                    shape.Fill.FillBkgnd.Value = "#FF0000";   // Red background
+                    shape.Fill.FillForegnd.Value = "#00FF00"; // Green foreground
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Diagram saved to {outputPath}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram using a valid overload (SaveFileFormat enum)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

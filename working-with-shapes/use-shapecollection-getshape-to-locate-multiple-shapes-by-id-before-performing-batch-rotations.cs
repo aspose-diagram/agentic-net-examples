@@ -10,29 +10,37 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Select the first page (index 0)
+            // IDs of the shapes that need to be rotated
+            long[] shapeIds = new long[] { 5, 12, 20 };
+
+            // Work with the first page (adjust index if needed)
             Page page = diagram.Pages[0];
 
-            // IDs of the shapes we want to rotate
-            long[] shapeIds = { 5, 10, 15 };
-
-            // Rotate each shape by 45 degrees (using SetAngle as per the rule set)
             foreach (long id in shapeIds)
             {
                 // Retrieve the shape by its ID
                 Shape shape = page.Shapes.GetShape(id);
-
-                // Ensure the shape exists and is not marked as deleted
-                if (shape != null && shape.Del == BOOL.False)
+                if (shape == null)
                 {
-                    shape.SetAngle(45); // Rotate 45 degrees
+                    Console.WriteLine($"Shape with ID {id} not found.");
+                    continue;
                 }
+
+                // Rotate the shape by adding 45 degrees to its current angle
+                double currentAngle = shape.XForm.Angle.Value;
+                double newAngle = currentAngle + 45.0;
+                shape.XForm.Angle.Value = newAngle;
+
+                Console.WriteLine($"Rotated shape ID {id} from {currentAngle}° to {newAngle}°.");
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,63 +1,65 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect three arguments: old diagram path, new diagram path, output diagram path
+        if (args.Length != 3)
         {
-            // Expect three arguments: old diagram path, new diagram path, output path
-            if (args == null || args.Length < 3)
-            {
-                Console.WriteLine("Usage: DiagramComparison <oldDiagramPath> <newDiagramPath> <outputPath>");
-                return;
-            }
-
-            string oldDiagramPath = args[0];
-            string newDiagramPath = args[1];
-            string outputPath = args[2];
-
-            // Load the two diagram versions
-            Diagram oldDiagram = new Diagram(oldDiagramPath);
-            Diagram newDiagram = new Diagram(newDiagramPath);
-
-            // Iterate through pages of the old diagram
-            foreach (Page oldPage in oldDiagram.Pages)
-            {
-                // Find the corresponding page in the new diagram by name
-                Page newPage = newDiagram.Pages.GetPage(oldPage.Name);
-                if (newPage == null)
-                {
-                    // No matching page; skip to next
-                    continue;
-                }
-
-                // Iterate through shapes on the old page
-                foreach (Shape oldShape in oldPage.Shapes)
-                {
-                    // Retrieve the shape with the same ID from the new page
-                    Shape newShape = newPage.Shapes.GetShape(oldShape.ID);
-                    if (newShape == null)
-                    {
-                        // Shape not present in new diagram; skip
-                        continue;
-                    }
-
-                    // Get plain text from both shapes
-                    string oldText = oldShape.Text.Value.Text;
-                    string newText = newShape.Text.Value.Text;
-
-                    // Compare texts; if different, highlight the shape in the new diagram
-                    if (!string.Equals(oldText, newText, StringComparison.Ordinal))
-                    {
-                        // Highlight by setting fill foreground color to yellow
-                        newShape.Fill.FillForegnd.Value = "#FFFF00";
-                    }
-                }
-            }
-
-            // Save the highlighted new diagram
-            newDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Comparison completed. Highlighted diagram saved to: {outputPath}");
+            Console.WriteLine("Usage: <oldDiagram.vsdx> <newDiagram.vsdx> <outputDiagram.vsdx>");
+            return;
         }
+
+        string oldPath = args[0];
+        string newPath = args[1];
+        string outputPath = args[2];
+
+        // Load the two diagram versions
+        Diagram oldDiagram = new Diagram(oldPath);
+        Diagram newDiagram = new Diagram(newPath);
+
+        // Assume both diagrams have the same number of pages and matching shape IDs
+        for (int pageIndex = 0; pageIndex < oldDiagram.Pages.Count; pageIndex++)
+        {
+            Page oldPage = oldDiagram.Pages[pageIndex];
+            Page newPage = newDiagram.Pages[pageIndex];
+
+            // Iterate through all shapes on the old page
+            foreach (Shape oldShape in oldPage.Shapes)
+            {
+                // Try to find the corresponding shape in the new diagram by ID
+                Shape newShape = newPage.Shapes.GetShape(oldShape.ID);
+                if (newShape == null)
+                    continue; // No matching shape; skip
+
+                // Retrieve plain text from both shapes
+                string oldText = oldShape.Text.Value.Text ?? string.Empty;
+                string newText = newShape.Text.Value.Text ?? string.Empty;
+
+                // If the texts differ, highlight the shape in the new diagram
+                if (!oldText.Equals(newText, StringComparison.Ordinal))
+                {
+                    // Highlight fill with yellow
+                    newShape.Fill.FillForegnd.Value = "#FFFF00";
+
+                    // Ensure there is at least one character formatting entry
+                    if (newShape.Chars.Count == 0)
+                    {
+                        Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+                        ch.IX = 0; // first character run
+                        newShape.Chars.Add(ch);
+                    }
+
+                    // Set text color to red for the first character run
+                    newShape.Chars[0].Color.Value = "#FF0000";
+                }
+            }
+        }
+
+        // Save the highlighted diagram
+        newDiagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
+}

@@ -3,58 +3,65 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VisioToEmfMultiPage
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file
-            string sourceFile = @"C:\Input\diagram.vsdx";
-
-            // Load the source Visio diagram
-            Diagram sourceDiagram = new Diagram(sourceFile, LoadFileFormat.Vsdx);
-
-            // Create a new empty diagram that will hold the combined pages
-            Diagram combinedDiagram = new Diagram();
-
-            // Combine the source diagram into the new diagram (all pages are merged)
-            combinedDiagram.Combine(sourceDiagram);
-
-            // Iterate through all pages and shapes in the source diagram
-            foreach (Page page in sourceDiagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Export each shape to EMF format using a memory stream
-                    using (MemoryStream emfStream = new MemoryStream())
-                    {
-                        // ImageSaveOptions with EMF format
-                        ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Emf);
-                        shape.ToImage(emfStream, options);
 
-                        // At this point emfStream contains the EMF image of the shape.
-                        // The stream can be saved to a file or processed further as needed.
-                        // Example: save to a temporary file (optional)
-                        // string tempEmfPath = Path.Combine(@"C:\Temp", $"{Guid.NewGuid()}.emf");
-                        // File.WriteAllBytes(tempEmfPath, emfStream.ToArray());
+                // Input Visio file path (change as needed)
+                string inputPath = "input.vsdx";
+                // Output Visio file path (multi‑page document)
+                string outputPath = "output.vsdx";
+
+                // Load the source diagram
+                Diagram sourceDiagram = new Diagram(inputPath);
+
+                // Create an empty target diagram
+                Diagram targetDiagram = new Diagram();
+
+                // Iterate through each page in the source diagram
+                foreach (Page srcPage in sourceDiagram.Pages)
+                {
+                    // Iterate through each shape on the current page
+                    foreach (Shape srcShape in srcPage.Shapes)
+                    {
+                        // Export the shape to a temporary EMF file
+                        string tempEmfPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".emf");
+                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Emf);
+                        srcShape.ToImage(tempEmfPath, imgOptions);
+
+                        // Create a new page in the target diagram for this shape
+                        Page newPage = new Page();
+                        targetDiagram.Pages.Add(newPage);
+
+                        // Insert the EMF image into the new page as a shape
+                        using (FileStream fs = new FileStream(tempEmfPath, FileMode.Open, FileAccess.Read))
+                        {
+                            // Position and size (in inches) for the inserted image shape
+                            double pinX = 5.0;   // X coordinate of the shape's pin
+                            double pinY = 5.0;   // Y coordinate of the shape's pin
+                            double width = 5.0;  // Width of the image
+                            double height = 5.0; // Height of the image
+
+                            // AddShape overload that accepts a Stream inserts the image as a foreign shape
+                            long imageShapeId = newPage.AddShape(pinX, pinY, width, height, fs);
+                            // The returned ID can be used later if further manipulation is required
+                        }
+
+                        // Clean up the temporary EMF file
+                        File.Delete(tempEmfPath);
                     }
                 }
+
+                // Save the combined multi‑page diagram
+                targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the combined multi‑page diagram to a new Visio file
-            string outputFile = @"C:\Output\combinedDiagram.vsdx";
-            combinedDiagram.Save(outputFile, SaveFileFormat.Vsdx);
-
-            // Clean up
-            sourceDiagram.Dispose();
-            combinedDiagram.Dispose();
-
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

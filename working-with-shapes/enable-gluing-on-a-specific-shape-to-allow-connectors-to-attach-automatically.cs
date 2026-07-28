@@ -1,52 +1,37 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: <input.vsdx> <shapeId> [output.vsdx]");
-            return;
-        }
-
-        string inputPath = args[0];
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        if (!long.TryParse(args[1], out long shapeId))
-        {
-            Console.Error.WriteLine($"Invalid shape ID: {args[1]}");
-            return;
-        }
-
-        string outputPath = args.Length >= 3 ? args[2] : "output.vsdx";
-
         try
         {
-            Diagram diagram = new Diagram(inputPath);
-            Page page = diagram.Pages[0]; // assuming shape is on the first page
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
-            {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found.");
-                return;
-            }
 
-            // Enable dynamic gluing for the shape
+            // Create a new diagram instance
+            Diagram diagram = new Diagram();
+
+            // Access the first page (a default page is created automatically)
+            Page page = diagram.Pages[0];
+
+            // Add a rectangle shape at position (2,2) on the page
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+
+            // Retrieve the shape object using its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Enable dynamic glue so connectors can automatically attach to this shape
             shape.Misc.GlueType.Value = GlueTypeValue.AllowDynamicGlue;
 
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with gluing enabled on shape {shapeId} to '{outputPath}'.");
+            // Save the diagram to a VSDX file
+            diagram.Save("GluedShape.vsdx", SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

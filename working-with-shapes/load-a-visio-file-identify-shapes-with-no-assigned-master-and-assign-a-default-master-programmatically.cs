@@ -9,59 +9,57 @@ class AssignDefaultMaster
         try
         {
 
-            // Input Visio file path
-            string inputPath = @"C:\Visio\input.vsdx";
+            // Paths to the source Visio file and the output file
+            string sourceFile = "input.vsdx";
+            string outputFile = "output.vsdx";
 
-            // Output Visio file path
-            string outputPath = @"C:\Visio\output.vsdx";
-
-            // Path to a stencil/template that contains the default master (e.g., Basic_U.vssx)
-            string stencilPath = @"C:\Visio\Stencils\Basic_U.vssx";
-
-            // Name of the default master to assign (must exist in the stencil)
+            // Name of the default master to assign (must exist in a stencil)
             string defaultMasterName = "Rectangle";
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Try to locate the default master in the current document
-            int defaultMasterId = -1;
-            foreach (Master m in diagram.Masters)
+            // Load the Visio diagram (uses the Diagram constructor – lifecycle rule)
+            using (Diagram diagram = new Diagram(sourceFile))
             {
-                if (string.Equals(m.Name, defaultMasterName, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(m.NameU, defaultMasterName, StringComparison.OrdinalIgnoreCase))
+                // Try to locate the default master already present in the document
+                int masterId = -1;
+                foreach (Master m in diagram.Masters)
                 {
-                    defaultMasterId = m.ID;
-                    break;
-                }
-            }
-
-            // If the master is not present, add it from the stencil file
-            if (defaultMasterId == -1)
-            {
-                // AddMaster returns the ID of the newly added master
-                defaultMasterId = diagram.AddMaster(stencilPath, defaultMasterName);
-            }
-
-            // Retrieve the Master object to assign
-            Master defaultMaster = diagram.Masters[defaultMasterId];
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Shapes without an assigned master have Master == null
-                    if (shape.Master == null)
+                    if (string.Equals(m.NameU, defaultMasterName, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Assign the default master
-                        shape.Master = defaultMaster;
+                        masterId = m.ID;
+                        break;
                     }
                 }
-            }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // If the master is not found, add it from a stencil/template file
+                if (masterId == -1)
+                {
+                    // Path to a stencil that contains the required master (adjust as needed)
+                    string stencilPath = "basic_u.vssx";
+
+                    // AddMaster adds the master to the diagram and returns its unique ID (rule usage)
+                    masterId = diagram.AddMaster(stencilPath, defaultMasterName);
+                }
+
+                // Retrieve the Master object using the obtained ID
+                Master defaultMaster = diagram.Masters[masterId];
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Identify shapes without an assigned master
+                        if (shape.Master == null)
+                        {
+                            // Assign the default master to the shape
+                            shape.Master = defaultMaster;
+                        }
+                    }
+                }
+
+                // Save the modified diagram (uses the Diagram.Save method – lifecycle rule)
+                diagram.Save(outputFile, SaveFileFormat.Vsdx);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

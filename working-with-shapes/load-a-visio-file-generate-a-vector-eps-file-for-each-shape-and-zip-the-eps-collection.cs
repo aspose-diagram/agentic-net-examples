@@ -4,63 +4,66 @@ using System.IO.Compression;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VisioShapeEpsExporter
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Input Visio file path
-            string visioFilePath = @"C:\Path\To\InputDiagram.vsdx";
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Output ZIP file path
-            string zipFilePath = @"C:\Path\To\ShapesEpsCollection.zip";
+            // Folder where individual EPS files will be saved
+            string epsFolder = "eps_output";
 
-            // Temporary folder to store individual EPS files
-            string tempFolder = Path.Combine(Path.GetTempPath(), "VisioShapeEps_" + Guid.NewGuid().ToString());
-            Directory.CreateDirectory(tempFolder);
+            // Path for the final ZIP archive
+            string zipPath = "shapes_eps.zip";
 
-            // Load the Visio diagram using the provided constructor
-            using (Diagram diagram = new Diagram(visioFilePath))
+            // Ensure the EPS output folder exists
+            if (!Directory.Exists(epsFolder))
+                Directory.CreateDirectory(epsFolder);
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure image save options to use a vector format (EMF)
+            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Emf);
+
+            int shapeIndex = 0;
+
+            // Iterate through all pages and their shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Build a unique file name for each shape (using Shape ID)
-                        string epsFilePath = Path.Combine(tempFolder, $"shape_{shape.ID}.eps");
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Create image save options – EMF is the closest vector format supported
-                        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Emf);
+                    // Build a unique file name for each shape
+                    string epsFile = Path.Combine(
+                        epsFolder,
+                        $"shape_page{page.ID}_id{shape.ID}_{shapeIndex++}.eps");
 
-                        // Export the shape to an EMF file; the file extension is set to .eps
-                        shape.ToImage(epsFilePath, saveOptions);
-                    }
+                    // Export the shape to an EPS file (using EMF format)
+                    shape.ToImage(epsFile, imgOptions);
                 }
             }
 
-            // Create a ZIP archive containing all generated EPS files
-            using (FileStream zipStream = new FileStream(zipFilePath, FileMode.Create))
-            {
-                using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
-                {
-                    foreach (string file in Directory.GetFiles(tempFolder, "*.eps"))
-                    {
-                        archive.CreateEntryFromFile(file, Path.GetFileName(file));
-                    }
-                }
-            }
+            // Remove existing ZIP if it exists
+            if (File.Exists(zipPath))
+                File.Delete(zipPath);
 
-            // Clean up temporary files
-            Directory.Delete(tempFolder, true);
+            // Create a ZIP archive containing all EPS files
+            ZipFile.CreateFromDirectory(epsFolder, zipPath);
+
+            Console.WriteLine($"Exported {shapeIndex} shapes to EPS files and created archive '{zipPath}'.");
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -5,59 +5,61 @@ class Program
     {
         static void Main(string[] args)
         {
+            string filePath;
+
+            if (args.Length > 0)
+            {
+                filePath = args[0];
+            }
+            else
+            {
+                Console.Write("Enter the path to the Visio file: ");
+                filePath = Console.ReadLine();
+            }
+
             try
             {
+                ValidateConnectorJumpStyles(filePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Validation failed: {ex.Message}");
+            }
+        }
 
-                // Input Visio file path (first argument or default)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        /// <summary>
+        /// Loads a Visio diagram and checks every connector (1‑D shape) to ensure its
+        /// line jump style is not undefined. Throws an exception if an undefined style is found.
+        /// </summary>
+        /// <param name="filePath">Path to the Visio file.</param>
+        static void ValidateConnectorJumpStyles(string filePath)
+        {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(filePath);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                bool hasUndefinedJump = false;
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+            // Iterate through all pages.
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Connectors are 1‑D shapes.
+                    if (shape.OneD)
                     {
-                        // Identify connectors (1‑D shapes)
-                        if (shape.OneD)
+                        // Retrieve the connector's line jump style.
+                        ConLineJumpStyleValue jumpStyle = shape.Layout.ConLineJumpStyle.Value;
+
+                        // Undefined indicates the style is not set.
+                        if (jumpStyle == ConLineJumpStyleValue.Undefined)
                         {
-                            // Retrieve the line jump style for the connector
-                            ConLineJumpStyleValue jumpStyle = shape.Layout.ConLineJumpStyle.Value;
-
-                            // Check for undefined style
-                            if (jumpStyle == ConLineJumpStyleValue.Undefined)
-                            {
-                                Console.WriteLine($"Connector ID {shape.ID} on page \"{page.Name}\" has undefined line jump style.");
-
-                                // Optionally fix the undefined style by setting it to the page default
-                                shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.PageDefault;
-                                Console.WriteLine(" -> Line jump style set to PageDefault.");
-
-                                hasUndefinedJump = true;
-                            }
+                            string message = $"Connector shape ID {shape.ID} on page \"{page.Name}\" has an undefined line jump style.";
+                            Console.WriteLine(message);
+                            throw new Exception(message);
                         }
                     }
                 }
-
-                if (hasUndefinedJump)
-                {
-                    // Save the corrected diagram
-                    string outputPath = "validated_output.vsdx";
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved with corrections to \"{outputPath}\".");
-                }
-                else
-                {
-                    Console.WriteLine("All connectors have defined line jump styles.");
-                }
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
-    }
+
+            Console.WriteLine("All connectors have defined line jump styles.");
+        }
     }

@@ -1,39 +1,49 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output_protected.vsdx";
-
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            try
             {
-                // Iterate through each shape on the current page
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+                // Output Visio file path (protected)
+                string outputPath = "output_protected.vsdx";
+
+                try
                 {
-                    // Prevent the shape from being deleted by locking the Delete property
-                    shape.Protection.LockDelete.Value = BOOL.True;
+                    // Load the diagram from file
+                    using (Diagram diagram = new Diagram(inputPath))
+                    {
+                        // Iterate through all pages and shapes
+                        foreach (Page page in diagram.Pages)
+                        {
+                            foreach (Shape shape in page.Shapes)
+                            {
+                                // Prevent deletion of the shape
+                                shape.Protection.LockDelete.Value = BOOL.True;
+                            }
+                        }
+
+                        // Save the modified diagram
+                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    }
+
+                    Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("An error occurred: " + ex.Message);
+                    throw;
+                }
+
             }
-
-            // Save the modified diagram with protection applied
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

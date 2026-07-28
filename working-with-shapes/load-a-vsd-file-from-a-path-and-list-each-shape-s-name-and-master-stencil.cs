@@ -10,9 +10,9 @@ class Program
         {
 
             // Path to the VSD file
-            string filePath = @"C:\Path\To\Your\Diagram.vsd";
+            string filePath = @"C:\Path\To\YourFile.vsd";
 
-            // Load the diagram using the constructor that accepts a file path
+            // Load the Visio diagram
             using (Diagram diagram = new Diagram(filePath))
             {
                 // Iterate through all pages in the diagram
@@ -21,13 +21,12 @@ class Program
                     // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Get the shape's name
-                        string shapeName = shape.Name;
+                        // Shape name (may be empty)
+                        string shapeName = shape.Name ?? "<no name>";
 
-                        // Get the name of the master (stencil) the shape is based on, if any
-                        string masterName = shape.Master != null ? shape.Master.Name : "N/A";
+                        // Master stencil name (if the shape is based on a master)
+                        string masterName = shape.Master != null ? shape.Master.Name ?? "<no master name>" : "<no master>";
 
-                        // Output the information
                         Console.WriteLine($"Shape: {shapeName}, Master Stencil: {masterName}");
                     }
                 }

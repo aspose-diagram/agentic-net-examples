@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,68 +8,68 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx"; // replace with actual file path
+                // Load an existing Visio diagram (replace with your file path)
+                string inputPath = "input.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
-                    throw new Exception("The diagram contains no pages.");
-
-                // Work with the first page
+                // Work with the first page in the document
                 Page page = diagram.Pages[0];
 
-                // Ensure the page has at least one shape to duplicate
-                if (page.Shapes.Count == 0)
-                    throw new Exception("The page contains no shapes to duplicate.");
+                // Retrieve the first shape on the page to use as the source for duplication
+                Shape originalShape = null;
+                foreach (Shape shp in page.Shapes)
+                {
+                    originalShape = shp;
+                    break;
+                }
 
-                // Get the first shape as the source shape
-                Shape sourceShape = page.Shapes.GetShape(0);
+                if (originalShape == null)
+                {
+                    Console.WriteLine("No shapes found on the page to duplicate.");
+                    return;
+                }
 
-                // Verify the source shape has a master (required for AddShape)
-                if (sourceShape.Master == null)
-                    throw new Exception("Source shape does not have an associated master.");
+                // Master name to use for new shapes (fallback to a basic rectangle if master is missing)
+                string masterName = originalShape.Master != null ? originalShape.Master.Name : "Rectangle";
 
-                // Store original position
-                double originalPinX = sourceShape.XForm.PinX.Value;
-                double originalPinY = sourceShape.XForm.PinY.Value;
+                // Base position and size of the original shape
+                double basePinX = originalShape.XForm.PinX.Value;
+                double basePinY = originalShape.XForm.PinY.Value;
+                double shapeWidth = originalShape.XForm.Width.Value;
+                double shapeHeight = originalShape.XForm.Height.Value;
 
-                // Store original text (if any)
-                string originalText = sourceShape.Text.Value.ToString();
-
-                // Define duplication parameters
-                int duplicateCount = 5;          // number of copies to create
+                // Duplication settings
+                int numberOfCopies = 5;          // how many duplicates to create
                 double offsetX = 1.0;            // horizontal offset per copy (in inches)
                 double offsetY = 0.5;            // vertical offset per copy (in inches)
 
-                // Loop to create duplicates
-                for (int i = 1; i <= duplicateCount; i++)
+                // Create duplicates with incremental offsets
+                for (int i = 1; i <= numberOfCopies; i++)
                 {
-                    // Calculate new position
-                    double newPinX = originalPinX + i * offsetX;
-                    double newPinY = originalPinY + i * offsetY;
+                    double newPinX = basePinX + i * offsetX;
+                    double newPinY = basePinY + i * offsetY;
 
-                    // Add a new shape based on the same master
-                    long newShapeId = page.AddShape(newPinX, newPinY, sourceShape.Master.Name);
+                    // Add a new shape based on the same master; AddShape returns a unique shape ID
+                    long newShapeId = page.AddShape(newPinX, newPinY, masterName);
 
-                    // Retrieve the newly added shape for further customization
+                    // Retrieve the newly added shape to copy additional properties
                     Shape newShape = page.Shapes.GetShape(newShapeId);
 
-                    // Copy the text from the source shape
-                    if (!string.IsNullOrWhiteSpace(originalText))
-                    {
-                        newShape.Text.Value.Clear();
-                        newShape.Text.Value.Add(new Txt(originalText));
-                    }
+                    // Preserve the original size
+                    newShape.XForm.Width.Value = shapeWidth;
+                    newShape.XForm.Height.Value = shapeHeight;
 
-                    // Additional property copying can be done here if needed
-                    // Example: copy fill color
-                    // newShape.Fill.FillForegnd.Value = sourceShape.Fill.FillForegnd.Value;
+                    // (Optional) Copy visual formatting such as fill and line if desired
+                    newShape.Fill.FillForegnd.Value = originalShape.Fill.FillForegnd.Value;
+                    newShape.Line.LineColor.Value = originalShape.Line.LineColor.Value;
+                    newShape.Line.LineWeight.Value = originalShape.Line.LineWeight.Value;
                 }
 
                 // Save the modified diagram to a new file
-                string outputPath = "output.vsdx"; // replace with desired output path
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Diagram saved with duplicated shapes to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

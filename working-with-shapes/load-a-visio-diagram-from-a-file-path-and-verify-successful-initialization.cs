@@ -10,29 +10,34 @@ class Program
         {
 
             // Path to the Visio file to be loaded
-            string filePath = @"C:\Path\To\Your\Diagram.vsdx";
+            string filePath = "sample.vsdx";
 
-            // Load the diagram using the constructor that accepts a file name
-            Diagram diagram = new Diagram(filePath);
+            // Load and verify the diagram
+            Diagram diagram = LoadDiagram(filePath);
 
-            // Verify that the diagram was initialized correctly
-            // Check that the diagram object is not null and contains at least one page
-            if (diagram != null && diagram.Pages.Count > 0)
-            {
-                Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
-            }
-            else
-            {
-                Console.WriteLine("Failed to load diagram or diagram contains no pages.");
-            }
-
-            // Clean up resources
-            diagram.Dispose();
+            // Diagram is ready for further processing
+            // ...
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    static Diagram LoadDiagram(string filePath)
+    {
+        // Load the diagram using the constructor that accepts a file path
+        Diagram diagram = new Diagram(filePath);
+
+        // Verify successful initialization:
+        // Ensure the diagram object is not null and contains at least one page
+        if (diagram == null || diagram.Pages == null || diagram.Pages.Count == 0)
+        {
+            throw new InvalidOperationException("Failed to load the Visio diagram or it contains no pages.");
+        }
+
+        Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
+        return diagram;
     }
 }

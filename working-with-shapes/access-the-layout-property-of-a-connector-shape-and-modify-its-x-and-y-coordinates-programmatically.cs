@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -13,42 +12,39 @@ class Program
                 string inputPath = "input.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
-                // Define new coordinates for the connector (in inches)
-                double newPinX = 5.0;
-                double newPinY = 3.0;
+                // Access the first page (index 0)
+                Page page = diagram.Pages[0];
 
-                // Iterate through pages to locate the first connector shape (1‑D shape)
-                foreach (Page page in diagram.Pages)
+                // Find the first connector shape (1‑D shape)
+                Shape? connector = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Connector shapes are 1‑D (OneD == true)
+                    if (shape.OneD)
                     {
-                        // Connectors are 1‑D shapes; check the OneD flag
-                        if (shape.OneD)
-                        {
-                            // Access the Layout property (required by the task)
-                            Layout connectorLayout = shape.Layout;
-
-                            // Although Layout does not hold position cells, we modify the
-                            // geometric position via the XForm property, which controls PinX and PinY.
-                            shape.XForm.PinX.Value = newPinX;
-                            shape.XForm.PinY.Value = newPinY;
-
-                            Console.WriteLine($"Connector shape ID {shape.ID} moved to PinX={newPinX}, PinY={newPinY}.");
-
-                            // If you need to adjust layout‑specific settings, you can do it here,
-                            // e.g., connectorLayout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-
-                            // Exit after modifying the first connector
-                            goto SaveDiagram;
-                        }
+                        connector = shape;
+                        break;
                     }
                 }
 
-                SaveDiagram:
-                // Save the modified diagram to a new file
+                if (connector == null)
+                {
+                    throw new Exception("No connector shape found in the diagram.");
+                }
+
+                // Modify the connector's position via its XForm (PinX and PinY)
+                // Example: move the connector to (5.0, 7.0) inches
+                connector.XForm.PinX.Value = 5.0;
+                connector.XForm.PinY.Value = 7.0;
+
+                // Optionally, you can also adjust routing style via Layout if needed
+                // connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+
+                // Save the modified diagram
                 string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+                Console.WriteLine($"Connector position updated and diagram saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

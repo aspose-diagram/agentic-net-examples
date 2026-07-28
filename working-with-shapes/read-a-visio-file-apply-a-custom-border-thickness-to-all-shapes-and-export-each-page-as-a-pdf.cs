@@ -4,65 +4,69 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (adjust as needed)
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Desired border thickness (in inches)
+            double borderThickness = 0.03; // approx 2.16 points
+
+            // Iterate pages using an index because Page has no Index property
+            for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
             {
+                Page page = diagram.Pages[pageIdx];
 
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
-
-                // Verify the input file exists
-                if (!File.Exists(inputPath))
+                // Apply border thickness to all non‑deleted shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    throw new FileNotFoundException($"Visio file not found: {inputPath}");
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Set line weight (border thickness)
+                    shape.Line.LineWeight.Value = borderThickness;
                 }
 
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Prepare PDF save options for the current page
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
                 {
-                    // Desired border thickness (line weight) in inches
-                    double borderThickness = 0.02; // approx 0.5 mm
+                    // Export only the current page (zero‑based index)
+                    PageIndex = pageIdx,
+                    ExportHiddenPage = false,
+                    // Fallback font in case a required font is missing
+                    DefaultFont = "Arial"
+                };
 
-                    // Apply the border thickness to every shape on every page
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Set line weight (border thickness)
-                            shape.Line.LineWeight.Value = borderThickness;
-                        }
-                    }
+                // Construct output PDF file name using the page name (or a fallback)
+                string safePageName = string.IsNullOrWhiteSpace(page.Name) ? $"Page_{pageIdx}" : page.Name;
+                string outputPdfPath = Path.Combine("Output", $"{safePageName}.pdf");
 
-                    // Export each page as a separate PDF file
-                    int pageIndex = 0;
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Prepare PDF save options for the current page
-                        PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                        pdfOptions.DefaultFont = "Arial";
-                        pdfOptions.ExportHiddenPage = false;
-                        pdfOptions.PageIndex = pageIndex;   // zero‑based page index
-                        pdfOptions.PageCount = 1;           // export only this page
-                        pdfOptions.SaveFormat = SaveFileFormat.Pdf; // explicit format
+                // Ensure the output directory exists
+                Directory.CreateDirectory(Path.GetDirectoryName(outputPdfPath) ?? "Output");
 
-                        // Build output file name
-                        string outputFileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_Page{pageIndex + 1}.pdf";
-
-                        // Save the diagram (only the specified page) as PDF
-                        diagram.Save(outputFileName, pdfOptions);
-
-                        pageIndex++;
-                    }
-                }
-
-                Console.WriteLine("Processing completed successfully.");
-
+                // Save the current page as a PDF
+                diagram.Save(outputPdfPath, pdfOptions);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("Processing completed. PDFs are saved in the 'Output' folder.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

@@ -9,54 +9,39 @@ class Program
         try
         {
 
-            // Paths for input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Add a rectangle shape to the active page at position (2,2)
+            double pinX = 2.0;
+            double pinY = 2.0;
+            string masterName = "Rectangle";
 
-            // Access the first page
-            Page page = diagram.Pages[0];
+            // The fourth parameter indicates whether to calculate geometry; set to false
+            long shapeId = diagram.ActivePage.AddShape(pinX, pinY, masterName, false);
 
-            // Ensure the page contains at least one shape
-            if (page.Shapes.Count == 0)
-            {
-                Console.WriteLine("No shapes found on the first page.");
-                return;
-            }
-
-            // Retrieve the first shape on the page
-            Shape shape = page.Shapes[0];
+            // Retrieve the shape instance using its ID
+            Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
 
             // Set a 45‑degree rotation around the X‑axis
-            shape.ThreeDFormat.RotationXAngle.Value = 45; // degrees
+            shape.ThreeDFormat.RotationXAngle.Value = 45;
 
-            // Retrieve ThreeDFormat properties
-            double rotationX = shape.ThreeDFormat.RotationXAngle.Value;
-            double rotationY = shape.ThreeDFormat.RotationYAngle.Value;
-            double rotationZ = shape.ThreeDFormat.RotationZAngle.Value;
-            var rotationType = shape.ThreeDFormat.RotationType.Value;
-            double perspective = shape.ThreeDFormat.Perspective.Value;
-            double distanceFromGround = shape.ThreeDFormat.DistanceFromGround.Value;
-            BOOL keepTextFlat = shape.ThreeDFormat.KeepTextFlat.Value;
+            // Retrieve and display various ThreeDFormat properties
+            Console.WriteLine($"RotationXAngle: {shape.ThreeDFormat.RotationXAngle.Value}");
+            Console.WriteLine($"RotationYAngle: {shape.ThreeDFormat.RotationYAngle.Value}");
+            Console.WriteLine($"RotationZAngle: {shape.ThreeDFormat.RotationZAngle.Value}");
+            Console.WriteLine($"RotationType: {shape.ThreeDFormat.RotationType.Value}");
+            Console.WriteLine($"Perspective: {shape.ThreeDFormat.Perspective.Value}");
+            Console.WriteLine($"DistanceFromGround: {shape.ThreeDFormat.DistanceFromGround.Value}");
+            Console.WriteLine($"KeepTextFlat: {shape.ThreeDFormat.KeepTextFlat.Value}");
 
-            // Output the retrieved values
-            Console.WriteLine($"RotationXAngle: {rotationX}");
-            Console.WriteLine($"RotationYAngle: {rotationY}");
-            Console.WriteLine($"RotationZAngle: {rotationZ}");
-            Console.WriteLine($"RotationType: {rotationType}");
-            Console.WriteLine($"Perspective: {perspective}");
-            Console.WriteLine($"DistanceFromGround: {distanceFromGround}");
-            Console.WriteLine($"KeepTextFlat: {keepTextFlat}");
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the diagram (optional)
+            diagram.Save("RotatedShape.vsdx", SaveFileFormat.Vsdx);
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.NullReferenceException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
 }

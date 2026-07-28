@@ -5,26 +5,30 @@ using Aspose.Diagram.Saving;
 
 public class DiagramProcessor
 {
-    // Loads a Visio diagram, applies modifications, and returns the diagram as a byte array.
-    public byte[] GetDiagramBytes(string sourceFilePath)
+    // Loads a Visio diagram, performs optional modifications, and returns it as a memory stream.
+    public MemoryStream GetDiagramAsStream(string sourceFilePath)
     {
-        // Load the diagram from a file.
+        // Load the diagram from a file using the default constructor.
         Diagram diagram = new Diagram(sourceFilePath);
 
-        // -------------------------------------------------
-        // Place any diagram modifications here.
-        // For example, you could add shapes, change properties, etc.
-        // -------------------------------------------------
+        // ----- Place for diagram modifications -----
+        // Example: change the background color of the first page (optional).
+        // if (diagram.Pages.Count > 0)
+        // {
+        //     diagram.Pages[0].Background = 2; // set to a predefined background index
+        // }
+        // -------------------------------------------
 
-        // Save the modified diagram into a memory stream using VDX format.
-        using (MemoryStream memoryStream = new MemoryStream())
-        {
-            // Use the Save method that accepts a Stream and a SaveFileFormat.
-            diagram.Save(memoryStream, SaveFileFormat.Vdx);
+        // Prepare a memory stream to hold the saved diagram.
+        MemoryStream memoryStream = new MemoryStream();
 
-            // Return the stream contents as a byte array for further processing.
-            return memoryStream.ToArray();
-        }
+        // Save the diagram into the memory stream in VDX format.
+        diagram.Save(memoryStream, SaveFileFormat.Vdx);
+
+        // Reset the stream position so it can be read from the beginning by the caller.
+        memoryStream.Position = 0;
+
+        return memoryStream;
     }
 }
 

@@ -1,43 +1,48 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Master name to filter shapes by
-            string targetMasterName = "MyCustomMaster";
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+
+                // Output Visio file path
+                string outputPath = "output.vsdx";
+
+                // Master name to filter shapes by (case‑sensitive)
+                string masterNameFilter = "Rectangle";
+
+                // Load the diagram from file
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Check if the shape is based on a master and if the master's name matches the filter
-                    if (shape.Master != null && shape.Master.NameU == targetMasterName)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Apply a preset theme style matrix to the shape
-                        // (using example enum values; replace with desired style/color)
-                        shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style1, PresetColorMatricsValue.Color1);
+                        // Ensure the shape has an associated master and compare its name
+                        if (shape.Master != null && shape.Master.Name == masterNameFilter)
+                        {
+                            // Apply a custom preset theme to the matching shape
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+                        }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,46 +1,42 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
-class Program
+class ListUnconnectedShapes
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // List to hold IDs of shapes without any connections
-            List<long> isolatedShapeIds = new List<long>();
-
-            // Iterate through all pages and shapes
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve IDs of all shapes connected to the current shape (both incoming and outgoing)
+                    // Get IDs of shapes connected to the current shape (both incoming and outgoing)
                     long[] connected = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
 
-                    // If no connections are found, add the shape ID to the list
-                    if (connected == null || connected.Length == 0)
+                    // Get IDs of shapes that this shape depends on
+                    long[] dependsOn = shape.DependsOnShapes();
+
+                    // Get IDs of shapes glued to this shape (all 1‑D and 2‑D glued shapes)
+                    long[] glued = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+
+                    // If all three arrays are empty, the shape has no connections
+                    if ((connected == null || connected.Length == 0) &&
+                        (dependsOn == null || dependsOn.Length == 0) &&
+                        (glued == null || glued.Length == 0))
                     {
-                        isolatedShapeIds.Add(shape.ID);
+                        // Output the shape ID for further analysis
+                        Console.WriteLine($"Unconnected Shape ID: {shape.ID}");
                     }
                 }
             }
-
-            // Output the IDs to the console
-            Console.WriteLine("Shapes with no connections:");
-            foreach (long id in isolatedShapeIds)
-            {
-                Console.WriteLine(id);
-            }
-
-            // Optionally, write the IDs to a text file for further analysis
-            System.IO.File.WriteAllLines("IsolatedShapeIds.txt", isolatedShapeIds.ConvertAll(id => id.ToString()));
 
         }
         catch (System.IO.FileNotFoundException ex)

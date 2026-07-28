@@ -9,57 +9,61 @@ class Program
             try
             {
 
-                // Path to the Visio file to be validated
-                string diagramPath = "input.vsdx";
+                // Path to the Visio file (provide as first argument or modify the literal)
+                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Define the intended rotation angles for specific shapes (shape ID -> expected angle in degrees)
-                // Adjust this dictionary according to your expected values.
-                var expectedAngles = new Dictionary<long, double>
+                // Define the intended rotation angles (in degrees) for shapes identified by their universal name.
+                // Adjust this dictionary to match your expected values.
+                var expectedAnglesDeg = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
                 {
-                    // Example entries:
-                    // { 5, 45.0 },
-                    // { 12, 90.0 }
+                    { "Rectangle", 45.0 },
+                    { "Process", 90.0 },
+                    { "Decision", 0.0 } // example entries
                 };
 
-                // Tolerance for floating‑point comparison (degrees)
-                const double tolerance = 0.001;
+                // Tolerance for floating‑point comparison (in radians)
+                const double toleranceRad = 0.0001;
 
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are not in the expected list
-                        if (!expectedAngles.ContainsKey(shape.ID))
+                        // Skip shapes that have no expected entry
+                        if (!expectedAnglesDeg.TryGetValue(shape.NameU, out double expectedDeg))
                             continue;
 
-                        // Retrieve the actual rotation angle from the Angle cell (in degrees)
-                        double actualAngle = shape.XForm.Angle.Value;
+                        // Retrieve the actual rotation angle (stored in radians)
+                        double actualRad = shape.XForm.Angle.Value;
 
-                        // Retrieve the intended angle
-                        double intendedAngle = expectedAngles[shape.ID];
+                        // Convert expected degrees to radians for comparison
+                        double expectedRad = expectedDeg * Math.PI / 180.0;
 
                         // Compare with tolerance
-                        if (Math.Abs(actualAngle - intendedAngle) > tolerance)
+                        if (Math.Abs(actualRad - expectedRad) > toleranceRad)
                         {
-                            // Report mismatch
-                            string message = $"Shape ID {shape.ID} on page '{page.Name}' has angle {actualAngle}°, " +
-                                             $"but expected {intendedAngle}°.";
-                            // Throw exception to indicate verification failure
-                            throw new Exception(message);
+                            // Report mismatch and abort
+                            throw new Exception(
+                                $"Shape '{shape.NameU}' (ID={shape.ID}) has angle {actualRad * 180.0 / Math.PI:F2}°, " +
+                                $"expected {expectedDeg:F2}°.");
+                        }
+                        else
+                        {
+                            Console.WriteLine(
+                                $"Shape '{shape.NameU}' (ID={shape.ID}) rotation verified: {expectedDeg:F2}°.");
                         }
                     }
                 }
 
-                Console.WriteLine("All shape angles match the intended values.");
+                Console.WriteLine("All specified shape rotations match the intended values.");
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

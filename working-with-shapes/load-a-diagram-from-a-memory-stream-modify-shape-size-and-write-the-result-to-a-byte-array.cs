@@ -2,62 +2,72 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class Program
+public class Program
 {
-    static void Main()
+    // Loads a Visio diagram from a byte array, resizes the first shape found,
+    // and returns the modified diagram as a new byte array.
+    public static byte[] ResizeFirstShape(byte[] diagramBytes)
     {
-        // Input Visio diagram as a byte array.
-        byte[] inputVisioBytes = GetInputBytes();
-
-        if (inputVisioBytes == null || inputVisioBytes.Length == 0)
+        // Load diagram from the input memory stream
+        using (MemoryStream inputStream = new MemoryStream(diagramBytes))
         {
-            Console.Error.WriteLine("Input byte array is empty.");
-            return;
-        }
+            Diagram diagram = new Diagram(inputStream);
 
-        try
-        {
-            // Load the diagram from a memory stream.
-            using (MemoryStream inputStream = new MemoryStream(inputVisioBytes))
+            // Access the first page (index 0)
+            Page page = diagram.Pages[0];
+
+            // Retrieve the first shape on the page
+            Aspose.Diagram.Shape targetShape = null;
+            foreach (Aspose.Diagram.Shape shape in page.Shapes)
             {
-                Diagram diagram = new Diagram(inputStream);
-
-                // Access the first page.
-                Page page = diagram.Pages[0];
-
-                // Modify the size of the first non‑deleted shape.
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Del == BOOL.False)
-                    {
-                        // Set new width and height (in inches).
-                        shape.XForm.Width.Value = 2.0;   // example width
-                        shape.XForm.Height.Value = 1.0;  // example height
-                        break;
-                    }
-                }
-
-                // Save the modified diagram to a byte array (using VDX format as an example).
-                using (MemoryStream outputStream = new MemoryStream())
-                {
-                    diagram.Save(outputStream, SaveFileFormat.Vdx);
-                    byte[] resultBytes = outputStream.ToArray();
-
-                    // Demonstrate that the result was produced.
-                    Console.WriteLine($"Resulting diagram size: {resultBytes.Length} bytes");
-                }
+                targetShape = shape;
+                break;
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+
+            if (targetShape == null)
+            {
+                throw new Exception("No shape found in the diagram.");
+            }
+
+            // Modify the shape's width and height (values are in inches)
+            targetShape.XForm.Width.Value = 2.0;   // New width
+            targetShape.XForm.Height.Value = 1.5;  // New height
+
+            // Save the modified diagram to an output memory stream
+            using (MemoryStream outputStream = new MemoryStream())
+            {
+                diagram.Save(outputStream, SaveFileFormat.Vsdx);
+                return outputStream.ToArray();
+            }
         }
     }
 
-    // Placeholder method to obtain the input byte array.
-    static byte[] GetInputBytes()
+    // Example entry point demonstrating usage
+    public static void Main()
     {
-        // Replace this with actual logic to retrieve the diagram bytes.
-        return new byte[0];
+        try
+        {
+
+            // Path to an existing Visio file
+            string inputPath = "input.vsdx";
+            // Path where the modified file will be saved
+            string outputPath = "output.vsdx";
+
+            // Read the original file into a byte array
+            byte[] inputBytes = File.ReadAllBytes(inputPath);
+
+            // Process the diagram
+            byte[] outputBytes = ResizeFirstShape(inputBytes);
+
+            // Write the result back to disk
+            File.WriteAllBytes(outputPath, outputBytes);
+
+            Console.WriteLine("Diagram has been resized and saved successfully.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

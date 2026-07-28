@@ -1,48 +1,53 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            bool allValid = true;
-
-            // Iterate through all pages and their shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the Visio file to be validated
+                string inputPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                bool validationFailed = false;
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the shape has a 3D format and a DistanceFromGround value
-                    if (shape.ThreeDFormat != null && shape.ThreeDFormat.DistanceFromGround != null)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
+                        // Access the DistanceFromGround value (in points)
                         double distance = shape.ThreeDFormat.DistanceFromGround.Value;
 
-                        // Validate the distance does not exceed 100 points
+                        // Check if the distance exceeds 100 points
                         if (distance > 100)
                         {
-                            allValid = false;
-                            Console.WriteLine($"Shape ID {shape.ID} exceeds 100 points: DistanceFromGround = {distance}");
+                            validationFailed = true;
+                            Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' exceeds 100 points: {distance}");
                         }
                     }
                 }
-            }
 
-            if (allValid)
+                // Throw an exception if any shape failed the validation
+                if (validationFailed)
+                {
+                    throw new Exception("One or more shapes have DistanceFromGround greater than 100 points.");
+                }
+                else
+                {
+                    Console.WriteLine("All shapes passed the DistanceFromGround validation (<= 100 points).");
+                }
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("All shapes have DistanceFromGround <= 100 points.");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
@@ -9,28 +9,35 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (use the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Access the first page (adjust index as needed)
+            // ID of the shape to check (replace with the actual ID)
+            long shapeId = 5;
+
+            // Load the diagram (lifecycle rule: use provided load method)
+            Diagram diagram = new Diagram(inputPath);
+
+            // Work with the first page (adjust if needed)
             Page page = diagram.Pages[0];
 
-            // Identify the shape to check (replace with actual shape ID or retrieval logic)
-            long targetShapeId = 1; // example ID
-            Shape targetShape = page.Shapes.GetShape(targetShapeId);
+            // Retrieve the shape by its unique ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
             // Verify whether the shape is already part of a group
-            if (!targetShape.IsInGroup())
+            if (!shape.IsInGroup())
             {
-                // The shape is not grouped; create a new group containing this shape
-                Shape groupShape = page.Shapes.Group(new Shape[] { targetShape });
+                // Shape is not grouped; create a new group containing this shape
+                // Group method returns the newly created group shape
+                Shape groupShape = page.Shapes.Group(new Shape[] { shape });
 
-                // Optional: configure group selection behavior
+                // Example: set the group's selection mode (optional)
                 groupShape.Group.SelectMode.Value = SelectModeValue.GroupShapeOnly;
             }
 
-            // Save the modified diagram (use the provided save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram (lifecycle rule: use provided save method)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

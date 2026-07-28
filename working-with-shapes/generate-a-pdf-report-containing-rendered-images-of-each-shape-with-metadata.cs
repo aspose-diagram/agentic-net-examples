@@ -6,96 +6,123 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string diagramPath = "input.vsdx";
-        if (!File.Exists(diagramPath))
+        // Input Visio file (replace with actual path)
+        string visioPath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"File not found: {visioPath}");
             return;
         }
 
-        string imageFolder = "ShapeImages";
-        Directory.CreateDirectory(imageFolder);
+        // Output PDF report file
+        string pdfReportPath = "ShapeReport.pdf";
 
-        List<ShapeInfo> shapeInfos = new List<ShapeInfo>();
-
+        // Load the Visio diagram inside a try/catch to capture loading errors
+        Diagram diagram;
         try
         {
-            Diagram diagram = new Diagram(diagramPath);
-
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    var info = new ShapeInfo
-                    {
-                        PageId = page.ID,
-                        ShapeId = shape.ID,
-                        Name = shape.Name,
-                        NameU = shape.NameU,
-                        MasterName = shape.Master?.Name ?? string.Empty,
-                        Type = shape.Type.ToString(),
-                        PinX = shape.XForm.PinX.Value,
-                        PinY = shape.XForm.PinY.Value,
-                        Width = shape.XForm.Width.Value,
-                        Height = shape.XForm.Height.Value
-                    };
-                    shapeInfos.Add(info);
-
-                    string imageFile = Path.Combine(imageFolder, $"Page{page.ID}_Shape{shape.ID}.png");
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    shape.ToImage(imageFile, imgOptions);
-                }
-            }
-
-            // Create PDF report using Aspose.Pdf (fully qualified)
-            var pdfDoc = new Aspose.Pdf.Document();
-            foreach (var info in shapeInfos)
-            {
-                var pdfPage = pdfDoc.Pages.Add();
-
-                // Add image
-                var pdfImage = new Aspose.Pdf.Image
-                {
-                    File = Path.Combine(imageFolder, $"Page{info.PageId}_Shape{info.ShapeId}.png"),
-                    FixWidth = 500
-                };
-                pdfPage.Paragraphs.Add(pdfImage);
-
-                // Add metadata text
-                string meta = $"Page: {info.PageId}, Shape ID: {info.ShapeId}, Name: {info.Name}, " +
-                              $"NameU: {info.NameU}, Master: {info.MasterName}, Type: {info.Type}, " +
-                              $"Position: ({info.PinX}, {info.PinY}), Size: ({info.Width} x {info.Height})";
-                var textFragment = new Aspose.Pdf.Text.TextFragment(meta);
-                pdfPage.Paragraphs.Add(textFragment);
-            }
-
-            string pdfPath = "ShapeReport.pdf";
-            pdfDoc.Save(pdfPath);
-            Console.WriteLine($"PDF report generated: {pdfPath}");
+            diagram = new Diagram(visioPath);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Temporary folder to store shape images
+        string tempFolder = Path.Combine(Path.GetTempPath(), "ShapeImages_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempFolder);
+
+        // List to hold image paths and metadata for each shape
+        List<(string ImagePath, string Metadata)> shapeData = new List<(string, string)>();
+
+        // Iterate through all pages and shapes
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
+            {
+                // Skip deleted shapes
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                // Prepare image file path
+                string imageFile = Path.Combine(tempFolder, $"shape_{shape.ID}.png");
+
+                // Export shape to PNG image inside a try/catch
+                try
+                {
+                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                    shape.ToImage(imageFile, imgOptions);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error exporting shape ID {shape.ID} to image: {ex.Message}");
+                    continue;
+                }
+
+                // Build metadata string
+                string masterName = shape.Master != null ? shape.Master.Name : "N/A";
+                string metadata = $"Shape ID: {shape.ID}\nName: {shape.Name}\nMaster: {masterName}";
+
+                // Store for PDF generation
+                shapeData.Add((imageFile, metadata));
+            }
+        }
+
+        // Create PDF document (fully qualified to avoid namespace clash)
+        Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document();
+
+        // Add a page per shape with its image and metadata
+        foreach (var item in shapeData)
+        {
+            // Add a new page
+            Aspose.Pdf.Page pdfPage = pdfDoc.Pages.Add();
+
+            // Add the shape image
+            try
+            {
+                using (FileStream imgStream = new FileStream(item.ImagePath, FileMode.Open, FileAccess.Read))
+                {
+                    Aspose.Pdf.Image pdfImage = new Aspose.Pdf.Image
+                    {
+                        ImageStream = imgStream
+                    };
+                    pdfPage.Paragraphs.Add(pdfImage);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error adding image to PDF for shape file {item.ImagePath}: {ex.Message}");
+                continue;
+            }
+
+            // Add metadata text below the image
+            Aspose.Pdf.Text.TextFragment tf = new Aspose.Pdf.Text.TextFragment(item.Metadata);
+            tf.TextState.FontSize = 10;
+            pdfPage.Paragraphs.Add(tf);
+        }
+
+        // Save the PDF report inside a try/catch
+        try
+        {
+            pdfDoc.Save(pdfReportPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving PDF report: {ex.Message}");
+        }
+
+        // Optional: clean up temporary images
+        try
+        {
+            Directory.Delete(tempFolder, true);
+        }
+        catch
+        {
+            // Ignored – cleanup failure should not stop the program
         }
     }
-}
-
-// DTO for shape metadata
-public class ShapeInfo
-{
-    public int PageId { get; set; }
-    public long ShapeId { get; set; }
-    public string Name { get; set; }
-    public string NameU { get; set; }
-    public string MasterName { get; set; }
-    public string Type { get; set; }
-    public double PinX { get; set; }
-    public double PinY { get; set; }
-    public double Width { get; set; }
-    public double Height { get; set; }
 }

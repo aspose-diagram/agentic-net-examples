@@ -1,52 +1,48 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page of the diagram
-            Page page = diagram.Pages[0];
-
-            // Retrieve the first shape on the page (if any)
-            Shape targetShape = null;
-            foreach (Shape s in page.Shapes)
+            try
             {
-                targetShape = s;
-                break;
-            }
 
-            if (targetShape == null)
+                // Load an existing Visio diagram (replace with your actual file path)
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Ensure there is at least one page and one shape
+                if (diagram.Pages.Count == 0)
+                {
+                    throw new Exception("The diagram contains no pages.");
+                }
+
+                Page page = diagram.Pages[0];
+
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    targetShape = shape;
+                    break; // take the first shape found
+                }
+
+                if (targetShape == null)
+                {
+                    throw new Exception("No shape found on the first page.");
+                }
+
+                // Apply combined rotations of 30 degrees around X, Y, and Z axes
+                targetShape.ThreeDFormat.RotationXAngle.Value = 30.0;
+                targetShape.ThreeDFormat.RotationYAngle.Value = 30.0;
+                targetShape.ThreeDFormat.RotationZAngle.Value = 30.0;
+
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("No shapes found on the first page.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Apply combined rotations of 30 degrees on X, Y, and Z axes
-            targetShape.ThreeDFormat.RotationXAngle.Value = 30;
-            targetShape.ThreeDFormat.RotationYAngle.Value = 30;
-            targetShape.ThreeDFormat.RotationZAngle.Value = 30;
-
-            // Save the modified diagram to a new file
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Shape rotated on X, Y, Z axes by 30 degrees and saved to " + outputPath);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

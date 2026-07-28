@@ -2,47 +2,39 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class ThemeApplicationLogger
+class ThemeLogger
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram(@"input.vsdx");
 
             // Path to the log file
-            string logFilePath = "ThemeApplicationLog.txt";
+            string logFilePath = @"theme_log.txt";
 
-            // Ensure the log file is empty before starting
-            File.WriteAllText(logFilePath, string.Empty);
-
-            // Open a StreamWriter for appending log entries
+            // Open the log file for appending
             using (StreamWriter logWriter = new StreamWriter(logFilePath, true))
             {
-                // Iterate through all pages and shapes in the diagram
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Example: Apply the Office preset theme to the shape
+                        // Apply a preset theme to the shape (choose any theme you need)
                         shape.PresetTheme = PresetThemeValue.Office;
 
-                        // Log the theme application event
-                        string logEntry = string.Format(
-                            "[{0}] Shape ID {1} applied theme {2}",
-                            DateTime.Now.ToString("o"), // ISO 8601 timestamp
-                            shape.ID,
-                            PresetThemeValue.Office);
-
+                        // Log the event: timestamp (ISO 8601) and shape identifier
+                        string logEntry = $"{DateTime.UtcNow:O}\tShapeID:{shape.ID}";
                         logWriter.WriteLine(logEntry);
                     }
                 }
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram (replace with your desired output path)
+            diagram.Save(@"output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

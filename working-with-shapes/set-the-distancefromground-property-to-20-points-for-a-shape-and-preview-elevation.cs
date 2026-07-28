@@ -1,45 +1,48 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-                // Get the first (default) page
+                // Access the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Add a rectangle shape at position (2,2) inches
-                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
-
-                // Retrieve the shape instance using the returned ID
+                // Retrieve a shape by its ID (example: shape with ID 1)
+                // Adjust the ID as needed for your specific diagram
+                long shapeId = 1;
                 Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Set the distance from ground to 20 points (elevation)
-                shape.ThreeDFormat.DistanceFromGround.Value = 20;
+                // Set the distance from ground to 20 points (1 point = 1/72 inch)
+                // The property expects a double value representing points
+                shape.ThreeDFormat.DistanceFromGround.Value = 20.0;
 
-                // Optional: keep the text flat while the shape is elevated
-                shape.ThreeDFormat.KeepTextFlat.Value = BOOL.True;
+                // Optionally, adjust elevation angle for preview (e.g., rotate around X axis)
+                // Here we set a 30-degree elevation (converted to radians as required by SetAngle)
+                double elevationDegrees = 30.0;
+                double elevationRadians = (Math.PI / 180.0) * elevationDegrees;
+                shape.ThreeDFormat.RotationXAngle.Value = elevationRadians;
 
-                // Save the diagram in Visio format
-                diagram.Save("ElevatedShape.vsdx", SaveFileFormat.Vsdx);
+                // Refresh the shape to apply 3D changes
+                shape.RefreshData();
 
-                // Export a preview image (PNG) to visualize the elevation
-                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                diagram.Save("ElevatedShapePreview.png", imgOptions);
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                Console.WriteLine("Shape elevation set and files saved successfully.");
+                Console.WriteLine("DistanceFromGround set to 20 points and elevation preview applied.");
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

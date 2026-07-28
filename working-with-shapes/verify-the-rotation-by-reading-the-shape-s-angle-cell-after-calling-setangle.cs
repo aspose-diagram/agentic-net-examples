@@ -1,39 +1,50 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-class VerifyShapeRotation
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+                // Path to the source Visio file (replace with actual file path)
+                string diagramPath = "input.vsdx";
 
-            // Assume we work with the first shape on the first page
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-            // Set a new rotation angle (e.g., 45 degrees = PI/4 radians)
-            double angleInRadians = Math.PI / 4;
-            shape.SetAngle(angleInRadians);
+                // Access the first page (index 0)
+                Page page = diagram.Pages[0];
 
-            // Read back the Angle cell value from the shape's XForm
-            double actualAngle = shape.XForm.Angle.Value;
+                // Retrieve a shape by its ID.
+                // Replace 1 with the actual shape ID you want to test.
+                Shape shape = page.Shapes.GetShape(1);
 
-            // Output the result for verification
-            Console.WriteLine($"Set angle (radians): {angleInRadians}");
-            Console.WriteLine($"Read back angle (radians): {actualAngle}");
+                // Desired rotation angle in degrees
+                double targetAngle = 30.0;
 
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Apply rotation to the shape
+                shape.SetAngle(targetAngle);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Read back the angle from the shape's Angle cell
+                double actualAngle = shape.XForm.Angle.Value;
+
+                // Verify that the angle was set correctly
+                const double tolerance = 0.001;
+                if (Math.Abs(actualAngle - targetAngle) > tolerance)
+                {
+                    throw new Exception($"Rotation verification failed. Expected: {targetAngle}, Actual: {actualAngle}");
+                }
+                else
+                {
+                    Console.WriteLine($"Rotation verification succeeded. Angle = {actualAngle} degrees.");
+                }
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,55 +1,43 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
-class ValidateShapeRotations
+class RotationValidator
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Collect shapes that violate the rotation rule
-            var invalidShapes = new List<string>();
-
-            // Iterate through all pages and their shapes
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve rotation angles; default to 0 if not set
-                    double rotX = shape.ThreeDFormat?.RotationXAngle?.Value ?? 0;
-                    double rotY = shape.ThreeDFormat?.RotationYAngle?.Value ?? 0;
-                    double rotZ = shape.ThreeDFormat?.RotationZAngle?.Value ?? 0;
+                    // ThreeDFormat may be null if the shape has no 3‑D properties
+                    ThreeDFormat threeD = shape.ThreeDFormat;
+                    if (threeD == null) continue;
 
-                    // Validate that no angle exceeds 180 degrees (absolute value)
-                    if (Math.Abs(rotX) > 180 || Math.Abs(rotY) > 180 || Math.Abs(rotZ) > 180)
+                    // Retrieve rotation angles; DoubleValue may be null
+                    double rotX = threeD.RotationXAngle?.Value ?? 0.0;
+                    double rotY = threeD.RotationYAngle?.Value ?? 0.0;
+                    double rotZ = threeD.RotationZAngle?.Value ?? 0.0;
+
+                    // Validate each axis does not exceed 180 degrees
+                    if (Math.Abs(rotX) > 180.0 ||
+                        Math.Abs(rotY) > 180.0 ||
+                        Math.Abs(rotZ) > 180.0)
                     {
-                        invalidShapes.Add($"Page: {page.Name}, Shape ID: {shape.ID}");
+                        Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' exceeds rotation limits:");
+                        Console.WriteLine($"  RotationXAngle = {rotX}");
+                        Console.WriteLine($"  RotationYAngle = {rotY}");
+                        Console.WriteLine($"  RotationZAngle = {rotZ}");
                     }
                 }
             }
-
-            // Output validation results
-            if (invalidShapes.Count == 0)
-            {
-                Console.WriteLine("All shapes have rotation angles within 180 degrees.");
-            }
-            else
-            {
-                Console.WriteLine("Shapes exceeding 180-degree rotation:");
-                foreach (string info in invalidShapes)
-                {
-                    Console.WriteLine(info);
-                }
-            }
-
-            // Save the diagram (unchanged)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

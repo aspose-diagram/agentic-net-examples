@@ -1,33 +1,30 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Input Visio file path (adjust as needed)
+            // Input Visio file (change the path as needed)
             string inputPath = "input.vsdx";
 
-            // Output combined PDF file path
-            string outputPdfPath = "CombinedShapes.pdf";
+            // Output combined PDF file
+            string outputPdf = "CombinedShapes.pdf";
+
+            // Temporary folder to store individual shape PDFs
+            string tempFolder = Path.Combine(Path.GetTempPath(), "ShapePdfs_" + Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tempFolder);
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Create a temporary directory to store individual shape PDFs
-            string tempDir = Path.Combine(Path.GetTempPath(), "ShapePdfs_" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(tempDir);
+            int shapeIndex = 0;
 
-            // List to keep track of generated PDF file paths
-            List<string> shapePdfFiles = new List<string>();
-
-            // Iterate through each page and each shape on the page
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
@@ -36,41 +33,32 @@ public class Program
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Build a unique file name for the shape PDF
-                    string shapePdfPath = Path.Combine(tempDir, $"Page{page.ID}_Shape{shape.ID}.pdf");
-
-                    // Export the shape to a PDF file
+                    // Export each shape to a separate PDF file
+                    string shapePdfPath = Path.Combine(tempFolder, $"shape_{shapeIndex}.pdf");
                     shape.ToPdf(shapePdfPath);
-
-                    // Store the path for later combination
-                    shapePdfFiles.Add(shapePdfPath);
+                    shapeIndex++;
                 }
             }
 
-            // Combine all individual shape PDFs into a single PDF using Aspose.Pdf (fully qualified)
-            Aspose.Pdf.Document combinedDoc = new Aspose.Pdf.Document();
+            // Combine all individual PDFs into a single PDF using Aspose.Pdf (fully qualified)
+            Aspose.Pdf.Document finalDoc = new Aspose.Pdf.Document();
 
-            foreach (string pdfFile in shapePdfFiles)
+            foreach (string pdfFile in Directory.GetFiles(tempFolder, "*.pdf"))
             {
-                // Load the individual PDF
                 Aspose.Pdf.Document tempDoc = new Aspose.Pdf.Document(pdfFile);
-
-                // Add its first page to the combined document
-                combinedDoc.Pages.Add(tempDoc.Pages[1]);
+                foreach (Aspose.Pdf.Page page in tempDoc.Pages)
+                {
+                    finalDoc.Pages.Add(page);
+                }
             }
 
             // Save the combined PDF
-            combinedDoc.Save(outputPdfPath);
+            finalDoc.Save(outputPdf);
 
-            // Clean up temporary files and directory
-            foreach (string pdfFile in shapePdfFiles)
-            {
-                try { File.Delete(pdfFile); } catch { }
-            }
+            // Clean up temporary files
+            Directory.Delete(tempFolder, true);
 
-            try { Directory.Delete(tempDir, true); } catch { }
-
-            Console.WriteLine($"Combined PDF saved to: {outputPdfPath}");
+            Console.WriteLine($"Combined PDF saved to: {outputPdf}");
 
         }
         catch (System.IO.FileNotFoundException ex)

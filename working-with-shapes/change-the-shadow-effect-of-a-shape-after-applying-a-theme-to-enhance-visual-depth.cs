@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -13,16 +14,16 @@ class Program
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page of the diagram
+            // Get the first page
             Page page = diagram.Pages[0];
 
-            // Find the first non‑deleted shape on the page
+            // Find the first non-deleted shape on the page
             Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            foreach (Shape shp in page.Shapes)
             {
-                if (shape.Del == BOOL.False)
+                if (shp.Del == BOOL.False)
                 {
-                    targetShape = shape;
+                    targetShape = shp;
                     break;
                 }
             }
@@ -33,23 +34,26 @@ class Program
                 return;
             }
 
-            // Apply a preset theme to the shape to enhance visual depth
+            // Apply a preset theme to the shape
             targetShape.PresetTheme = PresetThemeValue.Bubble;
             targetShape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-            targetShape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
 
-            // Configure the shape's shadow effect
-            targetShape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;   // Enable simple shadow
-            targetShape.Fill.ShdwForegnd.Value = "#000000";                    // Shadow color (black)
-            targetShape.Fill.ShdwForegndTrans.Value = 0.3;                     // 30% transparency
-            targetShape.Fill.ShapeShdwOffsetX.Value = 0.1;                     // Horizontal offset (inches)
-            targetShape.Fill.ShapeShdwOffsetY.Value = 0.1;                     // Vertical offset (inches)
+            // Configure shadow effect
+            // Enable simple shadow
+            targetShape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+            // Set shadow color (dark gray)
+            targetShape.Fill.ShdwForegnd.Value = "#808080";
+            // Set shadow transparency (0 = opaque, 1 = fully transparent)
+            targetShape.Fill.ShdwForegndTrans.Value = 0.4; // 40% transparent
+            // Set shadow offsets
+            targetShape.Fill.ShapeShdwOffsetX.Value = 0.2; // horizontal offset in inches
+            targetShape.Fill.ShapeShdwOffsetY.Value = 0.2; // vertical offset in inches
 
             // Save the modified diagram
             string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            Console.WriteLine("Diagram saved with updated shadow effect.");
+            Console.WriteLine($"Diagram saved with updated shadow to '{outputPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

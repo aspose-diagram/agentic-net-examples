@@ -9,27 +9,51 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram (replace with your actual file path)
+            string filePath = "sample.vsdx";
+            Diagram diagram = new Diagram(filePath);
 
-            // Access the first page (adjust index as needed)
+            // Ensure the diagram has at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Get the first page
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape by its ID (replace 1 with the actual shape ID)
-            Shape shape = page.Shapes.GetShape(1);
+            // Ensure the page has at least one shape
+            if (page.Shapes.Count == 0)
+            {
+                Console.WriteLine("The page contains no shapes.");
+                return;
+            }
 
-            // Access the inherited fill settings of the shape
-            Fill inheritFill = shape.InheritFill;
+            // Retrieve the first shape on the page
+            Shape shape = null;
+            foreach (Shape s in page.Shapes)
+            {
+                shape = s;
+                break;
+            }
 
-            // Output some inherited fill properties
-            Console.WriteLine("Inherited Fill Pattern: " + inheritFill.FillPattern);
-            Console.WriteLine("Inherited Foreground Color: " + inheritFill.FillForegnd);
-            Console.WriteLine("Inherited Background Color: " + inheritFill.FillBkgnd);
-            Console.WriteLine("Inherited Foreground Transparency: " + inheritFill.FillForegndTrans);
-            Console.WriteLine("Inherited Background Transparency: " + inheritFill.FillBkgndTrans);
+            if (shape == null)
+            {
+                Console.WriteLine("Failed to retrieve a shape.");
+                return;
+            }
 
-            // Save the diagram if any modifications were made (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Access inherited fill settings
+            var inheritFill = shape.InheritFill;
+
+            Console.WriteLine("Inherited Fill Settings:");
+            Console.WriteLine($"  Fill Foreground Color: {inheritFill.FillForegnd.Value}");
+            Console.WriteLine($"  Fill Background Color: {inheritFill.FillBkgnd.Value}");
+            Console.WriteLine($"  Fill Pattern: {inheritFill.FillPattern.Value}");
+            Console.WriteLine($"  Shadow Foreground Color: {inheritFill.ShdwForegnd.Value}");
+            Console.WriteLine($"  Shadow Pattern: {inheritFill.ShdwPattern.Value}");
+            Console.WriteLine($"  Shape Shadow Type: {inheritFill.ShapeShdwType.Value}");
 
         }
         catch (System.IO.FileNotFoundException ex)

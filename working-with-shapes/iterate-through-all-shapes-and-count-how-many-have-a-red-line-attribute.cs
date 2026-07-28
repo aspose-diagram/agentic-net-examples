@@ -1,42 +1,44 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram (replace with actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            int redLineCount = 0;
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file (adjust as needed)
-                string inputPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                int redLineShapeCount = 0;
-
-                // Iterate through all pages and their shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.False)
                     {
-                        // Check if the shape's line color is red (#FF0000)
-                        if (shape.Line != null && shape.Line.LineColor != null &&
-                            string.Equals(shape.Line.LineColor.Value, "#FF0000", StringComparison.OrdinalIgnoreCase))
+                        // Retrieve the line color (hex string) and compare to red
+                        string lineColor = shape.Line.LineColor.Value;
+                        if (!string.IsNullOrEmpty(lineColor) &&
+                            lineColor.Equals("#FF0000", StringComparison.OrdinalIgnoreCase))
                         {
-                            redLineShapeCount++;
+                            redLineCount++;
                         }
                     }
                 }
-
-                // Output the result
-                Console.WriteLine($"Number of shapes with a red line: {redLineShapeCount}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine($"Number of shapes with a red line: {redLineCount}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

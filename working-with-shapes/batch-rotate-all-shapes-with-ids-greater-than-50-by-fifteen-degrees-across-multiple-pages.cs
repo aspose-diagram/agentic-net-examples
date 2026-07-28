@@ -1,54 +1,42 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Path for the rotated output file
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Rotation increment (15 degrees in radians)
-            double rotationIncrement = Math.PI / 180.0 * 15.0;
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+
+                // Load the Visio diagram from a file.
+                // Replace "input.vsdx" with the actual path to your diagram.
+                using (Diagram diagram = new Diagram("input.vsdx"))
                 {
-                    // Process only shapes with ID greater than 50
-                    if (shape.ID > 50)
+                    // Iterate through all pages in the diagram.
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Get current angle (in radians)
-                        double currentAngle = shape.XForm.Angle.Value;
-
-                        // Apply the additional rotation
-                        shape.XForm.Angle.Value = currentAngle + rotationIncrement;
+                        // Iterate through all shapes on the current page.
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Shape IDs are of type long. Rotate only shapes with ID > 50.
+                            if (shape.ID > 50)
+                            {
+                                // Add 15 degrees to the existing rotation angle.
+                                // The Angle property is used for rotation.
+                                shape.XForm.Angle.Value = shape.XForm.Angle.Value + 15;
+                            }
+                        }
                     }
+
+                    // Save the modified diagram.
+                    // Replace "output.vsdx" with the desired output path.
+                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
                 }
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Release resources
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

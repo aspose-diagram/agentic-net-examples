@@ -1,75 +1,63 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class ShapeIdConsistencyValidator
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Example usage:
-                // Validate that the shape with name "OldShapeName" keeps its ID after being renamed to "NewShapeName"
-                ValidateShapeIdAfterRename("sample.vsdx", "OldShapeName", "NewShapeName");
+            // Load the Visio diagram (replace with actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Loads a Visio diagram, renames a shape, and verifies that the shape's ID remains unchanged.
-        /// </summary>
-        /// <param name="filePath">Path to the Visio file.</param>
-        /// <param name="oldName">Current name of the shape to be renamed.</param>
-        /// <param name="newName">New name to assign to the shape.</param>
-        static void ValidateShapeIdAfterRename(string filePath, string oldName, string newName)
-        {
-            // Load the diagram (using the provided load rule)
-            Diagram diagram = new Diagram(filePath);
-
-            // Assume the shape is on the first page; adjust if needed
-            Page page = diagram.Pages[0];
+            // Assume the shape we want to rename is on the first page and has a known name
+            const string originalShapeName = "OldShapeName";
+            const string newShapeName = "NewShapeName";
 
             // Retrieve the shape by its original name
-            Shape shapeBeforeRename = page.Shapes.GetShape(oldName);
-            if (shapeBeforeRename == null)
+            Shape originalShape = diagram.Pages[0].Shapes.GetShape(originalShapeName);
+            if (originalShape == null)
             {
-                Console.WriteLine($"Shape with name \"{oldName}\" not found.");
+                Console.WriteLine($"Shape with name '{originalShapeName}' not found.");
                 return;
             }
 
             // Store the original ID
-            long originalId = shapeBeforeRename.ID;
+            long originalId = originalShape.ID;
 
             // Rename the shape
-            shapeBeforeRename.Name = newName;
+            originalShape.Name = newShapeName;
 
             // Refresh shape data to ensure internal references are updated
-            shapeBeforeRename.RefreshData();
+            originalShape.RefreshData();
 
             // Retrieve the shape by its new name
-            Shape shapeAfterRename = page.Shapes.GetShape(newName);
-            if (shapeAfterRename == null)
+            Shape renamedShape = diagram.Pages[0].Shapes.GetShape(newShapeName);
+            if (renamedShape == null)
             {
-                Console.WriteLine($"Shape with new name \"{newName}\" not found after rename.");
+                Console.WriteLine($"Renamed shape with name '{newShapeName}' not found.");
                 return;
             }
 
-            // Compare IDs
-            long newId = shapeAfterRename.ID;
-            if (originalId == newId)
+            // Validate that the ID has remained the same
+            if (renamedShape.ID == originalId)
             {
-                Console.WriteLine($"Success: Shape ID remained consistent after rename. ID = {originalId}");
+                Console.WriteLine("Success: Shape ID remained consistent after renaming.");
             }
             else
             {
-                Console.WriteLine($"Failure: Shape ID changed after rename. Original ID = {originalId}, New ID = {newId}");
+                Console.WriteLine($"Failure: Shape ID changed from {originalId} to {renamedShape.ID} after renaming.");
             }
 
-            // (Optional) Save the diagram if you need to persist the rename
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram (optional)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

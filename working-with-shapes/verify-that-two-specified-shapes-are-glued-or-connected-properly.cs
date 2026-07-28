@@ -1,67 +1,48 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect three arguments: diagram file path, first shape ID, second shape ID
-            if (args.Length != 3)
-            {
-                Console.WriteLine("Usage: ShapeVerification <diagramPath> <shapeId1> <shapeId2>");
-                return;
-            }
 
-            string diagramPath = args[0];
-            if (!long.TryParse(args[1], out long shapeId1))
-            {
-                Console.WriteLine("Invalid first shape ID.");
-                return;
-            }
+            // Path to the Visio file
+            string diagramPath = "input.vsdx";
 
-            if (!long.TryParse(args[2], out long shapeId2))
-            {
-                Console.WriteLine("Invalid second shape ID.");
-                return;
-            }
+            // IDs of the two shapes to verify
+            long shapeIdA = 1;
+            long shapeIdB = 2;
 
-            // Load the Visio diagram
+            // Load the diagram (uses the provided load rule)
             Diagram diagram = new Diagram(diagramPath);
 
-            // Access the first page (adjust if needed)
+            // Assume both shapes are on the first page
             Page page = diagram.Pages[0];
 
             // Retrieve the shapes by their IDs
-            Shape shape1 = page.Shapes.GetShape(shapeId1);
-            Shape shape2 = page.Shapes.GetShape(shapeId2);
+            Shape shapeA = page.Shapes.GetShape(shapeIdA);
+            Shape shapeB = page.Shapes.GetShape(shapeIdB);
 
-            if (shape1 == null)
-            {
-                Console.WriteLine($"Shape with ID {shapeId1} not found.");
-                return;
-            }
+            // Verify if the shapes are glued
+            bool isGlued = shapeA.IsGlued(shapeB);
 
-            if (shape2 == null)
-            {
-                Console.WriteLine($"Shape with ID {shapeId2} not found.");
-                return;
-            }
+            // Verify if the shapes are connected
+            bool isConnected = shapeA.IsConnected(shapeB);
 
-            // Verify connection
-            bool areConnected = shape1.IsConnected(shape2);
-            Console.WriteLine($"Shapes connected: {areConnected}");
+            // Output the results
+            Console.WriteLine($"Shapes {shapeIdA} and {shapeIdB} glued: {isGlued}");
+            Console.WriteLine($"Shapes {shapeIdA} and {shapeIdB} connected: {isConnected}");
 
-            // Verify gluing
-            bool areGlued = shape1.IsGlued(shape2);
-            Console.WriteLine($"Shapes glued: {areGlued}");
+            // (Optional) Save the diagram if any changes were made, using the provided save rule
+            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-            // Throw exception if either verification fails (as per requirement)
-            if (!areConnected)
-                throw new Exception($"Shapes {shapeId1} and {shapeId2} are NOT connected.");
-
-            if (!areGlued)
-                throw new Exception($"Shapes {shapeId1} and {shapeId2} are NOT glued.");
-
-            Console.WriteLine("Both connection and gluing are verified successfully.");
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

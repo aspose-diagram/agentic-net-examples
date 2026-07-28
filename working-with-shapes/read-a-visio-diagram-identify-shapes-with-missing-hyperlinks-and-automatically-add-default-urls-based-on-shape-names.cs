@@ -1,63 +1,52 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Input and output Visio file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Input and output file paths (can be passed as command‑line arguments)
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
+                        // Ensure the shape is not deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // If the shape has no hyperlinks, add a default one
-                        if (shape.Hyperlinks == null || shape.Hyperlinks.Count == 0)
+                        // Check if the shape already has hyperlinks
+                        bool hasHyperlink = shape.Hyperlinks != null && shape.Hyperlinks.Count > 0;
+
+                        if (!hasHyperlink)
                         {
-                            // Create a new hyperlink instance
+                            // Create a default hyperlink based on the shape's universal name
                             Hyperlink link = new Hyperlink();
-
-                            // Optional: give the hyperlink a name
                             link.Name = "DefaultLink";
+                            link.Address.Value = $"https://example.com/{shape.NameU}";
 
-                            // Build a default URL based on the shape's universal name
-                            // Example: https://example.com/ShapeNameU
-                            string defaultUrl = "https://example.com/" + shape.NameU;
-
-                            // Assign the URL to the hyperlink (cell-based property requires .Value)
-                            link.Address.Value = defaultUrl;
-
-                            // Optionally set a description (tooltip) for the hyperlink
-                            link.Description.Value = "Default link for " + shape.NameU;
-
-                            // Add the hyperlink to the shape's collection
+                            // Add the hyperlink to the shape
                             shape.Hyperlinks.Add(link);
                         }
                     }
                 }
 
-                // Save the modified diagram back to a file (using VSDX format)
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

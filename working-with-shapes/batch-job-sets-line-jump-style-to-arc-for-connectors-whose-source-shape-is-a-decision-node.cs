@@ -3,59 +3,45 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the source Visio file
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
-                // Path for the modified Visio file
                 string outputPath = "output.vsdx";
 
-                // Load the diagram
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages in the diagram
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Build a quick lookup for shapes by their ID
-                    var shapeLookup = new System.Collections.Generic.Dictionary<long, Shape>();
-                    foreach (Shape shp in page.Shapes)
+                    // Collect IDs of all decision node shapes on the current page
+                    var decisionShapeIds = new System.Collections.Generic.HashSet<long>();
+                    foreach (Shape shape in page.Shapes)
                     {
-                        shapeLookup[shp.ID] = shp;
+                        if (shape.Master != null && shape.Master.Name == "Decision")
+                        {
+                            decisionShapeIds.Add(shape.ID);
+                        }
                     }
 
-                    // Keep track of connectors already processed to avoid duplicate settings
-                    var processedConnectors = new System.Collections.Generic.HashSet<long>();
-
-                    // Examine each connection on the page
-                    foreach (Connect conn in page.Connects)
+                    // Process each connection to find connectors whose source is a decision node
+                    foreach (Connect connect in page.Connects)
                     {
-                        // The shape that the connector is attached to (source)
-                        long sourceShapeId = conn.FromSheet;
-                        // The connector shape ID
-                        long connectorShapeId = conn.ToSheet;
-
-                        // Ensure both IDs exist in the lookup
-                        if (!shapeLookup.ContainsKey(sourceShapeId) || !shapeLookup.ContainsKey(connectorShapeId))
-                            continue;
-
-                        Shape sourceShape = shapeLookup[sourceShapeId];
-                        Shape connectorShape = shapeLookup[connectorShapeId];
-
-                        // Verify the source shape is a decision node (master name "Decision")
-                        // and the target shape is a 1‑D connector
-                        if (sourceShape.Master != null &&
-                            sourceShape.Master.Name == "Decision" &&
-                            connectorShape.OneD &&
-                            !processedConnectors.Contains(connectorShapeId))
+                        // connect.FromSheet = source shape ID
+                        // connect.ToSheet   = shape ID of the connector (or target shape)
+                        if (decisionShapeIds.Contains(connect.FromSheet))
                         {
-                            // Set the connector's line jump style to Arc
-                            connectorShape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
-
-                            // Mark this connector as processed
-                            processedConnectors.Add(connectorShapeId);
+                            // Retrieve the shape that is the connector
+                            Shape connector = page.Shapes.GetShape(connect.ToSheet);
+                            if (connector != null && connector.OneD) // ensure it's a 1‑D connector
+                            {
+                                // Set the line jump style to Arc
+                                connector.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
+                            }
                         }
                     }
                 }

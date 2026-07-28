@@ -9,61 +9,56 @@ class Program
             try
             {
 
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
+                // Expect the Visio file path as the first argument
+                if (args.Length == 0)
+                {
+                    Console.WriteLine("Please provide the path to the Visio file as a command‑line argument.");
+                    return;
+                }
 
-                // Load the diagram using Aspose.Diagram
-                Diagram diagram = new Diagram(diagramPath);
+                string filePath = args[0];
 
-                // Dictionary to map shape IDs to the list of shapes that share the same ID
-                Dictionary<long, List<Shape>> idMap = new Dictionary<long, List<Shape>>();
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
 
-                // Iterate through all pages and their shapes
+                // Track seen IDs and collect duplicates
+                HashSet<long> seenIds = new HashSet<long>();
+                List<long> duplicateIds = new List<long>();
+
+                // Iterate over all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        long shapeId = shape.ID;
-
-                        if (!idMap.ContainsKey(shapeId))
+                        long id = shape.ID;
+                        if (!seenIds.Add(id))
                         {
-                            idMap[shapeId] = new List<Shape>();
+                            duplicateIds.Add(id);
                         }
-
-                        idMap[shapeId].Add(shape);
                     }
                 }
 
-                // Flag to indicate if any duplicates were found
-                bool duplicatesFound = false;
-
-                // Check the dictionary for IDs that appear more than once
-                foreach (KeyValuePair<long, List<Shape>> entry in idMap)
+                // Report results
+                if (duplicateIds.Count == 0)
                 {
-                    if (entry.Value.Count > 1)
+                    Console.WriteLine("No duplicate shape IDs found.");
+                }
+                else
+                {
+                    Console.WriteLine("Duplicate shape IDs detected:");
+                    foreach (long dupId in duplicateIds)
                     {
-                        duplicatesFound = true;
-                        Console.WriteLine($"Duplicate Shape ID found: {entry.Key}");
-                        foreach (Shape dupShape in entry.Value)
-                        {
-                            // Report page name and shape name for each duplicate
-                            Console.WriteLine($"\tPage: {dupShape.Page.Name}, Shape Name: {dupShape.Name}");
-                        }
+                        Console.WriteLine($"Duplicate ID: {dupId}");
                     }
-                }
 
-                if (!duplicatesFound)
-                {
-                    Console.WriteLine("All shape IDs are unique.");
+                    // Optionally raise an error
+                    // throw new Exception("Duplicate shape IDs were found in the diagram.");
                 }
-
-                // Optionally, save the diagram (if any modifications were made)
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,33 +10,29 @@ class ExportShapesToHtml
         try
         {
 
-            // Load the Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram from file
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Index of the page whose shapes will be exported (0‑based)
-            int pageIndex = 0; // modify as needed
+            int pageIndex = 0;
 
-            // Get the target page
-            var page = diagram.Pages[pageIndex];
+            // Get the specified page
+            Page page = diagram.Pages[pageIndex];
 
-            // Create output folder for the HTML files
-            string outputFolder = "ShapeHtml";
-            Directory.CreateDirectory(outputFolder);
-
-            // Export each shape on the page to a separate HTML file
+            // Iterate through all shapes on the page
             foreach (Shape shape in page.Shapes)
             {
-                // Configure HTML save options to embed CSS and resources in a single file
-                var htmlOptions = new HTMLSaveOptions
-                {
-                    SaveAsSingleFile = true
-                };
+                // Create HTML save options; default options embed CSS in the output
+                HTMLSaveOptions options = new HTMLSaveOptions();
+
+                // Ensure each shape is saved as a single HTML file (optional but keeps CSS inline)
+                options.SaveAsSingleFile = true;
 
                 // Build a unique file name for the shape (using its ID)
-                string htmlPath = Path.Combine(outputFolder, $"Shape_{shape.ID}.html");
+                string htmlFileName = $"Shape_{shape.ID}.html";
 
-                // Generate the HTML for the shape
-                shape.ToHTML(htmlPath, htmlOptions);
+                // Export the shape to an HTML file with the specified options
+                shape.ToHTML(htmlFileName, options);
             }
 
         }

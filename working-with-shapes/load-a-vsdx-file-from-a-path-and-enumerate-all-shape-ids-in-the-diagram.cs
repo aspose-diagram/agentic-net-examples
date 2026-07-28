@@ -13,21 +13,19 @@ class Program
             string filePath = @"C:\Path\To\YourDiagram.vsdx";
 
             // Load the diagram specifying the VSDX format explicitly
-            Diagram diagram = new Diagram(filePath, LoadFileFormat.Vsdx);
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            using (Diagram diagram = new Diagram(filePath, LoadFileFormat.Vsdx))
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Output the shape's unique identifier
-                    Console.WriteLine($"Page {page.ID}, Shape ID: {shape.ID}");
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Output the unique identifier of each shape
+                        Console.WriteLine($"Shape ID: {shape.ID}");
+                    }
                 }
             }
-
-            // Dispose the diagram object to release resources
-            diagram.Dispose();
 
         }
         catch (System.IO.DirectoryNotFoundException ex)

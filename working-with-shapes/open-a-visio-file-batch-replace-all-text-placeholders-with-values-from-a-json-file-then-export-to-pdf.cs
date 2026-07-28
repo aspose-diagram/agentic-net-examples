@@ -9,58 +9,96 @@ class Program
     {
         static void Main(string[] args)
         {
+            // Expect three arguments: input Visio file, JSON file with replacements, output PDF file
+            if (args.Length != 3)
+            {
+                Console.WriteLine("Usage: VisioBatchReplace <input.vsdx> <replacements.json> <output.pdf>");
+                return;
+            }
+
+            string inputVisioPath = args[0];
+            string jsonPath = args[1];
+            string outputPdfPath = args[2];
+
+            // Validate input files
+            if (!File.Exists(inputVisioPath))
+                throw new FileNotFoundException($"Visio file not found: {inputVisioPath}");
+            if (!File.Exists(jsonPath))
+                throw new FileNotFoundException($"JSON file not found: {jsonPath}");
+
+            // Load replacement dictionary from JSON (expects {"placeholder":"value", ...})
+            Dictionary<string, string> replacements;
             try
             {
-
-                // Paths – adjust as needed
-                string visioPath = "input.vsdx";
-                string jsonPath = "replacements.json";
-                string pdfOutputPath = "output.pdf";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Read and deserialize the JSON file containing placeholder-value pairs
                 string jsonContent = File.ReadAllText(jsonPath);
-                Dictionary<string, string> replacements = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent);
+                replacements = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent);
+                if (replacements == null)
+                    throw new Exception("Failed to deserialize JSON into a dictionary.");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error reading JSON file: {ex.Message}");
+            }
 
-                // Iterate through all pages and shapes to replace text
-                foreach (Page page in diagram.Pages)
+            // Load the Visio diagram
+            Diagram diagram;
+            try
+            {
+                diagram = new Diagram(inputVisioPath);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error loading Visio file: {ex.Message}");
+            }
+
+            // Iterate through all pages and shapes to replace text
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Get current plain text of the shape
+                    string currentText = shape.Text.Value.Text;
+                    if (string.IsNullOrWhiteSpace(currentText))
+                        continue;
+
+                    string newText = currentText;
+
+                    // Perform replacements for each placeholder
+                    foreach (KeyValuePair<string, string> kvp in replacements)
                     {
-                        // Iterate over each text run within the shape
-                        foreach (var item in shape.Text.Value)
+                        // Assuming placeholders are in the format {{key}}
+                        string placeholder = $"{{{{{kvp.Key}}}}}";
+                        if (newText.Contains(placeholder))
                         {
-                            if (item is Txt txt)
-                            {
-                                string updatedText = txt.Text;
-                                foreach (var kvp in replacements)
-                                {
-                                    if (updatedText.Contains(kvp.Key))
-                                    {
-                                        updatedText = updatedText.Replace(kvp.Key, kvp.Value);
-                                    }
-                                }
-                                txt.Text = updatedText;
-                            }
+                            newText = newText.Replace(placeholder, kvp.Value);
                         }
                     }
+
+                    // If text changed, update the shape's text
+                    if (newText != currentText)
+                    {
+                        shape.Text.Value.Clear();
+                        shape.Text.Value.Add(new Txt(newText));
+                    }
                 }
-
-                // Configure PDF save options (set a default font to avoid missing font issues)
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-
-                // Save the modified diagram as PDF
-                diagram.Save(pdfOutputPath, pdfOptions);
-
-                Console.WriteLine("Replacement completed and PDF saved to: " + pdfOutputPath);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Export the modified diagram to PDF
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial"; // Fallback font
+
+            try
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                diagram.Save(outputPdfPath, pdfOptions);
+                Console.WriteLine($"PDF exported successfully to: {outputPdfPath}");
             }
-    }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error saving PDF: {ex.Message}");
+            }
+        }
     }

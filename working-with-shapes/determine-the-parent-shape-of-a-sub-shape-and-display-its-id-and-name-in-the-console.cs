@@ -10,33 +10,25 @@ class Program
         {
 
             // Load an existing Visio diagram
-            // Replace the path with the actual file location
-            var diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Retrieve the sub‑shape.
-            // You can get the shape by its name or ID.
-            // Example using the shape name "SubShapeName":
-            Shape subShape = diagram.Pages[0].Shapes.GetShape("SubShapeName");
+            // Retrieve the sub‑shape (replace with actual ID or name)
+            // Example using shape ID 5:
+            Shape subShape = diagram.Pages[0].Shapes.GetShape(5);
+            // If you prefer to use the shape name, use:
+            // Shape subShape = diagram.Pages[0].Shapes.GetShape("SubShapeName");
 
-            // If the shape is not found, GetShape returns null.
-            if (subShape == null)
-            {
-                Console.WriteLine("Sub‑shape not found.");
-                return;
-            }
-
-            // Obtain the parent shape of the sub‑shape.
+            // Obtain the parent shape of the sub‑shape
             Shape parentShape = subShape.ParentShape;
 
-            // Check whether the shape has a parent (it may be a top‑level shape).
+            // Display parent shape information
             if (parentShape != null)
             {
-                Console.WriteLine($"Parent Shape ID: {parentShape.ID}");
-                Console.WriteLine($"Parent Shape Name: {parentShape.Name}");
+                Console.WriteLine($"Parent Shape ID: {parentShape.ID}, Name: {parentShape.Name}");
             }
             else
             {
-                Console.WriteLine("The specified shape does not have a parent (it is a top‑level shape).");
+                Console.WriteLine("The specified shape has no parent (it is a top‑level shape).");
             }
 
         }

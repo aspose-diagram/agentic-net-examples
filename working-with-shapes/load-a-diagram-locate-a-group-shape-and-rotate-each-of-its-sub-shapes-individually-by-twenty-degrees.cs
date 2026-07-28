@@ -1,53 +1,54 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Assume the group shape is on the first page
+            Page page = diagram.Pages[0];
+
+            // Locate the first group shape on the page
+            foreach (Shape groupShape in page.Shapes)
             {
-
-                // Load the Visio diagram from a file
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Find group shapes on the page
-                foreach (Shape groupShape in page.Shapes)
+                if (groupShape.Type == TypeValue.Group)
                 {
-                    // Identify a group shape by its Type
-                    if (groupShape.Type == TypeValue.Group)
+                    // Rotate each sub‑shape inside the group by 20 degrees
+                    foreach (Shape subShape in groupShape.Shapes)
                     {
-                        // Rotate each sub‑shape inside the group by 20 degrees
-                        foreach (Shape subShape in groupShape.Shapes)
-                        {
-                            // Current rotation angle (in radians)
-                            double currentAngle = subShape.XForm.Angle.Value;
+                        // Current rotation angle (in radians)
+                        double currentAngle = subShape.XForm.Angle.Value;
 
-                            // Convert 20 degrees to radians
-                            double delta = 20.0 * Math.PI / 180.0;
+                        // 20 degrees expressed in radians
+                        double addedRadians = 20.0 * Math.PI / 180.0;
 
-                            // Set the new rotation angle
-                            subShape.XForm.Angle.Value = currentAngle + delta;
-                        }
-
-                        // If only the first group should be processed, uncomment the next line
-                        // break;
+                        // Apply the new rotation
+                        subShape.XForm.Angle.Value = currentAngle + addedRadians;
                     }
+
+                    // If only one group shape is needed, break after processing
+                    break;
                 }
-
-                // Save the modified diagram (optional)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

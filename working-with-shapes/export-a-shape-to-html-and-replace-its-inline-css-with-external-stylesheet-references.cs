@@ -1,80 +1,81 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ShapeHtmlExport
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram(@"C:\Input\sample.vsdx");
-
-            // Choose the shape to export (e.g., first shape on the first page)
-            Shape shape = diagram.Pages[0].Shapes[0];
-
-            // Prepare HTML save options (default options are sufficient for this task)
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-
-            // Export the shape to an HTML file using the built‑in ToHTML method
-            string htmlFilePath = @"C:\Output\shape.html";
-            shape.ToHTML(htmlFilePath, htmlOptions);
-
-            // Read the generated HTML content
-            string htmlContent = File.ReadAllText(htmlFilePath);
-
-            // Dictionary to keep unique style strings and their generated class names
-            Dictionary<string, string> styleToClassMap = new Dictionary<string, string>();
-            int classCounter = 1;
-
-            // Regex to find inline style attributes
-            Regex styleRegex = new Regex(@"style\s*=\s*""([^""]*)""", RegexOptions.IgnoreCase);
-
-            // Replace each inline style with a CSS class reference
-            string processedHtml = styleRegex.Replace(htmlContent, match =>
+            try
             {
-                string styleValue = match.Groups[1].Value.Trim();
 
-                // If this style has already been encountered, reuse the class name
-                if (!styleToClassMap.TryGetValue(styleValue, out string className))
+                // Paths (adjust as needed)
+                string diagramPath = "input.vsdx";
+                string htmlOutputPath = "shape.html";
+                string cssOutputPath = "style.css";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Get the first page
+                Page page = diagram.Pages[0];
+
+                // Find the first non-deleted shape on the page
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    className = $"cls{classCounter++}";
-                    styleToClassMap[styleValue] = className;
+                    if (shape.Del == BOOL.False)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
                 }
 
-                // Return the new class attribute (remove the original style attribute)
-                return $"class=\"{className}\"";
-            });
+                if (targetShape == null)
+                {
+                    Console.WriteLine("No suitable shape found on the first page.");
+                    return;
+                }
 
-            // Build the external CSS content
-            StringBuilder cssBuilder = new StringBuilder();
-            foreach (var kvp in styleToClassMap)
-            {
-                cssBuilder.AppendLine($".{kvp.Value} {{{kvp.Key}}}");
+                // Export the shape to HTML using default options
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                targetShape.ToHTML(htmlOutputPath, htmlOptions);
+                Console.WriteLine($"Shape exported to HTML: {htmlOutputPath}");
+
+                // Read the generated HTML
+                string htmlContent = File.ReadAllText(htmlOutputPath);
+
+                // Extract the first <style>...</style> block (inline CSS)
+                string stylePattern = @"<style[^>]*>(.*?)</style>";
+                Match styleMatch = Regex.Match(htmlContent, stylePattern, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
+                if (styleMatch.Success)
+                {
+                    string cssContent = styleMatch.Groups[1].Value.Trim();
+
+                    // Write CSS to external file
+                    File.WriteAllText(cssOutputPath, cssContent);
+                    Console.WriteLine($"Extracted CSS written to: {cssOutputPath}");
+
+                    // Replace the inline <style> block with a <link> reference
+                    string linkTag = $"<link rel=\"stylesheet\" type=\"text/css\" href=\"{Path.GetFileName(cssOutputPath)}\" />";
+                    string modifiedHtml = Regex.Replace(htmlContent, stylePattern, linkTag, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
+                    // Save the modified HTML back to the original file
+                    File.WriteAllText(htmlOutputPath, modifiedHtml);
+                    Console.WriteLine("HTML file updated to reference external stylesheet.");
+                }
+                else
+                {
+                    Console.WriteLine("No inline <style> block found in the exported HTML.");
+                }
+
             }
-
-            // Write the CSS to an external stylesheet file
-            string cssFilePath = @"C:\Output\style.css";
-            File.WriteAllText(cssFilePath, cssBuilder.ToString());
-
-            // Insert a link to the external stylesheet into the HTML head
-            // Simple approach: replace </head> with the link tag before it
-            string linkTag = $"<link rel=\"stylesheet\" type=\"text/css\" href=\"{Path.GetFileName(cssFilePath)}\" />";
-            processedHtml = processedHtml.Replace("</head>", $"{linkTag}\n</head>");
-
-            // Save the modified HTML back to file
-            File.WriteAllText(htmlFilePath, processedHtml);
-
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

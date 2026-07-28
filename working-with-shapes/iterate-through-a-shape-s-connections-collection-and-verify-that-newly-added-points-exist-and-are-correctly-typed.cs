@@ -1,65 +1,66 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-class VerifyShapeConnections
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Assume we work with the first shape on the first page
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
-
-            // Add a new connection point to the shape
-            Connection newConnection = new Connection
+            try
             {
-                // Assign a unique name for identification
-                Name = "NewConnectionPoint",
-                // Optionally set other properties such as ID, X, Y if needed
-            };
-            shape.Connections.Add(newConnection);
 
-            // Iterate through all connection points of the shape
-            foreach (Connection conn in shape.Connections)
-            {
-                // Verify that the connection point exists (non-null)
-                if (conn == null)
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
+
+                // Add a rectangle shape to the first page (page index 0)
+                // PinX = 2, PinY = 2, master name = "Rectangle"
+                long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+
+                // Add a new connection point to the shape
+                Connection newConn = new Connection();
+                // Position the connection point at the center of the shape
+                newConn.X.Ufe.F = "Width*0.5";
+                newConn.Y.Ufe.F = "Height*0.5";
+                shape.Connections.Add(newConn);
+
+                // Verify that all connection points exist and have valid X/Y values
+                foreach (Connection conn in shape.Connections)
                 {
-                    Console.WriteLine("Encountered a null connection point.");
-                    continue;
+                    // X and Y should not be null
+                    if (conn.X == null)
+                    {
+                        throw new Exception("Connection point missing X coordinate.");
+                    }
+                    if (conn.Y == null)
+                    {
+                        throw new Exception("Connection point missing Y coordinate.");
+                    }
+
+                    // The formula strings should not be empty
+                    string xFormula = conn.X.Ufe.F;
+                    string yFormula = conn.Y.Ufe.F;
+
+                    if (string.IsNullOrWhiteSpace(xFormula))
+                    {
+                        throw new Exception("Connection point X coordinate has an empty formula.");
+                    }
+                    if (string.IsNullOrWhiteSpace(yFormula))
+                    {
+                        throw new Exception("Connection point Y coordinate has an empty formula.");
+                    }
+
+                    // Optionally, output the verified connection point
+                    Console.WriteLine($"Verified connection point: X = {xFormula}, Y = {yFormula}");
                 }
 
-                // Verify that the connection point has a valid Type value
-                // The Type property is read‑only and indicates the element type; it should be non‑zero for a valid connection
-                if (conn.Type == null)
-                {
-                    Console.WriteLine($"Connection '{conn.Name}' has an undefined Type.");
-                }
-                else
-                {
-                    Console.WriteLine($"Connection '{conn.Name}' verified. Type: {conn.Type}");
-                }
+                // Save the diagram to verify that the changes persist
+                diagram.Save("VerifiedDiagram.vsdx", SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram saved successfully.");
 
-                // Additional verification: check that the newly added connection can be identified by its Name
-                if (conn.Name == "NewConnectionPoint")
-                {
-                    Console.WriteLine("Newly added connection point is present and correctly typed.");
-                }
             }
-
-            // Save the diagram if any changes need to be persisted (replace with desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

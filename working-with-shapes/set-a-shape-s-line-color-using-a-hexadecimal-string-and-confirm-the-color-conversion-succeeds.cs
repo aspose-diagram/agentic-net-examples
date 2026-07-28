@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,36 +10,62 @@ class Program
         try
         {
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Path to an existing Visio file. Adjust as needed.
+            const string inputPath = "input.vsdx";
+            const string outputPath = "output.vsdx";
 
-            // Add a rectangle shape to the active page at position (2,2)
-            long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle");
+            // Load the diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the concrete Shape object using the returned ID
-            Shape shape = diagram.ActivePage.Shapes.GetShape((int)shapeId);
+            // Get the first page.
+            Page page = diagram.Pages[0];
 
-            // Set the line color using a hexadecimal string
-            string expectedColor = "#00FF00"; // green
-            shape.Line.LineColor.Value = expectedColor;
-
-            // Verify that the color was applied correctly
-            if (shape.Line.LineColor.Value != expectedColor)
+            // Retrieve an existing shape or create a new rectangle if none exist.
+            Shape shape;
+            if (page.Shapes.Count > 0)
             {
-                throw new Exception("Line color conversion failed.");
+                // Get the first shape in the collection.
+                foreach (Shape s in page.Shapes)
+                {
+                    shape = s;
+                    // Set and verify line color, then break.
+                    SetAndVerifyLineColor(shape);
+                    break;
+                }
             }
             else
             {
-                Console.WriteLine("Line color set and verified successfully: " + shape.Line.LineColor.Value);
+                // Add a rectangle shape (master name "Rectangle") at position (2,2) with size 1x1 inches.
+                long shapeId = page.AddShape(2.0, 2.0, 1.0, 1.0, "Rectangle");
+                shape = page.Shapes.GetShape(shapeId);
+                SetAndVerifyLineColor(shape);
             }
 
-            // Save the diagram to a file (optional, demonstrates proper save usage)
-            diagram.Save("LineColorDemo.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
-        catch (System.NullReferenceException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    // Sets the line color using a hex string and confirms the assignment.
+    static void SetAndVerifyLineColor(Shape shape)
+    {
+        const string hexColor = "#00FF00"; // Green
+
+        // Assign the line color.
+        shape.Line.LineColor.Value = hexColor;
+
+        // Verify that the color was set correctly (case‑insensitive comparison).
+        if (!string.Equals(shape.Line.LineColor.Value, hexColor, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new Exception($"Line color conversion failed. Expected: {hexColor}, Actual: {shape.Line.LineColor.Value}");
+        }
+
+        // Optional: output confirmation to console.
+        Console.WriteLine($"Line color set to {shape.Line.LineColor.Value} successfully.");
     }
 }

@@ -9,36 +9,31 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Select the page that contains the shape (here we use the first page)
+            // Get the first page (adjust index as needed)
             Page page = diagram.Pages[0];
 
-            // Identify the shape you want to inspect (replace with the actual shape ID)
-            int shapeId = 1; // example shape ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Select a shape by its ID (replace 1 with the desired shape ID)
+            Shape shape = page.Shapes.GetShape(1);
 
-            // Access the XForm object which holds positioning data
+            // Access the shape's XForm which holds positioning data
             XForm xform = shape.XForm;
 
             // Read the X and Y coordinates of the shape's pin (center of rotation)
             double pinX = xform.PinX.Value;
             double pinY = xform.PinY.Value;
 
-            // Read the width and height of the shape (in drawing units)
+            // Read the shape's width and height
             double width = xform.Width.Value;
             double height = xform.Height.Value;
 
             // Output the retrieved values
-            Console.WriteLine($"Shape ID: {shapeId}");
             Console.WriteLine($"PinX: {pinX}");
             Console.WriteLine($"PinY: {pinY}");
             Console.WriteLine($"Width: {width}");
             Console.WriteLine($"Height: {height}");
-
-            // Save the diagram if any modifications were made (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

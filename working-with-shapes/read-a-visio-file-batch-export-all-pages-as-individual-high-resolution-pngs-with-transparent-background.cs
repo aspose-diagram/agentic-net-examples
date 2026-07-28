@@ -4,50 +4,54 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Verify the input file exists
+            if (!File.Exists(inputPath))
             {
+                throw new FileNotFoundException($"Visio file not found: {inputPath}");
+            }
 
-                // Input Visio file path (modify as needed)
-                string inputPath = "input.vsdx";
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Base name for output PNG files
+                string baseName = Path.GetFileNameWithoutExtension(inputPath);
 
-                // Output directory for PNG files
-                string outputDir = "ExportedPages";
-                Directory.CreateDirectory(outputDir);
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page and export as a high‑resolution PNG with transparent background
+                // Iterate through each page in the diagram
                 for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Build output file name (e.g., Page_1.png, Page_2.png, ...)
-                    string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.png");
-
-                    // Configure image save options
+                    // Configure image export options
                     ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png)
                     {
-                        // Set a high resolution (e.g., 300 DPI)
-                        Resolution = 300f,
                         // Export only the current page
                         PageIndex = i,
                         PageCount = 1,
-                        // Do not export hidden pages
-                        ExportHiddenPage = false
+
+                        // High‑resolution output (300 DPI)
+                        Resolution = 300f
                     };
 
-                    // Save the specific page as PNG
+                    // Build the output file name (e.g., input_Page1.png)
+                    string outputPath = $"{baseName}_Page{i + 1}.png";
+
+                    // Save the current page as a PNG with transparent background
                     diagram.Save(outputPath, options);
+                    Console.WriteLine($"Exported page {i + 1} to {outputPath}");
                 }
-
-                Console.WriteLine("Export completed.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

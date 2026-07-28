@@ -1,52 +1,37 @@
-using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Specify the page (0‑based index) and the ID of the shape whose master will be changed
+            int pageIndex = 0;          // first page
+            long shapeId = 5;           // ID of the target shape
 
-                // Define the ID of the shape whose master will be replaced
-                long targetShapeId = 1; // replace with actual shape ID
+            // Retrieve the shape from the page
+            Shape shape = diagram.Pages[pageIndex].Shapes.GetShape(shapeId);
 
-                // Define the ID of the new master to apply
-                int newMasterId = 5; // replace with actual master ID present in the diagram
+            // Specify the ID of the new master that already exists in the diagram's Masters collection
+            int newMasterId = 10;       // ID of the master to apply
 
-                // Retrieve the target shape from the first page
-                Page page = diagram.Pages[0];
-                Shape shape = page.Shapes.GetShape(targetShapeId);
+            // Replace the shape's master with the new master
+            shape.Master = diagram.Masters[newMasterId];
 
-                // Verify that the new master exists in the diagram
-                if (!diagram.Masters.IsExist(newMasterId))
-                {
-                    throw new Exception($"Master with ID {newMasterId} does not exist in the diagram.");
-                }
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-                // Retrieve the new master object
-                Master newMaster = diagram.Masters.GetMaster(newMasterId);
-
-                // Assign the new master to the shape
-                shape.Master = newMaster;
-
-                // Save the modified diagram to a new file
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Shape master replacement completed successfully.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

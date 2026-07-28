@@ -1,63 +1,75 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
-{
-    public static void Main(string[] args)
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Paths for input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page (you can adjust for other pages as needed)
-            Page page = diagram.Pages[0];
-
-            // Store original positions of each shape to preserve alignment after theme change
-            var originalPositions = new Dictionary<long, (double PinX, double PinY)>();
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                // Skip shapes that are marked as deleted
-                if (shape.Del == BOOL.True)
-                    continue;
 
-                originalPositions[shape.ID] = (shape.XForm.PinX.Value, shape.XForm.PinY.Value);
-            }
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-            // Apply a preset theme to the page (example: Bubble theme with Variant2)
-            page.PresetTheme = PresetThemeValue.Bubble;
-            page.PresetThemeVariant = PresetThemeVariantValue.Variant2;
-
-            // Re‑apply the stored positions to keep shapes aligned as before the theme change
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                if (originalPositions.TryGetValue(shape.ID, out var pos))
+                // Load the Visio diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    shape.XForm.PinX.Value = pos.PinX;
-                    shape.XForm.PinY.Value = pos.PinY;
+                    // Ensure there is at least one page
+                    if (diagram.Pages.Count == 0)
+                    {
+                        throw new Exception("The diagram contains no pages.");
+                    }
+
+                    // Get the first page
+                    Page page = diagram.Pages[0];
+
+                    // Find the target shape (example: shape with universal name "Rectangle")
+                    Shape targetShape = null;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.NameU != null && shape.NameU.Equals("Rectangle", StringComparison.OrdinalIgnoreCase))
+                        {
+                            targetShape = shape;
+                            break;
+                        }
+                    }
+
+                    if (targetShape == null)
+                    {
+                        throw new Exception("Target shape not found on the page.");
+                    }
+
+                    // Apply a preset theme to the shape
+                    targetShape.PresetTheme = PresetThemeValue.Bubble;
+                    targetShape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+                    // After theme change, re-align the shape to the center of the page
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                    double shapeWidth = targetShape.XForm.Width.Value;
+                    double shapeHeight = targetShape.XForm.Height.Value;
+
+                    // Set PinX and PinY so the shape is centered
+                    targetShape.XForm.PinX.Value = pageWidth / 2.0;
+                    targetShape.XForm.PinY.Value = pageHeight / 2.0;
+
+                    // Optionally, preserve original size (if theme altered it)
+                    targetShape.XForm.Width.Value = shapeWidth;
+                    targetShape.XForm.Height.Value = shapeHeight;
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
+
+                Console.WriteLine("Diagram processed and saved successfully.");
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Clean up resources
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

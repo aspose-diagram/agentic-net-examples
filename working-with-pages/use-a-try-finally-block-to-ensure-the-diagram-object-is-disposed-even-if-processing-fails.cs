@@ -1,37 +1,44 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            Diagram diagram = null;
             try
             {
-                // Load the Visio diagram from a file
-                diagram = new Diagram("input.vsdx");
 
-                // TODO: Add processing logic here (e.g., modify pages, add shapes, etc.)
+                // Input and output file paths
+                string inputFile = "input.vsdx";
+                string outputFile = "output.vsdx";
 
-                // Save the modified diagram to a new file
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                Diagram diagram = null;
+
+                try
+                {
+                    // Load the diagram from the file
+                    diagram = new Diagram(inputFile);
+
+                    // ----- Place any diagram processing logic here -----
+                    // For example, you could add shapes, modify pages, etc.
+
+                    // Save the diagram to the desired format
+                    diagram.Save(outputFile, SaveFileFormat.Vsdx);
+                }
+                finally
+                {
+                    // Ensure the Diagram object is properly disposed even if an exception occurs
+                    if (diagram != null)
+                    {
+                        diagram.Dispose();
+                    }
+                }
+
             }
-            finally
+            catch (System.IO.FileNotFoundException ex)
             {
-                // Ensure the Diagram object is disposed even if an exception occurs
-                if (diagram != null)
-                    diagram.Dispose();
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

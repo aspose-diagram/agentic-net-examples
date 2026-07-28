@@ -5,53 +5,83 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // Prompt user for input diagram path
+            Console.Write("Enter the path to the Visio diagram file (e.g., diagram.vsdx): ");
+            string diagramPath = Console.ReadLine()?.Trim();
+            if (string.IsNullOrEmpty(diagramPath) || !File.Exists(diagramPath))
+                throw new Exception("Diagram file not found.");
 
-            // Paths – adjust as needed
-            string csvPath = "data.csv";
-            string outputPath = "output.vsdx";
+            // Prompt user for CSV file path
+            Console.Write("Enter the path to the CSV file containing shape text data: ");
+            string csvPath = Console.ReadLine()?.Trim();
+            if (string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
+                throw new Exception("CSV file not found.");
 
-            // Load or create a new diagram
-            Diagram diagram = new Diagram();
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Starting Y position for shapes
-            double startY = 1.0;
-            double offsetY = 1.5; // space between shapes
-
-            // Read CSV file with UTF-8 encoding to preserve Unicode characters
+            // Read CSV lines using UTF-8 encoding to preserve Unicode characters
             using (var reader = new StreamReader(csvPath, Encoding.UTF8))
             {
-                while (!reader.EndOfStream)
+                string line;
+                while ((line = reader.ReadLine()) != null)
                 {
-                    string line = reader.ReadLine();
+                    // Skip empty lines
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
 
-                    // Add a rectangle shape for each CSV line
-                    long shapeId = diagram.ActivePage.AddShape(1.0, startY, "Rectangle");
-                    Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
+                    // Simple CSV split on first comma (shape identifier, text)
+                    int commaIndex = line.IndexOf(',');
+                    if (commaIndex < 0)
+                        continue; // Invalid line format
 
-                    // Clear any existing text and set the Unicode text from CSV
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt(line));
+                    string shapeIdentifier = line.Substring(0, commaIndex).Trim();
+                    string shapeText = line.Substring(commaIndex + 1).Trim();
 
-                    // Move to next vertical position
-                    startY += offsetY;
+                    // Find the shape by NameU (case‑insensitive)
+                    Shape targetShape = null;
+                    foreach (Page page in diagram.Pages)
+                    {
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            if (string.Equals(shape.NameU, shapeIdentifier, StringComparison.OrdinalIgnoreCase))
+                            {
+                                targetShape = shape;
+                                break;
+                            }
+                        }
+                        if (targetShape != null)
+                            break;
+                    }
+
+                    if (targetShape == null)
+                    {
+                        Console.WriteLine($"Warning: Shape \"{shapeIdentifier}\" not found.");
+                        continue;
+                    }
+
+                    // Replace the shape's text with the Unicode string from CSV
+                    targetShape.Text.Value.Clear();
+                    targetShape.Text.Value.Add(new Txt(shapeText));
                 }
             }
 
-            // Save the diagram with a Unicode‑compatible fallback font
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions();
+            // Prepare save options with a Unicode‑capable default font
+            var saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
             saveOptions.DefaultFont = "Arial Unicode MS";
 
+            // Prompt for output path
+            Console.Write("Enter the output path for the updated diagram (e.g., updated.vsdx): ");
+            string outputPath = Console.ReadLine()?.Trim();
+            if (string.IsNullOrEmpty(outputPath))
+                throw new Exception("Output path is required.");
+
+            // Save the diagram with the specified options
             diagram.Save(outputPath, saveOptions);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine("Diagram saved successfully with Unicode text preserved.");
         }
     }
-}

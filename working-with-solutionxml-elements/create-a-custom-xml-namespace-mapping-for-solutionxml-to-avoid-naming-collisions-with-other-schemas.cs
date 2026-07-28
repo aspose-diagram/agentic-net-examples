@@ -1,30 +1,31 @@
 using System;
-using System.IO;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Create a new diagram instance
-        var diagram = new Aspose.Diagram.Diagram();
+        static void Main(string[] args)
+        {
+            // Create a new diagram instance
+            Diagram diagram = new Diagram();
 
-        // Define a unique name for the custom XML data set
-        string solutionXmlName = "CustomData";
+            // Define custom XML with a unique namespace to avoid collisions
+            string customXml = @"<root xmlns:custom=""http://example.com/custom"">" +
+                               @"<custom:Data>Sample Value</custom:Data>" +
+                               @"</root>";
 
-        // Prepare XML content with an explicit namespace to avoid collisions
-        string customNamespace = "http://my.custom.namespace";
-        string xmlContent = $@"
-        <my:Root xmlns:my=""{customNamespace}"">
-            <my:Item>SampleValue</my:Item>
-        </my:Root>";
+            // Create a SolutionXML object and assign name and XML content
+            SolutionXML solutionXml = new SolutionXML();
+            solutionXml.Name = "CustomSolutionData";
+            solutionXml.XmlValue = customXml;
 
-        // Create a SolutionXML object using the constructor that accepts name and XML value
-        var solutionXml = new Aspose.Diagram.SolutionXML(solutionXmlName, xmlContent);
+            // Add the SolutionXML to the diagram's collection
+            diagram.SolutionXMLs.Add(solutionXml);
 
-        // Add the SolutionXML object to the diagram's collection
-        diagram.SolutionXMLs.Add(solutionXml);
+            // Save the diagram to a VSDX file
+            diagram.Save("CustomSolutionDiagram.vsdx", SaveFileFormat.Vsdx);
 
-        // (Optional) Save the diagram to a file – replace with your desired format and path
-        diagram.Save("CustomNamespaceDiagram.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            // Inform the user
+            Console.WriteLine("Diagram saved with custom SolutionXML namespace mapping.");
+        }
     }
-}

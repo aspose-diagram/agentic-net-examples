@@ -1,63 +1,64 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
-
-            // Locate the target shape (by universal name "MyShape" in this example)
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                if (shape.NameU != null && shape.NameU.Equals("MyShape", StringComparison.OrdinalIgnoreCase))
-                {
-                    targetShape = shape;
-                    break;
-                }
-            }
 
-            // If the shape wasn't found by name, fall back to a known shape ID (e.g., 1)
-            if (targetShape == null)
-            {
-                long fallbackId = 1;
-                try
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Get the first page (index 0)
+                Page page = diagram.Pages[0];
+
+                // Find a shape to modify (example: first shape with NameU "Rectangle")
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    targetShape = page.Shapes.GetShape(fallbackId);
+                    if (shape.NameU != null && shape.NameU.Equals("Rectangle", StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetShape = shape;
+                        break;
+                    }
                 }
-                catch
+
+                // If the shape was not found, fallback to the first shape on the page
+                if (targetShape == null && page.Shapes.Count > 0)
                 {
-                    Console.WriteLine("Target shape not found.");
+                    targetShape = page.Shapes.GetShape(page.Shapes[0].ID);
+                }
+
+                if (targetShape == null)
+                {
+                    Console.WriteLine("No shape found to modify.");
                     return;
                 }
+
+                // Ensure the shape is not deleted
+                if (targetShape.Del == BOOL.True)
+                {
+                    Console.WriteLine("Target shape is marked as deleted. Skipping glue option update.");
+                    return;
+                }
+
+                // Set glue option to allow only incoming connectors (disable outgoing dynamic glue)
+                // GlueTypeValue.NoAllowDynamicGlue disables outgoing dynamic glue.
+                targetShape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Glue option updated and diagram saved to '{outputPath}'.");
+
             }
-
-            // Set glue options: allow incoming connectors but disallow outgoing dynamic glue
-            targetShape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Glue options updated and diagram saved successfully.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

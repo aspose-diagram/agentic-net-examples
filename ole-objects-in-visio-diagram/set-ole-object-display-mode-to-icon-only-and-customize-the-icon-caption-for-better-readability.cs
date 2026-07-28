@@ -3,44 +3,42 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        try
-        {
-            Diagram diagram = new Diagram(inputPath);
-
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (shape.ForeignData.ForeignType == ForeignType.Object)
+                        // Identify OLE objects (Foreign shapes with Object data)
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ForeignType == ForeignType.Object)
                         {
+                            // Set display mode to icon only
                             shape.ForeignData.ShowAsIcon = BOOL.True;
 
-                            // Set custom caption by updating the shape's text
+                            // Customize the icon caption by updating the shape's text
                             shape.Text.Value.Clear();
-                            shape.Text.Value.Add(new Txt("My Custom OLE Icon"));
+                            shape.Text.Value.Add(new Txt("My OLE Icon"));
                         }
                     }
                 }
-            }
 
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

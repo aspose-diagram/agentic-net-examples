@@ -3,65 +3,53 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Path to the Visio file to be audited
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        try
-        {
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Audit information header
-            Console.WriteLine("=== OLE Object Metadata Audit ===");
-            Console.WriteLine($"Diagram file: {Path.GetFileName(inputPath)}");
-            Console.WriteLine($"Diagram created on: {diagram.DocumentProps.TimeCreated}");
-            Console.WriteLine();
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+                // Output Visio file path (saved unchanged after audit)
+                string outputPath = "output_audit.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Ensure the shape has foreign data
-                    if (shape.ForeignData == null)
-                        continue;
+                    // Iterate through all shapes on the page
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        // Verify the shape is an OLE object
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ForeignType == ForeignType.Object)
+                        {
+                            // Retrieve the source file name of the embedded OLE object
+                            string sourceFileName = shape.ForeignData.ObjectSourceFullName ?? "N/A";
 
-                    // Verify the shape is an OLE object
-                    if (shape.Type != TypeValue.Foreign)
-                        continue;
+                            // Output audit information
+                            Console.WriteLine($"Shape ID: {shape.ID}");
+                            Console.WriteLine($"  OLE Source File: {sourceFileName}");
 
-                    // Verify the foreign type is an embedded OLE object
-                    if (shape.ForeignData.ForeignType != ForeignType.Object)
-                        continue;
-
-                    // Retrieve source file name of the OLE object
-                    string sourceFileName = shape.ForeignData.ObjectSourceFullName ?? "N/A";
-
-                    // OLE objects do not expose a creation date directly.
-                    // Use the diagram's creation date as a fallback for audit purposes.
-                    DateTime oleCreationDate = diagram.DocumentProps.TimeCreated;
-
-                    Console.WriteLine($"Page: {page.Name}");
-                    Console.WriteLine($"Shape ID: {shape.ID}");
-                    Console.WriteLine($"OLE Source File: {sourceFileName}");
-                    Console.WriteLine($"Assumed Creation Date: {oleCreationDate}");
-                    Console.WriteLine(new string('-', 40));
+                            // Note: Creation date of the OLE object is not directly exposed via Aspose.Diagram.
+                            // If needed, further processing of shape.ForeignData.ObjectData would be required
+                            // using the appropriate Aspose product (e.g., Aspose.Words, Aspose.Cells) to extract
+                            // metadata from the embedded file.
+                        }
+                    }
                 }
-            }
 
-            Console.WriteLine("Audit completed.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+                // Save the diagram (unchanged) to preserve any modifications if added later
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

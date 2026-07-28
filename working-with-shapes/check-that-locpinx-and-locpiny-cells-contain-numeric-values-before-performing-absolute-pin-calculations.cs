@@ -1,55 +1,65 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths to input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Retrieve the LocPinX and LocPinY formula strings
+                        string locPinXFormula = shape.XForm.LocPinX.Ufe.F;
+                        string locPinYFormula = shape.XForm.LocPinY.Ufe.F;
 
-                    // Retrieve LocPinX and LocPinY values
-                    double locPinX = shape.XForm.LocPinX.Value;
-                    double locPinY = shape.XForm.LocPinY.Value;
+                        // Try to parse the formulas as numeric values
+                        bool isLocPinXNumeric = double.TryParse(locPinXFormula, out double locPinXValue);
+                        bool isLocPinYNumeric = double.TryParse(locPinYFormula, out double locPinYValue);
 
-                    // Validate that the values are numeric
-                    if (double.IsNaN(locPinX) || double.IsInfinity(locPinX))
-                        throw new Exception($"LocPinX is not a valid number for shape ID {shape.ID}");
+                        if (!isLocPinXNumeric || !isLocPinYNumeric)
+                        {
+                            // If either value is not numeric, skip calculation for this shape
+                            Console.WriteLine($"Shape ID {shape.ID} has non-numeric LocPin values. Skipping.");
+                            continue;
+                        }
 
-                    if (double.IsNaN(locPinY) || double.IsInfinity(locPinY))
-                        throw new Exception($"LocPinY is not a valid number for shape ID {shape.ID}");
+                        // Perform absolute pin calculation
+                        // Absolute PinX = PinX + LocPinX
+                        // Absolute PinY = PinY + LocPinY
+                        double absolutePinX = shape.XForm.PinX.Value + locPinXValue;
+                        double absolutePinY = shape.XForm.PinY.Value + locPinYValue;
 
-                    // Perform absolute pin calculations
-                    shape.XForm.PinX.Value = shape.XForm.PinX.Value + locPinX;
-                    shape.XForm.PinY.Value = shape.XForm.PinY.Value + locPinY;
+                        // Update the shape's PinX and PinY to the absolute values
+                        shape.XForm.PinX.Value = absolutePinX;
+                        shape.XForm.PinY.Value = absolutePinY;
+
+                        // Reset local pins to zero after conversion
+                        shape.XForm.LocPinX.Value = 0.0;
+                        shape.XForm.LocPinY.Value = 0.0;
+
+                        Console.WriteLine($"Shape ID {shape.ID} pin updated to ({absolutePinX}, {absolutePinY}).");
+                    }
                 }
+
+                // Save the modified diagram (replace with your desired output path)
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram saved successfully.");
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

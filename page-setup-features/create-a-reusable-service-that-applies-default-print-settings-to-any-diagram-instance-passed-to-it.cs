@@ -1,75 +1,73 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Printing;
 
-namespace DiagramUtilities
+public static class DiagramPrintService
 {
-    /// <summary>
-    /// Service that applies a set of default print settings to every page of a Diagram.
-    /// </summary>
-    public class DiagramPrintSettingsService
+    // Applies default print settings to every page of the provided diagram.
+    public static void ApplyDefaultPrintSettings(Diagram diagram)
     {
-        /// <summary>
-        /// Applies default print configuration to all pages of the provided diagram.
-        /// </summary>
-        /// <param name="diagram">The Diagram instance to modify.</param>
-        public void ApplyDefaultPrintSettings(Diagram diagram)
-        {
-            if (diagram == null)
-                throw new ArgumentNullException(nameof(diagram));
+        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
 
-            // Iterate through each page and set the print properties.
+        try
+        {
+            // Iterate through all pages in the diagram.
             foreach (Page page in diagram.Pages)
             {
+                // Access the print properties of the current page.
                 var printProps = page.PageSheet.PrintProps;
 
-                // Orientation: Portrait
-                printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                // Set orientation to Landscape.
+                printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                // Scaling: 100% (no scaling)
+                // Set scaling to 100% (no scaling).
                 printProps.ScaleX.Value = 1.0;
                 printProps.ScaleY.Value = 1.0;
 
-                // Fit to sheet: enable and set 1x1 pages per sheet
+                // Enable fit-to-sheet: print on a single page (1x1).
                 printProps.OnPage.Value = BOOL.True;
                 printProps.PagesX.Value = 1;
                 printProps.PagesY.Value = 1;
 
-                // Margins: 0.5 inches on each side
-                const double marginInches = 0.5;
-                printProps.PageTopMargin.Value = marginInches;
-                printProps.PageBottomMargin.Value = marginInches;
-                printProps.PageLeftMargin.Value = marginInches;
-                printProps.PageRightMargin.Value = marginInches;
+                // Define uniform margins (in inches).
+                printProps.PageTopMargin.Value = 0.5;
+                printProps.PageBottomMargin.Value = 0.5;
+                printProps.PageLeftMargin.Value = 0.5;
+                printProps.PageRightMargin.Value = 0.5;
             }
         }
-    }
-
-    // Example usage
-    class Program
-    {
-        static void Main()
+        catch (Exception ex)
         {
-            try
-            {
-
-                // Load an existing Visio diagram (replace with your file path)
-                string inputPath = "example.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Apply default print settings
-                var printService = new DiagramPrintSettingsService();
-                printService.ApplyDefaultPrintSettings(diagram);
-
-                // Save the diagram (output path can be the same or different)
-                string outputPath = "example_modified.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Log any errors that occur while applying print settings.
+            Console.Error.WriteLine($"Error applying print settings: {ex.Message}");
+        }
     }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Create a new empty diagram instance.
+        Diagram diagram = new Diagram();
+
+        // Guard: ensure the diagram instance was created successfully.
+        if (diagram == null)
+        {
+            Console.Error.WriteLine("Failed to create Diagram instance.");
+            return;
+        }
+
+        // Apply default print settings to the diagram.
+        try
+        {
+            DiagramPrintService.ApplyDefaultPrintSettings(diagram);
+        }
+        catch (Exception ex)
+        {
+            // Log any unexpected errors from the service call.
+            Console.Error.WriteLine($"Service error: {ex.Message}");
+        }
     }
 }

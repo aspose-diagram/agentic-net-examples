@@ -1,48 +1,46 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
+        // Paths for the source diagram and the output files
         string sourcePath = "input.vsdx";
+        string updatedPath = "updated.vsdx";
+        string backupPath = "backup.vsdx";
+
+        // Verify the source file exists before proceeding
         if (!File.Exists(sourcePath))
         {
             Console.Error.WriteLine($"File not found: {sourcePath}");
             return;
         }
 
-        // Paths for backup and output files
-        string backupPath = "backup.vsdx";
-        string outputPath = "output.vsdx";
-
-        // Load the diagram
-        Diagram diagram = new Diagram(sourcePath);
         try
         {
-            // Save a backup before making changes
-            diagram.Save(backupPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Backup saved to '{backupPath}'.");
+            // Load the original diagram
+            Diagram diagram = new Diagram(sourcePath);
 
-            // Apply bulk orientation updates (example: set all pages to Landscape)
+            // Create a backup copy by saving the loaded diagram to a separate file
+            diagram.Save(backupPath, SaveFileFormat.Vsdx);
+
+            // Apply bulk orientation updates: set all pages to Landscape orientation
             foreach (Page page in diagram.Pages)
             {
-                if (page.PageSheet?.PrintProps != null)
-                {
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                }
+                // Set the page's print orientation to Landscape
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
             }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Modified diagram saved to '{outputPath}'.");
+            // Save the updated diagram with the new orientation settings
+            diagram.Save(updatedPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("An error occurred: " + ex.Message);
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

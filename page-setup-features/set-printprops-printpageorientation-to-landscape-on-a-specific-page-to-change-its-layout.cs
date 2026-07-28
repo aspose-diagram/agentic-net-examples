@@ -1,46 +1,33 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Printing;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Retrieve the target page (e.g., first page)
-                    // Ensure the page exists
-                    if (diagram.Pages.Count > 0)
-                    {
-                        Page page = diagram.Pages[0];
+            // Index of the page to modify (0‑based)
+            int pageIndex = 0; // adjust as needed
 
-                        // Set the page orientation to Landscape
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                    }
-                    else
-                    {
-                        throw new Exception("The diagram contains no pages.");
-                    }
+            // Access the PageSheet of the selected page
+            PageSheet pageSheet = diagram.Pages[pageIndex].PageSheet;
 
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
+            // Set the page orientation to Landscape
+            pageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                Console.WriteLine("Page orientation set to Landscape and diagram saved successfully.");
+            // Save the updated diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

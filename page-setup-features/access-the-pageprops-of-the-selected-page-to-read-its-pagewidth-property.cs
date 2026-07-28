@@ -9,26 +9,22 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram(@"C:\Path\To\YourDiagram.vsdx");
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Select the page you want to inspect (e.g., the first page)
-            int pageIndex = 0; // change as needed
-            Page selectedPage = diagram.Pages[pageIndex];
+            // Select the first page (or any page by index)
+            Page page = diagram.Pages[0];
 
-            // Access the PageProps of the selected page
-            PageProps props = selectedPage.PageSheet.PageProps;
-
-            // Read the PageWidth property (value is stored in a DoubleValue)
-            double pageWidth = props.PageWidth.Value;
+            // Access the PageProps of the selected page and read the PageWidth value
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
 
             // Output the page width
-            Console.WriteLine($"Page Width (drawing units): {pageWidth}");
+            Console.WriteLine($"Page width: {pageWidth}");
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -5,48 +5,52 @@ using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Path to the Visio file to be validated
+            // Path to the Visio file to be processed
             string inputPath = "input.vsdx";
 
-            // Expected print settings
-            PrintPageOrientationValue expectedOrientation = PrintPageOrientationValue.Landscape;
-            double expectedScaleX = 1.0; // 100%
-            double expectedScaleY = 1.0; // 100%
+            // Expected print settings for every page
+            PrintPageOrientationValue expectedOrientation = PrintPageOrientationValue.Landscape; // or Portrait
+            double expectedScaleX = 1.0; // 100% scaling
+            double expectedScaleY = 1.0; // 100% scaling
 
-            // Load the diagram
+            // Load the diagram inside a using block to ensure proper disposal
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages and validate PrintProps
+                // Iterate over all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    var printProps = page.PageSheet.PrintProps;
+                    // Access the print properties of the current page
+                    PrintProps printProps = page.PageSheet.PrintProps;
 
-                    // Validate orientation
+                    // Validate page orientation
                     if (printProps.PrintPageOrientation.Value != expectedOrientation)
                     {
-                        throw new Exception(
-                            $"Page '{page.Name}' orientation mismatch. Expected: {expectedOrientation}, Actual: {printProps.PrintPageOrientation.Value}");
+                        Console.WriteLine($"[Error] Page '{page.Name}' orientation mismatch. Expected: {expectedOrientation}, Actual: {printProps.PrintPageOrientation.Value}");
+                        throw new Exception("Print orientation validation failed.");
                     }
 
-                    // Validate scaling factors
-                    if (Math.Abs(printProps.ScaleX.Value - expectedScaleX) > 0.0001 ||
-                        Math.Abs(printProps.ScaleY.Value - expectedScaleY) > 0.0001)
+                    // Validate page scaling factors
+                    double actualScaleX = printProps.ScaleX.Value;
+                    double actualScaleY = printProps.ScaleY.Value;
+
+                    if (Math.Abs(actualScaleX - expectedScaleX) > 0.0001 || Math.Abs(actualScaleY - expectedScaleY) > 0.0001)
                     {
-                        throw new Exception(
-                            $"Page '{page.Name}' scaling mismatch. Expected ScaleX/ScaleY: {expectedScaleX}/{expectedScaleY}, " +
-                            $"Actual ScaleX/ScaleY: {printProps.ScaleX.Value}/{printProps.ScaleY.Value}");
+                        Console.WriteLine($"[Error] Page '{page.Name}' scaling mismatch. Expected: {expectedScaleX}/{expectedScaleY}, Actual: {actualScaleX}/{actualScaleY}");
+                        throw new Exception("Print scaling validation failed.");
                     }
 
-                    Console.WriteLine($"Page '{page.Name}' passed validation.");
+                    // If both checks pass, report success for this page
+                    Console.WriteLine($"Page '{page.Name}' passed print settings validation.");
                 }
 
-                // Optional: proceed to print if all pages are valid
-                // diagram.Print(); // Uncomment to print after successful validation
+                // After successful validation you may print the diagram.
+                // Uncomment the following line if actual printing is required.
+                // diagram.Print();
             }
 
         }

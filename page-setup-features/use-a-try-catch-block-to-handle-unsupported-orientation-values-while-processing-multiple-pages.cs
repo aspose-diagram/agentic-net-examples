@@ -1,58 +1,57 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Sample orientation values for demonstration (could come from any source)
-            string[] orientationValues = { "Landscape", "Portrait", "InvalidValue" };
-
-            // Process each page in the diagram
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            try
             {
-                Page page = diagram.Pages[i];
-                string orientStr = orientationValues[i % orientationValues.Length];
 
-                try
+                // Load the diagram from a file
+                using (Diagram diagram = new Diagram("input.vsdx"))
                 {
-                    // Convert the string to the corresponding enum value
-                    PrintPageOrientationValue orientation = (PrintPageOrientationValue)Enum.Parse(
-                        typeof(PrintPageOrientationValue), orientStr, ignoreCase: true);
+                    // Sample orientation values for each page (the third value is unsupported)
+                    string[] orientations = { "Landscape", "Portrait", "Diagonal" };
 
-                    // Apply the orientation to the page's print properties
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
-                    Console.WriteLine($"Page {page.ID} orientation set to {orientation}.");
+                    int pageIndex = 0;
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Determine the orientation string for the current page
+                        string orientationStr = pageIndex < orientations.Length ? orientations[pageIndex] : "Portrait";
+
+                        try
+                        {
+                            // Attempt to parse the string to the enum
+                            if (!Enum.TryParse<PrintPageOrientationValue>(orientationStr, true, out var orientation))
+                            {
+                                throw new ArgumentException($"Unsupported orientation value: {orientationStr}");
+                            }
+
+                            // Apply the parsed orientation to the page's print properties
+                            page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
+                            Console.WriteLine($"Page '{page.Name}' orientation set to {orientation}.");
+                        }
+                        catch (Exception ex)
+                        {
+                            // Handle any errors (e.g., unsupported orientation)
+                            Console.WriteLine($"Error processing page '{page.Name}': {ex.Message}");
+                            // Fallback to a default orientation
+                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                        }
+
+                        pageIndex++;
+                    }
+
+                    // Save the modified diagram
+                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                    Console.WriteLine("Diagram saved to 'output.vsdx'.");
                 }
-                catch (ArgumentException)
-                {
-                    // Thrown when the string cannot be parsed to a valid enum value
-                    Console.WriteLine($"Unsupported orientation '{orientStr}' for page {page.ID}. Skipping this page.");
-                }
-                catch (Exception ex)
-                {
-                    // Catch any other unexpected errors
-                    Console.WriteLine($"Error processing page {page.ID}: {ex.Message}");
-                }
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

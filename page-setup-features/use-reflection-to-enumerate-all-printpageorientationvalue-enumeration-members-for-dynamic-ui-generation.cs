@@ -7,33 +7,17 @@ class Program
 {
     static void Main()
     {
-        // Obtain the enum type for PrintPageOrientationValue
+        // Obtain the enum type via reflection
         Type enumType = typeof(PrintPageOrientationValue);
 
-        // Verify that the type is indeed an enum
-        if (!enumType.IsEnum)
-        {
-            Console.WriteLine("The specified type is not an enumeration.");
-            return;
-        }
-
-        // Enumerate enum members using the Enum helper methods
-        Console.WriteLine("Enum members (using Enum.GetNames):");
-        foreach (string name in Enum.GetNames(enumType))
-        {
-            // Parse the name back to its numeric value
-            int numericValue = (int)Enum.Parse(enumType, name);
-            Console.WriteLine($"{name} = {numericValue}");
-        }
-
-        // Enumerate enum members directly via reflection on the static fields
-        Console.WriteLine("\nEnum members (using reflection):");
+        // Enumerate all public static fields (the enum members)
         FieldInfo[] fields = enumType.GetFields(BindingFlags.Public | BindingFlags.Static);
+
         foreach (FieldInfo field in fields)
         {
             string name = field.Name;
-            int numericValue = (int)field.GetValue(null);
-            Console.WriteLine($"{name} = {numericValue}");
+            int value = (int)field.GetValue(null);
+            Console.WriteLine($"{name} = {value}");
         }
     }
 }

@@ -10,32 +10,39 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+
+            // Load the diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    // Retrieve the current page
-                    Page page = diagram.Pages[i];
+                int pageIndex = 0;
 
-                    // Get page dimensions (in inches)
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Retrieve page dimensions (in inches)
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Configure image save options
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    saveOptions.PageIndex = i; // Export the specific page
-                    // Define canvas size using the page dimensions
-                    saveOptions.PageSize = new PageSize((float)pageWidth, (float)pageHeight);
+                    // Configure image save options:
+                    // - Export as PNG
+                    // - Export only the current page
+                    // - Set canvas size to match page dimensions
+                    // - Apply a scaling factor to create a thumbnail
+                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+                    options.PageIndex = pageIndex;      // zero‑based page index
+                    options.PageCount = 1;              // export a single page
+                    options.PageSize = new PageSize((float)pageWidth, (float)pageHeight);
+                    options.Scale = 0.2f;               // 20 % of original size for thumbnail
 
-                    // Build output file name for the thumbnail
-                    string outputPath = $"thumbnail_page_{i + 1}.png";
+                    // Define output file name for the thumbnail
+                    string outputPath = $"Page_{pageIndex}_thumb.png";
 
-                    // Save the page as an image (thumbnail)
-                    diagram.Save(outputPath, saveOptions);
-                    Console.WriteLine($"Thumbnail saved: {outputPath}");
+                    // Save the thumbnail image
+                    diagram.Save(outputPath, options);
+
+                    pageIndex++;
                 }
             }
 

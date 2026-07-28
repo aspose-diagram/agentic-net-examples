@@ -1,23 +1,27 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        // ISO 216 A‑series sizes in inches (width x height)
-        private static readonly List<(double Width, double Height)> Iso216Sizes = new()
+        // ISO 216 A series sizes in millimeters (width x height)
+        private static readonly (double WidthMm, double HeightMm)[] IsoASeries = new (double, double)[]
         {
-            (33.11, 46.81), // A0
-            (23.39, 33.11), // A1
-            (16.54, 23.39), // A2
-            (11.69, 16.54), // A3
-            (8.27, 11.69),  // A4
-            (5.83, 8.27),   // A5
-            (4.13, 5.83)    // A6 (optional)
+            (841, 1189), // A0
+            (594, 841),  // A1
+            (420, 594),  // A2
+            (297, 420),  // A3
+            (210, 297),  // A4
+            (148, 210),  // A5
+            (105, 148),  // A6
+            (74, 105),   // A7
+            (52, 74),    // A8
+            (37, 52),    // A9
+            (26, 37)     // A10
         };
 
-        private const double Tolerance = 0.01; // inches
+        // Conversion factor from millimeters to inches
+        private const double MmToInch = 1.0 / 25.4;
 
         static void Main()
         {
@@ -25,28 +29,56 @@ class Program
             {
 
                 // Path to the source Visio file
-                const string inputPath = "input.vsdx";
+                string sourcePath = "input.vsdx";
 
                 // Load the diagram
-                using Diagram diagram = new Diagram(inputPath);
-
-                // Validate each page size against ISO 216 standards
-                foreach (Page page in diagram.Pages)
+                using (Diagram diagram = new Diagram(sourcePath))
                 {
-                    double width = page.PageSheet.PageProps.PageWidth.Value;
-                    double height = page.PageSheet.PageProps.PageHeight.Value;
-
-                    if (!IsIso216Size(width, height))
+                    // Validate each page size against ISO 216 standards
+                    foreach (Page page in diagram.Pages)
                     {
-                        string msg = $"Page \"{page.Name}\" has non‑ISO dimensions: {width:F2}\" x {height:F2}\".";
-                        throw new Exception(msg);
-                    }
-                }
+                        double pageWidthIn = page.PageSheet.PageProps.PageWidth.Value;
+                        double pageHeightIn = page.PageSheet.PageProps.PageHeight.Value;
 
-                // All pages are valid – proceed with batch export (example: PDF)
-                const string outputPath = "exported.pdf";
-                diagram.Save(outputPath, SaveFileFormat.Pdf);
-                Console.WriteLine("Export completed successfully.");
+                        // Ensure width is the smaller dimension (portrait orientation)
+                        double widthIn = Math.Min(pageWidthIn, pageHeightIn);
+                        double heightIn = Math.Max(pageWidthIn, pageHeightIn);
+
+                        bool matchesIso = false;
+                        const double toleranceIn = 0.01; // ~0.25 mm tolerance
+
+                        foreach (var (wMm, hMm) in IsoASeries)
+                        {
+                            double wIn = wMm * MmToInch;
+                            double hIn = hMm * MmToInch;
+
+                            if (Math.Abs(widthIn - wIn) <= toleranceIn && Math.Abs(heightIn - hIn) <= toleranceIn)
+                            {
+                                matchesIso = true;
+                                break;
+                            }
+                        }
+
+                        if (!matchesIso)
+                        {
+                            throw new Exception($"Page \"{page.Name}\" (ID {page.ID}) size {pageWidthIn:F3}\" x {pageHeightIn:F3}\" does not conform to any ISO 216 A‑series dimensions.");
+                        }
+                    }
+
+                    // All pages validated – proceed with batch export (PDF in this example)
+                    string outputPath = "output.pdf";
+
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
+                    {
+                        // Ensure a default font is set to avoid missing‑font issues
+                        DefaultFont = "Arial",
+                        // Export hidden pages if needed (set to false to exclude)
+                        ExportHiddenPage = true
+                    };
+
+                    diagram.Save(outputPath, pdfOptions);
+                    Console.WriteLine($"Diagram successfully exported to \"{outputPath}\".");
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -54,17 +86,4 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
-
-        // Checks whether the given dimensions match any ISO 216 size (allowing portrait or landscape)
-        private static bool IsIso216Size(double width, double height)
-        {
-            foreach (var (w, h) in Iso216Sizes)
-            {
-                if (Math.Abs(width - w) <= Tolerance && Math.Abs(height - h) <= Tolerance)
-                    return true;
-                if (Math.Abs(width - h) <= Tolerance && Math.Abs(height - w) <= Tolerance)
-                    return true;
-            }
-            return false;
-        }
     }

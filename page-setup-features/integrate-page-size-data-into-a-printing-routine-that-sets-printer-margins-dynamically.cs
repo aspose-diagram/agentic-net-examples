@@ -2,42 +2,56 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Printing;
+using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
 
-            // Path to the Visio file to be printed
+            // Path to the Visio file
             string diagramPath = "input.vsdx";
 
-            // Load the diagram inside a using block to ensure resources are released
+            // Load the diagram
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Iterate through all pages to set printer margins based on each page's size
-                foreach (Page page in diagram.Pages)
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
+
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Example: set margins to 10% of page dimensions
+                double marginLeft = pageWidth * 0.10;
+                double marginRight = pageWidth * 0.10;
+                double marginTop = pageHeight * 0.10;
+                double marginBottom = pageHeight * 0.10;
+
+                // Apply margins to the page's print properties
+                page.PageSheet.PrintProps.PageLeftMargin.Value = marginLeft;
+                page.PageSheet.PrintProps.PageRightMargin.Value = marginRight;
+                page.PageSheet.PrintProps.PageTopMargin.Value = marginTop;
+                page.PageSheet.PrintProps.PageBottomMargin.Value = marginBottom;
+
+                // Configure print options (optional)
+                PrintSaveOptions printOptions = new PrintSaveOptions();
+                // Example: set default font for missing fonts
+                printOptions.DefaultFont = "Arial";
+
+                try
                 {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Example: set margins to 5% of the corresponding page dimension
-                    double leftMargin = pageWidth * 0.05;
-                    double rightMargin = leftMargin;
-                    double topMargin = pageHeight * 0.05;
-                    double bottomMargin = topMargin;
-
-                    // Assign margins to the page's PrintProps (values are in inches)
-                    page.PageSheet.PrintProps.PageLeftMargin.Value = leftMargin;
-                    page.PageSheet.PrintProps.PageRightMargin.Value = rightMargin;
-                    page.PageSheet.PrintProps.PageTopMargin.Value = topMargin;
-                    page.PageSheet.PrintProps.PageBottomMargin.Value = bottomMargin;
+                    // Print to the default printer
+                    diagram.Print(printOptions);
+                    Console.WriteLine("Printing completed successfully.");
                 }
-
-                // Print the diagram using the default printer with the margins just set
-                diagram.Print();
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Printing failed: {ex.Message}");
+                    throw;
+                }
             }
 
         }

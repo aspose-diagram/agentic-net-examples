@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 using Aspose.Diagram.Printing;
 
 class Program
@@ -10,25 +11,26 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
 
-            // Reduce the print scaling to 75% on every page
-            foreach (Page page in diagram.Pages)
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // ScaleX controls the horizontal scaling factor (1.0 = 100%)
-                page.PageSheet.PrintProps.ScaleX.Value = 0.75;
+                // Adjust ScaleX for each page to 75% (reduce size by 25%)
+                foreach (Page page in diagram.Pages)
+                {
+                    // Access the print properties of the page
+                    var printProps = page.PageSheet.PrintProps;
+
+                    // Set the horizontal scaling factor
+                    printProps.ScaleX.Value = 0.75;
+                }
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Save the modified diagram back to Visio format
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Clean up resources
-            diagram.Dispose();
-
-            Console.WriteLine("Print scaling set to 75% and diagram saved to " + outputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,43 +1,44 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
-{
-    public static void Main(string[] args)
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
                 // Filter pages where the print scaling factor ScaleX exceeds 1.0
-                var pagesToTransform = diagram.Pages
+                List<Page> filteredPages = diagram.Pages
                     .Cast<Page>()
                     .Where(p => p.PageSheet.PrintProps.ScaleX.Value > 1.0)
                     .ToList();
 
                 // Apply additional transformations to the filtered pages
-                foreach (var page in pagesToTransform)
+                foreach (Page page in filteredPages)
                 {
-                    // Example transformation: reset ScaleX to 1.0
-                    page.PageSheet.PrintProps.ScaleX.Value = 1.0;
+                    // Example transformation: set page size to Letter (11" x 8.5")
+                    page.PageSheet.PageProps.PageWidth.Value = 11.0;
+                    page.PageSheet.PageProps.PageHeight.Value = 8.5;
                 }
 
                 // Save the modified diagram
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

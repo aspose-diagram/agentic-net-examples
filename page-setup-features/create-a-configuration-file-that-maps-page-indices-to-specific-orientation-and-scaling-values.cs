@@ -1,83 +1,56 @@
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-namespace DiagramPageConfiguration
-{
-    // Simple container for orientation and scaling settings per page
-    public class PageSettings
+class Program
     {
-        public PrintPageOrientationValue Orientation { get; set; }
-        public double ScaleX { get; set; }
-        public double ScaleY { get; set; }
-
-        public PageSettings(PrintPageOrientationValue orientation, double scaleX, double scaleY)
-        {
-            Orientation = orientation;
-            ScaleX = scaleX;
-            ScaleY = scaleY;
-        }
-    }
-
-    class Program
-    {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Define mapping: page index -> settings
-                var pageConfig = new Dictionary<int, PageSettings>
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Define mapping: page index -> (orientation, scaleX, scaleY)
+                var pageSettings = new Dictionary<int, (PrintPageOrientationValue orientation, double scaleX, double scaleY)>
                 {
-                    // Example: page 0 -> Landscape, 100% scaling
-                    { 0, new PageSettings(PrintPageOrientationValue.Landscape, 1.0, 1.0) },
+                    // Page 0: Landscape orientation, 75% scaling
+                    { 0, (PrintPageOrientationValue.Landscape, 0.75, 0.75) },
 
-                    // Example: page 1 -> Portrait, 75% scaling
-                    { 1, new PageSettings(PrintPageOrientationValue.Portrait, 0.75, 0.75) },
+                    // Page 1: Portrait orientation, 100% scaling
+                    { 1, (PrintPageOrientationValue.Portrait, 1.0, 1.0) },
 
-                    // Add more mappings as needed
+                    // Page 2: Landscape orientation, 50% scaling
+                    { 2, (PrintPageOrientationValue.Landscape, 0.5, 0.5) }
                 };
 
-                // Load an existing Visio diagram (replace with actual path)
-                string inputPath = "input.vsdx";
-                using (var diagram = new Diagram(inputPath))
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Apply configuration to each page that has an entry in the dictionary
-                    foreach (var kvp in pageConfig)
+                    // Iterate over pages and apply settings if a mapping exists
+                    foreach (Page page in diagram.Pages)
                     {
-                        int pageIndex = kvp.Key;
-                        PageSettings settings = kvp.Value;
+                        int pageIndex = page.ID; // Page.ID corresponds to its index in the collection
 
-                        // Validate page index
-                        if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+                        if (pageSettings.TryGetValue(pageIndex, out var settings))
                         {
-                            Console.WriteLine($"Warning: Page index {pageIndex} is out of range. Skipping.");
-                            continue;
-                        }
+                            // Set print orientation
+                            page.PageSheet.PrintProps.PrintPageOrientation.Value = settings.orientation;
 
-                        // Retrieve the page
-                        Page page = diagram.Pages[pageIndex];
-
-                        // Set orientation
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = settings.Orientation;
-
-                        // Set scaling factors (values >0)
-                        if (settings.ScaleX > 0 && settings.ScaleY > 0)
-                        {
-                            page.PageSheet.PrintProps.ScaleX.Value = settings.ScaleX;
-                            page.PageSheet.PrintProps.ScaleY.Value = settings.ScaleY;
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Warning: Invalid scaling values for page {pageIndex}. Skipping scaling.");
+                            // Set scaling factors
+                            page.PageSheet.PrintProps.ScaleX.Value = settings.scaleX;
+                            page.PageSheet.PrintProps.ScaleY.Value = settings.scaleY;
                         }
                     }
 
                     // Save the modified diagram
-                    string outputPath = "output.vsdx";
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved to {outputPath}");
                 }
+
+                Console.WriteLine("Diagram processing completed.");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -86,4 +59,3 @@ namespace DiagramPageConfiguration
             }
     }
     }
-}

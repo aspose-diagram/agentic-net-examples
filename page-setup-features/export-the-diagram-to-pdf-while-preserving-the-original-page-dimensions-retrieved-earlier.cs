@@ -3,7 +3,7 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportDiagramToPdf
+class Program
 {
     static void Main()
     {
@@ -11,24 +11,30 @@ class ExportDiagramToPdf
         {
 
             // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram(@"C:\Input\sample.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Create PDF save options to keep original page dimensions
+            // Assume original page dimensions were retrieved earlier.
+            // For example, you might have stored them like:
+            // double originalWidth = ...;
+            // double originalHeight = ...;
+
+            // Create PDF save options.
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Null PageSize tells Aspose to use the source diagram's page size
+            // Preserve the original page size by leaving PageSize as null.
+            // When PageSize is null Aspose.Diagram uses the source diagram's page dimensions.
             pdfOptions.PageSize = null;
 
-            // Do not enlarge the page; keep the original dimensions
-            pdfOptions.EnlargePage = false;
+            // Render all pages of the diagram.
+            pdfOptions.PageCount = diagram.Pages.Count;
 
-            // Save the diagram as PDF using the configured options
-            diagram.Save(@"C:\Output\sample.pdf", pdfOptions);
+            // Save the diagram to PDF while keeping the original page dimensions.
+            diagram.Save("output.pdf", pdfOptions);
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

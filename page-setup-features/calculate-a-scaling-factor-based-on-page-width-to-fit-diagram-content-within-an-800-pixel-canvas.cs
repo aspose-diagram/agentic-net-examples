@@ -1,40 +1,52 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Path to the Visio file to be processed
-            string inputPath = "input.vsdx";
+                // Path to the Visio file (adjust as needed)
+                string diagramPath = "input.vsdx";
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-            // Assume we work with the first page
-            Page page = diagram.Pages[0];
+                // Ensure there is at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-            // Retrieve the page width in inches
-            double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
+                // Use the first page for calculation
+                Page page = diagram.Pages[0];
 
-            // Define the DPI (dots per inch) used for pixel conversion; 96 DPI is common for screens
-            const double dpi = 96.0;
+                // Page width is stored in inches
+                double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
 
-            // Calculate the scaling factor to fit the page width into an 800‑pixel canvas
-            double scalingFactor = 800.0 / (pageWidthInches * dpi);
+                // Assume a standard screen DPI (dots per inch)
+                const double dpi = 96.0;
 
-            // Output the result
-            Console.WriteLine($"Page width (inches): {pageWidthInches}");
-            Console.WriteLine($"Scaling factor to fit 800px canvas: {scalingFactor}");
+                // Convert page width to pixels
+                double pageWidthPixels = pageWidthInches * dpi;
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Desired canvas width in pixels
+                const double canvasWidthPixels = 800.0;
+
+                // Calculate scaling factor to fit the page within the canvas
+                double scalingFactor = canvasWidthPixels / pageWidthPixels;
+
+                Console.WriteLine($"Page width (inches): {pageWidthInches}");
+                Console.WriteLine($"Page width (pixels) at {dpi} DPI: {pageWidthPixels}");
+                Console.WriteLine($"Scaling factor to fit within {canvasWidthPixels}px canvas: {scalingFactor}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

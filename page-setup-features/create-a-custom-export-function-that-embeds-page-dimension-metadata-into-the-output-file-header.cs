@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,13 +9,35 @@ class Program
             try
             {
 
-                // Example usage:
-                // Input Visio file path
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output_with_metadata.vsdx";
+                // Path for the exported file (HTML in this example)
+                string outputPath = "output.html";
 
-                ExportDiagramWithPageMetadata(inputPath, outputPath);
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Build a metadata string containing page dimensions
+                // Example format: "Page 1: Width=8.5in, Height=11in"
+                string metadata = "";
+                foreach (Page page in diagram.Pages)
+                {
+                    double width = page.PageSheet.PageProps.PageWidth.Value;
+                    double height = page.PageSheet.PageProps.PageHeight.Value;
+                    metadata += $"Page {page.ID}: Width={width}in, Height={height}in; ";
+                }
+
+                // Embed the metadata into the document header/footer.
+                // Using the right side of the footer for visibility.
+                diagram.HeaderFooter.FooterRight = metadata.Trim();
+
+                // Configure HTML save options (you can choose other formats similarly)
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                // Ensure the default font is set to avoid missing glyphs
+                htmlOptions.DefaultFont = "Arial";
+
+                // Save the diagram with the embedded metadata
+                diagram.Save(outputPath, htmlOptions);
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -22,55 +45,4 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
-
-        /// <summary>
-        /// Loads a Visio diagram, embeds page dimension metadata into custom document properties
-        /// and the footer, then saves the diagram.
-        /// </summary>
-        /// <param name="inputFile">Path to the source Visio file.</param>
-        /// <param name="outputFile">Path where the modified Visio file will be saved.</param>
-        static void ExportDiagramWithPageMetadata(string inputFile, string outputFile)
-        {
-            // Load the diagram from file
-            using (Diagram diagram = new Diagram(inputFile))
-            {
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
-                {
-                    throw new Exception("The diagram contains no pages.");
-                }
-
-                // Retrieve the first page (you can adjust to target a specific page)
-                Page page = diagram.Pages[0];
-
-                // Get page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Create custom document properties for width and height
-                CustomProp widthProp = new CustomProp
-                {
-                    Name = "PageWidth",
-                    PropType = PropType.String,
-                    CustomValue = { ValueString = pageWidth.ToString() }
-                };
-
-                CustomProp heightProp = new CustomProp
-                {
-                    Name = "PageHeight",
-                    PropType = PropType.String,
-                    CustomValue = { ValueString = pageHeight.ToString() }
-                };
-
-                // Add custom properties to the document
-                diagram.DocumentProps.CustomProps.Add(widthProp);
-                diagram.DocumentProps.CustomProps.Add(heightProp);
-
-                // Embed the dimensions into the footer (right side)
-                diagram.HeaderFooter.FooterRight = $"Page Size: {pageWidth} x {pageHeight} inches";
-
-                // Save the diagram with metadata
-                diagram.Save(outputFile, SaveFileFormat.Vsdx);
-            }
-        }
     }

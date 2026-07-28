@@ -1,65 +1,58 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Properties;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments
-        if (args.Length < 2)
+        static void Main()
         {
-            Console.WriteLine("Usage: <inputVisioFile> <outputVisioFile>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Load the Visio diagram
-        Diagram diagram = new Diagram(inputPath);
-
-        // Iterate through each page, convert dimensions to millimeters and store them as custom properties
-        foreach (Page page in diagram.Pages)
-        {
-            double widthInches = page.PageSheet.PageProps.PageWidth.Value;
-            double heightInches = page.PageSheet.PageProps.PageHeight.Value;
-
-            double widthMm = widthInches * 25.4;
-            double heightMm = heightInches * 25.4;
-
-            // Store width and height in custom properties
-            AddOrUpdateCustomProp(diagram, $"Page{page.ID}_Width_mm", widthMm);
-            AddOrUpdateCustomProp(diagram, $"Page{page.ID}_Height_mm", heightMm);
-        }
-
-        // Save the updated diagram
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-    }
-
-    // Helper method to add a new custom property or update an existing one
-    private static void AddOrUpdateCustomProp(Diagram diagram, string propName, double value)
-    {
-        // Search for an existing property with the same name
-        foreach (CustomProp existingProp in diagram.DocumentProps.CustomProps)
-        {
-            if (existingProp.Name == propName)
+            try
             {
-                existingProp.CustomValue.ValueString = value.ToString("F2");
-                return;
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path to the output Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram inside a using block to ensure proper disposal
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Retrieve the first page (index 0)
+                    Page page = diagram.Pages[0];
+
+                    // Page dimensions are stored in inches
+                    double widthInches = page.PageSheet.PageProps.PageWidth.Value;
+                    double heightInches = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Convert inches to millimeters (1 inch = 25.4 mm)
+                    double widthMillimeters = widthInches * 25.4;
+                    double heightMillimeters = heightInches * 25.4;
+
+                    // Create custom property for page width in mm
+                    CustomProp widthProp = new CustomProp();
+                    widthProp.Name = "PageWidthMm";
+                    widthProp.PropType = PropType.String;
+                    widthProp.CustomValue.ValueString = widthMillimeters.ToString("F2");
+
+                    // Create custom property for page height in mm
+                    CustomProp heightProp = new CustomProp();
+                    heightProp.Name = "PageHeightMm";
+                    heightProp.PropType = PropType.String;
+                    heightProp.CustomValue.ValueString = heightMillimeters.ToString("F2");
+
+                    // Add the custom properties to the document's metadata
+                    diagram.DocumentProps.CustomProps.Add(widthProp);
+                    diagram.DocumentProps.CustomProps.Add(heightProp);
+
+                    // Save the diagram back to a Visio file
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
+
+                Console.WriteLine("Page dimensions converted to millimeters and stored in metadata.");
+
             }
-        }
-
-        // Property not found – create a new one
-        CustomProp newProp = new CustomProp
-        {
-            Name = propName,
-            PropType = PropType.String,
-            CustomValue = { ValueString = value.ToString("F2") }
-        };
-
-        diagram.DocumentProps.CustomProps.Add(newProp);
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

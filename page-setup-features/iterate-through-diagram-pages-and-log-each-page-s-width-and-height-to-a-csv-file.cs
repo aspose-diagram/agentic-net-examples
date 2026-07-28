@@ -9,34 +9,34 @@ class Program
             try
             {
 
-                // Path to the Visio file to be processed
-                string visioFilePath = "input.vsdx";
+                // Input Visio file path (adjust as needed)
+                string diagramPath = "input.vsdx";
 
-                // Path to the CSV file that will contain the page dimensions
-                string csvOutputPath = "PageDimensions.csv";
+                // Output CSV file path
+                string csvPath = "pages_dimensions.csv";
 
-                // Load the diagram from the specified file
-                Diagram diagram = new Diagram(visioFilePath);
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Open a StreamWriter to create the CSV file
-                using (StreamWriter writer = new StreamWriter(csvOutputPath, false))
+                // Write page dimensions to CSV
+                using (StreamWriter writer = new StreamWriter(csvPath))
                 {
-                    // Write CSV header
-                    writer.WriteLine("PageID,PageName,WidthInches,HeightInches");
+                    // CSV header
+                    writer.WriteLine("PageName,Width,Height");
 
-                    // Iterate through each page in the diagram
+                    // Iterate through each page
                     foreach (Page page in diagram.Pages)
                     {
-                        // Retrieve page width and height (values are in inches)
                         double width = page.PageSheet.PageProps.PageWidth.Value;
                         double height = page.PageSheet.PageProps.PageHeight.Value;
+                        string pageName = page.Name ?? string.Empty;
 
-                        // Log the dimensions to the CSV file
-                        writer.WriteLine($"{page.ID},{page.Name},{width},{height}");
+                        // Write a line for the current page
+                        writer.WriteLine($"{pageName},{width},{height}");
                     }
                 }
 
-                Console.WriteLine($"Page dimensions have been written to '{csvOutputPath}'.");
+                Console.WriteLine($"Page dimensions have been exported to '{csvPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

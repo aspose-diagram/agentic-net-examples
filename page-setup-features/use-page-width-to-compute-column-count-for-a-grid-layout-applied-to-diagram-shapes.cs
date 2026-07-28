@@ -1,77 +1,86 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (first argument) and output file path (second argument)
+        if (args.Length < 2)
         {
-            try
-            {
+            Console.WriteLine("Usage: <program> <input.vsdx> <output.vsdx>");
+            return;
+        }
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+        // Load the diagram
+        Diagram diagram = new Diagram(inputPath);
 
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
-                {
-                    throw new Exception("The diagram contains no pages.");
-                }
+        // Work with the first page (index 0)
+        if (diagram.Pages.Count == 0)
+        {
+            Console.WriteLine("The diagram contains no pages.");
+            return;
+        }
 
-                // Work with the first page
-                Page page = diagram.Pages[0];
+        Page page = diagram.Pages[0];
 
-                // Retrieve page dimensions (values are in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+        // Retrieve page width (in inches)
+        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Define the desired width of each grid cell (including shape width and spacing)
-                // For this example we use a fixed cell width of 2 inches
-                double cellWidth = 2.0;
-                double cellHeight = 2.0; // Fixed cell height for vertical spacing
+        // Define spacing between shapes (in inches)
+        double horizontalSpacing = 0.5;
+        double verticalSpacing = 0.5;
 
-                // Compute how many columns can fit within the page width
-                int columnCount = (int)Math.Floor(pageWidth / cellWidth);
-                if (columnCount < 1)
-                    columnCount = 1; // Ensure at least one column
+        // Determine a reference shape size (use the first shape as a template)
+        if (page.Shapes.Count == 0)
+        {
+            Console.WriteLine("The page contains no shapes to arrange.");
+            return;
+        }
 
-                // Position each shape in a grid layout
-                int shapeIndex = 0;
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                    {
-                        shapeIndex++;
-                        continue;
-                    }
+        // Get the first shape to obtain its width and height
+        Shape firstShape = page.Shapes.GetShape(page.Shapes[0].ID);
+        double shapeWidth = firstShape.XForm.Width.Value;
+        double shapeHeight = firstShape.XForm.Height.Value;
 
-                    // Calculate row and column for the current shape
-                    int row = shapeIndex / columnCount;
-                    int col = shapeIndex % columnCount;
+        // Compute how many columns can fit within the page width
+        int columns = (int)Math.Floor((pageWidth + horizontalSpacing) / (shapeWidth + horizontalSpacing));
+        if (columns < 1) columns = 1; // Ensure at least one column
 
-                    // Compute the center position of the shape within its cell
-                    double pinX = (col + 0.5) * cellWidth;
-                    // Visio's Y coordinate grows upwards; we start from the top margin
-                    double pinY = pageHeight - ((row + 0.5) * cellHeight);
+        // Starting positions (center of first shape)
+        double startX = shapeWidth / 2.0 + horizontalSpacing;
+        double startY = shapeHeight / 2.0 + verticalSpacing;
 
-                    // Apply the new position
-                    shape.XForm.PinX.Value = pinX;
-                    shape.XForm.PinY.Value = pinY;
+        // Reposition each shape in a grid layout
+        int index = 0;
+        foreach (Shape shape in page.Shapes)
+        {
+            int col = index % columns;
+            int row = index / columns;
 
-                    shapeIndex++;
-                }
+            double pinX = startX + col * (shapeWidth + horizontalSpacing);
+            double pinY = startY + row * (shapeHeight + verticalSpacing);
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Ensure shapes stay within page bounds
+            if (pinX + shapeWidth / 2.0 > pageWidth)
+                pinX = pageWidth - shapeWidth / 2.0;
+            if (pinY + shapeHeight / 2.0 > pageHeight)
+                pinY = pageHeight - shapeHeight / 2.0;
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            shape.XForm.PinX.Value = pinX;
+            shape.XForm.PinY.Value = pinY;
+
+            index++;
+        }
+
+        // Save the modified diagram
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        Console.WriteLine($"Diagram saved to '{outputPath}' with {columns} columns per row.");
     }
-    }
+}

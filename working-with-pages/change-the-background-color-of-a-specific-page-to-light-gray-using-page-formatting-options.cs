@@ -10,62 +10,55 @@ class Program
         try
         {
 
-            // Path to the source Visio file
+            // Input and output file paths
             string inputPath = "input.vsdx";
-            // Path to the output Visio file
             string outputPath = "output.vsdx";
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Index of the page whose background we want to change (0‑based)
-                int targetPageIndex = 0;
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Retrieve the target page
-                Page targetPage = diagram.Pages[targetPageIndex];
+            // Retrieve the target page (e.g., the first page)
+            Page targetPage = diagram.Pages[0];
 
-                // Determine a new unique page ID
-                int maxPageId = 0;
-                foreach (Page p in diagram.Pages)
-                {
-                    if (p.ID > maxPageId)
-                        maxPageId = p.ID;
-                }
+            // Get page dimensions (in inches)
+            double pageWidth = targetPage.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = targetPage.PageSheet.PageProps.PageHeight.Value;
 
-                // Create a new background page
-                Page backgroundPage = new Page(maxPageId + 1);
-                backgroundPage.Name = "BackgroundPage";
-                backgroundPage.Background = BOOL.True; // Mark as a background page
+            // Create a new background page
+            Page backgroundPage = new Page();
+            backgroundPage.Background = BOOL.True; // Mark as a background page
 
-                // Copy the dimensions of the target page
-                double pageWidth = targetPage.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = targetPage.PageSheet.PageProps.PageHeight.Value;
-                backgroundPage.PageSheet.PageProps.PageWidth.Value = pageWidth;
-                backgroundPage.PageSheet.PageProps.PageHeight.Value = pageHeight;
+            // Calculate the center position for the rectangle that will cover the whole page
+            double pinX = pageWidth / 2.0;
+            double pinY = pageHeight / 2.0;
 
-                // Draw a rectangle that covers the entire page
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-                long rectShapeId = backgroundPage.DrawRectangle(pinX, pinY, pageWidth, pageHeight);
-                Shape rectShape = backgroundPage.Shapes.GetShape((int)rectShapeId);
+            // Add a rectangle shape that spans the entire page area
+            long rectId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle");
 
-                // Set the rectangle fill to solid light gray (#D3D3D3)
-                rectShape.Fill.FillPattern.Value = 1;               // Solid fill
-                rectShape.Fill.FillForegnd.Value = "#D3D3D3";       // Light gray color
-                rectShape.Line.LinePattern.Value = 0;               // No border
+            // Retrieve the rectangle shape to apply formatting
+            Shape rectShape = backgroundPage.Shapes.GetShape(rectId);
 
-                // Send the rectangle to the back so other shapes appear above it
-                backgroundPage.SendToBack(rectShapeId);
+            // Set solid fill pattern
+            rectShape.Fill.FillPattern.Value = 1;               // Solid fill
+            rectShape.Fill.FillForegnd.Value = "#D3D3D3";       // Light gray color
 
-                // Add the background page to the diagram
-                diagram.Pages.Add(backgroundPage);
+            // Remove border by setting line pattern to none
+            rectShape.Line.LinePattern.Value = (LinePatternValue)0; // No line
 
-                // Associate the background page with the target page
-                targetPage.BackPage = backgroundPage;
+            // Send the rectangle to the back so other shapes appear above it
+            rectShape.SendToBack();
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
+            // Optionally lock the background shape to prevent selection
+            rectShape.Protection.LockSelect.Value = BOOL.True;
+
+            // Add the background page to the diagram
+            diagram.Pages.Add(backgroundPage);
+
+            // Associate the background page with the target page
+            targetPage.BackPage = backgroundPage;
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

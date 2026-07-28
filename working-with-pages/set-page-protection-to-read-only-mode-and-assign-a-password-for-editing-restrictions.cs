@@ -1,45 +1,44 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = "output.pdf";
-
         try
         {
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the protected output file
+            string outputPath = "output_protected.vsdx";
+
+            // Load the diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Apply global read‑only protection to the document
+                // Apply read‑only protection to the entire document.
+                // This prevents editing of shapes, masters, backgrounds and styles.
                 diagram.DocumentSettings.ProtectShapes = BOOL.True;
                 diagram.DocumentSettings.ProtectMasters = BOOL.True;
                 diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
                 diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
-                // Configure PDF export with password protection
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    SaveFormat = SaveFileFormat.Pdf,
-                    EncryptionDetails = new PdfEncryptionDetails("userPassword", "ownerPassword", PdfEncryptionAlgorithm.RC4_128)
-                };
+                // NOTE: Aspose.Diagram does not provide a property to set an edit‑password.
+                // The protection flags above enforce read‑only behavior, but a password
+                // cannot be assigned via the current API.
 
-                // Save the protected diagram as a PDF
-                diagram.Save(outputPath, pdfOptions);
+                // Save the protected diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine("Diagram has been saved with read‑only protection.");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

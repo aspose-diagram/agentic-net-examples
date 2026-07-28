@@ -1,33 +1,43 @@
-using System;
 using System.IO;
+using System;
+using Aspose.Diagram;
+using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Saving;
 
-class Program
+class AutoSpaceBatchProcessor
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
-            var diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            // Load the diagram file (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Define the auto‑spacing options to be applied to every page
-            var autoSpaceOptions = new Aspose.Diagram.AutoSpaceOptions
-            {
-                // Set desired spacing in inches (adjust as needed)
-                DistanceInHorizontal = 0.5, // horizontal gap between shapes
-                DistanceInVertical   = 0.5  // vertical gap between shapes
-            };
+            // Define the desired spacing in inches
+            const double horizontalSpacing = 0.5; // inches
+            const double verticalSpacing = 0.5;   // inches
 
-            // Apply the auto‑spacing to each page in the diagram
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Iterate through all pages and apply auto‑spacing
+            foreach (Page page in diagram.Pages)
             {
-                // AutoSpaceShapes works on a collection of shapes; here we use all shapes on the page
+                // Configure auto‑space options
+                AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions
+                {
+                    DistanceInHorizontal = horizontalSpacing,
+                    DistanceInVertical = verticalSpacing
+                };
+
+                // Apply auto‑spacing to all shapes on the current page
                 page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
             }
 
-            // Save the modified diagram (replace with your desired output path and format)
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            // Save the modified diagram (adjust format and path as needed)
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions
+            {
+                AutoFitPageToDrawingContent = true // enlarge page to fit the new layout
+            };
+            diagram.Save("output.vsdx", saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

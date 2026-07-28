@@ -6,65 +6,83 @@ class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Expect two arguments: input Visio file path and output Visio file path
+            if (args.Length != 2)
             {
+                Console.WriteLine("Usage: DiagramTocGenerator <input.vsdx> <output.vsdx>");
+                return;
+            }
 
-                // Input Visio file path (modify as needed)
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output_with_toc.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-                // Load the existing diagram
-                using (Diagram diagram = new Diagram(inputPath))
+            // Load the existing diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Determine the maximum existing page ID to assign a new unique ID
+                int maxPageId = 0;
+                foreach (Page p in diagram.Pages)
                 {
-                    // Create a new page for the Table of Contents
-                    Page tocPage = new Page();
-                    tocPage.Name = "Table of Contents";
-                    diagram.Pages.Add(tocPage);
-
-                    // Reference to the newly added TOC page (last page in collection)
-                    Page toc = diagram.Pages[diagram.Pages.Count - 1];
-
-                    // Positioning variables for the list entries
-                    double startX = 1.0;      // inches from left
-                    double startY = 1.0;      // inches from top
-                    double entryHeight = 0.3; // height of each text shape
-                    double entryWidth = 3.0;  // width of each text shape
-                    double verticalSpacing = 0.5; // space between entries
-
-                    // Iterate over all existing pages except the TOC page itself
-                    for (int i = 0; i < diagram.Pages.Count - 1; i++)
-                    {
-                        Page targetPage = diagram.Pages[i];
-                        string pageTitle = targetPage.Name; // Use the page's name as the title
-
-                        // Calculate Y position for this entry
-                        double pinY = startY + i * verticalSpacing;
-
-                        // Add a text shape with the page title
-                        Shape entryShape = toc.AddText(startX, pinY, entryWidth, entryHeight, pageTitle);
-
-                        // Create a hyperlink that points to the target page within the same document
-                        Hyperlink link = new Hyperlink();
-                        // SubAddress refers to the internal page name
-                        link.SubAddress.Value = targetPage.Name;
-                        // Optional tooltip description
-                        link.Description.Value = $"Go to page \"{targetPage.Name}\"";
-
-                        // Attach the hyperlink to the shape
-                        entryShape.Hyperlinks.Add(link);
-                    }
-
-                    // Save the modified diagram with the TOC page
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    if (p.ID > maxPageId)
+                        maxPageId = p.ID;
                 }
 
-                Console.WriteLine("Table of Contents page created and diagram saved successfully.");
+                // Create a new page for the Table of Contents
+                Page tocPage = new Page(maxPageId + 1);
+                tocPage.Name = "Table of Contents";
+                tocPage.NameU = "Table of Contents";
 
+                // Copy page size from the first existing page (if any)
+                if (diagram.Pages.Count > 0)
+                {
+                    Page referencePage = diagram.Pages[0];
+                    tocPage.PageSheet.PageProps.PageWidth.Value = referencePage.PageSheet.PageProps.PageWidth.Value;
+                    tocPage.PageSheet.PageProps.PageHeight.Value = referencePage.PageSheet.PageProps.PageHeight.Value;
+                }
+
+                // Add the TOC page to the diagram
+                diagram.Pages.Add(tocPage);
+
+                // Layout parameters for TOC entries
+                double startX = 1.0; // inches from left
+                double startY = 1.0; // inches from top
+                double entryHeight = 0.3; // height of each text shape
+                double entryWidth = 5.0; // width of each text shape
+                double verticalSpacing = 0.4; // space between entries
+
+                double currentY = startY;
+
+                // Iterate over all pages except the newly added TOC page
+                foreach (Page page in diagram.Pages)
+                {
+                    // Skip the TOC page itself
+                    if (page.ID == tocPage.ID)
+                        continue;
+
+                    // Use the page's Name as the displayed title
+                    string pageTitle = page.Name;
+
+                    // Add a text shape on the TOC page
+                    Shape tocEntry = tocPage.AddText(startX, currentY, entryWidth, entryHeight, pageTitle);
+
+                    // Create a hyperlink that points to the target page (internal link)
+                    Hyperlink link = new Hyperlink();
+                    // SubAddress refers to the target page's universal name
+                    link.SubAddress.Value = page.NameU;
+                    // Optional description (tooltip)
+                    link.Description.Value = $"Go to page \"{pageTitle}\"";
+
+                    // Add the hyperlink to the shape
+                    tocEntry.Hyperlinks.Add(link);
+
+                    // Move to the next vertical position
+                    currentY += entryHeight + verticalSpacing;
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            Console.WriteLine("Table of Contents page created and diagram saved successfully.");
+        }
     }

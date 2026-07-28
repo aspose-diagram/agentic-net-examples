@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using System.Drawing.Drawing2D;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
@@ -12,31 +12,29 @@ class RenderDiagramPage
         {
 
             // Load the Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            var diagram = new Diagram(@"C:\Input\sample.vsdx");
 
             // Configure image save options
             var options = new ImageSaveOptions(SaveFileFormat.Png)
             {
-                // Render only the first page
-                PageIndex = 0,
-                PageCount = 1,
-
                 // Enable anti‑aliasing for smoother lines and curves
                 SmoothingMode = SmoothingMode.AntiAlias,
+                // Improve compositing quality (optional, but enhances rendering)
                 CompositingQuality = CompositingQuality.HighQuality,
+                // Use high‑quality pixel offset (optional)
                 PixelOffsetMode = PixelOffsetMode.HighQuality,
-
-                // Set a high resolution for better quality (optional)
-                Resolution = 300
+                // Ensure the background remains transparent (PNG supports transparency by default)
+                // No explicit property needed; just use PNG format.
             };
 
-            // Save the rendered page as a PNG image (supports transparency)
-            diagram.Save("output.png", options);
+            // Render the first page (index 0) to a bitmap image
+            // PageIndex defaults to 0, so we don't need to set it explicitly.
+            diagram.Save(@"C:\Output\page0.png", options);
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

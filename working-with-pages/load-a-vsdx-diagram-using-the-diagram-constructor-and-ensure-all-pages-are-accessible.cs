@@ -9,18 +9,18 @@ class Program
         try
         {
 
-            // Path to the VSDX file
-            string filePath = "sample.vsdx";
+            // Load the VSDX diagram using the constructor that accepts a file name.
+            Diagram diagram = new Diagram("sample.vsdx");
 
-            // Load the diagram using the Diagram constructor
-            Diagram diagram = new Diagram(filePath);
-
-            // Ensure all pages are accessible by iterating through them
-            Console.WriteLine($"Total pages: {diagram.Pages.Count}");
+            // Iterate through all pages to ensure they are accessible.
             foreach (Page page in diagram.Pages)
             {
+                // Access page properties (e.g., ID and Name) as a simple verification.
                 Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
             }
+
+            // Clean up resources.
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

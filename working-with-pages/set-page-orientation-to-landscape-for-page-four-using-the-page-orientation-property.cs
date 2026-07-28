@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,17 +10,17 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Path to the source Visio diagram
             string inputPath = "input.vsdx";
+
+            // Load the diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure there are at least four pages
+                // Ensure the diagram has at least four pages (index 0‑based)
                 if (diagram.Pages.Count < 4)
-                {
                     throw new Exception("The diagram does not contain a fourth page.");
-                }
 
-                // Access the fourth page (zero‑based index 3)
+                // Retrieve the fourth page (index 3)
                 Page page = diagram.Pages[3];
 
                 // Set the page orientation to Landscape

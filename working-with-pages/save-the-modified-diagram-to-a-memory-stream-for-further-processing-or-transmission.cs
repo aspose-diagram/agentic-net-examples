@@ -10,21 +10,24 @@ class Program
         try
         {
 
-            // Load an existing diagram (replace the path with your actual file)
+            // Load an existing Visio diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // ----- Perform any modifications to the diagram here -----
-            // Example: (placeholder) diagram.ActivePage.Name = "ModifiedPage";
+            // -----------------------------------------------------------------
+            // Perform any required modifications to the diagram here.
+            // For example, you could add shapes, change properties, etc.
+            // -----------------------------------------------------------------
 
-            // Save the diagram into a memory stream in VDX format
+            // Save the modified diagram to a memory stream in VDX format
             using (MemoryStream memoryStream = new MemoryStream())
             {
                 diagram.Save(memoryStream, SaveFileFormat.Vdx);
-                // Reset the stream position if it will be read later
+
+                // Reset the stream position if you need to read from it later
                 memoryStream.Position = 0;
 
-                // Example usage of the memory stream (e.g., display its size)
-                Console.WriteLine($"Diagram saved to memory stream. Size = {memoryStream.Length} bytes");
+                // The memoryStream now contains the diagram data and can be
+                // transmitted, stored, or processed further as needed.
             }
 
             // Clean up resources

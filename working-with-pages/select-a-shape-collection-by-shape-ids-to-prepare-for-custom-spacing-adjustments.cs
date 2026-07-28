@@ -1,6 +1,5 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -11,39 +10,37 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx"; // replace with your file path
-            Diagram diagram = new Diagram(inputPath);
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Access the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
             // Define the shape IDs you want to work with
             long[] shapeIds = new long[] { 1, 2, 3 }; // replace with actual IDs
 
-            // Collect the shapes into a list for further processing
-            List<Shape> selectedShapes = new List<Shape>();
-            foreach (long id in shapeIds)
+            // Access the first page (adjust index if needed)
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shapes corresponding to the specified IDs
+            Shape[] selectedShapes = new Shape[shapeIds.Length];
+            for (int i = 0; i < shapeIds.Length; i++)
             {
-                // Retrieve shape by ID; GetShape returns null if not found
+                long id = shapeIds[i];
                 Shape shape = page.Shapes.GetShape(id);
-                if (shape != null && shape.Del == BOOL.False) // ensure the shape is not deleted
-                {
-                    selectedShapes.Add(shape);
-                    Console.WriteLine($"Selected shape ID: {shape.ID}, NameU: {shape.NameU}");
-                }
-                else
-                {
-                    Console.WriteLine($"Shape with ID {id} not found or is marked as deleted.");
-                }
+                selectedShapes[i] = shape;
+
+                // Example: output basic information about each shape
+                Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
             }
 
-            // At this point 'selectedShapes' contains the shapes you can adjust spacing for.
-            // Example placeholder for custom spacing logic:
-            // foreach (Shape s in selectedShapes) { /* adjust s.XForm.PinX, s.XForm.PinY, etc. */ }
+            // At this point you can apply custom spacing adjustments to the selected shapes.
+            // For example, you might modify shape.XForm.PinX, shape.XForm.PinY, etc.,
+            // or later use page.AutoSpaceShapes(page.Shapes, options) with a filtered collection.
 
-            // Save the diagram after any modifications (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram (optional, if you made changes)
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

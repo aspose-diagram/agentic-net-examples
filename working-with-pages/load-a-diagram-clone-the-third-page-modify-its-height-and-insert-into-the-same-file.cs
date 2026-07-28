@@ -1,49 +1,49 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file
+            string filePath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
+
+            // Verify that the diagram has at least three pages (index 0‑based)
+            if (diagram.Pages.Count < 3)
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the existing diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Ensure the diagram has at least three pages (index 0‑based)
-                if (diagram.Pages.Count < 3)
-                {
-                    Console.WriteLine("The diagram must contain at least three pages.");
-                    return;
-                }
-
-                // Retrieve the third page (index 2)
-                Page sourcePage = diagram.Pages[2];
-
-                // Create a new page instance and copy the contents of the third page
-                Page clonedPage = new Page();
-                clonedPage.Copy(sourcePage);
-
-                // Modify the height of the cloned page (value is in inches)
-                clonedPage.PageSheet.PageProps.PageHeight.Value = 11.0; // example height
-
-                // Insert the cloned page into the diagram
-                diagram.Pages.Add(clonedPage);
-
-                // Save the updated diagram back to a file
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Third page cloned, height modified, and diagram saved successfully.");
-
+                throw new Exception("The diagram does not contain a third page to clone.");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Retrieve the third page (index 2)
+            Page thirdPage = diagram.Pages[2];
+
+            // Create a new blank page that will hold the clone
+            Page clonedPage = new Page();
+
+            // Add the new page to the diagram's page collection
+            diagram.Pages.Add(clonedPage);
+
+            // Copy the contents of the third page into the new page
+            thirdPage.Copy(clonedPage);
+
+            // Modify the height of the cloned page (value is in inches)
+            double newHeightInches = 11.0; // example height
+            clonedPage.PageSheet.PageProps.PageHeight.Value = newHeightInches;
+
+            // Save the updated diagram back to the same file
+            diagram.Save(filePath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

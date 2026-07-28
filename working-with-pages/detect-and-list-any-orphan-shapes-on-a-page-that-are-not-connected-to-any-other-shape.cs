@@ -2,14 +2,14 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+public class Program
 {
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
         try
         {
 
-            // Determine the Visio file path
+            // Get the Visio file path from command‑line arguments or prompt the user.
             string filePath;
             if (args.Length > 0)
             {
@@ -17,48 +17,45 @@ class Program
             }
             else
             {
-                Console.Write("Enter the path to the Visio file: ");
+                Console.Write("Enter Visio file path: ");
                 filePath = Console.ReadLine();
             }
 
-            if (string.IsNullOrWhiteSpace(filePath))
-            {
-                Console.WriteLine("No file path provided. Exiting.");
-                return;
-            }
+            // Load the diagram.
+            Diagram diagram = new Diagram(filePath);
 
-            // Load the diagram using the Aspose.Diagram constructor
-            using (Diagram diagram = new Diagram(filePath))
+            // Iterate through each page in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                bool anyOrphans = false;
+                Console.WriteLine($"Page: {page.NameU} (ID: {page.ID})");
+                bool foundOrphan = false;
 
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                // Iterate through each shape on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip shapes that are marked as deleted.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Retrieve IDs of shapes connected to this shape.
+                    long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
+
+                    // If there are no connections, the shape is an orphan.
+                    if (connectedIds == null || connectedIds.Length == 0)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve IDs of shapes connected to this shape
-                        long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
-
-                        // If there are no connections, the shape is an orphan
-                        if (connectedIds == null || connectedIds.Length == 0)
-                        {
-                            anyOrphans = true;
-                            Console.WriteLine($"Orphan Shape - Page: \"{page.Name}\" (ID {page.ID}), Shape ID: {shape.ID}, Name: \"{shape.Name}\", NameU: \"{shape.NameU}\"");
-                        }
+                        foundOrphan = true;
+                        Console.WriteLine($"  Orphan Shape - ID: {shape.ID}, NameU: {shape.NameU}");
                     }
                 }
 
-                if (!anyOrphans)
+                if (!foundOrphan)
                 {
-                    Console.WriteLine("No orphan shapes were found in the diagram.");
+                    Console.WriteLine("  No orphan shapes on this page.");
                 }
             }
+
+            // Clean up resources.
+            diagram.Dispose();
 
         }
         catch (Aspose.Diagram.DiagramException ex)

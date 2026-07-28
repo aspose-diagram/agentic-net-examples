@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -12,22 +13,22 @@ class Program
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
-                // Load the diagram inside a using block to ensure proper disposal
+                // Load the diagram within a using block to ensure proper disposal
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Verify that the diagram has at least three pages
+                    // Verify that the diagram has at least three pages (0‑based index)
                     if (diagram.Pages.Count < 3)
                     {
                         throw new Exception("The diagram does not contain a third page to delete.");
                     }
 
-                    // Retrieve the third page (zero‑based index 2)
+                    // Retrieve the third page (index 2)
                     Page pageToDelete = diagram.Pages[2];
 
                     // Confirm the page contains no shapes
                     if (pageToDelete.Shapes.Count > 0)
                     {
-                        throw new Exception("Page three contains shapes and cannot be deleted to preserve data integrity.");
+                        throw new Exception("Page 3 is not empty and cannot be deleted to preserve data integrity.");
                     }
 
                     // Remove the page from the diagram
@@ -37,7 +38,7 @@ class Program
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("Page three was successfully removed and the diagram saved.");
+                Console.WriteLine("Page 3 has been successfully removed (if it was empty) and the diagram saved.");
 
             }
             catch (System.IO.FileNotFoundException ex)

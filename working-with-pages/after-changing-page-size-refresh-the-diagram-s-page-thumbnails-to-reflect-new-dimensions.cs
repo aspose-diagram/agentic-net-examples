@@ -1,54 +1,37 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expected arguments: inputPath outputPath newWidthInInches newHeightInInches
-            if (args.Length < 4)
+
+            // Load the Visio diagram from a file
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Desired page size in inches (e.g., A4 dimensions)
+            double newWidth = 8.27;
+            double newHeight = 11.69;
+
+            // Update each page's width and height
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine("Usage: DiagramPageThumbnailRefresh <inputPath> <outputPath> <widthInInches> <heightInInches>");
-                return;
+                page.PageSheet.PageProps.PageWidth.Value = newWidth;
+                page.PageSheet.PageProps.PageHeight.Value = newHeight;
             }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-            if (!double.TryParse(args[2], out double newWidth))
-            {
-                Console.WriteLine("Invalid width value.");
-                return;
-            }
-            if (!double.TryParse(args[3], out double newHeight))
-            {
-                Console.WriteLine("Invalid height value.");
-                return;
-            }
+            // Save the diagram; this refreshes the page thumbnails
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            try
-            {
-                // Load the diagram from the specified file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and set the new dimensions
-                foreach (Page page in diagram.Pages)
-                {
-                    page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                    page.PageSheet.PageProps.PageHeight.Value = newHeight;
-                }
-
-                // Refresh the diagram to update internal representations (including thumbnails)
-                diagram.Refresh();
-
-                // Save the updated diagram back to a Visio file (VSDX format)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram page size updated and thumbnails refreshed successfully.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

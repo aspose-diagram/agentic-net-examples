@@ -1,160 +1,171 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
+using System.Text;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramPageDiff
+{
+    // Holds simplified shape information for comparison
+    class ShapeInfo
     {
-        static void Main()
-        {
-            try
-            {
-
-                // Paths to the Visio file containing the pages to compare
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Retrieve the two pages by name (adjust names as needed)
-                Page pageA = diagram.Pages.GetPage("Page-1");
-                Page pageB = diagram.Pages.GetPage("Page-2");
-
-                if (pageA == null || pageB == null)
-                {
-                    Console.WriteLine("One or both pages not found. Verify page names.");
-                    return;
-                }
-
-                // Generate diff report
-                List<string> diffLines = ComparePages(pageA, pageB);
-
-                // Output report to console
-                foreach (string line in diffLines)
-                {
-                    Console.WriteLine(line);
-                }
-
-                // Save report to a text file
-                string reportPath = "diff_report.txt";
-                File.WriteAllLines(reportPath, diffLines);
-                Console.WriteLine($"Diff report saved to: {reportPath}");
-
-                // Dispose diagram resources
-                diagram.Dispose();
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        public long Id { get; set; }
+        public string MasterName { get; set; }
+        public double PinX { get; set; }
+        public double PinY { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+        public string Text { get; set; }
+        public string LineColor { get; set; }
+        public string FillColor { get; set; }
     }
 
-        /// <summary>
-        /// Compares two pages and returns a list of textual differences.
-        /// </summary>
-        static List<string> ComparePages(Page page1, Page page2)
+    class Program
+    {
+        static void Main(string[] args)
         {
-            var report = new List<string>();
-            report.Add($"Comparing Page \"{page1.Name}\" (ID={page1.ID}) with Page \"{page2.Name}\" (ID={page2.ID})");
-            report.Add("------------------------------------------------------------");
-
-            // Build lookup dictionaries by universal shape name for quick matching
-            var shapesPage1 = new Dictionary<string, Shape>();
-            foreach (Shape shape in page1.Shapes)
+            // Expect three arguments: diagram file path, first page name, second page name
+            if (args.Length != 3)
             {
-                if (!string.IsNullOrEmpty(shape.NameU))
-                {
-                    shapesPage1[shape.NameU] = shape;
-                }
+                Console.WriteLine("Usage: DiagramPageDiff <diagramPath> <pageName1> <pageName2>");
+                return;
             }
 
-            var shapesPage2 = new Dictionary<string, Shape>();
-            foreach (Shape shape in page2.Shapes)
+            string diagramPath = args[0];
+            // Guard: ensure the diagram file exists
+            if (!File.Exists(diagramPath))
             {
-                if (!string.IsNullOrEmpty(shape.NameU))
-                {
-                    shapesPage2[shape.NameU] = shape;
-                }
+                Console.Error.WriteLine($"File not found: {diagramPath}");
+                return;
             }
 
-            // Detect removed or changed shapes (present in page1)
-            foreach (var kvp in shapesPage1)
+            string pageName1 = args[1];
+            string pageName2 = args[2];
+
+            try
             {
-                string shapeName = kvp.Key;
-                Shape shape1 = kvp.Value;
-
-                if (!shapesPage2.TryGetValue(shapeName, out Shape shape2))
+                // Load the diagram inside a using block to ensure disposal
+                using (Diagram diagram = new Diagram(diagramPath))
                 {
-                    report.Add($"Removed Shape: \"{shapeName}\" (ID={shape1.ID})");
-                    continue;
-                }
+                    // Retrieve the two pages by name
+                    Page page1 = diagram.Pages.GetPage(pageName1);
+                    Page page2 = diagram.Pages.GetPage(pageName2);
 
-                // Compare basic visual properties
-                List<string> changes = new List<string>();
-
-                // Position
-                if (Math.Abs(shape1.XForm.PinX.Value - shape2.XForm.PinX.Value) > 0.001 ||
-                    Math.Abs(shape1.XForm.PinY.Value - shape2.XForm.PinY.Value) > 0.001)
-                {
-                    changes.Add($"Position changed from ({shape1.XForm.PinX.Value:F3}, {shape1.XForm.PinY.Value:F3}) to ({shape2.XForm.PinX.Value:F3}, {shape2.XForm.PinY.Value:F3})");
-                }
-
-                // Size
-                if (Math.Abs(shape1.XForm.Width.Value - shape2.XForm.Width.Value) > 0.001 ||
-                    Math.Abs(shape1.XForm.Height.Value - shape2.XForm.Height.Value) > 0.001)
-                {
-                    changes.Add($"Size changed from ({shape1.XForm.Width.Value:F3} x {shape1.XForm.Height.Value:F3}) to ({shape2.XForm.Width.Value:F3} x {shape2.XForm.Height.Value:F3})");
-                }
-
-                // Fill color
-                if (!string.Equals(shape1.Fill.FillForegnd.Value, shape2.Fill.FillForegnd.Value, StringComparison.OrdinalIgnoreCase))
-                {
-                    changes.Add($"Fill color changed from \"{shape1.Fill.FillForegnd.Value}\" to \"{shape2.Fill.FillForegnd.Value}\"");
-                }
-
-                // Line color
-                if (!string.Equals(shape1.Line.LineColor.Value, shape2.Line.LineColor.Value, StringComparison.OrdinalIgnoreCase))
-                {
-                    changes.Add($"Line color changed from \"{shape1.Line.LineColor.Value}\" to \"{shape2.Line.LineColor.Value}\"");
-                }
-
-                // Text content
-                string text1 = shape1.Text.Value.Text;
-                string text2 = shape2.Text.Value.Text;
-                if (!string.Equals(text1, text2, StringComparison.Ordinal))
-                {
-                    changes.Add($"Text changed from \"{text1}\" to \"{text2}\"");
-                }
-
-                if (changes.Count > 0)
-                {
-                    report.Add($"Modified Shape: \"{shapeName}\" (ID={shape1.ID})");
-                    foreach (string change in changes)
+                    if (page1 == null || page2 == null)
                     {
-                        report.Add($"  - {change}");
+                        Console.WriteLine("One or both pages not found in the diagram.");
+                        return;
+                    }
+
+                    // Extract shape information from each page
+                    List<ShapeInfo> shapesPage1 = ExtractShapes(page1);
+                    List<ShapeInfo> shapesPage2 = ExtractShapes(page2);
+
+                    // Generate diff report
+                    StringBuilder report = new StringBuilder();
+                    report.AppendLine($"Diff Report for pages \"{pageName1}\" vs \"{pageName2}\"");
+                    report.AppendLine($"Generated on {DateTime.Now}");
+                    report.AppendLine();
+
+                    // Compare shape counts
+                    if (shapesPage1.Count != shapesPage2.Count)
+                    {
+                        report.AppendLine($"Shape count differs: {pageName1} has {shapesPage1.Count}, {pageName2} has {shapesPage2.Count}");
+                    }
+
+                    // Compare shapes by index (assuming similar ordering)
+                    int maxCount = Math.Max(shapesPage1.Count, shapesPage2.Count);
+                    for (int i = 0; i < maxCount; i++)
+                    {
+                        if (i >= shapesPage1.Count)
+                        {
+                            report.AppendLine($"Extra shape in {pageName2}: ID {shapesPage2[i].Id}");
+                            continue;
+                        }
+                        if (i >= shapesPage2.Count)
+                        {
+                            report.AppendLine($"Extra shape in {pageName1}: ID {shapesPage1[i].Id}");
+                            continue;
+                        }
+
+                        ShapeInfo s1 = shapesPage1[i];
+                        ShapeInfo s2 = shapesPage2[i];
+
+                        // Compare each property and log differences
+                        if (s1.MasterName != s2.MasterName)
+                            report.AppendLine($"Shape ID {s1.Id}: Master changed from \"{s1.MasterName}\" to \"{s2.MasterName}\"");
+
+                        if (!AreClose(s1.PinX, s2.PinX) || !AreClose(s1.PinY, s2.PinY))
+                            report.AppendLine($"Shape ID {s1.Id}: Position changed from ({s1.PinX:F3}, {s1.PinY:F3}) to ({s2.PinX:F3}, {s2.PinY:F3})");
+
+                        if (!AreClose(s1.Width, s2.Width) || !AreClose(s1.Height, s2.Height))
+                            report.AppendLine($"Shape ID {s1.Id}: Size changed from ({s1.Width:F3} x {s1.Height:F3}) to ({s2.Width:F3} x {s2.Height:F3})");
+
+                        if (s1.Text != s2.Text)
+                            report.AppendLine($"Shape ID {s1.Id}: Text changed from \"{s1.Text}\" to \"{s2.Text}\"");
+
+                        if (s1.LineColor != s2.LineColor)
+                            report.AppendLine($"Shape ID {s1.Id}: Line color changed from \"{s1.LineColor}\" to \"{s2.LineColor}\"");
+
+                        if (s1.FillColor != s2.FillColor)
+                            report.AppendLine($"Shape ID {s1.Id}: Fill color changed from \"{s1.FillColor}\" to \"{s2.FillColor}\"");
+                    }
+
+                    // Output report to console
+                    Console.WriteLine(report.ToString());
+
+                    // Also write report to a text file in the same directory as the diagram
+                    string reportPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "diff_report.txt");
+                    try
+                    {
+                        File.WriteAllText(reportPath, report.ToString());
+                        Console.WriteLine($"Diff report saved to: {reportPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to write report file: {ex.Message}");
                     }
                 }
             }
-
-            // Detect added shapes (present only in page2)
-            foreach (var kvp in shapesPage2)
+            catch (Exception ex)
             {
-                string shapeName = kvp.Key;
-                Shape shape2 = kvp.Value;
+                // Capture any Aspose.Diagram related errors
+                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            }
+        }
 
-                if (!shapesPage1.ContainsKey(shapeName))
+        // Extracts a list of ShapeInfo objects from a given page, ignoring deleted shapes
+        private static List<ShapeInfo> ExtractShapes(Page page)
+        {
+            List<ShapeInfo> list = new List<ShapeInfo>();
+            // Iterate over all shapes on the page
+            foreach (Shape shape in page.Shapes)
+            {
+                // Skip shapes marked as deleted
+                if (shape.Del == BOOL.True) continue;
+
+                // Build ShapeInfo from the shape's properties
+                ShapeInfo info = new ShapeInfo
                 {
-                    report.Add($"Added Shape: \"{shapeName}\" (ID={shape2.ID})");
-                }
+                    Id = shape.ID,
+                    MasterName = shape.Master?.Name ?? "None",
+                    PinX = shape.XForm.PinX.Value,
+                    PinY = shape.XForm.PinY.Value,
+                    Width = shape.XForm.Width.Value,
+                    Height = shape.XForm.Height.Value,
+                    Text = shape.Text.Value.Text, // plain concatenated text
+                    LineColor = shape.Line.LineColor.Value,
+                    FillColor = shape.Fill.FillForegnd.Value
+                };
+                list.Add(info);
             }
+            return list;
+        }
 
-            if (report.Count == 2) // only header lines, no differences found
-            {
-                report.Add("No visual differences detected between the pages.");
-            }
-
-            return report;
+        // Helper to compare double values within a tolerance
+        private static bool AreClose(double a, double b, double tolerance = 0.001)
+        {
+            return Math.Abs(a - b) <= tolerance;
         }
     }
+}

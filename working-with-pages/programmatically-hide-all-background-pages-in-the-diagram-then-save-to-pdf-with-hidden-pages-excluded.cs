@@ -7,48 +7,42 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
+        // Path to the source Visio file
         string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
 
+        // Path for the resulting PDF
         string outputPath = "output.pdf";
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram from the file
             Diagram diagram = new Diagram(inputPath);
 
-            // Hide all background pages
+            // Hide all background pages by setting UIVisibility to Hidden
             foreach (Page page in diagram.Pages)
             {
-                // Check if the page is a background page
+                // Identify background pages
                 if (page.Background == BOOL.True)
                 {
-                    // Hide the page from UI (makes it invisible in exported output)
+                    // Hide the page (UIVisibility.Hidden hides the page in the UI)
                     page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Hidden;
                 }
             }
 
             // Configure PDF save options to exclude hidden pages
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                ExportHiddenPage = false,   // Do not export hidden pages
-                DefaultFont = "Arial"       // Fallback font for missing characters
-            };
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.ExportHiddenPage = false; // Do not export hidden pages
 
-            // Save the diagram as PDF with the specified options
+            // Save the diagram as PDF using the configured options
             diagram.Save(outputPath, pdfOptions);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
+            // Report any errors to the error stream
+            Console.Error.WriteLine("Error: " + ex.Message);
+            throw;
         }
-
-        Console.WriteLine("Diagram processed and saved to PDF successfully.");
     }
 }

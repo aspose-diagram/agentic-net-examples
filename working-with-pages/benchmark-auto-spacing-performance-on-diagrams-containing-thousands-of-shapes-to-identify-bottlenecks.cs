@@ -2,56 +2,68 @@ using System.IO;
 using System;
 using System.Diagnostics;
 using Aspose.Diagram;
+using Aspose.Diagram.AutoLayout;
 
-class Program
+class AutoSpaceBenchmark
 {
     static void Main()
     {
         try
         {
 
-            // Load a template diagram that contains at least one master shape.
-            // Replace "template.vsdx" with the path to an existing Visio file.
-            Diagram diagram = new Diagram("template.vsdx");
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Use the first master shape from the template for adding new shapes.
-            Master master = diagram.Masters[0];
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Number of shapes to add for the benchmark.
-            int shapeCount = 5000;
+            // Number of shapes to add for the benchmark
+            const int shapeCount = 10000;
 
-            // Add shapes in a simple grid layout.
+            // Add shapes in a grid layout to avoid overlap initially
+            double startX = 1.0;
+            double startY = 1.0;
+            double offsetX = 2.0;
+            double offsetY = 2.0;
+            int cols = (int)Math.Sqrt(shapeCount);
+            int rows = cols;
+
             for (int i = 0; i < shapeCount; i++)
             {
-                double x = (i % 100) * 1.0;          // Horizontal position
-                double y = (i / 100) * 1.0;          // Vertical position
-                diagram.AddShape(x, y, master.NameU, master.ID);
+                int col = i % cols;
+                int row = i / cols;
+                double pinX = startX + col * offsetX;
+                double pinY = startY + row * offsetY;
+
+                // Add a rectangle shape using the built‑in master name "Rectangle"
+                // Master ID 0 works for built‑in masters
+                diagram.AddShape(pinX, pinY, "Rectangle", 0);
             }
 
-            // Get the active page that now contains the added shapes.
-            Page page = diagram.ActivePage;
-
-            // Configure auto‑spacing options.
+            // Prepare autospace options (default distances)
             AutoSpaceOptions options = new AutoSpaceOptions
             {
-                DistanceInHorizontal = 0.5f, // inches
-                DistanceInVertical = 0.5f    // inches
+                DistanceInHorizontal = 0.3f, // inches
+                DistanceInVertical = 0.3f    // inches
             };
 
-            // Measure the time taken by AutoSpaceShapes.
+            // Warm‑up run to avoid JIT impact
+            page.AutoSpaceShapes(page.Shapes, options);
+
+            // Benchmark the AutoSpaceShapes method
             Stopwatch sw = Stopwatch.StartNew();
             page.AutoSpaceShapes(page.Shapes, options);
             sw.Stop();
 
-            Console.WriteLine($"AutoSpaceShapes for {shapeCount} shapes took {sw.ElapsedMilliseconds} ms");
+            Console.WriteLine($"Auto‑spacing {shapeCount} shapes took {sw.ElapsedMilliseconds} ms.");
 
-            // Save the resulting diagram.
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the resulting diagram (optional)
+            diagram.Save("AutoSpacedDiagram.vdx", SaveFileFormat.Vdx);
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

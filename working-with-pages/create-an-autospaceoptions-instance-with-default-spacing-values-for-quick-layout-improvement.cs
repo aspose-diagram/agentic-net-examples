@@ -2,23 +2,19 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class Program
+class AutoSpaceExample
 {
     static void Main()
     {
-        // Create an AutoSpaceOptions instance using the default constructor
+        // Create an AutoSpaceOptions instance using the default constructor.
+        // The default values are 0.375 inches for both horizontal and vertical spacing.
         AutoSpaceOptions options = new AutoSpaceOptions();
 
-        // Set the default spacing values (in inches) explicitly
-        // Default horizontal spacing: 0.375 inch
-        options.DistanceInHorizontal = 0.375;
-        // Default vertical spacing: 0.375 inch
-        options.DistanceInVertical = 0.375;
+        // Access the default spacing values (optional, for verification).
+        double horizontalSpacing = options.DistanceInHorizontal; // 0.375 inches by default
+        double verticalSpacing = options.DistanceInVertical;     // 0.375 inches by default
 
-        // Example usage (commented out to avoid requiring a diagram file):
-        // Diagram diagram = new Diagram("input.vsdx");
-        // Page page = diagram.Pages[0];
-        // page.AutoSpaceShapes(page.Shapes, options);
-        // diagram.Save("output.vsdx");
+        // The 'options' object can now be passed to methods such as Page.AutoSpaceShapes
+        // to improve layout spacing automatically.
     }
 }

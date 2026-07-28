@@ -1,6 +1,7 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,32 +10,29 @@ class Program
         try
         {
 
-            // Load the source diagram containing the template page and target pages
+            // Load the source diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Index of the template page whose size will be copied (e.g., first page)
+            // Index of the template page (0‑based)
             int templatePageIndex = 0;
             Page templatePage = diagram.Pages[templatePageIndex];
-            PageProps templateProps = templatePage.PageSheet.PageProps;
 
-            // Indices of pages that should receive the template size
-            int[] targetPageIndices = new int[] { 1, 2, 3 }; // adjust as needed
+            // Retrieve width and height from the template page's PageProps
+            double templateWidth = Convert.ToDouble(templatePage.PageSheet.PageProps.PageWidth.Value);
+            double templateHeight = Convert.ToDouble(templatePage.PageSheet.PageProps.PageHeight.Value);
 
+            // Define the target pages that should receive the same size
+            int[] targetPageIndices = { 1, 2, 3 }; // example indices
+
+            // Apply the template size to each target page
             foreach (int idx in targetPageIndices)
             {
                 Page targetPage = diagram.Pages[idx];
-                PageProps targetProps = targetPage.PageSheet.PageProps;
-
-                // Copy page width and height from the template
-                targetProps.PageWidth.Value = templateProps.PageWidth.Value;
-                targetProps.PageHeight.Value = templateProps.PageHeight.Value;
-
-                // Optionally copy related scale properties to keep drawing consistency
-                targetProps.PageScale.Value = templateProps.PageScale.Value;
-                targetProps.DrawingScale.Value = templateProps.DrawingScale.Value;
+                targetPage.PageSheet.PageProps.PageWidth.Value = templateWidth;
+                targetPage.PageSheet.PageProps.PageHeight.Value = templateHeight;
             }
 
-            // Save the updated diagram
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

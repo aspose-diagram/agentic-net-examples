@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,73 +9,53 @@ class Program
             try
             {
 
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram("input.vsdx"))
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "optimized.vsdx";
+
+                // Load the diagram using a using block to ensure proper disposal
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate through all pages in the diagram
+                    // Iterate through each page in the diagram
                     foreach (Page page in diagram.Pages)
                     {
-                        // ---------- Flatten group shapes ----------
-                        // Collect group shapes first to avoid modifying the collection during iteration
-                        List<Shape> groups = new List<Shape>();
+                        // Collect IDs of group shapes to avoid modifying the collection while iterating
+                        var groupShapeIds = new System.Collections.Generic.List<long>();
+
                         foreach (Shape shape in page.Shapes)
                         {
+                            // Identify group shapes
                             if (shape.Type == TypeValue.Group)
                             {
-                                groups.Add(shape);
+                                groupShapeIds.Add(shape.ID);
                             }
-                        }
-
-                        // Ungroup each collected group shape
-                        foreach (Shape groupShape in groups)
-                        {
-                            // Ungroup expands the group into its constituent shapes
-                            groupShape.Ungroup();
-                        }
-
-                        // ---------- Simplify overly complex shapes ----------
-                        // Define a threshold for the number of geometry elements that makes a shape "complex"
-                        const int geometryThreshold = 20;
-                        List<Shape> complexShapes = new List<Shape>();
-
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip group shapes (already handled) and deleted shapes
-                            if (shape.Type == TypeValue.Group || shape.Del == BOOL.True)
-                                continue;
-
-                            // Identify complex shapes by the count of geometry elements
-                            if (shape.Geoms != null && shape.Geoms.Count > geometryThreshold)
+                            else
                             {
-                                complexShapes.Add(shape);
+                                // Simplify complex (non‑group) shapes:
+                                // Set line pattern to solid
+                                shape.Line.LinePattern.Value = LinePatternValue.Solid;
+                                // Remove fill pattern (set to none)
+                                shape.Fill.FillPattern.Value = 0;
                             }
                         }
 
-                        // Replace each complex shape with a simple rectangle that matches its bounding box
-                        foreach (Shape complexShape in complexShapes)
+                        // Ungroup each identified group shape
+                        foreach (long groupId in groupShapeIds)
                         {
-                            // Retrieve the shape's position and size
-                            double pinX = complexShape.XForm.PinX.Value;
-                            double pinY = complexShape.XForm.PinY.Value;
-                            double width = complexShape.XForm.Width.Value;
-                            double height = complexShape.XForm.Height.Value;
-
-                            // Draw a simple rectangle at the same location
-                            long rectId = page.DrawRectangle(pinX, pinY, width, height);
-                            // Optionally, copy basic formatting (fill, line) from the original shape
-                            Shape rectShape = page.Shapes.GetShape(rectId);
-                            rectShape.Fill.FillForegnd.Value = complexShape.Fill.FillForegnd.Value;
-                            rectShape.Line.LineColor.Value = complexShape.Line.LineColor.Value;
-                            rectShape.Line.LineWeight.Value = complexShape.Line.LineWeight.Value;
-
-                            // Remove the original complex shape from the page
-                            page.Shapes.Remove(complexShape);
+                            Shape groupShape = page.Shapes.GetShape(groupId);
+                            if (groupShape != null)
+                            {
+                                // Ungroup expands the group into its constituent shapes
+                                groupShape.Ungroup();
+                            }
                         }
                     }
 
-                    // Save the optimized diagram
-                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                    // Save the optimized diagram in VSDX format
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
+
+                Console.WriteLine("Diagram optimization completed successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -3,33 +3,24 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportDiagramToPdf
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (auto‑spaced) from a file
-            // Diagram(string) constructor loads the diagram from the specified path
-            var diagram = new Diagram("AutoSpacedDiagram.vsdx");
+            // Load the Visio diagram from a file (auto‑spaced diagram)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Create PDF save options – you can customize options here if needed
-            var pdfOptions = new PdfSaveOptions
+            // Configure PDF save options – enable page enlargement to fit the drawing content
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
             {
-                // Example: export all pages (default), you can set PageCount, PageIndex, etc.
-                // PageCount = 1,
-                // PageIndex = 0,
-                // EnlargePage = true,
+                EnlargePage = true   // ensures the PDF page expands to include all shapes
             };
 
-            // Save the diagram as PDF using the Save(string, SaveOptions) overload
-            diagram.Save("AutoSpacedDiagram.pdf", pdfOptions);
-
-            // Dispose the diagram object to release resources
-            diagram.Dispose();
-
-            Console.WriteLine("Diagram exported to PDF successfully.");
+            // Export the diagram to PDF for sharing with non‑Visio users
+            diagram.Save("output.pdf", pdfOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

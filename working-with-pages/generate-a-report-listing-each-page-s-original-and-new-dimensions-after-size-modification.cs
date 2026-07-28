@@ -1,66 +1,50 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths for input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram from file
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input Visio file (provide path as first argument or modify the literal)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                // Output Visio file after resizing
-                string outputPath = "resized_output.vsdx";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // List to hold report lines
-                    List<string> reportLines = new List<string>();
-                    reportLines.Add("Page Resize Report");
-                    reportLines.Add("-------------------");
+                    // Retrieve original page dimensions (in inches)
+                    double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Define resize factor (e.g., increase size by 20%)
-                    const double resizeFactor = 1.20;
+                    // Define new dimensions (e.g., increase each side by 1 inch)
+                    double newWidth = originalWidth + 1.0;
+                    double newHeight = originalHeight + 1.0;
 
-                    // Iterate through each page
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Capture original dimensions (in inches)
-                        double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    // Apply the new dimensions to the page
+                    page.PageSheet.PageProps.PageWidth.Value = newWidth;
+                    page.PageSheet.PageProps.PageHeight.Value = newHeight;
 
-                        // Compute new dimensions
-                        double newWidth = originalWidth * resizeFactor;
-                        double newHeight = originalHeight * resizeFactor;
-
-                        // Apply new dimensions
-                        page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                        page.PageSheet.PageProps.PageHeight.Value = newHeight;
-
-                        // Add entry to report
-                        string line = $"Page ID {page.ID} ('{page.Name}'): " +
-                                      $"Original = {originalWidth:F2}in x {originalHeight:F2}in, " +
-                                      $"New = {newWidth:F2}in x {newHeight:F2}in";
-                        reportLines.Add(line);
-                    }
-
-                    // Output report to console
-                    foreach (string line in reportLines)
-                    {
-                        Console.WriteLine(line);
-                    }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Output a report line for this page
+                    Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
+                    Console.WriteLine($"  Original Size: {originalWidth}in x {originalHeight}in");
+                    Console.WriteLine($"  New Size:      {newWidth}in x {newHeight}in");
                 }
 
+                // Save the modified diagram to a new file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

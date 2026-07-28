@@ -9,55 +9,62 @@ class Program
             try
             {
 
-                // Input and output Visio file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Load an existing Visio diagram
+                // Replace "input.vsdx" with the path to your source file
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Define which pages to apply the border to (zero‑based indices)
-                int[] selectedPageIndices = { 0, 2 }; // example: first and third pages
+                // Define border line style
+                const double lineThicknessInInches = 0.02; // Example thickness
+                const string lineColorHex = "#000000";    // Black color
 
-                // Border style settings
-                double borderThicknessInInches = 0.02; // approx 0.5 pt
-                string borderColorHex = "#000000";    // black
-                LinePatternValue borderPattern = LinePatternValue.Dash;
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Apply border to each page (or add your own selection logic)
+                foreach (Page page in diagram.Pages)
                 {
-                    foreach (int pageIndex in selectedPageIndices)
-                    {
-                        // Ensure the page index is valid
-                        if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
-                            continue;
+                    // Get page dimensions (in inches)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                        Page page = diagram.Pages[pageIndex];
+                    // Define a small margin so the border is fully visible within the page
+                    double margin = 0.1; // inches
 
-                        // Retrieve page dimensions (in inches)
-                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    // Calculate rectangle coordinates
+                    double left = margin;
+                    double bottom = margin;
+                    double right = pageWidth - margin;
+                    double top = pageHeight - margin;
 
-                        // Calculate the center point of the page
-                        double centerX = pageWidth / 2.0;
-                        double centerY = pageHeight / 2.0;
+                    // Draw rectangle representing the page border
+                    // DrawRectangle(pinX, pinY, width, height)
+                    // pinX/Y are the center of the rectangle
+                    double rectCenterX = (left + right) / 2.0;
+                    double rectCenterY = (bottom + top) / 2.0;
+                    double rectWidth = right - left;
+                    double rectHeight = top - bottom;
 
-                        // Draw a rectangle that matches the page size
-                        long rectShapeId = page.DrawRectangle(centerX, centerY, pageWidth, pageHeight);
+                    long borderShapeId = page.DrawRectangle(rectCenterX, rectCenterY, rectWidth, rectHeight);
+                    Shape borderShape = page.Shapes.GetShape(borderShapeId);
 
-                        // Retrieve the newly created shape
-                        Shape borderShape = page.Shapes.GetShape(rectShapeId);
+                    // Set line pattern to dashed
+                    borderShape.Line.LinePattern.Value = LinePatternValue.Dash;
 
-                        // Apply line styling
-                        borderShape.Line.LineColor.Value = borderColorHex;
-                        borderShape.Line.LinePattern.Value = borderPattern;
-                        borderShape.Line.LineWeight.Value = borderThicknessInInches;
+                    // Set line thickness
+                    borderShape.Line.LineWeight.Value = lineThicknessInInches;
 
-                        // Ensure the rectangle has no fill
-                        borderShape.Fill.FillPattern.Value = 0; // No fill
-                    }
+                    // Set line color
+                    borderShape.Line.LineColor.Value = lineColorHex;
 
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Ensure the shape has no fill (transparent)
+                    borderShape.Fill.FillPattern.Value = 0; // No fill
                 }
+
+                // Save the modified diagram
+                // Replace "output.vsdx" with the desired output path
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+                // Dispose diagram to release resources
+                diagram.Dispose();
+
+                Console.WriteLine("Page borders applied and diagram saved successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

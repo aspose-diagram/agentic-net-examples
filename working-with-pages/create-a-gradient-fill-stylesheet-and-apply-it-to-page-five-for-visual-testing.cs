@@ -10,47 +10,45 @@ class Program
         // Create a new empty diagram
         using (Diagram diagram = new Diagram())
         {
-            // Ensure the diagram has at least 5 pages
+            // Ensure the diagram has at least five pages
             while (diagram.Pages.Count < 5)
             {
                 diagram.Pages.Add(new Page());
             }
 
-            // Get the fifth page (index 4)
-            Page page = diagram.Pages[4];
+            // Create a stylesheet that defines a gradient fill
+            StyleSheet gradientStyle = new StyleSheet();
+            gradientStyle.ID = diagram.StyleSheets.Count + 1; // unique ID
 
-            // Draw a rectangle shape on the page
-            // Parameters: pinX, pinY (center), width, height (in inches)
-            long rectId = page.DrawRectangle(5.0, 5.0, 2.0, 1.0);
-
-            // Retrieve the shape object using the returned ID
-            Shape rectShape = page.Shapes.GetShape((int)rectId);
-
-            // Apply a gradient fill to the rectangle
-            // Set fill pattern to gradient (value 25)
-            rectShape.Fill.FillPattern.Value = 25;
-
-            // Enable gradient fill
-            rectShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-
-            // Set gradient direction (0 = horizontal, 1 = vertical, etc.)
-            rectShape.Fill.GradientFill.GradientDir.Value = 0;
-
+            // Set fill to gradient pattern (value 25)
+            gradientStyle.Fill.FillPattern.Value = 25;
+            // Enable the gradient
+            gradientStyle.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+            // Set gradient direction (0 = left‑to‑right)
+            gradientStyle.Fill.GradientFill.GradientDir.Value = 0;
             // Clear any existing gradient stops
-            rectShape.Fill.GradientFill.GradientStops.Clear();
-
-            // Add gradient stop at position 0 (start) with red color
-            rectShape.Fill.GradientFill.GradientStops.Add(
+            gradientStyle.Fill.GradientFill.GradientStops.Clear();
+            // Add a blue stop at the start (position 0)
+            gradientStyle.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(0, MeasureConst.NUM),
-                new ColorValue("#FF0000", MeasureConst.Undefined));
-
-            // Add gradient stop at position 1 (end) with green color
-            rectShape.Fill.GradientFill.GradientStops.Add(
+                new ColorValue("#0000FF", MeasureConst.Undefined));
+            // Add a green stop at the end (position 1)
+            gradientStyle.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(1, MeasureConst.NUM),
                 new ColorValue("#00FF00", MeasureConst.Undefined));
 
-            // Save the diagram to a VSDX file for visual testing
-            diagram.Save("GradientTest.vsdx", SaveFileFormat.Vsdx);
+            // Add the stylesheet to the diagram's collection
+            diagram.StyleSheets.Add(gradientStyle);
+
+            // Retrieve page five (zero‑based index 4) and apply the stylesheet
+            Page pageFive = diagram.Pages[4];
+            pageFive.ApplyStyle(gradientStyle.ID, gradientStyle.ID, gradientStyle.ID);
+
+            // Save the diagram for visual verification
+            string outputPath = "GradientFillTest.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
+
+        Console.WriteLine("Diagram saved with gradient fill stylesheet applied to page five.");
     }
 }

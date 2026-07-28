@@ -1,42 +1,50 @@
 using System;
-using System.IO;
+using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
-
-            // Access the first page (page zero)
-            Aspose.Diagram.Page page = diagram.Pages[0];
-
-            // Assume a stylesheet named "MyStyle" already exists in the document
-            // Retrieve its ID; if not found, default to -1 (no change)
-            int styleId = -1;
-            foreach (Aspose.Diagram.StyleSheet style in diagram.StyleSheets)
+            try
             {
-                if (style.Name == "MyStyle")
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Ensure there is at least one page and one stylesheet
+                if (diagram.Pages.Count > 0 && diagram.StyleSheets.Count > 0)
                 {
-                    styleId = style.ID;
-                    break;
+                    // Get the first page (page index 0)
+                    Page page = diagram.Pages[0];
+
+                    // Get the first stylesheet in the collection
+                    StyleSheet style = diagram.StyleSheets[0];
+
+                    // Apply the stylesheet to the page.
+                    // ApplyStyle(lineStyleId, fillStyleId, textStyleId)
+                    page.ApplyStyle(style.ID, style.ID, style.ID);
                 }
+                else
+                {
+                    Console.WriteLine("Diagram does not contain pages or stylesheets.");
+                }
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                // Clean up
+                diagram.Dispose();
+
+                Console.WriteLine("Style applied and diagram saved to " + outputPath);
+
             }
-
-            // Apply the same style to text, line, and fill of the page
-            // Using the retrieved style ID for all three categories
-            page.ApplyStyle(styleId, styleId, styleId);
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

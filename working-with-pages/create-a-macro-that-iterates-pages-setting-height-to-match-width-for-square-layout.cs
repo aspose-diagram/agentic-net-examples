@@ -1,41 +1,36 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths for the source diagram and the modified output
+            string inputPath = "input.vsdx";
+            string outputPath = "output_square.vsdx";
+
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the modified Visio file
-                string outputPath = "output_square.vsdx";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate over all pages and make each page square (height = width)
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Retrieve the current page width
-                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-
-                        // Set the page height to match the width (square layout)
-                        page.PageSheet.PageProps.PageHeight.Value = pageWidth;
-                    }
-
-                    // Save the modified diagram using the Vsdx format
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    double width = page.PageSheet.PageProps.PageWidth.Value;
+                    page.PageSheet.PageProps.PageHeight.Value = width;
                 }
 
-                Console.WriteLine("All pages have been set to a square layout and saved to: " + outputPath);
+                // Save the updated diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

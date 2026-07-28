@@ -1,28 +1,27 @@
 using System;
 using System.IO;
-using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Create a new (empty) diagram instance
-            Diagram diagram = new Diagram();
+            // Create a new diagram (empty or loaded as needed)
+            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram();
 
             // Create a new blank page
-            Page newPage = new Page();
+            Aspose.Diagram.Page newPage = new Aspose.Diagram.Page();
 
-            // Add the page to the diagram's page collection
+            // Add the page to the diagram's page collection (adds at the end)
             diagram.Pages.Add(newPage);
 
             // Move the newly added page to index 2 (third position, zero‑based)
             newPage.MoveTo(2);
 
-            // Save the diagram (adjust path/format as needed)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // (Optional) Save the diagram to verify the insertion
+            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
 
         }
         catch (System.ArgumentOutOfRangeException ex)

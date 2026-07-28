@@ -1,84 +1,62 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
 
-namespace DiagramProcessing
+interface IDiagramService
 {
-    // Service interface for diagram operations
-    public interface IDiagramService
+    void ApplyAutoSpace(Diagram diagram);
+}
+
+class DiagramService : IDiagramService
+{
+    private readonly AutoSpaceOptions _options;
+
+    public DiagramService(AutoSpaceOptions options)
     {
-        void AutoSpace(string inputPath, string outputPath);
+        _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
-    // Implementation that uses injected AutoSpaceOptions
-    public class DiagramService : IDiagramService
+    public void ApplyAutoSpace(Diagram diagram)
     {
-        private readonly AutoSpaceOptions _options;
+        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
 
-        public DiagramService(AutoSpaceOptions options)
+        // Use the first page for auto-spacing
+        Page page = diagram.Pages[0];
+        page.AutoSpaceShapes(page.Shapes, _options);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        try
         {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-        }
 
-        public void AutoSpace(string inputPath, string outputPath)
-        {
-            if (string.IsNullOrWhiteSpace(inputPath))
-                throw new ArgumentException("Input path must be provided.", nameof(inputPath));
-            if (string.IsNullOrWhiteSpace(outputPath))
-                throw new ArgumentException("Output path must be provided.", nameof(outputPath));
+            // Configure AutoSpaceOptions (injected via DI)
+            AutoSpaceOptions options = new AutoSpaceOptions();
+            options.DistanceInHorizontal = 2.0;
+            options.DistanceInVertical = 2.0;
 
-            // Load the diagram
+            // Create the service with injected options
+            IDiagramService service = new DiagramService(options);
+
+            // Load the diagram (replace with actual file path)
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page
-            if (diagram.Pages.Count > 0)
-            {
-                Page page = diagram.Pages[0];
-                // Apply auto-spacing using the injected options
-                page.AutoSpaceShapes(page.Shapes, _options);
-            }
-            else
-            {
-                throw new InvalidOperationException("The diagram contains no pages.");
-            }
+            // Apply auto-spacing using the service
+            service.ApplyAutoSpace(diagram);
 
             // Save the modified diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-    }
-
-    // Simple composition root
-    public class Program
-    {
-        public static void Main()
+        catch (System.IO.FileNotFoundException ex)
         {
-            try
-            {
-
-                // Configure AutoSpaceOptions (could be loaded from config or tests)
-                var autoSpaceOptions = new AutoSpaceOptions
-                {
-                    DistanceInHorizontal = 2,
-                    DistanceInVertical = 2
-                };
-
-                // Inject options into the service
-                IDiagramService diagramService = new DiagramService(autoSpaceOptions);
-
-                // Example file paths (replace with actual paths as needed)
-                string inputFile = "input.vsdx";
-                string outputFile = "output.vsdx";
-
-                // Execute the operation
-                diagramService.AutoSpace(inputFile, outputFile);
-
-                Console.WriteLine("Auto-spacing completed successfully.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

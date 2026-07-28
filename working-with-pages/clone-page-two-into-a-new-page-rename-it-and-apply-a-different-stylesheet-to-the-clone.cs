@@ -10,61 +10,84 @@ class Program
         try
         {
 
-            // Load the source Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Verify that a second page exists (pages are zero‑based)
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Verify that the diagram has at least two pages
             if (diagram.Pages.Count < 2)
             {
-                throw new Exception("The diagram does not contain a second page to clone.");
+                Console.WriteLine("The diagram does not contain a second page to clone.");
+                diagram.Dispose();
+                return;
             }
 
-            // Get the page to be cloned (page two)
+            // Get the second page (index 1)
             Page sourcePage = diagram.Pages[1];
 
-            // Determine the highest existing page ID to assign a unique ID to the new page
-            int maxId = 0;
-            foreach (Page p in diagram.Pages)
-            {
-                if (p.ID > maxId) maxId = p.ID;
-            }
-
-            // Create a new blank page and set its ID
+            // Create a new blank page
             Page clonedPage = new Page();
-            clonedPage.ID = maxId + 1;
 
-            // Clone the contents of the source page into the new page
+            // Copy the contents of the source page into the new page
             clonedPage.Copy(sourcePage);
-
-            // Rename the cloned page
-            clonedPage.Name = "ClonedPage";
-            clonedPage.NameU = "ClonedPage";
 
             // Add the cloned page to the diagram
             diagram.Pages.Add(clonedPage);
 
-            // Create a new stylesheet (different from any existing one)
-            StyleSheet newStyle = new StyleSheet();
-            newStyle.ID = diagram.StyleSheets.Count + 1;
-            newStyle.Name = "NewStyle";
+            // Rename the cloned page
+            clonedPage.Name = "ClonedPage";
 
-            // Example: set a simple character color in the stylesheet
-            Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-            ch.IX = 0;
-            ch.Color.Value = "#FF0000"; // Red text
-            newStyle.Chars.Add(ch);
+            // -------------------------------------------------
+            // Apply a different stylesheet to the cloned page
+            // -------------------------------------------------
 
-            // Add the new stylesheet to the diagram
-            diagram.StyleSheets.Add(newStyle);
+            // Try to find an existing stylesheet named "ClonedStyle"
+            StyleSheet style = null;
+            foreach (StyleSheet ss in diagram.StyleSheets)
+            {
+                if (ss.Name == "ClonedStyle")
+                {
+                    style = ss;
+                    break;
+                }
+            }
 
-            // Apply the new stylesheet to the cloned page
-            clonedPage.ApplyStyle(newStyle.ID, newStyle.ID, newStyle.ID);
+            // If not found, create a new stylesheet with simple formatting
+            if (style == null)
+            {
+                style = new StyleSheet();
+                style.ID = diagram.StyleSheets.Count + 1;
+                style.Name = "ClonedStyle";
+
+                // Text character formatting (red text)
+                Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+                ch.IX = 0;
+                ch.Color.Value = "#FF0000";
+                style.Chars.Add(ch);
+
+                // Line formatting (green line)
+                style.Line.LineColor.Value = "#00FF00";
+
+                // Fill formatting (blue fill)
+                style.Fill.FillForegnd.Value = "#0000FF";
+
+                // Add the new stylesheet to the diagram
+                diagram.StyleSheets.Add(style);
+            }
+
+            // Apply the stylesheet to the cloned page (shape, line, and text styles)
+            clonedPage.ApplyStyle(style.ID, style.ID, style.ID);
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Dispose the diagram to release resources
+            // Clean up
             diagram.Dispose();
+
+            Console.WriteLine("Page cloned and stylesheet applied successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

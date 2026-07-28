@@ -1,6 +1,6 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
 {
@@ -10,23 +10,24 @@ class Program
         {
 
             // Load the source diagram containing the page to copy
-            Diagram srcDiagram = new Diagram("source.vdx");
+            Diagram sourceDiagram = new Diagram("source.vsdx");
 
-            // Load the target diagram where the page will be appended
-            Diagram targetDiagram = new Diagram("target.vdx");
+            // Load the target diagram where the page will be added
+            Diagram targetDiagram = new Diagram("target.vsdx");
 
-            // Select the page to copy from the source diagram (e.g., the first page)
-            Page sourcePage = srcDiagram.Pages[0];
+            // Select the page to copy from the source diagram (e.g., first page)
+            int sourcePageIndex = 0;
+            Page sourcePage = sourceDiagram.Pages[sourcePageIndex];
 
-            // Add a new blank page at the end of the target diagram's pages collection
+            // Create a new empty page and add it to the target diagram's Pages collection
             Page newPage = new Page();
             targetDiagram.Pages.Add(newPage);
 
-            // Copy the entire content of the source page into the newly added page
+            // Copy the contents of the source page into the newly added page
             newPage.Copy(sourcePage);
 
             // Save the updated target diagram
-            targetDiagram.Save("target_modified.vdx", SaveFileFormat.Vdx);
+            targetDiagram.Save("target_modified.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

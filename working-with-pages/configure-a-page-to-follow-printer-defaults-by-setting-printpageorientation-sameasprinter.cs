@@ -7,35 +7,32 @@ class Program
 {
     static void Main()
     {
-        // Path to an existing Visio file; if it doesn't exist, create a new blank diagram.
-        string inputPath = "input.vsdx";
-        Diagram diagram;
-
-        if (System.IO.File.Exists(inputPath))
+        try
         {
-            diagram = new Diagram(inputPath);
+
+            // Input and output file paths (replace with actual paths as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Set each page to use printer defaults for orientation
+                foreach (Page page in diagram.Pages)
+                {
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.SameAsPrinter;
+                }
+
+                // Save the updated diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine("Print orientation set to SameAsPrinter and diagram saved.");
+
         }
-        else
+        catch (System.IO.FileNotFoundException ex)
         {
-            diagram = new Diagram();
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-
-        // Ensure the diagram has at least one page.
-        if (diagram.Pages.Count == 0)
-        {
-            diagram.Pages.Add(new Page());
-        }
-
-        // Access the first page.
-        Page page = diagram.Pages[0];
-
-        // Set the page to follow printer defaults.
-        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.SameAsPrinter;
-
-        // Save the modified diagram.
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        // Clean up resources.
-        diagram.Dispose();
     }
 }

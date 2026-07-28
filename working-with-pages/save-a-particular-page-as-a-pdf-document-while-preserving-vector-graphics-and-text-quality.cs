@@ -3,39 +3,39 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class SavePageAsPdf
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio file
-            string sourceFile = @"C:\Diagrams\sample.vsdx";
+            // Input Visio file path
+            string inputPath = "input.vsdx";
 
-            // Path for the output PDF file
-            string outputPdf = @"C:\Diagrams\page3.pdf";
-
-            // Index of the page to be saved (0‑based). For example, page 3 => index 2
-            int pageIndex = 2;
+            // Output PDF file path (will contain the selected page)
+            string outputPath = "selected_page.pdf";
 
             // Load the Visio diagram
-            Diagram diagram = new Diagram(sourceFile);
+            Diagram diagram = new Diagram(inputPath);
 
-            // Configure PDF save options to render only the required page
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                // Render only the page at the specified index
-                PageIndex = pageIndex,
-                PageCount = 1,
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Fallback font to ensure text renders correctly
+            pdfOptions.DefaultFont = "Arial";
+            // Export only the first page (zero‑based index)
+            pdfOptions.PageIndex = 0;
+            pdfOptions.PageCount = 1;
+            // Explicitly set the save format
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Preserve vector graphics and text (default behavior)
-                // Additional optional settings can be adjusted here if needed
-                // e.g., TextCompression = TextCompression.Flate;
-            };
+            // Save the selected page as a PDF preserving vector graphics and text quality
+            diagram.Save(outputPath, pdfOptions);
 
-            // Save the selected page as a PDF document
-            diagram.Save(outputPdf, pdfOptions);
+            // Clean up resources
+            diagram.Dispose();
+
+            Console.WriteLine("Page saved to PDF successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

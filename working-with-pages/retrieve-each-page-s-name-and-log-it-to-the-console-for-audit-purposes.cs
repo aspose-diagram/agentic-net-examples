@@ -10,14 +10,16 @@ class Program
         {
 
             // Load the Visio diagram (replace with your file path)
-            using (var diagram = new Diagram("input.vsdx"))
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through all pages in the diagram
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Log each page's name (and optionally its ID) to the console
-                    Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
-                }
+                // Retrieve the page object by index
+                Page page = diagram.Pages[i];
+
+                // Log the page index and its name to the console
+                Console.WriteLine($"Page {i}: {page.Name}");
             }
 
         }

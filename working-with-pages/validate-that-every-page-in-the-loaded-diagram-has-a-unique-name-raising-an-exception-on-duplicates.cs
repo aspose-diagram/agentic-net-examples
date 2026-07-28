@@ -1,50 +1,50 @@
+using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
-class Program
+class DiagramPageValidator
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Determine the input file path.
-                string inputPath;
-                if (args.Length > 0)
-                {
-                    inputPath = args[0];
-                }
-                else
-                {
-                    Console.Write("Enter the path to the Visio diagram file: ");
-                    inputPath = Console.ReadLine();
-                }
+            // Path to the Visio diagram file
+            string diagramPath = "input.vsdx";
 
-                // Load the diagram.
-                Diagram diagram = new Diagram(inputPath);
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-                // Validate that each page has a unique name.
-                var pageNames = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (Page page in diagram.Pages)
-                {
-                    // Use the universal name (NameU) for consistency.
-                    string name = page.NameU ?? string.Empty;
+            // Validate that each page has a unique universal name (NameU)
+            EnsureUniquePageNames(diagram);
 
-                    if (pageNames.Contains(name))
-                    {
-                        // Duplicate found – raise an exception with details.
-                        throw new Exception($"Duplicate page name detected: \"{name}\".");
-                    }
+            // Continue with further processing or saving if needed
+            // diagram.Save("output.vsdx");
 
-                    pageNames.Add(name);
-                }
-
-                Console.WriteLine("All page names are unique.");
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
+
+    static void EnsureUniquePageNames(Diagram diagram)
+    {
+        // HashSet to track encountered page names
+        HashSet<string> pageNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // Iterate through all pages in the diagram
+        foreach (Page page in diagram.Pages)
+        {
+            string name = page.NameU ?? string.Empty;
+
+            // If the name already exists, raise an exception
+            if (!pageNames.Add(name))
+            {
+                throw new InvalidOperationException(
+                    $"Duplicate page name detected: \"{name}\". All pages must have unique names.");
+            }
+        }
     }
+}

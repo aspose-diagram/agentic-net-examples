@@ -1,56 +1,50 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output_resized.vsdx";
+
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
-                // Output Visio file path after resizing
-                string outputPath = "output_resized.vsdx";
-
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
+                    // Detect if the page has auto‑expand (DrawingResizeType) enabled
+                    if (page.PageSheet.PageProps.DrawingResizeType.Value == DrawingResizeTypeValue.Automatically)
                     {
-                        // Check if auto‑expand (automatic drawing resize) is enabled for the page
-                        if (page.PageSheet.PageProps.DrawingResizeType.Value == DrawingResizeTypeValue.Automatically)
-                        {
-                            // Retrieve original dimensions (in inches)
-                            double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
-                            double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
+                        // Log original dimensions
+                        double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
+                        double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
+                        Console.WriteLine($"Page ID {page.ID} ('{page.Name}') has auto‑expand enabled.");
+                        Console.WriteLine($"Original size: Width = {originalWidth} in, Height = {originalHeight} in.");
 
-                            // Log the page information and its original size
-                            Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
-                            Console.WriteLine($"  Original Width: {originalWidth} in, Original Height: {originalHeight} in");
+                        // Resize the page (example: set to 11 x 8.5 inches)
+                        page.PageSheet.PageProps.PageWidth.Value = 11.0;
+                        page.PageSheet.PageProps.PageHeight.Value = 8.5;
 
-                            // Example resizing: increase both dimensions by 10%
-                            double newWidth = originalWidth * 1.10;
-                            double newHeight = originalHeight * 1.10;
-
-                            // Apply the new dimensions
-                            page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                            page.PageSheet.PageProps.PageHeight.Value = newHeight;
-
-                            Console.WriteLine($"  Resized Width: {newWidth} in, Resized Height: {newHeight} in");
-                        }
+                        // Optionally turn off auto‑expand after resizing
+                        page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
                     }
-
-                    // Save the modified diagram to a new file
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
                 }
 
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,45 +1,39 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Expect the path to the Visio file as the first argument.
-                if (args.Length == 0)
+            // Path to the Visio file to be processed.
+            // Replace with the actual file path or pass it as a command‑line argument.
+            string filePath = args.Length > 0 ? args[0] : "input.vsdx";
+
+            // Load the diagram. The Diagram constructor handles file loading.
+            using (Diagram diagram = new Diagram(filePath))
+            {
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.WriteLine("Usage: DiagramPageResize <path-to-visio-file>");
-                    return;
+                    // Retrieve the current page width (in inches).
+                    double currentWidth = page.PageSheet.PageProps.PageWidth.Value;
+
+                    // Increase the width by 10 percent.
+                    page.PageSheet.PageProps.PageWidth.Value = currentWidth * 1.10;
                 }
 
-                string filePath = args[0];
-
-                // Load the diagram, modify page widths, and overwrite the original file.
-                using (Diagram diagram = new Diagram(filePath))
-                {
-                    // Iterate through each page in the diagram.
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Current width in inches.
-                        double currentWidth = page.PageSheet.PageProps.PageWidth.Value;
-
-                        // Increase width by 10 percent.
-                        page.PageSheet.PageProps.PageWidth.Value = currentWidth * 1.10;
-                    }
-
-                    // Save back to the same file using the VSDX format.
-                    diagram.Save(filePath, SaveFileFormat.Vsdx);
-                }
-
-                Console.WriteLine("Page widths increased by 10% and file saved.");
-
+                // Overwrite the original file with the updated diagram.
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

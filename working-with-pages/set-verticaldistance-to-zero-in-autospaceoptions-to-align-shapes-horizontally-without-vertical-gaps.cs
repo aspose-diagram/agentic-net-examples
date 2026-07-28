@@ -4,32 +4,32 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-         try
-         {
+        try
+        {
 
-             // Load an existing Visio diagram (replace with your file path)
-             Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-             // Get the first page (or any specific page you want to work with)
-             Page page = diagram.Pages[0];
+            // Get the first page (or any specific page you need)
+            Page page = diagram.Pages[0];
 
-             // Create AutoSpaceOptions and set vertical distance to zero
-             AutoSpaceOptions options = new AutoSpaceOptions();
-             options.DistanceInVertical = 0.0;          // No vertical gap between shapes
-             options.DistanceInHorizontal = 0.375;    // Keep default horizontal spacing (optional)
+            // Create AutoSpaceOptions and set vertical distance to zero
+            AutoSpaceOptions options = new AutoSpaceOptions();
+            options.DistanceInVertical = 0;               // No vertical gaps
+            options.DistanceInHorizontal = 0.375;        // Default horizontal spacing (optional)
 
-             // Apply auto‑spacing to all shapes on the page
-             page.AutoSpaceShapes(page.Shapes, options);
+            // Auto‑space the shapes on the page using the specified options
+            page.AutoSpaceShapes(page.Shapes, options);
 
-             // Save the modified diagram (replace with your desired output path)
-             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-         }
-         catch (System.IO.FileNotFoundException ex)
-         {
-             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-         }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

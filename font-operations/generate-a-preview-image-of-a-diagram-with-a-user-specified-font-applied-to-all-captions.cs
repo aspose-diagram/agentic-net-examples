@@ -1,76 +1,44 @@
-using System;
 using System.IO;
-using System.Linq;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Drawing.Text;
 
-class Program
+class DiagramPreview
 {
     static void Main()
     {
-        // Get input Visio file path from the user
-        Console.Write("Enter the full path to the Visio file: ");
-        string visioPath = Console.ReadLine();
-
-        // Get desired font name from the user
-        Console.Write("Enter the font name to apply to all captions: ");
-        string userFont = Console.ReadLine();
-
-        // Validate that the specified font is installed on the system
-        var fontCollection = new InstalledFontCollection();
-        bool fontExists = false;
-        foreach (var family in fontCollection.Families)
+        try
         {
-            if (family.Name.Equals(userFont, StringComparison.OrdinalIgnoreCase))
+
+            // Path to the source Visio diagram
+            string sourceFile = "input.vsdx";
+
+            // Path for the generated preview image
+            string previewFile = "preview.png";
+
+            // Font that should be applied to all text captions
+            string userFont = "Arial";
+
+            // Load the diagram from file
+            using (Diagram diagram = new Diagram(sourceFile))
             {
-                fontExists = true;
-                break;
+                // Create rendering options for PNG output
+                RenderingSaveOptions renderOptions = (RenderingSaveOptions)SaveOptions.CreateSaveOptions(SaveFileFormat.Png);
+
+                // Apply the user‑specified font to all text elements
+                renderOptions.DefaultFont = userFont;
+
+                // Ensure the format is set to PNG
+                renderOptions.SaveFormat = SaveFileFormat.Png;
+
+                // Save the diagram as an image preview using the rendering options
+                diagram.Save(previewFile, renderOptions);
             }
+
         }
-
-        if (!fontExists)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.WriteLine($"Font \"{userFont}\" not found. Falling back to Arial.");
-            userFont = "Arial";
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-
-        // Set the default font for the diagram (used for missing glyphs)
-        FontConfigs.DefaultFontName = userFont;
-
-        // Load the diagram
-        Diagram diagram = new Diagram(visioPath);
-
-        // Apply the chosen font to all shape captions (text)
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                // Ensure the shape actually contains text
-                if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.ToString()))
-                {
-                    // Update each character's font name
-                    foreach (Aspose.Diagram.Char ch in shape.Chars)
-                    {
-                        ch.FontName.Value = userFont;
-                    }
-                }
-            }
-        }
-
-        // Prepare preview image save options (PNG format, first page only)
-        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-        {
-            PageIndex = 0 // render only the first page
-        };
-
-        // Determine output file path (same folder, name "preview.png")
-        string outputDir = Path.GetDirectoryName(visioPath);
-        string outputPath = Path.Combine(outputDir ?? string.Empty, "preview.png");
-
-        // Save the preview image
-        diagram.Save(outputPath, saveOptions);
-
-        Console.WriteLine($"Preview image saved to: {outputPath}");
     }
 }

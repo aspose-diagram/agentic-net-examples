@@ -2,37 +2,37 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class VisioBatchRenameAndExport
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
             // Path to the source Visio file
-            string inputPath = @"C:\Visio\SampleDiagram.vsdx";
+            string inputPath = @"C:\Diagrams\Sample.vsdx";
 
-            // Derive a prefix from the file name (without extension) and add an underscore
+            // Path for the resulting PDF file
+            string outputPdf = @"C:\Diagrams\Sample_renamed.pdf";
+
+            // Create a prefix from the file name (without extension)
             string prefix = Path.GetFileNameWithoutExtension(inputPath) + "_";
 
-            // Destination PDF file (same folder, same base name)
-            string outputPdf = Path.ChangeExtension(inputPath, ".pdf");
-
-            // Load the Visio diagram using the provided constructor
+            // Load the diagram using the Diagram(string) constructor
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages and their shapes
+                // Iterate over all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate over all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Rename each shape using the derived prefix and the shape's ID
-                        // (ID is unique within the document)
-                        shape.Name = prefix + shape.ID;
+                        // Rename the shape by adding the derived prefix
+                        shape.Name = prefix + shape.Name;
                     }
                 }
 
-                // Export the modified diagram to PDF using the provided Save method
+                // Export the modified diagram to PDF using the Save method with SaveFileFormat.Pdf
                 diagram.Save(outputPdf, SaveFileFormat.Pdf);
             }
 

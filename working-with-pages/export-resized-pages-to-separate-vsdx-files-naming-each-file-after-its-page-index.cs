@@ -1,58 +1,76 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        try
-        {
-            Diagram original = new Diagram(inputPath);
-            int pageCount = original.Pages.Count;
-
-            for (int i = 0; i < pageCount; i++)
+            try
             {
-                // Load a fresh copy for each page to avoid mutating the original diagram
-                Diagram pageDiagram = new Diagram(inputPath);
 
-                // Collect pages that are not the target page
-                List<Page> pagesToRemove = new List<Page>();
-                for (int j = 0; j < pageDiagram.Pages.Count; j++)
+                // Path to the source Visio file
+                string sourcePath = "input.vsdx";
+
+                // Load the source diagram
+                Diagram sourceDiagram = new Diagram(sourcePath);
+
+                int pageCount = sourceDiagram.Pages.Count;
+
+                for (int i = 0; i < pageCount; i++)
                 {
-                    if (j != i)
-                        pagesToRemove.Add(pageDiagram.Pages[j]);
+                    // Create a new empty diagram for the current page
+                    Diagram pageDiagram = new Diagram();
+
+                    // Copy all masters from the source diagram
+                    foreach (Master master in sourceDiagram.Masters)
+                    {
+                        // Add master by name from the source diagram
+                        pageDiagram.AddMaster(sourceDiagram, master.Name);
+                    }
+
+                    // Retrieve the source page
+                    Page srcPage = sourceDiagram.Pages[i];
+
+                    // Create a new page and copy its PageSheet (size, properties, etc.)
+                    Page newPage = new Page();
+                    newPage.Name = srcPage.Name;
+                    newPage.NameU = srcPage.NameU;
+                    newPage.PageSheet.Copy(srcPage.PageSheet);
+
+                    // Add the new page to the diagram
+                    pageDiagram.Pages.Add(newPage);
+
+                    // Copy shapes that have an associated master
+                    foreach (Shape shape in srcPage.Shapes)
+                    {
+                        if (shape.Master != null)
+                        {
+                            // Add the shape to the new diagram using the same master
+                            pageDiagram.AddShape(shape, shape.Master.Name, pageDiagram.Pages.Count - 1);
+                        }
+                    }
+
+                    // Build output file name using the page index
+                    string outputFileName = $"Page_{i}{Path.GetExtension(sourcePath)}";
+
+                    // Save the single‑page diagram as VSDX
+                    pageDiagram.Save(outputFileName, SaveFileFormat.Vsdx);
+
+                    // Clean up the per‑page diagram
+                    pageDiagram.Dispose();
                 }
 
-                // Remove the unwanted pages
-                foreach (Page p in pagesToRemove)
-                {
-                    pageDiagram.Pages.Remove(p);
-                }
+                // Clean up the source diagram
+                sourceDiagram.Dispose();
 
-                // Resize the remaining page (example size: 8.5 x 11 inches)
-                Page page = pageDiagram.Pages[0];
-                page.PageSheet.PageProps.PageWidth.Value = 8.5;
-                page.PageSheet.PageProps.PageHeight.Value = 11;
+                Console.WriteLine("Export completed.");
 
-                // Save the single‑page diagram
-                string outputPath = $"Page_{i}.vsdx";
-                pageDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Exported page {i} to {outputPath}");
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

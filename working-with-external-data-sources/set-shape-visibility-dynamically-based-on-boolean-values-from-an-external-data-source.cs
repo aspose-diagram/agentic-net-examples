@@ -1,50 +1,70 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Text.Json;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect three arguments: input diagram path, JSON data path, output diagram path
-            if (args.Length < 3)
-            {
-                Console.WriteLine("Usage: ShapeVisibilityDemo <input.vsdx> <visibility.json> <output.vsdx>");
-                return;
-            }
 
-            string diagramPath = args[0];
-            string jsonPath = args[1];
-            string outputPath = args[2];
+            // Path to the source Visio diagram
+            string diagramPath = "input.vsdx";
 
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Read visibility data from JSON.
-            // Expected format: { "123": true, "124": false, ... } where keys are shape IDs.
-            string jsonContent = File.ReadAllText(jsonPath);
-            Dictionary<string, bool> visibilityMap = JsonSerializer.Deserialize<Dictionary<string, bool>>(jsonContent);
+            // Load visibility settings from an external CSV file (shapeId,visible)
+            // Example line: 12345,true
+            var visibilityMap = new Dictionary<long, bool>();
+            string csvPath = "visibility.csv";
 
-            // Iterate through all pages and shapes, applying visibility based on the map
+            if (File.Exists(csvPath))
+            {
+                foreach (string line in File.ReadAllLines(csvPath))
+                {
+                    // Skip empty lines
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    string[] parts = line.Split(',');
+                    if (parts.Length >= 2 &&
+                        long.TryParse(parts[0].Trim(), out long shapeId) &&
+                        bool.TryParse(parts[1].Trim(), out bool isVisible))
+                    {
+                        visibilityMap[shapeId] = isVisible;
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Visibility file not found: {csvPath}");
+            }
+
+            // Apply visibility settings to shapes
             foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
                 foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Use shape ID as string key
-                    string shapeIdKey = shape.ID.ToString();
-
-                    if (visibilityMap != null && visibilityMap.TryGetValue(shapeIdKey, out bool isVisible))
+                    if (visibilityMap.TryGetValue(shape.ID, out bool isVisible))
                     {
-                        // Set the deletion flag: TRUE hides the shape, FALSE shows it
+                        // Hide shape when not visible by marking it as deleted locally
                         shape.Del = isVisible ? BOOL.False : BOOL.True;
                     }
                 }
             }
 
             // Save the modified diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

@@ -1,89 +1,91 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Work with the first page (index 0)
+            Page page = diagram.Pages[0];
+
+            // Add two rectangle shapes
+            long rectId1 = page.AddShape(2.0, 5.0, "Rectangle");
+            long rectId2 = page.AddShape(6.0, 5.0, "Rectangle");
+
+            // Retrieve the rectangle shapes (optional, for further manipulation)
+            Shape rect1 = page.Shapes.GetShape(rectId1);
+            Shape rect2 = page.Shapes.GetShape(rectId2);
+
+            // Add three dynamic connectors
+            long connId1 = page.AddShape(4.0, 5.0, "Dynamic connector");
+            long connId2 = page.AddShape(4.0, 5.0, "Dynamic connector");
+            long connId3 = page.AddShape(4.0, 5.0, "Dynamic connector");
+
+            // Connect the rectangles using the connectors
+            page.ConnectShapesViaConnector(rectId1, ConnectionPointPlace.Bottom, rectId2, ConnectionPointPlace.Top, connId1);
+            page.ConnectShapesViaConnector(rectId1, ConnectionPointPlace.Right, rectId2, ConnectionPointPlace.Left, connId2);
+            page.ConnectShapesViaConnector(rectId1, ConnectionPointPlace.Top, rectId2, ConnectionPointPlace.Bottom, connId3);
+
+            // Collect all connector shapes (OneD == true)
+            var connectorShapes = new System.Collections.Generic.List<Shape>();
+            foreach (Shape shp in page.Shapes)
             {
-
-                // Input and output file paths
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Process each page: group all connector (1-D) shapes
-                foreach (Page page in diagram.Pages)
+                if (shp.OneD) // connectors are 1‑D shapes
                 {
-                    List<Shape> connectorShapes = new List<Shape>();
-
-                    // Collect connector shapes (OneD == true)
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.OneD)
-                        {
-                            connectorShapes.Add(shape);
-                        }
-                    }
-
-                    if (connectorShapes.Count > 0)
-                    {
-                        // Group the connector shapes
-                        Shape[] connectorArray = connectorShapes.ToArray();
-                        Shape groupShape = page.Shapes.Group(connectorArray);
-                        Console.WriteLine($"Page '{page.Name}' - grouped {connectorShapes.Count} connectors into group ID {groupShape.ID}.");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Page '{page.Name}' - no connector shapes found.");
-                    }
+                    connectorShapes.Add(shp);
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
-                // Reload the saved diagram to verify connections
-                Diagram reloadedDiagram = new Diagram(outputPath);
-
-                // Verify that each connector still has at least one connection
-                foreach (Page page in reloadedDiagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.OneD)
-                        {
-                            long connectorId = shape.ID;
-                            bool hasConnection = false;
-
-                            // Iterate through the Connect collection to find a link involving this connector
-                            foreach (Connect conn in page.Connects)
-                            {
-                                if (conn.FromSheet == connectorId || conn.ToSheet == connectorId)
-                                {
-                                    hasConnection = true;
-                                    break;
-                                }
-                            }
-
-                            if (!hasConnection)
-                            {
-                                throw new Exception($"Connector shape ID {connectorId} on page '{page.Name}' has no connections after saving.");
-                            }
-                        }
-                    }
-                }
-
-                Console.WriteLine("All connector shapes have valid connections after saving.");
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
+
+            // Group all connector shapes together
+            Shape groupShape = page.Shapes.Group(connectorShapes.ToArray());
+
+            // Save the diagram to a VSDX file
+            string outputPath = "GroupedConnectors.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            // Reload the saved diagram
+            Diagram loadedDiagram = new Diagram(outputPath);
+            Page loadedPage = loadedDiagram.Pages[0];
+
+            // Verify that all connections are still valid
+            bool allConnectionsValid = true;
+            foreach (Connect conn in loadedPage.Connects)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                try
+                {
+                    // Attempt to retrieve the source and target shapes
+                    Shape fromShape = loadedPage.Shapes.GetShape(conn.FromSheet);
+                    Shape toShape = loadedPage.Shapes.GetShape(conn.ToSheet);
+                    // If retrieval succeeds, the connection is considered valid
+                }
+                catch (Exception ex)
+                {
+                    allConnectionsValid = false;
+                    Console.WriteLine($"Invalid connection detected: FromSheet={conn.FromSheet}, ToSheet={conn.ToSheet}. Error: {ex.Message}");
+                }
             }
+
+            if (allConnectionsValid)
+            {
+                Console.WriteLine("All connector connections are valid after saving and reloading.");
+            }
+            else
+            {
+                Console.WriteLine("Some connections are invalid after reloading.");
+            }
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

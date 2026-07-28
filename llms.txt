@@ -1,6 +1,6 @@
 # Aspose.Diagram for .NET — Agentic Examples
 
-> 1840 AI-generated, compiler-validated C# examples for the [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) API. All examples target `net8.0` and Aspose.Diagram v26.5.0. Every example passes both `dotnet build` and `dotnet run`.
+> 1840 AI-generated, compiler-validated C# examples for the [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) API. All examples target `net8.0` and Aspose.Diagram v26.7.0. Every example passes both `dotnet build` and `dotnet run`.
 
 ## Key Resources
 
@@ -15,9 +15,9 @@
 - Total Examples: 1840
 - Categories: 31
 - Overall Pass Rate: 100.0%
-- Aspose.Diagram Version: 26.5.0
+- Aspose.Diagram Version: 26.7.0
 - Target Framework: net8.0
-- Last Updated: 2026-06-23
+- Last Updated: 2026-07-28
 
 ## Categories
 

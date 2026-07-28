@@ -1,11 +1,11 @@
 {
   "category": "working-with-layers",
   "display_name": "Working With Layers",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-06-09",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,13 +14,11 @@
       "task": "Add a custom tag to the legal layer and retrieve it during runtime for compliance checks",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "diagram"
@@ -32,7 +30,6 @@
       "task": "Add a new layer named annotations to an existing diagram and set its color to blue",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -49,7 +46,8 @@
       "task": "Apply a custom metadata property to the security layer for downstream processing",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -64,6 +62,7 @@
       "task": "Apply a drop shadow effect to every shape within the ui layer using layer settings",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -82,7 +81,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -98,10 +98,8 @@
       "task": "Clone the draft layer rename the clone to final and preserve its shape properties",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -118,7 +116,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -135,14 +134,12 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
-        "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -169,9 +166,10 @@
       "task": "Delete the layer obsolete and permanently remove its associated shapes from the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -187,7 +185,6 @@
       "task": "Detect and remove any orphaned shapes that are not assigned to any layer",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -221,7 +218,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -256,7 +254,9 @@
       "task": "Filter shapes by layer and export only those from the analysis layer to a csv report",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -273,7 +273,8 @@
       "task": "Generate a summary report listing each layer s name visibility and total shape count",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -291,6 +292,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -323,8 +325,7 @@
       "task": "Load a diagram disable the grid layer and save the result as a vsdx file",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -339,12 +340,15 @@
       "task": "Load a diagram lock the architecture layer to prevent edits and save the locked state",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -354,7 +358,8 @@
       "task": "Load a visio diagram and list all layer names with their visibility status",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -368,6 +373,7 @@
       "task": "Load multiple visio files from a folder merge their overview layers into a single diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -384,7 +390,7 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -418,6 +424,7 @@
       "task": "Rename the layer background to base and update all shapes referencing the old name",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -487,7 +494,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -504,7 +512,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",

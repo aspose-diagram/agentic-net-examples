@@ -1,39 +1,38 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Path to the Visio file to be loaded
-                string inputPath = "example.vsdx";
+            // Path to the Visio diagram file
+            string inputPath = "input.vsdx";
 
-                // Load the diagram from the file
-                Diagram diagram = new Diagram(inputPath);
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
 
-                // Specify the page index (0‑based) and the unique shape ID you want to retrieve
-                int pageIndex = 0;          // first page
-                long shapeId = 12345;       // replace with the actual shape ID
+            // Unique identifier of the shape to retrieve (example value)
+            long shapeId = 5;
 
-                // Get the page
-                Page page = diagram.Pages[pageIndex];
+            // Access the first page of the diagram
+            Page page = diagram.Pages[0];
 
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(shapeId);
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Example processing: output some basic information about the shape
-                Console.WriteLine($"Shape ID: {shape.ID}");
-                Console.WriteLine($"Shape Name: {shape.Name}");
-                Console.WriteLine($"Shape Master: {shape.Master?.Name ?? "None"}");
-                Console.WriteLine($"Shape Text: {shape.Text.Value.ToString()}");
+            // Example processing: display basic shape information
+            Console.WriteLine($"Shape ID: {shape.ID}");
+            Console.WriteLine($"Shape Name: {shape.Name}");
+            Console.WriteLine($"Master Name: {shape.Master?.Name ?? "No master"}");
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

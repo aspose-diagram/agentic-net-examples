@@ -1,96 +1,118 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Collections.Generic;
+using System.Text;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Determine input Visio file path
+            string inputPath;
+            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
             {
+                inputPath = args[0];
+            }
+            else
+            {
+                Console.Write("Enter the path to the Visio file: ");
+                inputPath = Console.ReadLine();
+            }
 
-                // Validate arguments
-                if (args.Length < 1)
-                {
-                    Console.WriteLine("Usage: VisioLayerHierarchy <inputVisioFile> [outputDotFile]");
-                    return;
-                }
+            if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
+            {
+                Console.WriteLine("Invalid input file path.");
+                return;
+            }
 
-                string inputPath = args[0];
-                string outputPath = args.Length > 1 ? args[1] : "layer_hierarchy.dot";
+            // Determine output DOT file path
+            string outputPath;
+            if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
+            {
+                outputPath = args[1];
+            }
+            else
+            {
+                outputPath = Path.ChangeExtension(inputPath, ".dot");
+            }
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            using (var diagram = new Diagram(inputPath))
+            {
+                // Prepare DOT content
+                var sb = new StringBuilder();
+                sb.AppendLine("digraph VisioLayers {");
+                sb.AppendLine("    rankdir=LR;"); // left‑to‑right layout for readability
 
-                // StringBuilder for DOT content
-                StringBuilder dotBuilder = new StringBuilder();
-                dotBuilder.AppendLine("digraph G {");
-
-                // Process each page in the diagram
+                // Collect layer definitions (index -> name)
+                var layerIndexToName = new Dictionary<int, string>();
                 foreach (Page page in diagram.Pages)
                 {
-                    // Build a map of layer index to layer name for the current page
-                    Dictionary<int, string> layerIndexToName = new Dictionary<int, string>();
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // Ensure the layer has a valid name
-                        string layerName = layer.Name.Value ?? $"Layer_{layer.IX}";
-                        layerIndexToName[layer.IX] = layerName;
-
-                        // Add a node for the layer
-                        dotBuilder.AppendLine($"    \"L{layer.IX}\" [label=\"{EscapeLabel(layerName)}\"];");
+                        // Layer.IX is the zero‑based index
+                        int ix = layer.IX;
+                        string layerName = layer.Name.Value;
+                        if (!layerIndexToName.ContainsKey(ix))
+                        {
+                            layerIndexToName[ix] = layerName;
+                            // Declare layer node
+                            sb.AppendLine($"    \"{Escape(layerName)}\" [shape=box, style=filled, color=lightgray];");
+                        }
                     }
+                }
 
-                    // Iterate through all shapes on the page
+                // Process shapes and create edges to their layers
+                foreach (Page page in diagram.Pages)
+                {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Create a unique identifier for the shape node
-                        string shapeNodeId = $"S{shape.ID}";
-                        string shapeLabel = shape.NameU ?? $"Shape_{shape.ID}";
-                        dotBuilder.AppendLine($"    \"{shapeNodeId}\" [label=\"{EscapeLabel(shapeLabel)}\"];");
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Retrieve layer membership string (semicolon separated indexes)
-                        string layerMember = shape.LayerMem.LayerMember.Value;
-                        if (!string.IsNullOrEmpty(layerMember))
+                        // Determine a readable shape identifier
+                        string shapeLabel = !string.IsNullOrWhiteSpace(shape.NameU) ? shape.NameU : $"Shape_{shape.ID}";
+
+                        // Declare shape node
+                        sb.AppendLine($"    \"{Escape(shapeLabel)}\" [shape=ellipse];");
+
+                        // Retrieve layer membership string (e.g., "0;2")
+                        string layerMember = shape.LayerMem?.LayerMember?.Value;
+                        if (string.IsNullOrWhiteSpace(layerMember))
+                            continue; // shape not assigned to any layer
+
+                        string[] parts = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (string part in parts)
                         {
-                            string[] parts = layerMember.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                            foreach (string part in parts)
+                            if (int.TryParse(part, out int layerIdx) && layerIndexToName.TryGetValue(layerIdx, out string layerName))
                             {
-                                if (int.TryParse(part, out int layerIdx) && layerIndexToName.ContainsKey(layerIdx))
-                                {
-                                    // Add an edge from the layer to the shape
-                                    dotBuilder.AppendLine($"    \"L{layerIdx}\" -> \"{shapeNodeId}\";");
-                                }
+                                // Create edge from layer to shape
+                                sb.AppendLine($"    \"{Escape(layerName)}\" -> \"{Escape(shapeLabel)}\";");
                             }
                         }
                     }
                 }
 
-                dotBuilder.AppendLine("}");
+                sb.AppendLine("}"); // end of digraph
 
-                // Write the DOT file
+                // Write DOT file
                 try
                 {
-                    File.WriteAllText(outputPath, dotBuilder.ToString());
-                    Console.WriteLine($"DOT graph successfully written to '{outputPath}'.");
+                    File.WriteAllText(outputPath, sb.ToString());
+                    Console.WriteLine($"DOT graph successfully written to: {outputPath}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error writing DOT file: {ex.Message}");
+                    Console.WriteLine($"Failed to write DOT file: {ex.Message}");
                 }
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
-    }
+        }
 
-        // Helper method to escape double quotes in labels
-        private static string EscapeLabel(string label)
+        // Helper to escape double quotes in DOT identifiers
+        private static string Escape(string text)
         {
-            return label.Replace("\"", "\\\"");
+            return text?.Replace("\"", "\\\"") ?? string.Empty;
         }
     }

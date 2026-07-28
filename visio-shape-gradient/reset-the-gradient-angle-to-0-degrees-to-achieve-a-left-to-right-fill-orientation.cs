@@ -9,25 +9,31 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            const string inputPath = "input.vsdx";
+            // Path for the modified Visio file
+            const string outputPath = "output.vsdx";
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages (optional: you can target a specific page)
+                foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the shape has a fill and a gradient fill defined
-                    if (shape.Fill != null && shape.Fill.GradientFill != null)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Reset the gradient angle to 0 degrees (left‑to‑right orientation)
+                        // Reset gradient angle to 0 degrees (left‑to‑right fill)
+                        // Ensure we access the .Value property of the cell
                         shape.Fill.GradientFill.GradientAngle.Value = 0;
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Gradient angles have been reset to 0 degrees.");
 
         }
         catch (System.IO.FileNotFoundException ex)

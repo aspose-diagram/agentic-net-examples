@@ -1,68 +1,67 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new diagram (empty Visio document)
+        // Create a new empty diagram
         using (Diagram diagram = new Diagram())
         {
-            // Ensure there is at least one foreground page
-            if (diagram.Pages.Count == 0)
-                diagram.Pages.Add(new Page());
+            try
+            {
+                // Ensure at least one foreground page exists
+                if (diagram.Pages.Count == 0)
+                {
+                    diagram.Pages.Add(new Page());
+                }
 
-            // Get the first (foreground) page
-            Page foregroundPage = diagram.Pages[0];
+                // Retrieve the first (foreground) page
+                Page foregroundPage = diagram.Pages[0];
 
-            // Retrieve page dimensions (in inches)
-            double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
+                // Create a new background page
+                Page backgroundPage = new Page();
 
-            // -----------------------------------------------------------------
-            // Create a dedicated background page
-            // -----------------------------------------------------------------
-            Page backgroundPage = new Page();
-            backgroundPage.Name = "BackgroundPage";
-            backgroundPage.Background = BOOL.True; // Mark as a background page
+                // Mark the page as a background canvas
+                backgroundPage.Background = BOOL.True;
 
-            // Set background page size to match the foreground page
-            backgroundPage.PageSheet.PageProps.PageWidth.Value = pageWidth;
-            backgroundPage.PageSheet.PageProps.PageHeight.Value = pageHeight;
+                // Add the background page to the diagram
+                diagram.Pages.Add(backgroundPage);
 
-            // Add the background page to the diagram
-            diagram.Pages.Add(backgroundPage);
+                // Obtain the dimensions of the foreground page (in inches)
+                double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
 
-            // -----------------------------------------------------------------
-            // Add a rectangle shape that spans the entire background page
-            // -----------------------------------------------------------------
-            double centerX = pageWidth / 2.0;
-            double centerY = pageHeight / 2.0;
+                // Calculate the centre point for the rectangle shape
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
 
-            // DrawRectangle(pinX, pinY, width, height) returns the shape ID (long)
-            long rectShapeId = backgroundPage.DrawRectangle(centerX, centerY, pageWidth, pageHeight);
+                // Add a rectangle shape that spans the whole page on the background page
+                // The last argument (isCalculate) must be a bool, not an int
+                long rectId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle", false);
 
-            // Retrieve the shape object to modify its fill properties
-            Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
+                // Retrieve the newly added shape to set its fill properties
+                Shape backgroundRect = backgroundPage.Shapes.GetShape(rectId);
 
-            // Set a solid fill pattern (1) and a light blue background color
-            rectShape.Fill.FillPattern.Value = 1;               // Solid fill
-            rectShape.Fill.FillForegnd.Value = "#ADD8E6";       // Light blue (hex)
+                // Set a solid fill pattern (1) and a light‑blue colour
+                backgroundRect.Fill.FillPattern.Value = 1;               // 1 = solid fill
+                backgroundRect.Fill.FillForegnd.Value = "#ADD8E6";       // Light blue
 
-            // Remove the outline by setting line pattern to 0 (no line)
-            rectShape.Line.LinePattern.Value = 0;
+                // Remove the border by setting the line pattern to 0 (no line)
+                backgroundRect.Line.LinePattern.Value = 0;
 
-            // -----------------------------------------------------------------
-            // Link the background page to the foreground page
-            // -----------------------------------------------------------------
-            foregroundPage.BackPage = backgroundPage;
+                // Link the foreground page to the background page
+                foregroundPage.BackPage = backgroundPage;
 
-            // -----------------------------------------------------------------
-            // Save the diagram to a VSDX file
-            // -----------------------------------------------------------------
-            diagram.Save("OutputWithBackground.vsdx", SaveFileFormat.Vsdx);
+                // Save the diagram as VSDX
+                diagram.Save("PageBackground.vsdx", SaveFileFormat.Vsdx);
+            }
+            catch (Exception ex)
+            {
+                // Output any errors that occur during processing
+                Console.Error.WriteLine($"Error: {ex.Message}");
+            }
         }
     }
 }

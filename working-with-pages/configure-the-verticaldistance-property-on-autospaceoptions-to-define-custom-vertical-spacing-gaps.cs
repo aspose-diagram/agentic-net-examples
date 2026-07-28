@@ -9,20 +9,21 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Create AutoSpaceOptions and set a custom vertical spacing (in inches)
             AutoSpaceOptions options = new AutoSpaceOptions();
             options.DistanceInVertical = 1.0; // Example: 1 inch vertical gap
 
-            // Get the target page (here we use the first page)
+            // Retrieve the first page (or any target page) and its shape collection
             Page page = diagram.Pages[0];
+            ShapeCollection shapes = page.Shapes;
 
-            // Apply auto‑spacing to all shapes on the page using the custom options
-            page.AutoSpaceShapes(page.Shapes, options);
+            // Apply auto‑spacing using the configured options
+            page.AutoSpaceShapes(shapes, options);
 
-            // Save the modified diagram
+            // Save the modified diagram (replace with your desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

@@ -1,37 +1,60 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            // Create a new empty diagram
+
+            // Create a new empty Visio diagram
             Diagram diagram = new Diagram();
 
-            // Add a blank page to the diagram
-            Page page = new Page();
-            diagram.Pages.Add(page);
+            // Retrieve the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Draw a simple rectangle shape on the page
-            // Parameters: PinX, PinY, Width, Height
-            long shapeId = page.DrawRectangle(2.0, 2.0, 3.0, 1.5);
-            Shape shape = page.Shapes.GetShape((int)shapeId);
+            // Parameters for a rectangle shape
+            double pinX = 5.0;      // X coordinate (in inches)
+            double pinY = 5.0;      // Y coordinate (in inches)
+            double width = 2.0;     // Width (in inches)
+            double height = 1.0;    // Height (in inches)
+            string masterName = "Rectangle";
 
-            // Create first user‑defined cell
-            User customCell1 = new User();
-            customCell1.Name = "CustomField1";               // Row name
-            customCell1.Value.Val = "DefaultValue1";         // Cell value
-            customCell1.Prompt.Value = "First custom field"; // Optional description
-            shape.Users.Add(customCell1);
+            // Add the rectangle shape to the diagram on the current page
+            long shapeIdLong = diagram.AddShape(pinX, pinY, width, height, masterName, page.ID);
+            // Convert the long ID to int for GetShape
+            Shape shape = page.Shapes.GetShape((int)shapeIdLong);
 
-            // Create second user‑defined cell
-            User customCell2 = new User();
-            customCell2.Name = "CustomField2";
-            customCell2.Value.Val = "12345";
-            customCell2.Prompt.Value = "Second custom field (numeric)";
-            shape.Users.Add(customCell2);
+            // ----- Create user‑defined cells (custom properties) -----
+            // Custom cell 1: CustomWidth
+            User customWidth = new User();
+            customWidth.Name = "CustomWidth";
+            customWidth.Value.Val = "800";                     // Value stored as string
+            customWidth.Prompt.Value = "Custom width in pixels";
+
+            // Custom cell 2: CustomDescription
+            User customDesc = new User();
+            customDesc.Name = "CustomDescription";
+            customDesc.Value.Val = "Template shape for reuse";
+            customDesc.Prompt.Value = "Description of the shape";
+
+            // Add the custom cells to the shape's Users collection
+            shape.Users.Add(customWidth);
+            shape.Users.Add(customDesc);
+
+            // Optional: set visible text for the shape
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt("Template Shape"));
 
             // Save the diagram as a VSDX template file
             diagram.Save("TemplateDiagram.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
+}

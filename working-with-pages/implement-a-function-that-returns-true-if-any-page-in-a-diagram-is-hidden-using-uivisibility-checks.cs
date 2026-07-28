@@ -2,46 +2,53 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-public static class DiagramHelper
+class Program
 {
-    // Returns true if any page in the diagram is hidden (UIVisibility set to Hidden)
-    public static bool AnyPageHidden(Diagram diagram)
+    // Returns true if any page in the diagram is hidden.
+    static bool AnyPageHidden(string filePath)
     {
-        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
-
-        foreach (Page page in diagram.Pages)
-        {
-            if (page.PageSheet.PageProps.UIVisibility.Value == UIVisibilityValue.Hidden)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-}
-
-public class Program
-{
-    public static void Main()
-    {
-        string filePath = "sample.vsdx";
-        if (!File.Exists(filePath))
-        {
-            Console.Error.WriteLine($"File not found: {filePath}");
-            return;
-        }
-
         try
         {
+            // Load the diagram from the specified file.
             Diagram diagram = new Diagram(filePath);
-            bool hasHiddenPage = DiagramHelper.AnyPageHidden(diagram);
-            Console.WriteLine(hasHiddenPage
-                ? "The diagram contains at least one hidden page."
-                : "No hidden pages found in the diagram.");
+
+            // Iterate through all pages in the diagram.
+            foreach (Page page in diagram.Pages)
+            {
+                // UIVisibility.Value returns a UIVisibilityValue enum.
+                // Any value other than Visible indicates the page is hidden.
+                if (page.PageSheet.PageProps.UIVisibility.Value != UIVisibilityValue.Visible)
+                    return true;
+            }
         }
         catch (Exception ex)
         {
+            // Write any loading or processing errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+
+        // No hidden pages found (or an error occurred).
+        return false;
+    }
+
+    static void Main(string[] args)
+    {
+        // Path to the Visio diagram file.
+        string diagramPath = "sample.vsdx";
+
+        // Guard to ensure the file exists before attempting to load it.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Determine whether the diagram contains any hidden pages.
+        bool hasHiddenPage = AnyPageHidden(diagramPath);
+
+        // Output the result to the console.
+        Console.WriteLine(hasHiddenPage
+            ? "At least one page is hidden."
+            : "No hidden pages detected.");
     }
 }

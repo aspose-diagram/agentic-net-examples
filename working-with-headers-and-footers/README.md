@@ -1,6 +1,6 @@
 # Working With Headers And Footers — Aspose.Diagram for .NET C# Examples
 
-> Compiler-validated C# code examples for **Working With Headers And Footers** using [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.5.0. Every example in this folder passes both `dotnet build` and `dotnet run` on `net8.0`.
+> Compiler-validated C# code examples for **Working With Headers And Footers** using [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.7.0. Every example in this folder passes both `dotnet build` and `dotnet run` on `net8.0`.
 
 ## Statistics
 
@@ -8,9 +8,9 @@
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.5.0 |
+| Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-28 |
 
 ## What This Category Covers
 
@@ -35,7 +35,7 @@ dotnet build && dotnet run
 ## Prerequisites
 
 - .NET SDK (net8.0 or later)
-- [Aspose.Diagram for .NET 26.5.0](https://releases.aspose.com/diagram/net/)
+- [Aspose.Diagram for .NET 26.7.0](https://releases.aspose.com/diagram/net/)
 - `Aspose.Diagram.dll` referenced in your `.csproj` via `HintPath`
 
 ## Examples in This Category
@@ -68,7 +68,7 @@ dotnet build && dotnet run
 
 **How do I get started with Working With Headers And Footers in Aspose.Diagram for .NET?**
 
-Add a reference to `Aspose.Diagram.dll` (v26.5.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -98,4 +98,4 @@ Aspose.Diagram uses its own `BOOL` enumeration type, not C# `bool`. Use `BOOL.Tr
 
 ---
 
-*30 compiler-validated C# examples | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.5.0 | Updated: 2026-06-23*
+*30 compiler-validated C# examples | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.7.0 | Updated: 2026-07-28*

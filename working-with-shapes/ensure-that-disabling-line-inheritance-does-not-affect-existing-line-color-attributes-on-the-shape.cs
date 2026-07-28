@@ -1,39 +1,31 @@
-using System.IO;
 using System;
-using Aspose.Diagram;
+using System.IO;
 
-class DisableLineInheritancePreserveColor
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Ensure the shape has a Line object and a defined LineColor
-                    if (shape.Line != null && shape.Line.LineColor != null)
-                    {
-                        // Preserve the current line color
-                        ColorValue originalLineColor = shape.Line.LineColor;
+            // Get the shape you want to modify (for example, the first shape on the first page)
+            Aspose.Diagram.Shape shape = diagram.Pages[0].Shapes[1];
 
-                        // Disable line inheritance by clearing the LineStyle reference
-                        shape.LineStyle = null;
+            // Preserve the current line color before changing inheritance settings
+            Aspose.Diagram.ColorValue originalLineColor = shape.Line.LineColor;
 
-                        // Reapply the preserved line color to keep the visual appearance unchanged
-                        shape.Line.LineColor = originalLineColor;
-                    }
-                }
-            }
+            // Disable line inheritance by removing the line style reference
+            // This prevents the shape from inheriting line formatting from a master or style sheet
+            shape.LineStyle = null;
+
+            // Re‑apply the preserved line color to ensure it is not lost after inheritance is disabled
+            shape.Line.LineColor = originalLineColor;
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

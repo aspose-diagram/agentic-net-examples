@@ -1,46 +1,46 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Process each page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Remember the current auto‑expand setting
-                DrawingResizeTypeValue originalResize = page.PageSheet.PageProps.DrawingResizeType.Value;
 
-                // Temporarily disable auto‑expand
-                page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
+                // Paths to the source and destination Visio files
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Example size modification: set width to 11 inches and height to 8.5 inches
-                page.PageSheet.PageProps.PageWidth.Value = 11.0;
-                page.PageSheet.PageProps.PageHeight.Value = 8.5;
+                // Load the diagram from file
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Access the first page (adjust index if needed)
+                    Page page = diagram.Pages[0];
 
-                // Restore the original auto‑expand setting
-                page.PageSheet.PageProps.DrawingResizeType.Value = originalResize;
+                    // Store the current auto‑expand setting
+                    var originalResize = page.PageSheet.PageProps.DrawingResizeType.Value;
+
+                    // Temporarily disable auto‑expand
+                    page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
+
+                    // Modify page dimensions (values are in inches)
+                    page.PageSheet.PageProps.PageWidth.Value = 11.0;   // Width
+                    page.PageSheet.PageProps.PageHeight.Value = 8.5;   // Height
+
+                    // Re‑enable (restore) the original auto‑expand setting
+                    page.PageSheet.PageProps.DrawingResizeType.Value = originalResize;
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
+
+                Console.WriteLine("Diagram processing completed.");
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

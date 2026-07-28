@@ -1,70 +1,58 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
 
-namespace DiagramAutoSpaceCacheExample
+public class DiagramProcessor
 {
-    // Static cache for AutoSpaceOptions to reuse across diagrams
-    public static class AutoSpaceOptionsCache
+    // Cached AutoSpaceOptions instance reused for all diagrams
+    private static readonly AutoSpaceOptions CachedOptions = CreateAutoSpaceOptions();
+
+    private static AutoSpaceOptions CreateAutoSpaceOptions()
     {
-        // Preconfigured options instance
-        private static readonly AutoSpaceOptions _cachedOptions = CreateOptions();
-
-        private static AutoSpaceOptions CreateOptions()
-        {
-            var options = new AutoSpaceOptions();
-            // Example distances; adjust as needed
-            options.DistanceInHorizontal = 2.0;
-            options.DistanceInVertical = 2.0;
-            return options;
-        }
-
-        // Retrieve the cached instance
-        public static AutoSpaceOptions Get()
-        {
-            return _cachedOptions;
-        }
+        var options = new AutoSpaceOptions();
+        // Configure spacing (in inches) as needed
+        options.DistanceInHorizontal = 0.5;
+        options.DistanceInVertical = 0.5;
+        return options;
     }
 
-    class Program
+    public static void ProcessDiagram(string inputPath, string outputPath)
     {
-        static void Main()
+        // Load the diagram from the specified file
+        var diagram = new Diagram(inputPath);
+
+        // Apply auto‑spacing to each page using the cached options
+        foreach (Page page in diagram.Pages)
         {
-            try
-            {
+            page.AutoSpaceShapes(page.Shapes, CachedOptions);
+        }
 
-                // Paths for input and output diagrams
-                string[] inputFiles = { "Diagram1.vsdx", "Diagram2.vsdx", "Diagram3.vsdx" };
-                string outputFolder = "ProcessedDiagrams";
-
-                // Ensure output folder exists
-                System.IO.Directory.CreateDirectory(outputFolder);
-
-                foreach (string inputPath in inputFiles)
-                {
-                    // Load diagram
-                    Diagram diagram = new Diagram(inputPath);
-
-                    // Apply cached AutoSpaceOptions to each page
-                    foreach (Page page in diagram.Pages)
-                    {
-                        page.AutoSpaceShapes(page.Shapes, AutoSpaceOptionsCache.Get());
-                    }
-
-                    // Save the modified diagram
-                    string fileName = System.IO.Path.GetFileNameWithoutExtension(inputPath);
-                    string outputPath = System.IO.Path.Combine(outputFolder, fileName + "_AutoSpaced.vsdx");
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-
-                Console.WriteLine("Processing completed.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        // Save the modified diagram as VSDX
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
+
+    public static void Main(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: DiagramProcessor <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputFile = args[0];
+        string outputFile = args[1];
+
+        try
+        {
+            ProcessDiagram(inputFile, outputFile);
+            Console.WriteLine($"Diagram processed and saved to '{outputFile}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            throw;
+        }
     }
 }

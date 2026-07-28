@@ -4,69 +4,80 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace ExportComments
+namespace DiagramCommentExporter
 {
     // DTO for JSON serialization
     public class CommentInfo
     {
-        public long Id { get; set; }
-        public string Text { get; set; }
+        public string PageName { get; set; } = string.Empty;
         public int ShapeId { get; set; }
-        public double ShapePinX { get; set; }
-        public double ShapePinY { get; set; }
+        public string Text { get; set; } = string.Empty;
+        public double X { get; set; }
+        public double Y { get; set; }
     }
 
     public class Program
     {
-        static void Main()
+        public static void Main(string[] args)
         {
             try
             {
 
-                // Path to the Visio file (adjust as needed)
-                string visioPath = "input.vsdx";
+                // Input Visio file path (adjust as needed)
+                string inputPath = "input.vsdx";
+                // Output JSON file path
+                string outputPath = "comments.json";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // List to hold extracted comments
-                List<CommentInfo> comments = new List<CommentInfo>();
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                try
                 {
-                    // Access annotations (comments) on the current page
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    // Load the diagram
+                    Diagram diagram = new Diagram(inputPath);
+
+                    var comments = new List<CommentInfo>();
+
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        CommentInfo info = new CommentInfo
+                        // Access annotations (comments) on the page
+                        foreach (Annotation annotation in page.PageSheet.Annotations)
                         {
-                            Id = annotation.MarkerIndex.Value,
-                            Text = annotation.Comment.Value,
-                            ShapeId = annotation.ShapeID
-                        };
+                            // Retrieve comment text
+                            string text = annotation.Comment.Value ?? string.Empty;
 
-                        // If the comment is linked to a shape, retrieve its coordinates
-                        if (annotation.ShapeID != 0)
-                        {
-                            Shape linkedShape = page.Shapes.GetShape(annotation.ShapeID);
-                            if (linkedShape != null)
+                            // Retrieve linked shape identifier (0 if not linked to a shape)
+                            int shapeId = annotation.ShapeID;
+
+                            // Retrieve position coordinates (if available)
+                            // Annotation provides X and Y as DoubleValue; use .Value
+                            double x = annotation.X?.Value ?? 0.0;
+                            double y = annotation.Y?.Value ?? 0.0;
+
+                            comments.Add(new CommentInfo
                             {
-                                info.ShapePinX = linkedShape.XForm.PinX.Value;
-                                info.ShapePinY = linkedShape.XForm.PinY.Value;
-                            }
+                                PageName = page.Name ?? string.Empty,
+                                ShapeId = shapeId,
+                                Text = text,
+                                X = x,
+                                Y = y
+                            });
                         }
-
-                        comments.Add(info);
                     }
+
+                    // Serialize to JSON with indentation
+                    var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                    string json = JsonSerializer.Serialize(comments, jsonOptions);
+
+                    // Write JSON to file
+                    File.WriteAllText(outputPath, json);
+
+                    Console.WriteLine($"Exported {comments.Count} comments to '{outputPath}'.");
                 }
-
-                // Serialize the comment list to JSON with indentation
-                string json = JsonSerializer.Serialize(comments, new JsonSerializerOptions { WriteIndented = true });
-
-                // Write the JSON output to a file
-                File.WriteAllText("comments.json", json);
-
-                Console.WriteLine($"Exported {comments.Count} comments to comments.json");
+                catch (Exception ex)
+                {
+                    Console.WriteLine("An error occurred:");
+                    Console.WriteLine(ex.Message);
+                    throw;
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)

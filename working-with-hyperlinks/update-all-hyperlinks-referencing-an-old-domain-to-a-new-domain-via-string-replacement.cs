@@ -3,45 +3,48 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Paths to the source and destination Visio files
+                // Input file, output file, old domain and new domain.
+                // Adjust these paths/values as needed.
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
-
-                // Domain strings for replacement
                 string oldDomain = "oldexample.com";
                 string newDomain = "newexample.com";
 
-                // Load the diagram from file
+                // Load the Visio diagram.
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has a Hyperlinks collection
+                        // Ensure the shape has a Hyperlinks collection.
                         if (shape.Hyperlinks != null)
                         {
+                            // Iterate through each hyperlink.
                             foreach (Hyperlink link in shape.Hyperlinks)
                             {
-                                // Verify the Address cell exists and contains the old domain
-                                if (link.Address != null && link.Address.Value != null &&
-                                    link.Address.Value.Contains(oldDomain))
+                                // Guard against null Address.
+                                if (link.Address != null && link.Address.Value != null)
                                 {
-                                    // Replace the old domain with the new domain
-                                    link.Address.Value = link.Address.Value.Replace(oldDomain, newDomain);
+                                    // Replace old domain with new domain if present.
+                                    if (link.Address.Value.Contains(oldDomain))
+                                    {
+                                        link.Address.Value = link.Address.Value.Replace(oldDomain, newDomain);
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                // Save the updated diagram
+                // Save the modified diagram.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

@@ -1,70 +1,60 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output Visio file path
-        string outputPath = "output.vsdx";
-
-        // Desired page dimensions in inches
-        double newWidth = 11.0;   // e.g., Letter width
-        double newHeight = 8.5;   // e.g., Letter height
-
-        try
-        {
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Update dimensions for each page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                page.PageSheet.PageProps.PageHeight.Value = newHeight;
-            }
 
-            // Update or add a SolutionXML element that stores canvas size
-            string solutionXmlName = "CanvasSize";
-            string newXmlValue = $"<Canvas><Width>{newWidth}</Width><Height>{newHeight}</Height></Canvas>";
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-            bool found = false;
-            foreach (SolutionXML solXml in diagram.SolutionXMLs)
-            {
-                if (solXml.Name == solutionXmlName)
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Define new canvas size (in inches)
+                double newWidth = 11.0;   // example width
+                double newHeight = 8.5;   // example height
+
+                // Update the size of each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    solXml.XmlValue = newXmlValue;
-                    found = true;
-                    break;
+                    page.PageSheet.PageProps.PageWidth.Value = newWidth;
+                    page.PageSheet.PageProps.PageHeight.Value = newHeight;
                 }
-            }
 
-            if (!found)
+                // Update (or create) a SolutionXML entry that stores the canvas size
+                const string solutionXmlName = "PageDimensions";
+                bool found = false;
+                foreach (SolutionXML solXml in diagram.SolutionXMLs)
+                {
+                    if (solXml.Name == solutionXmlName)
+                    {
+                        solXml.XmlValue = $"<Page width=\"{newWidth}\" height=\"{newHeight}\" />";
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    SolutionXML newSolXml = new SolutionXML();
+                    newSolXml.Name = solutionXmlName;
+                    newSolXml.XmlValue = $"<Page width=\"{newWidth}\" height=\"{newHeight}\" />";
+                    diagram.SolutionXMLs.Add(newSolXml);
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                // Create a new SolutionXML entry if it does not exist
-                SolutionXML canvasXml = new SolutionXML();
-                canvasXml.Name = solutionXmlName;
-                canvasXml.XmlValue = newXmlValue;
-                diagram.SolutionXMLs.Add(canvasXml);
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save the modified diagram back to a Visio file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Propagate any errors
-            throw new Exception("Failed to update diagram canvas size: " + ex.Message, ex);
-        }
     }
-}
+    }

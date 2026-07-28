@@ -12,20 +12,23 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the target shape (example: first shape on the first page)
-            Shape shape = diagram.Pages[0].Shapes[0];
+            // Work with the first page (adjust as needed)
+            Page page = diagram.Pages[0];
 
-            // Index of the field to be removed (zero‑based)
-            int fieldIndex = 0; // adjust as needed
+            // Get the target shape (replace 1 with the actual shape ID)
+            Shape shape = page.Shapes.GetShape(1);
 
-            // Verify that the index is valid
+            // Zero‑based index of the field to delete
+            int fieldIndex = 0;
+
+            // Verify the index is within the collection bounds
             if (fieldIndex >= 0 && fieldIndex < shape.Fields.Count)
             {
                 // Retrieve the field at the specified index
-                Field fieldToRemove = shape.Fields[fieldIndex];
+                Field field = shape.Fields[fieldIndex];
 
                 // Remove the field from the shape's field collection
-                shape.Fields.Remove(fieldToRemove);
+                shape.Fields.Remove(field);
             }
 
             // Save the modified diagram

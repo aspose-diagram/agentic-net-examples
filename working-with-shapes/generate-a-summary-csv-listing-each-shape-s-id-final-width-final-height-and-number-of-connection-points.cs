@@ -6,51 +6,45 @@ class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Expect two arguments: input Visio file path and output CSV file path
+            if (args.Length < 2)
             {
+                Console.WriteLine("Usage: DiagramSummaryCsv <inputVisioFile> <outputCsvFile>");
+                return;
+            }
 
-                // Input Visio file path (first argument or default)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                // Output CSV file path
-                string outputCsv = "summary.csv";
+            string inputPath = args[0];
+            string outputCsvPath = args[1];
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Prepare CSV writer
-                using (StreamWriter writer = new StreamWriter(outputCsv))
+            // Create or overwrite the CSV file
+            using (StreamWriter writer = new StreamWriter(outputCsvPath, false))
+            {
+                // Write CSV header
+                writer.WriteLine("ShapeID,Width,Height,ConnectionPoints");
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Write CSV header
-                    writer.WriteLine("ShapeID,Width,Height,ConnectionPoints");
-
-                    // Iterate through all pages and shapes
-                    foreach (Page page in diagram.Pages)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip shapes marked as deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                            // Retrieve shape dimensions
-                            double width = shape.XForm.Width.Value;
-                            double height = shape.XForm.Height.Value;
+                        long shapeId = shape.ID;
+                        double width = shape.XForm.Width.Value;
+                        double height = shape.XForm.Height.Value;
+                        int connectionPoints = shape.Connections.Count;
 
-                            // Count connection points (if collection is null, treat as zero)
-                            int connectionCount = shape.Connections != null ? shape.Connections.Count : 0;
-
-                            // Write CSV line
-                            writer.WriteLine($"{shape.ID},{width},{height},{connectionCount}");
-                        }
+                        // Write a CSV line for the current shape
+                        writer.WriteLine($"{shapeId},{width},{height},{connectionPoints}");
                     }
                 }
-
-                Console.WriteLine($"Summary CSV generated at: {Path.GetFullPath(outputCsv)}");
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
-    }
+
+            Console.WriteLine($"CSV summary has been written to: {outputCsvPath}");
+        }
     }

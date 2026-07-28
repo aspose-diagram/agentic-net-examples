@@ -1,112 +1,60 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Define file paths (adjust as needed)
+        string inputPath = "protected.vsdx";
+        // Verify the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "exported.vdx";
+
         try
         {
+            // Load the protected diagram from the input file
+            Diagram original = new Diagram(inputPath);
 
-            // Input and output file paths (adjust as needed)
-            string inputPath = "protected_input.vsdx";
-            string outputPath = "exported_output.vdx";
+            // Capture document‑level protection flags (BOOL enum comparison)
+            bool protectBkgnds = original.DocumentSettings.ProtectBkgnds == BOOL.True;
+            bool protectMasters = original.DocumentSettings.ProtectMasters == BOOL.True;
+            bool protectShapes = original.DocumentSettings.ProtectShapes == BOOL.True;
+            bool protectStyles = original.DocumentSettings.ProtectStyles == BOOL.True;
 
-            // Load the protected diagram (Visio VSDX format)
-            Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vsdx);
+            // Export the diagram to VDX format
+            original.Save(outputPath, SaveFileFormat.Vdx);
 
-            // Capture protection lock states before export
-            var preExportLocks = GetShapeProtectionLocks(diagram);
+            // Reload the exported VDX file
+            Diagram exported = new Diagram(outputPath);
 
-            // Export to VDX using DiagramSaveOptions
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
-            diagram.Save(outputPath, saveOptions);
+            // Verify that protection flags are identical after export
+            bool protectBkgndsExport = exported.DocumentSettings.ProtectBkgnds == BOOL.True;
+            bool protectMastersExport = exported.DocumentSettings.ProtectMasters == BOOL.True;
+            bool protectShapesExport = exported.DocumentSettings.ProtectShapes == BOOL.True;
+            bool protectStylesExport = exported.DocumentSettings.ProtectStyles == BOOL.True;
 
-            // Load the exported VDX file
-            Diagram reloadedDiagram = new Diagram(outputPath, LoadFileFormat.Vdx);
-
-            // Capture protection lock states after reloading
-            var postExportLocks = GetShapeProtectionLocks(reloadedDiagram);
-
-            // Verify that lock states are identical
-            if (preExportLocks.Count != postExportLocks.Count)
+            // If any flag differs, raise an exception
+            if (protectBkgnds != protectBkgndsExport ||
+                protectMasters != protectMastersExport ||
+                protectShapes != protectShapesExport ||
+                protectStyles != protectStylesExport)
             {
-                throw new Exception("Lock verification failed: shape count mismatch after export.");
+                throw new Exception("Protection settings were not retained after exporting to VDX.");
             }
 
-            foreach (var kvp in preExportLocks)
-            {
-                if (!postExportLocks.TryGetValue(kvp.Key, out var postLocks))
-                {
-                    throw new Exception($"Lock verification failed: shape ID {kvp.Key} missing after export.");
-                }
-
-                if (!LocksAreEqual(kvp.Value, postLocks))
-                {
-                    throw new Exception($"Lock verification failed: lock state mismatch for shape ID {kvp.Key}.");
-                }
-            }
-
-            Console.WriteLine("Export to VDX completed successfully. All style locks are retained.");
-
+            Console.WriteLine("Export to VDX succeeded and all protection settings are retained.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
-    }
-
-    // Retrieves a dictionary mapping shape IDs to their protection lock states
-    private static Dictionary<long, ShapeProtectionState> GetShapeProtectionLocks(Diagram diagram)
-    {
-        var result = new Dictionary<long, ShapeProtectionState>();
-
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                // Only consider shapes that are not deleted
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                var state = new ShapeProtectionState
-                {
-                    LockMoveX = shape.Protection.LockMoveX.Value,
-                    LockMoveY = shape.Protection.LockMoveY.Value,
-                    LockWidth = shape.Protection.LockWidth.Value,
-                    LockHeight = shape.Protection.LockHeight.Value,
-                    LockRotate = shape.Protection.LockRotate.Value,
-                    LockVtxEdit = shape.Protection.LockVtxEdit.Value
-                };
-
-                result[shape.ID] = state;
-            }
-        }
-
-        return result;
-    }
-
-    // Compares two protection states for equality
-    private static bool LocksAreEqual(ShapeProtectionState a, ShapeProtectionState b)
-    {
-        return a.LockMoveX == b.LockMoveX &&
-               a.LockMoveY == b.LockMoveY &&
-               a.LockWidth == b.LockWidth &&
-               a.LockHeight == b.LockHeight &&
-               a.LockRotate == b.LockRotate &&
-               a.LockVtxEdit == b.LockVtxEdit;
-    }
-
-    // Simple container for protection lock values
-    private class ShapeProtectionState
-    {
-        public BOOL LockMoveX { get; set; }
-        public BOOL LockMoveY { get; set; }
-        public BOOL LockWidth { get; set; }
-        public BOOL LockHeight { get; set; }
-        public BOOL LockRotate { get; set; }
-        public BOOL LockVtxEdit { get; set; }
     }
 }

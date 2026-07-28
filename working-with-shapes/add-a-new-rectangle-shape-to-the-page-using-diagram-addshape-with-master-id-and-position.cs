@@ -1,54 +1,43 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Create a new diagram (uses the provided creation rule)
+            Diagram diagram = new Diagram();
 
-                // Ensure there is at least one page; add a blank page if none exist
-                if (diagram.Pages.Count == 0)
-                {
-                    diagram.Pages.Add(new Page());
-                }
+            // Define position for the rectangle (in inches)
+            double pinX = 2.0; // X‑coordinate of the shape's pin (center)
+            double pinY = 2.0; // Y‑coordinate of the shape's pin (center)
 
-                // Use the first page (index 0)
-                int pageIndex = 0;
+            // Master name for a rectangle shape in Visio stencil
+            string masterName = "Rectangle";
 
-                // Retrieve the master named "Rectangle"
-                // If the master does not exist, this will throw; in a real scenario ensure the master is loaded.
-                Master rectangleMaster = diagram.Masters.GetMasterByName("Rectangle");
-                string masterName = rectangleMaster.Name;
+            // Page index (0 = first page)
+            int pageNumber = 0;
 
-                // Define position for the new rectangle (in inches)
-                double pinX = 2.0; // X coordinate of the shape's pin (center)
-                double pinY = 2.0; // Y coordinate of the shape's pin (center)
+            // Add the rectangle shape to the specified page using the master
+            // This utilizes the Diagram.AddShape(double, double, string, int) overload
+            long shapeId = diagram.AddShape(pinX, pinY, masterName, pageNumber);
 
-                // Add the rectangle shape to the diagram using the master name and page index
-                long shapeId = diagram.AddShape(pinX, pinY, masterName, pageIndex);
+            // (Optional) You can further manipulate the shape via its ID if needed
+            // Shape rectShape = diagram.Pages[pageNumber].Shapes[shapeId];
+            // rectShape.SetWidth(3.0);
+            // rectShape.SetHeight(2.0);
 
-                // Retrieve the created shape if further modifications are needed
-                Shape rectangleShape = diagram.Pages[pageIndex].Shapes.GetShape(shapeId);
+            // Save the diagram (uses the provided save rule)
+            diagram.Save("output.vdx", SaveFileFormat.Vdx);
 
-                // Example: set some basic properties (optional)
-                rectangleShape.XForm.Width.Value = 1.5;   // width in inches
-                rectangleShape.XForm.Height.Value = 1.0; // height in inches
-                rectangleShape.Fill.FillForegnd.Value = "#FF0000"; // fill color red
-                rectangleShape.Line.LineColor.Value = "#000000";   // line color black
-
-                // The diagram now contains the new rectangle shape.
-                // (Optional) Save the diagram to verify the result:
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (System.NullReferenceException ex)
-            {
-                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-            }
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

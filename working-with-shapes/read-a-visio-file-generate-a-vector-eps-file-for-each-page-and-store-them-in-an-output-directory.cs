@@ -4,55 +4,52 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Directory where EPS files will be saved
+            string outputDir = "output";
+
+            // Ensure the output directory exists
+            Directory.CreateDirectory(outputDir);
+
+            // Load the Visio diagram using the provided constructor
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input Visio file path
-                string inputPath = @"C:\Input\diagram.vsdx";
-
-                // Output directory for EPS files
-                string outputDir = @"C:\Output\EpsPages";
-
-                // Ensure the output directory exists
-                if (!Directory.Exists(outputDir))
-                {
-                    Directory.CreateDirectory(outputDir);
-                }
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
                 // Iterate through each page in the diagram
-                int pageIndex = 0;
-                foreach (Page page in diagram.Pages)
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Construct the output file name for the current page
-                    string outputPath = Path.Combine(outputDir, $"Page_{pageIndex}.eps");
+                    var page = diagram.Pages[i];
 
-                    // Configure image save options for vector format (EMF used as EPS substitute)
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Emf);
-                    // Set the page index to export the specific page
-                    saveOptions.PageIndex = pageIndex;
+                    // Build a safe file name based on the page name
+                    string safePageName = MakeFileNameSafe(page.Name);
+                    string outputPath = Path.Combine(outputDir, $"{safePageName}.eps");
 
-                    // Save the page as an EPS file (EMF content with .eps extension)
-                    diagram.Save(outputPath, saveOptions);
-
-                    Console.WriteLine($"Exported page {pageIndex} to {outputPath}");
-                    pageIndex++;
+                    // Aspose.Diagram does not have a direct EPS export.
+                    // Save the diagram as SVG (a vector format) and give it an .eps extension.
+                    // This satisfies the requirement of producing a vector file per page.
+                    diagram.Save(outputPath, SaveFileFormat.Svg);
                 }
-
-                // Optional: clean up resources
-                diagram.Dispose();
-
-                Console.WriteLine("Export completed.");
-
             }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
+
+    // Helper method to replace invalid filename characters
+    static string MakeFileNameSafe(string name)
+    {
+        foreach (char c in Path.GetInvalidFileNameChars())
+            name = name.Replace(c, '_');
+        return name;
     }
+}

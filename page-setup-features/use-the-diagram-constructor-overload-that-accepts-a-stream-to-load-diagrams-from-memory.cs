@@ -1,39 +1,40 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string sourcePath = "input.vsdx";
+
+            // Load the file into a memory stream
+            using (FileStream fileStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read))
+            using (MemoryStream memoryStream = new MemoryStream())
             {
+                fileStream.CopyTo(memoryStream);
+                memoryStream.Position = 0; // Reset stream position before loading
 
-                // Path to the source Visio file on disk
-                string inputPath = "input.vsdx";
-
-                // Read the entire file into a byte array
-                byte[] fileBytes = File.ReadAllBytes(inputPath);
-
-                // Create a memory stream from the byte array
-                using (MemoryStream memoryStream = new MemoryStream(fileBytes))
+                // Use the Diagram constructor that accepts a Stream to load from memory
+                using (Diagram diagram = new Diagram(memoryStream))
                 {
-                    // Load the diagram from the memory stream using the Diagram(Stream) constructor
-                    Diagram diagram = new Diagram(memoryStream);
+                    // Example operation: you could modify the diagram here
 
-                    // Path for the output file
+                    // Save the diagram to a new file using the Save method
                     string outputPath = "output.vsdx";
-
-                    // Save the diagram to a file in VSDX format
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-
-                Console.WriteLine("Diagram loaded from memory and saved successfully.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

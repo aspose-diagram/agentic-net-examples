@@ -1,60 +1,63 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first shape on the first page (shape IDs start at 1)
-            Shape shape = diagram.Pages[0].Shapes.GetShape(1);
-
-            // Ensure the shape is set up for gradient fill
-            shape.Fill.FillPattern.Value = 25; // gradient fill pattern
-            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-            shape.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.Linear;
-
-            // Retrieve the current number of gradient stops
-            int stopCount = shape.Fill.GradientFill.GradientStops.Count;
-            Console.WriteLine($"Current gradient stop count: {stopCount}");
-
-            // Ensure there are at least three gradient stops
-            if (stopCount < 3)
+            try
             {
-                // Clear any existing stops
-                shape.Fill.GradientFill.GradientStops.Clear();
 
-                // Add three stops: start (red), middle (green), end (blue)
-                shape.Fill.GradientFill.GradientStops.Add(
-                    new DoubleValue(0, MeasureConst.NUM),
-                    new ColorValue("#FF0000", MeasureConst.Undefined));
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
 
-                shape.Fill.GradientFill.GradientStops.Add(
-                    new DoubleValue(0.5, MeasureConst.NUM),
-                    new ColorValue("#00FF00", MeasureConst.Undefined));
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Access the gradient fill of the shape
+                        GradientFill gradientFill = shape.Fill.GradientFill;
+                        if (gradientFill == null)
+                            continue;
 
-                shape.Fill.GradientFill.GradientStops.Add(
-                    new DoubleValue(1, MeasureConst.NUM),
-                    new ColorValue("#0000FF", MeasureConst.Undefined));
+                        // Retrieve the current number of gradient stops
+                        int stopCount = gradientFill.GradientStops.Count;
+                        Console.WriteLine($"Shape ID {shape.ID} has {stopCount} gradient stop(s).");
 
-                Console.WriteLine("Added missing gradient stops to meet the minimum of three.");
+                        // Ensure there are at least three stops
+                        if (stopCount < 3)
+                        {
+                            // Clear existing stops and add three default stops
+                            gradientFill.GradientStops.Clear();
+
+                            // Position 0 (start) – red
+                            gradientFill.GradientStops.Add(
+                                new DoubleValue(0, MeasureConst.NUM),
+                                new ColorValue("#FF0000", MeasureConst.Undefined));
+
+                            // Position 0.5 (middle) – green
+                            gradientFill.GradientStops.Add(
+                                new DoubleValue(0.5, MeasureConst.NUM),
+                                new ColorValue("#00FF00", MeasureConst.Undefined));
+
+                            // Position 1 (end) – blue
+                            gradientFill.GradientStops.Add(
+                                new DoubleValue(1, MeasureConst.NUM),
+                                new ColorValue("#0000FF", MeasureConst.Undefined));
+
+                            Console.WriteLine($"Added 3 gradient stops to shape ID {shape.ID}.");
+                        }
+                    }
+                }
+
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

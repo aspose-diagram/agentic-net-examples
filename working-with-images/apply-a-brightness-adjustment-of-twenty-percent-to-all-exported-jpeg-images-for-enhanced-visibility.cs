@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,17 +10,24 @@ class Program
         try
         {
 
-            // Load the source Visio diagram
+            // Load the source diagram file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Prepare JPEG save options and increase brightness by 20%
-            // Default brightness is 0.5; adding 0.2 gives 0.7 (range 0‑1)
+            // Prepare image save options for JPEG format
             ImageSaveOptions jpegOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+
+            // Increase brightness by 20% (default is 0.5, so set to 0.7)
             jpegOptions.ImageBrightness = 0.7f;
 
-            // Export the diagram pages to JPEG files using the configured options
-            // When saving to JPEG, Aspose.Diagram creates separate files for each page
-            diagram.Save("output.jpg", jpegOptions);
+            // Export each page as a separate JPEG with the adjusted brightness
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            {
+                jpegOptions.PageIndex = pageIndex;   // select current page
+                jpegOptions.PageCount = 1;           // export only this page
+
+                string outputFile = $"output_page_{pageIndex + 1}.jpg";
+                diagram.Save(outputFile, jpegOptions);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

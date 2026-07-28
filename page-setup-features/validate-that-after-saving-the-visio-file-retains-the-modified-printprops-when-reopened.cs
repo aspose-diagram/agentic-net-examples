@@ -1,88 +1,61 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
-        {
+        // Create a new diagram and add a page
+        Diagram diagram = new Diagram();
+        diagram.Pages.Add(new Page());
 
-            // Input Visio file (must exist in the working directory)
-            string inputPath = "sample.vsdx";
-            // Output file where modifications will be saved
-            string outputPath = "modifiedPrintProps.vsdx";
+        // Access the first page
+        Page page = diagram.Pages[0];
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+        // Modify PrintProps
+        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+        page.PageSheet.PrintProps.ScaleX.Value = 0.75;
+        page.PageSheet.PrintProps.ScaleY.Value = 0.75;
+        page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
+        page.PageSheet.PrintProps.PagesX.Value = 1;
+        page.PageSheet.PrintProps.PagesY.Value = 1;
+        page.PageSheet.PrintProps.PageTopMargin.Value = 0.5;    // inches
+        page.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
+        page.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
+        page.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
 
-            // Access the first page (ensure at least one page exists)
-            Page page = diagram.Pages[0];
+        // Save the diagram to a file
+        string filePath = "modified.vsdx";
+        diagram.Save(filePath, SaveFileFormat.Vsdx);
 
-            // ----- Modify PrintProps -----
-            // Margins (in inches)
-            page.PageSheet.PrintProps.PageTopMargin.Value = 0.5;
-            page.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
-            page.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
-            page.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
+        // Reload the diagram
+        Diagram loadedDiagram = new Diagram(filePath);
+        Page loadedPage = loadedDiagram.Pages[0];
 
-            // Orientation
-            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+        // Validate that the PrintProps were retained
+        if (loadedPage.PageSheet.PrintProps.PrintPageOrientation.Value != PrintPageOrientationValue.Landscape)
+            throw new Exception("PrintPageOrientation was not retained.");
 
-            // Scaling (75%)
-            page.PageSheet.PrintProps.ScaleX.Value = 0.75;
-            page.PageSheet.PrintProps.ScaleY.Value = 0.75;
+        if (Math.Abs(loadedPage.PageSheet.PrintProps.ScaleX.Value - 0.75) > 0.0001)
+            throw new Exception("ScaleX was not retained.");
 
-            // Fit to sheet (2x2 pages)
-            page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
-            page.PageSheet.PrintProps.PagesX.Value = 2;
-            page.PageSheet.PrintProps.PagesY.Value = 2;
+        if (Math.Abs(loadedPage.PageSheet.PrintProps.ScaleY.Value - 0.75) > 0.0001)
+            throw new Exception("ScaleY was not retained.");
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            diagram.Dispose();
+        if (loadedPage.PageSheet.PrintProps.OnPage.Value != BOOL.True)
+            throw new Exception("OnPage flag was not retained.");
 
-            // Reload the saved diagram
-            Diagram reloaded = new Diagram(outputPath);
-            Page reloadedPage = reloaded.Pages[0];
+        if (loadedPage.PageSheet.PrintProps.PagesX.Value != 1 || loadedPage.PageSheet.PrintProps.PagesY.Value != 1)
+            throw new Exception("PagesX/PagesY were not retained.");
 
-            // ----- Validation -----
-            // Helper local function for tolerance comparison
-            bool AreEqual(double a, double b, double tolerance = 0.0001) => Math.Abs(a - b) <= tolerance;
+        if (Math.Abs(loadedPage.PageSheet.PrintProps.PageTopMargin.Value - 0.5) > 0.0001 ||
+            Math.Abs(loadedPage.PageSheet.PrintProps.PageBottomMargin.Value - 0.5) > 0.0001 ||
+            Math.Abs(loadedPage.PageSheet.PrintProps.PageLeftMargin.Value - 0.5) > 0.0001 ||
+            Math.Abs(loadedPage.PageSheet.PrintProps.PageRightMargin.Value - 0.5) > 0.0001)
+            throw new Exception("Page margins were not retained.");
 
-            if (!AreEqual(reloadedPage.PageSheet.PrintProps.PageTopMargin.Value, 0.5))
-                throw new Exception("PageTopMargin was not retained after reload.");
-            if (!AreEqual(reloadedPage.PageSheet.PrintProps.PageBottomMargin.Value, 0.5))
-                throw new Exception("PageBottomMargin was not retained after reload.");
-            if (!AreEqual(reloadedPage.PageSheet.PrintProps.PageLeftMargin.Value, 0.5))
-                throw new Exception("PageLeftMargin was not retained after reload.");
-            if (!AreEqual(reloadedPage.PageSheet.PrintProps.PageRightMargin.Value, 0.5))
-                throw new Exception("PageRightMargin was not retained after reload.");
-
-            if (reloadedPage.PageSheet.PrintProps.PrintPageOrientation.Value != PrintPageOrientationValue.Landscape)
-                throw new Exception("PrintPageOrientation was not retained after reload.");
-
-            if (!AreEqual(reloadedPage.PageSheet.PrintProps.ScaleX.Value, 0.75))
-                throw new Exception("ScaleX was not retained after reload.");
-            if (!AreEqual(reloadedPage.PageSheet.PrintProps.ScaleY.Value, 0.75))
-                throw new Exception("ScaleY was not retained after reload.");
-
-            if (reloadedPage.PageSheet.PrintProps.OnPage.Value != BOOL.True)
-                throw new Exception("OnPage flag was not retained after reload.");
-            if (!AreEqual(reloadedPage.PageSheet.PrintProps.PagesX.Value, 2))
-                throw new Exception("PagesX was not retained after reload.");
-            if (!AreEqual(reloadedPage.PageSheet.PrintProps.PagesY.Value, 2))
-                throw new Exception("PagesY was not retained after reload.");
-
-            Console.WriteLine("All PrintProps values were successfully retained after saving and reloading.");
-
-            reloaded.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        Console.WriteLine("PrintProps retained after save and reload successfully.");
     }
 }

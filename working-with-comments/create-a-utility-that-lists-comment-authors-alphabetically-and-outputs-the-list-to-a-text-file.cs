@@ -7,62 +7,58 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and output text file path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: CommentAuthorLister <inputVisioFile> <outputTextFile>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Collect reviewer IDs that actually have comments
-            HashSet<int> reviewerIdsWithComments = new HashSet<int>();
-
-            foreach (Page page in diagram.Pages)
-            {
-                // Annotations are stored in the page's DocumentSheet
-                foreach (Annotation annotation in page.PageSheet.Annotations)
-                {
-                    // ReviewerID is a Str2Value; retrieve its integer value
-                    int reviewerId = annotation.ReviewerID.Value;
-                    reviewerIdsWithComments.Add(reviewerId);
-                }
-            }
-
-            // Map reviewer IDs to their names
-            List<string> authorNames = new List<string>();
-            int currentId = 0;
-            foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
-            {
-                if (reviewerIdsWithComments.Contains(currentId))
-                {
-                    // Reviewer.Name is a Str2Value; extract the string
-                    string name = reviewer.Name.Value;
-                    if (!string.IsNullOrWhiteSpace(name))
-                    {
-                        authorNames.Add(name);
-                    }
-                }
-                currentId++;
-            }
-
-            // Sort author names alphabetically (case‑insensitive)
-            authorNames.Sort(StringComparer.OrdinalIgnoreCase);
-
-            // Write the sorted list to the output text file
             try
             {
-                File.WriteAllLines(outputPath, authorNames);
-                Console.WriteLine($"Successfully wrote {authorNames.Count} author(s) to '{outputPath}'.");
+
+                // Path to the Visio diagram file
+                string diagramPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Use a HashSet to collect unique author names
+                HashSet<string> authorSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all annotations (comments) on the page
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    {
+                        // Get the reviewer index for this comment
+                        int reviewerIndex = annotation.ReviewerID.Value;
+
+                        // Retrieve the reviewer object from the document's reviewer collection
+                        Reviewer reviewer = diagram.DocumentSheet.Reviewers[reviewerIndex];
+
+                        // Extract the reviewer name (Str2Value) and add to the set
+                        if (reviewer != null && reviewer.Name != null)
+                        {
+                            string authorName = reviewer.Name.Value;
+                            if (!string.IsNullOrWhiteSpace(authorName))
+                            {
+                                authorSet.Add(authorName.Trim());
+                            }
+                        }
+                    }
+                }
+
+                // Transfer the set to a list for sorting
+                List<string> authorList = new List<string>(authorSet);
+                authorList.Sort(StringComparer.OrdinalIgnoreCase);
+
+                // Output file path
+                string outputPath = "CommentAuthors.txt";
+
+                // Write the sorted author names to the text file
+                File.WriteAllLines(outputPath, authorList);
+
+                Console.WriteLine($"Author list written to '{outputPath}'.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Error writing to file: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
+    }
     }

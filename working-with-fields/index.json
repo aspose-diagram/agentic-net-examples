@@ -1,11 +1,11 @@
 {
   "category": "working-with-fields",
   "display_name": "Working With Fields",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 33,
   "pass_rate": 100.0,
-  "generated": "2026-06-08",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,8 +14,7 @@
       "task": "Add a field only to shapes that have a specific custom property set to true",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -31,14 +30,15 @@
       "task": "Assign a static string value to a field to display custom text on the shape",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -65,8 +65,7 @@
       "task": "Catch exceptions when a specified field does not exist and log detailed error information",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -81,7 +80,6 @@
       "task": "Check whether a field already exists on a shape before attempting to create a duplicate entry",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -98,7 +96,6 @@
       "task": "Clone an existing shape and copy its fields to the new shape to preserve metadata",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -121,10 +118,10 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
+        "Shape",
         "Shapes"
       ]
     },
@@ -141,6 +138,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -203,7 +201,6 @@
       "task": "Insert a date time field that automatically displays the current system timestamp on the shape",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -219,8 +216,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -236,15 +233,13 @@
       "task": "Insert a field into a shape s geometry at a defined coordinate to display dynamic text",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -253,7 +248,8 @@
       "task": "Insert a field into a shape using its name property to locate the target element",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -285,7 +281,8 @@
       "task": "Iterate over all shapes in the diagram and add a timestamp field to each one",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -305,11 +302,7 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "Diagram"
       ]
     },
     {
@@ -318,7 +311,8 @@
       "task": "Log each field operation result to the console for real time monitoring during development",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -334,7 +328,8 @@
       "task": "Loop through every shape and update an existing field s formula only if the shape is a connector",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -350,7 +345,6 @@
       "task": "Measure execution time of batch field updates to evaluate performance improvements after code optimization",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Diagnostics"
       ],
@@ -368,6 +362,7 @@
       "task": "Perform bulk updates of field formulas across several diagrams to reflect new calculation standards",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -386,6 +381,7 @@
       "task": "Process all visio files in a directory adding a custom field to each shape across every diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -411,7 +407,7 @@
         "Pages",
         "Save",
         "Shapes",
-        "TimelineHelper"
+        "diagram"
       ]
     },
     {
@@ -420,6 +416,7 @@
       "task": "Remove a field from a shape by specifying the field s name to clean up unused data",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -436,7 +433,8 @@
       "task": "Remove all existing fields from a shape before adding a fresh set of updated fields",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -452,14 +450,14 @@
       "task": "Retrieve the list of field names and their data types from a given shape for inspection",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
-        "diagram"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -467,10 +465,12 @@
       "file": "save-the-modified-visio-diagram-back-to-its-original-file-location-after-completing-field-operations.cs",
       "task": "Save the modified visio diagram back to its original file location after completing field operations",
       "namespaces": [
-        "System",
-        "System.IO"
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
+        "Diagram",
         "Pages",
         "Save",
         "diagram"
@@ -498,7 +498,8 @@
       "task": "Update a field s formula to reference another shape s data for dynamic calculations",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -515,7 +516,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -532,9 +532,7 @@
       "task": "Validate field results after modification by comparing calculated values against expected thresholds",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -550,8 +548,10 @@
       "task": "Validate that a field s formula syntax is correct before applying it to avoid runtime errors",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text.RegularExpressions"
       ],
       "key_apis": [
         "Diagram",

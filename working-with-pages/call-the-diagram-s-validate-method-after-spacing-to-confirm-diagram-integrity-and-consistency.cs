@@ -1,48 +1,63 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Verify the input file exists before proceeding
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+
+        // Load the diagram from file
+        Diagram diagram = new Diagram(inputPath);
+
+        // Access the first page of the diagram
+        Page page = diagram.Pages[0];
+
+        // Set up auto‑spacing options (distance in inches)
+        AutoSpaceOptions spacingOptions = new AutoSpaceOptions
+        {
+            DistanceInHorizontal = 2,
+            DistanceInVertical = 2
+        };
+
+        // Apply auto‑spacing to all shapes on the page inside a try/catch to capture any errors
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Define spacing options (in inches)
-            LayoutOptions layoutOptions = new LayoutOptions
-            {
-                SpaceShapes = 0.5f // adjust as needed
-            };
-
-            // Apply layout (spacing) to each page in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                page.Layout(layoutOptions);
-            }
-
-            // Invoke validation to confirm diagram integrity
-            Validation validation = diagram.Validation;
-
-            // Optionally, inspect validation issues
-            foreach (var issue in validation.Issues)
-            {
-                Console.WriteLine($"Issue: {issue}");
-            }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            page.AutoSpaceShapes(page.Shapes, spacingOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error during auto‑spacing: {ex.Message}");
+            return;
+        }
+
+        // NOTE: Aspose.Diagram does not provide a Validate method. 
+        // The spacing operation is assumed successful if no exception was thrown.
+
+        // Path for the output Visio file
+        string outputPath = "output.vsdx";
+        // Verify the output directory is writable (optional guard)
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        // Save the updated diagram using the correct overload with SaveFileFormat
+        try
+        {
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
         }
     }
 }

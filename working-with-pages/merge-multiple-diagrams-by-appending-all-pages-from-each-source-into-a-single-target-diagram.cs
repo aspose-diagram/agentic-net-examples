@@ -1,44 +1,65 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramMerger
+public class DiagramMerger
 {
-    static void Main()
+    /// <summary>
+    /// Merges multiple Visio diagrams into a single diagram by appending all pages.
+    /// </summary>
+    /// <param name="sourceFiles">Array of file paths to source diagrams.</param>
+    /// <param name="targetFile">File path where the merged diagram will be saved.</param>
+    public void Merge(string[] sourceFiles, string targetFile)
+    {
+        // Create an empty target diagram using the default constructor.
+        Diagram targetDiagram = new Diagram();
+
+        try
+        {
+            // Iterate over each source file, load it, and combine it with the target.
+            foreach (string srcPath in sourceFiles)
+            {
+                // Load the source diagram from file.
+                Diagram srcDiagram = new Diagram(srcPath);
+
+                try
+                {
+                    // Append all pages from srcDiagram into targetDiagram.
+                    targetDiagram.Combine(srcDiagram);
+                }
+                finally
+                {
+                    // Release resources of the source diagram.
+                    srcDiagram.Dispose();
+                }
+            }
+
+            // Save the merged diagram to the specified file in VDX format.
+            targetDiagram.Save(targetFile, SaveFileFormat.Vdx);
+        }
+        finally
+        {
+            // Ensure the target diagram is properly disposed.
+            targetDiagram.Dispose();
+        }
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
     {
         try
         {
 
-            // Paths of the diagrams to be merged
-            var sourceFiles = new List<string>
-            {
-                "diagram1.vsdx",
-                "diagram2.vsdx",
-                "diagram3.vsdx"
-            };
-
-            // Create an empty target diagram
-            using (var targetDiagram = new Diagram())
-            {
-                // Load each source diagram and combine its pages into the target
-                foreach (var filePath in sourceFiles)
-                {
-                    using (var sourceDiagram = new Diagram(filePath))
-                    {
-                        targetDiagram.Combine(sourceDiagram);
-                    }
-                }
-
-                // Save the merged diagram to a new file
-                targetDiagram.Save("mergedDiagram.vsdx", SaveFileFormat.Vsdx);
-            }
+            var obj = new DiagramMerger();
+            obj.Merge(null, "");
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.NullReferenceException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
 }

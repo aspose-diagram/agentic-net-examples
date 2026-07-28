@@ -14,22 +14,29 @@ class Program
                 // Output PDF file path
                 string outputPath = "output.pdf";
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Set each page's orientation to Landscape
-                foreach (Page page in diagram.Pages)
+                try
                 {
-                    // Access the PrintProps of the page and set orientation
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    // Load the Visio diagram
+                    Diagram diagram = new Diagram(inputPath);
+
+                    // Set each page's orientation to Landscape
+                    foreach (Page page in diagram.Pages)
+                    {
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    }
+
+                    // Configure PDF save options (optional: set default font)
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.DefaultFont = "Arial";
+
+                    // Save the diagram as PDF
+                    diagram.Save(outputPath, pdfOptions);
                 }
-
-                // Prepare PDF save options (optional: set default font)
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-
-                // Save the diagram as PDF
-                diagram.Save(outputPath, pdfOptions);
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error: {ex.Message}");
+                    throw;
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)

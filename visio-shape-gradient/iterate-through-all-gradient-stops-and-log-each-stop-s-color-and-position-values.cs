@@ -1,49 +1,47 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (the load rule will replace this line with the appropriate code)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Load an existing Visio diagram (replace with your file path)
+                string diagramPath = "input.vsdx";
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the shape has a gradient fill
-                    if (shape.Fill != null && shape.Fill.GradientFill != null)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        GradientStopCollection stops = shape.Fill.GradientFill.GradientStops;
-
-                        // Iterate over each gradient stop
-                        for (int i = 0; i < stops.Count; i++)
+                        // Ensure the shape has a gradient fill defined
+                        if (shape.Fill != null && shape.Fill.GradientFill != null)
                         {
-                            GradientStop stop = stops[i];
+                            var gradientFill = shape.Fill.GradientFill;
 
-                            // Log the color and position of the stop
-                            // Position is a DoubleValue; its numeric value is accessed via the Value property
-                            // Color is a ColorValue; its string representation can be used directly
-                            Console.WriteLine(
-                                $"Shape ID {shape.ID}, Stop {i}: Color = {stop.Color}, Position = {stop.Position.Value}");
+                            // Iterate through each gradient stop
+                            foreach (GradientStop stop in gradientFill.GradientStops)
+                            {
+                                // Position is stored as a DoubleValue (0..1)
+                                double position = stop.Position.Value;
+
+                                // Color is stored as a ColorValue (hex string)
+                                string color = stop.Color.Value;
+
+                                Console.WriteLine($"Shape ID {shape.ID}: Stop Position = {position}, Color = {color}");
+                            }
                         }
                     }
                 }
+
             }
-
-            // Save the diagram if any modifications were made (the save rule will replace this line)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

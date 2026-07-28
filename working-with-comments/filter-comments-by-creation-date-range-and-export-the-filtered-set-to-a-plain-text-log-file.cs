@@ -9,51 +9,49 @@ class Program
             try
             {
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
+                // Input Visio diagram file
+                string diagramPath = "input.vsdx";
 
-                // Output plain‑text log file path
-                string outputLogPath = "filtered_comments.txt";
+                // Output plain‑text log file
+                string logPath = "FilteredComments.log";
 
                 // Define the date range for filtering comments
                 DateTime startDate = new DateTime(2023, 1, 1);
                 DateTime endDate   = new DateTime(2023, 12, 31);
 
                 // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Prepare the log file
-                using (StreamWriter writer = new StreamWriter(outputLogPath, false))
+                // Open the log file for writing
+                using (StreamWriter writer = new StreamWriter(logPath))
                 {
-                    // Iterate through all pages
+                    // Iterate through all pages in the diagram
                     foreach (Page page in diagram.Pages)
                     {
-                        // Access annotations (comments) via the PageSheet
+                        // Iterate through all annotations (comments) on the page
                         foreach (Annotation annotation in page.PageSheet.Annotations)
                         {
-                            // Attempt to read the creation date.
-                            // The Annotation class provides a Date property (DateTimeValue) in recent versions.
-                            // If the property is not present, this line will cause a compile‑time error,
-                            // indicating that the used Aspose.Diagram version does not support date filtering.
-                            DateTime commentDate = annotation.Date?.Value ?? DateTime.MinValue;
+                            // Retrieve the creation date of the comment
+                            // The Date property is a DateTimeValue; use .Value to get DateTime
+                            DateTime commentDate = annotation.Date.Value;
 
-                            // Filter by the specified date range
+                            // Check if the comment falls within the specified range
                             if (commentDate >= startDate && commentDate <= endDate)
                             {
-                                // Retrieve comment details
-                                long commentId = annotation.MarkerIndex.Value;
-                                int reviewerId = annotation.ReviewerID.Value;
-                                string commentText = annotation.Comment?.Value ?? string.Empty;
+                                // Gather comment details
+                                long commentId   = annotation.MarkerIndex.Value;
+                                long reviewerId  = annotation.ReviewerID.Value;
+                                string commentText = annotation.Comment.Value;
 
                                 // Write a formatted line to the log file
-                                writer.WriteLine($"Page: {page.Name}, CommentID: {commentId}, ReviewerID: {reviewerId}, Date: {commentDate:yyyy-MM-dd}, Text: {commentText}");
+                                writer.WriteLine(
+                                    $"Page: {page.Name}, CommentID: {commentId}, ReviewerID: {reviewerId}, Date: {commentDate:u}, Text: {commentText}");
                             }
                         }
                     }
                 }
 
-                // Optional: inform the user
-                Console.WriteLine($"Filtered comments have been exported to '{outputLogPath}'.");
+                Console.WriteLine($"Filtered comments have been exported to '{logPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -1,89 +1,62 @@
-using System;
 using System.IO;
+using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        if (args.Length == 0)
-        {
-            Console.Error.WriteLine("Usage: <program> <visio-file-path>");
-            return;
-        }
-
-        string visioPath = args[0];
-        if (!File.Exists(visioPath))
-        {
-            Console.Error.WriteLine($"File not found: {visioPath}");
-            return;
-        }
-
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(visioPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
 
-        var commentCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            // Load the Visio diagram from a file
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-        try
-        {
+            // Dictionary to hold comment counts per shape type
+            var commentCounts = new Dictionary<TypeValue, int>();
+
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                if (page.PageSheet?.Annotations == null) continue;
-
+                // Iterate through all annotations (comments) on the page
                 foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
+                    // ShapeID links the comment to a shape; 0 means no shape association
                     int shapeId = annotation.ShapeID;
-                    Shape shape = null;
-                    try
+                    if (shapeId != 0)
                     {
-                        shape = page.Shapes.GetShape(shapeId);
+                        // Retrieve the shape by its ID
+                        Shape shape = page.Shapes.GetShape(shapeId);
+                        if (shape != null)
+                        {
+                            TypeValue shapeType = shape.Type;
+                            if (commentCounts.ContainsKey(shapeType))
+                                commentCounts[shapeType]++;
+                            else
+                                commentCounts[shapeType] = 1;
+                        }
                     }
-                    catch
-                    {
-                        // Skip if shape cannot be retrieved
-                        continue;
-                    }
-
-                    string key;
-                    if (shape != null && shape.Master != null && !string.IsNullOrEmpty(shape.Master.Name))
-                    {
-                        key = shape.Master.Name;
-                    }
-                    else if (shape != null)
-                    {
-                        key = shape.Type.ToString();
-                    }
-                    else
-                    {
-                        key = "Unknown";
-                    }
-
-                    if (commentCounts.ContainsKey(key))
-                        commentCounts[key]++;
-                    else
-                        commentCounts[key] = 1;
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing comments: {ex.Message}");
-            return;
-        }
 
-        Console.WriteLine("Comments grouped by shape type:");
-        foreach (var kvp in commentCounts)
+            // Output the grouped comment report to the console
+            Console.WriteLine("Comments grouped by shape type:");
+            foreach (var kvp in commentCounts)
+            {
+                Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+            }
+
+            // Save a copy of the diagram (optional)
+            string outputPath = "output_copy.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

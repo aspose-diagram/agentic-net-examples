@@ -1,80 +1,71 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    // Threshold distance (in inches) to consider two comments overlapping
+    private const double OverlapThreshold = 0.2;
+
+    // Offset applied to a comment when an overlap is detected
+    private const double OffsetStep = 0.3;
+
+    public static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the diagram (replace with your actual file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Process each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Collect annotations (comments) on the page
+                var annotations = page.PageSheet.Annotations;
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Work with the first page (adjust as needed)
-                Page page = diagram.Pages[0];
-
-                // Threshold distance (in inches) to consider comments overlapping
-                const double overlapThreshold = 0.5;
-                // Offset to apply when moving a comment to avoid overlap
-                const double offset = 0.6;
-
-                // Collect existing annotations with their (simulated) positions
-                // Note: Aspose.Diagram.Annotation does not expose PinX/PinY directly.
-                // For demonstration, we treat MarkerIndex.Value as a placeholder for X coordinate
-                // and use a fixed Y coordinate. In a real scenario, retrieve actual positions via
-                // the appropriate cells or custom storage.
-                var annotations = new System.Collections.Generic.List<(Annotation annotation, double x, double y)>();
-                foreach (Annotation ann in page.PageSheet.Annotations)
-                {
-                    double x = ann.MarkerIndex.Value; // Placeholder for X coordinate
-                    double y = 1.0; // Fixed Y coordinate placeholder
-                    annotations.Add((ann, x, y));
-                }
-
-                // Adjust positions to resolve overlaps
+                // Simple O(N^2) overlap detection and adjustment
                 for (int i = 0; i < annotations.Count; i++)
                 {
-                    var (currentAnn, curX, curY) = annotations[i];
+                    Annotation annA = annotations[i];
+
+                    // Retrieve current coordinates (assumed to be stored in X and Y cells)
+                    double xA = annA.X.Value;
+                    double yA = annA.Y.Value;
 
                     for (int j = i + 1; j < annotations.Count; j++)
                     {
-                        var (otherAnn, otherX, otherY) = annotations[j];
+                        Annotation annB = annotations[j];
+                        double xB = annB.X.Value;
+                        double yB = annB.Y.Value;
 
-                        double deltaX = curX - otherX;
-                        double deltaY = curY - otherY;
-                        double distance = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+                        // Compute Euclidean distance between the two comments
+                        double distance = Math.Sqrt(Math.Pow(xA - xB, 2) + Math.Pow(yA - yB, 2));
 
-                        if (distance < overlapThreshold)
+                        // If the comments are too close, shift the second one
+                        if (distance < OverlapThreshold)
                         {
-                            // Move the later comment by the offset to the right
-                            otherX += offset;
-                            // Update the stored position
-                            annotations[j] = (otherAnn, otherX, otherY);
+                            // Apply an offset to the second comment's position
+                            annB.X.Value = xB + OffsetStep;
+                            annB.Y.Value = yB + OffsetStep;
+
+                            // Update local variables for further comparisons
+                            xB = annB.X.Value;
+                            yB = annB.Y.Value;
                         }
                     }
                 }
-
-                // Re‑add comments at the adjusted positions.
-                // Since Aspose.Diagram does not provide a direct way to modify an existing annotation's
-                // coordinates, we add new comments with the corrected positions.
-                // (In practice, you might delete the original annotation first if needed.)
-                foreach (var (annotation, x, y) in annotations)
-                {
-                    // Add a new comment at the resolved position with the same text
-                    page.AddComment(x, y, annotation.Comment.Value);
-                }
-
-                // Save the updated diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the adjusted diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -6,97 +6,94 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
+        // Entry point
         static void Main(string[] args)
         {
-            try
+            // Folder containing the Visio files (adjust as needed)
+            string diagramsFolder = @"C:\VisioDiagrams";
+
+            // Get all VSDX files in the folder
+            string[] diagramFiles = Directory.GetFiles(diagramsFolder, "*.vsdx");
+
+            if (diagramFiles.Length == 0)
             {
-
-                // Folder containing the Visio files to process
-                string folderPath = @"C:\VisioDiagrams";
-
-                // Get all Visio files (VSDX) in the folder
-                string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
-                if (diagramFiles.Length == 0)
-                {
-                    Console.WriteLine("No Visio files found in the specified folder.");
-                    return;
-                }
-
-                // Load the first diagram as the reference for comment texts
-                Diagram referenceDiagram = new Diagram(diagramFiles[0]);
-
-                // Build a dictionary of reference comments:
-                // Key = page name + "_" + marker index, Value = comment text
-                var referenceComments = new Dictionary<string, string>();
-
-                foreach (Page refPage in referenceDiagram.Pages)
-                {
-                    foreach (Annotation refAnnotation in refPage.PageSheet.Annotations)
-                    {
-                        string key = $"{refPage.Name}_{refAnnotation.MarkerIndex.Value}";
-                        referenceComments[key] = refAnnotation.Comment.Value;
-                    }
-                }
-
-                // Process each diagram (including the reference one to ensure it is saved)
-                foreach (string filePath in diagramFiles)
-                {
-                    try
-                    {
-                        Diagram diagram = new Diagram(filePath);
-
-                        foreach (Page page in diagram.Pages)
-                        {
-                            // Track existing annotation marker indices on this page
-                            var existingMarkers = new HashSet<long>();
-                            foreach (Annotation annotation in page.PageSheet.Annotations)
-                            {
-                                existingMarkers.Add(annotation.MarkerIndex.Value);
-                                string key = $"{page.Name}_{annotation.MarkerIndex.Value}";
-                                if (referenceComments.TryGetValue(key, out string refText))
-                                {
-                                    // Synchronize comment text
-                                    annotation.Comment.Value = refText;
-                                }
-                            }
-
-                            // Add missing comments from the reference diagram
-                            foreach (var kvp in referenceComments)
-                            {
-                                // Split the key to obtain page name and marker index
-                                var parts = kvp.Key.Split('_');
-                                if (parts.Length != 2) continue;
-                                string refPageName = parts[0];
-                                if (!refPageName.Equals(page.Name, StringComparison.OrdinalIgnoreCase))
-                                    continue;
-
-                                if (long.TryParse(parts[1], out long markerIdx))
-                                {
-                                    if (!existingMarkers.Contains(markerIdx))
-                                    {
-                                        // Add a new comment at a default location (1,1)
-                                        page.AddComment(1.0, 1.0, kvp.Value);
-                                    }
-                                }
-                            }
-                        }
-
-                        // Save the updated diagram (overwrite original)
-                        diagram.Save(filePath, SaveFileFormat.Vsdx);
-                        Console.WriteLine($"Synchronized comments for: {Path.GetFileName(filePath)}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
-                    }
-                }
-
-                Console.WriteLine("Comment synchronization completed.");
-
+                Console.WriteLine("No Visio files found in the specified folder.");
+                return;
             }
-            catch (System.IO.DirectoryNotFoundException ex)
+
+            // Load the first diagram as the reference for comment settings
+            Diagram referenceDiagram = new Diagram(diagramFiles[0]);
+
+            // Build a lookup of comment settings from the reference diagram
+            var referenceComments = BuildCommentLookup(referenceDiagram);
+
+            // Process remaining diagrams
+            for (int i = 1; i < diagramFiles.Length; i++)
             {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                string filePath = diagramFiles[i];
+                Diagram targetDiagram = new Diagram(filePath);
+
+                SynchronizeComments(targetDiagram, referenceComments);
+
+                // Save the updated diagram (overwrite original)
+                targetDiagram.Save(filePath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Synchronized comments for: {Path.GetFileName(filePath)}");
             }
-    }
+
+            Console.WriteLine("Comment synchronization completed.");
+        }
+
+        // Builds a dictionary: PageName -> (MarkerIndex -> (CommentText, ReviewerID))
+        private static Dictionary<string, Dictionary<int, (string Comment, int ReviewerId)>> BuildCommentLookup(Diagram diagram)
+        {
+            var lookup = new Dictionary<string, Dictionary<int, (string, int)>>();
+
+            foreach (Page page in diagram.Pages)
+            {
+                string pageName = page.Name ?? page.NameU ?? $"Page_{page.ID}";
+                var pageDict = new Dictionary<int, (string, int)>();
+
+                foreach (Annotation ann in page.PageSheet.Annotations)
+                {
+                    int marker = ann.MarkerIndex.Value;
+                    string comment = ann.Comment.Value;
+                    int reviewerId = ann.ReviewerID.Value;
+
+                    pageDict[marker] = (comment, reviewerId);
+                }
+
+                if (pageDict.Count > 0)
+                {
+                    lookup[pageName] = pageDict;
+                }
+            }
+
+            return lookup;
+        }
+
+        // Updates comments in the target diagram to match the reference lookup
+        private static void SynchronizeComments(Diagram diagram, Dictionary<string, Dictionary<int, (string Comment, int ReviewerId)>> reference)
+        {
+            foreach (Page page in diagram.Pages)
+            {
+                string pageName = page.Name ?? page.NameU ?? $"Page_{page.ID}";
+
+                if (!reference.ContainsKey(pageName))
+                    continue; // No reference comments for this page
+
+                var refPageComments = reference[pageName];
+
+                foreach (Annotation ann in page.PageSheet.Annotations)
+                {
+                    int marker = ann.MarkerIndex.Value;
+
+                    if (refPageComments.TryGetValue(marker, out var refData))
+                    {
+                        // Update comment text and reviewer ID to match reference
+                        ann.Comment.Value = refData.Comment;
+                        ann.ReviewerID.Value = refData.ReviewerId;
+                    }
+                }
+            }
+        }
     }

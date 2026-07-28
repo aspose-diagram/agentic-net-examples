@@ -1,68 +1,62 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Create a new empty diagram inside a try/catch to capture Aspose errors.
+        try
         {
-            try
-            {
+            Diagram diagram = new Diagram();
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Retrieve the first page (the diagram always contains at least one page).
+            Page page = diagram.Pages[0];
 
-                // Add a new page to the diagram
-                diagram.Pages.Add(new Page());
-                Page page = diagram.Pages[0];
+            // Add two rectangle shapes that will serve as the connector's endpoints.
+            // AddShape returns a shape ID (long), so we store the ID and then fetch the Shape object.
+            long shape1Id = page.AddShape(2.0, 5.0, "Rectangle");
+            Shape shape1 = page.Shapes.GetShape(shape1Id);
 
-                // Add two rectangle shapes (source and target) using built‑in masters
-                // The AddShape method returns the shape ID (long)
-                long shape1Id = page.AddShape(2.0, 2.0, "Rectangle");
-                long shape2Id = page.AddShape(6.0, 4.0, "Rectangle");
+            long shape2Id = page.AddShape(8.0, 5.0, "Rectangle");
+            Shape shape2 = page.Shapes.GetShape(shape2Id);
 
-                // Retrieve the shape objects for further manipulation (optional)
-                Shape shape1 = page.Shapes.GetShape(shape1Id);
-                Shape shape2 = page.Shapes.GetShape(shape2Id);
+            // Add a dynamic connector shape; again retrieve the Shape instance via its ID.
+            long connectorId = page.AddShape(5.0, 5.0, "Dynamic connector");
+            Shape connector = page.Shapes.GetShape(connectorId);
 
-                // Add a dynamic connector shape
-                long connectorId = page.AddShape(4.0, 3.0, "Dynamic connector");
-                Shape connector = page.Shapes.GetShape(connectorId);
+            // Connect shape1 to shape2 using the connector.
+            // The ConnectionPointPlace enum specifies the exact segment (bottom of shape1, top of shape2).
+            page.ConnectShapesViaConnector(
+                shape1Id,
+                ConnectionPointPlace.Bottom,
+                shape2Id,
+                ConnectionPointPlace.Top,
+                connectorId);
 
-                // Connect the two rectangles with the connector
-                page.ConnectShapesViaConnector(
-                    shape1Id,
-                    ConnectionPointPlace.Bottom,
-                    shape2Id,
-                    ConnectionPointPlace.Top,
-                    connectorId);
+            // Determine a point on the connector where the comment should appear.
+            // Here we use the connector's own PinX and PinY (its centre) as the comment location.
+            double commentX = connector.XForm.PinX.Value;
+            double commentY = connector.XForm.PinY.Value;
 
-                // Determine a point on the connector segment where the comment should appear.
-                // For simplicity, use the midpoint between the two shapes' pins.
-                double x1 = shape1.XForm.PinX.Value;
-                double y1 = shape1.XForm.PinY.Value;
-                double x2 = shape2.XForm.PinX.Value;
-                double y2 = shape2.XForm.PinY.Value;
+            // Attach a comment to the connector at the calculated coordinates.
+            page.AddComment(commentX, commentY, "This is a comment on the connector segment.");
 
-                double commentX = (x1 + x2) / 2.0;
-                double commentY = (y1 + y2) / 2.0;
+            // Define the output file path.
+            string outputPath = "ConnectorWithComment.vsdx";
 
-                // Add a comment at the calculated position on the page.
-                // This comment is visually attached to the connector segment.
-                page.AddComment(commentX, commentY, "Review this connector segment");
+            // Save the diagram using the correct overload (path + SaveFileFormat).
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                // Optionally, also attach a comment directly to the connector shape.
-                // This links the comment to the shape itself.
-                page.AddComment(connector, "Connector shape comment");
-
-                // Save the diagram to a VSDX file
-                diagram.Save("ConnectorWithComment.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

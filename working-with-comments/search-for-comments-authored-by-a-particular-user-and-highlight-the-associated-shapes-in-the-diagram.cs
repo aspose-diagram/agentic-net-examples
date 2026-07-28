@@ -1,56 +1,74 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the output file with highlighted shapes
+            string outputPath = "output_highlighted.vsdx";
+            // Name of the reviewer whose comments should be highlighted
+            string targetUser = "John Doe";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Locate the reviewer ID that matches the target user name
+            int targetReviewerId = -1;
+            int reviewerIndex = 0;
+            foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
             {
+                if (reviewer.Name.Value == targetUser)
+                {
+                    targetReviewerId = reviewerIndex;
+                    break;
+                }
+                reviewerIndex++;
+            }
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output.vsdx";
-                // Reviewer ID to filter comments (example value)
-                int targetReviewerId = 1;
-
-                // Load the diagram from file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages in the diagram
+            if (targetReviewerId == -1)
+            {
+                Console.WriteLine($"Reviewer \"{targetUser}\" not found in the document.");
+            }
+            else
+            {
+                // Iterate through all pages and their annotations (comments)
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all annotations (comments) on the page
                     foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
                         // Check if the comment was authored by the target reviewer
                         if (annotation.ReviewerID.Value == targetReviewerId)
                         {
-                            // Retrieve the shape ID associated with the comment
-                            int shapeId = annotation.ShapeID;
-
-                            // Get the shape instance from the page's shape collection
+                            // Retrieve the shape linked to this comment
+                            long shapeId = annotation.ShapeID;
                             Shape shape = page.Shapes.GetShape(shapeId);
                             if (shape != null)
                             {
-                                // Highlight the shape by setting a yellow fill color
-                                shape.Fill.FillForegnd.Value = "#FFFF00";
-                                // Optionally, set a red outline for better visibility
+                                // Highlight the shape: red border and yellow fill
                                 shape.Line.LineColor.Value = "#FF0000";
+                                shape.Line.LineWeight.Value = 0.03;
+                                shape.Fill.FillForegnd.Value = "#FFFF00";
                             }
                         }
                     }
                 }
 
-                // Save the modified diagram to the output file
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram saved with highlighted shapes.");
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

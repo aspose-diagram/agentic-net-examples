@@ -1,53 +1,79 @@
-using System.IO;
 using System;
-using System.Text;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Properties;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths for input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Gather all comment texts from every page
-            StringBuilder commentBuilder = new StringBuilder();
-
-            foreach (Page page in diagram.Pages)
+            // Expect two arguments: input Visio file path and output Visio file path
+            if (args.Length < 2)
             {
-                // Annotations collection holds comments for the page
-                foreach (Annotation annotation in page.PageSheet.Annotations)
-                {
-                    // Append the comment text; use .Value as required
-                    commentBuilder.AppendLine(annotation.Comment.Value);
-                }
+                Console.WriteLine("Usage: DiagramMetadataExample <inputPath> <outputPath>");
+                return;
             }
 
-            // Create a custom document property to store the concatenated comments
-            CustomProp hiddenProp = new CustomProp();
-            hiddenProp.Name = "EmbeddedComments";
-            hiddenProp.PropType = PropType.String;
-            hiddenProp.CustomValue = new CustomValue();
-            hiddenProp.CustomValue.ValueString = commentBuilder.ToString();
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-            // Add the custom property to the diagram's custom properties collection
-            diagram.DocumentProps.CustomProps.Add(hiddenProp);
+            try
+            {
+                // Load the diagram from the specified file
+                Diagram diagram = new Diagram(inputPath);
 
-            // Save the diagram with the new hidden metadata
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Collect all comment texts from all pages
+                List<string> commentTexts = new List<string>();
+                foreach (Page page in diagram.Pages)
+                {
+                    // Annotations are stored in the PageSheet
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    {
+                        // The comment text is accessed via the .Comment.Value property
+                        string text = annotation.Comment.Value;
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            commentTexts.Add(text);
+                        }
+                    }
+                }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Combine comments into a single string (e.g., separated by line breaks)
+                string combinedComments = string.Join(Environment.NewLine, commentTexts);
+
+                // Embed the combined comments as a hidden custom property
+                // First, check if a property with the same name already exists and remove it
+                CustomProp existingProp = null;
+                foreach (CustomProp prop in diagram.DocumentProps.CustomProps)
+                {
+                    if (prop.Name == "EmbeddedComments")
+                    {
+                        existingProp = prop;
+                        break;
+                    }
+                }
+                if (existingProp != null)
+                {
+                    diagram.DocumentProps.CustomProps.Remove(existingProp);
+                }
+
+                // Create and add the new custom property
+                CustomProp customProp = new CustomProp();
+                customProp.Name = "EmbeddedComments";
+                customProp.PropType = PropType.String;
+                customProp.CustomValue.ValueString = combinedComments;
+                diagram.DocumentProps.CustomProps.Add(customProp);
+
+                // Save the diagram with the embedded metadata
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Comments extracted and embedded successfully.");
+            }
+            catch (Exception ex)
+            {
+                // Report any errors
+                Console.WriteLine($"Error: {ex.Message}");
+                throw;
+            }
         }
     }
-}

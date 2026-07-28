@@ -1,99 +1,62 @@
 using System;
 using System.IO;
+using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramDisclaimerBatchProcessor
+class DiagramDisclaimerBatch
 {
-    // Standardized disclaimer text to be added to each diagram page
+    // Standard disclaimer text to be added to each diagram
     private const string DisclaimerText = "Disclaimer: This diagram is confidential and intended for internal use only.";
 
-    // Entry point
-    static void Main(string[] args)
+    // Coordinates where the comment will be placed on each page
+    private const double CommentPinX = 0.5;
+    private const double CommentPinY = 0.5;
+
+    static void Main()
     {
-        // Expect the first argument to be the root directory containing Visio files
-        if (args.Length == 0)
+        try
         {
-            Console.WriteLine("Please provide the path to the project directory.");
-            return;
-        }
 
-        string projectDirectory = args[0];
-        if (!Directory.Exists(projectDirectory))
-        {
-            Console.WriteLine($"Directory does not exist: {projectDirectory}");
-            return;
-        }
+            // Path to the root folder containing Visio diagrams
+            string projectDirectory = @"C:\Path\To\Project";
 
-        ProcessDirectory(projectDirectory);
-        Console.WriteLine("Processing completed.");
-    }
+            // Retrieve all Visio files (common extensions) recursively
+            var diagramFiles = Directory.GetFiles(projectDirectory, "*.*", SearchOption.AllDirectories)
+                .Where(f => f.EndsWith(".vsdx", StringComparison.OrdinalIgnoreCase) ||
+                            f.EndsWith(".vsd", StringComparison.OrdinalIgnoreCase) ||
+                            f.EndsWith(".vdx", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
 
-    // Processes all Visio files in the given directory (recursively)
-    private static void ProcessDirectory(string rootPath)
-    {
-        // Visio file extensions to consider
-        string[] visioExtensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vssx", ".vss", ".vstx", ".vst" };
-
-        // Get all files matching the extensions
-        var files = Directory.GetFiles(rootPath, "*.*", SearchOption.AllDirectories);
-        foreach (var file in files)
-        {
-            if (Array.Exists(visioExtensions, ext => ext.Equals(Path.GetExtension(file), StringComparison.OrdinalIgnoreCase)))
+            foreach (var filePath in diagramFiles)
             {
-                AddDisclaimerToDiagram(file);
-            }
-        }
-    }
+                // Load the diagram using the provided constructor
+                using (var diagram = new Diagram(filePath))
+                {
+                    // Add the disclaimer comment to every page in the diagram
+                    foreach (Page page in diagram.Pages)
+                    {
+                        page.AddComment(CommentPinX, CommentPinY, DisclaimerText);
+                    }
 
-    // Loads a diagram, adds the disclaimer comment to each page, and saves it back
-    private static void AddDisclaimerToDiagram(string filePath)
-    {
-        // Load the diagram using the appropriate constructor
-        using (var diagram = new Diagram(filePath))
-        {
-            // Add disclaimer comment to every page in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                // PinX and PinY coordinates (center of the page). Adjust as needed.
-                double pinX = 0.5;
-                double pinY = 0.5;
+                    // Prepare save options preserving the original file format
+                    var saveOptions = new DiagramSaveOptions();
+                    if (filePath.EndsWith(".vsdx", StringComparison.OrdinalIgnoreCase))
+                        saveOptions.SaveFormat = SaveFileFormat.Vsdx;
+                    else if (filePath.EndsWith(".vsd", StringComparison.OrdinalIgnoreCase))
+                        saveOptions.SaveFormat = SaveFileFormat.Vsd;
+                    else
+                        saveOptions.SaveFormat = SaveFileFormat.Vdx;
 
-                page.AddComment(pinX, pinY, DisclaimerText);
+                    // Save the modified diagram back to the same file using the provided Save method
+                    diagram.Save(filePath, saveOptions);
+                }
             }
 
-            // Determine save format based on file extension
-            SaveFileFormat saveFormat = GetSaveFormatFromExtension(Path.GetExtension(filePath));
-
-            // Save the diagram back to the original file using the appropriate overload
-            diagram.Save(filePath, saveFormat);
         }
-    }
-
-    // Maps file extensions to Aspose.Diagram.SaveFileFormat values
-    private static SaveFileFormat GetSaveFormatFromExtension(string extension)
-    {
-        switch (extension.ToLowerInvariant())
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            case ".vsdx":
-                return SaveFileFormat.Vsdx;
-            case ".vsd":
-                return SaveFileFormat.Vsd;
-            case ".vdx":
-                return SaveFileFormat.Vdx;
-            case ".vsx":
-                return SaveFileFormat.Vsx;
-            case ".vssx":
-                return SaveFileFormat.Vssx;
-            case ".vss":
-                return SaveFileFormat.Vss;
-            case ".vstx":
-                return SaveFileFormat.Vstx;
-            case ".vst":
-                return SaveFileFormat.Vst;
-            default:
-                // Default to VDX if unknown
-                return SaveFileFormat.Vdx;
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

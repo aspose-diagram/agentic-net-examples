@@ -1,70 +1,64 @@
 using System.IO;
 using System;
+using System.Linq;
 using System.Xml.Linq;
 using Aspose.Diagram;
 
-class Program
+class ImportComments
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        if (args.Length < 3)
+        try
         {
-            Console.WriteLine("Usage: <diagramPath> <commentsXmlPath> <outputPath>");
-            return;
-        }
 
-        string diagramPath = args[0];
-        string commentsXmlPath = args[1];
-        string outputPath = args[2];
+            // Load the Visio diagram (replace with the provided load rule if available)
+            Diagram diagram = LoadDiagram("input.vsdx");
 
-        // Load the Visio diagram
-        Diagram diagram = new Diagram(diagramPath);
+            // Load the XML file containing comments
+            XDocument xmlDoc = XDocument.Load("comments.xml");
 
-        // Load the XML containing comments
-        XDocument xmlDoc = XDocument.Load(commentsXmlPath);
-
-        // Iterate over each comment entry in the XML
-        foreach (var commentNode in xmlDoc.Descendants("Comment"))
-        {
-            // Extract ShapeID and comment text
-            long shapeId = (long)commentNode.Element("ShapeID");
-            string commentText = (string)commentNode.Element("Text") ?? string.Empty;
-
-            // Find the shape and its page that matches the ShapeID
-            Shape targetShape = null;
-            Page targetPage = null;
-
-            foreach (Page page in diagram.Pages)
+            // Iterate through each comment element in the XML
+            foreach (XElement commentElem in xmlDoc.Root.Elements("Comment"))
             {
-                try
+                // Extract the shape ID and comment text
+                long shapeId = (long)commentElem.Attribute("ShapeID");
+                string commentText = commentElem.Value;
+
+                // Search for the shape across all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // GetShape throws if the ID does not exist on this page
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    if (shape != null && shape.Del == BOOL.False)
+                    // Find the shape with the matching ID on the current page
+                    Shape shape = page.Shapes.FirstOrDefault(s => s.ID == shapeId);
+                    if (shape != null)
                     {
-                        targetShape = shape;
-                        targetPage = page;
-                        break;
+                        // Add the comment to the shape using the page's AddComment method
+                        page.AddComment(shapeId, commentText);
+                        break; // Shape found and comment added; move to next comment
                     }
                 }
-                catch
-                {
-                    // Shape not on this page; continue searching
-                }
             }
 
-            // If the shape was found, add the comment to it
-            if (targetShape != null && targetPage != null)
-            {
-                targetPage.AddComment(targetShape, commentText);
-            }
-            else
-            {
-                Console.WriteLine($"Warning: Shape with ID {shapeId} not found or is deleted.");
-            }
+            // Save the modified diagram (replace with the provided save rule if available)
+            SaveDiagram(diagram, "output.vsdx");
+
         }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
+    }
 
-        // Save the updated diagram
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+    // Placeholder for the provided load rule
+    static Diagram LoadDiagram(string path)
+    {
+        // The actual implementation should be supplied by the lifecycle rule.
+        return new Diagram(path);
+    }
+
+    // Placeholder for the provided save rule
+    static void SaveDiagram(Diagram diagram, string path)
+    {
+        // The actual implementation should be supplied by the lifecycle rule.
+        diagram.Save(path, SaveFileFormat.Vsdx);
     }
 }

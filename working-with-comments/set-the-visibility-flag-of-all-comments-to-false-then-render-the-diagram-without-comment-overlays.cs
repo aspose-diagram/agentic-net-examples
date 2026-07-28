@@ -10,31 +10,18 @@ class Program
         try
         {
 
-            // Path to the source Visio file
+            // Load the Visio diagram from a file
             string inputPath = "input.vsdx";
-
-            // Path for the rendered image output
-            string outputPath = "output.png";
-
-            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and hide every comment
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Annotation comment in page.PageSheet.Annotations)
-                {
-                    // Clear the comment text to effectively hide it
-                    comment.Comment.Value = "";
-                }
-            }
+            // Create image save options (PNG format) and disable comment export
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // RenderingSaveOptions (base class) provides IsExportComments to control comment visibility
+            saveOptions.IsExportComments = false;
 
-            // Configure image export options without comment overlays
-            ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-            options.IsExportComments = false; // Do not render comments
-
-            // Save the diagram as an image
-            diagram.Save(outputPath, options);
+            // Save the diagram as an image without comment overlays
+            string outputPath = "output.png";
+            diagram.Save(outputPath, saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

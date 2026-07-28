@@ -1,68 +1,73 @@
 using System;
-using System.IO;
-using System.Data;
-using System.Data.SqlClient;
 using Aspose.Diagram;
+using System.Data.SqlClient;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Path to the Visio file
-        string visioPath = "input.vsdx";
-        if (!File.Exists(visioPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
-            return;
-        }
-
-        // Database connection string (replace with actual values)
-        string connectionString = "Server=YOUR_SERVER;Database=YOUR_DATABASE;Trusted_Connection=True;";
-
-        // Prepare the INSERT command
-        const string insertSql = "INSERT INTO Comments (ShapeId, CommentText) VALUES (@ShapeId, @CommentText)";
-
-        try
-        {
-            // Load the diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            try
             {
-                connection.Open();
 
-                using (SqlCommand command = new SqlCommand(insertSql, connection))
+                // Path to the Visio file
+                string diagramPath = "input.vsdx";
+
+                // Connection string to the relational database
+                string connectionString = "Data Source=SERVER;Initial Catalog=DatabaseName;Integrated Security=True";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Open a SQL connection
+                using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    // Define parameters
-                    SqlParameter shapeIdParam = command.Parameters.Add("@ShapeId", SqlDbType.Int);
-                    SqlParameter commentParam = command.Parameters.Add("@CommentText", SqlDbType.NVarChar, -1);
+                    connection.Open();
 
-                    // Iterate through all pages and their annotations (comments)
-                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                    // Prepare the INSERT command with parameters
+                    string insertSql = "INSERT INTO Comments (ShapeId, CommentText) VALUES (@ShapeId, @CommentText)";
+                    using (SqlCommand command = new SqlCommand(insertSql, connection))
                     {
-                        Page page = diagram.Pages[pageIndex];
+                        // Define parameters
+                        SqlParameter shapeIdParam = new SqlParameter("@ShapeId", System.Data.SqlDbType.Int);
+                        SqlParameter commentTextParam = new SqlParameter("@CommentText", System.Data.SqlDbType.NVarChar, -1);
+                        command.Parameters.Add(shapeIdParam);
+                        command.Parameters.Add(commentTextParam);
 
-                        foreach (Annotation annotation in page.PageSheet.Annotations)
+                        // Iterate through all pages in the diagram
+                        foreach (Page page in diagram.Pages)
                         {
-                            // Retrieve the associated shape ID and comment text
-                            int shapeId = annotation.ShapeID;
-                            string commentText = annotation.Comment.Value ?? string.Empty;
+                            // Ensure the page has annotations
+                            if (page.PageSheet.Annotations != null)
+                            {
+                                // Iterate through each comment (annotation) on the page
+                                foreach (Annotation annotation in page.PageSheet.Annotations)
+                                {
+                                    // Retrieve the shape ID associated with the comment
+                                    int shapeId = annotation.ShapeID;
 
-                            // Set parameter values and execute the insert
-                            shapeIdParam.Value = shapeId;
-                            commentParam.Value = commentText;
+                                    // Retrieve the comment text
+                                    string commentText = annotation.Comment.Value;
 
-                            command.ExecuteNonQuery();
+                                    // Assign parameter values
+                                    shapeIdParam.Value = shapeId;
+                                    commentTextParam.Value = commentText ?? string.Empty;
+
+                                    // Execute the INSERT command
+                                    command.ExecuteNonQuery();
+                                }
+                            }
                         }
                     }
-                }
-            }
 
-            Console.WriteLine("Comment metadata export completed.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+                    connection.Close();
+                }
+
+                Console.WriteLine("Comment export completed successfully.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

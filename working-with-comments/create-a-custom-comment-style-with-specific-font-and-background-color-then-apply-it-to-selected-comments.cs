@@ -1,69 +1,72 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main()
         {
-            // Create a new empty diagram
+            // Create a new blank diagram
             Diagram diagram = new Diagram();
 
-            // Get the first page (a diagram always has at least one page)
+            // Get the first page (default page is created automatically)
             Page page = diagram.Pages[0];
 
-            // Add a simple rectangle shape that we will comment on
-            double pinX = 5.0;      // X coordinate of the shape centre
-            double pinY = 5.0;      // Y coordinate of the shape centre
-            double width = 2.0;     // Width of the rectangle (in inches)
-            double height = 1.0;    // Height of the rectangle (in inches)
+            // Draw a simple rectangle shape on the page
+            // Parameters: pinX, pinY, width, height
+            double pinX = 5.0;
+            double pinY = 5.0;
+            double width = 2.0;
+            double height = 1.0;
+            long rectShapeId = page.DrawRectangle(pinX, pinY, pinX + width, pinY + height);
+            Shape rectShape = page.Shapes.GetShape(rectShapeId);
 
-            // DrawRectangle returns the shape identifier (long)
-            long rectId = page.DrawRectangle(pinX, pinY, width, height);
-            Shape rectShape = page.Shapes.GetShape((int)rectId);
+            // Add some text to the rectangle (this will be the visible comment text)
+            rectShape.Text.Value.Clear();
+            rectShape.Text.Value.Add(new Txt("Review this item"));
 
-            // Add a comment attached to the rectangle shape
-            string commentText = "Review this shape";
-            page.AddComment(rectShape, commentText);
+            // -----------------------------------------------------------------
+            // Create a custom style sheet that defines the desired font and
+            // background color for the comment appearance.
+            // -----------------------------------------------------------------
+            StyleSheet commentStyle = new StyleSheet();
+            commentStyle.ID = diagram.StyleSheets.Count + 1;
+            commentStyle.Name = "CustomCommentStyle";
 
-            // Define the custom style for comments
-            string customFontName = "Calibri";
-            string customFontColor = "#FF0000";        // Red text
-            string customBackgroundColor = "#FFFF00";  // Yellow fill
+            // ----- Character (font) formatting -----
+            Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
+            charFormat.IX = 0; // index of the character run
+            charFormat.FontName.Value = "Calibri";          // specific font
+            charFormat.Color.Value = "#FFFFFF";            // white text color
+            charFormat.Size.Value = 12.0 / 72.0;            // 12 pt in inches
+            commentStyle.Chars.Add(charFormat);
 
-            // Apply the custom style to every comment on the page
-            foreach (Annotation annotation in page.PageSheet.Annotations)
-            {
-                // The comment is rendered as a separate shape; retrieve it
-                Shape commentShape = page.Shapes.GetShape(annotation.ShapeID);
+            // ----- Fill (background) formatting -----
+            commentStyle.Fill.FillForegnd.Value = "#007ACC"; // background color (blue)
+            commentStyle.Fill.FillPattern.Value = 1;        // solid fill
 
-                // Replace the existing text run with the annotation text
-                commentShape.Text.Value.Clear();
-                commentShape.Text.Value.Add(new Txt(annotation.Comment.Value));
+            // Add the style sheet to the diagram
+            diagram.StyleSheets.Add(commentStyle);
 
-                // Ensure there is at least one Char object for character formatting
-                if (commentShape.Chars.Count == 0)
-                {
-                    Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-                    ch.IX = 0;
-                    commentShape.Chars.Add(ch);
-                }
+            // Apply the custom style to the rectangle shape
+            // This gives the shape the desired font and background appearance.
+            rectShape.TextStyle = commentStyle;
+            rectShape.FillStyle = commentStyle;
+            rectShape.LineStyle = commentStyle;
 
-                // Apply font name and color to the first character run
-                Aspose.Diagram.Char firstChar = commentShape.Chars[0];
-                firstChar.FontName.Value = customFontName;
-                firstChar.Color.Value = customFontColor;
+            // -----------------------------------------------------------------
+            // Add a comment (annotation) to the shape.
+            // The comment itself will inherit the visual appearance from the
+            // shape because we are using the shape as a visual comment holder.
+            // -----------------------------------------------------------------
+            page.AddComment(rectShape, "Please verify the dimensions.");
 
-                // Apply background fill to the comment shape
-                commentShape.Fill.FillForegnd.Value = customBackgroundColor;
-                commentShape.Fill.FillPattern.Value = 1; // Solid fill
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // -----------------------------------------------------------------
+            // Save the diagram to a VSDX file to inspect the result.
+            // -----------------------------------------------------------------
+            string outputPath = "CustomCommentStyle.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
         }
     }
-}

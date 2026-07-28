@@ -3,17 +3,26 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Create a new empty Visio diagram
-            Diagram diagram = new Diagram();
+            try
+            {
 
-            // Lock the diagram styles to prevent editing
-            // DocumentSettings.ProtectStyles expects a BOOL enum value
-            diagram.DocumentSettings.ProtectStyles = BOOL.True;
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // Save the protected diagram to a VSDX file
-            // Use the correct overload with a SaveFileFormat enum
-            diagram.Save("ProtectedDiagram.vsdx", SaveFileFormat.Vsdx);
-        }
+                // Lock the diagram styles to prevent any modifications
+                diagram.DocumentSettings.ProtectStyles = BOOL.True;
+
+                // Save the protected diagram to a new file
+                string outputPath = "output_protected.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }

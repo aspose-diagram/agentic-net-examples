@@ -3,58 +3,51 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx"; // TODO: replace with actual file path
+                // Input and output file paths (replace with actual paths)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Find the index of the layer named "ReadOnly"
-                string readOnlyLayerIndex = null;
-                // Layers are stored in the PageSheet of each page; they are usually identical across pages.
-                // Use the first page to locate the layer.
-                if (diagram.Pages.Count > 0)
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    Page firstPage = diagram.Pages[0];
-                    foreach (Layer layer in firstPage.PageSheet.Layers)
+                    // Find the index of the layer named "ReadOnly"
+                    int readOnlyLayerIndex = -1;
+                    foreach (Layer layer in page.PageSheet.Layers)
                     {
                         if (layer.Name.Value == "ReadOnly")
                         {
-                            readOnlyLayerIndex = layer.IX.ToString();
+                            readOnlyLayerIndex = layer.IX;
                             break;
                         }
                     }
-                }
 
-                if (readOnlyLayerIndex == null)
-                {
-                    Console.WriteLine("Layer \"ReadOnly\" not found. No protection applied.");
-                    return;
-                }
+                    // If the "ReadOnly" layer does not exist on this page, skip to next page
+                    if (readOnlyLayerIndex == -1)
+                        continue;
 
-                // Apply protection to all shapes that belong to the "ReadOnly" layer
-                foreach (Page page in diagram.Pages)
-                {
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Layer membership is a semicolon‑separated list of layer indexes
+                        // Get the layer membership string (e.g., "0;2;5")
                         string layerMember = shape.LayerMem.LayerMember.Value;
+
                         if (string.IsNullOrEmpty(layerMember))
                             continue;
 
-                        // Check if the shape is assigned to the ReadOnly layer
-                        string[] assignedLayers = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        // Check if the shape belongs to the "ReadOnly" layer
                         bool belongsToReadOnly = false;
-                        foreach (string idx in assignedLayers)
+                        string[] members = layerMember.Split(';');
+                        foreach (string member in members)
                         {
-                            if (idx == readOnlyLayerIndex)
+                            if (member == readOnlyLayerIndex.ToString())
                             {
                                 belongsToReadOnly = true;
                                 break;
@@ -64,7 +57,7 @@ class Program
                         if (!belongsToReadOnly)
                             continue;
 
-                        // Apply full protection
+                        // Apply full protection to the shape
                         shape.Protection.LockAspect.Value = BOOL.True;
                         shape.Protection.LockBegin.Value = BOOL.True;
                         shape.Protection.LockCalcWH.Value = BOOL.True;
@@ -89,10 +82,7 @@ class Program
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx"; // TODO: replace with desired output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Protection applied to shapes on the \"ReadOnly\" layer and diagram saved.");
 
             }
             catch (System.IO.FileNotFoundException ex)

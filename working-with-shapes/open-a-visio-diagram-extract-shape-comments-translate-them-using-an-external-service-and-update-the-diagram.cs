@@ -3,58 +3,49 @@ using Aspose.Diagram;
 
 class Program
     {
-        // Mock translation method – replace with actual service call as needed
-        static string TranslateText(string text)
+        static void Main()
         {
-            // Example: prepend a marker to indicate translation
-            return "[Translated] " + text;
-        }
-
-        static void Main(string[] args)
-        {
-            // Validate arguments
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: VisioCommentTranslator <inputVisioPath> <outputVisioPath>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-
             try
             {
+
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the annotations collection on the page sheet
+                    // Iterate through each annotation (comment) on the page
                     foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
                         // Retrieve the original comment text
                         string originalComment = annotation.Comment.Value;
 
-                        // Translate the comment text
-                        string translatedComment = TranslateText(originalComment);
+                        // Translate the comment using an external service (placeholder implementation)
+                        string translatedComment = Translate(originalComment);
 
                         // Update the annotation with the translated text
                         annotation.Comment.Value = translatedComment;
-
-                        // Optional: log the update
-                        Console.WriteLine($"Page '{page.Name}' - ShapeID {annotation.ShapeID}: \"{originalComment}\" => \"{translatedComment}\"");
                     }
                 }
 
-                // Save the updated diagram (preserve original format)
+                // Save the updated diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved successfully to: " + outputPath);
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("An error occurred: " + ex.Message);
-                throw;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
+    }
+
+        // Placeholder translation method – replace with actual service call as needed
+        static string Translate(string text)
+        {
+            // Simulate translation by appending a suffix
+            return text + " (translated)";
         }
     }

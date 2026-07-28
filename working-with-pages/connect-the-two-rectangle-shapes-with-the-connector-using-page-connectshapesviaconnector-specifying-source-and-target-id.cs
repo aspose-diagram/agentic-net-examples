@@ -9,21 +9,24 @@ class Program
             try
             {
 
-                // Create a new empty diagram (contains a default page)
+                // Create a new empty diagram. It contains a default page (index 0).
                 using (Diagram diagram = new Diagram())
                 {
-                    // Get the first (default) page
+                    // Reference the first (default) page.
                     Page page = diagram.Pages[0];
 
-                    // Add two rectangle shapes and capture their IDs (type long)
-                    long rect1Id = page.AddShape(2.0, 2.0, "Rectangle");
-                    long rect2Id = page.AddShape(5.0, 5.0, "Rectangle");
+                    // Add two rectangle shapes to the page.
+                    // Parameters: pinX, pinY, master name, page index.
+                    long rect1Id = diagram.AddShape(2.0, 5.0, "Rectangle", 0);
+                    long rect2Id = diagram.AddShape(6.0, 5.0, "Rectangle", 0);
 
-                    // Add a dynamic connector shape and capture its ID
-                    long connectorId = page.AddShape(3.5, 3.5, "Dynamic connector");
+                    // Add a dynamic connector shape.
+                    // Create an empty Shape instance and add it using the connector master.
+                    Shape connectorShape = new Shape();
+                    long connectorId = diagram.AddShape(connectorShape, "Dynamic connector", 0);
 
-                    // Connect the first rectangle to the second rectangle using the connector
-                    // Use Bottom of the source shape and Top of the target shape as connection points
+                    // Connect the first rectangle to the second rectangle using the connector.
+                    // Use ConnectionPointPlace.Bottom for the source and ConnectionPointPlace.Top for the target.
                     page.ConnectShapesViaConnector(
                         rect1Id,
                         ConnectionPointPlace.Bottom,
@@ -31,14 +34,11 @@ class Program
                         ConnectionPointPlace.Top,
                         connectorId);
 
-                    // Optional: set connector routing style (e.g., right‑angle)
-                    // Retrieve the connector shape to modify its layout
-                    Shape connectorShape = page.Shapes.GetShape(connectorId);
-                    connectorShape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-
-                    // Save the diagram to a VSDX file
+                    // Save the diagram to a VSDX file.
                     diagram.Save("ConnectedDiagram.vsdx", SaveFileFormat.Vsdx);
                 }
+
+                Console.WriteLine("Diagram created and saved successfully.");
 
             }
             catch (Aspose.Diagram.DiagramException ex)

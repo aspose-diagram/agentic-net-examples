@@ -13,30 +13,30 @@ class ExportPageAsHighResPng
             // Path to the source Visio diagram
             string sourcePath = "input.vsdx";
 
+            // Path for the exported PNG image
+            string outputPath = "page_2_highres.png";
+
+            // Index of the page to export (0‑based). For example, export page 2.
+            int pageIndex = 1;
+
             // Load the diagram
             Diagram diagram = new Diagram(sourcePath);
-
-            // Index of the page to export (0‑based). Change as needed.
-            int pageIndexToExport = 2; // example: export the third page
 
             // Configure image save options for PNG with custom DPI
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
             {
-                // Set the desired resolution (dots per inch). 300 DPI is typical for high‑resolution output.
-                Resolution = 300f,
+                // Set desired resolution (dots per inch)
+                Resolution = 300f,          // Horizontal and vertical DPI
 
                 // Export only the selected page
-                PageIndex = pageIndexToExport,
-                PageCount = 1,
+                PageIndex = pageIndex,      // First page to render (0‑based)
+                PageCount = 1,              // Number of pages to render
 
-                // Optional: ensure hidden pages are not exported (set to false if you only want visible pages)
-                ExportHiddenPage = false
+                // Optional: keep original page size without enlargement
+                EnlargePage = false
             };
 
-            // Output file path
-            string outputPath = $"Page_{pageIndexToExport + 1}_HighRes.png";
-
-            // Save the selected page as a high‑resolution PNG image
+            // Save the selected page as a high‑resolution PNG
             diagram.Save(outputPath, saveOptions);
 
         }

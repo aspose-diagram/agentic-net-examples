@@ -1,95 +1,49 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";   // TODO: replace with actual file path
-                Diagram diagram = new Diagram(inputPath);
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Ensure there are at least two pages; add a new page if necessary
-                Page sourcePage = diagram.Pages[0];
-                Page targetPage;
-                if (diagram.Pages.Count > 1)
-                {
-                    targetPage = diagram.Pages[1];
-                }
-                else
-                {
-                    // Add a blank page and use it as the target
-                    targetPage = new Page();
-                    diagram.Pages.Add(targetPage);
-                }
+            // Indices of the source page (where the original shape resides) 
+            // and the target page (where the copy will be placed)
+            int sourcePageIndex = 0;
+            int targetPageIndex = 1;
 
-                // Retrieve the first shape on the source page to duplicate
-                Shape originalShape = null;
-                foreach (Shape shp in sourcePage.Shapes)
-                {
-                    originalShape = shp;
-                    break;
-                }
+            // ID of the shape to duplicate on the source page
+            long shapeIdToCopy = 1; // replace with the actual shape ID
 
-                if (originalShape == null)
-                {
-                    Console.WriteLine("No shape found on the source page to duplicate.");
-                    return;
-                }
+            // Retrieve the source page and the shape to be copied
+            Page sourcePage = diagram.Pages[sourcePageIndex];
+            Shape sourceShape = sourcePage.Shapes.GetShape(shapeIdToCopy);
 
-                // Get master name (shape type) – required for creating a new shape of the same type
-                string masterName = originalShape.Master != null ? originalShape.Master.Name : string.Empty;
-                if (string.IsNullOrEmpty(masterName))
-                {
-                    Console.WriteLine("The original shape does not have an associated master. Duplication aborted.");
-                    return;
-                }
+            // Create a new Shape instance and copy all properties from the source shape
+            Shape copiedShape = new Shape();
+            copiedShape.Copy(sourceShape);
 
-                // Get original position (PinX, PinY)
-                double origPinX = originalShape.XForm.PinX.Value;
-                double origPinY = originalShape.XForm.PinY.Value;
+            // Determine the master name of the source shape (required by AddShape)
+            string masterName = sourceShape.MasterShape?.Name ?? string.Empty;
 
-                // Add a new shape on the target page using the same master.
-                // Offset the position slightly so the copy does not overlap the original.
-                double newPinX = origPinX + 2.0; // 2 inches to the right
-                double newPinY = origPinY + 2.0; // 2 inches up
+            // Add the copied shape to the target page; AddShape returns a new unique ID
+            long newShapeId = diagram.AddShape(copiedShape, masterName, targetPageIndex);
 
-                long newShapeId = targetPage.AddShape(newPinX, newPinY, masterName);
-                Shape newShape = targetPage.Shapes.GetShape(newShapeId);
+            // Optional: bring the new shape to the front of the Z‑order on the target page
+            diagram.Pages[targetPageIndex].BringToFront(newShapeId);
 
-                // Copy the text content from the original shape to the new shape
-                newShape.Text.Value.Clear();
-                foreach (var item in originalShape.Text.Value)
-                {
-                    if (item is Txt txt)
-                    {
-                        newShape.Text.Value.Add(new Txt(txt.Text));
-                    }
-                }
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-                // Optionally, copy other visual properties (fill, line, etc.) as needed.
-                // Example: copy fill foreground color
-                newShape.Fill.FillForegnd.Value = originalShape.Fill.FillForegnd.Value;
-                // Example: copy line color
-                newShape.Line.LineColor.Value = originalShape.Line.LineColor.Value;
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx"; // TODO: replace with desired output path
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Clean up
-                diagram.Dispose();
-
-                Console.WriteLine($"Shape duplicated. New shape ID: {newShapeId}");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

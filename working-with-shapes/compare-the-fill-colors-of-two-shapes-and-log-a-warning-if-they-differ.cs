@@ -3,7 +3,7 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
@@ -11,29 +11,30 @@ class Program
                 // Load the Visio diagram (replace with your actual file path)
                 Diagram diagram = new Diagram("input.vsdx");
 
-                // Assume we are working with the first page
+                // Access the first page (adjust index if needed)
                 Page page = diagram.Pages[0];
 
-                // IDs of the two shapes to compare (replace with actual IDs)
-                long shapeId1 = 1;
-                long shapeId2 = 2;
+                // Retrieve two shapes by their IDs (replace with actual IDs)
+                long shapeId1 = 1; // Example ID for the first shape
+                long shapeId2 = 2; // Example ID for the second shape
 
-                // Retrieve the shapes by their IDs
                 Shape shape1 = page.Shapes.GetShape(shapeId1);
                 Shape shape2 = page.Shapes.GetShape(shapeId2);
 
-                // Get the foreground fill colors (hex string, e.g., "#FF0000")
+                // Get the fill foreground colors (hex strings, e.g., "#FF0000")
                 string fillColor1 = shape1.Fill.FillForegnd.Value;
                 string fillColor2 = shape2.Fill.FillForegnd.Value;
 
                 // Compare the colors and log a warning if they differ
                 if (!string.Equals(fillColor1, fillColor2, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine($"Warning: Fill colors differ. Shape {shapeId1} has {fillColor1}, Shape {shapeId2} has {fillColor2}.");
+                    Console.WriteLine($"Warning: Fill colors differ between shapes.");
+                    Console.WriteLine($"Shape ID {shape1.ID} Fill: {fillColor1}");
+                    Console.WriteLine($"Shape ID {shape2.ID} Fill: {fillColor2}");
                 }
                 else
                 {
-                    Console.WriteLine($"Info: Fill colors are identical ({fillColor1}).");
+                    Console.WriteLine("Fill colors are identical.");
                 }
 
             }

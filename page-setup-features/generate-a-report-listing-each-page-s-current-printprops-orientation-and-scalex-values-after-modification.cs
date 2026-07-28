@@ -1,45 +1,46 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram inside a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the source Visio file (replace with actual file path)
-                const string inputPath = "input.vsdx";
-
-                // Path to the output Visio file after modifications (replace with desired file path)
-                const string outputPath = "output.vsdx";
-
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate over each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over each page in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Modify the print orientation to Landscape
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    // Access the PrintProps of the current page
+                    PrintProps printProps = page.PageSheet.PrintProps;
 
-                        // Set the horizontal scaling factor (ScaleX) to 0.75 (75%)
-                        page.PageSheet.PrintProps.ScaleX.Value = 0.75;
+                    // Modify orientation to Landscape
+                    printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                        // Report the current orientation and ScaleX after modification
-                        Console.WriteLine($"Page ID {page.ID}: Orientation = {page.PageSheet.PrintProps.PrintPageOrientation.Value}, ScaleX = {page.PageSheet.PrintProps.ScaleX.Value}");
-                    }
+                    // Set horizontal scaling factor (ScaleX) to 75%
+                    printProps.ScaleX.Value = 0.75;
 
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Output the current settings after modification
+                    Console.WriteLine($"Page ID {page.ID}: Orientation = {printProps.PrintPageOrientation.Value}, ScaleX = {printProps.ScaleX.Value}");
                 }
 
-                Console.WriteLine("Processing completed.");
+                // Save the modified diagram to a new file
+                diagram.Save("output_modified.vsdx", SaveFileFormat.Vsdx);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

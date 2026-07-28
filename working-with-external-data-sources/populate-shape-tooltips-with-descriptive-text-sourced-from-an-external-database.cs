@@ -5,61 +5,52 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
+                // Paths – adjust as needed
+                string diagramPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Database connection string – adjust to your environment
+                string connectionString = "Data Source=YOUR_SERVER;Initial Catalog=YOUR_DATABASE;Integrated Security=True";
+
                 // Load the Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Retrieve tooltip data from an external SQL database
-                // Expected table schema: ShapeId (bigint) , Tooltip (nvarchar)
-                string connectionString = "Data Source=YOUR_SERVER;Initial Catalog=YOUR_DATABASE;Integrated Security=True;";
-                var tooltipMap = new Dictionary<long, string>();
+                // Retrieve tooltip data from the database
+                Dictionary<long, string> tooltipMap = LoadTooltipsFromDatabase(connectionString);
 
-                using (SqlConnection connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
-                    using (SqlCommand command = new SqlCommand("SELECT ShapeId, Tooltip FROM ShapeTooltips", connection))
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            long shapeId = reader.GetInt64(0);
-                            string tip = reader.GetString(1);
-                            tooltipMap[shapeId] = tip;
-                        }
-                    }
-                }
-
-                // Iterate through all pages and shapes, assigning tooltips via hyperlink description
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Check if we have a tooltip for this shape (using its ID)
                         if (tooltipMap.TryGetValue(shape.ID, out string tooltip))
                         {
-                            // Ensure there is at least one hyperlink; create if none exist
-                            Hyperlink link;
-                            if (shape.Hyperlinks.Count > 0)
-                            {
-                                link = shape.Hyperlinks[0];
-                            }
-                            else
-                            {
-                                link = new Hyperlink();
-                                shape.Hyperlinks.Add(link);
-                            }
+                            // Ensure the Hyperlinks collection exists
+                            if (shape.Hyperlinks == null)
+                                continue; // Should not happen, but safety check
 
-                            // Set the tooltip text (description) for the hyperlink
-                            link.Description.Value = tooltip;
+                            // Create a new hyperlink with empty address and set the description as tooltip
+                            Hyperlink link = new Hyperlink();
+                            link.Address.Value = "";               // No navigation address
+                            link.Description.Value = tooltip;      // Tooltip text
+
+                            shape.Hyperlinks.Add(link);
                         }
                     }
                 }
 
                 // Save the updated diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -67,4 +58,32 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
+
+        /// <summary>
+        /// Loads shape tooltip information from a database table.
+        /// Expected table schema: ShapeTooltips(ShapeId BIGINT PRIMARY KEY, Tooltip NVARCHAR(MAX))
+        /// </summary>
+        static Dictionary<long, string> LoadTooltipsFromDatabase(string connString)
+        {
+            var map = new Dictionary<long, string>();
+
+            using (SqlConnection conn = new SqlConnection(connString))
+            {
+                conn.Open();
+                string query = "SELECT ShapeId, Tooltip FROM ShapeTooltips";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        long shapeId = reader.GetInt64(0);
+                        string tooltip = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                        map[shapeId] = tooltip;
+                    }
+                }
+            }
+
+            return map;
+        }
     }

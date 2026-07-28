@@ -1,66 +1,58 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = "output_merged.vsdx";
-
-        try
-        {
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that have no geometry or only one geometry section
-                    if (shape.Geoms == null || shape.Geoms.Count <= 1)
-                        continue;
-
-                    // Create a new geometry that will hold all coordinate segments
-                    Geom mergedGeom = new Geom();
-
-                    // Copy all coordinate segments from each existing geometry
-                    foreach (Geom geom in shape.Geoms)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Each geometry has a collection of coordinate objects (MoveTo, LineTo, etc.)
-                        foreach (var coord in geom.CoordinateCol)
+                        // Skip shapes that have no geometry sections
+                        if (shape.Geoms == null || shape.Geoms.Count <= 1)
+                            continue;
+
+                        // Keep the first geometry as the target
+                        Geom targetGeom = shape.Geoms[0];
+
+                        // Merge geometry from subsequent Geom objects into the target
+                        for (int i = 1; i < shape.Geoms.Count; i++)
                         {
-                            // Add the existing coordinate object to the merged geometry
-                            mergedGeom.CoordinateCol.Add((Coordinate)coord);
+                            Geom sourceGeom = shape.Geoms[i];
+
+                            // Append each coordinate segment from the source geometry to the target geometry
+                            foreach (var segment in sourceGeom.CoordinateCol)
+                            {
+                                // Add the segment to the target geometry's coordinate collection
+                                targetGeom.CoordinateCol.Add(segment);
+                            }
+
+                            // Mark the source geometry as deleted
+                            sourceGeom.Del = BOOL.True;
                         }
                     }
-
-                    // Clear the original geometries collection
-                    shape.Geoms.Clear();
-
-                    // Add the merged geometry as the sole geometry for the shape
-                    shape.Geoms.Add(mergedGeom);
                 }
-            }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Geometry merging completed. Saved to: " + outputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine("Error: " + ex.Message);
-        }
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Geometry merge completed. Saved to: " + outputPath);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

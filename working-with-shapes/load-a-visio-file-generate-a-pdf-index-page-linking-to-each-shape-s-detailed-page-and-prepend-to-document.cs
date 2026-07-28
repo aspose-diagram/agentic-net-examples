@@ -7,117 +7,88 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
+        // Validate arguments: input Visio file and output PDF file
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: VisioIndexPdfGenerator <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard for input file existence
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Output PDF file path
-        string outputPath = "output.pdf";
-
         try
         {
-            // Load the existing Visio diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // -----------------------------------------------------------------
-            // 1. Create an index page and prepend it to the diagram
-            // -----------------------------------------------------------------
-            Page indexPage = new Page();
-            diagram.Pages.Add(indexPage);
-            // Move the newly added page to the first position (index 0)
-            indexPage.MoveTo(0);
-            indexPage.Name = "Index";
+            // ------------------------------------------------------------
+            // 1. Create an index page and insert it at the beginning
+            // ------------------------------------------------------------
+            Page indexPage = new Page();                     // new blank page
+            diagram.Pages.Add(indexPage);                     // add to collection
+            indexPage.MoveTo(0);                              // move to first position
+            indexPage.Name = "Index";                         // optional name
             indexPage.NameU = "Index";
 
-            // Variables to position index entries vertically
-            double startX = 1.0;   // inches from left
-            double startY = 10.0;  // start near top of page
-            double entryHeight = 0.5;
-            double entryWidth = 6.0;
-            double verticalSpacing = 0.6;
+            // ------------------------------------------------------------
+            // 2. Build the index content (list of shapes with hyperlinks)
+            // ------------------------------------------------------------
+            double startX = 1.0;      // inches from left margin
+            double startY = 1.0;      // inches from top margin
+            double lineHeight = 0.5;  // vertical spacing between entries
+            double boxWidth = 5.0;    // width of the text box
+            double boxHeight = 0.4;   // height of the text box
 
-            // Counter for index entries
-            int entryCount = 0;
+            double currentY = startY;
 
-            // -----------------------------------------------------------------
-            // 2. Iterate through existing pages and shapes to create detail pages
-            // -----------------------------------------------------------------
-            // Note: We start from page index 1 because index page is at position 0
-            for (int pageIdx = 1; pageIdx < diagram.Pages.Count; pageIdx++)
+            // Iterate over all pages (skip the index page itself)
+            foreach (Page page in diagram.Pages)
             {
-                Page sourcePage = diagram.Pages[pageIdx];
+                if (page == indexPage) continue; // do not list the index page
 
-                foreach (Shape sourceShape in sourcePage.Shapes)
+                // Iterate over each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (sourceShape.Del == BOOL.True)
-                        continue;
+                    // Build display text: "PageName - ShapeNameU"
+                    string displayText = $"{page.NameU} - {shape.NameU}";
 
-                    // Ensure the shape has a master (required for recreation)
-                    if (sourceShape.Master == null)
-                        continue;
+                    // Add a rectangle shape on the index page to hold the entry
+                    long idxShapeId = indexPage.AddShape(startX, currentY, boxWidth, boxHeight, "Rectangle", false);
+                    Shape idxShape = indexPage.Shapes.GetShape(idxShapeId);
 
-                    // ---------------------------------------------------------
-                    // Create a detail page for the current shape
-                    // ---------------------------------------------------------
-                    Page detailPage = new Page();
-                    diagram.Pages.Add(detailPage);
-                    // Give the detail page a unique name
-                    string detailPageName = $"Shape_{sourceShape.ID}_Page";
-                    detailPage.Name = detailPageName;
-                    detailPage.NameU = detailPageName;
+                    // Clear any default text and add our display text
+                    idxShape.Text.Value.Clear();
+                    idxShape.Text.Value.Add(new Txt(displayText));
 
-                    // Retrieve geometry from the source shape
-                    double pinX = sourceShape.XForm.PinX.Value;
-                    double pinY = sourceShape.XForm.PinY.Value;
-                    double width = sourceShape.XForm.Width.Value;
-                    double height = sourceShape.XForm.Height.Value;
-
-                    // Add the shape to the detail page using its master name
-                    long newShapeId = detailPage.AddShape(pinX, pinY, width, height,
-                                                          sourceShape.Master.Name, false);
-                    // Retrieve the newly added shape to copy text
-                    Shape newShape = detailPage.Shapes.GetShape((int)newShapeId);
-                    if (newShape != null)
-                    {
-                        // Copy plain text from source shape to the new shape
-                        string plainText = sourceShape.Text.Value.Text;
-                        newShape.Text.Value.Clear();
-                        newShape.Text.Value.Add(new Txt(plainText));
-                    }
-
-                    // ---------------------------------------------------------
-                    // Add an entry on the index page linking to this detail page
-                    // ---------------------------------------------------------
-                    double entryY = startY - entryCount * verticalSpacing;
-                    Shape indexEntry = indexPage.AddText(startX, entryY, entryWidth, entryHeight,
-                                                         $"Shape ID {sourceShape.ID}");
-                    // Create a hyperlink that points to the detail page (internal link)
+                    // Create a hyperlink that navigates to the target page
                     Hyperlink link = new Hyperlink();
-                    link.Address.Value = "";                     // No external address
-                    link.SubAddress.Value = detailPageName;      // Internal page reference
-                    link.Description.Value = $"Go to page for shape {sourceShape.ID}";
-                    indexEntry.Hyperlinks.Add(link);
+                    // SubAddress points to the page name; Visio treats this as an internal link
+                    link.SubAddress.Value = page.NameU;
+                    idxShape.Hyperlinks.Add(link);
 
-                    entryCount++;
+                    // Move to the next line position
+                    currentY += lineHeight;
                 }
             }
 
-            // -----------------------------------------------------------------
-            // 3. Save the modified diagram as a PDF with the index page first
-            // -----------------------------------------------------------------
+            // ------------------------------------------------------------
+            // 3. Save the updated diagram as a PDF
+            // ------------------------------------------------------------
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
+            pdfOptions.DefaultFont = "Arial"; // fallback font
             diagram.Save(outputPath, pdfOptions);
         }
         catch (Exception ex)
         {
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

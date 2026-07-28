@@ -1,73 +1,59 @@
 using System;
 using System.IO;
-using System.Text;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        // Folder containing diagram files (change as needed)
-        string inputFolder = Directory.GetCurrentDirectory();
-
-        // Output CSV file path
-        string outputCsvPath = Path.Combine(inputFolder, "DiagramSummary.csv");
-
-        // Prepare a list to hold CSV rows
-        List<string> csvLines = new List<string>();
-        // Header row
-        csvLines.Add("FileName,HeaderMargin,FooterMargin,FooterFontSize");
-
-        // Get all Visio diagram files in the folder (common extensions)
-        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in diagramFiles)
+        static void Main()
         {
-            // Filter by known Visio extensions (case‑insensitive)
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
-            if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx" && extension != ".vssx" && extension != ".vss" && extension != ".vstx" && extension != ".vst")
+            // Folder containing diagram files (adjust as needed)
+            string diagramsFolder = @"C:\Diagrams";
+
+            // Output CSV file path
+            string csvOutputPath = Path.Combine(diagramsFolder, "summary.csv");
+
+            // Prepare CSV writer
+            using (var writer = new StreamWriter(csvOutputPath, false))
             {
-                continue;
+                // Write CSV header
+                writer.WriteLine("FileName,HeaderMargin,FooterMargin,FooterFontSize");
+
+                // Get all files in the folder
+                string[] allFiles = Directory.GetFiles(diagramsFolder);
+
+                foreach (string filePath in allFiles)
+                {
+                    // Process only supported Visio file extensions
+                    string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                    if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx" && ext != ".vsdm" && ext != ".vssx")
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Load the diagram
+                        Diagram diagram = new Diagram(filePath);
+
+                        // Retrieve header and footer margins (in inches)
+                        double headerMargin = diagram.HeaderFooter.HeaderMargin.Value;
+                        double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
+
+                        // Retrieve footer font size (point size stored as integer)
+                        int footerFontSize = diagram.HeaderFooter.HeaderFooterFont.Height;
+
+                        // Write a line to the CSV
+                        string line = $"{Path.GetFileName(filePath)},{headerMargin},{footerMargin},{footerFontSize}";
+                        writer.WriteLine(line);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log any errors to console and continue processing other files
+                        Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                    }
+                }
             }
 
-            // Guard for file existence
-            if (!File.Exists(filePath))
-            {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                continue;
-            }
-
-            try
-            {
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Retrieve header and footer margins (in inches)
-                double headerMargin = diagram.HeaderFooter.HeaderMargin.Value;
-                double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
-
-                // Retrieve footer font size (height property represents size)
-                int footerFontSize = diagram.HeaderFooter.HeaderFooterFont.Height;
-
-                // Build CSV line
-                string fileName = Path.GetFileName(filePath);
-                string line = $"{fileName},{headerMargin},{footerMargin},{footerFontSize}";
-                csvLines.Add(line);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
-            }
+            Console.WriteLine($"Summary CSV generated at: {csvOutputPath}");
         }
-
-        // Write all lines to the CSV file
-        StringBuilder sb = new StringBuilder();
-        foreach (string line in csvLines)
-        {
-            sb.AppendLine(line);
-        }
-        File.WriteAllText(outputCsvPath, sb.ToString());
-
-        Console.WriteLine($"Summary CSV generated at: {outputCsvPath}");
     }
-}

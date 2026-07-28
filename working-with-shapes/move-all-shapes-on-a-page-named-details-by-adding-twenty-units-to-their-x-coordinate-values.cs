@@ -9,7 +9,7 @@ class Program
         try
         {
 
-            // Load the Visio diagram
+            // Load the Visio document
             Diagram diagram = new Diagram("input.vsdx");
 
             // Locate the page named "Details"
@@ -23,7 +23,7 @@ class Program
                 }
             }
 
-            // If the page exists, shift all its shapes 20 units right (X axis)
+            // If the page exists, shift all its shapes 20 units right on the X axis
             if (detailsPage != null)
             {
                 foreach (Shape shape in detailsPage.Shapes)
@@ -32,7 +32,7 @@ class Program
                 }
             }
 
-            // Save the updated diagram
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

@@ -14,33 +14,45 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Query all SolutionXML entries that have a specific name (e.g., "ShapeMetadata")
-            var solutionXmlQuery = diagram.SolutionXMLs
-                .Cast<SolutionXML>()                                   // Convert non‑generic collection to IEnumerable<SolutionXML>
-                .Where(sxml => sxml.Name == "ShapeMetadata")           // Filter by the desired XML set name
-                .Select(sxml => new
-                {
-                    Name = sxml.Name,
-                    XmlDoc = XDocument.Parse(sxml.XmlValue)           // Parse the XML string into an XDocument for LINQ‑to‑XML queries
-                });
-
-            foreach (var entry in solutionXmlQuery)
+            // Access a specific SolutionXML by its name (replace with your actual name)
+            SolutionXML solutionXml = diagram.SolutionXMLs["MyCustomData"];
+            if (solutionXml == null)
             {
-                // Example: find all <ShapeInfo> elements and read their "type" attribute
-                var shapeInfos = entry.XmlDoc
-                    .Descendants()
-                    .Where(e => e.Name.LocalName == "ShapeInfo");
-
-                foreach (var shapeInfo in shapeInfos)
-                {
-                    string shapeId = shapeInfo.Attribute("id")?.Value;
-                    string shapeType = shapeInfo.Attribute("type")?.Value;
-
-                    Console.WriteLine($"Shape ID: {shapeId}, Type: {shapeType}");
-                }
+                Console.WriteLine("Specified SolutionXML not found.");
+                return;
             }
 
-            // Save the diagram (if any modifications were made)
+            // Parse the XML stored in the SolutionXML into an XDocument for LINQ querying
+            XDocument xmlDoc = XDocument.Parse(solutionXml.XmlValue);
+
+            // Query all Shape elements and retrieve selected attributes (ID, Name, Data1)
+            var shapeAttributes = xmlDoc.Descendants()
+                                        .Where(e => e.Name.LocalName == "Shape")
+                                        .Select(e => new
+                                        {
+                                            Id = (string)e.Attribute("ID"),
+                                            Name = (string)e.Attribute("Name"),
+                                            Data1 = (string)e.Attribute("Data1")
+                                        })
+                                        .ToList();
+
+            // Output the queried attributes
+            foreach (var shape in shapeAttributes)
+            {
+                Console.WriteLine($"ID: {shape.Id}, Name: {shape.Name}, Data1: {shape.Data1}");
+            }
+
+            // Example modification: update Data1 of the first Shape element
+            XElement firstShape = xmlDoc.Descendants()
+                                        .FirstOrDefault(e => e.Name.LocalName == "Shape");
+            if (firstShape != null)
+            {
+                firstShape.SetAttributeValue("Data1", "UpdatedValue");
+                // Write the modified XML back to the SolutionXML collection
+                solutionXml.XmlValue = xmlDoc.ToString();
+            }
+
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

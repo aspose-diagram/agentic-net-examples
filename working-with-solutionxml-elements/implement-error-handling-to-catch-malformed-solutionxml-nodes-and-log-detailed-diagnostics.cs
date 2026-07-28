@@ -1,83 +1,55 @@
-using System;
 using System.IO;
-using System.Xml;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using System.Xml.Linq;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            // Determine input and output file paths
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-            // Load the diagram with error handling
-            Diagram diagram;
-            try
+            // Path to the Visio file (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all SolutionXML elements and validate their XML content
+            foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
             {
-                if (!File.Exists(inputPath))
-                {
-                    Console.WriteLine($"Error: Input file '{inputPath}' does not exist.");
-                    return;
-                }
-
-                diagram = new Diagram(inputPath);
-                Console.WriteLine($"Diagram loaded successfully from '{inputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
-
-            // Process each SolutionXML element
-            ProcessSolutionXml(diagram);
-
-            // Save the diagram (optional, demonstrates a valid Save overload)
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
-            }
-        }
-
-        private static void ProcessSolutionXml(Diagram diagram)
-        {
-            if (diagram.SolutionXMLs == null || diagram.SolutionXMLs.Count == 0)
-            {
-                Console.WriteLine("No SolutionXML elements found in the diagram.");
-                return;
-            }
-
-            foreach (SolutionXML solXml in diagram.SolutionXMLs)
-            {
-                Console.WriteLine($"--- Processing SolutionXML: Name = '{solXml.Name}' ---");
-                if (string.IsNullOrWhiteSpace(solXml.XmlValue))
-                {
-                    Console.WriteLine("Warning: XmlValue is empty or whitespace.");
-                    continue;
-                }
-
+                Console.WriteLine($"Processing SolutionXML: Name = '{solutionXml.Name}'");
                 try
                 {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.LoadXml(solXml.XmlValue);
-                    Console.WriteLine("XML is well-formed.");
-                }
-                catch (XmlException xmlEx)
-                {
-                    Console.WriteLine($"Malformed XML detected in SolutionXML '{solXml.Name}': {xmlEx.Message}");
-                    Console.WriteLine($"Location: Line {xmlEx.LineNumber}, Position {xmlEx.LinePosition}");
+                    // Attempt to parse the XML value
+                    XDocument.Parse(solutionXml.XmlValue);
+                    Console.WriteLine("  XML is well-formed.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Unexpected error while processing SolutionXML '{solXml.Name}': {ex.Message}");
+                    // Log detailed diagnostics for malformed XML
+                    Console.WriteLine("  ERROR: Malformed XML detected.");
+                    Console.WriteLine($"  Exception Type: {ex.GetType().FullName}");
+                    Console.WriteLine($"  Message: {ex.Message}");
+                    // If the exception provides line info, display it
+                    if (ex is System.Xml.XmlException xmlEx)
+                    {
+                        Console.WriteLine($"  Line Number: {xmlEx.LineNumber}, Position: {xmlEx.LinePosition}");
+                    }
                 }
             }
+
+            // Save the diagram (no modifications made, just demonstrating save lifecycle)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

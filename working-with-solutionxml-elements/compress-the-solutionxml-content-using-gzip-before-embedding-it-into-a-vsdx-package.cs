@@ -3,40 +3,54 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+class CompressSolutionXml
 {
     static void Main()
     {
-        // Create a new diagram (or load an existing one)
-        Diagram diagram = new Diagram();
-
-        // Example XML content to be stored
-        string originalXml = "<root><data>Example</data></root>";
-
-        // Compress the XML using GZip
-        byte[] compressedBytes;
-        using (MemoryStream ms = new MemoryStream())
+        try
         {
-            using (GZipStream gzip = new GZipStream(ms, CompressionMode.Compress, true))
+
+            // Paths to the source and destination VSDX files
+            string sourcePath = "input.vsdx";
+            string destinationPath = "output.vsdx";
+
+            // Load the existing diagram
+            Diagram diagram = new Diagram(sourcePath);
+
+            // Iterate through all SolutionXML objects in the diagram
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                byte[] xmlBytes = Encoding.UTF8.GetBytes(originalXml);
-                gzip.Write(xmlBytes, 0, xmlBytes.Length);
+                // Ensure there is XML content to compress
+                if (!string.IsNullOrEmpty(solXml.XmlValue))
+                {
+                    // Convert the XML string to UTF‑8 bytes
+                    byte[] originalBytes = Encoding.UTF8.GetBytes(solXml.XmlValue);
+
+                    // Compress the bytes using GZip
+                    using (MemoryStream compressedStream = new MemoryStream())
+                    {
+                        using (GZipStream gzip = new GZipStream(compressedStream, CompressionMode.Compress, true))
+                        {
+                            gzip.Write(originalBytes, 0, originalBytes.Length);
+                        }
+
+                        // Get the compressed byte array
+                        byte[] compressedBytes = compressedStream.ToArray();
+
+                        // Store the compressed data as a Base64 string back into XmlValue
+                        solXml.XmlValue = Convert.ToBase64String(compressedBytes);
+                    }
+                }
             }
-            compressedBytes = ms.ToArray();
+
+            // Save the modified diagram as a VSDX package
+            diagram.Save(destinationPath, SaveFileFormat.Vsdx);
+
         }
-
-        // Encode compressed data as Base64 string (SolutionXML expects a string)
-        string compressedBase64 = Convert.ToBase64String(compressedBytes);
-
-        // Create a SolutionXML object with the compressed data
-        SolutionXML solutionXml = new SolutionXML("CompressedData", compressedBase64);
-
-        // Add the SolutionXML to the diagram's collection
-        diagram.SolutionXMLs.Add(solutionXml);
-
-        // Save the diagram as a VSDX package
-        diagram.Save("CompressedSolution.vsdx", SaveFileFormat.Vsdx);
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

@@ -10,7 +10,7 @@ class Program
         {
 
             // Load an existing Visio diagram (replace with your file path)
-            var diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
@@ -18,12 +18,8 @@ class Program
                 // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Extract the shape's unique ID and its name
-                    long shapeId = shape.ID;
-                    string shapeName = shape.Name;
-
-                    // Output the ID and name
-                    Console.WriteLine($"Shape ID: {shapeId}, Name: {shapeName}");
+                    // Output the shape's unique ID and its name
+                    Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
                 }
             }
 

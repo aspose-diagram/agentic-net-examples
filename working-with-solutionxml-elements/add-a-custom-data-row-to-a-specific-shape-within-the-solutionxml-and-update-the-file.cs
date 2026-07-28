@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,39 +10,49 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram (SolutionXML)
-            Diagram diagram = new Diagram("SolutionXML.vsdx");
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Identify the target page (e.g., first page)
-            Page targetPage = diagram.Pages[0];
+            // Load the existing diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Locate the specific shape by its name (replace "MyShapeName" with the actual name)
-            Shape targetShape = null;
-            foreach (Shape shape in targetPage.Shapes)
+            // Name of the SolutionXML element we want to work with
+            string targetSolutionXmlName = "MyShapeData";
+
+            // Locate the SolutionXML by name; if it doesn't exist, create a new one
+            SolutionXML targetSolutionXml = null;
+            foreach (SolutionXML s in diagram.SolutionXMLs)
             {
-                if (shape.NameU == "MyShapeName")
+                if (s.Name == targetSolutionXmlName)
                 {
-                    targetShape = shape;
+                    targetSolutionXml = s;
                     break;
                 }
             }
 
-            if (targetShape == null)
+            if (targetSolutionXml == null)
             {
-                Console.WriteLine("Shape not found.");
-                return;
+                targetSolutionXml = new SolutionXML();
+                targetSolutionXml.Name = targetSolutionXmlName;
+                diagram.SolutionXMLs.Add(targetSolutionXml);
             }
 
-            // Add custom data to the shape.
-            // Visio provides three generic data fields: Data1, Data2, Data3.
-            // Here we use Data1 to store the custom value.
-            targetShape.Data1 = "CustomRowValue";
+            // Define the custom data row to add (example XML fragment)
+            string newDataRow = "<CustomData ShapeId=\"123\">SomeValue</CustomData>";
 
-            // Refresh the shape to ensure the changes are applied.
-            targetShape.RefreshData();
+            // Append the new row to the existing XmlValue
+            if (string.IsNullOrEmpty(targetSolutionXml.XmlValue))
+            {
+                targetSolutionXml.XmlValue = newDataRow;
+            }
+            else
+            {
+                targetSolutionXml.XmlValue += newDataRow;
+            }
 
-            // Save the updated diagram back to file.
-            diagram.Save("SolutionXML_Updated.vsdx", SaveFileFormat.Vsdx);
+            // Save the updated diagram back to a file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -11,33 +10,32 @@ class ThumbnailGenerator
         try
         {
 
-            // Assume solutionXml contains the diagram XML (VSDX) as a string.
-            string solutionXml = File.ReadAllText("diagram.xml"); // replace with actual source
+            // XML representation of the diagram (SolutionXML)
+            string solutionXml = @"<Diagram>...</Diagram>"; // TODO: replace with actual XML content
 
-            // Load the diagram from the XML string using a memory stream.
-            using (MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(solutionXml)))
+            // Load the diagram from the XML string using a memory stream
+            byte[] xmlBytes = System.Text.Encoding.UTF8.GetBytes(solutionXml);
+            using (MemoryStream xmlStream = new MemoryStream(xmlBytes))
             {
-                Diagram diagram = new Diagram(ms);
+                Diagram diagram = new Diagram(xmlStream);
 
-                // Configure image save options for a low‑resolution thumbnail.
-                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                {
-                    // Render only the first page (0‑based index).
-                    PageIndex = 0,
-                    // Set a low DPI to reduce size (e.g., 72 DPI).
-                    Resolution = 72,
-                    // Optionally scale down further if needed.
-                    Scale = 0.5f
-                };
+                // Configure image save options for a low‑resolution thumbnail
+                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                imgOptions.PageIndex = 0;          // render the first page (0‑based)
+                imgOptions.PageCount = 1;          // only one page
+                imgOptions.Resolution = 72;        // low DPI for thumbnail
 
-                // Save the rendered thumbnail to a file.
-                diagram.Save("thumbnail.png", imgOptions);
+                // Output thumbnail file path
+                string thumbnailPath = "thumbnail.png";
+
+                // Render and save the thumbnail image
+                diagram.Save(thumbnailPath, imgOptions);
             }
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

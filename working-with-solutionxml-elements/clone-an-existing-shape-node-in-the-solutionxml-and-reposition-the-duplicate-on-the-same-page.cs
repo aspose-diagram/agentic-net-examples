@@ -1,76 +1,44 @@
-using System;
 using System.IO;
-using System.Linq;
-using System.Xml.Linq;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+class CloneShapeExample
 {
     static void Main()
     {
         try
         {
 
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Assume we work with the first page
+            Page page = diagram.Pages[0];
 
-            // Locate the specific SolutionXML element by its Name
-            SolutionXML targetSolutionXml = null;
-            foreach (SolutionXML s in diagram.SolutionXMLs)
-            {
-                if (s.Name == "MySolutionXML")
-                {
-                    targetSolutionXml = s;
-                    break;
-                }
-            }
+            // Identify the shape to clone (e.g., shape with ID = 1)
+            // Adjust the ID as needed for your specific diagram
+            long sourceShapeId = 1;
+            Shape sourceShape = page.Shapes.GetShape(sourceShapeId);
 
-            if (targetSolutionXml == null)
-            {
-                Console.WriteLine("SolutionXML with the specified name was not found.");
-                return;
-            }
+            // Create a new shape on the same page using the same master as the source shape
+            // Position it initially at the same coordinates as the source shape
+            double pinX = sourceShape.XForm.PinX.Value;
+            double pinY = sourceShape.XForm.PinY.Value;
+            string masterName = sourceShape.Master.NameU;
 
-            // Parse the XML stored in the SolutionXML element
-            XDocument xmlDoc = XDocument.Parse(targetSolutionXml.XmlValue);
+            long newShapeId = page.AddShape(pinX, pinY, masterName);
+            Shape newShape = page.Shapes.GetShape(newShapeId);
 
-            // Find the first <Shape> node (adjust the query as needed for your XML structure)
-            XElement originalShapeNode = xmlDoc.Descendants("Shape").FirstOrDefault();
-            if (originalShapeNode == null)
-            {
-                Console.WriteLine("No <Shape> element found in the SolutionXML.");
-                return;
-            }
+            // Perform a deep copy of the source shape's properties into the new shape
+            newShape.Copy(sourceShape);
 
-            // Clone the shape node
-            XElement clonedShapeNode = new XElement(originalShapeNode);
+            // Reposition the cloned shape (e.g., offset by 2 inches right and 1 inch down)
+            double offsetX = 2.0; // inches
+            double offsetY = 1.0; // inches
+            newShape.MoveTo(pinX + offsetX, pinY + offsetY);
 
-            // Adjust the position attributes (PinX and PinY) of the cloned node
-            double originalPinX = double.Parse(originalShapeNode.Attribute("PinX")?.Value ?? "0");
-            double originalPinY = double.Parse(originalShapeNode.Attribute("PinY")?.Value ?? "0");
-
-            // Example offset: move the duplicate 1 inch to the right and 1 inch down
-            clonedShapeNode.SetAttributeValue("PinX", originalPinX + 1.0);
-            clonedShapeNode.SetAttributeValue("PinY", originalPinY + 1.0);
-
-            // Insert the cloned node after the original node in the XML hierarchy
-            originalShapeNode.AddAfterSelf(clonedShapeNode);
-
-            // Write the modified XML back to the SolutionXML element
-            targetSolutionXml.XmlValue = xmlDoc.ToString();
-
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Clean up
-            diagram.Dispose();
-
-            Console.WriteLine("Shape node cloned and repositioned successfully.");
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

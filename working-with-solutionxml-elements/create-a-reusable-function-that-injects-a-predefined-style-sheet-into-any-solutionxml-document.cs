@@ -1,55 +1,53 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-public static class DiagramExtensions
-{
-    /// <summary>
-    /// Injects a predefined style sheet into the SolutionXML collection of the specified diagram.
-    /// </summary>
-    /// <param name="diagram">The diagram whose SolutionXML collection will receive the style sheet.</param>
-    public static void InjectPredefinedStyleSheet(this Diagram diagram)
-    {
-        // Define the XML representation of the predefined style sheet.
-        // This XML should conform to the Visio ShapeSheet schema.
-        const string styleSheetXml =
-            @"<StyleSheet Name=""MyPredefinedStyle"" ID=""1"">
-                <Fill>
-                    <FillForegnd>#FF0000</FillForegnd>
-                    <FillPattern>1</FillPattern>
-                </Fill>
-                <Line>
-                    <LineWeight>0.5 pt</LineWeight>
-                    <LineColor>#0000FF</LineColor>
-                </Line>
-                <TextStyle>
-                    <Font>Arial</Font>
-                    <Size>10 pt</Size>
-                    <Color>#000000</Color>
-                </TextStyle>
-              </StyleSheet>";
-
-        // Create a new SolutionXML instance using the constructor that accepts name and XML value.
-        var solutionXml = new SolutionXML("PredefinedStyleSheet", styleSheetXml);
-
-        // Add the SolutionXML to the diagram's SolutionXMLs collection.
-        diagram.SolutionXMLs.Add(solutionXml);
-    }
-}
-
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            DiagramExtensions.InjectPredefinedStyleSheet(null);
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
 
-        }
-        catch (System.NullReferenceException ex)
+                // Example XML representing a predefined style sheet
+                string styleXml = "<StyleSheet><Name>CustomStyle</Name></StyleSheet>";
+
+                // Inject the style sheet and its XML representation into the diagram
+                InjectStyleSheet(diagram, "CustomStyleXML", styleXml);
+
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
+
+        /// <summary>
+        /// Injects a predefined style sheet into the diagram and stores its XML in a SolutionXML element.
+        /// </summary>
+        /// <param name="diagram">The Aspose.Diagram.Diagram instance to modify.</param>
+        /// <param name="solutionXmlName">The name identifier for the SolutionXML entry.</param>
+        /// <param name="xmlContent">The XML content representing the style sheet.</param>
+        static void InjectStyleSheet(Diagram diagram, string solutionXmlName, string xmlContent)
         {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            // Create a new StyleSheet and assign a name
+            StyleSheet styleSheet = new StyleSheet();
+            styleSheet.Name = "CustomStyle";
+
+            // Add the style sheet to the diagram's collection
+            diagram.StyleSheets.Add(styleSheet);
+
+            // Create a SolutionXML element containing the style sheet XML
+            SolutionXML solutionXml = new SolutionXML();
+            solutionXml.Name = solutionXmlName;
+            solutionXml.XmlValue = xmlContent;
+
+            // Add the SolutionXML element to the diagram
+            diagram.SolutionXMLs.Add(solutionXml);
         }
     }
-}

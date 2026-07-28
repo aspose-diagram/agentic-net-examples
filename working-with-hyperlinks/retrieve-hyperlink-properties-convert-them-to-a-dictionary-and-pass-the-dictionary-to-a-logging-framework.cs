@@ -2,18 +2,35 @@ using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-class Program
+namespace HyperlinkExtractor
+{
+    // Simple logger that writes dictionary contents to the console
+    public static class Logger
     {
-        static void Main()
+        public static void LogHyperlinks(Dictionary<string, string> hyperlinks)
+        {
+            Console.WriteLine("=== Hyperlink Information ===");
+            foreach (KeyValuePair<string, string> entry in hyperlinks)
+            {
+                Console.WriteLine($"{entry.Key}: {entry.Value}");
+            }
+            Console.WriteLine("=== End of Hyperlink Information ===");
+        }
+    }
+
+    public class Program
+    {
+        public static void Main()
         {
             try
             {
 
-                // Path to the Visio file
-                string filePath = "input.vsdx";
+                // Load the Visio diagram (replace with your actual file path)
+                string diagramPath = "input.vsdx";
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
+                // Dictionary to hold hyperlink data
+                Dictionary<string, string> hyperlinkData = new Dictionary<string, string>();
 
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
@@ -23,27 +40,30 @@ class Program
                         // Ensure the shape has a Hyperlinks collection
                         if (shape.Hyperlinks != null)
                         {
-                            // Iterate each hyperlink in the shape
+                            int linkIndex = 0;
                             foreach (Hyperlink link in shape.Hyperlinks)
                             {
-                                // Create a dictionary with hyperlink properties
-                                var hyperlinkData = new Dictionary<string, string>
-                                {
-                                    { "Address", link.Address?.Value },
-                                    { "SubAddress", link.SubAddress?.Value },
-                                    { "Description", link.Description?.Value }
-                                };
+                                // Build a unique key for each hyperlink
+                                string key = $"Page{page.ID}_Shape{shape.ID}_Link{linkIndex}";
 
-                                // Log the dictionary (using Console as a simple logger)
-                                Console.WriteLine($"Shape ID: {shape.ID}");
-                                foreach (KeyValuePair<string, string> kvp in hyperlinkData)
-                                {
-                                    Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
-                                }
+                                // Retrieve hyperlink properties using .Value
+                                string address = link.Address?.Value ?? string.Empty;
+                                string subAddress = link.SubAddress?.Value ?? string.Empty;
+                                string description = link.Description?.Value ?? string.Empty;
+                                string name = link.Name ?? string.Empty;
+
+                                // Combine properties into a readable string
+                                string value = $"Name={name}; Address={address}; SubAddress={subAddress}; Description={description}";
+
+                                hyperlinkData[key] = value;
+                                linkIndex++;
                             }
                         }
                     }
                 }
+
+                // Pass the dictionary to the logging framework
+                Logger.LogHyperlinks(hyperlinkData);
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -52,3 +72,4 @@ class Program
             }
     }
     }
+}

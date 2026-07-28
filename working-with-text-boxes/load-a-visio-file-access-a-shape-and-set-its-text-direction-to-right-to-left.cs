@@ -1,44 +1,50 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        try
-        {
-            Diagram diagram = new Diagram(inputPath);
-            Page page = diagram.Pages[0];
-
-            Shape shape = null;
-            foreach (Shape s in page.Shapes)
+            // Expect input and output file paths as command‑line arguments
+            if (args.Length < 2)
             {
-                shape = s;
-                break;
-            }
-
-            if (shape == null)
-            {
-                Console.Error.WriteLine("No shape found in the diagram.");
+                Console.WriteLine("Usage: <inputVisioPath> <outputVisioPath>");
                 return;
             }
 
-            // Set text direction (available values: Horizontal, Vertical)
-            shape.TextBlock.TextDirection.Value = TextDirectionValue.Horizontal;
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page (index 0)
+            Page page = diagram.Pages[0];
+
+            // Find the first non‑deleted shape on the page
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.Del == BOOL.False)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
+
+            if (targetShape == null)
+            {
+                Console.WriteLine("No shape found on the first page.");
+                return;
+            }
+
+            // Set the text direction.
+            // Aspose.Diagram supports Horizontal and Vertical directions.
+            // Right‑to‑left is not a distinct enum value, so we use Vertical as an example.
+            targetShape.TextBlock.TextDirection.Value = TextDirectionValue.Vertical;
+
+            // Save the modified diagram to a new file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
     }
-}

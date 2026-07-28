@@ -1,60 +1,59 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Paths for input and output diagrams
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create a custom stylesheet for title shapes
+            StyleSheet titleStyle = new StyleSheet();
+            titleStyle.ID = diagram.StyleSheets.Count + 1;
+            titleStyle.Name = "TitleStyle";
+
+            // Define character formatting: font name and size (12 pt -> inches)
+            Aspose.Diagram.Char titleChar = new Aspose.Diagram.Char();
+            titleChar.IX = 0; // first character run
+            titleChar.FontName.Value = "Arial";
+            titleChar.Size.Value = 12.0 / 72.0; // convert points to inches
+            titleChar.Color.Value = "#000000"; // black text
+
+            // Add the character formatting to the stylesheet
+            titleStyle.Chars.Add(titleChar);
+
+            // Add the stylesheet to the diagram's collection
+            diagram.StyleSheets.Add(titleStyle);
+
+            // Apply the stylesheet to all shapes whose universal name contains "Title"
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load the Visio diagram from a file.
-                // Replace "input.vsdx" with the actual path to your diagram.
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Create a new stylesheet that will be applied to title shapes.
-                StyleSheet titleStyle = new StyleSheet();
-                // Assign a unique ID for the stylesheet.
-                titleStyle.ID = diagram.StyleSheets.Count + 1;
-                // Optional: give the stylesheet a name for identification.
-                titleStyle.Name = "TitleStyle";
-
-                // Define character formatting: font name and size.
-                Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
-                charFormat.IX = 0; // Index of the character run.
-                charFormat.FontName.Value = "Arial";               // Desired font.
-                charFormat.Size.Value = 12.0 / 72.0;               // Font size in inches (12 points).
-
-                // Add the character formatting to the stylesheet.
-                titleStyle.Chars.Add(charFormat);
-
-                // Add the stylesheet to the diagram's collection.
-                diagram.StyleSheets.Add(titleStyle);
-
-                // Iterate through all pages and shapes to find title shapes.
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    if (!string.IsNullOrEmpty(shape.NameU) &&
+                        shape.NameU.IndexOf("Title", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        // Identify title shapes by their universal name (NameU).
-                        // Adjust the condition if your titles are identified differently.
-                        if (shape.NameU != null && shape.NameU.Equals("Title", StringComparison.OrdinalIgnoreCase))
-                        {
-                            // Apply the custom stylesheet to the shape's text.
-                            shape.TextStyle = titleStyle;
-                        }
+                        shape.TextStyle = titleStyle;
                     }
                 }
-
-                // Save the modified diagram to a new file.
-                // Replace "output.vsdx" with the desired output path.
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

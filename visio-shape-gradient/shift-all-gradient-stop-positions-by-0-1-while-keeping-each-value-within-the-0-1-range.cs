@@ -1,70 +1,61 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input and output file paths (provide via command line or use defaults)
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-            // Load the Visio diagram
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Ensure the shape has a gradient fill enabled
-                    if (shape.Fill?.GradientFill?.GradientEnabled?.Value != BOOL.True)
-                        continue;
-
-                    GradientFill gradientFill = shape.Fill.GradientFill;
-
-                    // Collect shifted gradient stops
-                    List<(double position, ColorValue color)> shiftedStops = new List<(double, ColorValue)>();
-
-                    foreach (GradientStop stop in gradientFill.GradientStops)
+                    // Ensure the shape has a gradient fill defined
+                    if (shape.Fill?.GradientFill != null && shape.Fill.GradientFill.GradientStops.Count > 0)
                     {
-                        double originalPos = stop.Position.Value;
-                        double newPos = originalPos + 0.1;
+                        // Preserve existing stops
+                        var existingStops = new System.Collections.Generic.List<(double position, string color)>();
+                        foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
+                        {
+                            double pos = stop.Position.Value;
+                            string col = stop.Color.Value;
+                            existingStops.Add((pos, col));
+                        }
 
-                        // Clamp the position to the 0‑1 range
-                        if (newPos > 1.0) newPos = 1.0;
-                        if (newPos < 0.0) newPos = 0.0;
+                        // Clear current stops
+                        shape.Fill.GradientFill.GradientStops.Clear();
 
-                        shiftedStops.Add((newPos, stop.Color));
-                    }
-
-                    // Replace existing stops with the shifted ones
-                    gradientFill.GradientStops.Clear();
-                    foreach (var (pos, col) in shiftedStops)
-                    {
-                        gradientFill.GradientStops.Add(
-                            new DoubleValue(pos, MeasureConst.NUM),
-                            col);
+                        // Re‑add stops with shifted positions (+0.1) and clamp to 0‑1 range
+                        foreach (var (position, color) in existingStops)
+                        {
+                            double newPos = position + 0.1;
+                            if (newPos > 1.0) newPos = 1.0; // clamp upper bound
+                            // Create new stop entries
+                            shape.Fill.GradientFill.GradientStops.Add(
+                                new DoubleValue(newPos, MeasureConst.NUM),
+                                new ColorValue(color, MeasureConst.Undefined));
+                        }
                     }
                 }
             }
 
             // Save the modified diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

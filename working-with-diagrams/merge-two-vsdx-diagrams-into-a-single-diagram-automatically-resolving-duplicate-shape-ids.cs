@@ -1,43 +1,27 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramMerger
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Paths to the source VSDX files and the output file
-            string firstDiagramPath = @"C:\Diagrams\FirstDiagram.vsdx";
-            string secondDiagramPath = @"C:\Diagrams\SecondDiagram.vsdx";
-            string mergedDiagramPath = @"C:\Diagrams\MergedDiagram.vsdx";
+            // Load the first VSDX diagram.
+            Diagram diagram1 = new Diagram("FirstDiagram.vsdx");
 
-            // Load the first diagram (this will be the target diagram)
-            using (Diagram targetDiagram = new Diagram(firstDiagramPath))
-            {
-                // Load the second diagram that will be merged into the target
-                using (Diagram sourceDiagram = new Diagram(secondDiagramPath))
-                {
-                    // Combine the source diagram into the target diagram.
-                    // Aspose.Diagram.Combine automatically handles duplicate shape IDs.
-                    targetDiagram.Combine(sourceDiagram);
-                }
+            // Load the second VSDX diagram.
+            Diagram diagram2 = new Diagram("SecondDiagram.vsdx");
 
-                // Optional: configure save options (e.g., auto‑fit page to content)
-                DiagramSaveOptions saveOptions = new DiagramSaveOptions
-                {
-                    AutoFitPageToDrawingContent = true,
-                    SaveFormat = SaveFileFormat.Vdx // VDX is the XML format for Visio diagrams
-                };
+            // Merge the second diagram into the first one.
+            // Combine automatically resolves duplicate shape IDs.
+            diagram1.Combine(diagram2);
 
-                // Save the merged diagram to the specified file
-                targetDiagram.Save(mergedDiagramPath, saveOptions);
-            }
-
-            Console.WriteLine("Diagrams merged successfully.");
+            // Save the merged diagram to a new file.
+            diagram1.Save("MergedDiagram.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

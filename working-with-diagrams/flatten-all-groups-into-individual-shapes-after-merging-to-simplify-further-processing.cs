@@ -1,64 +1,58 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the source diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Flatten all group shapes on each page
-            foreach (Page page in diagram.Pages)
+            // Expect three arguments: first diagram path, second diagram path to merge, output path
+            if (args.Length < 3)
             {
-                FlattenGroups(page);
+                Console.WriteLine("Usage: DiagramProcessing <baseDiagram.vsdx> <mergeDiagram.vsdx> <outputDiagram.vsdx>");
+                return;
             }
 
-            // Save the flattened diagram
-            string outputPath = "output_flattened.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            string basePath = args[0];
+            string mergePath = args[1];
+            string outputPath = args[2];
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
+            // Load the base diagram
+            Diagram baseDiagram = new Diagram(basePath);
 
-    // Recursively ungroup all group shapes on a page
-    static void FlattenGroups(Page page)
-    {
-        bool groupsRemaining = true;
-        while (groupsRemaining)
-        {
-            groupsRemaining = false;
-            var groupIds = new System.Collections.Generic.List<long>();
+            // Load the diagram to be merged
+            Diagram mergeDiagram = new Diagram(mergePath);
 
-            // Collect IDs of current group shapes
-            foreach (Shape shape in page.Shapes)
+            // Combine the second diagram into the first one
+            baseDiagram.Combine(mergeDiagram);
+
+            // Flatten all group shapes into individual shapes
+            foreach (Page page in baseDiagram.Pages)
             {
-                if (shape.Type == TypeValue.Group)
+                // Collect IDs of group shapes first to avoid modifying the collection during iteration
+                List<long> groupShapeIds = new List<long>();
+                foreach (Shape shape in page.Shapes)
                 {
-                    groupIds.Add(shape.ID);
+                    if (shape.Type == TypeValue.Group)
+                    {
+                        groupShapeIds.Add(shape.ID);
+                    }
+                }
+
+                // Ungroup each collected group shape
+                foreach (long groupId in groupShapeIds)
+                {
+                    Shape groupShape = page.Shapes.GetShape(groupId);
+                    if (groupShape != null)
+                    {
+                        groupShape.Ungroup();
+                    }
                 }
             }
 
-            // Ungroup each collected group shape
-            foreach (long id in groupIds)
-            {
-                Shape groupShape = page.Shapes.GetShape(id);
-                if (groupShape != null && groupShape.Type == TypeValue.Group)
-                {
-                    groupShape.Ungroup();
-                    groupsRemaining = true; // New groups may appear after ungrouping
-                }
-            }
+            // Save the resulting diagram
+            baseDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
         }
     }
-}

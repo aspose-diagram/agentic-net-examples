@@ -1,60 +1,51 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page of the diagram
-            Page page = diagram.Pages[0];
-
-            // Verify that the page contains at least one shape
-            if (page.Shapes.Count == 0)
+            try
             {
-                Console.WriteLine("The first page does not contain any shapes.");
-                return;
-            }
 
-            // Retrieve the first shape by its ID
-            long firstShapeId = page.Shapes[0].ID;
-            Shape shape = page.Shapes.GetShape(firstShapeId);
-            if (shape == null)
+                // Load an existing Visio diagram (replace with your actual file path)
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Access the first page of the diagram
+                Page page = diagram.Pages[0];
+
+                // Add a new rectangle shape to the page
+                // The fourth parameter (isCalculate) must be a boolean
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+
+                // Retrieve the shape instance using the returned ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // -----------------------------------------------------------------
+                // Directly modify theme‑related cells via the ShapeSheet properties
+                // -----------------------------------------------------------------
+
+                // Change the fill foreground and background colors (hex strings)
+                shape.Fill.FillForegnd.Value = "#FF0000"; // Red foreground
+                shape.Fill.FillBkgnd.Value = "#00FF00";   // Green background
+
+                // Change the line color and weight
+                shape.Line.LineColor.Value = "#0000FF";   // Blue line
+                shape.Line.LineWeight.Value = 0.02;       // 0.02 inches
+
+                // Apply a preset theme to the shape (write‑only properties)
+                shape.PresetTheme = PresetThemeValue.Bubble;
+                shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3;
+
+                // Save the modified diagram to a new file
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("Failed to retrieve the shape.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // ----- Directly modify theme‑related cells via the ShapeSheet -----
-            // Change the fill foreground color (theme‑related fill cell)
-            shape.Fill.FillForegnd.Value = "#FF5733"; // Custom orange‑red color
-
-            // Change the line color (theme‑related line cell)
-            shape.Line.LineColor.Value = "#3366FF"; // Custom blue color
-
-            // Adjust the line weight (thickness) in inches
-            shape.Line.LineWeight.Value = 0.02;
-
-            // Apply a preset theme to the shape (writes to the theme cells)
-            shape.PresetTheme = PresetThemeValue.Bubble;
-            shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
-            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3;
-
-            // Save the modified diagram to a new file
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

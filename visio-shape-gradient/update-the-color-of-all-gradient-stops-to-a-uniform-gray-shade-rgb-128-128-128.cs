@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,33 +10,42 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Define the uniform gray color in hex
+            const string grayHex = "#808080";
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape uses a gradient fill
-                    shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
-                    shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+                    // Check if the shape has a gradient fill (FillPattern = 25)
+                    if (shape.Fill.FillPattern.Value == 25)
+                    {
+                        // Enable gradient fill if not already enabled
+                        shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-                    // Remove any existing gradient stops
-                    shape.Fill.GradientFill.GradientStops.Clear();
+                        // Clear existing gradient stops
+                        shape.Fill.GradientFill.GradientStops.Clear();
 
-                    // Add uniform gray stops at start (0) and end (1)
-                    shape.Fill.GradientFill.GradientStops.Add(
-                        new DoubleValue(0, MeasureConst.NUM),
-                        new ColorValue("#808080", MeasureConst.Undefined));
+                        // Add a start stop at position 0 with gray color
+                        shape.Fill.GradientFill.GradientStops.Add(
+                            new DoubleValue(0, MeasureConst.NUM),
+                            new ColorValue(grayHex, MeasureConst.Undefined));
 
-                    shape.Fill.GradientFill.GradientStops.Add(
-                        new DoubleValue(1, MeasureConst.NUM),
-                        new ColorValue("#808080", MeasureConst.Undefined));
+                        // Add an end stop at position 1 with gray color
+                        shape.Fill.GradientFill.GradientStops.Add(
+                            new DoubleValue(1, MeasureConst.NUM),
+                            new ColorValue(grayHex, MeasureConst.Undefined));
+                    }
                 }
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -7,79 +7,52 @@ class Program
 {
     static void Main()
     {
-        try
+        // Create a new diagram instance
+        using (Diagram diagram = new Diagram())
         {
+            // -----------------------------------------------------------------
+            // Create a single stylesheet that defines a solid white fill
+            // -----------------------------------------------------------------
+            StyleSheet whiteStyle = new StyleSheet();
+            whiteStyle.ID = diagram.StyleSheets.Count + 1;          // unique ID
+            whiteStyle.Fill.FillPattern.Value = 1;                // solid pattern
+            whiteStyle.Fill.FillForegnd.Value = "#FFFFFF";        // white color
+            // Add the stylesheet to the diagram
+            diagram.StyleSheets.Add(whiteStyle);
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // -----------------------------------------------------------------
+            // Loop through every page and apply the white background
+            // -----------------------------------------------------------------
+            foreach (Page page in diagram.Pages)
             {
-                // Create a single stylesheet for white background fill
-                StyleSheet whiteStyle = new StyleSheet();
-                whiteStyle.ID = diagram.StyleSheets.Count + 1;
-                whiteStyle.Name = "WhiteBackground";
-                whiteStyle.Fill.FillForegnd.Value = "#FFFFFF";   // White fill color
-                whiteStyle.Fill.FillPattern.Value = 1;          // Solid pattern
-                diagram.StyleSheets.Add(whiteStyle);
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Determine the current maximum page ID to assign unique IDs to new background pages
-                int maxPageId = 0;
-                foreach (Page p in diagram.Pages)
-                {
-                    if (p.ID > maxPageId)
-                        maxPageId = p.ID;
-                }
+                // Center of the page (pin coordinates)
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
 
-                // Loop through all existing pages
-                foreach (Page page in diagram.Pages)
-                {
-                    // Create a new background page
-                    Page bgPage = new Page();
-                    bgPage.ID = ++maxPageId;
-                    bgPage.Name = $"Background_{page.ID}";
-                    bgPage.Background = BOOL.True; // Mark as background page
+                // Draw a rectangle that spans the entire page
+                long shapeId = page.DrawRectangle(pinX, pinY, pageWidth, pageHeight);
 
-                    // Add the background page to the diagram
-                    diagram.Pages.Add(bgPage);
+                // Get the shape object from the returned ID
+                Shape backgroundShape = page.Shapes.GetShape((int)shapeId);
 
-                    // Link the foreground page to its background page
-                    page.BackPage = bgPage;
+                // Apply the previously created white stylesheet
+                backgroundShape.FillStyle = whiteStyle;
 
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Send the shape to the back so other content appears above it
+                backgroundShape.SendToBack();
 
-                    // Add a rectangle shape that spans the entire page
-                    // PinX and PinY are the center of the shape
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
-                    long shapeId = bgPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle");
-
-                    // Retrieve the shape object
-                    Shape bgShape = bgPage.Shapes.GetShape(shapeId);
-
-                    // Apply the white background stylesheet
-                    bgShape.FillStyle = whiteStyle;
-
-                    // Ensure the shape has no visible border
-                    bgShape.Line.LinePattern.Value = 0;          // No line pattern
-                    bgShape.Line.LineColor.Value = "#FFFFFF";    // Border color (irrelevant when pattern is 0)
-
-                    // Send the shape to the back so other content appears above it
-                    bgPage.SendToBack(shapeId);
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Make the background shape non‑selectable
+                backgroundShape.Protection.LockSelect.Value = BOOL.True;
             }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // -----------------------------------------------------------------
+            // Save the modified diagram
+            // -----------------------------------------------------------------
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
         }
     }
 }

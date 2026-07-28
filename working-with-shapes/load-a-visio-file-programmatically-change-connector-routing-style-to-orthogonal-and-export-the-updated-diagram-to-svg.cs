@@ -10,11 +10,14 @@ class Program
         try
         {
 
-            // Load the Visio diagram from file
+            // Paths to the input Visio file and the output SVG file
             string inputPath = "input.vsdx";
+            string outputPath = "output.svg";
+
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate over all pages and shapes to modify connector routing
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
@@ -22,15 +25,20 @@ class Program
                     // Identify connector shapes (1‑D shapes)
                     if (shape.OneD)
                     {
-                        // Set connector routing style to orthogonal (right‑angle)
+                        // Set routing style to orthogonal (right‑angle)
                         shape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
                     }
                 }
             }
 
-            // Export the updated diagram to SVG
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            diagram.Save("output.svg", svgOptions);
+            // Configure SVG export options
+            SVGSaveOptions svgOptions = new SVGSaveOptions
+            {
+                ExportHiddenPage = false
+            };
+
+            // Save the updated diagram as SVG
+            diagram.Save(outputPath, svgOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

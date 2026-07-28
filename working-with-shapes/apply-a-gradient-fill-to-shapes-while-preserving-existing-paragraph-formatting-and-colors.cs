@@ -13,7 +13,7 @@ class Program
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages
@@ -26,7 +26,7 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Preserve existing paragraph formatting by NOT modifying shape.Paras
+                        // Preserve existing paragraph formatting by not modifying shape.Paras
 
                         // Apply gradient fill
                         // Set fill pattern to gradient (value 25)
@@ -41,14 +41,15 @@ class Program
                         // Clear any existing gradient stops
                         shape.Fill.GradientFill.GradientStops.Clear();
 
-                        // Add gradient stops (example: blue to green)
+                        // Add gradient stop at position 0 (start) with blue color
                         shape.Fill.GradientFill.GradientStops.Add(
                             new DoubleValue(0, MeasureConst.NUM),
-                            new ColorValue("#0000FF", MeasureConst.Undefined)); // Start color
+                            new ColorValue("#0000FF", MeasureConst.Undefined));
 
+                        // Add gradient stop at position 1 (end) with green color
                         shape.Fill.GradientFill.GradientStops.Add(
                             new DoubleValue(1, MeasureConst.NUM),
-                            new ColorValue("#00FF00", MeasureConst.Undefined)); // End color
+                            new ColorValue("#00FF00", MeasureConst.Undefined));
                     }
                 }
 

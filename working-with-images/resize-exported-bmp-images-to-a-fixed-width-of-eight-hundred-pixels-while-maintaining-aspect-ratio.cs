@@ -1,65 +1,52 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: input Visio file path and output folder path.
+        if (args.Length < 2)
         {
-            try
+            Console.WriteLine("Usage: <program> <inputVisioFile> <outputFolder>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputFolder = args[1];
+
+        // Load the Visio diagram.
+        using (Diagram diagram = new Diagram(inputPath))
+        {
+            // Iterate through all pages in the diagram.
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
+                var page = diagram.Pages[i];
 
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
+                // Get page dimensions in inches.
+                double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeightInches = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Output directory for resized BMP images
-                string outputDir = "ExportedBmp";
-                Directory.CreateDirectory(outputDir);
+                // Desired output width in pixels.
+                const int targetWidthPx = 800;
 
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Desired width in pixels
-                    const int targetWidthPixels = 800;
+                // Calculate target height to maintain aspect ratio.
+                int targetHeightPx = (int)Math.Round(targetWidthPx * pageHeightInches / pageWidthInches);
 
-                    // Iterate through each page in the diagram
-                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
-                    {
-                        Page page = diagram.Pages[pageIndex];
+                // Configure image save options for BMP with the calculated size.
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Bmp);
+                saveOptions.PageSize = new PageSize(targetWidthPx, targetHeightPx);
 
-                        // Get the page width in inches
-                        double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
+                // Build output file name.
+                string outputPath = System.IO.Path.Combine(outputFolder, $"Page_{i + 1}.bmp");
 
-                        // Use default resolution (dots per inch). You can change this if needed.
-                        int dpi = 96;
+                // Save the page as a BMP image with the specified dimensions.
+                diagram.Save(outputPath, saveOptions);
 
-                        // Calculate the scaling factor to achieve the target pixel width
-                        // scale = targetPixels / (pageWidthInches * dpi)
-                        float scale = (float)(targetWidthPixels / (pageWidthInches * dpi));
-
-                        // Configure image save options for BMP format
-                        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Bmp)
-                        {
-                            Resolution = dpi,
-                            Scale = scale,
-                            PageIndex = pageIndex // Export only the current page
-                        };
-
-                        // Build output file name (e.g., Page_1.bmp)
-                        string outputPath = Path.Combine(outputDir, $"Page_{pageIndex + 1}.bmp");
-
-                        // Save the page as a BMP image with the calculated scaling
-                        diagram.Save(outputPath, saveOptions);
-                    }
-                }
-
-                Console.WriteLine("BMP export and resizing completed.");
-
+                Console.WriteLine($"Exported page {i + 1} to {outputPath} (Width: {targetWidthPx}px, Height: {targetHeightPx}px)");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
     }
-    }
+}

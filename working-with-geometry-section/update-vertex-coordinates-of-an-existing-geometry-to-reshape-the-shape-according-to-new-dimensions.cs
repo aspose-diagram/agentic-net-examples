@@ -10,70 +10,87 @@ class Program
         try
         {
 
-            // Paths for input Visio file and output image
+            // Input Visio file path
             string inputPath = "input.vsdx";
-            string outputPath = "output.png";
+            // Output Visio file path
+            string outputPath = "output.vsdx";
 
             // Load the existing diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Work with the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
-
-            // Identify the shape to modify (example uses shape ID 1)
-            long shapeId = 1;
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
-            {
-                Console.WriteLine($"Shape with ID {shapeId} not found.");
-                return;
-            }
-
-            // Ensure the shape contains geometry data
-            if (shape.Geoms.Count == 0)
-            {
-                Console.WriteLine("Shape has no geometry to modify.");
-                return;
-            }
-
-            // Retrieve the first geometry section
-            Geom geom = (Geom)shape.Geoms[0];
-
-            // Desired new dimensions (in inches)
+            // Define the new dimensions for the shape (in inches)
             double newWidth = 2.0;
             double newHeight = 1.0;
 
-            // Calculate scaling factors based on the shape's current size
-            double origWidth = shape.XForm.Width.Value;
-            double origHeight = shape.XForm.Height.Value;
-            double scaleX = newWidth / origWidth;
-            double scaleY = newHeight / origHeight;
-
-            // Update each vertex coordinate in the geometry
-            foreach (var segment in geom.CoordinateCol)
+            // Find the target shape by its universal name (adjust as needed)
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                if (segment is MoveTo move)
+                foreach (Shape shape in page.Shapes)
                 {
-                    move.X.Value *= scaleX;
-                    move.Y.Value *= scaleY;
+                    if (shape.NameU != null && shape.NameU.Equals("Rectangle", StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetShape = shape;
+                        break;
+                    }
                 }
-                else if (segment is LineTo line)
-                {
-                    line.X.Value *= scaleX;
-                    line.Y.Value *= scaleY;
-                }
-                // Additional segment types (ArcTo, etc.) can be handled similarly if required
+                if (targetShape != null) break;
             }
 
-            // Adjust the shape's bounding box to the new dimensions
-            shape.XForm.Width.Value = newWidth;
-            shape.XForm.Height.Value = newHeight;
+            if (targetShape == null)
+            {
+                throw new Exception("Target shape not found.");
+            }
 
-            // Save the modified diagram as a PNG image
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            diagram.Save(outputPath, saveOptions);
+            // Ensure the shape has at least one geometry section
+            if (targetShape.Geoms.Count == 0)
+            {
+                throw new Exception("Shape does not contain any geometry.");
+            }
 
-            Console.WriteLine("Geometry updated and diagram saved successfully.");
+            // Get the first geometry (Geom) of the shape
+            Geom geom = (Geom)targetShape.Geoms[0];
+
+            // Clear existing coordinate collection
+            geom.CoordinateCol.Clear();
+
+            // Build a rectangle geometry with the new dimensions
+            // 1. MoveTo (0,0) – starting point
+            MoveTo move = new MoveTo();
+            move.X.Value = 0.0;
+            move.Y.Value = 0.0;
+            geom.CoordinateCol.Add(move);
+
+            // 2. LineTo (newWidth,0)
+            LineTo line1 = new LineTo();
+            line1.X.Value = newWidth;
+            line1.Y.Value = 0.0;
+            geom.CoordinateCol.Add(line1);
+
+            // 3. LineTo (newWidth,newHeight)
+            LineTo line2 = new LineTo();
+            line2.X.Value = newWidth;
+            line2.Y.Value = newHeight;
+            geom.CoordinateCol.Add(line2);
+
+            // 4. LineTo (0,newHeight)
+            LineTo line3 = new LineTo();
+            line3.X.Value = 0.0;
+            line3.Y.Value = newHeight;
+            geom.CoordinateCol.Add(line3);
+
+            // 5. Close the shape by returning to the start point (0,0)
+            LineTo line4 = new LineTo();
+            line4.X.Value = 0.0;
+            line4.Y.Value = 0.0;
+            geom.CoordinateCol.Add(line4);
+
+            // Optionally, update the shape's width and height cells to match the new size
+            targetShape.XForm.Width.Value = newWidth;
+            targetShape.XForm.Height.Value = newHeight;
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

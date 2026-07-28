@@ -1,39 +1,43 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Access the first page and the first shape on that page
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes[0];
+
+            // Ensure the shape has at least one hyperlink; create one if none exist
+            if (shape.Hyperlinks.Count == 0)
             {
-
-                // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Assume we want to modify the first shape on the first page (ID = 1)
-                // Retrieve the shape by its ID (shape IDs are of type long)
-                long shapeId = 1;
-                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-
-                // Create a new hyperlink
-                Hyperlink link = new Hyperlink
-                {
-                    Name = "ExampleLink",                     // Optional internal name
-                    Address = { Value = "https://example.com" }, // External URL
-                    Description = { Value = "Visit Example.com" } // Tooltip text shown on hover
-                };
-
-                // Add the hyperlink to the shape's Hyperlinks collection
-                shape.Hyperlinks.Add(link);
-
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                Hyperlink newLink = new Hyperlink();
+                // Example address; adjust as needed
+                newLink.Address.Value = "https://example.com";
+                shape.Hyperlinks.Add(newLink);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Retrieve the first hyperlink associated with the shape
+            Hyperlink hyperlink = shape.Hyperlinks[0];
+
+            // Set the description (tooltip) for the hyperlink
+            hyperlink.Description.Value = "Open example website";
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

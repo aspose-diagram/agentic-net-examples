@@ -1,48 +1,39 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportShapesWithDpi
+class ExportShapesWithCustomDpi
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio file
-            string sourceFile = "input.vsdx";
+            // Load the Visio diagram from a file
+            var diagram = new Diagram("input.vsdx");
 
-            // Folder where JPEG images will be saved
-            string outputFolder = "ExportedImages";
+            // Prepare image save options for JPEG with 600 DPI
+            var imgOptions = new ImageSaveOptions(SaveFileFormat.Jpeg)
+            {
+                Resolution = 600,          // Set custom DPI
+                SaveFormat = SaveFileFormat.Jpeg
+            };
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(sourceFile);
-
-            // Ensure the output directory exists
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
-
-            // Iterate through all pages and their shapes
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
                     // Build a unique file name for each shape
-                    string imagePath = Path.Combine(
-                        outputFolder,
-                        $"Page{page.ID}_Shape{shape.ID}.jpg");
-
-                    // Configure image save options with 600 DPI and JPEG format
-                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Jpeg);
-                    options.Resolution = 600; // DPI setting
+                    string fileName = $"Shape_Page{page.ID}_Shape{shape.ID}.jpg";
 
                     // Export the shape to JPEG using the specified options
-                    shape.ToImage(imagePath, options);
+                    shape.ToImage(fileName, imgOptions);
                 }
             }
 
-            // Release resources
+            // Dispose the diagram when done
             diagram.Dispose();
 
         }

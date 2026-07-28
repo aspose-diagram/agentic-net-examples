@@ -5,68 +5,79 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input folder containing Visio files
-            string inputFolder = @"C:\Visio\Input";
-            // Output folder for generated PDFs
+            // Folder containing source Visio files
+            string sourceFolder = @"C:\Visio\Input";
+            // Folder where processed PDFs will be saved
             string outputFolder = @"C:\Visio\Output";
 
-            // Ensure the output directory exists
-            Directory.CreateDirectory(outputFolder);
+            // Ensure output folder exists
+            if (!Directory.Exists(outputFolder))
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
 
-            // Retrieve all Visio files (adjust pattern if other formats are needed)
-            string[] visioFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-
+            // Process all Visio files (VSDX, VSD, VDX, etc.) in the source folder
+            string[] visioFiles = Directory.GetFiles(sourceFolder, "*.*", SearchOption.TopDirectoryOnly);
             foreach (string filePath in visioFiles)
             {
+                // Filter supported Visio extensions
+                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx")
+                {
+                    continue;
+                }
+
                 try
                 {
-                    // Load the Visio diagram
+                    // Load the diagram
                     Diagram diagram = new Diagram(filePath);
 
                     // Apply standardized print settings to each page
                     foreach (Page page in diagram.Pages)
                     {
+                        // Access the PrintProps cell collection
                         var printProps = page.PageSheet.PrintProps;
 
-                        // Orientation: Landscape
+                        // Set orientation to Landscape
                         printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                        // Scaling: 75%
+                        // Set scaling to 75%
                         printProps.ScaleX.Value = 0.75;
                         printProps.ScaleY.Value = 0.75;
 
-                        // Fit to sheet: 1x1 page
+                        // Enable Fit to Sheet (single page)
                         printProps.OnPage.Value = BOOL.True;
                         printProps.PagesX.Value = 1;
                         printProps.PagesY.Value = 1;
 
-                        // Margins: 1 inch on each side
-                        double marginInches = 1.0;
-                        printProps.PageTopMargin.Value = marginInches;
-                        printProps.PageBottomMargin.Value = marginInches;
-                        printProps.PageLeftMargin.Value = marginInches;
-                        printProps.PageRightMargin.Value = marginInches;
+                        // Set margins (0.5 inch on all sides)
+                        double marginInInches = 0.5;
+                        printProps.PageTopMargin.Value = marginInInches;
+                        printProps.PageBottomMargin.Value = marginInInches;
+                        printProps.PageLeftMargin.Value = marginInInches;
+                        printProps.PageRightMargin.Value = marginInInches;
                     }
 
-                    // Export the updated diagram to PDF with a default font fallback
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
-                    string pdfPath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
+                    // Prepare PDF save options
                     PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.DefaultFont = "Arial";
+                    pdfOptions.DefaultFont = "Arial"; // Fallback font for missing characters
 
-                    diagram.Save(pdfPath, pdfOptions);
+                    // Build output file path (same name, .pdf extension)
+                    string outputFileName = Path.GetFileNameWithoutExtension(filePath) + ".pdf";
+                    string outputPath = Path.Combine(outputFolder, outputFileName);
 
-                    // Optional: overwrite the original file with updated print settings
-                    // diagram.Save(filePath, SaveFileFormat.Vsdx);
+                    // Save the diagram as PDF with the applied print settings
+                    diagram.Save(outputPath, pdfOptions);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing '{filePath}': {ex.Message}");
+                    // Log error to console; in production replace with proper logging
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
                 }
             }
 

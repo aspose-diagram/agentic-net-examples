@@ -1,49 +1,42 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Path to the input Visio file
+        string inputPath = "input.vsdx";
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            // Expect two arguments: input Visio file path and shape ID to inspect
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: LineInheritanceCheck <inputVisioFile> <shapeId>");
-                return;
-            }
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
-            string inputPath = args[0];
-            if (!long.TryParse(args[1], out long shapeId))
-            {
-                Console.WriteLine("Invalid shape ID. It must be a numeric value.");
-                return;
-            }
-
-            // Load the diagram
+        try
+        {
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (or you can iterate pages to find the shape)
+            // Access the first page (adjust index if needed)
             Page page = diagram.Pages[0];
 
-            // Retrieve the shape by its ID
+            // Retrieve a shape by its ID (replace with the actual ID you want to check)
+            long shapeId = 1; // example shape ID
             Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
-            {
-                Console.WriteLine($"Shape with ID {shapeId} not found on page {page.Name}.");
-                return;
-            }
 
-            // Determine if line properties are inherited.
-            // Compare a representative line property (e.g., LineColor) with its inherited counterpart.
-            bool isLineColorInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
-            bool isLineWeightInherited = shape.Line.LineWeight.Value == shape.InheritLine.LineWeight.Value;
+            // Determine line inheritance by comparing the shape's line color with its inherited line color
+            // If the values match, the line properties are inherited from the master/style
+            bool isLineInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
 
-            // If both key properties match, we consider the line to be inherited.
-            bool isLineInherited = isLineColorInherited && isLineWeightInherited;
-
-            Console.WriteLine($"Shape ID: {shapeId}");
-            Console.WriteLine($"Line Color Inherited: {isLineColorInherited}");
-            Console.WriteLine($"Line Weight Inherited: {isLineWeightInherited}");
-            Console.WriteLine($"Overall Line Inheritance Status: {(isLineInherited ? "Inherited" : "Not Inherited")}");
+            Console.WriteLine($"Shape ID {shapeId} line inheritance status: {(isLineInherited ? "Inherited" : "Not inherited")}");
+        }
+        catch (Exception ex)
+        {
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

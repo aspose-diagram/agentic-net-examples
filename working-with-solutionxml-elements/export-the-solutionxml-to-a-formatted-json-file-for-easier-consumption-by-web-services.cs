@@ -6,62 +6,56 @@ using Aspose.Diagram;
 
 namespace DiagramSolutionXmlExport
 {
-    // DTO for JSON serialization
+    // Simple DTO to hold SolutionXML data for JSON serialization
     public class SolutionXmlDto
     {
-        public string Name { get; set; } = null!;
-        public string XmlValue { get; set; } = null!;
+        public string Name { get; set; }
+        public string XmlValue { get; set; }
     }
 
     public class Program
     {
         public static void Main(string[] args)
         {
-            // Input Visio file path (adjust as needed)
-            string visioPath = "input.vsdx";
-
-            // Output JSON file path
-            string jsonOutputPath = "solutionxml.json";
-
-            // Load the diagram
-            Diagram diagram;
-            try
+            // Validate arguments: input VSD file and output JSON file
+            if (args.Length != 2)
             {
-                diagram = new Diagram(visioPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                Console.WriteLine("Usage: DiagramSolutionXmlExport <input.vsd> <output.json>");
                 return;
             }
 
-            // Collect SolutionXML entries
+            string inputVsdPath = args[0];
+            string outputJsonPath = args[1];
+
+            // Load the Visio diagram (Aspose.Diagram constructor loads the file)
+            Diagram diagram = new Diagram(inputVsdPath);
+
+            // Prepare a list to hold all SolutionXML entries
             List<SolutionXmlDto> solutionXmlList = new List<SolutionXmlDto>();
-            foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+
+            // Iterate through the SolutionXML collection
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
                 solutionXmlList.Add(new SolutionXmlDto
                 {
-                    Name = solutionXml.Name,
-                    XmlValue = solutionXml.XmlValue
+                    Name = solXml.Name,
+                    XmlValue = solXml.XmlValue
                 });
             }
 
-            // Serialize to formatted JSON
-            string json = JsonSerializer.Serialize(solutionXmlList, new JsonSerializerOptions
+            // Configure JSON serializer for formatted (indented) output
+            JsonSerializerOptions jsonOptions = new JsonSerializerOptions
             {
                 WriteIndented = true
-            });
+            };
 
-            // Write JSON to file
-            try
-            {
-                File.WriteAllText(jsonOutputPath, json);
-                Console.WriteLine($"SolutionXML exported successfully to '{jsonOutputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to write JSON file: {ex.Message}");
-            }
+            // Serialize the list to JSON
+            string jsonContent = JsonSerializer.Serialize(solutionXmlList, jsonOptions);
+
+            // Write the JSON content to the specified file
+            File.WriteAllText(outputJsonPath, jsonContent);
+
+            Console.WriteLine($"SolutionXML data exported to JSON file: {outputJsonPath}");
         }
     }
 }

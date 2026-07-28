@@ -1,70 +1,59 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Work with the first page (adjust as needed)
+            Page page = diagram.Pages[0];
+
+            // Identify the shape to duplicate (example uses ID = 1)
+            long originalShapeId = 1;
+            Shape originalShape = page.Shapes.GetShape(originalShapeId);
+            if (originalShape == null)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Work with the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Assume we duplicate the first shape on the page
-                // Retrieve the original shape
-                Shape originalShape = page.Shapes[0];
-
-                // Extract necessary properties from the original shape
-                string masterName = originalShape.Master.Name;                     // Master name to reuse
-                double width = originalShape.XForm.Width.Value;                    // Width in inches
-                double height = originalShape.XForm.Height.Value;                  // Height in inches
-                double originalPinX = originalShape.XForm.PinX.Value;              // Original X position
-                double originalPinY = originalShape.XForm.PinY.Value;              // Original Y position
-
-                // Calculate new position (offset by 10 units)
-                double newPinX = originalPinX + 10.0;
-                double newPinY = originalPinY + 10.0;
-
-                // Add a new shape using the same master and dimensions at the new position
-                long newShapeId = page.AddShape(newPinX, newPinY, width, height, masterName);
-
-                // Retrieve the newly added shape instance
-                Shape newShape = page.Shapes.GetShape(newShapeId);
-
-                // Ensure the new shape has a unique ID (greater than any existing ID)
-                long maxId = 0;
-                foreach (Shape shp in page.Shapes)
-                {
-                    if (shp.ID > maxId)
-                        maxId = shp.ID;
-                }
-                newShape.ID = maxId + 1; // Assign a new unique identifier
-
-                // Optionally, copy other properties from the original shape (e.g., text)
-                // Clear any existing text and copy the original text
-                newShape.Text.Value.Clear();
-                foreach (var txtItem in originalShape.Text.Value)
-                {
-                    if (txtItem is Txt txt)
-                    {
-                        newShape.Text.Value.Add(new Txt(txt.Text));
-                    }
-                }
-
-                // Save the modified diagram to a new file
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                throw new Exception($"Shape with ID {originalShapeId} not found.");
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Retrieve master name, size and position of the original shape
+            string masterName = originalShape.Master?.Name ?? "Rectangle";
+            double width = originalShape.XForm.Width.Value;
+            double height = originalShape.XForm.Height.Value;
+            double pinX = originalShape.XForm.PinX.Value;
+            double pinY = originalShape.XForm.PinY.Value;
+
+            // Add a new shape using the same master and dimensions
+            long newShapeId = page.AddShape(pinX, pinY, width, height, masterName);
+            Shape newShape = page.Shapes.GetShape(newShapeId);
+
+            // Adjust the duplicated shape's position by ten units (inches)
+            newShape.XForm.PinX.Value = pinX + 10;
+            newShape.XForm.PinY.Value = pinY + 10;
+
+            // Ensure the new shape has a unique ID (greater than any existing ID on the page)
+            long maxId = 0;
+            foreach (Shape s in page.Shapes)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                if (s.ID > maxId) maxId = s.ID;
             }
+            newShape.ID = maxId + 1;
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

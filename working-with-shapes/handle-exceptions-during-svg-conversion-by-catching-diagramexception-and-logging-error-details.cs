@@ -11,32 +11,32 @@ class SvgConversion
         {
 
             // Path to the source Visio file
-            const string sourcePath = "input.vsdx";
-            // Path where the SVG output will be saved
+            const string inputPath = "input.vsdx";
+            // Desired output SVG file path
             const string outputPath = "output.svg";
 
             try
             {
-                // Load the Visio diagram using the provided constructor (load rule)
-                using (var diagram = new Diagram(sourcePath))
+                // Load the Visio diagram using the built‑in constructor (lifecycle rule)
+                using (var diagram = new Diagram(inputPath))
                 {
-                    // Create SVG save options (save rule)
+                    // Create SVG save options (lifecycle rule)
                     var svgOptions = new SVGSaveOptions
                     {
                         // Example option: fit the generated SVG to the view port
                         SVGFitToViewPort = true
                     };
 
-                    // Save the diagram as SVG using the save method with options (save rule)
+                    // Save the diagram as SVG using the Save method with SaveOptions (lifecycle rule)
                     diagram.Save(outputPath, svgOptions);
                 }
 
-                Console.WriteLine("SVG conversion completed successfully.");
+                Console.WriteLine("Diagram successfully converted to SVG.");
             }
             catch (DiagramException ex)
             {
-                // Log detailed error information when a DiagramException occurs
-                Console.Error.WriteLine($"Diagram conversion failed: {ex.Message}");
+                // Log error details when a DiagramException occurs during conversion
+                Console.Error.WriteLine($"Error converting diagram to SVG: {ex.Message}");
                 Console.Error.WriteLine($"Stack Trace: {ex.StackTrace}");
             }
 

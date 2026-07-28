@@ -5,29 +5,23 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Get diagram file path from command line or prompt the user
-            string diagramPath;
+            // Determine the input Visio file path
+            string filePath;
             if (args.Length > 0)
             {
-                diagramPath = args[0];
+                filePath = args[0];
             }
             else
             {
-                Console.Write("Enter the path to the Visio diagram file: ");
-                diagramPath = Console.ReadLine();
-            }
-
-            if (string.IsNullOrWhiteSpace(diagramPath))
-            {
-                Console.WriteLine("No file path provided. Exiting.");
-                return;
+                Console.Write("Enter the path to the Visio file: ");
+                filePath = Console.ReadLine();
             }
 
             // Load the diagram
             Diagram diagram;
             try
             {
-                diagram = new Diagram(diagramPath);
+                diagram = new Diagram(filePath);
             }
             catch (Exception ex)
             {
@@ -37,23 +31,35 @@ class Program
 
             bool anyFlagged = false;
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify connector shapes (1-D shapes)
+                    // Identify connector shapes (1‑D shapes)
                     if (shape.OneD)
                     {
-                        // Retrieve the line jump style for the connector
-                        var jumpStyle = shape.Layout.ConLineJumpStyle.Value;
-
-                        // Flag if the jump style is undefined or uses the page default (i.e., not explicitly set)
-                        if (jumpStyle == ConLineJumpStyleValue.Undefined ||
-                            jumpStyle == ConLineJumpStyleValue.PageDefault)
+                        // Access the connector's line jump style
+                        var jumpStyleCell = shape.Layout?.ConLineJumpStyle;
+                        if (jumpStyleCell != null)
                         {
+                            var jumpStyle = jumpStyleCell.Value;
+                            // Flag if the style is the default (no explicit definition)
+                            if (jumpStyle == ConLineJumpStyleValue.PageDefault ||
+                                jumpStyle == ConLineJumpStyleValue.Undefined)
+                            {
+                                anyFlagged = true;
+                                Console.WriteLine(
+                                    $"Connector ID {shape.ID} on page '{page.Name}' lacks explicit line jump style (value: {jumpStyle}).");
+                            }
+                        }
+                        else
+                        {
+                            // If the Layout or ConLineJumpStyle cell is missing, treat as undefined
                             anyFlagged = true;
-                            Console.WriteLine($"Connector ID {shape.ID} on page '{page.Name}' lacks explicit line jump style. Current value: {jumpStyle}");
+                            Console.WriteLine(
+                                $"Connector ID {shape.ID} on page '{page.Name}' lacks explicit line jump style (Layout/ConLineJumpStyle missing).");
                         }
                     }
                 }

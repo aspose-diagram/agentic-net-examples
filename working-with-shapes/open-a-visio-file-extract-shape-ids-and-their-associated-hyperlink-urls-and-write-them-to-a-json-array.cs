@@ -6,8 +6,8 @@ using Aspose.Diagram;
 
 namespace VisioHyperlinkExtractor
 {
-    // DTO for JSON output
-    public class ShapeHyperlinkInfo
+    // DTO for JSON serialization
+    public class LinkInfo
     {
         public long ShapeId { get; set; }
         public string Url { get; set; }
@@ -27,42 +27,56 @@ namespace VisioHyperlinkExtractor
             string inputPath = args[0];
             string outputPath = args[1];
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            var result = new List<ShapeHyperlinkInfo>();
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Verify input file exists
+            if (!File.Exists(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                Console.WriteLine($"Error: Input file not found: {inputPath}");
+                return;
+            }
+
+            try
+            {
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Collect shape IDs and their hyperlink URLs
+                List<LinkInfo> links = new List<LinkInfo>();
+
+                foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the shape has a Hyperlinks collection
-                    if (shape.Hyperlinks != null)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (Hyperlink link in shape.Hyperlinks)
+                        // Ensure the Hyperlinks collection is not null
+                        if (shape.Hyperlinks != null)
                         {
-                            // Guard against null cells and empty addresses
-                            if (link != null && link.Address != null && !string.IsNullOrWhiteSpace(link.Address.Value))
+                            foreach (Hyperlink hyperlink in shape.Hyperlinks)
                             {
-                                result.Add(new ShapeHyperlinkInfo
+                                // Validate hyperlink and its address
+                                if (hyperlink != null && hyperlink.Address != null && !string.IsNullOrWhiteSpace(hyperlink.Address.Value))
                                 {
-                                    ShapeId = shape.ID,
-                                    Url = link.Address.Value
-                                });
+                                    links.Add(new LinkInfo
+                                    {
+                                        ShapeId = shape.ID,
+                                        Url = hyperlink.Address.Value
+                                    });
+                                }
                             }
                         }
                     }
                 }
+
+                // Serialize the list to JSON with indentation
+                string json = JsonSerializer.Serialize(links, new JsonSerializerOptions { WriteIndented = true });
+
+                // Write JSON to the specified output file
+                File.WriteAllText(outputPath, json);
+
+                Console.WriteLine($"Extraction completed. {links.Count} hyperlink(s) written to {outputPath}");
             }
-
-            // Serialize the list to JSON with indentation
-            string json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
-
-            // Write JSON to the specified output file
-            File.WriteAllText(outputPath, json);
-
-            Console.WriteLine($"Extraction completed. {result.Count} hyperlink(s) written to '{outputPath}'.");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
         }
     }
 }

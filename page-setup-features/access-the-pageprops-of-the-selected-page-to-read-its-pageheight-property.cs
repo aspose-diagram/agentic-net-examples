@@ -9,18 +9,20 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with actual file path)
-            using (Diagram diagram = new Diagram("input.vsdx"))
-            {
-                // Access the first page (or change index as needed)
-                Page page = diagram.Pages[0];
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Read the page height (value is in inches)
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+            // Choose the page you want to inspect (e.g., the first page)
+            Page page = diagram.Pages[0];
 
-                // Output the page height
-                Console.WriteLine($"Page height: {pageHeight} inches");
-            }
+            // Access the PageProps of the selected page
+            DoubleValue pageHeightValue = page.PageSheet.PageProps.PageHeight;
+
+            // Retrieve the numeric height from the DoubleValue object
+            double pageHeight = pageHeightValue.Value;
+
+            // Display the page height
+            Console.WriteLine($"Page Height: {pageHeight}");
 
         }
         catch (System.IO.FileNotFoundException ex)

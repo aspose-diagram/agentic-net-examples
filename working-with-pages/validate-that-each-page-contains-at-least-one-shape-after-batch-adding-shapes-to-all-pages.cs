@@ -10,43 +10,38 @@ class Program
         try
         {
 
-            // Create a new diagram (uses the provided creation rule)
-            Diagram diagram = new Diagram();
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Ensure there is at least one page; add a page if the diagram is empty
-            if (diagram.Pages.Count == 0)
-            {
-                diagram.Pages.Add(new Page());
-            }
-
-            // Master shape name to use for adding shapes (e.g., a built‑in rectangle)
+            // Name of the master shape to be added (e.g., a rectangle)
             string masterName = "Rectangle";
 
-            // Batch add a shape to every page
-            foreach (Page page in diagram.Pages)
+            // Add a shape to every page in the diagram
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Add a shape at coordinates (1,1) inches on the page
-                // Uses Diagram.Page.AddShape(double pinX, double pinY, string masterName)
-                page.AddShape(1.0, 1.0, masterName);
+                // AddShape(pinX, pinY, masterName, pageNumber)
+                // Position (1,1) is arbitrary; size defaults are taken from the master
+                diagram.AddShape(1.0, 1.0, masterName, pageIndex);
             }
 
             // Validate that each page now contains at least one shape
-            foreach (Page page in diagram.Pages)
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
+                Page page = diagram.Pages[pageIndex];
                 if (page.Shapes.Count == 0)
                 {
-                    // If any page has no shapes, raise an exception
-                    throw new InvalidOperationException($"Page '{page.Name}' does not contain any shapes.");
+                    // Throw an exception if any page is empty
+                    throw new InvalidOperationException($"Page {pageIndex} contains no shapes after batch addition.");
                 }
             }
 
-            // Save the diagram (uses the provided save rule)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

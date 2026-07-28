@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.AutoLayout;
 
 class Program
 {
@@ -10,21 +9,21 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (or any specific page)
-            Page page = diagram.Pages[0];
+            // Create AutoSpaceOptions instance
+            AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
 
-            // Create AutoSpaceOptions and set a custom horizontal spacing (in inches)
-            AutoSpaceOptions options = new AutoSpaceOptions();
-            options.DistanceInHorizontal = 1.0; // Example: 1 inch gap between shapes horizontally
+            // Define custom horizontal spacing gap (in inches)
+            autoSpaceOptions.DistanceInHorizontal = 1.0; // 1 inch gap
 
-            // Apply auto‑spacing to all shapes on the page using the configured options
-            page.AutoSpaceShapes(page.Shapes, options);
+            // Apply the auto‑spacing to all shapes on the first page
+            Page firstPage = diagram.Pages[0];
+            firstPage.AutoSpaceShapes(firstPage.Shapes, autoSpaceOptions);
 
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram (replace with your desired output path)
+            diagram.Save("output.vsdx", SaveFileFormat.Vdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -3,49 +3,49 @@ using System.IO;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 
-class BatchDiagramProcessor
+class BatchThemeProcessor
 {
     static void Main()
     {
         try
         {
 
-            // Path to the preset theme diagram
-            string themePath = @"C:\Themes\preset.vsdx";
+            // Path to the preset theme diagram (must be a Visio file)
+            string themePath = @"C:\Themes\presetTheme.vsdx";
 
-            // Folder containing diagrams to process
-            string inputFolder = @"C:\Diagrams\Input";
+            // Directory containing source diagrams
+            string inputDirectory = @"C:\Diagrams\Input";
 
-            // Folder where themed diagrams will be saved
-            string outputFolder = @"C:\Diagrams\Output";
+            // Directory where themed diagrams will be saved
+            string outputDirectory = @"C:\Diagrams\Output";
 
-            // Load the theme diagram once (read‑only)
-            Diagram themeDiagram = new Diagram(themePath);
+            // Ensure the output directory exists
+            Directory.CreateDirectory(outputDirectory);
 
-            // Get all Visio files to process
-            string[] files = Directory.GetFiles(inputFolder, "*.vsdx");
-
-            // Process each diagram in parallel
-            Parallel.ForEach(files, inputFile =>
+            // Load the theme diagram once (shared across all tasks)
+            using (Diagram themeDiagram = new Diagram(themePath))
             {
-                // Load the source diagram
-                using (Diagram doc = new Diagram(inputFile))
+                // Get all Visio files to process
+                string[] inputFiles = Directory.GetFiles(inputDirectory, "*.vsdx");
+
+                // Process each file in parallel
+                Parallel.ForEach(inputFiles, inputFile =>
                 {
-                    // Apply the preset theme
-                    doc.CopyTheme(themeDiagram);
+                    // Determine output file path
+                    string fileName = Path.GetFileNameWithoutExtension(inputFile);
+                    string outputPath = Path.Combine(outputDirectory, $"{fileName}_themed.vsdx");
 
-                    // Build output file name
-                    string outputPath = Path.Combine(
-                        outputFolder,
-                        Path.GetFileNameWithoutExtension(inputFile) + "_themed.vsdx");
+                    // Load the source diagram
+                    using (Diagram diagram = new Diagram(inputFile))
+                    {
+                        // Apply the preset theme
+                        diagram.CopyTheme(themeDiagram);
 
-                    // Save the themed diagram using the provided Save method
-                    doc.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-            });
-
-            // Clean up the theme diagram
-            themeDiagram.Dispose();
+                        // Save the themed diagram using the standard Save method
+                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    }
+                });
+            }
 
         }
         catch (System.IO.DirectoryNotFoundException ex)

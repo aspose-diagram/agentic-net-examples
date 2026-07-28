@@ -6,67 +6,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file – adjust as needed.
-        string diagramPath = "input.vsdx";
-        if (!File.Exists(diagramPath))
+        // Expect a Visio file path as the first argument.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.WriteLine("Usage: DiagramWindowDiagnostics <visio-file-path>");
             return;
         }
 
-        // Load the diagram.
-        Diagram diagram;
+        string filePath = args[0];
+        // Verify the input file exists before proceeding.
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"File not found: {filePath}");
+            return;
+        }
+
         try
         {
-            diagram = new Diagram(diagramPath);
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(filePath);
+
+            // Iterate through each window in the document.
+            foreach (Window window in diagram.Windows)
+            {
+                // Retrieve visibility settings (BOOL values) and convert to readable strings.
+                string showGrid = window.ShowGrid == BOOL.True ? "True" : "False";
+                string showGuides = window.ShowGuides == BOOL.True ? "True" : "False";
+                string showRulers = window.ShowRulers == BOOL.True ? "True" : "False";
+                string showPageBreaks = window.ShowPageBreaks == BOOL.True ? "True" : "False";
+                string showConnectionPoints = window.ShowConnectionPoints == BOOL.True ? "True" : "False";
+                string dynamicGridEnabled = window.DynamicGridEnabled == BOOL.True ? "True" : "False";
+
+                // Determine the page the window applies to (if any).
+                string pageInfo = "N/A";
+                // The Window.Page property returns a Page object (or null) rather than an integer.
+                if (window.Page != null)
+                {
+                    Page page = window.Page;
+                    pageInfo = $"{page.Name} (ID {page.ID})";
+                }
+
+                // Output the diagnostic information for the current window.
+                Console.WriteLine($"Window ID: {window.ID}");
+                Console.WriteLine($"  Type: {window.WindowType}");
+                Console.WriteLine($"  ShowGrid: {showGrid}");
+                Console.WriteLine($"  ShowGuides: {showGuides}");
+                Console.WriteLine($"  ShowRulers: {showRulers}");
+                Console.WriteLine($"  ShowPageBreaks: {showPageBreaks}");
+                Console.WriteLine($"  ShowConnectionPoints: {showConnectionPoints}");
+                Console.WriteLine($"  DynamicGridEnabled: {dynamicGridEnabled}");
+                Console.WriteLine($"  Applies to Page: {pageInfo}");
+                Console.WriteLine();
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
-
-        // Ensure there is at least one window.
-        if (diagram.Windows.Count == 0)
-        {
-            Console.Error.WriteLine("No windows found in the diagram.");
-            return;
-        }
-
-        // Iterate through each window and report its visibility settings.
-        foreach (Window window in diagram.Windows)
-        {
-            Console.WriteLine($"Window ID: {window.ID}");
-            Console.WriteLine($"  Type: {window.WindowType}");
-
-            // Visibility settings – each property is of type BOOL.
-            Console.WriteLine($"  ShowGrid: {(window.ShowGrid == BOOL.True ? "True" : "False")}");
-            Console.WriteLine($"  ShowGuides: {(window.ShowGuides == BOOL.True ? "True" : "False")}");
-            Console.WriteLine($"  ShowRulers: {(window.ShowRulers == BOOL.True ? "True" : "False")}");
-            Console.WriteLine($"  ShowPageBreaks: {(window.ShowPageBreaks == BOOL.True ? "True" : "False")}");
-            Console.WriteLine($"  ShowConnectionPoints: {(window.ShowConnectionPoints == BOOL.True ? "True" : "False")}");
-            Console.WriteLine($"  DynamicGridEnabled: {(window.DynamicGridEnabled == BOOL.True ? "True" : "False")}");
-
-            // Determine the page(s) the window applies to, if applicable.
-            // For drawing windows the Page property holds a reference to the page.
-            if (window.Page != null)
-            {
-                try
-                {
-                    Page page = window.Page;
-                    Console.WriteLine($"  Applies to Page ID: {page.ID}, Name: {page.Name}");
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"  Error retrieving page for window ID {window.ID}: {ex.Message}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("  Applies to: All pages (global window settings)");
-            }
-
-            Console.WriteLine(); // Blank line between windows.
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

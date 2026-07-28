@@ -3,7 +3,7 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class VisioToSvgExporter
 {
     static void Main()
     {
@@ -11,51 +11,40 @@ class Program
         {
 
             // Path to the source Visio file
-            string inputPath = "input.vsdx";
+            string visioFilePath = @"C:\Docs\sample.vsdx";
 
-            // Desired output SVG file path
-            string outputPath = "output.svg";
+            // Path for the exported SVG file
+            string svgOutputPath = @"C:\Docs\sample_page.svg";
 
-            // Name of the page to export (adjust as needed)
-            string targetPageName = "Page-1";
+            // Index of the page to export (0‑based). Change as needed.
+            int pageIndexToExport = 2;
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Locate the index of the target page
-            int pageIndex = -1;
-            for (int i = 0; i < diagram.Pages.Count; i++)
-            {
-                Page page = diagram.Pages[i];
-                if (page.Name == targetPageName)
-                {
-                    pageIndex = i;
-                    break;
-                }
-            }
-
-            if (pageIndex == -1)
-            {
-                throw new Exception($"Page '{targetPageName}' not found in the diagram.");
-            }
+            // Load the Visio diagram from file
+            Diagram diagram = new Diagram(visioFilePath);
 
             // Configure SVG export options
             SVGSaveOptions svgOptions = new SVGSaveOptions
             {
-                PageIndex = pageIndex,
-                ExportHiddenPage = false,
-                ExportGuideShapes = false,
+                // Specify which page to render
+                PageIndex = pageIndexToExport,
+
+                // Optional: fit the generated SVG to the viewport
                 SVGFitToViewPort = true,
-                ExportElementAsRectTag = true
+
+                // Optional: export hidden pages if needed
+                ExportHiddenPage = false
             };
 
-            // Export the specified page to SVG
-            diagram.Save(outputPath, svgOptions);
+            // Save the selected page as SVG using the configured options
+            diagram.Save(svgOutputPath, svgOptions);
+
+            // Release resources
+            diagram.Dispose();
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

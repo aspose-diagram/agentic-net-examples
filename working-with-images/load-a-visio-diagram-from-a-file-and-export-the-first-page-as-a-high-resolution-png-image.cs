@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,12 +10,12 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            var diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram from a file (first page becomes the active page)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Export the first page as a high‑resolution PNG image.
-            // When saving as an image, Aspose.Diagram renders the active (first) page by default.
-            diagram.Save("first_page.png", SaveFileFormat.Png);
+            // Export the active (first) page as a high‑resolution PNG image
+            // SaveFileFormat.Png tells Aspose.Diagram to render the page as PNG
+            diagram.Save("firstPage.png", SaveFileFormat.Png);
 
         }
         catch (System.IO.FileNotFoundException ex)

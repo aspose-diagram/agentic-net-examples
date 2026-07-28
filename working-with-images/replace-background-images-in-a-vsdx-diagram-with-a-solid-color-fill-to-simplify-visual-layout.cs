@@ -1,62 +1,61 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect input VSDX path as first argument and output path as second argument.
-        if (args.Length < 2)
+        static void Main()
         {
-            Console.WriteLine("Usage: <program> <input.vsdx> <output.vsdx> [hexColor]");
-            return;
-        }
+            try
+            {
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-        // Optional solid fill color (hex string like "#FFFFFF"). Default to white.
-        string fillColor = args.Length >= 3 ? args[2] : "#FFFFFF";
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-        // Load the Visio diagram.
-        Diagram diagram = new Diagram(inputPath);
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-        // Iterate through all pages and replace background with a solid color rectangle.
-        foreach (Page page in diagram.Pages)
-        {
-            // Retrieve page dimensions (in inches).
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Process only background pages
+                    if (page.Background == BOOL.True)
+                    {
+                        // Collect IDs of image (foreign) shapes on the background page
+                        List<long> imageShapeIds = new List<long>();
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            if (shape.Type == TypeValue.Foreign)
+                            {
+                                imageShapeIds.Add(shape.ID);
+                            }
+                        }
 
-            // Center coordinates for the rectangle shape.
-            double centerX = pageWidth / 2.0;
-            double centerY = pageHeight / 2.0;
+                        // Replace each background image with a solid color fill
+                        foreach (long shapeId in imageShapeIds)
+                        {
+                            Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Add a rectangle shape that spans the entire page.
-            // Master name "Rectangle" is a built‑in Visio master.
-            long rectId = page.AddShape(centerX, centerY, pageWidth, pageHeight, "Rectangle");
+                            // Set solid fill pattern
+                            shape.Fill.FillPattern.Value = 1; // Solid fill
 
-            // Retrieve the newly added shape.
-            Shape rect = page.Shapes.GetShape(rectId);
+                            // Choose a solid color (light gray in this example)
+                            shape.Fill.FillForegnd.Value = "#CCCCCC";
 
-            // Set solid fill pattern.
-            rect.Fill.FillPattern.Value = 1; // 1 = solid fill.
+                            // Remove any outline by setting line pattern to none
+                            shape.Line.LinePattern.Value = 0;
+                        }
+                    }
+                }
 
-            // Apply the desired foreground color.
-            rect.Fill.FillForegnd.Value = fillColor;
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Remove any outline.
-            rect.Line.LinePattern.Value = 0; // 0 = no line.
-
-            // Send the rectangle to the back so other content appears above it.
-            rect.SendToBack();
-
-            // Make the background shape non‑selectable.
-            rect.Protection.LockSelect.Value = BOOL.True;
-        }
-
-        // Save the modified diagram.
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

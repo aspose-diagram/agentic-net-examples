@@ -10,53 +10,58 @@ class Program
         try
         {
 
-            // Paths – adjust as needed
-            string diagramPath = "input.vsdx";
-            string watermarkPath = "watermark.png";
-            string outputFolder = "output";
+            // Path to the source Visio file
+            string visioPath = "input.vsdx";
 
-            // Ensure the output directory exists
-            Directory.CreateDirectory(outputFolder);
+            // Path to the watermark image (PNG, JPEG, etc.)
+            string watermarkImagePath = "watermark.png";
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Load the watermark image into memory
-            byte[] watermarkBytes = File.ReadAllBytes(watermarkPath);
-
-            // Process each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the diagram
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                // Get page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Insert the watermark image covering the whole page
-                using (MemoryStream imgStream = new MemoryStream(watermarkBytes))
+                // Iterate over all pages in the diagram
+                int pageIndex = 0;
+                foreach (Page page in diagram.Pages)
                 {
-                    // AddShape returns the shape ID (long)
-                    long shapeId = page.AddShape(0, 0, pageWidth, pageHeight, imgStream);
-                    Shape watermarkShape = page.Shapes.GetShape(shapeId);
+                    // Get page dimensions (in inches)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Set semi‑transparent fill (50% opacity)
-                    watermarkShape.Fill.FillForegndTrans.Value = 50; // percent
+                    // Center coordinates for the watermark shape
+                    double centerX = pageWidth / 2.0;
+                    double centerY = pageHeight / 2.0;
 
-                    // Send the watermark to the back so other content appears on top
-                    watermarkShape.SendToBack();
+                    // Add the watermark image as a shape covering the whole page
+                    using (FileStream imgStream = new FileStream(watermarkImagePath, FileMode.Open, FileAccess.Read))
+                    {
+                        long shapeId = page.AddShape(centerX, centerY, pageWidth, pageHeight, imgStream);
+                        Shape watermarkShape = page.Shapes.GetShape(shapeId);
 
-                    // Optional: make the watermark non‑selectable
-                    watermarkShape.Protection.LockSelect.Value = BOOL.True;
+                        // Set semi‑transparent fill (0 = opaque, 100 = fully transparent)
+                        watermarkShape.Fill.FillForegndTrans.Value = 50; // 50 % transparency
+
+                        // Send the watermark to the back so it does not obscure other content
+                        watermarkShape.SendToBack();
+                    }
+
+                    // Prepare PNG export options for the current page
+                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    {
+                        PageIndex = pageIndex, // zero‑based page index
+                        // Optional: adjust resolution if needed
+                        // HorizontalResolution = 300,
+                        // VerticalResolution = 300
+                    };
+
+                    // Export the page with the watermark applied
+                    string outputFile = $"output_page_{pageIndex + 1}.png";
+                    diagram.Save(outputFile, pngOptions);
+
+                    pageIndex++;
                 }
-
-                // Export the current page as a PNG file
-                string outputPath = Path.Combine(outputFolder, $"Page_{page.ID}.png");
-                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-                options.PageIndex = page.ID; // Export only this page
-                diagram.Save(outputPath, options);
             }
 
-            // Clean up
-            diagram.Dispose();
+            Console.WriteLine("Export completed.");
 
         }
         catch (System.IO.FileNotFoundException ex)

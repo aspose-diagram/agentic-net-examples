@@ -3,38 +3,32 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportDiagramWithCustomPalette
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram(@"C:\Diagrams\sample.vsdx");
+            // Load the source Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Create image save options for PNG format
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
-            // Set color mode to None (full color). Adjust if grayscale or B&W is required.
-            saveOptions.ImageColorMode = ImageColorMode.None;
+            // Apply corporate branding adjustments
+            // Adjust brightness and contrast to fit the required palette
+            pngOptions.ImageBrightness = 0.6f;   // value between 0 and 1
+            pngOptions.ImageContrast   = 0.7f;   // value between 0 and 1
 
-            // Adjust brightness and contrast to align with corporate branding colors.
-            // Values are between 0 and 1. Modify these as needed for your palette.
-            saveOptions.ImageBrightness = 0.6f; // example brightness
-            saveOptions.ImageContrast   = 0.7f; // example contrast
+            // Ensure the image is saved in full color (no grayscale or B&W conversion)
+            pngOptions.ImageColorMode = ImageColorMode.None;
 
-            // Export each page of the diagram as a separate PNG image
+            // Export each page of the diagram as a separate PNG file using the same options
             for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Specify which page to render
-                saveOptions.PageIndex = pageIndex;
-
-                // Build output file name
-                string outputPath = $@"C:\ExportedImages\Diagram_Page_{pageIndex + 1}.png";
-
-                // Save the page as PNG using the configured options
-                diagram.Save(outputPath, saveOptions);
+                string outputPath = $"Page_{pageIndex + 1}.png";
+                diagram.Save(outputPath, pngOptions);
             }
 
         }

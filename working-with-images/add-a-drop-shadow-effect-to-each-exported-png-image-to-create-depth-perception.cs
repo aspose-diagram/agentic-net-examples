@@ -4,23 +4,21 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input Visio file path (adjust as needed)
+                // Load the Visio diagram
                 string inputPath = "input.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Apply a simple drop shadow to every shape in every page
+                // Apply a simple drop shadow to every non-deleted shape in the diagram
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip shapes that are marked as deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
@@ -33,33 +31,28 @@ class Program
                         // Shadow transparency (30% transparent)
                         shape.Fill.ShdwForegndTrans.Value = 0.3;
 
-                        // Shadow offset (0.1 inch right and down)
-                        shape.Fill.ShapeShdwOffsetX.Value = 0.1;
-                        shape.Fill.ShapeShdwOffsetY.Value = 0.1;
+                        // Shadow offset (adjust as needed)
+                        shape.Fill.ShapeShdwOffsetX.Value = 0.1; // inches
+                        shape.Fill.ShapeShdwOffsetY.Value = 0.1; // inches
                     }
                 }
 
                 // Export each page as a PNG image with the applied shadows
                 for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Configure image save options for PNG
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                    {
-                        // Render only the current page
-                        PageIndex = i
-                    };
-
-                    // Output file name per page
                     string outputPath = $"Page_{i + 1}.png";
 
-                    // Save the diagram (only the specified page) as PNG
-                    diagram.Save(outputPath, saveOptions);
+                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    {
+                        PageIndex = i // Export the specific page
+                    };
+
+                    diagram.Save(outputPath, pngOptions);
+                    Console.WriteLine($"Exported page {i + 1} to {outputPath}");
                 }
 
                 // Clean up
                 diagram.Dispose();
-
-                Console.WriteLine("Export completed with drop shadows applied.");
 
             }
             catch (System.IO.FileNotFoundException ex)

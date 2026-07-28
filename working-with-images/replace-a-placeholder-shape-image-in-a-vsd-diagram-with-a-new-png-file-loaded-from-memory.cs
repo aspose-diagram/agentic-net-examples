@@ -1,54 +1,46 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-
-            // Output Visio file path
-            string outputPath = "output.vsdx";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // PNG image data loaded into memory (replace with actual byte array as needed)
-            byte[] pngData = File.ReadAllBytes("newImage.png");
-
-            // Find the placeholder shape (first foreign shape in the first page)
-            Page page = diagram.Pages[0];
-            Shape placeholderShape = null;
-
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                if (shape.Type == TypeValue.Foreign)
+
+                // Paths to the source Visio file and the output file
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the new PNG image into a byte array (in-memory)
+                byte[] newPngData = File.ReadAllBytes("newImage.png");
+
+                // Load the existing Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes to find the placeholder shape
+                foreach (Page page in diagram.Pages)
                 {
-                    placeholderShape = shape;
-                    break;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Identify the placeholder shape by its universal name and ensure it is an image (Foreign) shape
+                        if (shape.NameU == "Placeholder" && shape.Type == TypeValue.Foreign)
+                        {
+                            // Replace the embedded image data with the new PNG bytes
+                            shape.ForeignData.Value = newPngData;
+                        }
+                    }
                 }
-            }
 
-            if (placeholderShape == null)
+                // Save the modified diagram back to VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                throw new Exception("Placeholder shape not found.");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Replace the image data
-            placeholderShape.ForeignData.Value = pngData;
-
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

@@ -1,31 +1,29 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = "output.jpg";
-
         try
         {
-            Diagram diagram = new Diagram(inputPath);
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-            saveOptions.JpegQuality = 80; // Compression quality (0-100)
-            diagram.Save(outputPath, saveOptions);
+
+            // Load the VSDX diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Configure JPEG quality (80%)
+            ImageSaveOptions jpegOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+            jpegOptions.JpegQuality = 80;
+
+            // Save the diagram as a JPEG image
+            diagram.Save("output.jpg", jpegOptions);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

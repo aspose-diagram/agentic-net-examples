@@ -1,75 +1,97 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing;
 using Aspose.Drawing.Imaging;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Path to the VST (stencil) file
+        string vstPath = "assets.stencil.vst";
+        // Guard: ensure the stencil file exists
+        if (!File.Exists(vstPath)) { Console.Error.WriteLine($"File not found: {vstPath}"); return; }
+
+        // Output sprite sheet file
+        string outputPath = "sprite_sheet.png";
+
+        try
         {
-            // Expect two arguments: input VST file path and output sprite sheet path
-            if (args.Length < 2)
+            // Load the diagram (stencil) containing pages
+            Diagram diagram = new Diagram(vstPath);
+
+            int pageCount = diagram.Pages.Count;
+            if (pageCount == 0)
             {
-                Console.WriteLine("Usage: SpriteSheetGenerator <input.vst> <output.png>");
+                Console.WriteLine("No pages found in the diagram.");
                 return;
             }
 
-            string vstPath = args[0];
-            string outputPath = args[1];
+            // Store each page image in memory
+            List<Aspose.Drawing.Image> pageImages = new List<Aspose.Drawing.Image>();
+            int maxHeight = 0;
+            int totalWidth = 0;
 
-            // Load the VST diagram (stencil). The constructor auto‑detects the format.
-            Diagram diagram = new Diagram(vstPath);
-
-            // Collect rendered page images
-            List<Bitmap> pageBitmaps = new List<Bitmap>();
-            int maxWidth = 0;
-            int totalHeight = 0;
-
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            for (int i = 0; i < pageCount; i++)
             {
-                // Configure image export options for PNG
-                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                imgOptions.PageIndex = i; // zero‑based page index
+                // Export the current page to PNG using ImageSaveOptions
+                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    PageIndex = i,
+                    PageCount = 1
+                };
 
                 using (MemoryStream ms = new MemoryStream())
                 {
-                    // Export the page to a memory stream
+                    // Save the single page to a memory stream
                     diagram.Save(ms, imgOptions);
                     ms.Position = 0;
+                    // Load the image from the stream using Aspose.Drawing.Image
+                    Aspose.Drawing.Image pageImg = Aspose.Drawing.Image.FromStream(ms);
+                    pageImages.Add(pageImg);
 
-                    // Load the image with Aspose.Drawing
-                    Bitmap bmp = new Bitmap(ms);
-                    pageBitmaps.Add(bmp);
-
-                    // Track dimensions for the final sprite sheet
-                    if (bmp.Width > maxWidth) maxWidth = bmp.Width;
-                    totalHeight += bmp.Height;
+                    // Update sprite sheet dimensions
+                    totalWidth += pageImg.Width;
+                    if (pageImg.Height > maxHeight)
+                        maxHeight = pageImg.Height;
                 }
             }
 
-            // Create the final sprite sheet bitmap
-            using (Bitmap spriteSheet = new Bitmap(maxWidth, totalHeight))
+            // Create the sprite sheet bitmap with the accumulated dimensions
+            using (Aspose.Drawing.Bitmap spriteSheet = new Aspose.Drawing.Bitmap(totalWidth, maxHeight))
             {
-                using (Graphics g = Graphics.FromImage(spriteSheet))
+                using (Aspose.Drawing.Graphics g = Aspose.Drawing.Graphics.FromImage(spriteSheet))
                 {
-                    g.Clear(Color.White); // optional background
+                    // Fill background with white
+                    g.Clear(Aspose.Drawing.Color.White);
 
-                    int currentY = 0;
-                    foreach (Bitmap bmp in pageBitmaps)
+                    int offsetX = 0;
+                    // Draw each page image side by side
+                    foreach (Aspose.Drawing.Image img in pageImages)
                     {
-                        // Draw each page image stacked vertically
-                        g.DrawImage(bmp, 0, currentY, bmp.Width, bmp.Height);
-                        currentY += bmp.Height;
-                        bmp.Dispose(); // release individual page bitmap
+                        g.DrawImage(img, offsetX, 0, img.Width, img.Height);
+                        offsetX += img.Width;
                     }
                 }
 
                 // Save the combined sprite sheet as PNG
-                spriteSheet.Save(outputPath, ImageFormat.Png);
+                spriteSheet.Save(outputPath, Aspose.Drawing.Imaging.ImageFormat.Png);
                 Console.WriteLine($"Sprite sheet saved to: {outputPath}");
             }
+
+            // Clean up individual page images
+            foreach (Aspose.Drawing.Image img in pageImages)
+            {
+                img.Dispose();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

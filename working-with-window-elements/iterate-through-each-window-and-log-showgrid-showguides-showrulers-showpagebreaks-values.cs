@@ -9,19 +9,18 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through each Window element in the diagram
-            foreach (Window window in diagram.Windows)
+            // Iterate through each Window and log the required properties
+            foreach (Window win in diagram.Windows)
             {
-                // Log the required properties for the current window
-                Console.WriteLine(
-                    $"Window ID: {window.ID}, " +
-                    $"ShowGrid: {window.ShowGrid}, " +
-                    $"ShowGuides: {window.ShowGuides}, " +
-                    $"ShowRulers: {window.ShowRulers}, " +
-                    $"ShowPageBreaks: {window.ShowPageBreaks}");
+                Console.WriteLine($"Window ID: {win.ID}");
+                Console.WriteLine($"ShowGrid: {win.ShowGrid}");
+                Console.WriteLine($"ShowGuides: {win.ShowGuides}");
+                Console.WriteLine($"ShowRulers: {win.ShowRulers}");
+                Console.WriteLine($"ShowPageBreaks: {win.ShowPageBreaks}");
+                Console.WriteLine();
             }
 
         }

@@ -1,8 +1,8 @@
+using Aspose.Diagram;
 using System;
 using System.IO;
-using Aspose.Diagram;
 
-class Program
+class ExtractOleObjects
 {
     static void Main()
     {
@@ -19,59 +19,37 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Each shape may contain ForeignData (OLE object, image, etc.)
-                    ForeignData foreignData = shape.ForeignData;
-                    if (foreignData == null)
-                        continue;
-
-                    // ----- Embedded OLE object -----
-                    // ObjectData holds the raw bytes of the embedded OLE object.
-                    if (foreignData.ObjectData != null && foreignData.ObjectData.Length > 0)
+                    // Shapes that contain OLE data expose ForeignData
+                    if (shape.ForeignData != null)
                     {
-                        string extension = DetermineExtension(foreignData);
-                        string fileName = $"OleObject_{oleCounter}{extension}";
-                        File.WriteAllBytes(fileName, foreignData.ObjectData);
-                        oleCounter++;
-                        continue;
-                    }
+                        ForeignData foreign = shape.ForeignData;
 
-                    // ----- Linked OLE object -----
-                    // ObjectSourceFullName contains the original file path of the linked object.
-                    if (!string.IsNullOrEmpty(foreignData.ObjectSourceFullName))
-                    {
-                        string sourcePath = foreignData.ObjectSourceFullName;
-                        string extension = Path.GetExtension(sourcePath);
-                        string fileName = $"OleObject_{oleCounter}{extension}";
+                        // Embedded OLE objects store their binary in ObjectData
+                        if (foreign.ObjectData != null && foreign.ObjectData.Length > 0)
+                        {
+                            // Try to preserve the original file extension
+                            string extension = ".bin";
+                            if (!string.IsNullOrEmpty(foreign.ObjectSourceFullName))
+                            {
+                                string extFromSource = Path.GetExtension(foreign.ObjectSourceFullName);
+                                if (!string.IsNullOrEmpty(extFromSource))
+                                    extension = extFromSource;
+                            }
 
-                        // If the source file exists, copy it; otherwise create an empty placeholder.
-                        if (File.Exists(sourcePath))
-                            File.Copy(sourcePath, fileName, true);
-                        else
-                            File.WriteAllBytes(fileName, new byte[0]);
-
-                        oleCounter++;
+                            string outputFile = $"OleObject_{oleCounter}{extension}";
+                            File.WriteAllBytes(outputFile, foreign.ObjectData);
+                            oleCounter++;
+                        }
                     }
                 }
             }
+
+            // No diagram saving required for extraction; saving would use the provided Save methods.
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-    }
-
-    // Helper to infer a file extension for an embedded OLE object.
-    // If the source name is available, its extension is used; otherwise default to .bin.
-    static string DetermineExtension(ForeignData foreignData)
-    {
-        if (!string.IsNullOrEmpty(foreignData.ObjectSourceFullName))
-        {
-            string ext = Path.GetExtension(foreignData.ObjectSourceFullName);
-            if (!string.IsNullOrEmpty(ext))
-                return ext;
-        }
-        // Fallback when no source name is present.
-        return ".bin";
     }
 }

@@ -1,53 +1,52 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Load an existing Visio diagram
+                // Paths to the input and output Visio files
                 string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Name of the custom property (field) to remove from shapes
+                string targetFieldName = "MyCustomProp";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Define the target page index and shape ID (adjust as needed)
-                int pageIndex = 0;               // first page
-                long shapeId = 1;                // ID of the shape to modify
-
-                // Retrieve the page and shape
-                Page page = diagram.Pages[pageIndex];
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Name of the custom property (Prop) to remove
-                string targetPropName = "MyCustomProperty";
-
-                // Find and remove the property with the specified name
-                Prop propToRemove = null;
-                foreach (Prop prop in shape.Props)
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    if (prop.Name == targetPropName)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        propToRemove = prop;
-                        break;
+                        // Search for the property with the specified name
+                        Prop propToRemove = null;
+                        foreach (Prop prop in shape.Props)
+                        {
+                            if (prop.Name == targetFieldName)
+                            {
+                                propToRemove = prop;
+                                break;
+                            }
+                        }
+
+                        // If found, remove it from the shape's Props collection
+                        if (propToRemove != null)
+                        {
+                            shape.Props.Remove(propToRemove);
+                            Console.WriteLine($"Removed property '{targetFieldName}' from shape ID {shape.ID} on page ID {page.ID}.");
+                        }
                     }
                 }
 
-                if (propToRemove != null)
-                {
-                    shape.Props.Remove(propToRemove);
-                    Console.WriteLine($"Property '{targetPropName}' removed from shape ID {shapeId}.");
-                }
-                else
-                {
-                    Console.WriteLine($"Property '{targetPropName}' not found on shape ID {shapeId}.");
-                }
-
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+                Console.WriteLine("Diagram saved to " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

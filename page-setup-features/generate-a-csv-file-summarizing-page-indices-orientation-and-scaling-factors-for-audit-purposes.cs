@@ -4,36 +4,35 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input Visio file path (adjust as needed)
-                string visioPath = "input.vsdx";
-
+                // Path to the Visio file to be audited
+                const string diagramPath = "input.vsdx";
                 // Output CSV file path
-                string csvPath = "PageAudit.csv";
+                const string csvPath = "audit_pages.csv";
 
-                // Ensure the diagram is disposed properly
-                using (Diagram diagram = new Diagram(visioPath))
+                // Load the diagram inside a using block to ensure proper disposal
+                using (Diagram diagram = new Diagram(diagramPath))
                 {
-                    // Prepare to write CSV
+                    // Prepare the CSV file
                     using (StreamWriter writer = new StreamWriter(csvPath, false))
                     {
                         // Write CSV header
                         writer.WriteLine("PageIndex,Orientation,ScaleX,ScaleY");
 
-                        // Iterate through each page in the diagram
+                        // Iterate over each page in the diagram
                         foreach (Page page in diagram.Pages)
                         {
-                            // Page index (using the page's ID for uniqueness)
+                            // Page index (ID)
                             int pageIndex = page.ID;
 
-                            // Orientation: Landscape, Portrait, or SameAsPrinter
+                            // Orientation (Landscape, Portrait, SameAsPrinter)
                             string orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value.ToString();
 
-                            // Scaling factors (default to 1.0 if not set)
+                            // Scaling factors (default 1.0 if not set)
                             double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
                             double scaleY = page.PageSheet.PrintProps.ScaleY.Value;
 

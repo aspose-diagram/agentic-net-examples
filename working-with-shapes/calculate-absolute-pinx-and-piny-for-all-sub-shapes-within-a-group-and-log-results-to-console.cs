@@ -1,55 +1,61 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the page
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+
+                // Load the Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages in the diagram
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Check if the shape is a group
-                    if (shape.Type == TypeValue.Group)
+                    // Iterate through all shapes on the page
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Group's absolute PinX and PinY
-                        double groupPinX = shape.XForm.PinX.Value;
-                        double groupPinY = shape.XForm.PinY.Value;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Iterate through sub‑shapes within the group
-                        foreach (Aspose.Diagram.Shape subShape in shape.Shapes)
+                        // Process only group shapes
+                        if (shape.Type == TypeValue.Group)
                         {
-                            // Sub‑shape's position is relative to the group
-                            double relPinX = subShape.XForm.PinX.Value;
-                            double relPinY = subShape.XForm.PinY.Value;
+                            // Absolute position of the group shape
+                            double groupPinX = shape.XForm.PinX.Value;
+                            double groupPinY = shape.XForm.PinY.Value;
 
-                            // Simplified absolute calculation (ignores rotation/scaling)
-                            double absPinX = groupPinX + relPinX;
-                            double absPinY = groupPinY + relPinY;
+                            Console.WriteLine($"Group Shape ID={shape.ID}, Name={shape.NameU}, PinX={groupPinX}, PinY={groupPinY}");
 
-                            Console.WriteLine($"Group Shape ID {shape.ID}, Sub‑Shape ID {subShape.ID}: Absolute PinX = {absPinX}, PinY = {absPinY}");
+                            // Iterate through sub‑shapes within the group
+                            foreach (Aspose.Diagram.Shape subShape in shape.Shapes)
+                            {
+                                // Skip deleted sub‑shapes
+                                if (subShape.Del == BOOL.True)
+                                    continue;
+
+                                // Sub‑shape coordinates are relative to the group's origin.
+                                // Approximate absolute coordinates by adding the group's PinX/PinY.
+                                double absPinX = groupPinX + subShape.XForm.PinX.Value;
+                                double absPinY = groupPinY + subShape.XForm.PinY.Value;
+
+                                Console.WriteLine($"  Sub‑Shape ID={subShape.ID}, Name={subShape.NameU}, Absolute PinX={absPinX}, Absolute PinY={absPinY}");
+                            }
                         }
                     }
                 }
+
+                // Optionally save the diagram (no changes made in this example)
+                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
             }
-
-            // Save the diagram (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

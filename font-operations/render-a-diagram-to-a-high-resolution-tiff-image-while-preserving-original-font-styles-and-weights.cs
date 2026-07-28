@@ -13,20 +13,13 @@ class Program
             // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create image save options for TIFF format
+            // Configure image save options for high‑resolution TIFF
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
+            saveOptions.Resolution = 300;               // Set DPI (e.g., 300 for high quality)
+            saveOptions.TiffCompression = TiffCompression.Lzw; // Optional compression
+            // Do NOT set DefaultFont to preserve original font styles and weights
 
-            // Set a high resolution (e.g., 300 DPI) to get a high‑resolution image
-            saveOptions.Resolution = 300;
-
-            // Preserve original font styles by specifying a default font that exists on the system.
-            // If the original fonts are installed, they will be used automatically.
-            saveOptions.DefaultFont = "Arial";
-
-            // Optional: set TIFF compression (LZW is lossless and keeps quality)
-            saveOptions.TiffCompression = TiffCompression.Lzw;
-
-            // Save the diagram as a high‑resolution TIFF image
+            // Render and save the diagram as a TIFF image
             diagram.Save("output.tiff", saveOptions);
 
         }

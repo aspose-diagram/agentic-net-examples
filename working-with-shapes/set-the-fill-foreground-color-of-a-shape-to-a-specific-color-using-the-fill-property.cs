@@ -9,28 +9,28 @@ class Program
         try
         {
 
-            // Create a new diagram instance
-            Diagram diagram = new Diagram();
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
             // Get the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape at coordinates (2,2)
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
-
-            // Retrieve the shape object using its ID
+            // Retrieve a shape by its ID (example ID = 1)
+            int shapeId = 1;
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Set the fill foreground color to red (hex format)
+            // Set the fill foreground color (hex string, e.g., red)
             shape.Fill.FillForegnd.Value = "#FF0000";
 
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

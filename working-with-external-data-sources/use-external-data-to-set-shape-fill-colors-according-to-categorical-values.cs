@@ -1,78 +1,100 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Input diagram, output diagram, and external CSV file paths
-            string diagramPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-            string dataPath = "colors.csv";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Read external CSV data (format: ShapeName,HexColor)
-            var colorMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            if (!File.Exists(dataPath))
+            try
             {
-                Console.WriteLine($"Data file not found: {dataPath}");
-                return;
+
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+
+                // Output Visio file path
+                string outputPath = "output.vsdx";
+
+                // External CSV file that maps categories to hex color strings (e.g., "Category,Color")
+                // Example content:
+                // High,#FF0000
+                // Medium,#FFFF00
+                // Low,#00FF00
+                string csvPath = "categoryColors.csv";
+
+                // Load external category‑to‑color mapping
+                var categoryColors = LoadCategoryColors(csvPath);
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Assume the shape's Data1 cell holds the categorical value
+                        string category = shape.Data1?.Trim();
+
+                        if (string.IsNullOrEmpty(category))
+                            continue;
+
+                        if (categoryColors.TryGetValue(category, out string hexColor))
+                        {
+                            // Set solid fill pattern
+                            shape.Fill.FillPattern.Value = 1; // 1 = solid
+
+                            // Apply the fill foreground color using a hex string
+                            shape.Fill.FillForegnd.Value = hexColor;
+                        }
+                    }
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            foreach (var line in File.ReadAllLines(dataPath))
+            catch (System.IO.FileNotFoundException ex)
             {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
+
+        // Reads a CSV file where each line is "Category,HexColor"
+        private static Dictionary<string, string> LoadCategoryColors(string csvPath)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            if (!File.Exists(csvPath))
+                throw new FileNotFoundException($"Category‑color CSV file not found: {csvPath}");
+
+            foreach (string line in File.ReadAllLines(csvPath))
+            {
+                // Skip empty lines
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
-                var parts = line.Split(',');
-                if (parts.Length < 2)
-                    continue;
+                string[] parts = line.Split(',');
 
-                string shapeName = parts[0].Trim();
-                string hexColor = parts[1].Trim();
+                if (parts.Length != 2)
+                    continue; // Invalid line format; ignore
 
-                if (!string.IsNullOrEmpty(shapeName) && !string.IsNullOrEmpty(hexColor))
-                    colorMap[shapeName] = hexColor;
+                string category = parts[0].Trim();
+                string color = parts[1].Trim();
+
+                // Basic validation of hex color (must start with '#')
+                if (!color.StartsWith("#"))
+                    continue; // Invalid color format; ignore
+
+                dict[category] = color;
             }
 
-            // Apply fill colors based on the external data
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Use the universal name if available, otherwise the local name
-                    string key = shape.NameU ?? shape.Name;
-                    if (key == null)
-                        continue;
-
-                    if (colorMap.TryGetValue(key, out string hex))
-                    {
-                        // Set solid fill pattern and foreground color
-                        shape.Fill.FillPattern.Value = 1; // Solid fill
-                        shape.Fill.FillForegnd.Value = hex;
-                    }
-                }
-            }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            return dict;
         }
     }
-}

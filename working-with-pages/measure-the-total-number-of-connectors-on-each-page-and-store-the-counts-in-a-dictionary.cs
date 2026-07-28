@@ -1,7 +1,7 @@
 using System.IO;
+using Aspose.Diagram;
 using System;
 using System.Collections.Generic;
-using Aspose.Diagram;
 
 class Program
 {
@@ -10,29 +10,28 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx"); // replace with your file path
 
-            // Dictionary to store the number of connectors per page (key: page index, value: connector count)
-            Dictionary<int, int> connectorCounts = new Dictionary<int, int>();
+            // Dictionary to store the number of connectors per page (key: page ID, value: connector count)
+            Dictionary<long, int> connectorCounts = new Dictionary<long, int>();
 
             // Iterate through all pages in the diagram
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[i];
-
-                // The Connects collection contains all connector elements on the page
-                int connectorCount = page.Connects.Count;
-
-                // Store the count in the dictionary
-                connectorCounts[i] = connectorCount;
+                // The Connects collection holds every connector on the page
+                int count = page.Connects.Count;
+                connectorCounts[page.ID] = count;
             }
 
             // Example output of the results
             foreach (var kvp in connectorCounts)
             {
-                Console.WriteLine($"Page {kvp.Key}: {kvp.Value} connectors");
+                Console.WriteLine($"Page ID {kvp.Key}: {kvp.Value} connectors");
             }
+
+            // If you need to save the diagram after processing, uncomment the line below
+            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

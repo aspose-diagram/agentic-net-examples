@@ -10,24 +10,32 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
+            // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsd");
 
-            // TODO: Update shape geometries here if required
-            // Example: diagram.Pages[0].Shapes[1].XForm... (modify as needed)
+            // -------------------------------------------------
+            // Here you can modify shape geometries if needed.
+            // For example, iterate through shapes and adjust
+            // their XForm geometry properties.
+            // -------------------------------------------------
+            // foreach (Shape shape in diagram.Pages[0].Shapes)
+            // {
+            //     // shape.XForm.PinX = ...;
+            //     // shape.XForm.PinY = ...;
+            // }
 
             // Configure SVG save options
             SVGSaveOptions svgOptions = new SVGSaveOptions
             {
-                // Export rectangle shapes as <rect> tags for cleaner SVG
+                // Export rectangle shapes as <rect> tags (optional)
                 ExportElementAsRectTag = true,
-                // Keep scaling information inside transformation matrices
+                // Keep scale information in the transformation matrix
                 IsExportScaleInMatrix = true,
-                // Render the first page (0‑based index)
-                PageIndex = 0
+                // Fit the generated SVG to the viewport
+                SVGFitToViewPort = true
             };
 
-            // Export the diagram to SVG using the configured options
+            // Save the entire diagram as an SVG file using the options above
             diagram.Save("output.svg", svgOptions);
 
         }

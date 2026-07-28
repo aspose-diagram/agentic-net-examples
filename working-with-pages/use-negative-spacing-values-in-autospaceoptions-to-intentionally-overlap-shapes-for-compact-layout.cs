@@ -2,8 +2,6 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-using Aspose.Diagram.AutoLayout; // Namespace for AutoSpaceOptions
-
 class Program
 {
     static void Main()
@@ -14,19 +12,19 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the first page (or any specific page)
+            // Get the first page (or any specific page you want to modify)
             Page page = diagram.Pages[0];
 
-            // Prepare AutoSpaceOptions with negative spacing to force overlap
+            // Create AutoSpaceOptions with negative spacing to force overlap
             AutoSpaceOptions options = new AutoSpaceOptions
             {
-                // Negative values (in inches) cause shapes to be placed closer together,
-                // resulting in intentional overlap.
-                DistanceInHorizontal = -0.2, // overlap horizontally by 0.2 inch
-                DistanceInVertical = -0.2    // overlap vertically by 0.2 inch
+                // Negative horizontal spacing (in inches)
+                DistanceInHorizontal = -0.2,
+                // Negative vertical spacing (in inches)
+                DistanceInVertical = -0.2
             };
 
-            // Apply auto‑spacing to all shapes on the page using the options above
+            // Apply auto-spacing to all shapes on the page using the negative values
             page.AutoSpaceShapes(page.Shapes, options);
 
             // Save the modified diagram

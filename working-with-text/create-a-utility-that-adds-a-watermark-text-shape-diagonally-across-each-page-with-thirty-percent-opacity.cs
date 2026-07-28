@@ -1,53 +1,66 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Expect two arguments: input Visio file path and output file path.
+            if (args.Length != 2)
             {
+                Console.WriteLine("Usage: WatermarkUtility <input.vsdx> <output.vsdx>");
+                return;
+            }
 
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output_with_watermark.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page and add a diagonal watermark
+            // Load the diagram.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve page dimensions (in inches)
+                    // Retrieve page dimensions (in inches).
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Center position for the watermark text shape
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
+                    // Center coordinates.
+                    double centerX = pageWidth / 2.0;
+                    double centerY = pageHeight / 2.0;
 
-                    // Add a full‑page text shape as the watermark
-                    // Font size is specified in inches (e.g., 0.5 inches ≈ 36 points)
-                    Shape watermark = page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                                  "CONFIDENTIAL", "Arial", "#808080", 0.5);
+                    // Add a full‑page text shape that will serve as the watermark.
+                    // Parameters: pinX, pinY, width, height, text, fontName, fontColor, fontSize(in inches).
+                    Shape watermark = page.AddText(
+                        centerX,               // pinX (center of rotation)
+                        centerY,               // pinY (center of rotation)
+                        pageWidth,             // width of the text box
+                        pageHeight,            // height of the text box
+                        "CONFIDENTIAL",        // watermark text
+                        "Arial",               // font name
+                        "#808080",             // font color (gray)
+                        1.0                    // font size (72 pt = 1 inch)
+                    );
 
-                    // Rotate the text 45 degrees to make it diagonal
-                    watermark.TextXForm.TxtAngle.Value = (float)(Math.PI / 180.0 * 45.0);
+                    // Rotate the text 45 degrees (diagonal across the page).
+                    // TextXForm.TxtAngle expects radians.
+                    watermark.TextXForm.TxtAngle.Value = (Math.PI / 180.0) * 45.0;
 
-                    // Set fill transparency to 70 % (i.e., 30 % opacity)
-                    // This makes the watermark semi‑transparent
+                    // Set the shape's fill transparency to achieve 30 % opacity.
+                    // Transparency value: 0 = opaque, 100 = fully transparent.
+                    // 30 % opacity => 70 % transparency.
                     watermark.Fill.FillForegndTrans.Value = 70.0;
-                    // Optional: set a fill color (white) so the transparency applies to a visible background
-                    watermark.Fill.FillForegnd.Value = "#FFFFFF";
+
+                    // Ensure the shape has no background fill (optional, keeps only the text visible).
+                    watermark.Fill.FillPattern.Value = 0;
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+            Console.WriteLine($"Watermark added and diagram saved to '{outputPath}'.");
+        }
     }

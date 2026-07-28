@@ -1,58 +1,60 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Diagnostics;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
 {
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: BenchmarkFillInheritance <inputVisioFile> <outputVisioFile>");
+            Console.WriteLine("Usage: <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Load the diagram
-        Diagram diagram = new Diagram(inputPath);
-
-        // Assume processing the first page; adjust as needed for multi‑page diagrams
-        Page page = diagram.Pages[0];
-
-        Stopwatch sw = new Stopwatch();
-        sw.Start();
-
-        // Iterate through all shapes and toggle fill inheritance
-        foreach (Shape shape in page.Shapes)
+        // Benchmark scenario: rely on inherited fill (no overrides)
+        Stopwatch inheritTimer = Stopwatch.StartNew();
+        using (Diagram diagram = new Diagram(inputPath))
         {
-            // Skip deleted shapes
-            if (shape.Del == BOOL.True)
-                continue;
-
-            // Determine if the shape currently uses inherited fill color
-            bool usesInheritedFill = shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value;
-
-            if (usesInheritedFill)
+            foreach (Page page in diagram.Pages)
             {
-                // Break inheritance by assigning a distinct fill color
-                shape.Fill.FillForegnd.Value = "#FF0000"; // Red
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Access inherited fill to simulate read operation
+                    string inheritedForegnd = shape.InheritFill.FillForegnd.Value;
+                }
             }
-            else
-            {
-                // Re‑enable inheritance by copying the inherited fill value
-                shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
-            }
+            inheritTimer.Stop();
+
+            // Save the unchanged diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
+        Console.WriteLine($"Time with inherited fill (no overrides): {inheritTimer.ElapsedMilliseconds} ms");
 
-        sw.Stop();
+        // Benchmark scenario: override fill for each shape
+        Stopwatch overrideTimer = Stopwatch.StartNew();
+        using (Diagram diagram = new Diagram(inputPath))
+        {
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Override fill foreground color
+                    shape.Fill.FillForegnd.Value = "#FF0000";
+                }
+            }
+            overrideTimer.Stop();
 
-        Console.WriteLine($"Toggled fill inheritance for {page.Shapes.Count} shapes in {sw.ElapsedMilliseconds} ms.");
-
-        // Save the modified diagram
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the diagram with overridden fills
+            string overriddenPath = Path.Combine(
+                Path.GetDirectoryName(outputPath) ?? string.Empty,
+                "overridden_" + Path.GetFileName(outputPath));
+            diagram.Save(overriddenPath, SaveFileFormat.Vsdx);
+        }
+        Console.WriteLine($"Time with fill overrides: {overrideTimer.ElapsedMilliseconds} ms");
     }
 }

@@ -14,13 +14,14 @@ class Program
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through each page in the diagram
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    // Access the annotations (comments) collection on the page sheet
+                    var annotations = page.PageSheet.Annotations;
 
-                    // Iterate through all annotations (comments) on the page
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    // Iterate through each annotation
+                    foreach (Annotation annotation in annotations)
                     {
                         // Retrieve the comment text
                         string commentText = annotation.Comment.Value;
@@ -28,9 +29,9 @@ class Program
                         // Check for empty or whitespace-only comments
                         if (string.IsNullOrWhiteSpace(commentText))
                         {
+                            // Report a warning with page name and comment identifier
                             Console.WriteLine(
-                                $"Warning: Empty comment found on page \"{page.Name}\" (ID {page.ID}), " +
-                                $"MarkerIndex {annotation.MarkerIndex.Value}.");
+                                $"Warning: Empty comment detected on page \"{page.Name}\" (MarkerIndex: {annotation.MarkerIndex.Value}).");
                         }
                     }
                 }

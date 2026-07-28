@@ -1,51 +1,50 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class Program
-{
-    public static void Main(string[] args)
+class Program
     {
-        try
+        static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output PDF file path.
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: VisioConnectorWeightUpdater <inputVisioPath> <outputPdfPath>");
+                return;
+            }
 
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output PDF file path
-            string outputPath = "output.pdf";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Increment line weight of all connector shapes by 0.5 pt (0.5/72 inches)
-            double increment = 0.5 / 72.0;
+            // Increment value: 0.5 point = 0.5 / 72 inches.
+            double incrementInInches = 0.5 / 72.0;
 
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Connector shapes are 1‑D shapes
+                    // Identify connector shapes (1‑D shapes).
                     if (shape.OneD)
                     {
-                        double currentWeight = shape.Line.LineWeight.Value;
-                        shape.Line.LineWeight.Value = currentWeight + increment;
+                        // Increase line weight by the specified increment.
+                        shape.Line.LineWeight.Value += incrementInInches;
                     }
                 }
             }
 
-            // Configure PDF save options
+            // Configure PDF save options.
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            // Optional: set a default font to avoid missing‑font issues.
             pdfOptions.DefaultFont = "Arial";
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // explicit format tracking
 
-            // Save the modified diagram as PDF
+            // Save the modified diagram as PDF.
             diagram.Save(outputPath, pdfOptions);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Diagram processed and saved to PDF: {outputPath}");
         }
     }
-}

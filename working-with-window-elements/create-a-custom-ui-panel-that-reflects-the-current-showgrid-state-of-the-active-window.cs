@@ -1,66 +1,76 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio diagram file (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is at least one window; if not, create a default drawing window
+            if (diagram.Windows.Count == 0)
             {
+                Window defaultWindow = new Window();
+                defaultWindow.WindowType = WindowTypeValue.Drawing;
+                defaultWindow.WindowState = WindowStateValue.Maximized;
+                defaultWindow.WindowWidth = 1100;
+                defaultWindow.WindowHeight = 700;
+                diagram.Windows.Add(defaultWindow);
+            }
 
-                // Path to the Visio file (adjust as needed)
-                string diagramPath = "sample.vsdx";
+            // Use the first window as the active window
+            Window activeWindow = diagram.Windows[0];
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+            while (true)
+            {
+                // Display current ShowGrid state
+                Console.WriteLine($"Current ShowGrid state: {activeWindow.ShowGrid}");
 
-                // Ensure there is at least one window; if not, create a default drawing window
-                if (diagram.Windows.Count == 0)
+                // Simple console UI panel
+                Console.WriteLine("Options:");
+                Console.WriteLine("  T - Toggle ShowGrid");
+                Console.WriteLine("  S - Save diagram");
+                Console.WriteLine("  Q - Quit");
+                Console.Write("Enter choice: ");
+                string choice = Console.ReadLine()?.Trim().ToUpperInvariant();
+
+                if (choice == "T")
                 {
-                    Window defaultWindow = new Window();
-                    defaultWindow.WindowType = WindowTypeValue.Drawing;
-                    defaultWindow.WindowState = WindowStateValue.Maximized;
-                    defaultWindow.WindowWidth = 800;
-                    defaultWindow.WindowHeight = 600;
-                    diagram.Windows.Add(defaultWindow);
+                    // Toggle between BOOL.True and BOOL.False
+                    activeWindow.ShowGrid = (activeWindow.ShowGrid == BOOL.True) ? BOOL.False : BOOL.True;
+                    Console.WriteLine("ShowGrid state toggled.");
+                }
+                else if (choice == "S")
+                {
+                    // Save the diagram with the updated window settings
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
+                }
+                else if (choice == "Q")
+                {
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("Invalid option. Please try again.");
                 }
 
-                // Use the first window as the active window for this example
-                Window activeWindow = diagram.Windows[0];
-
-                while (true)
-                {
-                    // Display current ShowGrid state
-                    Console.WriteLine($"Current ShowGrid state: {(activeWindow.ShowGrid == BOOL.True ? "Enabled" : "Disabled")}");
-
-                    // Prompt user for action
-                    Console.WriteLine("Enter 't' to toggle ShowGrid, 's' to save and exit, or any other key to refresh:");
-                    string input = Console.ReadLine();
-
-                    if (string.Equals(input, "t", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Toggle the ShowGrid property
-                        activeWindow.ShowGrid = (activeWindow.ShowGrid == BOOL.True) ? BOOL.False : BOOL.True;
-                        Console.WriteLine("ShowGrid state toggled.");
-                    }
-                    else if (string.Equals(input, "s", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Save the diagram with the updated window settings
-                        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-                        Console.WriteLine("Diagram saved to 'output.vsdx'. Exiting.");
-                        break;
-                    }
-                    else
-                    {
-                        // Refresh display
-                        Console.Clear();
-                    }
-                }
-
+                Console.WriteLine(); // Blank line for readability
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

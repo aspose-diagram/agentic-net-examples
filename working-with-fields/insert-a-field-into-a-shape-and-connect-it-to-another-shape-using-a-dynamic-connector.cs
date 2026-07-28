@@ -1,56 +1,56 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Get the first (default) page
-                Page page = diagram.Pages[0];
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-                // Add two rectangle shapes (master name "Rectangle")
-                long rect1Id = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
-                long rect2Id = diagram.AddShape(5.0, 2.0, "Rectangle", 0);
+            // Add two rectangle shapes
+            long rect1Id = page.AddShape(2.0, 2.0, "Rectangle");
+            Shape rect1 = page.Shapes.GetShape(rect1Id);
 
-                // Retrieve the shape objects for further manipulation
-                Shape rect1 = page.Shapes.GetShape(rect1Id);
-                Shape rect2 = page.Shapes.GetShape(rect2Id);
+            long rect2Id = page.AddShape(5.0, 5.0, "Rectangle");
+            Shape rect2 = page.Shapes.GetShape(rect2Id);
 
-                // Insert a text field into the first rectangle
-                Field field = new Field();
-                field.Value.Val = "Sample Field";
-                rect1.Fields.Add(field);
+            // Insert a custom field into the first rectangle
+            Field customField = new Field();
+            // Set the field type (Undefined is a safe default)
+            customField.Type.Value = TypeFieldValue.Undefined;
+            // Set the field's displayed value
+            customField.Value.Val = "CustomValue";
+            // Add the field to the shape's Fields collection
+            rect1.Fields.Add(customField);
 
-                // Add a dynamic connector shape (master name "Dynamic connector")
-                long connectorId = diagram.AddShape(0.0, 0.0, "Dynamic connector", 0);
-                Shape connector = page.Shapes.GetShape(connectorId);
+            // Add a dynamic connector shape
+            long connectorId = page.AddShape(3.5, 3.5, "Dynamic connector");
+            Shape connector = page.Shapes.GetShape(connectorId);
 
-                // Connect the two rectangles using the connector
-                page.ConnectShapesViaConnector(
-                    rect1Id,
-                    ConnectionPointPlace.Right,
-                    rect2Id,
-                    ConnectionPointPlace.Left,
-                    connectorId);
+            // Connect the first rectangle to the second rectangle using the connector
+            page.ConnectShapesViaConnector(
+                rect1Id,
+                ConnectionPointPlace.Bottom,
+                rect2Id,
+                ConnectionPointPlace.Top,
+                connectorId);
 
-                // Optional: set connector routing style to right‑angle
-                connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+            // Save the diagram to a VSDX file
+            diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
 
-                // Save the diagram to VSDX format
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

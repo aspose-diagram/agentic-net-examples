@@ -1,72 +1,52 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Create a new blank diagram
-        using (Diagram diagram = new Diagram())
+        try
         {
-            // Ensure there is at least one foreground page
-            Page foregroundPage = diagram.Pages[0];
 
-            // Retrieve page dimensions (in inches)
-            double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
-
-            // Create a background page
-            Page backgroundPage = new Page();
-            backgroundPage.Name = "Background";
-            backgroundPage.Background = BOOL.True;
-            backgroundPage.PageSheet.PageProps.PageWidth.Value = pageWidth;
-            backgroundPage.PageSheet.PageProps.PageHeight.Value = pageHeight;
-
-            // Add the background page to the diagram and link it to the foreground page
-            diagram.Pages.Add(backgroundPage);
-            foregroundPage.BackPage = backgroundPage;
-
-            // Watermark settings
-            string watermarkText = "CONFIDENTIAL";
-            string fontName = "Arial";
-            string fontColor = "#CCCCCC"; // Light gray
-            double fontSizeInches = 0.5;   // Approx. 36 points (0.5 inch)
-
-            // Spacing between watermark instances
-            double stepX = pageWidth / 4;   // Four columns
-            double stepY = pageHeight / 4;  // Four rows
-
-            // Loop to place watermark text across the background page
-            for (double y = stepY / 2; y < pageHeight; y += stepY)
+            // Create a new empty diagram
+            using (Diagram diagram = new Diagram())
             {
-                for (double x = stepX / 2; x < pageWidth; x += stepX)
-                {
-                    // Add a text shape at the calculated position
-                    Shape wmShape = backgroundPage.AddText(
-                        pinX: x,
-                        pinY: y,
-                        width: 0,
-                        height: 0,
-                        text: watermarkText,
-                        fontName: fontName,
-                        fontColor: fontColor,
-                        size: fontSizeInches);
+                // Get the first (default) page
+                Page page = diagram.Pages[0];
 
-                    // Rotate the text 45 degrees (in radians)
-                    wmShape.TextXForm.TxtAngle.Value = (Math.PI / 180) * 45;
+                // Create a background page
+                Page backgroundPage = new Page();
+                backgroundPage.Background = BOOL.True; // Mark as background
 
-                    // Send the watermark to the back so it stays behind other content
-                    wmShape.SendToBack();
+                // Use the same dimensions as the foreground page
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Make the watermark non‑selectable
-                    wmShape.Protection.LockSelect.Value = BOOL.True;
-                }
+                // Add a rectangle that covers the entire page
+                long bgShapeId = backgroundPage.AddShape(0, 0, pageWidth, pageHeight, "Rectangle");
+                Shape bgShape = backgroundPage.Shapes.GetShape(bgShapeId);
+
+                // Apply a diagonal hatch pattern as the watermark
+                bgShape.Fill.FillPattern.Value = 25;               // Diagonal lines pattern
+                bgShape.Fill.FillForegnd.Value = "#CCCCCC";        // Light gray lines
+                bgShape.Fill.FillBkgnd.Value = "#FFFFFF";          // White background
+
+                // Send the shape to the back and make it non‑selectable
+                bgShape.SendToBack();
+                bgShape.Protection.LockSelect.Value = BOOL.True;
+
+                // Assign the background page to the foreground page
+                page.BackPage = backgroundPage;
+
+                // Save the diagram
+                diagram.Save("WatermarkDiagram.vsdx", SaveFileFormat.Vsdx);
             }
 
-            // Save the diagram with the repeated diagonal watermark
-            diagram.Save("WatermarkedDiagram.vsdx", SaveFileFormat.Vsdx);
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
 }

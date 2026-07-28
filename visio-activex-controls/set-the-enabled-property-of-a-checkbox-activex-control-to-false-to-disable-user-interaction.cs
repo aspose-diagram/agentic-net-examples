@@ -13,19 +13,20 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes to find CheckBox ActiveX controls
+            // Iterate through all shapes on all pages
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape contains an ActiveX control
-                    if (shape.ActiveXControl != null && shape.ActiveXControl.Type == ControlType.CheckBox)
+                    // Check if the shape contains an ActiveX control
+                    if (shape.ActiveXControl != null)
                     {
-                        // Cast to the specific CheckBox control type
-                        CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
-
-                        // Disable user interaction by setting the Enabled property to false
-                        checkBox.IsEnabled = false;
+                        // Identify CheckBox ActiveX controls
+                        if (shape.ActiveXControl is CheckBoxActiveXControl checkBox)
+                        {
+                            // Disable user interaction
+                            checkBox.IsEnabled = false;
+                        }
                     }
                 }
             }

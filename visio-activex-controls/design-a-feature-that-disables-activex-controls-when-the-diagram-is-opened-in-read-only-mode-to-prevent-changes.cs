@@ -1,61 +1,56 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths to the input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Determine if any window is marked as read‑only
-            bool isReadOnly = false;
-            foreach (Window win in diagram.Windows)
+            try
             {
-                if (win.ReadOnly == BOOL.True)
-                {
-                    isReadOnly = true;
-                    break;
-                }
-            }
 
-            // If the diagram is opened in read‑only mode, lock all ActiveX controls
-            if (isReadOnly)
-            {
-                foreach (Page page in diagram.Pages)
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Open the diagram in read‑only mode using a FileStream with FileAccess.Read
+                using (FileStream fs = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Load the diagram from the read‑only stream
+                    Diagram diagram = new Diagram(fs);
+
+                    // Iterate through all pages and shapes
+                    foreach (Page page in diagram.Pages)
                     {
-                        if (shape.ActiveXControl != null)
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Prevent selection, movement, deletion and other edits
-                            shape.Protection.LockSelect.Value = BOOL.True;
-                            shape.Protection.LockBegin.Value = BOOL.True;
-                            shape.Protection.LockEnd.Value = BOOL.True;
-                            shape.Protection.LockMoveX.Value = BOOL.True;
-                            shape.Protection.LockMoveY.Value = BOOL.True;
-                            shape.Protection.LockDelete.Value = BOOL.True;
+                            // Check if the shape contains an ActiveX control
+                            if (shape.ActiveXControl != null)
+                            {
+                                // Disable interaction by clearing common event formulas
+                                // EventDblClick – double‑click action
+                                shape.Event.EventDblClick.Ufe.F = "FALSE";
+
+                                // EventDrop – drag‑and‑drop action
+                                shape.Event.EventDrop.Ufe.F = "FALSE";
+
+                                // Additional events can be cleared similarly if needed
+                            }
                         }
                     }
+
+                    // Save the modified diagram (still in VSDX format)
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
+
+                Console.WriteLine("ActiveX controls have been disabled and diagram saved to: " + outputPath);
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

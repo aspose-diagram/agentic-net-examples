@@ -1,76 +1,92 @@
 using System;
+using System.IO;
 using System.Diagnostics;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Folder containing Visio files to benchmark
+        string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+
+        // Get all Visio files (VSDX) in the folder
+        string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx");
+
+        if (diagramFiles.Length == 0)
+        {
+            Console.WriteLine("No Visio files found in the specified folder.");
+            return;
+        }
+
+        foreach (string filePath in diagramFiles)
         {
             try
             {
-
-                // Define diagram files to process. Adjust paths as needed.
-                string[] diagramFiles = new string[]
-                {
-                    "DiagramSmall.vsdx",
-                    "DiagramMedium.vsdx",
-                    "DiagramLarge.vsdx"
-                };
-
-                foreach (string filePath in diagramFiles)
-                {
-                    // Measure total time for loading, processing, and saving the diagram.
-                    Stopwatch sw = Stopwatch.StartNew();
-
-                    // Load the diagram.
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Iterate through all pages.
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Iterate through all shapes on the page.
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Check if the shape contains an ActiveX control.
-                            if (shape.ActiveXControl != null)
-                            {
-                                // Determine the control type and modify a property accordingly.
-                                if (shape.ActiveXControl.Type == ControlType.CommandButton)
-                                {
-                                    // Cast to the specific control class.
-                                    CommandButtonActiveXControl btn = (CommandButtonActiveXControl)shape.ActiveXControl;
-                                    // Update the caption text.
-                                    btn.Caption = "Updated";
-                                }
-                                else if (shape.ActiveXControl.Type == ControlType.CheckBox)
-                                {
-                                    // Example for a CheckBox control.
-                                    CheckBoxActiveXControl chk = (CheckBoxActiveXControl)shape.ActiveXControl;
-                                    // Toggle the check state.
-                                    chk.Value = CheckValueType.Checked;
-                                }
-                                // Add additional control types as needed.
-                            }
-                        }
-                    }
-
-                    // Optionally save the modified diagram to a new file.
-                    string outputPath = System.IO.Path.Combine(
-                        System.IO.Path.GetDirectoryName(filePath),
-                        System.IO.Path.GetFileNameWithoutExtension(filePath) + "_Modified.vsdx");
-
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                    sw.Stop();
-
-                    Console.WriteLine($"Processed '{filePath}' in {sw.Elapsed.TotalMilliseconds} ms. Output saved to '{outputPath}'.");
-                }
-
+                long elapsedMs = ProcessDiagram(filePath);
+                Console.WriteLine($"File: {Path.GetFileName(filePath)} - Retrieval & Modification Time: {elapsedMs} ms");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
             }
+        }
     }
+
+    // Loads a diagram, retrieves all ActiveX controls, modifies a property, and returns elapsed time in milliseconds
+    static long ProcessDiagram(string filePath)
+    {
+        // Load the diagram
+        Diagram diagram = new Diagram(filePath);
+
+        Stopwatch sw = Stopwatch.StartNew();
+
+        // Iterate through all pages
+        foreach (Page page in diagram.Pages)
+        {
+            // Iterate through all shapes on the page
+            foreach (Shape shape in page.Shapes)
+            {
+                // Check if the shape contains an ActiveX control
+                if (shape.ActiveXControl != null)
+                {
+                    // Determine the control type and modify a property accordingly
+                    switch (shape.ActiveXControl.Type)
+                    {
+                        case ControlType.CommandButton:
+                            var cmdBtn = (CommandButtonActiveXControl)shape.ActiveXControl;
+                            cmdBtn.Caption = "Modified";
+                            break;
+
+                        case ControlType.CheckBox:
+                            var chkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
+                            // Set to checked; to represent unchecked use (CheckValueType)0
+                            chkBox.Value = CheckValueType.Checked;
+                            break;
+
+                        case ControlType.TextBox:
+                            var txtBox = (TextBoxActiveXControl)shape.ActiveXControl;
+                            txtBox.Text = "Modified";
+                            break;
+
+                        // Add other control types as needed
+                        default:
+                            // No modification for other control types
+                            break;
+                    }
+                }
+            }
+        }
+
+        sw.Stop();
+
+        // Save the modified diagram to a new file (optional)
+        string outputPath = Path.Combine(Path.GetDirectoryName(filePath),
+                                         Path.GetFileNameWithoutExtension(filePath) + "_modified.vsdx");
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        // Return elapsed milliseconds
+        return sw.ElapsedMilliseconds;
     }
+}

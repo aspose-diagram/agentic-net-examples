@@ -9,34 +9,51 @@ class Program
         try
         {
 
-            // Path to the Visio file (can be .vsdx, .vsd, etc.)
-            string visioFilePath = "input.vsdx";
+            // Path to the Visio file (VDX, VSDX, etc.)
+            string visioPath = @"C:\Path\To\YourDiagram.vsdx";
 
-            // Load the Visio diagram using the built‑in constructor (lifecycle rule)
-            Diagram diagram = new Diagram(visioFilePath);
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the diagram using the appropriate constructor.
+            // The constructor automatically detects the format based on the file extension.
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the document.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Check if the shape embeds an ActiveX control
-                    if (shape.ActiveXControl != null)
-                    {
-                        // Output basic information about the shape
-                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Name: {shape.Name}");
-                    }
+                    Console.WriteLine($"Page: {page.Name} (ID: {page.ID})");
+
+                    // Recursively enumerate shapes on the page.
+                    EnumerateShapes(page.Shapes);
                 }
             }
 
-            // Dispose the diagram when done
-            diagram.Dispose();
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+        }
+    }
+
+    // Recursively checks each shape and its child shapes for an embedded ActiveX control.
+    static void EnumerateShapes(ShapeCollection shapes)
+    {
+        foreach (Shape shape in shapes)
+        {
+            // If the shape contains an ActiveX control, the property will be non‑null.
+            if (shape.ActiveXControl != null)
+            {
+                // Output basic information about the shape and its control.
+                Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
+                Console.WriteLine($"    ActiveX Control Type: {shape.ActiveXControl.Type}");
+                // Additional properties can be accessed, e.g., Width, Height, IsEnabled, etc.
+                Console.WriteLine($"    Size (pts): {shape.ActiveXControl.Width} x {shape.ActiveXControl.Height}");
+                Console.WriteLine($"    Enabled: {shape.ActiveXControl.IsEnabled}");
+            }
+
+            // If the shape is a group, it may contain nested shapes.
+            if (shape.Shapes != null && shape.Shapes.Count > 0)
+            {
+                EnumerateShapes(shape.Shapes);
+            }
         }
     }
 }

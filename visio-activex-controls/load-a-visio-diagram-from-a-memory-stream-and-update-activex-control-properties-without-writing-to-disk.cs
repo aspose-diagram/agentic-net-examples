@@ -7,65 +7,82 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Obtain the Visio file bytes from a source (e.g., database, network).
-        // For this example a placeholder method returns an empty array.
-        byte[] visioBytes = GetVisioFileBytes();
+        // Obtain the Visio file bytes from any source (e.g., database, network).
+        byte[] visioData = GetVisioFileBytes();
 
-        try
+        // Guard against missing or empty input data.
+        if (visioData == null || visioData.Length == 0)
         {
-            using (var inputStream = new MemoryStream(visioBytes))
+            Console.Error.WriteLine("Visio data is empty or null.");
+            return;
+        }
+
+        // Load the diagram from a memory stream.
+        using (MemoryStream inputStream = new MemoryStream(visioData))
+        {
+            Diagram diagram;
+            try
             {
-                Diagram diagram = new Diagram(inputStream);
+                diagram = new Diagram(inputStream);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
 
-                // Iterate through all pages and shapes to find ActiveX controls.
-                foreach (Page page in diagram.Pages)
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("Diagram contains no pages.");
+                return;
+            }
+
+            // Work with the first page of the diagram.
+            Page page = diagram.Pages[0];
+
+            // Add a CommandButton ActiveX control to the page.
+            long controlShapeId = page.AddActiveXControl(
+                ControlType.CommandButton, // type of control
+                2.0,   // PinX (in inches)
+                2.0,   // PinY (in inches)
+                1.5,   // Width (in inches)
+                0.5);  // Height (in inches)
+
+            // Retrieve the shape that represents the ActiveX control.
+            Shape controlShape = page.Shapes.GetShape(controlShapeId);
+
+            // Cast the generic ActiveXControl to the specific CommandButton type.
+            CommandButtonActiveXControl cmdButton = (CommandButtonActiveXControl)controlShape.ActiveXControl;
+
+            // Update properties of the command button.
+            cmdButton.Caption = "Click Me";
+
+            // Optionally reposition the control on the page.
+            controlShape.XForm.PinX.Value = 3.0;
+            controlShape.XForm.PinY.Value = 3.0;
+
+            // Save the modified diagram back to a memory stream (no disk I/O).
+            using (MemoryStream outputStream = new MemoryStream())
+            {
+                try
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.ActiveXControl != null)
-                        {
-                            // Update properties based on the specific control type.
-                            switch (shape.ActiveXControl.Type)
-                            {
-                                case ControlType.CommandButton:
-                                    var button = (CommandButtonActiveXControl)shape.ActiveXControl;
-                                    button.Caption = "Updated Caption";
-                                    break;
-
-                                case ControlType.TextBox:
-                                    var textBox = (TextBoxActiveXControl)shape.ActiveXControl;
-                                    textBox.Text = "Updated Text";
-                                    break;
-
-                                case ControlType.CheckBox:
-                                    var checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
-                                    checkBox.Value = CheckValueType.Checked;
-                                    break;
-
-                                case ControlType.Image:
-                                    var imageCtrl = (ImageActiveXControl)shape.ActiveXControl;
-                                    imageCtrl.Width = 2.0;   // Width in inches
-                                    imageCtrl.Height = 1.0;  // Height in inches
-                                    break;
-
-                                // Add handling for other control types as needed.
-                                default:
-                                    break;
-                            }
-                        }
-                    }
+                    diagram.Save(outputStream, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Updated diagram size: {outputStream.Length} bytes");
+                    // The outputStream now contains the updated Visio file.
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
                 }
             }
         }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
     }
 
-    // Placeholder method – replace with actual implementation to retrieve Visio file bytes.
-    private static byte[] GetVisioFileBytes()
+    // Placeholder method – replace with actual logic to retrieve Visio file bytes.
+    static byte[] GetVisioFileBytes()
     {
+        // Example: return an empty array for demonstration purposes.
         return new byte[0];
     }
 }

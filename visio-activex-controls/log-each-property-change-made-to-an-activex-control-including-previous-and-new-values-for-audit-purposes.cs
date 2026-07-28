@@ -10,38 +10,37 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram (uses the provided load rule)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page of the diagram
-            Page page = diagram.Pages[0];
-
-            // Insert a CommandButton ActiveX control onto the page
-            long shapeId = page.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Ensure the shape contains an ActiveX control
-            if (shape?.ActiveXControl == null)
+            // Iterate through all pages and shapes to locate ActiveX controls
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine("Failed to add ActiveX control.");
-                return;
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Each shape may contain an ActiveX control; null if none
+                    ActiveXControl control = shape.ActiveXControl;
+                    if (control == null) continue;
+
+                    // Use the shape name as a simple identifier for logging
+                    string controlId = shape.Name;
+
+                    // Example: change BackOleColor and log the change
+                    LogPropertyChange(controlId, "BackOleColor", control.BackOleColor, 0x00FF00);
+                    control.BackOleColor = 0x00FF00;
+
+                    // Example: change IsEnabled and log the change
+                    LogPropertyChange(controlId, "IsEnabled", control.IsEnabled, false);
+                    control.IsEnabled = false;
+
+                    // Example: change Width and log the change
+                    LogPropertyChange(controlId, "Width", control.Width, 2.5);
+                    control.Width = 2.5;
+                }
             }
 
-            // Cast to the specific CommandButton control type
-            CommandButtonActiveXControl button = (CommandButtonActiveXControl)shape.ActiveXControl;
-
-            // Log the initial value of the Caption property
-            LogChange("Caption", "<none>", button.Caption);
-
-            // Change the Caption property and log the change
-            string oldCaption = button.Caption;
-            button.Caption = "Submit";
-            LogChange("Caption", oldCaption, button.Caption);
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram (uses the provided save rule)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
@@ -50,9 +49,13 @@ class Program
         }
     }
 
-    // Simple logger that writes property changes to the console
-    static void LogChange(string propertyName, string oldValue, string newValue)
+    // Logs a property change with previous and new values
+    static void LogPropertyChange(string controlId, string propertyName, object oldValue, object newValue)
     {
-        Console.WriteLine($"Property '{propertyName}' changed from '{oldValue}' to '{newValue}'.");
+        // Only log when the value actually changes
+        if (!Equals(oldValue, newValue))
+        {
+            Console.WriteLine($"Control '{controlId}': Property '{propertyName}' changed from '{oldValue}' to '{newValue}'.");
+        }
     }
 }

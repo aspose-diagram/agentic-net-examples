@@ -1,41 +1,36 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
 {
-    static void Main()
+    public static void Main(string[] args)
     {
         try
         {
 
-            // Paths to the source and destination Visio files
+            // Input and output file paths (adjust as needed)
             string inputPath = "input.vsdx";
             string outputPath = "output.vsdx";
 
             // Load the existing diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Access the first page (layers are page‑specific)
-                Page page = diagram.Pages[0];
+            Diagram diagram = new Diagram(inputPath);
 
-                // Create a new layer called "Annotations"
-                Layer layer = new Layer();
-                layer.Name.Value = "Annotations";
+            // Access the first page (or iterate pages if needed)
+            Page page = diagram.Pages[0];
 
-                // Set the layer color to blue (hex format)
-                layer.Color.Value = "#0000FF";
+            // Create a new layer named 'Annotations'
+            Layer layer = new Layer();
+            layer.Name.Value = "Annotations";          // Set layer name
+            layer.Visible.Value = BOOL.True;          // Make the layer visible
+            layer.IsColorChecked = BOOL.True;         // Enable color for the layer
+            layer.Color.Value = "#0000FF";            // Set layer color to blue (hex)
 
-                // Enable the color for the layer
-                layer.IsColorChecked = BOOL.True;
+            // Add the new layer to the page's layer collection
+            page.PageSheet.Layers.Add(layer);
 
-                // Add the new layer to the page's layer collection
-                page.PageSheet.Layers.Add(layer);
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

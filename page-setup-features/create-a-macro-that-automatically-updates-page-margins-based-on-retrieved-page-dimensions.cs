@@ -1,46 +1,47 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        // Prompt user for input and output file paths
-        Console.Write("Enter the path of the Visio file to process: ");
-        string inputPath = Console.ReadLine();
-
-        Console.Write("Enter the path where the updated Visio file will be saved: ");
-        string outputPath = Console.ReadLine();
-
-        // Load the diagram
-        using (Diagram diagram = new Diagram(inputPath))
+        static void Main(string[] args)
         {
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Retrieve current page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Calculate new margins as 5% of the respective dimensions
-                double horizontalMargin = pageWidth * 0.05; // left and right
-                double verticalMargin = pageHeight * 0.05;  // top and bottom
+                // Input and output Visio file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Update the page's print margins
-                page.PageSheet.PrintProps.PageLeftMargin.Value = horizontalMargin;
-                page.PageSheet.PrintProps.PageRightMargin.Value = horizontalMargin;
-                page.PageSheet.PrintProps.PageTopMargin.Value = verticalMargin;
-                page.PageSheet.PrintProps.PageBottomMargin.Value = verticalMargin;
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                Console.WriteLine($"Page '{page.Name}' margins updated: " +
-                                  $"Left/Right = {horizontalMargin:F3} in, " +
-                                  $"Top/Bottom = {verticalMargin:F3} in.");
+                // Iterate through all pages and adjust margins proportionally to page size
+                foreach (Page page in diagram.Pages)
+                {
+                    // Retrieve current page width and height (in inches)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Example: set each margin to 5% of the corresponding dimension
+                    double leftMargin = pageWidth * 0.05;
+                    double rightMargin = pageWidth * 0.05;
+                    double topMargin = pageHeight * 0.05;
+                    double bottomMargin = pageHeight * 0.05;
+
+                    // Update the print margins (values are in inches)
+                    page.PageSheet.PrintProps.PageLeftMargin.Value = leftMargin;
+                    page.PageSheet.PrintProps.PageRightMargin.Value = rightMargin;
+                    page.PageSheet.PrintProps.PageTopMargin.Value = topMargin;
+                    page.PageSheet.PrintProps.PageBottomMargin.Value = bottomMargin;
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram back to a Visio file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

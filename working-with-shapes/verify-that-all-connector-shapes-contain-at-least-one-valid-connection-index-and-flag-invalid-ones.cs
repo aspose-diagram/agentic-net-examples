@@ -3,53 +3,71 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Path to the Visio file to be validated
-                string inputPath = "input.vsdx";
+                // Path to the Visio file to be validated.
+                // Replace with the actual file path as needed.
+                string filePath = "input.vsdx";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Load the diagram.
+                Diagram diagram = new Diagram(filePath);
 
-                // Iterate through all pages
+                bool anyInvalid = false;
+
+                // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    // Collect IDs of all connector shapes (1‑D shapes) on the current page.
+                    var connectorIds = new System.Collections.Generic.HashSet<long>();
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Identify connector shapes (1‑D shapes)
-                        if (shape.OneD)
+                        if (shape.OneD) // Connector shapes are 1‑D.
                         {
-                            bool hasConnection = false;
+                            connectorIds.Add(shape.ID);
+                        }
+                    }
 
-                            // Check the page's Connect collection for any link involving this connector
-                            foreach (Connect conn in page.Connects)
-                            {
-                                if (conn.FromSheet == shape.ID || conn.ToSheet == shape.ID)
-                                {
-                                    hasConnection = true;
-                                    break;
-                                }
-                            }
+                    // Count how many connections each connector participates in.
+                    var connectionCount = new System.Collections.Generic.Dictionary<long, int>();
+                    foreach (Connect conn in page.Connects)
+                    {
+                        long from = conn.FromSheet;
+                        long to = conn.ToSheet;
 
-                            // Flag connectors without any connections
-                            if (!hasConnection)
-                            {
-                                Console.WriteLine($"Invalid connector found: ID={shape.ID}, NameU=\"{shape.NameU}\"");
-                            }
+                        if (connectorIds.Contains(from))
+                        {
+                            if (!connectionCount.ContainsKey(from))
+                                connectionCount[from] = 0;
+                            connectionCount[from]++;
+                        }
+
+                        if (connectorIds.Contains(to))
+                        {
+                            if (!connectionCount.ContainsKey(to))
+                                connectionCount[to] = 0;
+                            connectionCount[to]++;
+                        }
+                    }
+
+                    // Flag connectors that have zero connections.
+                    foreach (long connectorId in connectorIds)
+                    {
+                        int count = connectionCount.ContainsKey(connectorId) ? connectionCount[connectorId] : 0;
+                        if (count == 0)
+                        {
+                            anyInvalid = true;
+                            Console.WriteLine($"Invalid connector shape ID {connectorId} on page '{page.Name}' (no connections).");
                         }
                     }
                 }
 
-                // Optionally save the diagram (unchanged) to demonstrate lifecycle compliance
-                diagram.Save("validated_output.vsdx", SaveFileFormat.Vsdx);
+                if (!anyInvalid)
+                {
+                    Console.WriteLine("All connector shapes have at least one valid connection.");
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)

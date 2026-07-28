@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,23 +10,16 @@ class Program
         try
         {
 
-            // Load the VSD file
+            // Load the source VSD file
             Diagram diagram = new Diagram("input.vsd");
 
-            // Configure PDF save options for PDF/A compliance and lossless image embedding
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                // PDF/A-1b compliance
-                Compliance = PdfCompliance.PdfA1b,
-                // Set JPEG quality to maximum to avoid lossy compression
-                JpegQuality = 100
-            };
+            // Set up PDF/A save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.Compliance = PdfCompliance.PdfA1b; // PDF/A-1b compliance
+            pdfOptions.JpegQuality = 100;                 // Preserve maximum image quality (lossless for non‑JPEG images)
 
-            // Save the diagram as a PDF/A compliant document
+            // Export the diagram to a PDF/A compliant file with embedded images
             diagram.Save("output.pdf", pdfOptions);
-
-            // Release resources
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

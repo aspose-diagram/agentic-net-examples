@@ -1,38 +1,37 @@
-using System;
 using System.IO;
-
-// Load an existing Visio diagram
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the diagram from file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input and output file paths (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Access the HeaderFooter object
-            HeaderFooter hf = diagram.HeaderFooter;
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Set the header to display the document title (centered)
-            // If the document title is not set, you can assign a custom title here
-            hf.HeaderCenter = diagram.DocumentProps.Title ?? "My Diagram Title";
+            // Retrieve the document title; use a fallback if it's empty
+            string title = diagram.DocumentProps.Title;
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                title = "Untitled Diagram";
+            }
 
-            // Set the footer to display the page number (centered)
-            // Visio field codes can be inserted using the special syntax &[Page]
-            // Aspose.Diagram will preserve this field and render the correct page number on each page
-            hf.FooterCenter = "Page &[Page]";
+            // Set global header and footer.
+            // HeaderLeft will display the diagram title on every page.
+            diagram.HeaderFooter.HeaderLeft = title;
 
-            // Optionally, you can set left/right portions or margins if needed
-            // hf.HeaderLeft = "Left Header Text";
-            // hf.FooterRight = "Right Footer Text";
+            // FooterRight uses the Visio field code '&p' to insert the current page number.
+            diagram.HeaderFooter.FooterRight = "Page: &p";
 
-            // Save the diagram back to a file (preserving the original format)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

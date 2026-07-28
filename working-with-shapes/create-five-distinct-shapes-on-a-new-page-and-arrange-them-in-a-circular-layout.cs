@@ -1,6 +1,6 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
 {
@@ -9,7 +9,7 @@ class Program
         try
         {
 
-            // Create a new diagram instance
+            // Create a new diagram
             Diagram diagram = new Diagram();
 
             // Add a new page to the diagram
@@ -17,29 +17,28 @@ class Program
             diagram.Pages.Add(page);
 
             // Parameters for the circular layout
-            double centerX = 5.0;      // X‑coordinate of circle centre (in inches)
-            double centerY = 5.0;      // Y‑coordinate of circle centre (in inches)
+            double centerX = 5.0;      // Center X coordinate (in inches)
+            double centerY = 5.0;      // Center Y coordinate (in inches)
             double radius = 3.0;       // Radius of the circle (in inches)
-            int shapeCount = 5;        // Number of shapes to place
+            string masterName = "Rectangle"; // Master shape to use for each shape
 
-            // Master shape names – each will produce a distinct visual shape
-            string[] masterNames = { "Rectangle", "Ellipse", "Triangle", "Hexagon", "Star" };
-
-            // Add each shape at its calculated position on the circle
-            for (int i = 0; i < shapeCount; i++)
+            // Add five shapes positioned evenly around the circle
+            for (int i = 0; i < 5; i++)
             {
-                double angle = 2 * Math.PI * i / shapeCount;               // Angle for current shape
-                double pinX = centerX + radius * Math.Cos(angle);          // X coordinate on circle
-                double pinY = centerY + radius * Math.Sin(angle);          // Y coordinate on circle
+                double angle = 2 * Math.PI * i / 5; // Angle in radians
+                double pinX = centerX + radius * Math.Cos(angle);
+                double pinY = centerY + radius * Math.Sin(angle);
 
-                // Add the shape with a default size of 1 inch by 1 inch
-                page.AddShape(pinX, pinY, 1.0, 1.0, masterNames[i]);
+                // Use the AddShape method that takes PinX, PinY, and master name
+                page.AddShape(pinX, pinY, masterName);
             }
 
-            // Center the drawing on the page (optional, keeps the group centered)
-            page.CenterDrawing();
+            // Optional: apply Visio's built‑in circular layout (requires LayoutOptions)
+            // LayoutOptions layoutOpts = new LayoutOptions();
+            // layoutOpts.PlaceStyle = PlaceStyleValue.Circular;
+            // page.Layout(layoutOpts);
 
-            // Save the diagram to a VSDX file
+            // Save the diagram to a file
             diagram.Save("CircularShapes.vsdx", SaveFileFormat.Vsdx);
 
         }

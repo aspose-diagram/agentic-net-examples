@@ -1,42 +1,52 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file to be loaded
+            string filePath = "input.vsdx";
+
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(filePath);
+
+            // Define the page index and shape ID you want to inspect
+            int pageIndex = 0;          // first page (zero‑based)
+            long shapeId = 1;           // replace with the actual shape ID
+
+            // Retrieve the page from the diagram
+            Page page = diagram.Pages[pageIndex];
+
+            // Retrieve the shape by its unique ID (must be a long)
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Check if the shape contains an ActiveX control
+            if (shape.ActiveXControl != null)
             {
+                // Obtain the concrete control type via the Type property
+                ControlType controlType = shape.ActiveXControl.Type;
 
-                // Load an existing Visio diagram
-                string diagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Example shape ID – replace with the actual ID of the shape you want to inspect
-                long shapeId = 1;
-
-                // Retrieve the shape from the first page
-                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-
-                // Ensure the shape contains an ActiveX control
-                if (shape.ActiveXControl != null)
-                {
-                    // Determine the concrete control type using the Type property (ControlType enum)
-                    ControlType controlType = shape.ActiveXControl.Type;
-
-                    // Output the detected control type
-                    Console.WriteLine($"Shape ID {shapeId} contains an ActiveX control of type: {controlType}");
-                }
-                else
-                {
-                    Console.WriteLine($"Shape ID {shapeId} does not contain an ActiveX control.");
-                }
-
+                // Output the determined control type
+                Console.WriteLine($"Shape ID {shapeId} contains an ActiveX control of type: {controlType}");
             }
-            catch (System.IO.FileNotFoundException ex)
+            else
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine($"Shape ID {shapeId} does not contain an ActiveX control.");
             }
+
+            // Clean up resources
+            diagram.Dispose();
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

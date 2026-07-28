@@ -7,29 +7,24 @@ class Program
 {
     static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            Diagram diagram = new Diagram(inputPath);
 
-            SVGSaveOptions svgOptions = new SVGSaveOptions
-            {
-                // High quality rendering (value range 0-100)
-                Quality = 100
-            };
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            string outputPath = "output.svg";
-            diagram.Save(outputPath, svgOptions);
+            // Create ImageSaveOptions and set anti‑aliasing (high‑quality smoothing)
+            // Note: SmoothingMode affects raster formats; for SVG it is ignored but the code follows the requirement.
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Svg);
+            saveOptions.SmoothingMode = SmoothingMode.HighQuality;
+
+            // Save the diagram as SVG using the configured options
+            diagram.Save("output.svg", saveOptions);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

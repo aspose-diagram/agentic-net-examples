@@ -1,60 +1,71 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: input Visio file path and output CSV file path
+        if (args.Length < 2)
         {
-            try
+            Console.WriteLine("Usage: DiagramCommentsExport <inputVisioPath> <outputCsvPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputCsvPath = args[1];
+
+        // Load the diagram
+        using (Diagram diagram = new Diagram(inputPath))
+        {
+            // Prepare CSV lines with header
+            List<string> csvLines = new List<string>();
+            csvLines.Add("CommentId,CommentText,Author");
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
-
-                // Path to the output CSV file
-                string csvPath = "comments.csv";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(diagramPath))
+                // Iterate through all annotations (comments) on the page
+                foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    // Prepare the CSV file
-                    using (StreamWriter writer = new StreamWriter(csvPath, false))
-                    {
-                        // Write CSV header
-                        writer.WriteLine("CommentID,ReviewerID,Text");
+                    long commentId = annotation.MarkerIndex.Value;
+                    string commentText = annotation.Comment.Value;
 
-                        // Iterate through all pages
-                        foreach (Page page in diagram.Pages)
-                        {
-                            // Access annotations (comments) via the PageSheet
-                            foreach (Annotation comment in page.PageSheet.Annotations)
-                            {
-                                // Retrieve comment identifier
-                                long commentId = comment.MarkerIndex.Value;
+                    // Retrieve author name based on ReviewerID
+                    int reviewerId = annotation.ReviewerID.Value;
+                    string authorName = GetReviewerName(reviewerId, diagram);
 
-                                // Retrieve reviewer identifier (author)
-                                int reviewerId = comment.ReviewerID.Value;
+                    // Escape commas in text fields
+                    string escapedText = commentText.Replace("\"", "\"\"");
+                    string escapedAuthor = authorName.Replace("\"", "\"\"");
 
-                                // Retrieve comment text
-                                string text = comment.Comment.Value ?? string.Empty;
-
-                                // Clean text for CSV (replace newlines and commas)
-                                text = text.Replace("\r", " ").Replace("\n", " ").Replace(",", " ");
-
-                                // Write CSV line
-                                writer.WriteLine($"{commentId},{reviewerId},{text}");
-                            }
-                        }
-                    }
+                    // Build CSV line
+                    string csvLine = $"{commentId},\"{escapedText}\",\"{escapedAuthor}\"";
+                    csvLines.Add(csvLine);
                 }
-
-                Console.WriteLine($"Comments exported to '{csvPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Write all lines to the CSV file
+            File.WriteAllLines(outputCsvPath, csvLines);
+            Console.WriteLine($"Export completed. {csvLines.Count - 1} comment(s) written to '{outputCsvPath}'.");
+        }
+    }
+
+    // Helper method to map ReviewerID to reviewer name
+    private static string GetReviewerName(int reviewerId, Diagram diagram)
+    {
+        int index = 0;
+        foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
+        {
+            if (index == reviewerId)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Reviewer.Name is a Str2Value; use .Value to get the string
+                return reviewer.Name.Value;
             }
+            index++;
+        }
+        return "Unknown";
     }
-    }
+}

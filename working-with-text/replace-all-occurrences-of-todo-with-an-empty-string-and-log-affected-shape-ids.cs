@@ -2,37 +2,40 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class TodoRemover
 {
     static void Main()
     {
         try
         {
 
-            // Load the diagram from a file
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Get the plain text of the shape
-                    string text = shape.Text.Value.Text;
+                    // Get the shape's text (if any)
+                    string shapeText = shape.Text?.Value?.ToString();
 
-                    // If the text contains "TODO", replace it and log the shape ID
-                    if (!string.IsNullOrEmpty(text) && text.Contains("TODO"))
+                    if (!string.IsNullOrEmpty(shapeText) && shapeText.Contains("TODO"))
                     {
+                        // Replace all occurrences of "TODO" with an empty string
                         shape.ReplaceText("TODO", "");
-                        Console.WriteLine($"Shape ID {shape.ID} had TODO removed.");
+
+                        // Refresh shape data to update geometry after text change
+                        shape.RefreshData();
+
+                        // Log the affected shape ID
+                        Console.WriteLine($"Replaced 'TODO' in shape ID: {shape.ID}");
                     }
                 }
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

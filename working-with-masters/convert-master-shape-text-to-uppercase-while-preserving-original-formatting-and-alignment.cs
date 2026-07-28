@@ -2,16 +2,16 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
+class Program
 {
-    public static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input and output file paths (can be passed as arguments or hard‑coded)
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output_uppercase.vsdx";
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
@@ -19,33 +19,30 @@ public class Program
             // Iterate through all masters in the diagram
             foreach (Master master in diagram.Masters)
             {
-                // Each master can contain multiple shapes
+                // Iterate through each shape within the master
                 foreach (Shape shape in master.Shapes)
                 {
-                    // Ensure the shape has text runs
-                    if (shape.Text != null && shape.Text.Value != null)
+                    // Access the collection of text runs (Txt objects) in the shape
+                    var textRuns = shape.Text.Value;
+
+                    // Convert each text run to uppercase while keeping formatting intact
+                    foreach (var item in textRuns)
                     {
-                        // Iterate over the text collection (contains Txt and Cp objects)
-                        foreach (var item in shape.Text.Value)
+                        if (item is Txt txt && !string.IsNullOrEmpty(txt.Text))
                         {
-                            // Only modify actual text runs (Txt)
-                            if (item is Txt txt && !string.IsNullOrEmpty(txt.Text))
-                            {
-                                // Convert the text to uppercase while leaving formatting (Cp) untouched
-                                txt.Text = txt.Text.ToUpperInvariant();
-                            }
+                            txt.Text = txt.Text.ToUpperInvariant();
                         }
                     }
                 }
             }
 
-            // Save the modified diagram, preserving all original formatting and alignment
+            // Save the modified diagram preserving all original formatting and alignment
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -8,8 +8,11 @@ class Program
             try
             {
 
-                // Load the Visio diagram (replace with your actual file path)
-                using (Diagram diagram = new Diagram("input.vsdx"))
+                // Path to the Visio diagram file
+                string diagramPath = "input.vsdx";
+
+                // Load the diagram
+                using (Diagram diagram = new Diagram(diagramPath))
                 {
                     // Iterate through each page in the diagram
                     foreach (Page page in diagram.Pages)
@@ -17,23 +20,24 @@ class Program
                         // Iterate through each shape on the current page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Skip shapes that are marked as deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
-
-                            // Ensure the shape contains text
+                            // Check if the shape contains visible text
                             if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
                             {
-                                // Iterate through each character formatting run in the shape
-                                foreach (Aspose.Diagram.Char ch in shape.Chars)
+                                // If the shape has character formatting information, log each character's font size
+                                if (shape.Chars != null && shape.Chars.Count > 0)
                                 {
-                                    // Font size is stored in inches; convert to points (1 inch = 72 points)
-                                    double sizeInInches = ch.Size.Value;
-                                    double sizeInPoints = sizeInInches * 72.0;
+                                    foreach (Aspose.Diagram.Char ch in shape.Chars)
+                                    {
+                                        // Font size is stored in inches; convert to points for readability (1 inch = 72 points)
+                                        double fontSizeInPoints = ch.Size.Value * 72.0;
 
-                                    Console.WriteLine(
-                                        $"Page: {page.Name}, Shape ID: {shape.ID}, Char Index: {ch.IX}, " +
-                                        $"Font: {ch.FontName.Value}, Size: {sizeInPoints:F2} pt");
+                                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, Shape Name: {shape.NameU}, Char Index: {ch.IX}, Font Size: {fontSizeInPoints:F2} pt");
+                                    }
+                                }
+                                else
+                                {
+                                    // No character formatting; report that the shape has text but no explicit font size
+                                    Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, Shape Name: {shape.NameU}, Font Size: (default or unspecified)");
                                 }
                             }
                         }

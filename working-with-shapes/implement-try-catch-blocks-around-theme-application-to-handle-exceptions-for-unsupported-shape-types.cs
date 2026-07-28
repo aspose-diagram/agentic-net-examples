@@ -12,24 +12,24 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Choose preset style and color indices (example values)
-            PresetStyleMatricsValue styleIndex = PresetStyleMatricsValue.Style1;
-            PresetColorMatricsValue colorIndex = PresetColorMatricsValue.Color1;
-
-            // Iterate through all pages and shapes
+            // Iterate through all pages and their shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
                     try
                     {
-                        // Apply the preset theme style matrix to the shape
-                        shape.SetPresetThemeStyleMatrics(styleIndex, colorIndex);
+                        // Attempt to apply a preset theme style matrix to the shape.
+                        // Adjust the enum values as needed for your scenario.
+                        shape.SetPresetThemeStyleMatrics(
+                            PresetStyleMatricsValue.Style1,
+                            PresetColorMatricsValue.Color1);
                     }
                     catch (Exception ex)
                     {
-                        // Handle shapes that do not support theme application
-                        Console.WriteLine($"Shape ID {shape.ID} could not apply theme: {ex.Message}");
+                        // Handle shapes that do not support theme application.
+                        // For example, log the shape ID and continue processing.
+                        Console.WriteLine($"Shape ID {shape.ID} unsupported for theme: {ex.Message}");
                     }
                 }
             }

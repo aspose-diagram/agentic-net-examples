@@ -1,52 +1,70 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Indices of the page, shape, and field to access
-            int pageIndex = 0;   // first page
-            int shapeIndex = 0;  // first shape on the page
-            int fieldIndex = 5;  // the field we expect to exist
-
             try
             {
-                // Attempt to retrieve the specified field
-                Field field = diagram.Pages[pageIndex].Shapes[shapeIndex].Fields[fieldIndex];
 
-                // Use the field (e.g., display its value)
-                Console.WriteLine($"Field Value: {field.Value}");
+                // Paths for input and output diagrams
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram from file
+                Diagram diagram = new Diagram(inputPath);
+
+                // Work with the first page and first shape (if they exist)
+                if (diagram.Pages.Count > 0 && diagram.Pages[0].Shapes.Count > 0)
+                {
+                    Shape shape = diagram.Pages[0].Shapes[0];
+                    string fieldName = "CustomField";
+
+                    try
+                    {
+                        // Search for a custom property (Prop) with the specified name
+                        bool found = false;
+                        foreach (Prop prop in shape.Props)
+                        {
+                            if (prop.Name == fieldName)
+                            {
+                                found = true;
+                                Console.WriteLine($"Property '{fieldName}' found with value: {prop.Value.Val}");
+                                break;
+                            }
+                        }
+
+                        // If not found, throw an exception to be caught below
+                        if (!found)
+                        {
+                            throw new InvalidOperationException($"Property '{fieldName}' does not exist on shape ID {shape.ID}.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Detailed error logging
+                        Console.WriteLine("=== Error accessing field ===");
+                        Console.WriteLine($"Timestamp   : {DateTime.Now}");
+                        Console.WriteLine($"Shape ID    : {shape.ID}");
+                        Console.WriteLine($"Requested   : {fieldName}");
+                        Console.WriteLine($"Exception   : {ex.GetType().FullName}");
+                        Console.WriteLine($"Message     : {ex.Message}");
+                        Console.WriteLine($"Stack Trace : {ex.StackTrace}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("The diagram does not contain any pages or shapes.");
+                }
+
+                // Save the diagram to the output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-            catch (DiagramException dex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                // Detailed logging for Aspose.Diagram specific errors
-                Console.WriteLine("DiagramException caught while accessing the field:");
-                Console.WriteLine($"Message   : {dex.Message}");
-                Console.WriteLine($"StackTrace: {dex.StackTrace}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-            catch (Exception ex)
-            {
-                // Logging for any other unexpected errors
-                Console.WriteLine("Unexpected exception caught:");
-                Console.WriteLine($"Message   : {ex.Message}");
-                Console.WriteLine($"StackTrace: {ex.StackTrace}");
-            }
-
-            // Save the diagram (if any changes were made)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

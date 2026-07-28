@@ -1,88 +1,76 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            // Load an existing Visio diagram
+
+            // Load the existing Visio diagram
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (adjust index as needed)
+            // Work with the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Locate the shape to be cloned.
-            // Here we simply take the shape with ID 1.
-            Shape originalShape = page.Shapes.GetShape(1);
-            if (originalShape == null)
+            // Identify the shape to clone (example uses shape ID 1)
+            long sourceShapeId = 1;
+            Shape sourceShape = page.Shapes.GetShape(sourceShapeId);
+            if (sourceShape == null)
             {
-                throw new Exception("Original shape not found.");
+                throw new Exception($"Shape with ID {sourceShapeId} not found.");
             }
 
-            // Determine a position for the cloned shape (offset by 2 inches on X axis)
-            double newPinX = originalShape.XForm.PinX.Value + 2.0;
-            double newPinY = originalShape.XForm.PinY.Value;
-
-            // Ensure the original shape has a master; otherwise cloning is not possible.
-            if (originalShape.Master == null)
+            // Ensure the source shape has an associated master
+            if (sourceShape.Master == null)
             {
-                throw new Exception("Original shape does not have an associated master.");
+                throw new Exception("Source shape does not have a master.");
             }
 
-            // Add a new shape using the same master as the original shape.
-            long newShapeId = page.AddShape(newPinX, newPinY, originalShape.Master.Name);
-            Shape clonedShape = page.Shapes.GetShape(newShapeId);
-            if (clonedShape == null)
+            // Determine a new position for the cloned shape (offset X by 2 inches)
+            double newPinX = sourceShape.XForm.PinX.Value + 2.0;
+            double newPinY = sourceShape.XForm.PinY.Value;
+
+            // Add a new shape using the same master as the source shape
+            string masterName = sourceShape.Master.Name;
+            long newShapeId = page.AddShape(newPinX, newPinY, masterName);
+            Shape newShape = page.Shapes.GetShape(newShapeId);
+
+            // Copy all fields from the source shape to the new shape
+            foreach (Field srcField in sourceShape.Fields)
             {
-                throw new Exception("Failed to create cloned shape.");
+                Field dstField = new Field();
+
+                // Copy the field's value
+                dstField.Value.Val = srcField.Value.Val;
+
+                // Copy the field's format string
+                dstField.Format.Val = srcField.Format.Val;
+
+                // Copy the field type (if needed)
+                dstField.Type.Value = srcField.Type.Value;
+
+                // Copy the calendar setting (if needed)
+                dstField.Calendar.Value = srcField.Calendar.Value;
+
+                // Preserve the deletion flag
+                dstField.Del = srcField.Del;
+
+                // Add the cloned field to the new shape
+                newShape.Fields.Add(dstField);
             }
 
-            // Copy all fields from the original shape to the cloned shape.
-            foreach (Field originalField in originalShape.Fields)
-            {
-                Field newField = new Field();
+            // Save the diagram with the cloned shape
+            string outputPath = "cloned_output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                // Copy the field name if the property exists.
-                // Field does not have a 'Name' property; use 'NameU' if available.
-                // This line is kept optional to avoid compile errors on different API versions.
-                // Uncomment the following line if 'NameU' exists:
-                // newField.NameU = originalField.NameU;
-
-                // Copy the field value.
-                newField.Value.Val = originalField.Value.Val;
-
-                // Copy the field format if it exists.
-                if (originalField.Format != null)
-                {
-                    newField.Format.Val = originalField.Format.Val;
-                    if (originalField.Format.Ufev != null)
-                    {
-                        newField.Format.Ufev.F = originalField.Format.Ufev.F;
-                        newField.Format.Ufev.Unit = originalField.Format.Ufev.Unit;
-                    }
-                }
-
-                // Add the new field to the cloned shape.
-                clonedShape.Fields.Add(newField);
-            }
-
-            // Save the modified diagram to a new file.
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

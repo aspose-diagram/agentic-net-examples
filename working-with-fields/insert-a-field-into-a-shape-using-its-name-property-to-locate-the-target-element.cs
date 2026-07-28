@@ -1,71 +1,62 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Name of the shape to modify (universal name)
+            string targetShapeName = "MyShape";
+
+            Shape targetShape = null;
+
+            // Locate the shape by iterating through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Name of the shape to modify
-                string targetShapeName = "TargetShape";
-
-                // Flag to indicate if the shape was found
-                bool shapeFound = false;
-
-                // Iterate through all pages and shapes to locate the shape by its Name property
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    if (shape.NameU == targetShapeName)
                     {
-                        if (shape.Name == targetShapeName)
-                        {
-                            // Create a new field
-                            Field field = new Field();
-
-                            // Set the field's value (plain text)
-                            field.Value.Val = "Inserted Field Value";
-
-                            // Optional: clear any existing format strings
-                            field.Format.Val = "";
-                            field.Format.Ufev.F = "";
-                            field.Format.Ufev.Unit = MeasureConst.Undefined;
-
-                            // Add the field to the shape's Fields collection
-                            shape.Fields.Add(field);
-
-                            shapeFound = true;
-                            break; // Exit inner loop once the shape is processed
-                        }
+                        targetShape = shape;
+                        break;
                     }
-
-                    if (shapeFound)
-                        break; // Exit outer loop if shape has been found
                 }
-
-                if (!shapeFound)
-                {
-                    Console.WriteLine($"Shape with Name \"{targetShapeName}\" was not found.");
-                    return;
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Field inserted and diagram saved successfully.");
-
+                if (targetShape != null)
+                    break;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // If the shape was not found, abort with an error
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                throw new Exception($"Shape with NameU '{targetShapeName}' not found.");
             }
+
+            // Create a new text field
+            Field field = new Field();
+
+            // Set the field type (using Undefined as a generic type)
+            field.Type.Value = TypeFieldValue.Undefined;
+
+            // Assign a value to the field
+            field.Value.Val = "Inserted Field Value";
+
+            // Add the field to the shape's Fields collection
+            targetShape.Fields.Add(field);
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

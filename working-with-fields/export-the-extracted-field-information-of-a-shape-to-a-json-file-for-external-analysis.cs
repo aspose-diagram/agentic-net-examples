@@ -4,92 +4,107 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace ShapeFieldExport
+namespace DiagramFieldExport
 {
-    // DTO for a field within a shape
+    // Model representing a field inside a shape
     public class FieldInfo
     {
         public int IX { get; set; }
-        public int Type { get; set; }          // Underlying integer value of TypeFieldValue enum
-        public string? Value { get; set; }     // Field value as string
-        public string? Format { get; set; }    // Field format string
+        public int Type { get; set; }
+        public string Value { get; set; } = string.Empty;
+        public string Format { get; set; } = string.Empty;
+        public int Calendar { get; set; }
+        public bool Deleted { get; set; }
     }
 
-    // DTO for a shape and its collection of fields
+    // Model representing a shape and its collection of fields
     public class ShapeFieldInfo
     {
         public long ShapeId { get; set; }
-        public string? Name { get; set; }
-        public List<FieldInfo>? Fields { get; set; }
+        public string ShapeName { get; set; } = string.Empty;
+        public List<FieldInfo> Fields { get; set; } = new();
     }
 
     public class Program
     {
-        public static void Main()
+        public static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output JSON file path
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramFieldExport <inputVisioFile> <outputJsonFile>");
+                return;
+            }
+
+            string inputPath = args[0];
+            // Guard to ensure the input file exists
+            if (!File.Exists(inputPath))
+            {
+                Console.Error.WriteLine($"File not found: {inputPath}");
+                return;
+            }
+
+            string outputPath = args[1];
+
+            // Container for all extracted shape field information
+            var allShapeFields = new List<ShapeFieldInfo>();
+
             try
             {
-
-                // Paths – adjust as needed
-                string diagramPath = "input.vsdx";
-                string jsonOutputPath = "shape_fields.json";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // List to hold extracted information
-                List<ShapeFieldInfo> extractedData = new List<ShapeFieldInfo>();
+                // Load the Visio diagram using Aspose.Diagram
+                Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Only process shapes that contain fields
-                        if (shape.Fields != null && shape.Fields.Count > 0)
+                        // Skip shapes without any fields
+                        if (shape.Fields == null || shape.Fields.Count == 0)
+                            continue;
+
+                        var shapeInfo = new ShapeFieldInfo
                         {
-                            ShapeFieldInfo shapeInfo = new ShapeFieldInfo
+                            ShapeId = shape.ID,
+                            ShapeName = shape.Name ?? string.Empty
+                        };
+
+                        // Extract each field's details
+                        foreach (Field field in shape.Fields)
+                        {
+                            var fieldInfo = new FieldInfo
                             {
-                                ShapeId = shape.ID,
-                                Name = shape.Name,
-                                Fields = new List<FieldInfo>()
+                                IX = field.IX,
+                                // Cast the enum value to its underlying int representation
+                                Type = (int)field.Type.Value,
+                                Value = field.Value?.Val ?? string.Empty,
+                                Format = field.Format?.Val ?? string.Empty,
+                                // Convert CalendarValue enum to int, defaulting to 0 if null
+                                Calendar = field.Calendar != null ? (int)field.Calendar.Value : 0,
+                                Deleted = field.Del == BOOL.True
                             };
 
-                            foreach (Field field in shape.Fields)
-                            {
-                                FieldInfo fi = new FieldInfo
-                                {
-                                    IX = field.IX,
-                                    // Cast enum to its underlying int value
-                                    Type = (int)field.Type.Value,
-                                    Value = field.Value.Val,
-                                    Format = field.Format.Val
-                                };
-                                shapeInfo.Fields.Add(fi);
-                            }
-
-                            extractedData.Add(shapeInfo);
+                            shapeInfo.Fields.Add(fieldInfo);
                         }
+
+                        allShapeFields.Add(shapeInfo);
                     }
                 }
 
-                // Serialize the list to JSON with indentation for readability
-                JsonSerializerOptions options = new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                };
-                string json = JsonSerializer.Serialize(extractedData, options);
+                // Serialize the collected information to JSON
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(allShapeFields, jsonOptions);
 
-                // Write JSON to file
-                File.WriteAllText(jsonOutputPath, json);
+                // Write JSON to the specified output file
+                File.WriteAllText(outputPath, json);
 
-                Console.WriteLine($"Export completed. JSON saved to: {jsonOutputPath}");
-
+                Console.WriteLine($"Export completed. JSON saved to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Log any errors that occur during processing
+                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
             }
-    }
+        }
     }
 }

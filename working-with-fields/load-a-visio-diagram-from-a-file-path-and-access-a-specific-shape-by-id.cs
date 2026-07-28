@@ -10,27 +10,24 @@ class Program
         {
 
             // Path to the Visio file to load
-            string filePath = "sample.vsdx";
+            string filePath = @"C:\Path\To\YourDiagram.vsdx";
 
-            // Load the diagram using the built‑in constructor (load rule)
+            // Load the diagram using the constructor that accepts a file path
             Diagram diagram = new Diagram(filePath);
 
-            // ID of the shape you want to access
-            long shapeId = 5; // replace with the actual shape ID
+            // Specify the ID of the shape you want to access
+            long shapeId = 123; // replace with the actual shape ID
 
-            // Get the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape by its ID (shape collection rule)
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Retrieve the shape from the active page by its ID
+            Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
 
             // Example usage: print shape details
             Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

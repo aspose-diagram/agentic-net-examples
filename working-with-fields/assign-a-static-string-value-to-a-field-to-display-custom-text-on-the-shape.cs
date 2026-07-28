@@ -1,28 +1,41 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
+
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Access the first (default) page
-            Page page = diagram.Pages[0];
+            // Use the active page to add a rectangle shape
+            Page page = diagram.ActivePage;
+            // DrawRectangle(pinX, pinY, width, height) – all values are in inches
+            long shapeId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
 
-            // Draw a rectangle shape on the page
-            // Parameters: pinX, pinY, width, height (all in inches)
-            long shapeId = page.DrawRectangle(2.0, 2.0, 1.0, 1.0);
-
-            // Retrieve the Shape object using the returned ID
+            // Retrieve the Shape object from the returned ID
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Clear any existing text and assign a static string
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt("Custom Text"));
+            // Create a new Field object
+            Field field = new Field();
+
+            // Assign a static string value to the field (this will appear as custom text on the shape)
+            field.Value.Val = "Custom Text";
+
+            // Add the field to the shape's Fields collection
+            shape.Fields.Add(field);
 
             // Save the diagram to a VSDX file
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
+}

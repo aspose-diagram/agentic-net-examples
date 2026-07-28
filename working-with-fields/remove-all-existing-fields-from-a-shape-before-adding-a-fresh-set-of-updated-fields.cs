@@ -1,53 +1,52 @@
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Access the first page (adjust index as needed)
+                Page page = diagram.Pages[0];
 
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Retrieve a shape by its ID (replace 1 with the actual shape ID)
+                Shape shape = page.Shapes.GetShape(1);
+
+                // Ensure the shape has a Fields collection
+                if (shape.Fields != null)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Collect existing fields to remove (cannot modify collection while iterating)
+                    List<Field> fieldsToRemove = new List<Field>();
+                    foreach (Field existingField in shape.Fields)
                     {
-                        // Remove all existing fields from the shape
-                        // Fields collection does not have a Clear method, so remove items one by one
-                        while (shape.Fields.Count > 0)
-                        {
-                            // Remove the first field repeatedly until the collection is empty
-                            shape.Fields.Remove(shape.Fields[0]);
-                        }
+                        fieldsToRemove.Add(existingField);
+                    }
 
-                        // Add a fresh set of updated fields
-                        // Example: add a single field with a custom value
-                        Field newField = new Field();
-
-                        // Set the field's displayed value
-                        newField.Value.Val = "UpdatedValue";
-
-                        // Optionally clear formatting strings (if needed)
-                        newField.Format.Val = "";
-                        newField.Format.Ufev.F = "";
-                        newField.Format.Ufev.Unit = MeasureConst.Undefined;
-
-                        // Add the new field to the shape
-                        shape.Fields.Add(newField);
+                    // Remove each field from the shape
+                    foreach (Field fieldToRemove in fieldsToRemove)
+                    {
+                        shape.Fields.Remove(fieldToRemove);
                     }
                 }
 
-                // Save the modified diagram to a new file (using VSDX format)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Add new fields to the shape
+                // Example: add a custom date field
+                Field newField = new Field();
+                // Set the field's value (e.g., a date string)
+                newField.Value.Val = "2026-07-22";
+                // Optionally set the field type (Undefined is safe)
+                newField.Type.Value = TypeFieldValue.Undefined;
+                // Add the field to the shape's collection
+                shape.Fields.Add(newField);
+
+                // Save the updated diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

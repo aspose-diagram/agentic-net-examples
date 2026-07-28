@@ -1,36 +1,47 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
-class Program
+class RefreshFieldAfterGeometryChange
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (use the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (adjust index as needed)
+            // Access the first page (adjust index if needed)
             Page page = diagram.Pages[0];
 
-            // Retrieve the shape whose geometry you want to modify (replace 1 with the actual shape ID)
-            Shape shape = page.Shapes.GetShape(1);
+            // Retrieve the shape you want to modify (replace with actual shape ID)
+            int shapeId = 1; // example shape ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Example geometry modification: change the shape's width
-            // (Units are in inches; adjust the value as required)
-            shape.XForm.Width.Value = 2.0;
+            // ---- Modify the shape's geometry ----
+            // Example: change the shape's width (value is in inches)
+            shape.XForm.Width.Value = 2.0; // set new width
 
-            // Refresh the shape's data so that any fields reflecting geometry are updated
+            // ---- Refresh shape data ----
+            // This recalculates the shape's position, connections, geometry,
+            // and updates any fields/formulas that depend on the geometry.
             shape.RefreshData();
 
-            // If the shape is part of a timeline, you could also refresh the timeline:
-            // TimelineHelper timelineHelper = new TimelineHelper(diagram);
-            // timelineHelper.RefreshTimeLine();
+            // ---- Retrieve updated field values (if any) ----
+            // Fields are stored in the shape's Fields collection.
+            foreach (Field field in shape.Fields)
+            {
+                // Display the raw value of the field
+                Console.WriteLine($"Field IX={field.IX}, Value={field.Value}");
+                // Optionally, display the formatted value
+                Console.WriteLine($"Formatted: {field.DisplayValue}");
+            }
 
-            // Save the updated diagram (use the provided save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

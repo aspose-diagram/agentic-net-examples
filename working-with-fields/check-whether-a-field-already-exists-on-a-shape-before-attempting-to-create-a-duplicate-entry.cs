@@ -1,59 +1,42 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the source Visio file
+                // Load an existing Visio diagram (replace with your file path)
                 string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Define the page index and shape ID to work with
-                int pageIndex = 0;               // first page
-                long shapeId = 1;                // example shape ID
+                // Get the first page and the first shape on that page
+                Page page = diagram.Pages[0];
+                Shape shape = page.Shapes.GetShape(1); // assumes shape with ID 1 exists
 
-                // Retrieve the page and shape
-                Page page = diagram.Pages[pageIndex];
-                Shape shape = page.Shapes.GetShape(shapeId);
+                // The value we want to ensure is not duplicated
+                string fieldValue = "SampleFieldValue";
 
-                // The value we want to ensure exists as a field
-                string targetFieldValue = "MyCustomField";
-
-                // Check if the field already exists on the shape
-                bool fieldExists = false;
-                foreach (Field field in shape.Fields)
+                // Check if a field with the same value already exists
+                if (FieldExists(shape, fieldValue))
                 {
-                    if (field.Value.Val == targetFieldValue)
-                    {
-                        fieldExists = true;
-                        break;
-                    }
-                }
-
-                // Add the field only if it does not already exist
-                if (!fieldExists)
-                {
-                    Field newField = new Field();
-                    newField.Value.Val = targetFieldValue;
-                    shape.Fields.Add(newField);
-                    Console.WriteLine($"Field '{targetFieldValue}' added to shape ID {shapeId}.");
+                    Console.WriteLine($"A field with value \"{fieldValue}\" already exists on the shape (ID: {shape.ID}).");
                 }
                 else
                 {
-                    Console.WriteLine($"Field '{targetFieldValue}' already exists on shape ID {shapeId}.");
+                    // Create a new field and add it to the shape
+                    Field newField = new Field();
+                    newField.Value.Val = fieldValue;
+                    shape.Fields.Add(newField);
+                    Console.WriteLine($"Added new field with value \"{fieldValue}\" to the shape (ID: {shape.ID}).");
                 }
 
-                // Save the modified diagram
+                // Optionally, save the diagram to verify changes
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to \"{outputPath}\".");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -61,4 +44,17 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
+
+        // Returns true if a field with the specified value already exists on the shape
+        static bool FieldExists(Shape shape, string value)
+        {
+            foreach (Field field in shape.Fields)
+            {
+                if (field.Value.Val == value)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }

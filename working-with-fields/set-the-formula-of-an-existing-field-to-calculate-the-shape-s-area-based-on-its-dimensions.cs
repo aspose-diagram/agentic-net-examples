@@ -3,42 +3,56 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the existing Visio file
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
-                // Path where the modified Visio file will be saved
                 string outputPath = "output.vsdx";
 
-                // Load the diagram
+                // Load the existing Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Get the first page of the diagram
+                Page page = diagram.Pages[0];
+
+                // Find the first non‑deleted shape on the page
+                Shape targetShape = null;
+                foreach (Shape shp in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    if (shp.Del == BOOL.False) // ensure the shape is not marked as deleted
                     {
-                        // Ensure the shape has at least one field
-                        if (shape.Fields != null && shape.Fields.Count > 0)
-                        {
-                            // Example: modify the first field of the shape
-                            Field field = shape.Fields[0];
-
-                            // Set the formula to calculate area (Width * Height)
-                            // The formula is stored in the Ufev.F property of the field's Value
-                            field.Value.Ufev.F = "Width*Height";
-
-                            // Optionally, clear any existing format strings
-                            field.Format.Val = "";
-                            field.Format.Ufev.F = "";
-                            field.Format.Ufev.Unit = MeasureConst.Undefined;
-                        }
+                        targetShape = shp;
+                        break;
                     }
                 }
+
+                if (targetShape == null)
+                {
+                    throw new Exception("No suitable shape found on the page.");
+                }
+
+                // Ensure the shape has at least one field to modify
+                if (targetShape.Fields.Count == 0)
+                {
+                    throw new Exception("The selected shape does not contain any fields.");
+                }
+
+                // Access the first field (you can select a different index as required)
+                Field field = targetShape.Fields[0];
+
+                // Set the formula to calculate the area (Width * Height)
+                field.Value.Ufev.F = "Width*Height";
+
+                // Use an undefined unit for the formula result
+                field.Value.Ufev.Unit = MeasureConst.Undefined;
+
+                // Optional: clear any existing format strings
+                field.Format.Val = "";
+                field.Format.Ufev.F = "";
+                field.Format.Ufev.Unit = MeasureConst.Undefined;
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);

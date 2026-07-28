@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -36,33 +35,41 @@ class Program
                 try
                 {
                     // Load the Visio diagram.
-                    Diagram diagram = new Diagram(vdxPath, LoadFileFormat.Vdx);
+                    Diagram diagram = new Diagram(vdxPath);
 
-                    // Iterate through all pages and shapes.
+                    // Use the original file name (without extension) as a prefix.
+                    string filePrefix = Path.GetFileNameWithoutExtension(vdxPath);
+
+                    // Iterate through all pages and shapes to find embedded images.
                     foreach (Page page in diagram.Pages)
                     {
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Identify foreign (image) shapes.
+                            // Image shapes are of type Foreign.
                             if (shape.Type == TypeValue.Foreign)
                             {
-                                // Build a unique file name using the original VDX name and shape ID.
-                                string baseName = Path.GetFileNameWithoutExtension(vdxPath);
-                                string imageFileName = $"{baseName}_shape{shape.ID}.png";
-                                string imagePath = Path.Combine(outputFolder, imageFileName);
+                                // The raw image bytes are stored in ForeignData.
+                                byte[] imageData = shape.ForeignData?.Value;
+                                if (imageData != null && imageData.Length > 0)
+                                {
+                                    // Build a unique file name: <originalFile>_Shape<ID>.png
+                                    string imageFileName = $"{filePrefix}_Shape{shape.ID}.png";
+                                    string imagePath = Path.Combine(outputFolder, imageFileName);
 
-                                // Export the shape to a PNG image.
-                                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                                shape.ToImage(imagePath, imgOptions);
-
-                                Console.WriteLine($"Extracted image: {imagePath}");
+                                    // Write the image bytes to disk.
+                                    File.WriteAllBytes(imagePath, imageData);
+                                    Console.WriteLine($"Extracted image to: {imagePath}");
+                                }
                             }
                         }
                     }
+
+                    // Dispose the diagram to release resources.
+                    diagram.Dispose();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing file '{vdxPath}': {ex.Message}");
+                    Console.WriteLine($"Error processing '{vdxPath}': {ex.Message}");
                 }
             }
 

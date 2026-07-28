@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,15 +10,16 @@ class Program
         try
         {
 
-            // Load the Visio diagram
+            // Load the Visio diagram from file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Configure image save options for multi‑page TIFF with LZW compression
+            // Set up image save options for a multi‑page TIFF with LZW compression
             ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Tiff);
-            options.TiffCompression = TiffCompression.Lzw; // LZW compression
-            // options.PageCount = int.MaxValue; // optional: render all pages (default)
+            options.TiffCompression = TiffCompression.Lzw;   // Apply LZW compression
+            options.PageCount = int.MaxValue;                // Render all pages (default)
+            options.PageIndex = 0;                           // Start from the first page
 
-            // Save the diagram as a multi‑page TIFF file
+            // Save all pages as a single multi‑page TIFF file
             diagram.Save("output.tiff", options);
 
         }

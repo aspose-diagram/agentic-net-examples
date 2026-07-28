@@ -9,37 +9,35 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
             // Define the desired text direction (e.g., vertical)
-            TextDirection newDirection = new TextDirection(TextDirectionValue.Vertical);
+            var desiredDirection = new TextDirection(TextDirectionValue.Vertical);
 
-            // Iterate through all shapes on the first page (adjust as needed)
-            foreach (Shape shape in diagram.Pages[0].Shapes)
+            // Iterate through all pages and their shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Check whether the shape actually contains a TextBlock section
-                if (shape.TextBlock != null)
+                foreach (Shape shape in page.Shapes)
                 {
-                    try
+                    // Check if the shape actually contains a TextBlock section
+                    if (shape.TextBlock != null)
                     {
-                        // Set the TextDirection safely
-                        shape.TextBlock.TextDirection = newDirection;
+                        // Set the text direction safely
+                        shape.TextBlock.TextDirection = desiredDirection;
+
+                        // Refresh shape data after modifying the text block
+                        shape.RefreshData();
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        // Log any unexpected errors while setting the property
-                        Console.WriteLine($"Error setting TextDirection for shape ID {shape.ID}: {ex.Message}");
+                        // Handle shapes without a TextBlock (log, skip, etc.)
+                        Console.WriteLine($"Shape ID {shape.ID} on page \"{page.Name}\" does not have a TextBlock.");
                     }
-                }
-                else
-                {
-                    // Inform that the shape lacks a TextBlock and will be skipped
-                    Console.WriteLine($"Shape ID {shape.ID} does not have a TextBlock. Skipping.");
                 }
             }
 
-            // Save the modified diagram (replace with your desired output path)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

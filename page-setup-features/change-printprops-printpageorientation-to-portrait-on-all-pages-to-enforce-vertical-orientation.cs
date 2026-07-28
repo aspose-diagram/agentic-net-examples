@@ -1,5 +1,7 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
     {
@@ -8,17 +10,18 @@ class Program
             try
             {
 
-                // Input and output file paths (replace with actual paths as needed)
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the modified output file
                 string outputPath = "output.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate through all pages and set print orientation to Portrait
+                    // Iterate through all pages and set orientation to Portrait
                     foreach (Page page in diagram.Pages)
                     {
-                        // Access the PrintProps of the page sheet and set orientation
+                        // Access the PrintProps cell collection and set the orientation
                         page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
                     }
 
@@ -26,7 +29,7 @@ class Program
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("Print orientation set to Portrait for all pages and saved to: " + outputPath);
+                Console.WriteLine("Print orientation set to Portrait for all pages and saved to " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

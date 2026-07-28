@@ -1,48 +1,46 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load the Visio diagram from a file.
-                // Replace "input.vsdx" with the actual path to your diagram.
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Iterate through each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through each shape on the page.
-                    foreach (Shape shape in page.Shapes)
+                    // Identify connector shapes (1‑D objects)
+                    if (shape.OneD)
                     {
-                        // Identify connector shapes (1‑D shapes).
-                        if (shape.OneD)
+                        // Retrieve current line jump style
+                        var currentJump = shape.Layout.ConLineJumpStyle.Value;
+
+                        // If the jump style is the default straight style, change it to square
+                        if (currentJump == ConLineJumpStyleValue.PageDefault)
                         {
-                            // Check the current jump style of the connector.
-                            // If it is the default (no explicit jump) or undefined,
-                            // change it to the square jump style.
-                            var currentJumpStyle = shape.Layout.ConLineJumpStyle.Value;
-                            if (currentJumpStyle == ConLineJumpStyleValue.PageDefault ||
-                                currentJumpStyle == ConLineJumpStyleValue.Undefined)
-                            {
-                                shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Square;
-                            }
+                            shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Square;
                         }
                     }
                 }
-
-                // Save the modified diagram.
-                // Replace "output.vsdx" with the desired output path.
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,44 +1,49 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Maximum allowed characters for any shape's paragraph text
-    const int MaxParagraphLength = 1000;
-
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio file
+            // Define input and output file paths
             string inputPath = "input.vsdx";
-            // Path for the output Visio file
             string outputPath = "output.vsdx";
 
-            // Load the diagram
+            // Define the maximum allowed characters for any paragraph (shape text)
+            int maxCharacters = 1000;
+
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Validate paragraph text length on each shape
+            // Iterate through all pages and shapes to validate text length
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the concatenated plain text of the shape
-                    string text = shape.Text.Value.Text ?? string.Empty;
+                    // Retrieve plain text from the shape
+                    string text = shape.Text.Value.Text;
 
-                    // If the text exceeds the limit, raise an exception
-                    if (text.Length > MaxParagraphLength)
+                    // If the shape contains text and exceeds the limit, raise an error
+                    if (!string.IsNullOrEmpty(text) && text.Length > maxCharacters)
                     {
                         throw new Exception(
-                            $"Shape ID {shape.ID} on page '{page.Name}' exceeds the maximum allowed length of {MaxParagraphLength} characters.");
+                            $"Shape ID {shape.ID} on page \"{page.Name}\" exceeds the character limit " +
+                            $"({text.Length} > {maxCharacters}).");
                     }
                 }
             }
 
-            // Save the diagram after successful validation
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Prepare save options (optional: auto‑fit page to drawing content)
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
+            saveOptions.AutoFitPageToDrawingContent = true;
+
+            // Save the diagram after validation
+            diagram.Save(outputPath, saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

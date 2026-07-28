@@ -10,72 +10,81 @@ class Program
             try
             {
 
-                // Load the Visio diagram from a file
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the output Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
-
-                // Define theme settings for specific layer names
-                var layerThemes = new Dictionary<string, (PresetThemeValue Theme, PresetThemeVariantValue Variant, PresetQuickStyleValue QuickStyle)>
-                {
-                    { "Layer1", (PresetThemeValue.Bubble, PresetThemeVariantValue.Variant1, PresetQuickStyleValue.VariantStyle1) },
-                    { "Layer2", (PresetThemeValue.Clouds, PresetThemeVariantValue.Variant2, PresetQuickStyleValue.VariantStyle2) },
-                    // Add more layer-to-theme mappings as needed
-                };
-
-                // Default theme if a shape's layer is not in the dictionary
-                var defaultTheme = (Theme: PresetThemeValue.Bubble, Variant: PresetThemeVariantValue.Variant3, QuickStyle: PresetQuickStyleValue.VariantStyle3);
 
                 // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Build a lookup of layer index (as string) to layer name for the current page
-                    var layerIndexToName = new Dictionary<string, string>();
+                    // Build a lookup of layer index -> layer name for the current page
+                    Dictionary<int, string> layerIndexToName = new Dictionary<int, string>();
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // Layer.IX is an integer index; convert to string for comparison
-                        string ixStr = layer.IX.ToString();
-                        string name = layer.Name.Value;
-                        layerIndexToName[ixStr] = name;
+                        // Layer.IX is the zero‑based index of the layer
+                        layerIndexToName[layer.IX] = layer.Name.Value;
                     }
 
                     // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the layer membership string (e.g., "0;2")
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Get the layer membership string (e.g., "0;2")
                         string layerMember = shape.LayerMem.LayerMember.Value;
+                        if (string.IsNullOrWhiteSpace(layerMember))
+                            continue; // Shape is not assigned to any layer
 
-                        // Determine which theme to apply
-                        (PresetThemeValue Theme, PresetThemeVariantValue Variant, PresetQuickStyleValue QuickStyle) selectedTheme = defaultTheme;
+                        // Determine the first layer the shape belongs to
+                        string[] parts = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length == 0)
+                            continue;
 
-                        if (!string.IsNullOrEmpty(layerMember))
+                        // Parse the first layer index
+                        if (!int.TryParse(parts[0], out int layerIdx))
+                            continue;
+
+                        // Retrieve the layer name; if not found, skip
+                        if (!layerIndexToName.TryGetValue(layerIdx, out string layerName))
+                            continue;
+
+                        // Apply a theme based on the layer name (example logic)
+                        // You can extend this mapping as needed
+                        if (layerName.Equals("RedLayer", StringComparison.OrdinalIgnoreCase))
                         {
-                            // Split the membership string into individual layer indexes
-                            string[] memberIndexes = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-
-                            // Check each assigned layer for a matching theme
-                            foreach (string idx in memberIndexes)
-                            {
-                                if (layerIndexToName.TryGetValue(idx, out string layerName))
-                                {
-                                    if (layerThemes.TryGetValue(layerName, out var themeInfo))
-                                    {
-                                        selectedTheme = themeInfo;
-                                        // Stop at the first matching layer
-                                        break;
-                                    }
-                                }
-                            }
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
                         }
-
-                        // Apply the selected theme to the shape
-                        shape.PresetTheme = selectedTheme.Theme;
-                        shape.PresetThemeVariant = selectedTheme.Variant;
-                        shape.PresetThemeQuickStyle = selectedTheme.QuickStyle;
+                        else if (layerName.Equals("BlueLayer", StringComparison.OrdinalIgnoreCase))
+                        {
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+                        }
+                        else if (layerName.Equals("GreenLayer", StringComparison.OrdinalIgnoreCase))
+                        {
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3;
+                        }
+                        else
+                        {
+                            // Default theme for other layers
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant4;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle4;
+                        }
                     }
                 }
 
-                // Save the modified diagram to a new file
-                string outputPath = "output.vsdx";
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

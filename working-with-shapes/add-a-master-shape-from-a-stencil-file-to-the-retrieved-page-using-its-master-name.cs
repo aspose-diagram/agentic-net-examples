@@ -1,6 +1,6 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
+using System;
 
 class Program
 {
@@ -12,24 +12,22 @@ class Program
             // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vdx");
 
-            // Path to the stencil file that contains the master shape
-            string stencilPath = "MyStencil.vss";
-
-            // Name of the master shape inside the stencil
-            string masterName = "MyMaster";
+            // Path to the stencil file and the master name to be added
+            string stencilPath = "basic.vssx";
+            string masterName = "Rectangle";
 
             // Import the master from the stencil into the diagram
-            diagram.AddMaster(stencilPath, masterName);
+            int masterId = diagram.AddMaster(stencilPath, masterName);
 
-            // Retrieve the first page (index 0) from the diagram
+            // Retrieve the target page (e.g., the first page)
             Page page = diagram.Pages[0];
 
             // Position where the shape will be placed (in inches)
-            double pinX = 4.0;
+            double pinX = 5.0;
             double pinY = 5.0;
 
-            // Add the master shape to the page using its master name
-            page.AddShape(pinX, pinY, masterName);
+            // Add an instance of the master shape to the page
+            long shapeId = page.AddShape(pinX, pinY, masterName);
 
             // Save the updated diagram
             diagram.Save("output.vdx", SaveFileFormat.Vdx);

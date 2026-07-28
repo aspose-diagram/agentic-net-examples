@@ -1,48 +1,78 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class WatermarkRotationExample
+namespace WatermarkDemo
 {
-    static void Main()
+    // Simple configuration class to hold user-defined settings
+    public class WatermarkConfig
     {
-        try
+        // Rotation angle in degrees for the watermark text
+        public double RotationAngleDegrees { get; set; } = 45.0;
+
+        // Path to the source Visio file
+        public string InputFilePath { get; set; } = "input.vsdx";
+
+        // Path where the watermarked diagram will be saved
+        public string OutputFilePath { get; set; } = "output.png";
+    }
+
+    class Program
+    {
+        static void Main()
         {
+            // Load configuration (in a real scenario this could be read from a file or arguments)
+            var config = new WatermarkConfig();
 
-            // Configuration: rotation angle in degrees (could be read from a config file or environment variable)
-            double rotationDegrees = 45.0; // Example value; replace with your configuration source
-
-            // Load existing Visio diagram (replace with your actual file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to locate the watermark shape.
-            // Adjust the condition (e.g., shape.NameU) to match how your watermark is identified.
-            foreach (Page page in diagram.Pages)
+            // Guard: ensure the input Visio file exists
+            if (!File.Exists(config.InputFilePath))
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.NameU == "Watermark") // Identify watermark shape by its name
-                    {
-                        // Set the text block rotation angle (degrees) using TextXForm.TxtAngle
-                        shape.TextXForm.TxtAngle.Value = rotationDegrees;
-
-                        // Optionally, also rotate the entire shape.
-                        // Shape.SetAngle expects radians, so convert degrees to radians.
-                        double rotationRadians = rotationDegrees * Math.PI / 180.0;
-                        shape.SetAngle(rotationRadians);
-                    }
-                }
+                Console.Error.WriteLine($"File not found: {config.InputFilePath}");
+                return;
             }
 
-            // Save the modified diagram (replace with your desired output path and format)
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            try
+            {
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(config.InputFilePath);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Use the first page (or adjust as needed)
+                Page page = diagram.Pages[0];
+
+                // Determine page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Position the watermark at the center of the page
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
+
+                // Add a full‑page text shape that will serve as the watermark
+                // Width and height are set to the page size so the text can be centered
+                Shape watermarkShape = page.AddText(pinX, pinY, pageWidth, pageHeight, "CONFIDENTIAL");
+
+                // Convert rotation from degrees to radians (Aspose.Diagram expects radians)
+                double rotationRadians = (Math.PI / 180.0) * config.RotationAngleDegrees;
+
+                // Apply rotation to the text block
+                watermarkShape.TextXForm.TxtAngle.Value = rotationRadians;
+
+                // Clear any existing text and set the watermark text
+                watermarkShape.Text.Value.Clear();
+                watermarkShape.Text.Value.Add(new Txt("CONFIDENTIAL"));
+
+                // Save the diagram as an image (PNG) with the watermark applied
+                var saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                diagram.Save(config.OutputFilePath, saveOptions);
+
+                Console.WriteLine($"Watermark applied with rotation {config.RotationAngleDegrees}° and saved to '{config.OutputFilePath}'.");
+            }
+            catch (Exception ex)
+            {
+                // Write any Aspose or I/O errors to the error stream
+                Console.Error.WriteLine($"Error: {ex.Message}");
+            }
         }
     }
 }

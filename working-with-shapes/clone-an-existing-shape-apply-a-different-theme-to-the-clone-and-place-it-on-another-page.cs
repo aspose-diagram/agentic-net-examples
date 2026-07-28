@@ -1,97 +1,91 @@
 using System;
-using System.IO;
+using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = "output.vsdx";
-
-        try
-        {
-            Diagram diagram = new Diagram(inputPath);
-
-            if (diagram.Pages.Count == 0)
+            try
             {
-                Console.Error.WriteLine("Diagram contains no pages.");
-                return;
-            }
 
-            Page sourcePage = diagram.Pages[0];
-            Shape sourceShape = null;
-            foreach (Shape shp in sourcePage.Shapes)
-            {
-                if (shp.Del == BOOL.False)
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    sourceShape = shp;
-                    break;
+                    // Ensure there is at least one page to copy from
+                    if (diagram.Pages.Count == 0)
+                    {
+                        Console.WriteLine("The diagram contains no pages.");
+                        return;
+                    }
+
+                    // Source page (first page)
+                    Page sourcePage = diagram.Pages[0];
+
+                    // Find the first shape on the source page to clone
+                    Shape sourceShape = null;
+                    foreach (Shape shp in sourcePage.Shapes)
+                    {
+                        sourceShape = shp;
+                        break;
+                    }
+
+                    if (sourceShape == null)
+                    {
+                        Console.WriteLine("No shape found on the source page.");
+                        return;
+                    }
+
+                    // Determine the master name of the source shape (used for creating a similar shape)
+                    string masterName = sourceShape.Master != null ? sourceShape.Master.Name : "Rectangle";
+
+                    // Get or create the target page (second page)
+                    Page targetPage;
+                    if (diagram.Pages.Count > 1)
+                    {
+                        targetPage = diagram.Pages[1];
+                    }
+                    else
+                    {
+                        // Create a new page with a unique ID
+                        int maxPageId = diagram.Pages.Max(p => p.ID);
+                        targetPage = new Page
+                        {
+                            ID = maxPageId + 1,
+                            Name = "ClonedPage"
+                        };
+                        diagram.Pages.Add(targetPage);
+                    }
+
+                    // Add a new shape on the target page using the same master.
+                    // Position it slightly offset from the original shape.
+                    double offsetX = 2.0; // inches offset on X axis
+                    double newPinX = sourceShape.XForm.PinX.Value + offsetX;
+                    double newPinY = sourceShape.XForm.PinY.Value; // same Y position
+
+                    long newShapeId = targetPage.AddShape(newPinX, newPinY, masterName);
+                    Shape clonedShape = targetPage.Shapes.GetShape(newShapeId);
+
+                    // Apply a different preset theme to the cloned shape
+                    clonedShape.PresetTheme = PresetThemeValue.Bubble;
+                    clonedShape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+                    clonedShape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3;
+
+                    // Save the modified diagram
+                    string outputPath = "output.vsdx";
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                    Console.WriteLine($"Shape cloned and themed. Diagram saved to '{outputPath}'.");
                 }
-            }
 
-            if (sourceShape == null)
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine("No suitable shape found to clone on the source page.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            string masterName = sourceShape.Master?.Name;
-            if (string.IsNullOrEmpty(masterName))
-            {
-                Console.Error.WriteLine("Source shape does not have an associated master.");
-                return;
-            }
-
-            Page targetPage;
-            if (diagram.Pages.Count > 1)
-            {
-                targetPage = diagram.Pages[1];
-            }
-            else
-            {
-                targetPage = new Page();
-                diagram.Pages.Add(targetPage);
-            }
-
-            long newShapeId = targetPage.AddShape(
-                sourceShape.XForm.PinX.Value,
-                sourceShape.XForm.PinY.Value,
-                masterName,
-                false);
-
-            Shape newShape = targetPage.Shapes.GetShape(newShapeId);
-            if (newShape == null)
-            {
-                Console.Error.WriteLine("Failed to retrieve the newly added shape.");
-                return;
-            }
-
-            newShape.Text.Value.Clear();
-            foreach (object item in sourceShape.Text.Value)
-            {
-                if (item is Txt txt)
-                {
-                    newShape.Text.Value.Add(new Txt(txt.Text));
-                }
-            }
-
-            newShape.PresetTheme = PresetThemeValue.Bubble;
-            newShape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
-
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
     }
-}
+    }

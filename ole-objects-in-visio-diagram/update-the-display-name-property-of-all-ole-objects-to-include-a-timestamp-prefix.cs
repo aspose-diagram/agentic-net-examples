@@ -9,10 +9,10 @@ class UpdateOleDisplayNames
         try
         {
 
-            // Load the Visio diagram
+            // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Generate timestamp prefix
+            // Generate timestamp prefix (e.g., 20230721153045)
             string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
 
             // Iterate through all pages and shapes
@@ -20,16 +20,16 @@ class UpdateOleDisplayNames
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape contains OLE (ForeignData) information
-                    if (shape.ForeignData != null && !string.IsNullOrEmpty(shape.ForeignData.ObjectSourceFullName))
+                    // Identify OLE objects by checking for foreign data
+                    if (shape.ForeignData != null)
                     {
-                        // Prepend timestamp to the shape's display name (Name property)
-                        shape.Name = $"{timestamp}_{shape.Name}";
+                        // Prefix the display name (NameU) with the timestamp
+                        shape.NameU = $"{timestamp}_{shape.NameU}";
                     }
                 }
             }
 
-            // Save the updated diagram
+            // Save the modified diagram (replace with desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

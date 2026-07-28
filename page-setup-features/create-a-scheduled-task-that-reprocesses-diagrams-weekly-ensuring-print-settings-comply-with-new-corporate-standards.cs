@@ -1,91 +1,81 @@
 using System;
 using System.IO;
-using System.Threading;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
-public class Program
-{
-    // Interval of one week
-    private static readonly TimeSpan WeeklyInterval = TimeSpan.FromDays(7);
-
-    // Folder that contains the Visio diagrams to process
-    private const string DiagramsFolder = "Diagrams";
-
-    public static void Main()
+class Program
     {
-        // Run the processing immediately at startup
-        ProcessAllDiagrams();
+        // Corporate print standards
+        private const PrintPageOrientationValue DesiredOrientation = PrintPageOrientationValue.Landscape;
+        private const double DesiredScale = 0.75; // 75%
+        private const double MarginInInches = 0.5; // 0.5 inch margins
 
-        // Set up a timer to run the processing every week
-        Timer timer = new Timer(_ => ProcessAllDiagrams(),
-                                null,
-                                WeeklyInterval,   // first due time (after the initial run)
-                                WeeklyInterval);  // subsequent period
-
-        // Prevent the application from exiting
-        Console.WriteLine("Diagram reprocessing service started. Press Enter to stop.");
-        Console.ReadLine();
-
-        // Clean up timer before exit
-        timer.Dispose();
-    }
-
-    private static void ProcessAllDiagrams()
-    {
-        try
+        static void Main(string[] args)
         {
-            if (!Directory.Exists(DiagramsFolder))
+            // Folder containing diagrams to process; can be passed as first argument
+            string diagramsFolder = args.Length > 0 ? args[0] : @"C:\Diagrams";
+
+            if (!Directory.Exists(diagramsFolder))
             {
-                Console.WriteLine($"Folder '{DiagramsFolder}' does not exist. Skipping processing.");
+                Console.WriteLine($"Folder not found: {diagramsFolder}");
                 return;
             }
 
-            string[] diagramFiles = Directory.GetFiles(DiagramsFolder, "*.vsdx", SearchOption.AllDirectories);
-
+            // Process all Visio files (VSDX, VSD, VDX, etc.) in the folder
+            string[] diagramFiles = Directory.GetFiles(diagramsFolder, "*.*", SearchOption.AllDirectories);
             foreach (string filePath in diagramFiles)
             {
-                try
+                // Filter supported extensions based on SaveFileFormat enum
+                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                if (ext == ".vsdx" || ext == ".vsd" || ext == ".vdx")
                 {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Apply corporate print settings to every page
-                    foreach (Page page in diagram.Pages)
+                    try
                     {
-                        // Orientation: Landscape
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-
-                        // Scaling: 75%
-                        page.PageSheet.PrintProps.ScaleX.Value = 0.75;
-                        page.PageSheet.PrintProps.ScaleY.Value = 0.75;
-
-                        // Fit to sheet (single page)
-                        page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
-                        page.PageSheet.PrintProps.PagesX.Value = 1;
-                        page.PageSheet.PrintProps.PagesY.Value = 1;
-
-                        // Margins: 0.5 inches on each side
-                        page.PageSheet.PrintProps.PageTopMargin.Value = 0.5;
-                        page.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
-                        page.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
-                        page.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
+                        ProcessDiagram(filePath);
+                        Console.WriteLine($"Processed: {filePath}");
                     }
-
-                    // Save the updated diagram (overwrite original)
-                    diagram.Save(filePath, SaveFileFormat.Vsdx);
-                    diagram.Dispose();
-
-                    Console.WriteLine($"Processed and saved: {filePath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error processing {filePath}: {ex.Message}");
+                    }
                 }
             }
+
+            Console.WriteLine("Weekly diagram reprocessing completed.");
         }
-        catch (Exception ex)
+
+        private static void ProcessDiagram(string filePath)
         {
-            Console.WriteLine($"Fatal error during batch processing: {ex.Message}");
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
+
+            // Iterate through each page and apply corporate print settings
+            foreach (Page page in diagram.Pages)
+            {
+                // Access the print properties for the page
+                PrintProps printProps = page.PageSheet.PrintProps;
+
+                // Set orientation
+                printProps.PrintPageOrientation.Value = DesiredOrientation;
+
+                // Set scaling factors
+                printProps.ScaleX.Value = DesiredScale;
+                printProps.ScaleY.Value = DesiredScale;
+
+                // Enable fit-to-sheet (print on a single page)
+                printProps.OnPage.Value = BOOL.True;
+                printProps.PagesX.Value = 1;
+                printProps.PagesY.Value = 1;
+
+                // Set uniform margins (values are in inches)
+                printProps.PageTopMargin.Value = MarginInInches;
+                printProps.PageBottomMargin.Value = MarginInInches;
+                printProps.PageLeftMargin.Value = MarginInInches;
+                printProps.PageRightMargin.Value = MarginInInches;
+            }
+
+            // Save the updated diagram back to the original file
+            diagram.Save(filePath, SaveFileFormat.Vsdx);
         }
     }
-}

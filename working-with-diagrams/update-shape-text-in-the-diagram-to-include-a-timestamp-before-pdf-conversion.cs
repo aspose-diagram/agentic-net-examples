@@ -1,56 +1,65 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Create a timestamp string
-            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input Visio file path (replace with actual path)
+                string inputPath = "input.vsdx";
+                // Output PDF file path
+                string outputPdfPath = "output.pdf";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Generate timestamp string
+                string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Retrieve the current plain text of the shape
-                    string existingText = shape.Text.Value.Text;
+                        // Retrieve existing plain text
+                        string originalText = shape.Text.Value.Text;
 
-                    // Build the new text with the timestamp prefixed
-                    string newText = timestamp + " " + existingText;
+                        // Prepare new text with timestamp prefix
+                        string newText = $"{timestamp} {originalText}";
 
-                    // Replace the shape's text content
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt(newText));
+                        // Clear existing text runs
+                        shape.Text.Value.Clear();
+
+                        // Add the new text as a single Txt run
+                        shape.Text.Value.Add(new Txt(newText));
+                    }
                 }
+
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                {
+                    // Ensure the format is explicitly set (optional but safe)
+                    SaveFormat = SaveFileFormat.Pdf,
+                    // Use a default font to avoid missing font issues
+                    DefaultFont = "Arial"
+                };
+
+                // Save the diagram as PDF with the updated text
+                diagram.Save(outputPdfPath, pdfOptions);
+
             }
-
-            // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            pdfOptions.DefaultFont = "Arial";
-
-            // Save the updated diagram as PDF
-            string outputPath = "output.pdf";
-            diagram.Save(outputPath, pdfOptions);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

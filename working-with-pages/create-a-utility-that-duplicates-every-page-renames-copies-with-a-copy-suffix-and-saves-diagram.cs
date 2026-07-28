@@ -1,58 +1,64 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+public static class DiagramPageDuplicator
+{
+    /// <summary>
+    /// Duplicates every page in the source Visio diagram, appends "_Copy" to the duplicated page names,
+    /// and saves the result to the specified output file.
+    /// </summary>
+    /// <param name="inputPath">Path to the source diagram file.</param>
+    /// <param name="outputPath">Path where the modified diagram will be saved.</param>
+    public static void DuplicatePages(string inputPath, string outputPath)
     {
-        static void Main(string[] args)
+        // Load the diagram using the provided constructor rule.
+        using (Diagram diagram = new Diagram(inputPath))
         {
-            // Expect two arguments: input file path and output file path
-            if (args.Length < 2)
+            // Store the original page count to avoid iterating over pages added during duplication.
+            int originalPageCount = diagram.Pages.Count;
+
+            for (int i = 0; i < originalPageCount; i++)
             {
-                Console.WriteLine("Usage: DiagramPageDuplicator <inputPath> <outputPath>");
-                return;
+                // Reference to the source page.
+                Page sourcePage = diagram.Pages[i];
+
+                // Create a new page instance.
+                Page copiedPage = new Page();
+
+                // Set the new page's name with the required suffix.
+                copiedPage.Name = sourcePage.Name + "_Copy";
+
+                // Copy the page content (shapes, connectors, etc.) from the source page.
+                copiedPage.Copy(sourcePage);
+
+                // Copy the pagesheet (page-level properties) from the source page.
+                copiedPage.PageSheet.Copy(sourcePage.PageSheet);
+
+                // Add the newly created page to the diagram's page collection.
+                diagram.Pages.Add(copiedPage);
             }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            // Load the diagram using the built‑in constructor (lifecycle rule)
-            Diagram diagram = new Diagram(inputPath);
-
-            // Collect original pages to avoid modifying the collection while iterating
-            List<Page> originalPages = new List<Page>();
-            foreach (Page page in diagram.Pages)
-            {
-                originalPages.Add(page);
-            }
-
-            // Determine the current maximum page ID
-            int maxPageId = 0;
-            foreach (Page page in diagram.Pages)
-            {
-                if (page.ID > maxPageId)
-                    maxPageId = page.ID;
-            }
-
-            // Duplicate each original page
-            foreach (Page srcPage in originalPages)
-            {
-                // Create a new blank page and assign a new unique ID
-                Page newPage = new Page(maxPageId + 1);
-                maxPageId++;
-
-                // Copy the contents of the source page into the new page
-                newPage.Copy(srcPage);
-
-                // Rename the copied page
-                newPage.Name = srcPage.Name + "_Copy";
-
-                // Add the new page to the diagram
-                diagram.Pages.Add(newPage);
-            }
-
-            // Save the modified diagram using the correct overload (save rule)
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram using the provided Save method rule.
+            diagram.Save(outputPath, SaveFileFormat.Vdx);
         }
     }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        try
+        {
+
+            DiagramPageDuplicator.DuplicatePages("", "");
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
+    }
+}

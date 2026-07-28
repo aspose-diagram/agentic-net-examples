@@ -3,33 +3,19 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportVisibleLayersToVdx
+class Program
 {
     static void Main()
     {
-        try
-        {
+        // Load the source Visio diagram (any supported format, e.g., VSDX)
+        Diagram diagram = new Diagram("input.vsdx");
 
-            // Path to the source Visio file (any supported format, e.g., VSDX)
-            string inputFile = "input.vsdx";
+        // Create save options for legacy VDX format
+        DiagramSaveOptions saveOptions = new DiagramSaveOptions();
+        saveOptions.SaveFormat = SaveFileFormat.Vdx;   // VDX = Visio XML format
 
-            // Path for the legacy VDX output file
-            string outputFile = "output.vdx";
-
-            // Load the diagram from the file
-            Diagram diagram = new Diagram(inputFile);
-
-            // Create save options specifying VDX format
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
-
-            // Save the diagram using the specified options.
-            // This will produce a VDX file compatible with older Visio versions.
-            diagram.Save(outputFile, saveOptions);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        // Save the diagram. Hidden layers are not included in the VDX output,
+        // so the resulting file contains only the visible layers.
+        diagram.Save("output.vdx", saveOptions);
     }
 }

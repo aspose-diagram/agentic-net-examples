@@ -9,39 +9,35 @@ class Program
         try
         {
 
-            // Load the Visio diagram (use the provided load rule)
+            // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes
+            // Iterate through every page and shape in the diagram
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape contains text
-                    if (shape.Text != null && shape.Text.Value != null)
+                    // Retrieve the shape's text without formatting
+                    string pureText = shape.GetPureText();
+
+                    // If the shape contains text, replace line breaks with spaces
+                    if (!string.IsNullOrEmpty(pureText))
                     {
-                        // Get the current plain text of the shape
-                        string pureText = shape.GetPureText();
+                        string singleLine = pureText
+                            .Replace("\r\n", " ")
+                            .Replace("\n", " ")
+                            .Replace("\r", " ");
 
-                        // If the text contains line breaks, replace them with spaces
-                        if (!string.IsNullOrEmpty(pureText) && (pureText.Contains("\r") || pureText.Contains("\n")))
-                        {
-                            string singleLineText = pureText
-                                .Replace("\r\n", " ")
-                                .Replace("\n", " ")
-                                .Replace("\r", " ");
+                        // Set the modified text back to the shape (no formatting)
+                        shape.Text.Value.SetWholeText(singleLine);
 
-                            // Update the shape's text without formatting
-                            shape.Text.Value.SetWholeText(singleLineText);
-
-                            // Refresh shape data so the change is reflected in the diagram
-                            shape.RefreshData();
-                        }
+                        // Refresh shape geometry to reflect the text change
+                        shape.RefreshData();
                     }
                 }
             }
 
-            // Save the modified diagram (use the provided save rule)
+            // Save the updated diagram (replace with desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

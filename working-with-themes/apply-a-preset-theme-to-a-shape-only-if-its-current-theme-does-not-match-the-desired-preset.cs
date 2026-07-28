@@ -1,44 +1,30 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <input.vsdx> <output.vsdx> <themeName>");
-            return;
-        }
-
-        string inputPath = args[0];
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = args[1];
-        string themeName = args[2];
-
-        PresetThemeValue desiredTheme;
-        switch (themeName.Trim().ToLower())
-        {
-            case "bubble":
-                desiredTheme = PresetThemeValue.Bubble;
-                break;
-            // Add more mappings here if needed
-            default:
-                Console.Error.WriteLine($"Unsupported theme name: {themeName}");
-                return;
-        }
-
         try
         {
+
+            // Paths for input and output diagrams
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
+            // Desired preset theme and variant
+            PresetThemeValue desiredTheme = PresetThemeValue.Bubble;
+            PresetThemeVariantValue desiredVariant = PresetThemeVariantValue.Variant1;
+
+            // Name of the custom property used to track applied theme
+            const string themePropName = "AppliedTheme";
+
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
@@ -47,50 +33,42 @@ class Program
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    bool alreadyHasTheme = false;
-                    foreach (Prop prop in shape.Props)
+                    // Determine if the shape already has the desired theme applied
+                    bool themeAlreadyApplied = false;
+                    if (shape.Props != null)
                     {
-                        if (prop.Name == "AppliedTheme" && prop.Value.Val == themeName)
+                        foreach (Prop prop in shape.Props)
                         {
-                            alreadyHasTheme = true;
-                            break;
+                            if (prop.Name == themePropName && prop.Value.Val == desiredTheme.ToString())
+                            {
+                                themeAlreadyApplied = true;
+                                break;
+                            }
                         }
                     }
 
-                    if (alreadyHasTheme)
-                        continue;
-
-                    // Apply the preset theme
-                    shape.PresetTheme = desiredTheme;
-                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-
-                    // Record that the theme was applied
-                    bool propFound = false;
-                    foreach (Prop prop in shape.Props)
+                    // Apply the theme only if it is not already applied
+                    if (!themeAlreadyApplied)
                     {
-                        if (prop.Name == "AppliedTheme")
-                        {
-                            prop.Value.Val = themeName;
-                            propFound = true;
-                            break;
-                        }
-                    }
+                        shape.PresetTheme = desiredTheme;
+                        shape.PresetThemeVariant = desiredVariant;
 
-                    if (!propFound)
-                    {
-                        Prop newProp = new Prop();
-                        newProp.Name = "AppliedTheme";
-                        newProp.Value.Val = themeName;
-                        shape.Props.Add(newProp);
+                        // Record the applied theme in a custom property
+                        Prop themeProp = new Prop();
+                        themeProp.Name = themePropName;
+                        themeProp.Value.Val = desiredTheme.ToString();
+                        shape.Props.Add(themeProp);
                     }
                 }
             }
 
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

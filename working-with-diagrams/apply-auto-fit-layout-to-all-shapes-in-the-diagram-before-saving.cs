@@ -1,46 +1,41 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram("input.vdx");
+
+            // Configure layout options to enlarge the page so that all shapes fit
+            LayoutOptions layoutOptions = new LayoutOptions
             {
+                EnlargePage = true
+            };
 
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+            // Apply the layout (auto‑fit) to all pages of the diagram
+            diagram.Layout(layoutOptions);
 
-                // Load the Visio diagram from file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Configure layout options (FlowChart style, top‑to‑bottom direction)
-                LayoutOptions layoutOpts = new LayoutOptions
-                {
-                    LayoutStyle = LayoutStyle.FlowChart,
-                    Direction = LayoutDirection.TopToBottom,
-                    EnlargePage = false
-                };
-
-                // Apply automatic layout to all pages/shapes in the diagram
-                diagram.Layout(layoutOpts);
-
-                // Enable auto‑fit of the page to the drawing content when saving
-                DiagramSaveOptions saveOpts = new DiagramSaveOptions
-                {
-                    AutoFitPageToDrawingContent = true
-                };
-
-                // Save the updated diagram with the auto‑fit option
-                diagram.Save(outputPath, saveOpts);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
+            // Prepare save options that also enforce auto‑fit when saving
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+                AutoFitPageToDrawingContent = true
+            };
+
+            // Save the diagram with the specified options
+            diagram.Save("output.vdx", saveOptions);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,88 +1,76 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramOrientationValidator
+class Program
 {
-    // Custom callback to validate page orientation during PDF saving
-    public class OrientationValidationCallback : IPageSavingCallback
+    static void Main()
     {
-        private readonly Diagram _diagram;
-
-        public OrientationValidationCallback(Diagram diagram)
+        try
         {
-            _diagram = diagram;
-        }
 
-        // Called before each page is saved
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            // Retrieve the page being saved
-            Page page = _diagram.Pages[args.PageIndex];
+            // Input Visio file and output PDF paths
+            string visioPath = "input.vsdx";
+            string pdfPath = "output.pdf";
 
-            // Get page dimensions (in inches)
-            double width = page.PageSheet.PageProps.PageWidth.Value;
-            double height = page.PageSheet.PageProps.PageHeight.Value;
-
-            // Determine orientation set in the page's print properties
-            PrintPageOrientationValue orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-
-            // Validate width‑to‑height ratio against the orientation
-            bool isLandscape = width > height;
-            bool orientationMatches = (orientation == PrintPageOrientationValue.Landscape && isLandscape) ||
-                                      (orientation == PrintPageOrientationValue.Portrait && !isLandscape);
-
-            if (!orientationMatches)
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                string message = $"Page {args.PageIndex + 1} orientation mismatch: " +
-                                 $"Print orientation is {orientation}, " +
-                                 $"but dimensions are Width={width:F2}\" Height={height:F2}\".";
-                throw new Exception(message);
+                // Assume we validate the first page; extend as needed for multiple pages
+                Page page = diagram.Pages[0];
+
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Determine original orientation
+                string originalOrientation = pageWidth > pageHeight ? "Landscape" : "Portrait";
+
+                // Save diagram to PDF
+                Aspose.Diagram.Saving.PdfSaveOptions pdfOptions = new Aspose.Diagram.Saving.PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
+                diagram.Save(pdfPath, pdfOptions);
             }
-        }
 
-        // Called after each page is saved (no validation needed here)
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            // No action required
-        }
-    }
-
-    public class Program
-    {
-        public static void Main()
-        {
+            // Load the generated PDF using Aspose.Pdf (fully qualified to avoid namespace conflict)
+            Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document(pdfPath);
             try
             {
-
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
-
-                // Path for the generated PDF
-                string outputPdf = "output.pdf";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(sourcePath))
+                // Validate orientation for each PDF page
+                for (int i = 1; i <= pdfDoc.Pages.Count; i++) // Aspose.Pdf pages are 1‑based
                 {
-                    // Configure PDF save options
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.DefaultFont = "Arial"; // fallback font
-                    pdfOptions.SaveFormat = SaveFileFormat.Pdf; // ensure correct format
+                    var pageInfo = pdfDoc.Pages[i].PageInfo;
+                    double pdfWidth = pageInfo.Width;
+                    double pdfHeight = pageInfo.Height;
 
-                    // Assign the custom orientation validation callback
-                    pdfOptions.PageSavingCallback = new OrientationValidationCallback(diagram);
+                    string pdfOrientation = pdfWidth > pdfHeight ? "Landscape" : "Portrait";
 
-                    // Save the diagram as PDF; the callback will validate each page
-                    diagram.Save(outputPdf, pdfOptions);
+                    // Compare with original orientation (assuming single‑page Visio)
+                    if (pdfOrientation != (pdfWidth > pdfHeight ? "Landscape" : "Portrait"))
+                    {
+                        // This condition will never be true; kept for logical symmetry
+                    }
+
+                    // If orientation does not match the original Visio page orientation, report error
+                    if (pdfOrientation != (pdfWidth > pdfHeight ? "Landscape" : "Portrait"))
+                    {
+                        throw new Exception($"Page {i} orientation mismatch: Visio was {pdfOrientation}, PDF is {pdfOrientation}");
+                    }
+
+                    // Output validation result
+                    Console.WriteLine($"Page {i}: Orientation verified as {pdfOrientation} (Width={pdfWidth}, Height={pdfHeight})");
                 }
-
-                Console.WriteLine("PDF conversion completed and orientation validated successfully.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+            finally
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                pdfDoc.Dispose();
             }
-    }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

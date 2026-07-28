@@ -1,45 +1,42 @@
-using System.IO;
 using System;
-using System.Threading;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        // Path to the VSD file to be loaded.
-        string inputPath = "sample.vsd";
-
-        // Create an InterruptMonitor that can be used to cancel the load operation.
-        InterruptMonitor monitor = new InterruptMonitor();
-
-        // Example: start a background thread that will request interruption after a delay.
-        Thread interrupter = new Thread(() =>
+        static void Main(string[] args)
         {
-            Thread.Sleep(2000); // Wait 2 seconds.
-            monitor.Interrupt();
-            Console.WriteLine("Interrupt requested.");
-        });
-        interrupter.Start();
+            // Path to the VSD file to be loaded
+            string inputPath = "sample.vsd";
 
-        // Configure LoadOptions with the desired format and attach the monitor.
-        LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsd);
-        loadOptions.InterruptMonitor = monitor;
+            // Create an InterruptMonitor to enable cancellation of the load operation
+            InterruptMonitor monitor = new InterruptMonitor();
 
-        try
-        {
-            // Load the diagram using the custom LoadOptions.
-            Diagram diagram = new Diagram(inputPath, loadOptions);
-            Console.WriteLine("Diagram loaded successfully.");
-            // Diagram processing can be performed here.
+            // Configure LoadOptions with the desired format and assign the monitor
+            LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsd);
+            loadOptions.InterruptMonitor = monitor;
+
+            // Optional: start a background thread that triggers cancellation after a delay
+            System.Threading.Thread cancelThread = new System.Threading.Thread(() =>
+            {
+                System.Threading.Thread.Sleep(2000); // wait 2 seconds
+                monitor.Interrupt(); // request interruption
+            });
+            cancelThread.Start();
+
+            try
+            {
+                // Load the diagram using the custom LoadOptions
+                Diagram diagram = new Diagram(inputPath, loadOptions);
+                Console.WriteLine("Diagram loaded successfully.");
+                // Diagram processing logic can be placed here
+            }
+            catch (Exception ex)
+            {
+                // Handle interruption or other loading errors
+                Console.WriteLine($"Loading was interrupted or failed: {ex.Message}");
+            }
+
+            // Ensure the cancellation thread has completed before exiting
+            cancelThread.Join();
         }
-        catch (Exception ex)
-        {
-            // Loading was interrupted or failed.
-            Console.WriteLine($"Loading failed or was interrupted: {ex.Message}");
-        }
-
-        // Ensure the interrupter thread has completed before exiting.
-        interrupter.Join();
     }
-}

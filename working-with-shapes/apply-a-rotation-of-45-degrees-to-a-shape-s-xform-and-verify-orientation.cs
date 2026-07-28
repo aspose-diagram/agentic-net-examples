@@ -2,34 +2,60 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+public class Program
 {
-    static void Main()
+    public static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Paths for input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Access the first page and retrieve a shape (example: shape with ID 1)
-            Shape shape = diagram.Pages[0].Shapes.GetShape(1);
-
-            // Apply a rotation of 45 degrees to the shape's XForm
-            shape.XForm.Angle.Value = 45.0;
-
-            // Verify that the rotation was set correctly
-            if (Math.Abs(shape.XForm.Angle.Value - 45.0) < 0.001)
+            // Load the diagram from file
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("Rotation applied successfully.");
-            }
-            else
-            {
-                Console.WriteLine("Rotation verification failed.");
-            }
+                // Access the first page (index 0)
+                Page page = diagram.Pages[0];
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Find the first non‑deleted shape on the page
+                Shape targetShape = null;
+                foreach (Shape shp in page.Shapes)
+                {
+                    if (shp.Del == BOOL.False)
+                    {
+                        targetShape = shp;
+                        break;
+                    }
+                }
+
+                if (targetShape == null)
+                {
+                    throw new Exception("No suitable shape found on the page.");
+                }
+
+                // Rotate the shape by 45 degrees (convert to radians)
+                double angleDeg = 45.0;
+                double angleRad = (Math.PI / 180.0) * angleDeg;
+                targetShape.XForm.Angle.Value = angleRad;
+
+                // Verify that the rotation was applied correctly
+                double actualRad = targetShape.XForm.Angle.Value;
+                double tolerance = 0.0001; // acceptable deviation
+
+                if (Math.Abs(actualRad - angleRad) > tolerance)
+                {
+                    throw new Exception($"Rotation verification failed. Expected {angleRad} rad, but got {actualRad} rad.");
+                }
+                else
+                {
+                    Console.WriteLine("Shape rotated 45 degrees successfully.");
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

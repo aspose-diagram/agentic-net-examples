@@ -1,44 +1,58 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 
-class VsdToPngBatchConverter
-{
-    // Converts all .vsd files in the input folder to PNG images in the output folder using parallel processing.
-    public static void ConvertFolder(string inputFolder, string outputFolder)
+class Program
     {
-        // Ensure output directory exists
-        Directory.CreateDirectory(outputFolder);
-
-        // Gather all .vsd files
-        string[] vsdFiles = Directory.GetFiles(inputFolder, "*.vsd", SearchOption.TopDirectoryOnly);
-
-        // Process files in parallel
-        Parallel.ForEach(vsdFiles, vsdFile =>
+        static void Main(string[] args)
         {
-            // Determine output PNG file path
-            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(vsdFile);
-            string pngPath = Path.Combine(outputFolder, fileNameWithoutExt + ".png");
-
-            // Load the diagram from the VSD file
-            using (Diagram diagram = new Diagram(vsdFile, LoadFileFormat.Vsd))
+            // Validate arguments: input folder and output folder
+            if (args.Length < 2)
             {
-                // Save the diagram as PNG using the Save method with SaveFileFormat.Png
-                diagram.Save(pngPath, SaveFileFormat.Png);
+                Console.WriteLine("Usage: VsdToPngBatch <inputFolder> <outputFolder>");
+                return;
             }
-        });
+
+            string inputFolder = args[0];
+            string outputFolder = args[1];
+
+            if (!Directory.Exists(inputFolder))
+            {
+                Console.WriteLine($"Input folder does not exist: {inputFolder}");
+                return;
+            }
+
+            // Ensure output folder exists
+            Directory.CreateDirectory(outputFolder);
+
+            // Get all .vsd files in the input folder (non‑recursive)
+            string[] vsdFiles = Directory.GetFiles(inputFolder, "*.vsd");
+
+            // Process files in parallel to improve performance
+            Parallel.ForEach(vsdFiles, vsdFile =>
+            {
+                try
+                {
+                    // Load the VSD diagram using the appropriate load format
+                    using (Diagram diagram = new Diagram(vsdFile, LoadFileFormat.Vsd))
+                    {
+                        // Build output PNG file path
+                        string pngFileName = Path.GetFileNameWithoutExtension(vsdFile) + ".png";
+                        string pngPath = Path.Combine(outputFolder, pngFileName);
+
+                        // Save the diagram as PNG
+                        diagram.Save(pngPath, SaveFileFormat.Png);
+                    }
+
+                    Console.WriteLine($"Converted: {Path.GetFileName(vsdFile)}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error converting {Path.GetFileName(vsdFile)}: {ex.Message}");
+                }
+            });
+
+            Console.WriteLine("Batch conversion completed.");
+        }
     }
-
-    // Example usage
-    static void Main()
-    {
-        string inputDir = @"C:\VisioFiles";
-        string outputDir = @"C:\VisioPngs";
-
-        ConvertFolder(inputDir, outputDir);
-
-        Console.WriteLine("Conversion completed.");
-    }
-}

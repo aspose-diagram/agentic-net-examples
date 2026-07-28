@@ -4,83 +4,81 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace OLEObjectExporter
+namespace OleSerializationExample
 {
-    // DTO representing OLE object information for JSON serialization
+    // DTO for OLE object information
     public class OleInfo
     {
         public long ShapeId { get; set; }
         public string ShapeName { get; set; }
-        public double Width { get; set; }
-        public double Height { get; set; }
+        public string ObjectSourceFullName { get; set; }
+        public double ObjectWidth { get; set; }
+        public double ObjectHeight { get; set; }
         public bool ShowAsIcon { get; set; }
-        public string ObjectDataBase64 { get; set; }
+        public string ForeignType { get; set; }
+        public string ObjectType { get; set; }
     }
 
     public class Program
     {
-        public static void Main(string[] args)
+        public static void Main()
         {
             try
             {
 
-                // Input Visio file path (adjust as needed)
+                // Input Visio file path
                 string inputPath = "input.vsdx";
-                // Output JSON file path
-                string outputPath = "ole_objects.json";
+                // Output Visio file path (unchanged diagram saved back)
+                string outputPath = "output.vsdx";
+                // JSON output path
+                string jsonPath = "oleInfo.json";
 
-                // Load the diagram
+                // Load the diagram (create/load lifecycle)
                 Diagram diagram = new Diagram(inputPath);
 
-                // List to hold extracted OLE information
                 List<OleInfo> oleInfos = new List<OleInfo>();
 
-                // Iterate through all pages and shapes
+                // Iterate through pages and shapes to find OLE objects
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Verify the shape is an OLE object
+                        // Verify shape is a foreign OLE object
                         if (shape.Type == TypeValue.Foreign &&
                             shape.ForeignData != null &&
                             shape.ForeignData.ForeignType == ForeignType.Object)
                         {
-                            // Extract required properties
-                            long shapeId = shape.ID;
-                            string shapeName = shape.Name;
-                            double width = shape.ForeignData.ObjectWidth;
-                            double height = shape.ForeignData.ObjectHeight;
-                            bool showAsIcon = shape.ForeignData.ShowAsIcon == BOOL.True;
+                            var fd = shape.ForeignData;
 
-                            // Convert binary OLE data to Base64 (if present)
-                            string base64Data = null;
-                            if (shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
+                            // Ensure there is embedded OLE binary data
+                            if (fd.ObjectData != null && fd.ObjectData.Length > 0)
                             {
-                                base64Data = Convert.ToBase64String(shape.ForeignData.ObjectData);
+                                OleInfo info = new OleInfo
+                                {
+                                    ShapeId = shape.ID,
+                                    ShapeName = shape.Name,
+                                    ObjectSourceFullName = fd.ObjectSourceFullName,
+                                    ObjectWidth = fd.ObjectWidth,
+                                    ObjectHeight = fd.ObjectHeight,
+                                    ShowAsIcon = fd.ShowAsIcon == BOOL.True,
+                                    ForeignType = fd.ForeignType.ToString(),
+                                    ObjectType = fd.ObjectType.ToString()
+                                };
+
+                                oleInfos.Add(info);
                             }
-
-                            // Populate DTO and add to list
-                            OleInfo info = new OleInfo
-                            {
-                                ShapeId = shapeId,
-                                ShapeName = shapeName,
-                                Width = width,
-                                Height = height,
-                                ShowAsIcon = showAsIcon,
-                                ObjectDataBase64 = base64Data
-                            };
-                            oleInfos.Add(info);
                         }
                     }
                 }
 
-                // Serialize the list to JSON with indentation
+                // Serialize the collected OLE information to JSON
                 string json = JsonSerializer.Serialize(oleInfos, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(jsonPath, json);
+                Console.WriteLine($"OLE information serialized to {jsonPath}");
 
-                // Write JSON to output file
-                File.WriteAllText(outputPath, json);
-
-                Console.WriteLine($"OLE object information exported to '{outputPath}'.");
+                // Save the (unchanged) diagram back to a file (save lifecycle)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to {outputPath}");
 
             }
             catch (System.IO.FileNotFoundException ex)

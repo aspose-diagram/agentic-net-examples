@@ -1,97 +1,89 @@
 using System;
-using System.Text;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect two arguments: input Visio file path and output PDF file path
+        if (args.Length < 2)
         {
-            try
+            // Show usage message and exit gracefully instead of throwing
+            Console.Error.WriteLine("Usage: RotationReportGenerator <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Verify that the input Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Build the report content
+            string report = "Rotation Settings Report (Fixed RotationType)\n";
+            report += "============================================\n\n";
+
+            // Iterate through all pages and shapes to collect rotation info
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio diagram
-                const string inputPath = "input.vsdx";
-                // Path for the generated PDF report
-                const string outputPath = "RotationReport.pdf";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Build the report text
-                StringBuilder reportBuilder = new StringBuilder();
-                reportBuilder.AppendLine("Rotation Settings Report");
-                reportBuilder.AppendLine("========================");
-                reportBuilder.AppendLine();
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Check if the shape has a defined (non-Undefined) RotationType
+                    if (shape.ThreeDFormat != null &&
+                        shape.ThreeDFormat.RotationType != null &&
+                        shape.ThreeDFormat.RotationType.Value != RotationTypeValue.Undefined)
                     {
-                        // Check if the shape has a fixed rotation type (Parallel)
-                        if (shape.ThreeDFormat != null &&
-                            shape.ThreeDFormat.RotationType != null &&
-                            shape.ThreeDFormat.RotationType.Value == RotationTypeValue.Parallel)
-                        {
-                            // Retrieve shape name (fallback to ID if name is empty)
-                            string shapeName = !string.IsNullOrWhiteSpace(shape.NameU) ? shape.NameU : $"ID_{shape.ID}";
+                        // Retrieve rotation angle (radians) and convert to degrees
+                        double angleRad = shape.XForm.Angle.Value;
+                        double angleDeg = angleRad * 180.0 / Math.PI;
 
-                            // Rotation angle is stored in radians; convert to degrees for readability
-                            double angleRadians = shape.XForm.Angle.Value;
-                            double angleDegrees = angleRadians * (180.0 / Math.PI);
+                        // Retrieve rotation type name
+                        string rotationType = shape.ThreeDFormat.RotationType.Value.ToString();
 
-                            reportBuilder.AppendLine($"Page: {page.NameU}");
-                            reportBuilder.AppendLine($"  Shape: {shapeName}");
-                            reportBuilder.AppendLine($"    Rotation Angle: {angleDegrees:F2}°");
-                            reportBuilder.AppendLine();
-                        }
+                        // Append shape information to the report
+                        report += $"Page: {page.NameU}, Shape ID: {shape.ID}, Name: {shape.NameU}\n";
+                        report += $"  Angle (deg): {angleDeg:F2}, RotationType: {rotationType}\n\n";
                     }
                 }
-
-                // If no shapes matched, note it in the report
-                if (reportBuilder.Length == 0 || reportBuilder.ToString().Contains("Rotation Settings Report"))
-                {
-                    reportBuilder.AppendLine("No shapes with a fixed rotation type were found.");
-                }
-
-                // Add a new page to hold the textual report
-                Page reportPage = new Page();
-                diagram.Pages.Add(reportPage);
-
-                // Define dimensions for the text shape (full page size)
-                double pageWidth = reportPage.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = reportPage.PageSheet.PageProps.PageHeight.Value;
-
-                // Add a text shape containing the report
-                Shape textShape = reportPage.AddText(
-                    pinX: pageWidth / 2,
-                    pinY: pageHeight / 2,
-                    width: pageWidth - 1,   // leave a small margin
-                    height: pageHeight - 1,
-                    text: reportBuilder.ToString(),
-                    fontName: "Arial",
-                    fontColor: "#000000",
-                    size: 12.0 / 72.0   // convert 12 pt to inches
-                );
-
-                // Ensure the text shape uses the report content (override any default text)
-                textShape.Text.Value.Clear();
-                textShape.Text.Value.Add(new Txt(reportBuilder.ToString()));
-
-                // Save the diagram (including the report page) as a PDF
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    DefaultFont = "Arial"
-                };
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine($"Rotation report generated and saved to '{outputPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Add a new page to hold the report text
+            Page reportPage = new Page();
+            diagram.Pages.Add(reportPage);
+
+            // Determine page dimensions for positioning the text shape
+            double pageWidth = reportPage.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = reportPage.PageSheet.PageProps.PageHeight.Value;
+
+            // Position the report text near the top-left corner with margins
+            double textPinX = 0.5; // inches from left
+            double textPinY = pageHeight - 0.5; // inches from bottom (top margin)
+            double textWidth = pageWidth - 1.0; // leave 0.5‑inch margins on both sides
+            double textHeight = pageHeight - 1.0; // leave 0.5‑inch margins on top and bottom
+
+            // Add the report text as a text shape
+            reportPage.AddText(textPinX, textPinY, textWidth, textHeight, report);
+
+            // Save the diagram as a PDF with a default font fallback
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            diagram.Save(outputPath, pdfOptions);
+        }
+        catch (Exception ex)
+        {
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

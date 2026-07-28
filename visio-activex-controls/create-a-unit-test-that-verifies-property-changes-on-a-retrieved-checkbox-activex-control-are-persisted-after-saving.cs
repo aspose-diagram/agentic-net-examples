@@ -4,69 +4,57 @@ using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Define temporary file path
-                string filePath = Path.Combine(Path.GetTempPath(), "CheckBoxTest.vsdx");
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Create a new diagram
-                Diagram diagram = new Diagram();
+            // Add a CheckBox ActiveX control to the active page
+            // Parameters: ControlType, pinX, pinY, width, height (in inches)
+            long shapeId = diagram.ActivePage.AddActiveXControl(ControlType.CheckBox, 2.0, 2.0, 1.0, 0.5);
 
-                // Get the active page
-                Page page = diagram.ActivePage;
+            // Retrieve the shape and cast its ActiveXControl to CheckBoxActiveXControl
+            Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
+            CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
 
-                // Add a CheckBox ActiveX control to the page
-                // Parameters: ControlType, PinX, PinY, Width, Height (in inches)
-                long shapeId = page.AddActiveXControl(ControlType.CheckBox, 2.0, 2.0, 1.0, 0.5);
+            // Set properties on the CheckBox
+            checkBox.IsChecked = true;
+            checkBox.Caption = "UnitTestCheckBox";
+            checkBox.IsEnabled = true;
 
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(shapeId);
+            // Define a temporary file path for saving the diagram
+            string tempFile = Path.Combine(Path.GetTempPath(), "CheckBoxTest.vsdx");
 
-                // Cast the ActiveXControl to CheckBoxActiveXControl
-                CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
+            // Save the diagram using a valid overload (file path + SaveFileFormat)
+            diagram.Save(tempFile, SaveFileFormat.Vsdx);
 
-                // Set properties
-                checkBox.IsChecked = true;
-                checkBox.Caption = "UnitTestCheckBox";
-                checkBox.Value = CheckValueType.Checked;
+            // Load the diagram back from the saved file
+            Diagram loadedDiagram = new Diagram(tempFile);
 
-                // Save the diagram to file using Vsdx format
-                diagram.Save(filePath, SaveFileFormat.Vsdx);
+            // Retrieve the same shape from the loaded diagram
+            Shape loadedShape = loadedDiagram.ActivePage.Shapes.GetShape(shapeId);
+            CheckBoxActiveXControl loadedCheckBox = (CheckBoxActiveXControl)loadedShape.ActiveXControl;
 
-                // Dispose the original diagram
-                diagram.Dispose();
+            // Verify that the properties persisted after saving
+            if (loadedCheckBox.IsChecked != true)
+                throw new Exception("IsChecked property was not persisted.");
 
-                // Load the diagram back from file
-                Diagram loadedDiagram = new Diagram(filePath);
-                Page loadedPage = loadedDiagram.ActivePage;
-                Shape loadedShape = loadedPage.Shapes.GetShape(shapeId);
-                CheckBoxActiveXControl loadedCheckBox = (CheckBoxActiveXControl)loadedShape.ActiveXControl;
+            if (loadedCheckBox.Caption != "UnitTestCheckBox")
+                throw new Exception("Caption property was not persisted.");
 
-                // Verify persisted properties
-                if (loadedCheckBox.IsChecked != true)
-                    throw new Exception("IsChecked property was not persisted correctly.");
+            if (loadedCheckBox.IsEnabled != true)
+                throw new Exception("IsEnabled property was not persisted.");
 
-                if (loadedCheckBox.Caption != "UnitTestCheckBox")
-                    throw new Exception("Caption property was not persisted correctly.");
+            Console.WriteLine("All CheckBox ActiveX control properties persisted successfully.");
 
-                if (loadedCheckBox.Value != CheckValueType.Checked)
-                    throw new Exception("Value property was not persisted correctly.");
-
-                Console.WriteLine("All CheckBox ActiveX control properties persisted successfully.");
-
-                // Clean up
-                loadedDiagram.Dispose();
-                if (File.Exists(filePath))
-                    File.Delete(filePath);
-
-            }
-            catch (System.NullReferenceException ex)
-            {
-                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-            }
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+        }
     }
-    }
+}

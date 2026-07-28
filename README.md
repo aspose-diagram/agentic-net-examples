@@ -11,7 +11,7 @@
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-07-27 |
+| Last Updated | 2026-07-28 |
 
 ## Repository Structure
 
@@ -307,4 +307,4 @@ To trigger validation:
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) · 2026-07-27*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) · 2026-07-28*

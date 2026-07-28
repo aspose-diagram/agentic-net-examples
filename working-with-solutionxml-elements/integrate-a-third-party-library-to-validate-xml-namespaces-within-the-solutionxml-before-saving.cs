@@ -1,67 +1,53 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using System.Xml.Linq;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
-            // Load the Visio diagram
+
+            // Load the diagram (uses the provided load rule)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Validate namespaces in all SolutionXML elements
-            ValidateSolutionXmlNamespaces(diagram);
+            // Validate namespaces of all SolutionXML entries before saving
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
+            {
+                if (!IsNamespaceValid(solXml.XmlValue))
+                {
+                    Console.WriteLine($"Invalid namespace detected in SolutionXML '{solXml.Name}'.");
+                    throw new InvalidOperationException($"Invalid namespace in SolutionXML '{solXml.Name}'.");
+                }
+            }
 
-            // Save the diagram after successful validation
+            // Save the diagram (uses the provided save rule)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved successfully.");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
-            // Rethrow if needed
-            // throw;
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 
-    // Validates that each SolutionXML's XML content has a non‑empty namespace
-    static void ValidateSolutionXmlNamespaces(Diagram diagram)
+    // Third‑party (System.Xml.Linq) based validation of XML namespaces
+    static bool IsNamespaceValid(string xmlContent)
     {
-        foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+        try
         {
-            if (string.IsNullOrWhiteSpace(solutionXml.XmlValue))
-            {
-                throw new Exception($"SolutionXML '{solutionXml.Name}' contains empty XML.");
-            }
+            XDocument doc = XDocument.Parse(xmlContent);
+            XNamespace ns = doc.Root.Name.Namespace;
 
-            XDocument doc;
-            try
-            {
-                doc = XDocument.Parse(solutionXml.XmlValue);
-            }
-            catch (Exception parseEx)
-            {
-                throw new Exception($"SolutionXML '{solutionXml.Name}' is not well‑formed XML: {parseEx.Message}");
-            }
-
-            if (!HasValidNamespaces(doc))
-            {
-                throw new Exception($"SolutionXML '{solutionXml.Name}' does not define a valid XML namespace.");
-            }
+            // Example rule: namespace must start with the expected Aspose Diagram schema URI
+            return ns != null && ns.NamespaceName.StartsWith("http://schemas.aspose.com/diagram");
         }
-    }
-
-    // Checks that the root element has a namespace defined (non‑empty)
-    static bool HasValidNamespaces(XDocument doc)
-    {
-        if (doc.Root == null)
+        catch
+        {
+            // Parsing error indicates malformed XML or missing namespace
             return false;
-
-        // Namespace is considered valid if it is not empty
-        return !string.IsNullOrEmpty(doc.Root.Name.NamespaceName);
+        }
     }
 }

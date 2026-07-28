@@ -3,51 +3,59 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VisioThumbnailGenerator
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file
-            string visioFilePath = @"C:\Input\sample.vsdx";
-
-            // Folder where thumbnails will be saved
-            string thumbnailFolder = @"C:\Output\Thumbnails";
-
-            // Ensure the output folder exists
-            if (!Directory.Exists(thumbnailFolder))
-                Directory.CreateDirectory(thumbnailFolder);
-
-            // Load the Visio diagram using the provided constructor (load rule)
-            Diagram diagram = new Diagram(visioFilePath);
-
-            // Iterate through each page in the diagram
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Expect two arguments: input Visio file path and output folder for thumbnails
+            if (args.Length < 2)
             {
-                // Build the thumbnail file name (e.g., Page_1.png, Page_2.png, ...)
-                string thumbnailPath = Path.Combine(thumbnailFolder, $"Page_{i + 1}.png");
-
-                // Configure image save options:
-                // - Use PNG format (SaveFileFormat.Png)
-                // - Set the page index to render only the current page
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                {
-                    PageIndex = i   // Render the i‑th page only
-                };
-
-                // Save the current page as an image using the provided Save method (save rule)
-                diagram.Save(thumbnailPath, saveOptions);
+                Console.WriteLine("Usage: VisioThumbnailGenerator <inputVisioPath> <outputFolder>");
+                return;
             }
 
-            // Release resources
-            diagram.Dispose();
+            string inputPath = args[0];
+            string outputFolder = args[1];
 
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            // Validate input file
+            if (!File.Exists(inputPath))
+            {
+                Console.WriteLine($"Error: Input file not found: {inputPath}");
+                return;
+            }
+
+            // Ensure output directory exists
+            Directory.CreateDirectory(outputFolder);
+
+            try
+            {
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through each page and generate a thumbnail
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    // Build thumbnail file name (e.g., Page_1.png)
+                    string thumbnailPath = Path.Combine(outputFolder, $"Page_{i + 1}.png");
+
+                    // Configure image save options for the specific page
+                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    {
+                        PageIndex = i,      // Zero‑based page index
+                        PageCount = 1,      // Export only this page
+                        Resolution = 96f    // DPI (optional, adjust as needed)
+                    };
+
+                    // Save the page as an image thumbnail
+                    diagram.Save(thumbnailPath, saveOptions);
+
+                    Console.WriteLine($"Thumbnail saved: {thumbnailPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                throw;
+            }
         }
     }
-}

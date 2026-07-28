@@ -6,51 +6,63 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and output CSV file path
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: VisioCsvExport <inputVisioPath> <outputCsvPath>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+                // Input Visio file path (modify as needed)
+                string inputPath = "input.vsdx";
 
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Prepare CSV writer
-                using (StreamWriter writer = new StreamWriter(outputPath))
+                // Output CSV file path
+                string outputCsvPath = "shapes.csv";
+
+                // Conversion factor from inches to millimeters
+                const double InchToMillimeter = 25.4;
+
+                // Load the Visio diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Write CSV header
-                    writer.WriteLine("ID,Type,AreaSqMm");
-
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                    // Prepare to write CSV
+                    using (StreamWriter writer = new StreamWriter(outputCsvPath))
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
+                        // Write CSV header
+                        writer.WriteLine("ID,Type,AreaSqMm");
+
+                        // Iterate through all pages
+                        foreach (Aspose.Diagram.Page page in diagram.Pages)
                         {
-                            // Skip shapes that are marked as deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
+                            // Iterate through all shapes on the page
+                            foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                            {
+                                // Skip deleted shapes
+                                if (shape.Del == BOOL.True)
+                                    continue;
 
-                            // Ensure XForm is available
-                            if (shape.XForm == null)
-                                continue;
+                                // Retrieve shape ID
+                                long shapeId = shape.ID;
 
-                            // Width and Height are in inches; convert to millimeters (1 inch = 25.4 mm)
-                            double widthInches = shape.XForm.Width.Value;
-                            double heightInches = shape.XForm.Height.Value;
-                            double areaSqMm = widthInches * heightInches * 25.4 * 25.4;
+                                // Retrieve shape type as string
+                                string shapeType = shape.Type.ToString();
 
-                            // Write shape information to CSV
-                            writer.WriteLine($"{shape.ID},{shape.Type},{areaSqMm:F2}");
+                                // Retrieve width and height in inches
+                                double widthInches = shape.XForm.Width.Value;
+                                double heightInches = shape.XForm.Height.Value;
+
+                                // Calculate area in square millimeters
+                                double areaSqMm = widthInches * heightInches * InchToMillimeter * InchToMillimeter;
+
+                                // Write CSV line
+                                writer.WriteLine($"{shapeId},{shapeType},{areaSqMm:F2}");
+                            }
                         }
                     }
                 }
-            }
 
-            Console.WriteLine($"CSV export completed: {outputPath}");
-        }
+                Console.WriteLine($"CSV file generated at: {Path.GetFullPath(outputCsvPath)}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }

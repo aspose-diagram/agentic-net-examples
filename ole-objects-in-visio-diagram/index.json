@@ -1,11 +1,11 @@
 {
   "category": "ole-objects-in-visio-diagram",
   "display_name": "Ole Objects In Visio Diagram",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-06-05",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -19,11 +19,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -49,6 +49,7 @@
       "task": "Apply a security password to ole objects that contain confidential pdf content before exporting",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -67,8 +68,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO",
-        "System.Reflection",
         "System.Text"
       ],
       "key_apis": [
@@ -87,7 +88,8 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -121,14 +123,10 @@
       "file": "configure-the-diagram-saver-to-retain-ole-objects-when-converting-the-visio-file-to-svg-format.cs",
       "task": "Configure the diagram saver to retain ole objects when converting the visio file to svg format",
       "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "SVGSaveOptions",
         "Save",
         "diagram"
       ]
@@ -139,7 +137,6 @@
       "task": "Convert embedded ole excel worksheets to csv files while preserving cell formatting information",
       "namespaces": [
         "Aspose.Cells",
-        "Aspose.Cells.Saving",
         "Aspose.Diagram",
         "System",
         "System.IO"
@@ -147,9 +144,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -177,10 +174,8 @@
       "task": "Delete ole objects whose embedded type matches excel worksheets from the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -307,9 +302,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -367,7 +362,8 @@
         "Aspose.Diagram",
         "System",
         "System.IO",
-        "System.Security.Cryptography"
+        "System.Security.Cryptography",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -389,9 +385,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -426,6 +422,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -435,15 +432,17 @@
       "task": "Replace all ole objects of type powerpoint with a placeholder image to reduce diagram complexity",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -460,9 +459,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -488,6 +487,7 @@
       "task": "Update ole object hyperlinks to point to a new network share location across the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

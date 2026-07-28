@@ -1,7 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -10,61 +9,51 @@ class Program
             try
             {
 
-                // Input Visio file path (change as needed)
-                string visioPath = "input.vsdx";
+                // Input Visio file (adjust the path as needed)
+                string inputPath = "input.vsdx";
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
+                // Output image file showing the diagram after routing adjustments
+                string outputPath = "output.png";
 
-                // Map shape IDs to readable names (or fallback to ID)
-                var shapeNames = new Dictionary<long, string>();
-                foreach (Page page in diagram.Pages)
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Work with the first page (modify as required)
+                Page page = diagram.Pages[0];
+
+                Console.WriteLine("Connector routing information:");
+
+                // Iterate through all connections on the page
+                foreach (Connect conn in page.Connects)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    long fromId = conn.FromSheet;
+                    long toId = conn.ToSheet;
+                    string fromCell = conn.FromCell;
+                    string toCell = conn.ToCell;
+
+                    // Retrieve the source and target shapes
+                    Shape fromShape = page.Shapes.GetShape(fromId);
+                    Shape toShape = page.Shapes.GetShape(toId);
+
+                    Console.WriteLine($"From Shape ID {fromId} (Name: {fromShape.Name}) " +
+                                      $"to Shape ID {toId} (Name: {toShape.Name})");
+                    Console.WriteLine($"  FromCell: {fromCell}, ToCell: {toCell}");
+                }
+
+                // Example: set all connector routing to right‑angle style
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.OneD) // 1‑D shapes are connectors
                     {
-                        string name = string.IsNullOrWhiteSpace(shape.Name) ? $"Shape_{shape.ID}" : shape.Name;
-                        shapeNames[shape.ID] = name;
+                        shape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
                     }
                 }
 
-                // Collect connector relationships (edges)
-                var edges = new List<(long fromId, long toId)>();
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Connect connection in page.Connects)
-                    {
-                        // Connect objects expose FromSheet and ToSheet IDs
-                        edges.Add((connection.FromSheet, connection.ToSheet));
-                    }
-                }
+                // Save the modified diagram as a PNG image
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                diagram.Save(outputPath, pngOptions);
 
-                // Build GraphViz DOT representation
-                var dotLines = new List<string>();
-                dotLines.Add("digraph VisioConnections {");
-                dotLines.Add("    rankdir=LR;"); // left‑to‑right layout
-
-                // Define nodes
-                foreach (var kvp in shapeNames)
-                {
-                    string nodeId = $"node{kvp.Key}";
-                    string label = kvp.Value.Replace("\"", "\\\"");
-                    dotLines.Add($"    {nodeId} [label=\"{label}\"];");
-                }
-
-                // Define edges
-                foreach (var edge in edges)
-                {
-                    string fromNode = $"node{edge.fromId}";
-                    string toNode = $"node{edge.toId}";
-                    dotLines.Add($"    {fromNode} -> {toNode};");
-                }
-
-                dotLines.Add("}");
-
-                // Write DOT file
-                string outputDotPath = "connections.dot";
-                File.WriteAllLines(outputDotPath, dotLines);
-                Console.WriteLine($"Connector routing exported to '{outputDotPath}'.");
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

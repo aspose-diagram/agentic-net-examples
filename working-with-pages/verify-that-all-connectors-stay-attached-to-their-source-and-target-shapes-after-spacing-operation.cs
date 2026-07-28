@@ -1,78 +1,66 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.AutoLayout;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the diagram from a file
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Work with the first page (adjust if needed)
+            Page page = diagram.Pages[0];
+
+            // Apply automatic spacing to all shapes on the page
+            AutoSpaceOptions spacingOptions = new AutoSpaceOptions();
+            spacingOptions.DistanceInHorizontal = 2; // inches
+            spacingOptions.DistanceInVertical = 2;   // inches
+            page.AutoSpaceShapes(page.Shapes, spacingOptions);
+
+            // Verify that each connector is still attached to its source and target shapes
+            foreach (Connect connection in page.Connects)
             {
+                // Retrieve source and target shapes using their IDs
+                Shape sourceShape = page.Shapes.GetShape(connection.FromSheet);
+                Shape targetShape = page.Shapes.GetShape(connection.ToSheet);
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file after spacing (optional)
-                string outputPath = "output_spaced.vsdx";
+                if (sourceShape == null)
+                    throw new Exception($"Connector reference missing source shape with ID {connection.FromSheet}.");
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                if (targetShape == null)
+                    throw new Exception($"Connector reference missing target shape with ID {connection.ToSheet}.");
 
-                // Assume we work with the first page
-                Page page = diagram.Pages[0];
+                // Ensure neither shape is marked as deleted
+                if (sourceShape.Del == BOOL.True)
+                    throw new Exception($"Source shape ID {sourceShape.ID} is marked as deleted.");
 
-                // Configure auto‑spacing options
-                AutoSpaceOptions spaceOptions = new AutoSpaceOptions
+                if (targetShape.Del == BOOL.True)
+                    throw new Exception($"Target shape ID {targetShape.ID} is marked as deleted.");
+
+                // If the connector itself appears as a shape (OneD), verify it is not deleted
+                Shape possibleConnector = page.Shapes.GetShape(connection.FromSheet);
+                if (possibleConnector != null && possibleConnector.OneD)
                 {
-                    DistanceInHorizontal = 1.0, // inches
-                    DistanceInVertical = 1.0    // inches
-                };
-
-                // Apply auto‑spacing to all shapes on the page
-                page.AutoSpaceShapes(page.Shapes, spaceOptions);
-
-                // Verify that each connector is still attached to existing, non‑deleted shapes
-                foreach (Connect connection in page.Connects)
-                {
-                    long sourceId = connection.FromSheet;
-                    long targetId = connection.ToSheet;
-
-                    // Retrieve source and target shapes
-                    Shape sourceShape = page.Shapes.GetShape(sourceId);
-                    Shape targetShape = page.Shapes.GetShape(targetId);
-
-                    // Check that both shapes exist
-                    if (sourceShape == null)
-                    {
-                        throw new Exception($"Connector (ID={connection.FromSheet}) references a missing source shape (ID={sourceId}).");
-                    }
-
-                    if (targetShape == null)
-                    {
-                        throw new Exception($"Connector (ID={connection.FromSheet}) references a missing target shape (ID={targetId}).");
-                    }
-
-                    // Ensure neither shape is marked as deleted
-                    if (sourceShape.Del == BOOL.True)
-                    {
-                        throw new Exception($"Source shape (ID={sourceId}) of connector (ID={connection.FromSheet}) is marked as deleted.");
-                    }
-
-                    if (targetShape.Del == BOOL.True)
-                    {
-                        throw new Exception($"Target shape (ID={targetId}) of connector (ID={connection.FromSheet}) is marked as deleted.");
-                    }
+                    if (possibleConnector.Del == BOOL.True)
+                        throw new Exception($"Connector shape ID {possibleConnector.ID} is marked as deleted.");
                 }
-
-                Console.WriteLine("All connectors remain correctly attached after spacing.");
-
-                // Optional: save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("All connectors remain correctly attached after spacing.");
+
+            // Optionally save the modified diagram
+            diagram.Save("spaced_output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

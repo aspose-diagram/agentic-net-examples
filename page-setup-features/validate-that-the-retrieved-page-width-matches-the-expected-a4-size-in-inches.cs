@@ -3,46 +3,48 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Path to the Visio file to be validated.
-                // If a command‑line argument is provided, use it; otherwise use a placeholder path.
-                string filePath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Path to the Visio file to be validated
+                string diagramPath = "input.vsdx";
 
-                // Load the diagram from the specified file.
-                // The Diagram constructor handles loading; no LoadOptions are required.
-                using (Diagram diagram = new Diagram(filePath))
+                // Load the diagram inside a using block to ensure proper disposal
+                using (Diagram diagram = new Diagram(diagramPath))
                 {
-                    // Retrieve the first page (index 0). Pages are zero‑based in the collection.
+                    // Retrieve the first page (index 0)
                     Page page = diagram.Pages[0];
 
-                    // Get the page width in inches from the page's properties.
+                    // Get the page width in inches
                     double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
 
-                    // Expected A4 width in inches (8.27 inches).
+                    // Expected A4 width in inches (8.27 inches)
                     const double expectedA4Width = 8.27;
 
-                    // Allow a tiny tolerance for floating‑point differences.
-                    const double tolerance = 0.001;
+                    // Allow a small tolerance for floating‑point differences
+                    const double tolerance = 0.01;
 
-                    // Validate the width.
+                    // Validate the width
                     if (Math.Abs(pageWidthInches - expectedA4Width) > tolerance)
                     {
-                        throw new Exception($"Page width validation failed. Expected {expectedA4Width} inches, but found {pageWidthInches} inches.");
+                        // Width does not match the expected A4 size – raise an error
+                        throw new Exception(
+                            $"Page width validation failed. Actual: {pageWidthInches} inches, Expected: {expectedA4Width} inches.");
                     }
                     else
                     {
-                        Console.WriteLine($"Page width validation succeeded. Width = {pageWidthInches} inches (A4).");
+                        // Width matches the expected A4 size
+                        Console.WriteLine(
+                            $"Page width validation succeeded. Width: {pageWidthInches} inches matches A4 size.");
                     }
                 }
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

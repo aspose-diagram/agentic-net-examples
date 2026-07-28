@@ -2,41 +2,39 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class ExportShapeTexts
+class ExportShapeText
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Prepare the output text file
-            using (StreamWriter writer = new StreamWriter("shape_texts.txt"))
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Get the plain text of the shape
-                        string pureText = shape.GetPureText();
+                    // Retrieve the plain text of the shape
+                    string shapeText = shape.GetPureText();
 
-                        // Write only if the shape contains text
-                        if (!string.IsNullOrWhiteSpace(pureText))
-                        {
-                            writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}");
-                            writer.WriteLine(pureText);
-                            writer.WriteLine(new string('-', 40));
-                        }
+                    // If the shape contains any text, export it to a .txt file
+                    if (!string.IsNullOrEmpty(shapeText))
+                    {
+                        // Build a file name that identifies the shape (using its ID)
+                        string fileName = $"Shape_{shape.ID}_Text.txt";
+
+                        // Write the text to the file (overwrites if the file already exists)
+                        File.WriteAllText(fileName, shapeText);
                     }
                 }
             }
 
-            // Optional: inform the user
-            Console.WriteLine("Shape texts have been exported to shape_texts.txt");
+            // Optionally, save the diagram if any modifications were made
+            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

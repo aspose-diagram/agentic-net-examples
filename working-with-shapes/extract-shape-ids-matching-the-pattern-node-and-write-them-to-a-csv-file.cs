@@ -1,51 +1,46 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input Visio file path (change as needed)
-            string visioFilePath = "input.vsdx";
-            // Output CSV file path
-            string csvFilePath = "NodeShapeIds.csv";
-
             // Load the Visio diagram
-            Diagram diagram = new Diagram(visioFilePath);
+            var diagram = new Diagram("input.vsdx");
 
-            // List to hold matching shape IDs
-            List<long> nodeShapeIds = new List<long>();
+            var nodeIds = new List<long>();
 
-            // Iterate through all pages and their shapes
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Shape.NameU contains the universal name of the shape
-                    if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.StartsWith("Node_"))
+                    // Check if the shape name matches the pattern "Node_*"
+                    if (!string.IsNullOrEmpty(shape.Name) && shape.Name.StartsWith("Node_"))
                     {
-                        nodeShapeIds.Add(shape.ID);
+                        nodeIds.Add(shape.ID);
                     }
                 }
             }
 
-            // Write the collected IDs to a CSV file (one ID per line)
-            using (StreamWriter writer = new StreamWriter(csvFilePath))
+            // Write the collected shape IDs to a CSV file
+            using (var writer = new StreamWriter("node_ids.csv"))
             {
-                // Optional header
+                // Header (optional)
                 writer.WriteLine("ShapeID");
-                foreach (long id in nodeShapeIds)
+                foreach (long id in nodeIds)
                 {
                     writer.WriteLine(id);
                 }
             }
 
-            Console.WriteLine($"Extracted {nodeShapeIds.Count} shape IDs to '{csvFilePath}'.");
+            // If you need to save any changes to the diagram, uncomment the line below
+            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

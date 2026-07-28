@@ -1,133 +1,141 @@
 using System;
-using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Printing;
 using Aspose.Diagram.Saving;
 
-namespace PrintPropsRollbackDemo
+namespace DiagramPrintPropsRollback
 {
-    // Helper class to store original PrintProps values for a page
+    // Snapshot of printable properties for a page
     class PrintPropsSnapshot
     {
-        public PrintPageOrientationValue Orientation { get; set; }
-        public double ScaleX { get; set; }
-        public double ScaleY { get; set; }
-        public BOOL OnPage { get; set; }
-        public int PagesX { get; set; }
-        public int PagesY { get; set; }
-        public double TopMargin { get; set; }
-        public double BottomMargin { get; set; }
-        public double LeftMargin { get; set; }
-        public double RightMargin { get; set; }
-
-        // Capture current values from a page
-        public static PrintPropsSnapshot Capture(Page page)
-        {
-            var pp = page.PageSheet.PrintProps;
-            return new PrintPropsSnapshot
-            {
-                Orientation = pp.PrintPageOrientation.Value,
-                ScaleX = pp.ScaleX.Value,
-                ScaleY = pp.ScaleY.Value,
-                OnPage = pp.OnPage.Value,
-                PagesX = pp.PagesX.Value,
-                PagesY = pp.PagesY.Value,
-                TopMargin = pp.PageTopMargin.Value,
-                BottomMargin = pp.PageBottomMargin.Value,
-                LeftMargin = pp.PageLeftMargin.Value,
-                RightMargin = pp.PageRightMargin.Value
-            };
-        }
-
-        // Restore saved values to a page
-        public void Restore(Page page)
-        {
-            var pp = page.PageSheet.PrintProps;
-            pp.PrintPageOrientation.Value = this.Orientation;
-            pp.ScaleX.Value = this.ScaleX;
-            pp.ScaleY.Value = this.ScaleY;
-            pp.OnPage.Value = this.OnPage;
-            pp.PagesX.Value = this.PagesX;
-            pp.PagesY.Value = this.PagesY;
-            pp.PageTopMargin.Value = this.TopMargin;
-            pp.PageBottomMargin.Value = this.BottomMargin;
-            pp.PageLeftMargin.Value = this.LeftMargin;
-            pp.PageRightMargin.Value = this.RightMargin;
-        }
+        public PrintPageOrientationValue Orientation;
+        public double ScaleX;
+        public double ScaleY;
+        public BOOL OnPage;
+        public int PagesX;
+        public int PagesY;
+        public double TopMargin;
+        public double BottomMargin;
+        public double LeftMargin;
+        public double RightMargin;
     }
 
     class Program
     {
         static void Main(string[] args)
         {
-            // Input and output file paths (adjust as needed)
-            string inputPath = "input.vsdx";
-            if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-            string outputPath = "output.vsdx";
-
-            // Load the diagram inside a using block to ensure disposal
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                // Store snapshots of original PrintProps for each page
-                var originalSnapshots = new Dictionary<long, PrintPropsSnapshot>();
-                foreach (Page page in diagram.Pages)
-                {
-                    originalSnapshots[page.ID] = PrintPropsSnapshot.Capture(page);
-                }
 
-                try
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load diagram inside a using block to ensure disposal
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Apply new print settings to each page
+                    // Store original PrintProps for each page
+                    var originalProps = new System.Collections.Generic.Dictionary<long, PrintPropsSnapshot>();
+
                     foreach (Page page in diagram.Pages)
                     {
-                        var pp = page.PageSheet.PrintProps;
-
-                        // Example modifications
-                        pp.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                        pp.ScaleX.Value = 0.75; // 75% scaling
-                        pp.ScaleY.Value = 0.75;
-                        pp.OnPage.Value = BOOL.True;
-                        pp.PagesX.Value = 1;
-                        pp.PagesY.Value = 1;
-
-                        // Margins in inches (Visio uses inches)
-                        pp.PageTopMargin.Value = 0.5;
-                        pp.PageBottomMargin.Value = 0.5;
-                        pp.PageLeftMargin.Value = 0.5;
-                        pp.PageRightMargin.Value = 0.5;
-                    }
-
-                    // Validation step: ensure scaling factors are positive
-                    foreach (Page page in diagram.Pages)
-                    {
-                        var pp = page.PageSheet.PrintProps;
-                        if (pp.ScaleX.Value <= 0 || pp.ScaleY.Value <= 0)
+                        var printProps = page.PageSheet.PrintProps;
+                        var snapshot = new PrintPropsSnapshot
                         {
-                            throw new Exception("Invalid scaling factor detected.");
-                        }
+                            Orientation = printProps.PrintPageOrientation.Value,
+                            ScaleX = printProps.ScaleX.Value,
+                            ScaleY = printProps.ScaleY.Value,
+                            OnPage = printProps.OnPage.Value,
+                            PagesX = (int)printProps.PagesX.Value,
+                            PagesY = (int)printProps.PagesY.Value,
+                            TopMargin = printProps.PageTopMargin.Value,
+                            BottomMargin = printProps.PageBottomMargin.Value,
+                            LeftMargin = printProps.PageLeftMargin.Value,
+                            RightMargin = printProps.PageRightMargin.Value
+                        };
+                        originalProps[page.ID] = snapshot;
                     }
 
-                    // If validation passes, save the modified diagram
+                    // Apply new print settings (example changes)
+                    foreach (Page page in diagram.Pages)
+                    {
+                        var printProps = page.PageSheet.PrintProps;
+                        printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                        printProps.ScaleX.Value = 0.8; // 80%
+                        printProps.ScaleY.Value = 0.8;
+                        printProps.OnPage.Value = BOOL.True;
+                        printProps.PagesX.Value = 1;
+                        printProps.PagesY.Value = 1;
+                        // Set margins to 0.5 inches (Visio uses inches)
+                        printProps.PageTopMargin.Value = 0.5;
+                        printProps.PageBottomMargin.Value = 0.5;
+                        printProps.PageLeftMargin.Value = 0.5;
+                        printProps.PageRightMargin.Value = 0.5;
+                    }
+
+                    // Validation step
+                    bool validationFailed = false;
+                    foreach (Page page in diagram.Pages)
+                    {
+                        var printProps = page.PageSheet.PrintProps;
+
+                        // Example validation rules
+                        if (printProps.ScaleX.Value <= 0 || printProps.ScaleY.Value <= 0)
+                        {
+                            Console.WriteLine($"Validation error on page {page.Name}: Scale must be positive.");
+                            validationFailed = true;
+                            break;
+                        }
+
+                        if (printProps.PageTopMargin.Value < 0 ||
+                            printProps.PageBottomMargin.Value < 0 ||
+                            printProps.PageLeftMargin.Value < 0 ||
+                            printProps.PageRightMargin.Value < 0)
+                        {
+                            Console.WriteLine($"Validation error on page {page.Name}: Margins cannot be negative.");
+                            validationFailed = true;
+                            break;
+                        }
+
+                        // Additional custom validation can be added here
+                    }
+
+                    // Rollback if validation failed
+                    if (validationFailed)
+                    {
+                        Console.WriteLine("Validation failed. Restoring original PrintProps.");
+                        foreach (Page page in diagram.Pages)
+                        {
+                            if (originalProps.TryGetValue(page.ID, out PrintPropsSnapshot snapshot))
+                            {
+                                var printProps = page.PageSheet.PrintProps;
+                                printProps.PrintPageOrientation.Value = snapshot.Orientation;
+                                printProps.ScaleX.Value = snapshot.ScaleX;
+                                printProps.ScaleY.Value = snapshot.ScaleY;
+                                printProps.OnPage.Value = snapshot.OnPage;
+                                printProps.PagesX.Value = snapshot.PagesX;
+                                printProps.PagesY.Value = snapshot.PagesY;
+                                printProps.PageTopMargin.Value = snapshot.TopMargin;
+                                printProps.PageBottomMargin.Value = snapshot.BottomMargin;
+                                printProps.PageLeftMargin.Value = snapshot.LeftMargin;
+                                printProps.PageRightMargin.Value = snapshot.RightMargin;
+                            }
+                        }
+
+                        // Optionally abort saving
+                        Console.WriteLine("Operation aborted due to validation errors.");
+                        return;
+                    }
+
+                    // Save the modified diagram
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine("Diagram saved successfully.");
+                    Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
                 }
-                catch (Exception ex)
-                {
-                    // Rollback: restore original PrintProps for each page
-                    foreach (Page page in diagram.Pages)
-                    {
-                        if (originalSnapshots.TryGetValue(page.ID, out var snapshot))
-                        {
-                            snapshot.Restore(page);
-                        }
-                    }
 
-                    // Optionally, save the rolled-back diagram or just report the error
-                    Console.WriteLine($"Error occurred: {ex.Message}");
-                    Console.WriteLine("Changes have been rolled back to original PrintProps.");
-                }
             }
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

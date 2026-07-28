@@ -16,20 +16,19 @@ class Program
             // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Search for a shape whose universal name is "Background"
+                // Search for the shape named "Background"
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.NameU == "Background")
+                    if (!string.IsNullOrEmpty(shape.Name) &&
+                        shape.Name.Equals("Background", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Move the shape to the back of the Z‑order on this page
-                        page.SendToBack(shape.ID);
-                        // If you prefer the shape instance method, you could also call:
-                        // shape.SendToBack();
+                        // Move the background shape to the back of the Z‑order
+                        shape.SendToBack();
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Save the updated diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

@@ -10,62 +10,65 @@ class Program
             try
             {
 
-                // Input Visio file path (first argument) or default.
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Input Visio file path (adjust as needed)
+                string inputPath = "input.vsdx";
 
-                // Output CSV file path (second argument) or default.
-                string outputCsv = args.Length > 1 ? args[1] : "output.csv";
+                // Output CSV file path
+                string outputCsv = "output.csv";
 
-                // Load the Visio diagram.
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // StringBuilder to accumulate CSV lines.
-                StringBuilder csvBuilder = new StringBuilder();
+                // Prepare CSV content
+                var csvBuilder = new StringBuilder();
+                csvBuilder.AppendLine("PageNumber,TextContent");
 
-                // Iterate through pages using explicit type (no var).
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                int pageNumber = 1;
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    var pageTextBuilder = new StringBuilder();
 
-                    // Collect all plain text from shapes on this page.
-                    StringBuilder pageTextBuilder = new StringBuilder();
-
+                    // Iterate all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve plain text of the shape.
-                        string shapeText = shape.Text.Value.Text;
-
-                        // Skip empty or whitespace-only text.
-                        if (string.IsNullOrWhiteSpace(shapeText))
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
                             continue;
 
-                        // Replace line breaks and commas to keep CSV format clean.
-                        shapeText = shapeText.Replace("\r\n", " ")
-                                             .Replace("\n", " ")
-                                             .Replace(",", " ");
+                        // Get plain text from the shape
+                        string text = shape.Text.Value.Text;
 
-                        pageTextBuilder.Append(shapeText).Append(' ');
+                        // Append non‑empty text
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            // Replace line breaks with spaces for CSV readability
+                            text = text.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ");
+                            pageTextBuilder.Append(text);
+                            pageTextBuilder.Append(' ');
+                        }
                     }
 
-                    // Trim trailing space.
+                    // Combine and clean up the page text
                     string pageText = pageTextBuilder.ToString().Trim();
 
-                    // Escape double quotes for CSV compliance.
+                    // Escape double quotes for CSV format
                     pageText = pageText.Replace("\"", "\"\"");
 
-                    // CSV format: PageNumber, "TextContent"
-                    csvBuilder.AppendLine($"{pageIndex + 1},\"{pageText}\"");
+                    // Write the CSV line (text is quoted to preserve commas)
+                    csvBuilder.AppendLine($"{pageNumber},\"{pageText}\"");
+
+                    pageNumber++;
                 }
 
-                // Write the CSV content to the output file.
+                // Write CSV to file
                 File.WriteAllText(outputCsv, csvBuilder.ToString());
 
-                Console.WriteLine($"Extraction completed. CSV saved to: {outputCsv}");
+                Console.WriteLine($"Text extraction complete. CSV saved to: {outputCsv}");
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

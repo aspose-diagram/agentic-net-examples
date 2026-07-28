@@ -2,69 +2,65 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Path to the source Visio file
         string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
 
+        // Path for the modified Visio file
         string outputPath = "output.vsdx";
 
         try
         {
+            // Load the diagram from the input file
             Diagram diagram = new Diagram(inputPath);
 
-            int glueBefore = GetTotalGlueCount(diagram);
-            Console.WriteLine($"Gluing relationships before modification: {glueBefore}");
-
-            if (diagram.Pages.Count > 0)
+            // Count gluing relationships (using Connects collection) before modifications
+            int glueCountBefore = 0;
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[0];
-
-                long rectIdLong = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
-                Shape rectShape = page.Shapes.GetShape((int)rectIdLong);
-
-                Shape targetShape = null;
-                foreach (Shape s in page.Shapes)
-                {
-                    if (s.ID != rectShape.ID)
-                    {
-                        targetShape = s;
-                        break;
-                    }
-                }
-
-                if (targetShape != null)
-                {
-                    page.GlueShapes(rectShape.ID, ConnectionPointPlace.Center, targetShape.ID);
-                }
+                glueCountBefore += page.Connects.Count;
             }
+            Console.WriteLine($"Gluing relationships before modification: {glueCountBefore}");
 
-            int glueAfter = GetTotalGlueCount(diagram);
-            Console.WriteLine($"Gluing relationships after modification: {glueAfter}");
+            // --- Begin diagram modifications ---
+            // Use the first page for modifications
+            Page page0 = diagram.Pages[0];
 
+            // Add a rectangle shape (master name "Rectangle")
+            long rectIdLong = page0.AddShape(2.0, 2.0, 1.0, 0.5, "Rectangle");
+            Shape rectangle = page0.Shapes.GetShape(rectIdLong);
+
+            // Add a dynamic connector (master name "Dynamic connector")
+            long connectorIdLong = page0.AddShape(4.0, 2.0, "Dynamic connector");
+            Shape connector = page0.Shapes.GetShape(connectorIdLong);
+
+            // Glue the rectangle's right connection point to the connector's begin point
+            page0.GlueShapeToConnectorBeginX(rectIdLong, "Right", connectorIdLong);
+            // Glue the rectangle's bottom connection point to the connector's end point
+            page0.GlueShapeToConnectorEndX(rectIdLong, "Bottom", connectorIdLong);
+            // --- End diagram modifications ---
+
+            // Count gluing relationships after modifications
+            int glueCountAfter = 0;
+            foreach (Page page in diagram.Pages)
+            {
+                glueCountAfter += page.Connects.Count;
+            }
+            Console.WriteLine($"Gluing relationships after modification: {glueCountAfter}");
+
+            // Save the modified diagram to the output file
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
+            // Log any Aspose or I/O errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
-    }
-
-    static int GetTotalGlueCount(Diagram diagram)
-    {
-        int total = 0;
-        foreach (Page page in diagram.Pages)
-        {
-            total += page.Connects.Count;
-        }
-        return total;
     }
 }

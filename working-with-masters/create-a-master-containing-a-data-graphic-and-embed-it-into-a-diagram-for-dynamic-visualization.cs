@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,33 +10,38 @@ class Program
         try
         {
 
-            // Load the template diagram that already contains a master with a data graphic.
-            // The template file (e.g., .vsdx) must have a master named "DataGraphicMaster".
-            string templatePath = "DataGraphicTemplate.vsdx";
-            Diagram templateDiagram = new Diagram(templatePath);
+            // Path to the stencil (template) that contains the master with a data graphic.
+            string stencilPath = @"C:\Stencils\DataGraphicStencil.vssx";
 
-            // Create a new, empty diagram.
+            // Name (or universal name) of the master inside the stencil.
+            string masterName = "DataGraphicMaster";
+
+            // Create a new empty diagram.
             Diagram diagram = new Diagram();
 
-            // Add the master from the template into the new diagram by its name.
-            // The method returns the unique ID of the added master in the target diagram.
-            string masterName = "DataGraphicMaster";
-            int masterId = diagram.AddMaster(templateDiagram, masterName);
+            // Add the master from the stencil to the diagram.
+            // This returns the unique ID of the master within the diagram's Masters collection.
+            int masterId = diagram.AddMaster(stencilPath, masterName);
 
-            // Place an instance of the master on the active page.
-            // PinX and PinY define the position (in the document's units).
-            double pinX = 5.0;
-            double pinY = 5.0;
-            diagram.AddShape(pinX, pinY, masterName, masterId);
+            // Ensure there is at least one page to place the shape on.
+            // If the diagram is empty, a default page is automatically created.
+            Page page = diagram.Pages[0];
 
-            // Save the resulting diagram to a file.
-            string outputPath = "ResultDiagram.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Add a shape instance of the master to the page.
+            // Parameters: PinX, PinY, master name, master ID.
+            // Adjust PinX and PinY as needed for positioning.
+            diagram.AddShape(5.0, 5.0, masterName, masterId);
+
+            // Save the resulting diagram to a VDX file.
+            diagram.Save(@"C:\Output\DiagramWithDataGraphic.vdx", SaveFileFormat.Vdx);
+
+            // Clean up resources.
+            diagram.Dispose();
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

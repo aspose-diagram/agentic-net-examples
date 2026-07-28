@@ -1,74 +1,79 @@
+using System.IO;
 using System;
-using System.Data;
-using System.Data.SqlClient;
 using Aspose.Diagram;
+using System.Data.SqlClient;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file
+            string visioPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(visioPath);
+
+            // Database connection string (replace with actual values)
+            string connectionString = "Data Source=SERVER;Initial Catalog=Database;Integrated Security=True";
+
+            // Insert custom property data into the database
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
+                connection.Open();
 
-                // Path to the Visio file to be processed
-                string visioFilePath = "input.vsdx";
+                string insertSql = @"INSERT INTO ShapeCustomProperties (ShapeId, ShapeName, PropertyName, PropertyValue)
+                                     VALUES (@ShapeId, @ShapeName, @PropName, @PropValue)";
 
-                // Connection string for the target database
-                string connectionString = "Data Source=SERVER_NAME;Initial Catalog=DatabaseName;Integrated Security=True";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioFilePath);
-
-                // Open a database connection
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                using (SqlCommand command = new SqlCommand(insertSql, connection))
                 {
-                    connection.Open();
+                    // Define parameters
+                    command.Parameters.Add("@ShapeId", System.Data.SqlDbType.BigInt);
+                    command.Parameters.Add("@ShapeName", System.Data.SqlDbType.NVarChar, 255);
+                    command.Parameters.Add("@PropName", System.Data.SqlDbType.NVarChar, 255);
+                    command.Parameters.Add("@PropValue", System.Data.SqlDbType.NVarChar, -1); // -1 = MAX
 
-                    // Prepare the INSERT command (parameterized to avoid SQL injection)
-                    using (SqlCommand command = new SqlCommand(
-                        "INSERT INTO ShapeProperties (ShapeId, PropName, PropValue) VALUES (@ShapeId, @PropName, @PropValue)",
-                        connection))
+                    // Iterate through pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Define parameters with appropriate SQL types
-                        SqlParameter shapeIdParam = command.Parameters.Add("@ShapeId", SqlDbType.BigInt);
-                        SqlParameter propNameParam = command.Parameters.Add("@PropName", SqlDbType.NVarChar, 255);
-                        SqlParameter propValueParam = command.Parameters.Add("@PropValue", SqlDbType.NVarChar, -1); // -1 = MAX
-
-                        // Iterate through all pages in the diagram
-                        foreach (Page page in diagram.Pages)
+                        // Iterate through shapes on the page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Iterate through all shapes on the current page
-                            foreach (Shape shape in page.Shapes)
-                            {
-                                // Ensure the shape has a Props collection
-                                if (shape.Props != null)
-                                {
-                                    // Iterate through each custom property (Prop) of the shape
-                                    foreach (Prop prop in shape.Props)
-                                    {
-                                        // Set parameter values for the current record
-                                        shapeIdParam.Value = shape.ID;
-                                        propNameParam.Value = prop.Name;
-                                        propValueParam.Value = prop.Value.Val ?? string.Empty;
+                            // Skip shapes that are marked as deleted
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                                        // Execute the INSERT command
-                                        command.ExecuteNonQuery();
-                                    }
-                                }
+                            long shapeId = shape.ID;
+                            string shapeName = shape.Name ?? string.Empty;
+
+                            // Iterate through custom properties (Props)
+                            foreach (Prop prop in shape.Props)
+                            {
+                                string propName = prop.Name ?? string.Empty;
+                                string propValue = prop.Value != null ? prop.Value.Val : string.Empty;
+
+                                // Set parameter values
+                                command.Parameters["@ShapeId"].Value = shapeId;
+                                command.Parameters["@ShapeName"].Value = shapeName;
+                                command.Parameters["@PropName"].Value = propName;
+                                command.Parameters["@PropValue"].Value = propValue;
+
+                                // Execute the insert
+                                command.ExecuteNonQuery();
                             }
                         }
                     }
-
-                    connection.Close();
                 }
-
-                // Optionally, save the diagram if any modifications were made (not required for extraction)
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("Custom properties have been exported to the database.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

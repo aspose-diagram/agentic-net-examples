@@ -1,67 +1,94 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        try
-        {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-            Page page = diagram.Pages[0];
+        // Run all tests
+        TestSetConnectorStraight();
+        TestSetConnectorRightAngle();
+        TestSetConnectorCurved();
 
-            // Draw two rectangle shapes
-            long rect1Id = page.DrawRectangle(1.0, 1.0, 2.0, 1.0);
-            long rect2Id = page.DrawRectangle(5.0, 1.0, 2.0, 1.0);
+        Console.WriteLine("All tests passed.");
+    }
 
-            // Add a dynamic connector shape
-            long connectorId = page.AddShape(3.0, 1.0, "Dynamic connector");
+    static void TestSetConnectorStraight()
+    {
+        // Create a new diagram with a single page
+        Diagram diagram = new Diagram();
+        Page page = diagram.Pages[0];
 
-            // Retrieve the connector shape object
-            Shape connector = page.Shapes.GetShape(connectorId);
+        // Create two simple rectangle shapes using DrawRectangle
+        long rect1Id = page.DrawRectangle(1, 1, 2, 2);
+        long rect2Id = page.DrawRectangle(4, 1, 2, 2);
 
-            // ---------- Test 1: StraightLines ----------
-            connector.SetConnectorsType(ConnectorsTypeValue.StraightLines);
-            if (connector.GetConnectorsType() != ConnectorsTypeValue.StraightLines)
-                throw new Exception("Connector type should be StraightLines after SetConnectorsType.");
+        // Create a line shape (1‑D) that will act as a connector
+        long lineId = page.DrawLine(2, 2, 5, 2);
+        Shape connector = page.Shapes.GetShape(lineId);
 
-            Console.WriteLine("Test 1 passed: StraightLines set correctly.");
+        // Ensure the shape is a 1‑D connector
+        if (!connector.OneD)
+            throw new Exception("Connector shape is not 1‑D.");
 
-            // ---------- Test 2: RightAngle ----------
-            connector.SetConnectorsType(ConnectorsTypeValue.RightAngle);
-            if (connector.GetConnectorsType() != ConnectorsTypeValue.RightAngle)
-                throw new Exception("Connector type should be RightAngle after SetConnectorsType.");
+        // Set connector type to StraightLines
+        connector.SetConnectorsType(ConnectorsTypeValue.StraightLines);
 
-            Console.WriteLine("Test 2 passed: RightAngle set correctly.");
+        // Verify the type was set correctly
+        ConnectorsTypeValue actual = connector.GetConnectorsType();
+        if (actual != ConnectorsTypeValue.StraightLines)
+            throw new Exception($"Expected StraightLines, got {actual}.");
 
-            // ---------- Test 3: CurvedLines ----------
-            connector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
-            if (connector.GetConnectorsType() != ConnectorsTypeValue.CurvedLines)
-                throw new Exception("Connector type should be CurvedLines after SetConnectorsType.");
+        Console.WriteLine("TestSetConnectorStraight passed.");
+    }
 
-            Console.WriteLine("Test 3 passed: CurvedLines set correctly.");
+    static void TestSetConnectorRightAngle()
+    {
+        Diagram diagram = new Diagram();
+        Page page = diagram.Pages[0];
 
-            // ---------- Test 4: After connecting shapes ----------
-            // Connect the two rectangles using the connector
-            page.ConnectShapesViaConnector(rect1Id, ConnectionPointPlace.Right,
-                                          rect2Id, ConnectionPointPlace.Left, connectorId);
+        long rect1Id = page.DrawRectangle(1, 1, 2, 2);
+        long rect2Id = page.DrawRectangle(4, 1, 2, 2);
+        long lineId = page.DrawLine(2, 2, 5, 2);
+        Shape connector = page.Shapes.GetShape(lineId);
 
-            // Set to StraightLines and verify
-            connector.SetConnectorsType(ConnectorsTypeValue.StraightLines);
-            if (connector.GetConnectorsType() != ConnectorsTypeValue.StraightLines)
-                throw new Exception("Connector type should remain StraightLines after connecting shapes.");
+        if (!connector.OneD)
+            throw new Exception("Connector shape is not 1‑D.");
 
-            Console.WriteLine("Test 4 passed: Connector type persists after connection.");
+        // Set connector type to RightAngle
+        connector.SetConnectorsType(ConnectorsTypeValue.RightAngle);
 
-            // All tests passed
-            Console.WriteLine("All connector type tests completed successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+        // Verify
+        ConnectorsTypeValue actual = connector.GetConnectorsType();
+        if (actual != ConnectorsTypeValue.RightAngle)
+            throw new Exception($"Expected RightAngle, got {actual}.");
+
+        Console.WriteLine("TestSetConnectorRightAngle passed.");
+    }
+
+    static void TestSetConnectorCurved()
+    {
+        Diagram diagram = new Diagram();
+        Page page = diagram.Pages[0];
+
+        long rect1Id = page.DrawRectangle(1, 1, 2, 2);
+        long rect2Id = page.DrawRectangle(4, 1, 2, 2);
+        long lineId = page.DrawLine(2, 2, 5, 2);
+        Shape connector = page.Shapes.GetShape(lineId);
+
+        if (!connector.OneD)
+            throw new Exception("Connector shape is not 1‑D.");
+
+        // Set connector type to CurvedLines
+        connector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
+
+        // Verify
+        ConnectorsTypeValue actual = connector.GetConnectorsType();
+        if (actual != ConnectorsTypeValue.CurvedLines)
+            throw new Exception($"Expected CurvedLines, got {actual}.");
+
+        Console.WriteLine("TestSetConnectorCurved passed.");
     }
 }

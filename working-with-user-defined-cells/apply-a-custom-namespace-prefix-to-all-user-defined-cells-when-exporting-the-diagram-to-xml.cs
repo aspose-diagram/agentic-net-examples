@@ -1,6 +1,9 @@
-using System.IO;
 using System;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,39 +12,44 @@ class Program
         try
         {
 
-            // Paths for input Visio file and output XML (VDX) file
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vdx";
+            // Load the Visio diagram (lifecycle: load)
+            var diagram = new Diagram("input.vsdx");
 
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Define the custom namespace prefix to apply
-            const string prefix = "MyNS.";
-
-            // Iterate through all pages, shapes, and user-defined cells
-            foreach (Page page in diagram.Pages)
+            // Prepare save options for VDX (XML) format
+            var saveOptions = new DiagramSaveOptions
             {
-                foreach (Shape shape in page.Shapes)
+                SaveFormat = SaveFileFormat.Vdx // XML based Visio format
+            };
+
+            // Save the diagram to a memory stream (lifecycle: save)
+            using (var ms = new MemoryStream())
+            {
+                diagram.Save(ms, saveOptions);
+                ms.Position = 0; // Reset stream position for reading
+
+                // Load the saved XML into XDocument for manipulation
+                var xDoc = XDocument.Load(ms);
+
+                // Define the custom namespace prefix you want to apply
+                const string customPrefix = "MyPrefix";
+
+                // Find all <Cell> elements whose Name attribute starts with "User."
+                var userCells = xDoc.Descendants()
+                                    .Where(e => e.Name.LocalName == "Cell")
+                                    .Select(e => e.Attribute("N"))
+                                    .Where(attr => attr != null && attr.Value.StartsWith("User.", StringComparison.Ordinal));
+
+                // Replace the "User." prefix with the custom namespace prefix
+                foreach (var nameAttr in userCells)
                 {
-                    foreach (User userCell in shape.Users)
-                    {
-                        // Apply the prefix if it hasn't been added already
-                        if (!userCell.Name.StartsWith(prefix))
-                        {
-                            userCell.Name = prefix + userCell.Name;
-                        }
-
-                        if (!userCell.NameU.StartsWith(prefix))
-                        {
-                            userCell.NameU = prefix + userCell.NameU;
-                        }
-                    }
+                    var original = nameAttr.Value; // e.g., "User.MyCell"
+                    var newName = customPrefix + "." + original.Substring("User.".Length);
+                    nameAttr.Value = newName;
                 }
-            }
 
-            // Export the modified diagram to XML format (VDX)
-            diagram.Save(outputPath, SaveFileFormat.Vdx);
+                // Save the modified XML to the final file
+                xDoc.Save("output.vdx");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

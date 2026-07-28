@@ -6,156 +6,151 @@ class Program
         static void Main(string[] args)
         {
             // Prompt for the Visio file to load
-            Console.Write("Enter the path to the Visio file (e.g., diagram.vsdx): ");
+            Console.Write("Enter the path to the Visio diagram file: ");
             string inputPath = Console.ReadLine();
 
-            if (string.IsNullOrWhiteSpace(inputPath))
-            {
-                Console.WriteLine("Invalid file path. Exiting.");
-                return;
-            }
-
+            // Load the diagram using the Diagram constructor
             Diagram diagram;
             try
             {
-                // Load the diagram using the constructor that accepts a file path
                 diagram = new Diagram(inputPath);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                Console.WriteLine("Failed to load diagram: " + ex.Message);
                 return;
             }
 
-            while (true)
+            bool exitRequested = false;
+            while (!exitRequested)
             {
-                Console.WriteLine("\n--- Main Menu ---");
-                Console.WriteLine("1) List pages and shapes");
-                Console.WriteLine("2) Edit a user-defined cell");
-                Console.WriteLine("3) Save and exit");
-                Console.Write("Select an option (1-3): ");
-                string choice = Console.ReadLine();
-
-                if (choice == "1")
+                Console.WriteLine("\nPages in the diagram:");
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    ListPagesAndShapes(diagram);
+                    var page = diagram.Pages[i];
+                    Console.WriteLine($"{i}: {page.NameU}");
                 }
-                else if (choice == "2")
+
+                Console.Write("Select a page index (or type 'exit' to quit): ");
+                string pageInput = Console.ReadLine();
+                if (pageInput.Equals("exit", StringComparison.OrdinalIgnoreCase))
                 {
-                    EditUserDefinedCell(diagram);
+                    exitRequested = true;
+                    continue;
                 }
-                else if (choice == "3")
+
+                if (!int.TryParse(pageInput, out int pageIndex) || pageIndex < 0 || pageIndex >= diagram.Pages.Count)
                 {
-                    SaveDiagram(diagram);
-                    break;
+                    Console.WriteLine("Invalid page index.");
+                    continue;
                 }
-                else
+
+                Page selectedPage = diagram.Pages[pageIndex];
+
+                Console.WriteLine($"\nShapes on page '{selectedPage.NameU}':");
+                foreach (Shape shape in selectedPage.Shapes)
                 {
-                    Console.WriteLine("Invalid selection. Please choose 1, 2, or 3.");
+                    // Shape ID is a long, NameU is the universal name
+                    Console.WriteLine($"ID: {shape.ID}, Name: {shape.NameU}");
                 }
-            }
-        }
 
-        // Lists all pages and the shapes they contain
-        private static void ListPagesAndShapes(Diagram diagram)
-        {
-            Console.WriteLine("\nPages and Shapes:");
-            for (int p = 0; p < diagram.Pages.Count; p++)
-            {
-                Page page = diagram.Pages[p];
-                Console.WriteLine($"Page [{p}] - ID: {page.ID}, Name: {page.Name}");
-                for (int s = 0; s < page.Shapes.Count; s++)
+                Console.Write("Enter the Shape ID you want to edit (or 'back' to choose another page): ");
+                string shapeInput = Console.ReadLine();
+                if (shapeInput.Equals("back", StringComparison.OrdinalIgnoreCase))
                 {
-                    Shape shape = page.Shapes[s];
-                    Console.WriteLine($"  Shape [{s}] - ID: {shape.ID}, Name: {shape.Name}");
+                    continue;
+                }
+
+                if (!long.TryParse(shapeInput, out long shapeId))
+                {
+                    Console.WriteLine("Invalid shape ID.");
+                    continue;
+                }
+
+                Shape targetShape = selectedPage.Shapes.GetShape(shapeId);
+                if (targetShape == null)
+                {
+                    Console.WriteLine("Shape not found.");
+                    continue;
+                }
+
+                // List user-defined cells for the selected shape
+                Console.WriteLine($"\nUser-defined cells for shape ID {targetShape.ID}:");
+                foreach (User userCell in targetShape.Users)
+                {
+                    Console.WriteLine($"- NameU: {userCell.NameU}, Value: {userCell.Value.Val}, Prompt: {userCell.Prompt.Value}");
+                }
+
+                bool editAnother = true;
+                while (editAnother)
+                {
+                    Console.Write("\nEnter the NameU of the user-defined cell to edit (or 'done' to finish editing this shape): ");
+                    string cellName = Console.ReadLine();
+                    if (cellName.Equals("done", StringComparison.OrdinalIgnoreCase))
+                    {
+                        break;
+                    }
+
+                    // Find the user cell by NameU
+                    User cellToEdit = null;
+                    foreach (User u in targetShape.Users)
+                    {
+                        if (u.NameU.Equals(cellName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            cellToEdit = u;
+                            break;
+                        }
+                    }
+
+                    if (cellToEdit == null)
+                    {
+                        Console.WriteLine("User-defined cell not found.");
+                        continue;
+                    }
+
+                    Console.Write($"Current value of '{cellToEdit.NameU}' is '{cellToEdit.Value.Val}'. Enter new value: ");
+                    string newValue = Console.ReadLine();
+
+                    // Update the cell value
+                    cellToEdit.Value.Val = newValue;
+                    Console.WriteLine($"Cell '{cellToEdit.NameU}' updated to '{cellToEdit.Value.Val}'.");
+                }
+
+                Console.Write("\nDo you want to edit another shape on this page? (y/n): ");
+                string anotherShape = Console.ReadLine();
+                if (!anotherShape.Equals("y", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Ask if the user wants to save changes
+                    Console.Write("\nDo you want to save the diagram? (y/n): ");
+                    string saveChoice = Console.ReadLine();
+                    if (saveChoice.Equals("y", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Console.Write("Enter output file path (e.g., output.vsdx): ");
+                        string outputPath = Console.ReadLine();
+
+                        try
+                        {
+                            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                            Console.WriteLine("Diagram saved successfully.");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Failed to save diagram: " + ex.Message);
+                        }
+                    }
+
+                    // Return to page selection or exit
+                    Console.Write("\nDo you want to edit another page? (y/n): ");
+                    string anotherPage = Console.ReadLine();
+                    if (!anotherPage.Equals("y", StringComparison.OrdinalIgnoreCase))
+                    {
+                        exitRequested = true;
+                    }
                 }
             }
-        }
 
-        // Allows the user to edit a specific user-defined cell
-        private static void EditUserDefinedCell(Diagram diagram)
-        {
-            // Select page
-            Console.Write("\nEnter page index: ");
-            if (!int.TryParse(Console.ReadLine(), out int pageIndex) ||
-                pageIndex < 0 || pageIndex >= diagram.Pages.Count)
-            {
-                Console.WriteLine("Invalid page index.");
-                return;
-            }
-
-            Page page = diagram.Pages[pageIndex];
-
-            // Select shape
-            Console.Write("Enter shape index within the page: ");
-            if (!int.TryParse(Console.ReadLine(), out int shapeIndex) ||
-                shapeIndex < 0 || shapeIndex >= page.Shapes.Count)
-            {
-                Console.WriteLine("Invalid shape index.");
-                return;
-            }
-
-            Shape shape = page.Shapes[shapeIndex];
-
-            // List user-defined cells for the selected shape
-            if (shape.Users.Count == 0)
-            {
-                Console.WriteLine("No user-defined cells found for this shape.");
-                return;
-            }
-
-            Console.WriteLine("\nUser-defined cells:");
-            for (int u = 0; u < shape.Users.Count; u++)
-            {
-                User user = shape.Users[u];
-                Console.WriteLine($"  [{u}] Name: {user.Name}, Value: {user.Value.Val}");
-            }
-
-            // Choose cell to edit
-            Console.Write("Enter the index of the cell to edit: ");
-            if (!int.TryParse(Console.ReadLine(), out int userIndex) ||
-                userIndex < 0 || userIndex >= shape.Users.Count)
-            {
-                Console.WriteLine("Invalid cell index.");
-                return;
-            }
-
-            User targetUser = shape.Users[userIndex];
-            Console.Write($"Current value of '{targetUser.Name}' is '{targetUser.Value.Val}'. Enter new value: ");
-            string newValue = Console.ReadLine();
-
-            if (newValue == null)
-            {
-                Console.WriteLine("No value entered. Edit cancelled.");
-                return;
-            }
-
-            // Update the cell value
-            targetUser.Value.Val = newValue;
-            Console.WriteLine("Cell value updated successfully.");
-        }
-
-        // Saves the diagram to a new file
-        private static void SaveDiagram(Diagram diagram)
-        {
-            Console.Write("\nEnter the output file path (e.g., updated.vsdx): ");
-            string outputPath = Console.ReadLine();
-
-            if (string.IsNullOrWhiteSpace(outputPath))
-            {
-                Console.WriteLine("Invalid output path. Save aborted.");
-                return;
-            }
-
-            try
-            {
-                // Save using the SaveFileFormat enum (PascalCase)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
-            }
+            // Clean up
+            diagram.Dispose();
+            Console.WriteLine("Application terminated.");
         }
     }

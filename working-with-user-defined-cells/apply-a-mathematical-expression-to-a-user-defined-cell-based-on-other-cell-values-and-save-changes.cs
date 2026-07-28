@@ -9,74 +9,76 @@ class Program
             try
             {
 
-                // Path to the source Visio file
+                // Load an existing Visio diagram
                 string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Find the source user-defined cell (e.g., "SourceValue")
-                        User sourceUser = null;
+                        // Retrieve user-defined cells "A" and "B"
+                        double valueA = 0;
+                        double valueB = 0;
+                        bool hasA = false;
+                        bool hasB = false;
+
                         foreach (User user in shape.Users)
                         {
-                            if (user.Name == "SourceValue")
+                            if (user.Name.Equals("A", StringComparison.OrdinalIgnoreCase))
                             {
-                                sourceUser = user;
-                                break;
+                                hasA = double.TryParse(user.Value.Val, out valueA);
+                            }
+                            else if (user.Name.Equals("B", StringComparison.OrdinalIgnoreCase))
+                            {
+                                hasB = double.TryParse(user.Value.Val, out valueB);
                             }
                         }
 
-                        // If the source cell is not present, continue to next shape
-                        if (sourceUser == null)
-                            continue;
-
-                        // Try to parse the source value as double
-                        if (!double.TryParse(sourceUser.Value.Val, out double sourceNumber))
-                            continue; // Invalid number, skip
-
-                        // Compute the new value (example expression: double the source)
-                        double result = sourceNumber * 2.0;
-
-                        // Find or create the target user-defined cell (e.g., "ResultValue")
-                        User targetUser = null;
-                        foreach (User user in shape.Users)
+                        // If both cells exist and contain numeric values, compute the result
+                        if (hasA && hasB)
                         {
-                            if (user.Name == "ResultValue")
+                            double result = valueA + valueB; // Example expression: A + B
+
+                            // Check if a "Result" user-defined cell already exists
+                            User resultUser = null;
+                            foreach (User user in shape.Users)
                             {
-                                targetUser = user;
-                                break;
+                                if (user.Name.Equals("Result", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    resultUser = user;
+                                    break;
+                                }
+                            }
+
+                            if (resultUser != null)
+                            {
+                                // Update existing cell
+                                resultUser.Value.Val = result.ToString();
+                            }
+                            else
+                            {
+                                // Create a new user-defined cell named "Result"
+                                User newUser = new User
+                                {
+                                    Name = "Result",
+                                    NameU = "Result",
+                                    Prompt = { Value = "Computed Result" },
+                                    Value = { Val = result.ToString() }
+                                };
+                                shape.Users.Add(newUser);
                             }
                         }
-
-                        if (targetUser == null)
-                        {
-                            // Create a new user-defined cell if it does not exist
-                            targetUser = new User();
-                            targetUser.Name = "ResultValue";
-                            shape.Users.Add(targetUser);
-                        }
-
-                        // Assign the computed result back to the target cell
-                        targetUser.Value.Val = result.ToString();
-
-                        // Optional: you can also set a prompt or universal name if needed
-                        // targetUser.Prompt.Value = "Computed result";
                     }
                 }
 
                 // Save the modified diagram
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

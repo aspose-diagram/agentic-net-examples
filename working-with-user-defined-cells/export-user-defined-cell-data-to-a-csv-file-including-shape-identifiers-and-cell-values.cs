@@ -3,54 +3,64 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file (adjust as needed)
-            string inputPath = "input.vsdx";
-
-            // Path for the generated CSV file
-            string outputCsv = "UserCells.csv";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Create a StreamWriter for CSV output
-            using (StreamWriter writer = new StreamWriter(outputCsv))
+            try
             {
-                // Write CSV header
-                writer.WriteLine("ShapeID,UserCellName,UserCellValue,Prompt");
 
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Input Visio file (adjust the path as needed)
+                string inputPath = "input.vsdx";
+
+                // Output CSV file
+                string outputCsv = "UserDefinedCells.csv";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Create CSV and write header
+                using (StreamWriter writer = new StreamWriter(outputCsv))
                 {
-                    foreach (Shape shape in page.Shapes)
+                    writer.WriteLine("ShapeID,ShapeName,UserName,UserValue");
+
+                    // Iterate through all pages and shapes
+                    foreach (Page page in diagram.Pages)
                     {
-                        long shapeId = shape.ID;
-
-                        // Iterate through user-defined cells of the shape
-                        foreach (User userCell in shape.Users)
+                        foreach (Shape shape in page.Shapes)
                         {
-                            string name = userCell.Name ?? string.Empty;
-                            string value = userCell.Value?.Val ?? string.Empty;
-                            string prompt = userCell.Prompt?.Value ?? string.Empty;
+                            // Iterate through user‑defined cells of the shape
+                            foreach (User user in shape.Users)
+                            {
+                                // Prepare values
+                                string shapeId = shape.ID.ToString();
+                                string shapeName = shape.NameU ?? string.Empty;
+                                string userName = user.NameU ?? string.Empty;
+                                string userValue = user.Value?.Val ?? string.Empty;
 
-                            // Escape commas by enclosing fields in double quotes
-                            writer.WriteLine($"{shapeId},\"{name}\",\"{value}\",\"{prompt}\"");
+                                // Simple CSV escaping for commas and quotes
+                                string Escape(string s)
+                                {
+                                    if (s.Contains("\"") || s.Contains(","))
+                                    {
+                                        s = s.Replace("\"", "\"\"");
+                                        return $"\"{s}\"";
+                                    }
+                                    return s;
+                                }
+
+                                // Write a CSV line
+                                writer.WriteLine($"{Escape(shapeId)},{Escape(shapeName)},{Escape(userName)},{Escape(userValue)}");
+                            }
                         }
                     }
                 }
+
+                Console.WriteLine($"User‑defined cell data exported to '{outputCsv}'.");
+
             }
-
-            Console.WriteLine($"User-defined cell data exported to: {outputCsv}");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

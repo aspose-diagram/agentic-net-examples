@@ -5,40 +5,45 @@ class Program
     {
         static void Main(string[] args)
         {
+            // Expect input and output file paths as command‑line arguments.
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramUserCellAdder <input.vsdx> <output.vsdx>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputPath = args[1];
+
             try
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the modified Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram from the file
+                // Load the existing Visio diagram.
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages in the diagram
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Create a new user‑defined cell
+                        // Create a new user‑defined cell.
                         User customCell = new User();
-                        customCell.Name = "MyCustomCell";          // Custom cell name
-                        customCell.Value.Val = "CustomValue";      // Cell value (string)
+                        customCell.Name = "MyCustomCell";          // Custom name for the cell.
+                        customCell.Value.Val = "CustomValue";      // Cell value (string).
 
-                        // Add the custom cell to the shape's Users collection
+                        // Add the custom cell to the shape's Users collection.
                         shape.Users.Add(customCell);
                     }
                 }
 
-                // Save the modified diagram back to a file (VSDX format)
+                // Save the modified diagram.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("An error occurred: " + ex.Message);
+                throw;
             }
-    }
+        }
     }

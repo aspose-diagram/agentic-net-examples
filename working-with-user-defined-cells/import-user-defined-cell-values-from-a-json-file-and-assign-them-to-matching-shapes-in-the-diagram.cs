@@ -1,113 +1,91 @@
 using System;
 using System.IO;
-using System.Text.Json;
 using System.Collections.Generic;
+using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and JSON file path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramUserCellImporter <VisioFilePath> <JsonFilePath>");
-                return;
-            }
-
-            string visioPath = args[0];
-            string jsonPath = args[1];
-            string outputPath = Path.Combine(
-                Path.GetDirectoryName(visioPath) ?? string.Empty,
-                Path.GetFileNameWithoutExtension(visioPath) + "_Updated.vsdx");
-
-            // Load the diagram
-            Diagram diagram;
             try
             {
-                diagram = new Diagram(visioPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load Visio file: {ex.Message}");
-                return;
-            }
 
-            // Read and parse JSON
-            // Expected format:
-            // {
-            //   "ShapeNameU1": { "UserCellName1": "Value1", "UserCellName2": "Value2" },
-            //   "ShapeNameU2": { "UserCellNameA": "ValueA" }
-            // }
-            Dictionary<string, Dictionary<string, string>> shapeUserData;
-            try
-            {
+                // Paths – adjust as needed or pass via command‑line arguments
+                string diagramPath = "input.vsdx";
+                string jsonPath = "values.json";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Read and deserialize the JSON file.
+                // Expected format:
+                // {
+                //   "ShapeNameU1": { "CellName1": "Value1", "CellName2": "Value2" },
+                //   "ShapeNameU2": { "CellNameA": "ValueA" }
+                // }
                 string jsonContent = File.ReadAllText(jsonPath);
-                shapeUserData = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(jsonContent);
-                if (shapeUserData == null)
+                var shapeCellMap = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(jsonContent);
+
+                if (shapeCellMap == null)
                 {
-                    Console.WriteLine("JSON file is empty or not in expected format.");
+                    Console.WriteLine("JSON deserialization returned null. Exiting.");
                     return;
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to read or parse JSON file: {ex.Message}");
-                return;
-            }
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Match shape by its universal name (NameU)
-                    if (shape.NameU != null && shapeUserData.TryGetValue(shape.NameU, out var userCells))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (KeyValuePair<string, string> cellKvp in userCells)
+                        // Match shape by its universal name (NameU)
+                        if (shapeCellMap.TryGetValue(shape.NameU, out var cellValues))
                         {
-                            string userName = cellKvp.Key;
-                            string userValue = cellKvp.Value;
-
-                            // Search for existing user-defined cell
-                            User existingUser = null;
-                            foreach (User u in shape.Users)
+                            foreach (var kvp in cellValues)
                             {
-                                if (u.Name == userName)
+                                string cellName = kvp.Key;
+                                string cellValue = kvp.Value;
+
+                                // Look for an existing user‑defined cell with the same name
+                                User existingUser = null;
+                                foreach (User user in shape.Users)
                                 {
-                                    existingUser = u;
-                                    break;
+                                    if (user.Name == cellName)
+                                    {
+                                        existingUser = user;
+                                        break;
+                                    }
                                 }
-                            }
 
-                            if (existingUser != null)
-                            {
-                                // Update existing cell value
-                                existingUser.Value.Val = userValue;
-                            }
-                            else
-                            {
-                                // Create a new user-defined cell
-                                User newUser = new User();
-                                newUser.Name = userName;
-                                newUser.Value.Val = userValue;
-                                shape.Users.Add(newUser);
+                                if (existingUser != null)
+                                {
+                                    // Update existing cell value
+                                    existingUser.Value.Val = cellValue;
+                                }
+                                else
+                                {
+                                    // Create a new user‑defined cell and add it to the shape
+                                    User newUser = new User
+                                    {
+                                        Name = cellName,
+                                        Value = { Val = cellValue }
+                                    };
+                                    shape.Users.Add(newUser);
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // Save the updated diagram
-            try
-            {
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
+    }
     }

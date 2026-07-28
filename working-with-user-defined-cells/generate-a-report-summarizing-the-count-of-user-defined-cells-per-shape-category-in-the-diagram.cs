@@ -4,54 +4,60 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Determine the diagram file path (first argument or default)
-                string diagramPath = args.Length > 0 ? args[0] : "sample.vsdx";
+                // Path to the Visio diagram file (replace with actual path)
+                string diagramPath = "input.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Dictionary to hold the total user-defined cell count per shape category
-                var categoryUserCellCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                // Dictionary to hold the total count of user-defined cells per shape category (master name)
+                Dictionary<string, int> categoryUserCellCounts = new Dictionary<string, int>();
 
-                // Iterate through all pages and shapes
+                // Iterate through all pages explicitly typing the iterator
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Determine the shape category (master name or fallback)
+                        // Determine the shape category based on its master name; fallback if master is null
                         string category = shape.Master != null ? shape.Master.Name : "NoMaster";
 
                         // Count user-defined cells for this shape
-                        int userCellCount = shape.Users != null ? shape.Users.Count : 0;
-
-                        // Accumulate counts only if there are user-defined cells
-                        if (userCellCount > 0)
+                        int userCellCount = 0;
+                        foreach (User userCell in shape.Users)
                         {
-                            if (!categoryUserCellCounts.ContainsKey(category))
-                            {
-                                categoryUserCellCounts[category] = 0;
-                            }
+                            // Each entry in shape.Users represents one user-defined cell
+                            userCellCount++;
+                        }
+
+                        // Accumulate the count per category
+                        if (categoryUserCellCounts.ContainsKey(category))
+                        {
                             categoryUserCellCounts[category] += userCellCount;
+                        }
+                        else
+                        {
+                            categoryUserCellCounts[category] = userCellCount;
                         }
                     }
                 }
 
                 // Output the report
-                Console.WriteLine("User-defined cells count per shape category:");
-                foreach (var kvp in categoryUserCellCounts)
+                Console.WriteLine("User-Defined Cell Count per Shape Category:");
+                foreach (KeyValuePair<string, int> entry in categoryUserCellCounts)
                 {
-                    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+                    Console.WriteLine($"Category: {entry.Key}, Total User-Defined Cells: {entry.Value}");
                 }
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

@@ -10,34 +10,34 @@ class Program
         {
 
             // Path to the Visio file
-            string visioPath = @"C:\Path\To\Your\Diagram.vsdx";
+            string filePath = "input.vsdx";
 
-            // Load the Visio document (uses the Diagram(string) constructor)
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(filePath);
 
-            // Iterate through all pages
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                Console.WriteLine($"Page: {page.Name}");
+
+                // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // User‑defined cells are stored in the Users collection of a shape
+                    Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
+
+                    // Retrieve all user‑defined cells (User collection) for the shape
                     foreach (User userCell in shape.Users)
                     {
-                        // Output the page name, shape name, user cell name and its value
-                        Console.WriteLine(
-                            $"Page: {page.Name}, Shape: {shape.Name}, User Cell: {userCell.NameU} = {userCell.Value}");
+                        // Output the cell name and its value
+                        Console.WriteLine($"    User Cell: {userCell.NameU} = {userCell.Value}");
                     }
                 }
             }
 
-            // Dispose the diagram when done
-            diagram.Dispose();
-
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

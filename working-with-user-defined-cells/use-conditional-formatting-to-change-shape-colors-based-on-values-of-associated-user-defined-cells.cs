@@ -1,73 +1,69 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram (no LoadOptions needed)
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Look for a user-defined cell named "Status"
+                    foreach (User userCell in shape.Users)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Locate a user‑defined cell named "Status"
-                        User statusCell = null;
-                        foreach (User user in shape.Users)
+                        if (userCell.Name == "Status")
                         {
-                            if (user.Name == "Status" || user.NameU == "Status")
+                            string cellValue = userCell.Value.Val?.Trim();
+
+                            // Apply conditional color based on the cell value
+                            if (string.Equals(cellValue, "High", StringComparison.OrdinalIgnoreCase))
                             {
-                                statusCell = user;
-                                break;
+                                // Red for High
+                                shape.Fill.FillForegnd.Value = "#FF0000";
                             }
-                        }
+                            else if (string.Equals(cellValue, "Medium", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Yellow for Medium
+                                shape.Fill.FillForegnd.Value = "#FFFF00";
+                            }
+                            else
+                            {
+                                // Green for Low or any other value
+                                shape.Fill.FillForegnd.Value = "#00FF00";
+                            }
 
-                        // If the cell is not present, move to the next shape
-                        if (statusCell == null)
-                            continue;
-
-                        // Read the cell value (trim to avoid whitespace issues)
-                        string value = statusCell.Value.Val?.Trim();
-
-                        // Apply fill color based on the cell value
-                        if (string.Equals(value, "High", StringComparison.OrdinalIgnoreCase))
-                        {
-                            // Red for High
-                            shape.Fill.FillForegnd.Value = "#FF0000";
+                            // Once the relevant user cell is processed, exit the inner loop
+                            break;
                         }
-                        else if (string.Equals(value, "Medium", StringComparison.OrdinalIgnoreCase))
-                        {
-                            // Orange for Medium
-                            shape.Fill.FillForegnd.Value = "#FFA500";
-                        }
-                        else
-                        {
-                            // Green for any other value
-                            shape.Fill.FillForegnd.Value = "#00FF00";
-                        }
-
-                        // Ensure the fill pattern is solid
-                        shape.Fill.FillPattern.Value = 1;
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

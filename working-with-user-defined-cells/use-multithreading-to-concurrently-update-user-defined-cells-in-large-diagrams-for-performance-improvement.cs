@@ -1,89 +1,58 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Expecting four arguments: input file, output file, user cell name, new value
-            if (args.Length != 4)
+            try
             {
-                Console.WriteLine("Usage: DiagramUserCellUpdater <inputPath> <outputPath> <cellName> <newValue>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-            string cellName = args[2];
-            string newValue = args[3];
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-            // Validate input file existence
-            if (!File.Exists(inputPath))
-            {
-                Console.WriteLine($"Input file not found: {inputPath}");
-                return;
-            }
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Gather all shapes from all pages
-                List<Shape> allShapes = new List<Shape>();
-                foreach (Page page in diagram.Pages)
+                // Prepare a typed list of pages for parallel processing
+                List<Page> pages = new List<Page>();
+                foreach (Page p in diagram.Pages)
+                    pages.Add(p);
+
+                // Parallel update of user-defined cells
+                Parallel.ForEach(pages, page =>
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        allShapes.Add(shape);
-                    }
-                }
+                    // Collect shapes of the current page
+                    List<Shape> shapes = new List<Shape>();
+                    foreach (Shape s in page.Shapes)
+                        shapes.Add(s);
 
-                // Update user-defined cells concurrently
-                Parallel.ForEach(allShapes, shape =>
-                {
-                    // Lock per shape to avoid race conditions inside Aspose.Diagram
-                    lock (shape)
+                    // Update each shape's user-defined cells concurrently
+                    Parallel.ForEach(shapes, shape =>
                     {
-                        UpdateOrCreateUserCell(shape, cellName, newValue);
-                    }
+                        // Example: update a user-defined cell named "CustomValue"
+                        foreach (User userCell in shape.Users)
+                        {
+                            if (userCell.Name == "CustomValue")
+                            {
+                                // Set new value based on shape ID (as a string)
+                                userCell.Value.Val = (shape.ID * 10).ToString();
+                            }
+                        }
+                    });
                 });
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to {outputPath}");
-            }
-        }
 
-        /// <summary>
-        /// Updates an existing user-defined cell or creates a new one if it does not exist.
-        /// </summary>
-        /// <param name="shape">The shape whose Users collection will be modified.</param>
-        /// <param name="cellName">The name of the user-defined cell.</param>
-        /// <param name="value">The new value to assign.</param>
-        private static void UpdateOrCreateUserCell(Shape shape, string cellName, string value)
-        {
-            // Search for an existing user cell with the specified name
-            User targetUser = null;
-            foreach (User user in shape.Users)
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                if (user.Name == cellName)
-                {
-                    targetUser = user;
-                    break;
-                }
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // If not found, create a new user cell and add it to the shape
-            if (targetUser == null)
-            {
-                targetUser = new User();
-                targetUser.Name = cellName;
-                shape.Users.Add(targetUser);
-            }
-
-            // Assign the new value
-            targetUser.Value.Val = value;
-        }
+    }
     }

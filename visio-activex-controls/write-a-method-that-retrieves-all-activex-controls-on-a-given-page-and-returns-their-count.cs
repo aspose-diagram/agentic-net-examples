@@ -1,22 +1,15 @@
-using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.ActiveXControls;
+using System;
 
-public static class DiagramHelper
+public static class ActiveXHelper
 {
-    /// <summary>
-    /// Returns the number of ActiveX controls present on the specified page.
-    /// </summary>
-    /// <param name="page">The page to inspect.</param>
-    /// <returns>Count of shapes that contain an ActiveX control.</returns>
+    // Returns the number of ActiveX controls present on the specified page.
     public static int GetActiveXControlCount(Page page)
     {
-        if (page == null)
-            throw new ArgumentNullException(nameof(page));
+        if (page == null) throw new ArgumentNullException(nameof(page));
 
         int count = 0;
-
         // Iterate through all shapes on the page.
         foreach (Shape shape in page.Shapes)
         {

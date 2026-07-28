@@ -1,11 +1,11 @@
 {
   "category": "working-with-comments",
   "display_name": "Working With Comments",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 35,
   "pass_rate": 100.0,
-  "generated": "2026-06-08",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -31,13 +31,13 @@
       "task": "Add timestamps to comments automatically when they are created using the system s current time zone",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -48,7 +48,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -95,15 +96,15 @@
       "task": "Create a custom comment style with specific font and background color then apply it to selected comments",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "StyleSheet"
       ]
     },
     {
@@ -112,9 +113,8 @@
       "task": "Create a macro that removes all comments older than a specified number of days from a diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -129,6 +129,7 @@
       "task": "Create a report that groups comments by shape type and counts occurrences per group",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -136,9 +137,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -165,7 +166,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -180,8 +181,8 @@
       "task": "Detect overlapping comment positions and automatically adjust their coordinates to avoid visual clutter",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -196,12 +197,12 @@
       "task": "Develop a script to migrate comments from legacy diagram files to the latest file format version",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
-        "Save",
         "diagram"
       ]
     },
@@ -219,9 +220,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -247,9 +246,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Data",
-        "System.Data.SqlClient",
-        "System.IO"
+        "System.Data.SqlClient"
       ],
       "key_apis": [
         "Diagram",
@@ -263,10 +260,9 @@
       "task": "Extract comment text and embed it as hidden metadata within the diagram file for later retrieval",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Properties",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Text"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -314,7 +310,8 @@
       "namespaces": [
         "Aspose.Cells",
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -328,8 +325,7 @@
       "task": "Implement a feature to lock comments preventing further edits unless a specific unlock flag is set",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -346,7 +342,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -361,6 +358,7 @@
       "task": "Implement error handling to gracefully skip diagrams that lack comment support during batch operations",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -379,6 +377,7 @@
         "Aspose.Diagram",
         "System",
         "System.IO",
+        "System.Linq",
         "System.Xml.Linq"
       ],
       "key_apis": [
@@ -397,8 +396,7 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -412,14 +410,13 @@
       "task": "Load a diagram enumerate comment ids and use them to retrieve detailed comment objects via api",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -428,13 +425,13 @@
       "task": "Load a visio diagram add a new comment to a specific shape then save the file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -446,14 +443,15 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "ConnectShapesViaConnector",
         "Diagram",
-        "Page",
-        "Pages"
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -462,7 +460,6 @@
       "task": "Read comments from a diagram translate their text using an external service and update them in place",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -480,6 +477,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -494,8 +492,8 @@
       "task": "Search for comments authored by a particular user and highlight the associated shapes in the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -518,7 +516,6 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -537,7 +534,6 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "diagram"
       ]
     },
@@ -548,12 +544,10 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -565,7 +559,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",

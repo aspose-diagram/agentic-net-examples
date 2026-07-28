@@ -1,15 +1,14 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Determine the folder containing Visio files.
-            // If a folder path is provided as a command‑line argument, use it; otherwise use the current directory.
-            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+            // Define the folder containing Visio files.
+            // You can change this path or pass it as a command‑line argument.
+            string folderPath = args.Length > 0 ? args[0] : @"C:\VisioFiles";
 
             if (!Directory.Exists(folderPath))
             {
@@ -17,38 +16,17 @@ class Program
                 return;
             }
 
-            // Supported Visio extensions and their corresponding SaveFileFormat values.
-            var formatMap = new Dictionary<string, SaveFileFormat>(StringComparer.OrdinalIgnoreCase)
-            {
-                { ".vsdx", SaveFileFormat.Vsdx },
-                { ".vsd",  SaveFileFormat.Vsd },
-                { ".vdx",  SaveFileFormat.Vdx },
-                { ".vsx",  SaveFileFormat.Vsx },
-                { ".vtx",  SaveFileFormat.Vtx },
-                { ".vssx", SaveFileFormat.Vssx },
-                { ".vstx", SaveFileFormat.Vstx },
-                { ".vsdm", SaveFileFormat.Vsdm },
-                { ".vssm", SaveFileFormat.Vssm },
-                { ".vstm", SaveFileFormat.Vstm },
-                { ".vss",  SaveFileFormat.Vss },
-                { ".vst",  SaveFileFormat.Vst }
-            };
+            // Supported Visio extensions.
+            string[] extensions = new[] { ".vsdx", ".vdx", ".vsd", ".vsx", ".vtx", ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm", ".vss", ".vst", ".vsd" };
 
-            // Gather all files with the supported extensions.
-            var visioFiles = new List<string>();
-            foreach (var ext in formatMap.Keys)
+            // Get all Visio files in the folder (non‑recursive).
+            string[] files = Directory.GetFiles(folderPath);
+            foreach (string filePath in files)
             {
-                visioFiles.AddRange(Directory.GetFiles(folderPath, $"*{ext}", SearchOption.TopDirectoryOnly));
-            }
+                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                if (Array.IndexOf(extensions, ext) < 0)
+                    continue; // Skip non‑Visio files.
 
-            if (visioFiles.Count == 0)
-            {
-                Console.WriteLine("No Visio files found in the specified folder.");
-                return;
-            }
-
-            foreach (var filePath in visioFiles)
-            {
                 try
                 {
                     // Load the diagram.
@@ -61,21 +39,33 @@ class Program
                     }
 
                     // Determine the appropriate SaveFileFormat based on the file extension.
-                    string ext = Path.GetExtension(filePath);
-                    if (!formatMap.TryGetValue(ext, out SaveFileFormat saveFormat))
+                    SaveFileFormat format = ext switch
                     {
-                        Console.WriteLine($"Unsupported file format for file: {filePath}");
-                        continue;
-                    }
+                        ".vsdx" => SaveFileFormat.Vsdx,
+                        ".vdx" => SaveFileFormat.Vdx,
+                        ".vsd" => SaveFileFormat.Vsd,
+                        ".vsx" => SaveFileFormat.Vsx,
+                        ".vtx" => SaveFileFormat.Vtx,
+                        ".vssx" => SaveFileFormat.Vssx,
+                        ".vstx" => SaveFileFormat.Vstx,
+                        ".vsdm" => SaveFileFormat.Vsdm,
+                        ".vssm" => SaveFileFormat.Vssm,
+                        ".vstm" => SaveFileFormat.Vstm,
+                        ".vss" => SaveFileFormat.Vss,
+                        ".vst" => SaveFileFormat.Vst,
+                        _ => SaveFileFormat.Vsdx // Fallback to VSDX if unknown.
+                    };
 
                     // Save the modified diagram, overwriting the original file.
-                    diagram.Save(filePath, saveFormat);
-                    Console.WriteLine($"Processed and saved: {filePath}");
+                    diagram.Save(filePath, format);
+                    Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                    Console.WriteLine($"Error processing '{Path.GetFileName(filePath)}': {ex.Message}");
                 }
             }
+
+            Console.WriteLine("Batch orientation update completed.");
         }
     }

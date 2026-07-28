@@ -9,7 +9,7 @@ class Program
         try
         {
 
-            // Path to the Visio file to be loaded
+            // Path to the Visio file
             string filePath = "sample.vsdx";
 
             // Open the file as a read‑only stream
@@ -19,17 +19,14 @@ class Program
                 Diagram diagram = new Diagram(stream);
 
                 // Verify that the diagram contains at least one page
-                if (diagram.Pages.Count > 0)
+                if (diagram.Pages != null && diagram.Pages.Count > 0)
                 {
                     Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
                 }
                 else
                 {
-                    Console.WriteLine("Diagram loaded but contains no pages.");
+                    Console.WriteLine("The diagram does not contain any pages.");
                 }
-
-                // Clean up resources
-                diagram.Dispose();
             }
 
         }

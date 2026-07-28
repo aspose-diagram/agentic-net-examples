@@ -1,28 +1,26 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Path to the Visio file to be loaded.
-                // Adjust the file name or use a command‑line argument as needed.
-                string inputPath = "sample.vsdx";
+            // Load the Visio diagram from a file.
+            // The Diagram(string) constructor loads the diagram automatically.
+            Diagram diagram = new Diagram("sample.vsdx");
 
-                // Load the diagram inside a using block to ensure resources are released.
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // The Diagram object is now available for further processing.
-                    Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
-                }
+            // The 'diagram' variable now holds the loaded Diagram object
+            // and can be used for further processing.
+            Console.WriteLine("Diagram loaded successfully. Pages count: " + diagram.Pages.Count);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,6 +1,7 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,11 +10,13 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram (any supported format)
+            // Load the original diagram (replace with your source file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Save the diagram to a new VSDX file.
-            // The Save method with SaveFileFormat preserves the original page order.
+            // TODO: Apply any modifications to the diagram here
+
+            // Save the updated diagram to a new VSDX file.
+            // The Save method preserves the original page order.
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

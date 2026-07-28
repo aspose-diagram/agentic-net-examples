@@ -1,80 +1,74 @@
+using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the stencil (VST) file
+            string stencilPath = "input.vst";
+            Diagram diagram = new Diagram(stencilPath); // load existing stencil
+
+            // Define the order of frequently used masters (most used first)
+            List<string> priorityNames = new List<string>
             {
+                "Rectangle",
+                "Ellipse",
+                "Connector"
+            };
 
-                // Path to the source stencil (VSSX) file
-                string sourceStencilPath = @"C:\Stencils\MyStencil.vssx";
-
-                // Path where the reordered stencil will be saved
-                string reorderedStencilPath = @"C:\Stencils\MyStencil_Reordered.vssx";
-
-                // Define the master names in the order you want them to appear.
-                // These should be the universal names (NameU) of the masters.
-                string[] prioritizedMasterNames = new string[]
-                {
-                    "Process",      // most frequently used
-                    "Decision",
-                    "Data",
-                    "Start/End"
-                    // add more names as needed
-                };
-
-                // Load the original stencil
-                Diagram sourceStencil = new Diagram(sourceStencilPath, LoadFileFormat.Vssx);
-
-                // Create a new empty diagram that will hold the reordered masters
-                Diagram reorderedStencil = new Diagram();
-
-                // Keep track of which masters have already been added
-                var addedMasterNames = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                // First, add the prioritized masters in the specified order
-                foreach (string masterName in prioritizedMasterNames)
-                {
-                    if (sourceStencil.Masters.IsExist(masterName))
-                    {
-                        // Add the master from the source stencil to the new stencil
-                        reorderedStencil.AddMaster(sourceStencil, masterName);
-                        addedMasterNames.Add(masterName);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Warning: Master \"{masterName}\" not found in the source stencil.");
-                    }
-                }
-
-                // Then, add the remaining masters preserving their original order
-                foreach (Master master in sourceStencil.Masters)
-                {
-                    // Use the universal name for comparison
-                    string nameU = master.NameU;
-                    if (!addedMasterNames.Contains(nameU))
-                    {
-                        reorderedStencil.AddMaster(sourceStencil, nameU);
-                        addedMasterNames.Add(nameU);
-                    }
-                }
-
-                // Save the reordered stencil
-                reorderedStencil.Save(reorderedStencilPath, SaveFileFormat.Vssx);
-
-                // Clean up
-                sourceStencil.Dispose();
-                reorderedStencil.Dispose();
-
-                Console.WriteLine("Stencil reordering completed successfully.");
-
-            }
-            catch (System.IO.DirectoryNotFoundException ex)
+            // Build a lookup of masters by their universal name
+            var masterLookup = new Dictionary<string, Master>(StringComparer.OrdinalIgnoreCase);
+            foreach (Master m in diagram.Masters)
             {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                masterLookup[m.NameU] = m;
             }
+
+            // Create a new ordered list of masters
+            var reorderedMasters = new List<Master>();
+
+            // Add prioritized masters first (if they exist in the stencil)
+            foreach (string name in priorityNames)
+            {
+                if (masterLookup.TryGetValue(name, out Master m))
+                {
+                    reorderedMasters.Add(m);
+                    masterLookup.Remove(name);
+                }
+            }
+
+            // Append the remaining masters preserving their original order
+            foreach (Master m in diagram.Masters)
+            {
+                if (masterLookup.ContainsKey(m.NameU))
+                    reorderedMasters.Add(m);
+            }
+
+            // Clear the existing masters collection
+            for (int i = diagram.Masters.Count - 1; i >= 0; i--)
+            {
+                diagram.Masters.RemoveAt(i);
+            }
+
+            // Re‑add masters in the new order
+            foreach (Master m in reorderedMasters)
+            {
+                diagram.Masters.Add(m);
+            }
+
+            // Save the reordered stencil
+            string outputPath = "reordered.vst";
+            diagram.Save(outputPath, SaveFileFormat.Vst);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

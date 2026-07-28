@@ -7,65 +7,43 @@ class Program
 {
     static void Main()
     {
-        // Create a new diagram instance
-        using Diagram diagram = new Diagram();
-
-        // Ensure there is at least one page to work with
-        Page page;
-        if (diagram.Pages.Count == 0)
+        // Create a new empty diagram
+        using (Diagram diagram = new Diagram())
         {
-            page = new Page();
+            // Add a new page to the diagram
+            Page page = new Page();
             diagram.Pages.Add(page);
+
+            // Set page dimensions (A4 size in inches)
+            page.PageSheet.PageProps.PageWidth.Value = 8.27;   // width
+            page.PageSheet.PageProps.PageHeight.Value = 11.69; // height
+
+            // Calculate title font size as a proportion of the page width (e.g., 5%)
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double titleFontSizeInInches = pageWidth * 0.05; // 5% of page width
+
+            // Title text and formatting
+            string titleText = "Document Title";
+            string fontName = "Arial";
+            string fontColor = "#000000";
+
+            // Position the title at the top center of the page
+            double pinX = pageWidth / 2.0;                                   // center horizontally
+            double pinY = page.PageSheet.PageProps.PageHeight.Value - 0.5;   // half‑inch from top edge
+            double titleBoxWidth = pageWidth * 0.8;                          // 80% of page width
+            double titleBoxHeight = titleFontSizeInInches * 2;               // enough height for the text
+
+            // Add the title shape with the calculated font size (size is in inches)
+            Shape titleShape = page.AddText(pinX, pinY, titleBoxWidth, titleBoxHeight,
+                                            titleText, fontName, fontColor, titleFontSizeInInches);
+
+            // Configure PDF save options and set a default font for fallback
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = fontName;
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // explicit format
+
+            // Save the diagram as a PDF file
+            diagram.Save("output.pdf", pdfOptions);
         }
-        else
-        {
-            page = diagram.Pages[0];
-        }
-
-        // Retrieve current page dimensions (in inches)
-        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-        // If the diagram is brand‑new the dimensions may be zero – set A4 defaults
-        if (pageWidth == 0 || pageHeight == 0)
-        {
-            pageWidth = 8.27;   // A4 width in inches
-            pageHeight = 11.69; // A4 height in inches
-            page.PageSheet.PageProps.PageWidth.Value = pageWidth;
-            page.PageSheet.PageProps.PageHeight.Value = pageHeight;
-        }
-
-        // Calculate a font size that scales with the page width.
-        // Example: use 10 % of the page width expressed in points.
-        double fontSizePoints = pageWidth * 10.0;
-        double fontSizeInches = fontSizePoints / 72.0; // convert points → inches
-
-        // Title text to be placed on the page
-        string title = "Sample Document Title";
-
-        // Position the title near the top centre of the page
-        double marginTop = 0.5; // inches from the top edge
-        double pinX = pageWidth / 2.0;
-        double pinY = pageHeight - marginTop;
-
-        // Define a text box that spans the page width
-        double textBoxWidth = pageWidth;
-        double textBoxHeight = fontSizeInches * 2.0; // enough height for the text
-
-        // Add the title shape with the calculated font size
-        Shape titleShape = page.AddText(pinX, pinY, textBoxWidth, textBoxHeight,
-                                        title, "Arial", "#000000", fontSizeInches);
-
-        // Center the text horizontally within the box
-        titleShape.TextXForm.TxtLocPinX.Value = 0.5 * textBoxWidth;
-        titleShape.TextXForm.TxtLocPinY.Value = 0.0; // top alignment
-
-        // Prepare PDF save options and enforce a default font
-        PdfSaveOptions pdfOptions = new PdfSaveOptions();
-        pdfOptions.DefaultFont = "Arial";
-        pdfOptions.SaveFormat = SaveFileFormat.Pdf; // explicit format
-
-        // Save the diagram as a PDF
-        diagram.Save("output.pdf", pdfOptions);
     }
 }

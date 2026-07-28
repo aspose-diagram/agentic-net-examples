@@ -16,32 +16,26 @@ class Program
             Page page = diagram.Pages[0];
             Shape shape = page.Shapes[0];
 
-            // Create a new Field object that will be inserted into the shape
-            Field field = new Field();
-
-            // Example: you could set additional properties on the field here
-            // (e.g., field.Type, field.Format, etc.)
-
-            // Insert the field into the shape with error handling
             try
             {
-                // The Fld class represents the insertion point for the field.
-                // Index 0 means the field will be inserted at the beginning of the shape's text.
-                Fld insertionPoint = new Fld(0, shape);
+                // Create a new Field object
+                Field field = new Field();
 
-                // Add the field to the shape's Fields collection.
-                // The Add method returns the index at which the field was inserted.
+                // (Optional) Set additional properties on the field here
+                // e.g., field.Value = "Some text"; // Value is read‑only, use appropriate properties as needed
+
+                // Insert the field into the shape's field collection
                 shape.Fields.Add(field);
             }
             catch (DiagramException dex)
             {
-                // Capture and log Aspose.Diagram specific exceptions
-                Console.WriteLine($"DiagramException occurred: {dex.Message}");
+                // Capture Aspose.Diagram specific errors
+                Console.WriteLine($"DiagramException caught: {dex.Message}");
             }
             catch (Exception ex)
             {
-                // Capture and log any other unexpected exceptions
-                Console.WriteLine($"Unexpected error: {ex.Message}");
+                // Capture any other runtime errors
+                Console.WriteLine($"Unexpected error caught: {ex.Message}");
             }
 
             // Save the modified diagram (replace with your desired output path)

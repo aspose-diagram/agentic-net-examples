@@ -2,6 +2,7 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Cells;
+using System.IO;
 
 class Program
     {
@@ -10,59 +11,55 @@ class Program
             try
             {
 
-                // Input Visio file path
-                string visioPath = "input.vsdx";
-                // Output Excel file path
+                // Input Visio diagram file path (adjust as needed)
+                string diagramPath = "input.vsdx";
+
+                // Output Excel workbook file path
                 string excelPath = "ShapeData.xlsx";
 
                 // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
+                Diagram diagram = new Diagram(diagramPath);
 
                 // Create a new Excel workbook
                 Workbook workbook = new Workbook();
                 Worksheet sheet = workbook.Worksheets[0];
+                Cells cells = sheet.Cells;
 
                 // Write header row
-                sheet.Cells[0, 0].PutValue("Page Name");
-                sheet.Cells[0, 1].PutValue("Shape ID");
-                sheet.Cells[0, 2].PutValue("Shape Name");
-                sheet.Cells[0, 3].PutValue("Shape NameU");
-                sheet.Cells[0, 4].PutValue("Shape Text");
-                sheet.Cells[0, 5].PutValue("Data1");
-                sheet.Cells[0, 6].PutValue("Data2");
-                sheet.Cells[0, 7].PutValue("Data3");
+                cells[0, 0].PutValue("Page Name");
+                cells[0, 1].PutValue("Shape ID");
+                cells[0, 2].PutValue("Name");
+                cells[0, 3].PutValue("NameU");
+                cells[0, 4].PutValue("Data1");
+                cells[0, 5].PutValue("Data2");
+                cells[0, 6].PutValue("Data3");
 
                 int currentRow = 1;
 
-                // Iterate through each page in the diagram
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve plain text from the shape
-                        string plainText = shape.Text.Value.Text;
-
-                        // Write shape data to the worksheet
-                        sheet.Cells[currentRow, 0].PutValue(page.Name);
-                        sheet.Cells[currentRow, 1].PutValue(shape.ID);
-                        sheet.Cells[currentRow, 2].PutValue(shape.Name);
-                        sheet.Cells[currentRow, 3].PutValue(shape.NameU);
-                        sheet.Cells[currentRow, 4].PutValue(plainText);
-                        sheet.Cells[currentRow, 5].PutValue(shape.Data1);
-                        sheet.Cells[currentRow, 6].PutValue(shape.Data2);
-                        sheet.Cells[currentRow, 7].PutValue(shape.Data3);
+                        // Populate cells with shape information
+                        cells[currentRow, 0].PutValue(page.Name);
+                        cells[currentRow, 1].PutValue(shape.ID);
+                        cells[currentRow, 2].PutValue(shape.Name);
+                        cells[currentRow, 3].PutValue(shape.NameU);
+                        cells[currentRow, 4].PutValue(shape.Data1);
+                        cells[currentRow, 5].PutValue(shape.Data2);
+                        cells[currentRow, 6].PutValue(shape.Data3);
 
                         currentRow++;
                     }
                 }
 
-                // Save the workbook to an Excel file
-                workbook.Save(excelPath, SaveFormat.Xlsx);
+                // Save the Excel workbook
+                workbook.Save(excelPath);
 
                 Console.WriteLine($"Shape data exported successfully to '{excelPath}'.");
 

@@ -1,91 +1,94 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Expected arguments: diagramPath csvPath outputPath
+            if (args.Length < 3)
             {
+                Console.WriteLine("Usage: DiagramCsvBinding <diagramPath> <csvPath> <outputPath>");
+                return;
+            }
 
-                // Paths – adjust as needed
-                string diagramPath = "input.vsdx";
-                string csvPath = "data.csv";
-                string outputPath = "output.vsdx";
+            string diagramPath = args[0];
+            string csvPath = args[1];
+            string outputPath = args[2];
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Verify CSV file exists
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(diagramPath))
+            {
+                // Read CSV file
                 if (!File.Exists(csvPath))
                 {
                     Console.WriteLine($"CSV file not found: {csvPath}");
                     return;
                 }
 
-                // Read all lines from the CSV (first line assumed header)
-                string[] lines = File.ReadAllLines(csvPath);
-                if (lines.Length < 2)
+                using (StreamReader reader = new StreamReader(csvPath))
                 {
-                    Console.WriteLine("CSV file does not contain data rows.");
-                    return;
-                }
-
-                // Process each data row
-                for (int i = 1; i < lines.Length; i++)
-                {
-                    string line = lines[i];
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    // Simple CSV split – assumes no commas inside quoted fields
-                    string[] parts = line.Split(',');
-                    if (parts.Length < 4)
+                    // Read header (optional, ignored)
+                    string headerLine = reader.ReadLine();
+                    if (headerLine == null)
                     {
-                        Console.WriteLine($"Invalid CSV format at line {i + 1}");
-                        continue;
+                        Console.WriteLine("CSV file is empty.");
+                        return;
                     }
 
-                    string shapeIdentifier = parts[0].Trim(); // Expected to match shape.NameU
-                    string data1 = parts[1].Trim();
-                    string data2 = parts[2].Trim();
-                    string data3 = parts[3].Trim();
-
-                    bool shapeFound = false;
-
-                    // Search for the shape across all pages
-                    foreach (Aspose.Diagram.Page page in diagram.Pages)
+                    // Process each data row
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
                     {
-                        foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                        // Simple CSV split by comma; does not handle quoted commas
+                        string[] fields = line.Split(',');
+
+                        if (fields.Length < 2)
                         {
-                            if (shape.NameU != null && shape.NameU.Equals(shapeIdentifier, StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Bind CSV values to shape data fields
-                                shape.Data1 = data1;
-                                shape.Data2 = data2;
-                                shape.Data3 = data3;
-                                shapeFound = true;
-                                break;
-                            }
+                            Console.WriteLine($"Skipping malformed line: {line}");
+                            continue;
                         }
-                        if (shapeFound) break;
-                    }
 
-                    if (!shapeFound)
-                    {
-                        Console.WriteLine($"Shape not found for identifier '{shapeIdentifier}'");
+                        string shapeName = fields[0].Trim();
+                        string data1 = fields.Length > 1 ? fields[1].Trim() : string.Empty;
+                        string data2 = fields.Length > 2 ? fields[2].Trim() : string.Empty;
+                        string data3 = fields.Length > 3 ? fields[3].Trim() : string.Empty;
+
+                        bool shapeFound = false;
+
+                        // Iterate pages and shapes to find the matching shape by universal name
+                        foreach (Page page in diagram.Pages)
+                        {
+                            foreach (Shape shape in page.Shapes)
+                            {
+                                if (shape.NameU != null && shape.NameU.Equals(shapeName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    // Bind CSV values to shape data fields
+                                    shape.Data1 = data1;
+                                    shape.Data2 = data2;
+                                    shape.Data3 = data3;
+
+                                    shapeFound = true;
+                                    break;
+                                }
+                            }
+
+                            if (shapeFound)
+                                break;
+                        }
+
+                        if (!shapeFound)
+                        {
+                            Console.WriteLine($"Shape not found for name: {shapeName}");
+                        }
                     }
                 }
 
                 // Save the updated diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to {outputPath}");
-
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+        }
     }

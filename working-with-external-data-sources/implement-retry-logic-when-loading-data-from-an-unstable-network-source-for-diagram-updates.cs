@@ -5,82 +5,67 @@ using Aspose.Diagram;
 
 public class DiagramUpdater
 {
+    // Maximum number of retry attempts when refreshing data
+    private const int MaxRetryAttempts = 5;
+    // Initial delay between retries (in milliseconds)
+    private const int InitialDelayMs = 500;
+
     /// <summary>
-    /// Loads a Visio diagram, refreshes its data recordsets with retry logic,
-    /// and returns the updated Diagram instance.
+    /// Loads a Visio diagram, refreshes its data with retry logic, and saves the updated diagram.
     /// </summary>
-    /// <param name="filePath">Path to the Visio file to load.</param>
-    /// <param name="maxRetries">Maximum number of retry attempts.</param>
-    /// <param name="initialDelay">Initial delay before the first retry. Subsequent retries use exponential back‑off.</param>
-    /// <returns>The refreshed Diagram object.</returns>
-    public Diagram LoadAndRefreshWithRetry(string filePath, int maxRetries = 3, TimeSpan? initialDelay = null)
+    /// <param name="inputFilePath">Path to the source Visio file.</param>
+    /// <param name="outputFilePath">Path where the updated Visio file will be saved.</param>
+    public void UpdateDiagram(string inputFilePath, string outputFilePath)
     {
-        if (string.IsNullOrEmpty(filePath))
-            throw new ArgumentException("File path must be provided.", nameof(filePath));
+        // Load the diagram using the provided constructor (lifecycle rule)
+        Diagram diagram = new Diagram(inputFilePath);
 
-        // Load the diagram using the constructor that accepts a file name.
-        Diagram diagram = new Diagram(filePath);
-
-        // Determine the base delay.
-        TimeSpan delay = initialDelay ?? TimeSpan.FromSeconds(2);
         int attempt = 0;
+        int delay = InitialDelayMs;
 
         while (true)
         {
             try
             {
-                // Refresh all DataRecordSets in the diagram.
+                // Refresh all DataRecordSets in the diagram (refreshes linked shapes)
                 diagram.Refresh();
-                // If refresh succeeds, exit the loop.
+
+                // If refresh succeeds, exit the retry loop
                 break;
             }
-            catch (DiagramException dex)
+            catch (DiagramException ex)
             {
                 attempt++;
 
-                if (attempt > maxRetries)
+                if (attempt >= MaxRetryAttempts)
                 {
-                    // All retries exhausted – rethrow the exception.
+                    // Re‑throw after exceeding max attempts
                     throw new InvalidOperationException(
-                        $"Failed to refresh diagram after {maxRetries} attempts.", dex);
+                        $"Failed to refresh diagram data after {MaxRetryAttempts} attempts.", ex);
                 }
 
-                // Optionally log the exception (placeholder for real logging).
-                Console.WriteLine($"Refresh attempt {attempt} failed: {dex.Message}");
-                Console.WriteLine($"Waiting {delay.TotalSeconds} seconds before retry...");
-
-                // Wait before the next retry.
+                // Wait before next retry (exponential back‑off)
                 Thread.Sleep(delay);
-
-                // Exponential back‑off for subsequent attempts.
-                delay = TimeSpan.FromSeconds(delay.TotalSeconds * 2);
+                delay *= 2; // double the wait time for next attempt
             }
             catch (Exception ex)
             {
-                // Non‑DiagramException errors are considered fatal.
-                throw new InvalidOperationException("Unexpected error during diagram refresh.", ex);
+                // Non‑diagram specific errors are also retried
+                attempt++;
+
+                if (attempt >= MaxRetryAttempts)
+                {
+                    throw new InvalidOperationException(
+                        $"Unexpected error during diagram refresh after {MaxRetryAttempts} attempts.", ex);
+                }
+
+                Thread.Sleep(delay);
+                delay *= 2;
             }
         }
 
-        return diagram;
-    }
-
-    /// <summary>
-    /// Example usage: loads a diagram, refreshes it with retries, and saves the result.
-    /// </summary>
-    public void Example()
-    {
-        string sourcePath = @"C:\Diagrams\MyDiagram.vsdx";
-        string destinationPath = @"C:\Diagrams\MyDiagram_Updated.vsdx";
-
-        // Load and refresh with retry logic.
-        Diagram updatedDiagram = LoadAndRefreshWithRetry(sourcePath, maxRetries: 5, initialDelay: TimeSpan.FromSeconds(1));
-
-        // Save the updated diagram using the Save method that accepts a file name.
-        updatedDiagram.Save(destinationPath, SaveFileFormat.Vsdx);
-
-        // Dispose when done.
-        updatedDiagram.Dispose();
+        // Save the updated diagram using the provided Save method (lifecycle rule)
+        diagram.Save(outputFilePath, SaveFileFormat.Vsdx);
     }
 }
 
@@ -92,12 +77,12 @@ class Program
         {
 
             var obj = new DiagramUpdater();
-            obj.Example();
+            obj.UpdateDiagram("", "");
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

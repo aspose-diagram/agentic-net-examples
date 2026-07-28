@@ -1,6 +1,7 @@
-using System;
-using System.Data;
 using System.IO;
+using System;
+using System.Collections.Generic;
+using System.Data;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,47 +9,49 @@ class Program
 {
     static void Main()
     {
-        // Load external data (replace with actual data source)
-        DataTable data = LoadExternalData();
-
-        // Create a new empty Visio diagram
+        // Create a new empty diagram (lifecycle create)
         Diagram diagram = new Diagram();
 
-        // Determine distinct records based on a key column (e.g., "Category")
-        DataTable distinctTable = data.DefaultView.ToTable(true, "Category");
+        // Load external data (replace with real data source as needed)
+        DataTable externalData = GetExternalData();
 
-        // Create a new page for each distinct record
-        foreach (DataRow row in distinctTable.Rows)
+        // Determine distinct values for which pages will be created
+        var distinctKeys = new HashSet<string>();
+        foreach (DataRow row in externalData.Rows)
         {
-            // Add a new page to the diagram
-            Page page = new Page();
-            diagram.Pages.Add(page);
-
-            // Optionally set a meaningful page name
-            page.Name = row["Category"].ToString();
-
-            // Example: add a shape to the page using a master shape (optional)
-            // int masterId = diagram.AddMaster("Basic_U.vssx", "Rectangle");
-            // diagram.AddShape(5.0, 5.0, masterId);
+            distinctKeys.Add(row["Category"].ToString());
         }
 
-        // Save the diagram to a file (using VDX format as an example)
-        diagram.Save("DynamicPagesDiagram.vdx", SaveFileFormat.Vdx);
+        // Dynamically add a page for each distinct record
+        foreach (string key in distinctKeys)
+        {
+            // Add a new page to the diagram
+            Page newPage = new Page();
+            diagram.Pages.Add(newPage);
+
+            // Set a meaningful name for the page
+            newPage.Name = key;
+
+            // Example: place a shape on the page (optional)
+            // diagram.AddShape(4.25, 5.5, "Rectangle", 0);
+        }
+
+        // Save the diagram to a file (lifecycle save)
+        diagram.Save("DynamicPagesOutput.vdx", SaveFileFormat.Vdx);
     }
 
-    // Placeholder method to simulate loading data from an external source
-    static DataTable LoadExternalData()
+    // Mock method to simulate retrieving external data
+    static DataTable GetExternalData()
     {
         DataTable table = new DataTable();
+        table.Columns.Add("Id", typeof(int));
         table.Columns.Add("Category", typeof(string));
-        table.Columns.Add("Value", typeof(int));
+        table.Columns.Add("Value", typeof(string));
 
-        // Sample data rows
-        table.Rows.Add("Finance", 100);
-        table.Rows.Add("HR", 200);
-        table.Rows.Add("Finance", 150);
-        table.Rows.Add("IT", 300);
-        table.Rows.Add("HR", 250);
+        table.Rows.Add(1, "Alpha", "A1");
+        table.Rows.Add(2, "Beta", "B1");
+        table.Rows.Add(3, "Alpha", "A2");
+        table.Rows.Add(4, "Gamma", "G1");
 
         return table;
     }

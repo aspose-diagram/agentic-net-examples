@@ -1,11 +1,11 @@
 {
   "category": "working-with-external-data-sources",
   "display_name": "Working With External Data Sources",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 29,
   "pass_rate": 100.0,
-  "generated": "2026-06-08",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,7 +14,6 @@
       "task": "Apply conditional formatting to shapes based on thresholds defined in external data",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -34,8 +33,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -71,15 +69,14 @@
       "task": "Connect to a sql server database and populate diagram shapes with query results",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
         "System",
-        "System.Data.SqlClient"
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -90,15 +87,16 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.Data",
         "System.IO"
       ],
       "key_apis": [
-        "AddMaster",
         "AddShape",
         "Diagram",
         "Page",
-        "Pages"
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -109,14 +107,13 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "AddMaster",
-        "AddShape",
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -127,7 +124,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -143,13 +140,14 @@
       "task": "Export diagram shape data to a csv file for external reporting and analysis",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -161,7 +159,8 @@
         "Aspose.Cells",
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -180,14 +179,15 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
+        "System.IO",
         "System.Linq"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -197,14 +197,16 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
+        "Page",
         "Pages",
-        "Save",
-        "Shapes",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -218,7 +220,9 @@
         "System.Threading"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -227,6 +231,7 @@
       "task": "Import shape data from a csv file and bind each row to corresponding diagram shapes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -245,14 +250,17 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.Net.Http",
+        "System.Text.Json",
+        "System.Threading.Tasks"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
         "Shapes",
-        "User"
+        "diagram"
       ]
     },
     {
@@ -264,7 +272,7 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Xml"
+        "System.Xml.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -304,9 +312,9 @@
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Save",
-        "Shapes",
-        "diagram"
+        "Page",
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -315,6 +323,7 @@
       "task": "Merge hierarchical xml data into grouped shapes within the visio diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.Xml.Linq"
@@ -322,9 +331,9 @@
       "key_apis": [
         "AddShape",
         "Diagram",
+        "Page",
         "Pages",
-        "Save",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -335,14 +344,14 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "PdfSaveOptions",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -353,10 +362,7 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Net.Http",
-        "System.Text.Json",
-        "System.Threading.Tasks"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -397,7 +403,9 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -410,9 +418,7 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.Diagnostics",
-        "System.IO",
-        "System.Security",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -434,9 +440,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Prop",
         "Save",
-        "Shapes",
-        "User"
+        "Shapes"
       ]
     },
     {
@@ -445,11 +451,9 @@
       "task": "Set shape visibility dynamically based on boolean values from an external data source",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Text.Json"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -468,15 +472,14 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.Data",
-        "System.Data.SqlClient",
         "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
+        "Page",
         "Pages",
-        "Save",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -524,15 +527,17 @@
       "task": "Validate external data against a predefined schema before mapping to diagram shapes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Xml",
-        "System.Xml.Schema"
+        "System.Text.Json"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Save",
-        "diagram"
+        "Page",
+        "Pages",
+        "Save"
       ]
     }
   ]

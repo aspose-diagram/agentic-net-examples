@@ -1,6 +1,5 @@
 using System;
 using System.Data;
-using System.Data.SqlClient;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
@@ -9,101 +8,58 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Oracle connection details – replace with actual values
-        string connectionString = "User Id=myUser;Password=myPassword;Data Source=MyOracleDB";
+        // NOTE: Oracle data access requires external libraries not available in this project.
+        // The following mock data simulates rows that would be retrieved from an Oracle database.
+        DataTable mockTable = new DataTable();
+        mockTable.Columns.Add("POSX", typeof(double));
+        mockTable.Columns.Add("POSY", typeof(double));
+        mockTable.Columns.Add("WIDTH", typeof(double));
+        mockTable.Columns.Add("HEIGHT", typeof(double));
+        mockTable.Columns.Add("MASTER_NAME", typeof(string));
+        mockTable.Columns.Add("SHAPE_TEXT", typeof(string));
 
-        // Query to fetch data – adjust column names as needed
-        string query = "SELECT ID, NAME FROM MY_TABLE";
+        // Add sample rows – replace this block with actual Oracle data retrieval logic.
+        mockTable.Rows.Add(1.0, 2.0, 1.5, 1.0, "Rectangle", "First Shape");
+        mockTable.Rows.Add(3.0, 4.0, 2.0, 1.5, "Ellipse", "Second Shape");
 
-        // Create a new empty diagram
-        Diagram diagram;
-        try
+        // Create an empty diagram and ensure it has at least one page.
+        Diagram diagram = new Diagram();
+        if (diagram.Pages.Count == 0)
         {
-            diagram = new Diagram();
+            diagram.Pages.Add(new Page());
         }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Aspose error creating diagram: {ex.Message}");
-            return;
-        }
-
-        // Ensure there is at least one page
-        Page page;
-        try
-        {
-            page = diagram.Pages[0];
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Aspose error accessing page: {ex.Message}");
-            return;
-        }
-
-        // Positioning variables for shape placement
-        double startX = 2.0;   // inches from left
-        double startY = 2.0;   // inches from top
-        double verticalSpacing = 1.5; // inches between shapes
+        Page page = diagram.Pages[0];
 
         try
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            // Iterate over the mock data (replace with OracleDataReader loop in real scenario).
+            foreach (DataRow row in mockTable.Rows)
             {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                using (SqlDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        // Retrieve column values
-                        string id = reader["ID"].ToString();
-                        string name = reader["NAME"].ToString();
+                // Retrieve values from the data row.
+                double posX = Convert.ToDouble(row["POSX"]);
+                double posY = Convert.ToDouble(row["POSY"]);
+                double width = Convert.ToDouble(row["WIDTH"]);
+                double height = Convert.ToDouble(row["HEIGHT"]);
+                string masterName = row["MASTER_NAME"].ToString();
+                string shapeText = row["SHAPE_TEXT"].ToString();
 
-                        try
-                        {
-                            // Add a rectangle shape for each record
-                            // Using the built‑in "Rectangle" master with default size
-                            long shapeId = page.AddShape(startX, startY, 2.0, 1.0, "Rectangle");
+                // Add a shape based on the master name and dimensions.
+                long shapeId = page.AddShape(posX, posY, width, height, masterName);
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-                            // Retrieve the shape object
-                            Shape shape = page.Shapes.GetShape(shapeId);
-
-                            // Set shape text to display the fetched data
-                            shape.Text.Value.Clear();
-                            shape.Text.Value.Add(new Txt($"ID: {id}\nName: {name}"));
-
-                            // Optionally store the ID in a custom user cell
-                            User userCell = new User();
-                            userCell.Name = "RecordID";
-                            userCell.Value.Val = id;
-                            shape.Users.Add(userCell);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.Error.WriteLine($"Aspose error processing record ID {id}: {ex.Message}");
-                        }
-
-                        // Move to next vertical position
-                        startY += verticalSpacing;
-                    }
-                }
+                // Populate the shape's text.
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt(shapeText));
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error accessing database: {ex.Message}");
-            return;
-        }
 
-        // Save the diagram to VSDX format
-        string outputPath = "OutputDiagram.vsdx";
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
+            // Save the diagram to VSDX format.
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Aspose error saving diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

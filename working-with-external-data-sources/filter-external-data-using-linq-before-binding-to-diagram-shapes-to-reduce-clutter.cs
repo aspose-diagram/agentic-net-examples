@@ -1,79 +1,108 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramDataBindingExample
 {
-    static void Main()
+    // Simple data model representing external data to be bound to diagram shapes
+    public class DataItem
     {
-        try
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public double Value { get; set; }
+        public string Category { get; set; } = string.Empty;
+    }
+
+    public class Program
+    {
+        public static void Main()
         {
-
-            // Paths for input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Retrieve external data (could be from a database, API, etc.)
-            List<Record> records = GetExternalData();
-
-            // Filter the data using LINQ to keep only active records
-            var filteredRecords = records.Where(r => r.IsActive).ToList();
-
-            // Get the first page of the diagram
-            Page page = diagram.Pages[0];
-
-            // Iterate through shapes and bind filtered data
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                // Skip shapes that are marked as deleted
-                if (shape.Del == BOOL.True)
-                    continue;
 
-                // Assume each shape's Data1 holds an identifier matching Record.Id
-                string shapeKey = shape.Data1;
+                // Paths for input Visio file and output Visio file
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Find a matching record from the filtered list
-                Record match = filteredRecords.FirstOrDefault(r => r.Id.ToString() == shapeKey);
-                if (match != null)
+                // Load the existing diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Update the shape's text with information from the matched record
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt($"Name: {match.Name}, Value: {match.Value}"));
+                    // Retrieve the first page (avoid using ActivePage)
+                    Page page = diagram.Pages[0];
+
+                    // ------------------------------------------------------------
+                    // STEP 1: Obtain external data (could be from DB, CSV, etc.)
+                    // Here we mock a data source for demonstration purposes.
+                    // ------------------------------------------------------------
+                    List<DataItem> externalData = GetMockData();
+
+                    // ------------------------------------------------------------
+                    // STEP 2: Filter the data using LINQ to keep only relevant items.
+                    // This reduces clutter by avoiding creation of shapes for unwanted data.
+                    // ------------------------------------------------------------
+                    var filteredData = externalData
+                        .Where(item => item.Value > 10 && item.Category == "Important")
+                        .ToList();
+
+                    // ------------------------------------------------------------
+                    // STEP 3: Bind each filtered data item to a new shape on the diagram.
+                    // ------------------------------------------------------------
+                    double startX = 2.0;   // starting X coordinate (in inches)
+                    double startY = 2.0;   // starting Y coordinate (in inches)
+                    double offsetX = 2.5;  // horizontal spacing between shapes
+
+                    for (int i = 0; i < filteredData.Count; i++)
+                    {
+                        DataItem item = filteredData[i];
+
+                        // Calculate position for the new shape
+                        double pinX = startX + i * offsetX;
+                        double pinY = startY;
+
+                        // Add a rectangle shape using the master name "Rectangle"
+                        // AddShape returns the shape ID (long)
+                        long shapeId = diagram.AddShape(pinX, pinY, "Rectangle", 0);
+
+                        // Retrieve the concrete Shape object using the returned ID
+                        Shape shape = page.Shapes.GetShape(shapeId);
+
+                        // Clear any existing text and set new text based on the data item
+                        shape.Text.Value.Clear();
+                        shape.Text.Value.Add(new Txt($"{item.Name}: {item.Value}"));
+
+                        // Optional: set a fill color to visually differentiate the shape
+                        shape.Fill.FillForegnd.Value = "#FFCC00"; // light orange
+                    }
+
+                    // ------------------------------------------------------------
+                    // STEP 4: Save the modified diagram to a new file.
+                    // ------------------------------------------------------------
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
+
+                Console.WriteLine("Diagram processing completed successfully.");
+
             }
-
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
 
-    // Mock method to simulate retrieval of external data
-    static List<Record> GetExternalData()
-    {
-        return new List<Record>
+        // Mock method to simulate retrieval of external data.
+        private static List<DataItem> GetMockData()
         {
-            new Record { Id = 1, Name = "Alpha", Value = 100, IsActive = true },
-            new Record { Id = 2, Name = "Beta", Value = 200, IsActive = false },
-            new Record { Id = 3, Name = "Gamma", Value = 300, IsActive = true }
-        };
+            return new List<DataItem>
+            {
+                new DataItem { Id = 1, Name = "Alpha",   Value = 5,  Category = "Minor" },
+                new DataItem { Id = 2, Name = "Beta",    Value = 12, Category = "Important" },
+                new DataItem { Id = 3, Name = "Gamma",   Value = 8,  Category = "Minor" },
+                new DataItem { Id = 4, Name = "Delta",   Value = 20, Category = "Important" },
+                new DataItem { Id = 5, Name = "Epsilon", Value = 15, Category = "Important" }
+            };
+        }
     }
-}
-
-// Simple DTO representing external data items
-class Record
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public int Value { get; set; }
-    public bool IsActive { get; set; }
 }

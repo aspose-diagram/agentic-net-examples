@@ -1,83 +1,102 @@
 using System;
 using System.IO;
-using System.Xml;
+using System.Xml.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Paths to the Visio file and the XML data source
+        string diagramPath = "input.vsdx";
+        string xmlDataPath = "data.xml";
+        string outputPath = "output.vsdx";
+
+        // Load the Visio diagram
+        Diagram diagram;
+        try
         {
-            try
+            diagram = new Diagram(diagramPath);
+            Console.WriteLine("Diagram loaded successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Load the XML data that contains mapping information
+        XDocument xmlDoc;
+        try
+        {
+            xmlDoc = XDocument.Load(xmlDataPath);
+            Console.WriteLine("XML data loaded successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load XML data: {ex.Message}");
+            return;
+        }
+
+        // Example mapping format:
+        // <ShapeMappings>
+        //   <ShapeMapping>
+        //     <ShapeName>MyShape</ShapeName>
+        //     <Text>Hello World</Text>
+        //   </ShapeMapping>
+        //   ...
+        // </ShapeMappings>
+
+        foreach (var mapping in xmlDoc.Root.Elements("ShapeMapping"))
+        {
+            string shapeName = (string)mapping.Element("ShapeName");
+            string newText = (string)mapping.Element("Text");
+
+            if (string.IsNullOrEmpty(shapeName))
+                continue;
+
+            // Locate the shape by its universal name (NameU) across all pages
+            Shape targetShape = FindShapeByNameU(diagram, shapeName);
+            if (targetShape != null)
             {
+                // Replace the shape's text content
+                targetShape.Text.Value.Clear();
+                targetShape.Text.Value.Add(new Txt(newText));
+                Console.WriteLine($"Updated shape '{shapeName}' with text '{newText}'.");
+            }
+            else
+            {
+                Console.WriteLine($"Shape '{shapeName}' not found in the diagram.");
+            }
+        }
 
-                // Path to the Visio file (VSDX) to be loaded
-                string visioPath = "input.vsdx";
+        // Save the modified diagram
+        try
+        {
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to save diagram: {ex.Message}");
+        }
+    }
 
-                // Path to the XML data source that contains mapping information
-                string xmlPath = "mapping.xml";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Load and parse the XML document
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(xmlPath);
-
-                // Example XML structure:
-                // <Mappings>
-                //   <Shape id="1" text="Updated Text" fill="#FF0000" />
-                //   <Shape id="2" text="Another Text" fill="#00FF00" />
-                // </Mappings>
-
-                XmlNodeList shapeNodes = xmlDoc.SelectNodes("//Shape");
-                if (shapeNodes != null)
+    // Helper method to find a shape by its NameU on any page
+    private static Shape FindShapeByNameU(Diagram diagram, string nameU)
+    {
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
+            {
+                if (!string.IsNullOrEmpty(shape.NameU) &&
+                    shape.NameU.Equals(nameU, StringComparison.OrdinalIgnoreCase))
                 {
-                    foreach (XmlNode node in shapeNodes)
-                    {
-                        // Retrieve the shape ID from the XML attribute
-                        if (int.TryParse(node.Attributes["id"]?.Value, out int shapeId))
-                        {
-                            // Find the shape on the first page (adjust if needed)
-                            Page page = diagram.Pages[0];
-                            Shape shape = page.Shapes.GetShape(shapeId);
-                            if (shape != null)
-                            {
-                                // Update shape text if the 'text' attribute exists
-                                string newText = node.Attributes["text"]?.Value;
-                                if (!string.IsNullOrEmpty(newText))
-                                {
-                                    // Clear existing text runs and add the new text
-                                    shape.Text.Value.Clear();
-                                    shape.Text.Value.Add(new Txt(newText));
-                                }
-
-                                // Update shape fill color if the 'fill' attribute exists
-                                string fillColor = node.Attributes["fill"]?.Value;
-                                if (!string.IsNullOrEmpty(fillColor))
-                                {
-                                    // FillForegnd expects a HEX color string
-                                    shape.Fill.FillForegnd.Value = fillColor;
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Shape with ID {shapeId} not found on page '{page.Name}'.");
-                            }
-                        }
-                    }
+                    return shape;
                 }
-
-                // Save the modified diagram to a new file
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Diagram processing completed.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        return null;
     }
-    }
+}

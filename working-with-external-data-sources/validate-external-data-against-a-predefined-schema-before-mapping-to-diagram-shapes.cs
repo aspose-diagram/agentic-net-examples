@@ -1,114 +1,115 @@
 using System;
 using System.IO;
-using System.Xml;
-using System.Xml.Schema;
+using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramDataMapper
 {
-    // Path to the Visio diagram to be processed
-    private const string DiagramPath = @"C:\Diagrams\InputDiagram.vsdx";
-
-    // Path to the external XML data file
-    private const string XmlDataPath = @"C:\Data\ExternalData.xml";
-
-    // Path to the XSD schema that defines the expected structure of the XML data
-    private const string SchemaPath = @"C:\Data\ExternalDataSchema.xsd";
-
-    // Path where the updated diagram will be saved
-    private const string OutputDiagramPath = @"C:\Diagrams\OutputDiagram.vsdx";
-
-    static void Main()
+    // Simple data model representing the expected schema.
+    public class Person
     {
-        try
+        // Name may be null after deserialization; validation will enforce non‑null.
+        public string? Name { get; set; }
+        public int Age { get; set; }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (lifecycle rule: load)
-            Diagram diagram = new Diagram(DiagramPath);
-
-            // Load and validate the external XML data against the XSD schema
-            string xmlContent = File.ReadAllText(XmlDataPath);
-            bool isValid = ValidateXml(xmlContent, SchemaPath, out string validationErrors);
-
-            if (!isValid)
+            // Expect two arguments: input JSON file path and output Visio file path.
+            if (args.Length != 2)
             {
-                Console.WriteLine("XML validation failed:");
-                Console.WriteLine(validationErrors);
-                // Abort further processing because data does not conform to the schema
+                Console.Error.WriteLine("Usage: DiagramDataMapper <inputJsonPath> <outputVisioPath>");
                 return;
             }
 
-            // Create a DataRecordSet and assign the validated XML as its ADOData
-            DataRecordSet dataRecordSet = new DataRecordSet
+            string jsonPath = args[0];
+            string outputPath = args[1];
+
+            // Guard: ensure the input JSON file exists.
+            if (!File.Exists(jsonPath))
             {
-                Name = "ExternalDataSet",
-                ID = 1,
-                ADOData = xmlContent
-            };
+                Console.Error.WriteLine($"Input file not found: {jsonPath}");
+                return;
+            }
 
-            // Add the DataRecordSet to the diagram (lifecycle rule: create)
-            diagram.DataRecordSets.Add(dataRecordSet);
-
-            // OPTIONAL: Refresh the DataRecordSet to ensure any linked shapes are updated
-            // (if the diagram contains shapes linked to this DataRecordSet)
-            dataRecordSet.Refresh();
-
-            // Save the updated diagram (lifecycle rule: save)
-            diagram.Save(OutputDiagramPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Diagram saved successfully to: " + OutputDiagramPath);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Validates an XML string against an XSD schema.
-    /// </summary>
-    /// <param name="xml">The XML content to validate.</param>
-    /// <param name="xsdPath">Path to the XSD schema file.</param>
-    /// <param name="errors">Aggregated validation error messages.</param>
-    /// <returns>True if XML is valid; otherwise false.</returns>
-    private static bool ValidateXml(string xml, string xsdPath, out string errors)
-    {
-        bool isValid = true;
-        StringWriter errorWriter = new StringWriter();
-
-        // Set up the XML schema set
-        XmlSchemaSet schemas = new XmlSchemaSet();
-        schemas.Add(null, xsdPath);
-
-        // Configure XML reader settings for validation
-        XmlReaderSettings settings = new XmlReaderSettings
-        {
-            ValidationType = ValidationType.Schema,
-            Schemas = schemas
-        };
-        settings.ValidationEventHandler += (sender, e) =>
-        {
-            isValid = false;
-            errorWriter.WriteLine($"{e.Severity}: {e.Message}");
-        };
-
-        // Perform validation using an XmlReader
-        using (StringReader stringReader = new StringReader(xml))
-        using (XmlReader reader = XmlReader.Create(stringReader, settings))
-        {
+            // Read and deserialize JSON.
+            string jsonContent = File.ReadAllText(jsonPath);
+            Person[]? persons;
             try
             {
-                while (reader.Read()) { /* reading triggers validation */ }
+                persons = JsonSerializer.Deserialize<Person[]>(jsonContent);
+                if (persons == null)
+                {
+                    Console.Error.WriteLine("JSON deserialization returned null.");
+                    return;
+                }
             }
-            catch (XmlException ex)
+            catch (Exception ex)
             {
-                isValid = false;
-                errorWriter.WriteLine($"XML Exception: {ex.Message}");
+                Console.Error.WriteLine($"Failed to parse JSON: {ex.Message}");
+                return;
+            }
+
+            // Validate each record against the schema.
+            foreach (var person in persons)
+            {
+                if (string.IsNullOrWhiteSpace(person.Name))
+                {
+                    Console.Error.WriteLine("Validation error: Name is required.");
+                    return;
+                }
+
+                if (person.Age < 0)
+                {
+                    Console.Error.WriteLine($"Validation error: Age cannot be negative (Name: {person.Name}).");
+                    return;
+                }
+            }
+
+            // Wrap Aspose operations in a try/catch block.
+            try
+            {
+                // Create a new empty diagram.
+                Diagram diagram = new Diagram();
+
+                // Ensure there is at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    diagram.Pages.Add(new Page());
+                }
+
+                Page page = diagram.Pages[0];
+
+                // Layout parameters.
+                double startX = 2.0;
+                double startY = 2.0;
+                double offsetY = 2.0;
+
+                // Add a shape for each person.
+                for (int i = 0; i < persons.Length; i++)
+                {
+                    double pinX = startX;
+                    double pinY = startY + i * offsetY;
+
+                    // Add a rectangle shape (master name "Rectangle").
+                    long shapeId = page.AddShape(pinX, pinY, "Rectangle");
+                    Shape shape = page.Shapes.GetShape(shapeId);
+
+                    // Clear any existing text and add new text.
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt($"{persons[i].Name}, Age {persons[i].Age}"));
+                }
+
+                // Save the diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Aspose operation failed: {ex.Message}");
             }
         }
-
-        errors = errorWriter.ToString();
-        return isValid;
     }
 }

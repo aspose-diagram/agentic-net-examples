@@ -1,53 +1,80 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the updated Visio file
                 string outputPath = "output.vsdx";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Refresh data connections to ensure latest external data is loaded
-                diagram.Refresh();
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                try
                 {
-                    // Iterate through each shape on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Load the diagram
+                    Diagram diagram = new Diagram(inputPath);
+
+                    // Refresh external data connections to ensure latest data is loaded
+                    diagram.Refresh();
+
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Example: assume external data is stored in Data1 property
-                        string externalValue = shape.Data1;
-
-                        // If there is a value, apply transformation
-                        if (!string.IsNullOrEmpty(externalValue))
+                        // Iterate through all shapes on the page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Sample transformation: trim, replace newlines and commas
-                            string transformed = externalValue.Replace("\r\n", " ").Replace("\n", " ").Replace(",", " ").Trim();
+                            // Example: If the shape has a Data1 value that can be parsed as a number,
+                            // apply a transformation (e.g., multiply by 2) and update the shape text.
+                            if (!string.IsNullOrWhiteSpace(shape.Data1))
+                            {
+                                if (double.TryParse(shape.Data1, out double originalValue))
+                                {
+                                    // Transformation logic: double the value
+                                    double transformedValue = originalValue * 2;
 
-                            // Update the shape's text with the transformed value
-                            shape.Text.Value.Clear();
-                            shape.Text.Value.Add(new Txt(transformed));
+                                    // Update the Data1 field with the transformed value
+                                    shape.Data1 = transformedValue.ToString();
+
+                                    // Update the shape's displayed text to reflect the new value
+                                    shape.Text.Value.Clear();
+                                    shape.Text.Value.Add(new Txt($"Value: {transformedValue}"));
+                                }
+                            }
+
+                            // Example: If the shape has a Data2 value that represents a date,
+                            // convert it to a different format before updating the text.
+                            if (!string.IsNullOrWhiteSpace(shape.Data2))
+                            {
+                                if (DateTime.TryParse(shape.Data2, out DateTime dateValue))
+                                {
+                                    // Transformation: format date as "yyyy-MM-dd"
+                                    string formattedDate = dateValue.ToString("yyyy-MM-dd");
+
+                                    // Update the Data2 field
+                                    shape.Data2 = formattedDate;
+
+                                    // Update the shape's displayed text
+                                    shape.Text.Value.Clear();
+                                    shape.Text.Value.Add(new Txt($"Date: {formattedDate}"));
+                                }
+                            }
                         }
                     }
-                }
 
-                // Save the updated diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Save the updated diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
+                catch (Exception ex)
+                {
+                    // Simple error handling
+                    Console.WriteLine($"Error: {ex.Message}");
+                    throw;
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)

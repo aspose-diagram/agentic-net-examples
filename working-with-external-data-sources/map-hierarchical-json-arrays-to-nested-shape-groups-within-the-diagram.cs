@@ -5,121 +5,128 @@ using System.Text.Json;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace HierarchyToDiagram
+namespace DiagramJsonMapper
 {
+    // Model representing a node in the hierarchical JSON
     public class Node
     {
         public string Name { get; set; }
         public List<Node> Children { get; set; } = new();
     }
 
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        // Entry point
+        public static void Main(string[] args)
         {
-            string jsonPath = "hierarchy.json";
+            // Validate arguments
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramJsonMapper <jsonFilePath> <outputVsdxPath>");
+                return;
+            }
+
+            string jsonPath = args[0];
+            string outputPath = args[1];
+
+            // Load and deserialize JSON
             if (!File.Exists(jsonPath))
             {
-                Console.Error.WriteLine($"File not found: {jsonPath}");
+                Console.WriteLine($"JSON file not found: {jsonPath}");
                 return;
             }
 
             string jsonContent = File.ReadAllText(jsonPath);
-            List<Node> rootNodes = JsonSerializer.Deserialize<List<Node>>(jsonContent);
-            if (rootNodes == null)
-            {
-                Console.Error.WriteLine("Failed to deserialize JSON.");
-                return;
-            }
-
-            Diagram diagram;
+            Node rootNode;
             try
             {
-                diagram = new Diagram();
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Aspose error (diagram creation): {ex.Message}");
-                return;
-            }
-
-            Page page;
-            try
-            {
-                page = diagram.ActivePage;
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Aspose error (access active page): {ex.Message}");
-                return;
-            }
-
-            double startX = 1.0;
-            double startY = 1.0;
-            double offsetX = 5.0;
-
-            foreach (Node node in rootNodes)
-            {
-                Shape topShape = CreateShapeRecursive(node, page, startX, startY);
-                if (topShape == null)
+                rootNode = JsonSerializer.Deserialize<Node>(jsonContent);
+                if (rootNode == null)
                 {
-                    Console.Error.WriteLine($"Failed to create shape for node '{node.Name}'.");
+                    Console.WriteLine("Failed to deserialize JSON.");
                     return;
                 }
-                startX += offsetX;
-            }
-
-            try
-            {
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Aspose error (save): {ex.Message}");
+                Console.WriteLine($"JSON deserialization error: {ex.Message}");
+                return;
             }
+
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Ensure there is at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                diagram.Pages.Add(new Page(0));
+            }
+
+            Page page = diagram.Pages[0];
+
+            // Starting coordinates for the root shape
+            double startX = 2.0;
+            double startY = 2.0;
+
+            // Build the diagram recursively
+            Shape rootGroup = BuildGroup(diagram, page, rootNode, startX, startY, 0);
+
+            // Optionally, you could set the name of the root group
+            if (rootGroup != null)
+            {
+                rootGroup.Name = rootNode.Name ?? "RootGroup";
+            }
+
+            // Save the diagram as VSDX
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
         }
 
-        private static Shape CreateShapeRecursive(Node node, Page page, double posX, double posY)
+        // Recursively creates shapes and groups them according to the hierarchy
+        private static Shape BuildGroup(Diagram diagram, Page page, Node node, double posX, double posY, int depth)
         {
-            try
+            // Create a rectangle shape for the current node
+            // Using master name "Rectangle" which is available in the default stencil
+            long rectId = diagram.AddShape(posX, posY, "Rectangle", 0);
+            Shape rectShape = page.Shapes.GetShape((int)rectId);
+            rectShape.Name = node.Name ?? $"Node_{depth}";
+            // Add text to the rectangle
+            rectShape.Text.Value.Clear();
+            rectShape.Text.Value.Add(new Txt(node.Name ?? $"Node_{depth}"));
+
+            // If there are no children, return the rectangle shape itself
+            if (node.Children == null || node.Children.Count == 0)
             {
-                // Leaf node: simple rectangle
-                if (node.Children == null || node.Children.Count == 0)
-                {
-                    long shapeId = page.AddShape(posX, posY, 2.0, 1.0, "Rectangle");
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    shape.Name = node.Name;
-                    return shape;
-                }
-
-                // Non‑leaf: create child shapes
-                List<Shape> childShapes = new List<Shape>();
-                double childPosX = posX;
-                double childPosY = posY + 2.0;
-                double childOffsetX = 3.0;
-
-                foreach (Node child in node.Children)
-                {
-                    Shape childShape = CreateShapeRecursive(child, page, childPosX, childPosY);
-                    if (childShape == null)
-                    {
-                        Console.Error.WriteLine($"Failed to create child shape for node '{child.Name}'.");
-                        return null;
-                    }
-                    childShapes.Add(childShape);
-                    childPosX += childOffsetX;
-                }
-
-                // Group child shapes
-                Shape groupShape = page.Shapes.Group(childShapes.ToArray());
-                groupShape.Name = node.Name;
-                return groupShape;
+                return rectShape;
             }
-            catch (Exception ex)
+
+            // Prepare a list to hold the parent rectangle and all child shapes/groups
+            List<Shape> groupMembers = new List<Shape> { rectShape };
+
+            // Layout children vertically with an offset
+            double childOffsetX = 2.5; // horizontal offset between parent and children
+            double childOffsetY = 2.0; // vertical spacing between sibling children
+            double currentY = posY;
+
+            foreach (Node child in node.Children)
             {
-                Console.Error.WriteLine($"Aspose error (node '{node.Name}'): {ex.Message}");
-                return null;
+                // Recursively build child group/shape
+                Shape childShape = BuildGroup(diagram, page, child, posX + childOffsetX, currentY, depth + 1);
+                if (childShape != null)
+                {
+                    groupMembers.Add(childShape);
+                }
+                // Move down for the next sibling
+                currentY += childOffsetY;
             }
+
+            // Create a group containing the parent rectangle and its children
+            Shape groupShape = page.Shapes.Group(groupMembers.ToArray());
+
+            // Optionally, set the group's name
+            groupShape.Name = node.Name ?? $"Group_{depth}";
+
+            return groupShape;
         }
     }
 }

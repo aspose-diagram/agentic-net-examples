@@ -2,95 +2,100 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Determine the folder containing the Visio files.
-            string inputFolder;
-            if (args.Length > 0)
-            {
-                inputFolder = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the full path to the folder with Visio files: ");
-                inputFolder = Console.ReadLine();
-            }
+            // Input folder containing Visio files
+            string inputFolder = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+            // Output folder for updated files
+            string outputFolder = args.Length > 1 ? args[1] : inputFolder;
 
-            if (string.IsNullOrWhiteSpace(inputFolder) || !Directory.Exists(inputFolder))
+            if (!Directory.Exists(inputFolder))
             {
-                Console.WriteLine("Invalid folder path. Exiting.");
+                Console.WriteLine($"Input folder does not exist: {inputFolder}");
                 return;
             }
 
-            // Define old‑to‑new formula mappings.
-            var formulaReplacements = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            if (!Directory.Exists(outputFolder))
             {
-                // Example mappings – adjust as needed for the new standards.
-                { "Width*Height", "Width*Height*0.9" },
-                { "SUM(Prop.Row1,Prop.Row2)", "SUM(Prop.Row1,Prop.Row2)*1.1" }
-            };
+                Directory.CreateDirectory(outputFolder);
+            }
 
-            // Process each .vsdx file in the folder.
-            string[] visioFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
-            foreach (string filePath in visioFiles)
+            // Process all VSDX files in the input folder
+            string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+            foreach (string filePath in diagramFiles)
             {
                 try
                 {
                     Console.WriteLine($"Processing file: {Path.GetFileName(filePath)}");
-
-                    // Load the diagram.
                     Diagram diagram = new Diagram(filePath);
 
-                    // Update field formulas throughout the diagram.
-                    UpdateFieldFormulas(diagram, formulaReplacements);
+                    UpdateFieldFormulas(diagram);
 
-                    // Save the updated diagram (overwrite original).
-                    diagram.Save(filePath, SaveFileFormat.Vsdx);
-
-                    Console.WriteLine("Successfully updated and saved.");
+                    string outputPath = Path.Combine(outputFolder,
+                        Path.GetFileNameWithoutExtension(filePath) + "_updated.vsdx");
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Saved updated diagram to: {outputPath}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing '{Path.GetFileName(filePath)}': {ex.Message}");
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
                 }
             }
 
-            Console.WriteLine("Bulk update operation completed.");
+            Console.WriteLine("Bulk update completed.");
         }
 
-        /// <summary>
-        /// Iterates over all pages, shapes, and fields in the diagram,
-        /// replacing field formulas according to the provided mapping.
-        /// </summary>
-        /// <param name="diagram">The diagram to modify.</param>
-        /// <param name="replacements">Dictionary where key = old formula, value = new formula.</param>
-        private static void UpdateFieldFormulas(Diagram diagram, Dictionary<string, string> replacements)
+        // Updates field formulas according to new calculation standards
+        private static void UpdateFieldFormulas(Diagram diagram)
         {
-            foreach (Page page in diagram.Pages)
+            // Define old-to-new formula mappings
+            Dictionary<string, string> formulaReplacements = new Dictionary<string, string>
             {
-                foreach (Shape shape in page.Shapes)
+                { "Width*Height", "Area" },
+                { "OldFormula", "NewFormula" }
+                // Add more mappings as needed
+            };
+
+            // Iterate through each page
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            {
+                // Iterate through each shape on the page
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Ensure the shape actually contains fields.
+                    // Ensure the shape has fields to process
                     if (shape.Fields == null || shape.Fields.Count == 0)
                         continue;
 
-                    foreach (Field field in shape.Fields)
+                    // Iterate through each field in the shape
+                    foreach (Aspose.Diagram.Field field in shape.Fields)
                     {
-                        // The current formula string is stored in field.Value.Ufev.F.
-                        string currentFormula = field.Value.Ufev.F;
-
+                        // Retrieve the current formula; skip if null or empty
+                        string currentFormula = field.Value?.Ufev?.F;
                         if (string.IsNullOrWhiteSpace(currentFormula))
                             continue;
 
-                        // Check if the current formula matches any key in the replacement map.
-                        if (replacements.TryGetValue(currentFormula, out string newFormula))
+                        string updatedFormula = currentFormula;
+
+                        // Apply all defined replacements
+                        foreach (KeyValuePair<string, string> kvp in formulaReplacements)
                         {
-                            // Update the formula.
-                            field.Value.Ufev.F = newFormula;
-                            Console.WriteLine($"Updated field in shape ID {shape.ID} on page '{page.Name}' from '{currentFormula}' to '{newFormula}'.");
+                            if (updatedFormula.Contains(kvp.Key))
+                            {
+                                updatedFormula = updatedFormula.Replace(kvp.Key, kvp.Value);
+                            }
+                        }
+
+                        // If the formula changed, assign the new value
+                        if (!updatedFormula.Equals(currentFormula, StringComparison.Ordinal))
+                        {
+                            field.Value.Ufev.F = updatedFormula;
+                            // Reset unit to undefined to avoid unintended unit handling
+                            field.Value.Ufev.Unit = MeasureConst.Undefined;
+                            Console.WriteLine($"Updated field formula on shape ID {shape.ID} on page '{page.Name}'.");
                         }
                     }
                 }

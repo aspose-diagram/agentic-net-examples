@@ -6,39 +6,45 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
+        // Path to the source Visio file
         string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-        string outputPath = "output.vsdx";
+        // Verify the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
 
         try
         {
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Name of the page to modify
+            string targetPageName = "MyPage";
+
+            // Retrieve the page by its textual name
+            Page page = diagram.Pages.GetPage(targetPageName);
+            if (page == null)
             {
-                // Name of the page to modify
-                string pageName = "MyPage";
-
-                // Retrieve the page by its textual name
-                Page page = diagram.Pages.GetPage(pageName);
-                if (page == null)
-                {
-                    throw new Exception($"Page '{pageName}' not found.");
-                }
-
-                // Set UIVisibility to hidden (false)
-                page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Hidden;
-
-                // Save the updated diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.Error.WriteLine($"Page \"{targetPageName}\" not found.");
+                diagram.Dispose();
+                return;
             }
+
+            // Hide the page from the UI by setting UIVisibility to Hidden
+            page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Hidden;
+
+            // Path for the modified diagram
+            string outputPath = "output.vsdx";
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            // Release diagram resources
+            diagram.Dispose();
+
+            Console.WriteLine("UIVisibility set to false and diagram saved successfully.");
         }
         catch (Exception ex)
         {
+            // Output any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -1,47 +1,44 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        try
-        {
-            Diagram diagram = new Diagram(inputPath);
-
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Expect the Visio file path as the first argument
+                if (args.Length == 0)
                 {
-                    if (shape.OneD)
+                    Console.WriteLine("Please provide the path to a Visio file as an argument.");
+                    return;
+                }
+
+                string filePath = args[0];
+
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    Console.WriteLine($"Page: {page.Name} (ID: {page.ID})");
+
+                    // Iterate through all connections on the page
+                    foreach (Connect connection in page.Connects)
                     {
-                        long sourceId = -1;
-                        long targetId = -1;
+                        long sourceId = connection.FromSheet;
+                        long targetId = connection.ToSheet;
 
-                        foreach (Connect conn in page.Connects)
-                        {
-                            if (conn.ToSheet == shape.ID)
-                                sourceId = conn.FromSheet;
-                            else if (conn.FromSheet == shape.ID)
-                                targetId = conn.ToSheet;
-                        }
-
-                        Console.WriteLine($"Connector ID: {shape.ID}, Source Shape ID: {sourceId}, Target Shape ID: {targetId}");
+                        Console.WriteLine($"Connector from Shape ID {sourceId} to Shape ID {targetId}");
                     }
                 }
+
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

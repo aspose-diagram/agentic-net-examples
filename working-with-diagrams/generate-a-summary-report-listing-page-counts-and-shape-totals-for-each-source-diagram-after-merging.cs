@@ -1,76 +1,76 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+
+class DiagramMerger
+{
+    public static void MergeAndReport(string[] sourceFiles, string outputFile)
+    {
+        var reports = new List<(string FileName, int PageCount, int ShapeCount)>();
+        Diagram mainDiagram = null;
+
+        foreach (var filePath in sourceFiles)
+        {
+            // Load diagram from file
+            var diagram = new Diagram(filePath);
+
+            // Count pages
+            int pageCount = diagram.Pages.Count;
+
+            // Count shapes on all pages
+            int shapeCount = 0;
+            foreach (Page page in diagram.Pages)
+            {
+                shapeCount += page.Shapes.Count;
+            }
+
+            reports.Add((Path.GetFileName(filePath), pageCount, shapeCount));
+
+            // Merge diagrams
+            if (mainDiagram == null)
+            {
+                mainDiagram = diagram; // first diagram becomes the base
+            }
+            else
+            {
+                mainDiagram.Combine(diagram);
+                diagram.Dispose(); // dispose merged diagram
+            }
+        }
+
+        // Save merged diagram
+        if (mainDiagram != null)
+        {
+            mainDiagram.Save(outputFile, SaveFileFormat.Vdx);
+        }
+
+        // Print summary report
+        Console.WriteLine("Merge Summary Report:");
+        foreach (var report in reports)
+        {
+            Console.WriteLine($"File: {report.FileName}, Pages: {report.PageCount}, Shapes: {report.ShapeCount}");
+        }
+
+        // Cleanup
+        mainDiagram?.Dispose();
+    }
+}
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Paths to source diagrams
-            string[] sourceFiles = { "source1.vsdx", "source2.vsdx", "source3.vsdx" };
-
-            // Store report data for each source diagram
-            var reportData = new List<(string FileName, int PageCount, int ShapeCount)>();
-
-            // Master diagram that will hold the combined result
-            Diagram masterDiagram = null;
-
-            foreach (string filePath in sourceFiles)
-            {
-                // Load each diagram using the provided constructor (load rule)
-                using (Diagram diagram = new Diagram(filePath))
-                {
-                    // Count pages
-                    int pageCount = diagram.Pages.Count;
-
-                    // Count shapes across all pages
-                    int shapeCount = 0;
-                    foreach (Page page in diagram.Pages)
-                    {
-                        shapeCount += page.Shapes.Count;
-                    }
-
-                    // Save counts for the summary report
-                    reportData.Add((filePath, pageCount, shapeCount));
-
-                    // Combine diagrams: first diagram becomes the master, others are merged into it
-                    if (masterDiagram == null)
-                    {
-                        // Create a new master diagram from the first file (using load rule)
-                        masterDiagram = new Diagram(filePath);
-                    }
-                    else
-                    {
-                        // Use the Combine method (combine rule) to merge the current diagram into the master
-                        masterDiagram.Combine(diagram);
-                    }
-                }
-            }
-
-            // Output the summary report
-            Console.WriteLine("Summary Report:");
-            foreach (var entry in reportData)
-            {
-                Console.WriteLine($"File: {entry.FileName}");
-                Console.WriteLine($"  Pages : {entry.PageCount}");
-                Console.WriteLine($"  Shapes: {entry.ShapeCount}");
-            }
-
-            // Optionally save the merged diagram using the provided Save method (save rule)
-            if (masterDiagram != null)
-            {
-                masterDiagram.Save("merged.vsdx", SaveFileFormat.Vsdx);
-                masterDiagram.Dispose();
-            }
+            DiagramMerger.MergeAndReport(null, "");
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.NullReferenceException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
 }

@@ -1,100 +1,61 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.Printing;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram. Replace with your actual file path.
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages to apply consistent print settings.
+            foreach (Page page in diagram.Pages)
             {
+                // 1. Set page orientation.
+                // Landscape often provides better utilization of printer paper width.
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
+                // 2. Define scaling factors.
+                // Use 1.0 (100%) for exact size or adjust (e.g., 0.75) to shrink content.
+                page.PageSheet.PrintProps.ScaleX.Value = 1.0; // 100% width
+                page.PageSheet.PrintProps.ScaleY.Value = 1.0; // 100% height
 
-                // Path to the output PDF file
-                string outputPath = "output.pdf";
+                // 3. Enable "Fit to Sheet" to force the diagram onto a single printed page.
+                page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
+                page.PageSheet.PrintProps.PagesX.Value = 1; // one sheet across
+                page.PageSheet.PrintProps.PagesY.Value = 1; // one sheet down
 
-                // Load the diagram inside a using block to ensure resources are released
-                using (Diagram diagram = new Diagram(sourcePath))
-                {
-                    // Iterate over each page explicitly typed as Page
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // ------------------------------
-                        // 1. Set page orientation
-                        // ------------------------------
-                        // Choose Landscape for wide diagrams, Portrait for tall diagrams.
-                        // SameAsPrinter lets the printer decide based on its default.
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-
-                        // ------------------------------
-                        // 2. Configure scaling
-                        // ------------------------------
-                        // ScaleX and ScaleY are expressed as a factor (1.0 = 100%).
-                        // Values > 1 enlarge the diagram, values < 1 shrink it.
-                        // Typical print quality uses 0.75 (75%) to fit more content.
-                        page.PageSheet.PrintProps.ScaleX.Value = 0.75;
-                        page.PageSheet.PrintProps.ScaleY.Value = 0.75;
-
-                        // ------------------------------
-                        // 3. Fit to sheet (optional)
-                        // ------------------------------
-                        // When true, Visio scales the drawing to fit the specified number of pages.
-                        // Setting PagesX and PagesY to 1 forces a single‑sheet print.
-                        page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
-                        page.PageSheet.PrintProps.PagesX.Value = 1;
-                        page.PageSheet.PrintProps.PagesY.Value = 1;
-
-                        // ------------------------------
-                        // 4. Set printer margins
-                        // ------------------------------
-                        // Margins are in inches. Use a small margin (e.g., 0.25") to maximize printable area
-                        // while avoiding clipping on most printers.
-                        page.PageSheet.PrintProps.PageTopMargin.Value = 0.25;
-                        page.PageSheet.PrintProps.PageBottomMargin.Value = 0.25;
-                        page.PageSheet.PrintProps.PageLeftMargin.Value = 0.25;
-                        page.PageSheet.PrintProps.PageRightMargin.Value = 0.25;
-
-                        // ------------------------------
-                        // 5. Validate page size
-                        // ------------------------------
-                        // Ensure the page dimensions are reasonable for the target printer.
-                        // Typical A4 size is 8.27" x 11.69". Adjust if needed.
-                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                        if (pageWidth <= 0 || pageHeight <= 0)
-                        {
-                            throw new Exception($"Invalid page size detected on page '{page.Name}'. Width: {pageWidth}, Height: {pageHeight}");
-                        }
-
-                        // ------------------------------
-                        // 6. Log configuration (optional)
-                        // ------------------------------
-                        Console.WriteLine($"Configured page '{page.Name}' (ID: {page.ID}):");
-                        Console.WriteLine($"  Orientation: {page.PageSheet.PrintProps.PrintPageOrientation.Value}");
-                        Console.WriteLine($"  ScaleX: {page.PageSheet.PrintProps.ScaleX.Value}");
-                        Console.WriteLine($"  ScaleY: {page.PageSheet.PrintProps.ScaleY.Value}");
-                        Console.WriteLine($"  Fit to sheet: {page.PageSheet.PrintProps.OnPage.Value}");
-                        Console.WriteLine($"  Margins (in): Top={page.PageSheet.PrintProps.PageTopMargin.Value}, Bottom={page.PageSheet.PrintProps.PageBottomMargin.Value}, Left={page.PageSheet.PrintProps.PageLeftMargin.Value}, Right={page.PageSheet.PrintProps.PageRightMargin.Value}");
-                    }
-
-                    // Save the diagram as PDF to preserve print settings.
-                    // Using SaveOptions ensures that the print configuration is embedded.
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.DefaultFont = "Arial"; // Fallback font for Unicode characters
-                    diagram.Save(outputPath, pdfOptions);
-                }
-
-                Console.WriteLine("Diagram processing completed successfully.");
-
+                // 4. Set printable margins (in inches). 0.25" is a common safe margin.
+                double marginInches = 0.25;
+                page.PageSheet.PrintProps.PageTopMargin.Value = marginInches;
+                page.PageSheet.PrintProps.PageBottomMargin.Value = marginInches;
+                page.PageSheet.PrintProps.PageLeftMargin.Value = marginInches;
+                page.PageSheet.PrintProps.PageRightMargin.Value = marginInches;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the updated diagram to PDF.
+            // PdfSaveOptions allows us to specify a fallback font for characters not present on the printer.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            pdfOptions.ExportHiddenPage = false; // Exclude hidden pages from the print output.
+
+            diagram.Save("output.pdf", pdfOptions);
+
+            // Clean up resources.
+            diagram.Dispose();
+
+            Console.WriteLine("Print configuration applied and diagram saved as PDF.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

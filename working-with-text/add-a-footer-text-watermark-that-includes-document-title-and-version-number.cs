@@ -1,28 +1,36 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Load an existing Visio diagram (replace with your file path)
-                Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-                // Build the footer text using the document title and version number
-                string title = diagram.DocumentProps.Title;
-                string version = diagram.Version; // Version is a string
-                diagram.HeaderFooter.FooterCenter = $"{title} v{version}";
+            // Retrieve document title and version
+            string title = diagram.DocumentProps.Title ?? string.Empty;
+            string version = diagram.Version ?? string.Empty;
 
-                // Optionally, save the updated diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Compose footer watermark text
+            string footerText = $"{title} - Version {version}";
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Assign the watermark to the right side of the footer
+            diagram.HeaderFooter.FooterRight = footerText;
+
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,57 +1,80 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Access the first page (adjust index as needed)
+                // Process shapes on the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Retrieve a shape by its ID (replace 1 with the target shape ID)
-                Shape shape = page.Shapes.GetShape(1);
-
-                // Ensure the shape has text
-                if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Plain text of the shape
-                    string plainText = shape.Text.Value.Text;
-
-                    // Iterate over each character formatting entry
-                    foreach (Aspose.Diagram.Char ch in shape.Chars)
+                    // Ensure the shape has text
+                    if (shape.Text != null && !string.IsNullOrEmpty(shape.Text.Value.Text))
                     {
-                        // IX is the zero‑based character index within the shape's text
-                        int charIndex = ch.IX;
+                        string plainText = shape.Text.Value.Text;
 
-                        // Guard against out‑of‑range indices
-                        if (charIndex >= 0 && charIndex < plainText.Length)
+                        // Iterate over each character in the text
+                        for (int i = 0; i < plainText.Length; i++)
                         {
-                            char currentChar = plainText[charIndex];
+                            char c = plainText[i];
 
-                            // If the character is a digit, set a larger font size (e.g., 12 pt)
-                            if (char.IsDigit(currentChar))
+                            // Check if the character is a digit
+                            if (char.IsDigit(c))
                             {
-                                // Font size is specified in inches (points / 72)
-                                ch.Size.Value = 12.0 / 72.0;
+                                // Try to find an existing Char object for this index
+                                Aspose.Diagram.Char targetChar = null;
+                                foreach (Aspose.Diagram.Char ch in shape.Chars)
+                                {
+                                    if (ch.IX == i)
+                                    {
+                                        targetChar = ch;
+                                        break;
+                                    }
+                                }
+
+                                // Desired font size in points (e.g., 14 pt) converted to inches
+                                double sizeInInches = 14.0 / 72.0;
+
+                                if (targetChar != null)
+                                {
+                                    // Update the size of the existing character formatting
+                                    targetChar.Size.Value = sizeInInches;
+                                }
+                                else
+                                {
+                                    // Create a new Char entry for this character index
+                                    Aspose.Diagram.Char newChar = new Aspose.Diagram.Char();
+                                    newChar.IX = i;
+                                    newChar.Size.Value = sizeInInches;
+                                    shape.Chars.Add(newChar);
+                                }
                             }
-                            // Non‑numeric characters retain their existing size (no action needed)
+                            // Non‑numeric characters are left unchanged
                         }
                     }
                 }
 
                 // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

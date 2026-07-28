@@ -1,78 +1,67 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect two arguments: input Visio file path and output Visio file path
-            if (args.Length < 2)
+
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Define the legend entries that map color codes to their meanings
+            string[] legendLines = new string[]
             {
-                Console.WriteLine("Usage: DiagramLegendUtility <input.vsdx> <output.vsdx>");
-                return;
-            }
+                "Color1: Red",
+                "Color2: Green",
+                "Color3: Blue",
+                "Color4: Yellow"
+            };
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+            // Add the legend to the first page at a chosen position
+            LegendUtility.AddLegend(diagram, pinX: 5.0, pinY: 5.0, legendLines);
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Save the modified diagram (replace with your desired output path)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-            // Assume we work with the first page
-            Page page = diagram.Pages[0];
-
-            // Collect fill foreground colors from shapes that are not deleted
-            Dictionary<string, int> colorUsage = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (Shape shape in page.Shapes)
-            {
-                // Skip deleted shapes
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                string fillColor = shape.Fill.FillForegnd.Value;
-                if (!string.IsNullOrWhiteSpace(fillColor))
-                {
-                    if (colorUsage.ContainsKey(fillColor))
-                        colorUsage[fillColor]++;
-                    else
-                        colorUsage[fillColor] = 1;
-                }
-            }
-
-            // Build legend text
-            var legendLines = new List<string>();
-            legendLines.Add("Legend (Fill Color - Shape Count):");
-            foreach (var kvp in colorUsage)
-            {
-                legendLines.Add($"{kvp.Key} - {kvp.Value}");
-            }
-
-            string legendText = string.Join("\n", legendLines);
-
-            // Determine placement for the legend (top‑left corner of the page)
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-            double pinX = 1.0;                     // 1 inch from left edge
-            double pinY = pageHeight - 1.0;        // 1 inch from top edge
-            double legendWidth = 5.0;              // width in inches
-            double legendHeight = 2.0;             // height in inches
-            string fontName = "Arial";
-            string fontColor = "#000000";          // black text
-            double fontSizeInches = 0.2;           // approx 14 pt (14/72)
-
-            // Add the legend as a text shape
-            Shape legendShape = page.AddText(pinX, pinY, legendWidth, legendHeight,
-                                            legendText, fontName, fontColor, fontSizeInches);
-
-            // Optionally, give the legend a light background fill for readability
-            legendShape.Fill.FillPattern.Value = 1;               // solid fill
-            legendShape.Fill.FillForegnd.Value = "#FFFFE0";       // light yellow
-            legendShape.Line.LinePattern.Value = 0;              // no border
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Legend added and diagram saved to '{outputPath}'.");
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}
+
+static class LegendUtility
+{
+    /// <summary>
+    /// Adds a text shape that serves as a legend describing color codes.
+    /// </summary>
+    /// <param name="diagram">The Visio diagram.</param>
+    /// <param name="pinX">X‑coordinate of the legend’s pin (center).</param>
+    /// <param name="pinY">Y‑coordinate of the legend’s pin (center).</param>
+    /// <param name="lines">Array of strings, each representing one legend entry.</param>
+    public static void AddLegend(Diagram diagram, double pinX, double pinY, string[] lines)
+    {
+        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
+        if (lines == null || lines.Length == 0) return;
+
+        // Combine the lines using Visio’s line‑break token (\n)
+        string legendText = string.Join("\\n", lines);
+
+        // Estimate width and height for the text shape
+        double width = 2.5;                                   // inches
+        double lineHeight = 0.2;                              // approximate height per line (inches)
+        double height = lines.Length * lineHeight + 0.2;      // add a little padding
+
+        // Add the text shape to the first page
+        Page page = diagram.Pages[0];
+        Shape legendShape = page.AddText(pinX, pinY, width, height,
+                                         legendText, "Arial", "0,0,0", 0.2);
+
+        // Optional: make the legend’s background transparent (no fill)
+        legendShape.Fill.FillPattern.Value = 0; // 0 = no fill
+    }
+}

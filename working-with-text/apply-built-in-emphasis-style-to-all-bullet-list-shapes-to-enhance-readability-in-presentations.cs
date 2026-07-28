@@ -1,65 +1,74 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main()
         {
-
-            // Input and output file paths (use defaults if not provided)
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Locate the built‑in "Emphasis" style sheet (if it exists)
-            StyleSheet emphasisStyle = null;
-            foreach (StyleSheet ss in diagram.StyleSheets)
+            try
             {
-                if (ss.Name == "Emphasis")
+
+                // Load an existing Visio diagram
+                var diagram = new Diagram("input.vsdx");
+
+                // Locate the built‑in "Emphasis" style sheet (if it exists)
+                StyleSheet emphasisStyle = null;
+                foreach (StyleSheet ss in diagram.StyleSheets)
                 {
-                    emphasisStyle = ss;
-                    break;
+                    if (ss.Name == "Emphasis")
+                    {
+                        emphasisStyle = ss;
+                        break;
+                    }
                 }
-            }
 
-            if (emphasisStyle == null)
-            {
-                Console.WriteLine("Emphasis style not found in the document. No changes will be applied.");
-            }
-            else
-            {
+                // If the style sheet is not found, inform the user and exit
+                if (emphasisStyle == null)
+                {
+                    Console.WriteLine("Emphasis style sheet not found in the document.");
+                    return;
+                }
+
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Check if the shape contains at least one paragraph with a bullet
-                        if (shape.Paras != null && shape.Paras.Count > 0)
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Determine whether the shape contains any bullet‑formatted paragraphs
+                        bool hasBullet = false;
+                        foreach (var para in shape.Paras)
                         {
-                            // Examine the first paragraph; if it has a bullet other than None, treat it as a bullet list shape
-                            if (shape.Paras[0].Bullet != null && shape.Paras[0].Bullet.Value != BulletValue.None)
+                            // Bullet cell may be null for some shapes; guard against it
+                            if (para.Bullet != null && para.Bullet.Value != BulletValue.None)
                             {
-                                // Apply the Emphasis style to the shape's text
-                                shape.TextStyle = emphasisStyle;
+                                hasBullet = true;
+                                break;
                             }
+                        }
+
+                        // Apply the Emphasis style to shapes that contain bullet lists
+                        if (hasBullet)
+                        {
+                            shape.TextStyle = emphasisStyle;
+                            shape.FillStyle = emphasisStyle;
+                            shape.LineStyle = emphasisStyle;
                         }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                Console.WriteLine("Emphasis style applied and diagram saved as output.vsdx");
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

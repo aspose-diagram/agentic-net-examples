@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,36 +11,45 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram(@"input.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Get the plain text of the shape
-                    string originalText = shape.GetPureText();
+                    // Get the plain (unformatted) text of the shape
+                    string plainText = shape.GetPureText();
 
-                    // If the shape contains text, compute its length and annotate
-                    if (!string.IsNullOrEmpty(originalText))
+                    // Process only shapes that contain text
+                    if (!string.IsNullOrEmpty(plainText))
                     {
-                        int length = originalText.Length;
+                        // Compute character count
+                        int charCount = plainText.Length;
 
-                        // Create the new annotated text (e.g., "Hello (5)")
-                        string annotatedText = $"{originalText} ({length})";
+                        // Prepare annotation text
+                        string annotation = $"Length: {charCount}";
 
-                        // Set the new text without formatting
-                        shape.Text.Value.SetWholeText(annotatedText);
+                        // Use the shape's position as a reference point
+                        double pinX = shape.XForm.PinX.Value;
+                        double pinY = shape.XForm.PinY.Value;
 
-                        // Refresh shape data so the diagram updates correctly
-                        shape.RefreshData();
+                        // Add a new text shape slightly below the original shape
+                        // Width and height are arbitrary; adjust as needed
+                        double width = 1.0;
+                        double height = 0.2;
+                        double offsetY = 0.5; // vertical offset for the annotation
+
+                        Shape annotationShape = page.AddText(pinX, pinY - offsetY, width, height, annotation);
+
+                        // Refresh the newly added shape so its geometry is calculated correctly
+                        annotationShape.RefreshData();
                     }
                 }
             }
 
             // Save the modified diagram
-            diagram.Save(@"output.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

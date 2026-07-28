@@ -1,49 +1,50 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            // Path for the diagram file
-            const string filePath = "WatermarkedDiagram.vsdx";
 
-            // Create a new diagram (empty)
-            using (Diagram diagram = new Diagram())
+            // Paths – adjust as needed
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+            const string watermarkText = "CONFIDENTIAL";
+
+            // Load the original diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure at least one page exists
-                if (diagram.Pages.Count == 0)
-                {
-                    diagram.Pages.Add(new Page());
-                }
-
-                // Add a watermark to every page
-                const string watermarkText = "CONFIDENTIAL";
-                const string fontName = "Arial";
-                const string fontColor = "#CCCCCC"; // light gray
-                const double fontSizeInches = 0.5;   // approx 36 points
-
+                // Add watermark to every page
                 foreach (Page page in diagram.Pages)
                 {
                     // Retrieve page dimensions (in inches)
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Add a text shape that covers the whole page
-                    // PinX and PinY are the lower‑left corner of the text box
-                    page.AddText(0, 0, pageWidth, pageHeight, watermarkText, fontName, fontColor, fontSizeInches);
+                    // Center position for the watermark
+                    double pinX = pageWidth / 2.0;
+                    double pinY = pageHeight / 2.0;
+
+                    // Font size in inches (e.g., 0.5 inches ≈ 36 points)
+                    double fontSizeInches = 0.5;
+
+                    // Add the watermark text covering the full page area
+                    page.AddText(pinX, pinY, pageWidth, pageHeight,
+                                 watermarkText, "Arial", "#CCCCCC", fontSizeInches);
                 }
 
-                // Save the diagram to a file (VSDX format)
-                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                // Save the diagram with watermarks
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Load the saved diagram for validation
-            using (Diagram loadedDiagram = new Diagram(filePath))
+            // Reload the saved diagram to verify watermarks
+            using (Diagram savedDiagram = new Diagram(outputPath))
             {
-                // Validate that each page contains the watermark text
-                foreach (Page page in loadedDiagram.Pages)
+                foreach (Page page in savedDiagram.Pages)
                 {
                     bool watermarkFound = false;
 
@@ -52,7 +53,8 @@ class Program
                         // Get plain text of the shape
                         string shapeText = shape.Text.Value.Text;
 
-                        if (!string.IsNullOrEmpty(shapeText) && shapeText.Contains("CONFIDENTIAL"))
+                        if (!string.IsNullOrWhiteSpace(shapeText) &&
+                            shapeText.Contains(watermarkText, StringComparison.OrdinalIgnoreCase))
                         {
                             watermarkFound = true;
                             break;
@@ -65,7 +67,13 @@ class Program
                     }
                 }
 
-                Console.WriteLine("Watermark validation succeeded: present on all pages.");
+                Console.WriteLine("Validation successful: Watermark appears on every page.");
             }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

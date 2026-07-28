@@ -4,60 +4,71 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input and output file paths (adjust as needed)
+            // Load an existing Visio diagram.
+            // Replace the path with your actual file location.
             string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Add or update timestamp watermark on each page
-            AddTimestampWatermark(diagram);
+            // Current timestamp to be used as watermark text.
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-            // Save the diagram (the watermark will be persisted)
+            // Iterate through all pages and add or update the watermark.
+            foreach (Page page in diagram.Pages)
+            {
+                // Retrieve page dimensions (in inches).
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Search for an existing watermark shape by its name.
+                Shape watermarkShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.NameU != null && shape.NameU.Equals("Watermark", StringComparison.OrdinalIgnoreCase))
+                    {
+                        watermarkShape = shape;
+                        break;
+                    }
+                }
+
+                if (watermarkShape != null)
+                {
+                    // Update the existing watermark text.
+                    watermarkShape.Text.Value.Clear();
+                    watermarkShape.Text.Value.Add(new Txt(timestamp));
+                }
+                else
+                {
+                    // Add a new text shape that covers the whole page.
+                    // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches).
+                    Shape newShape = page.AddText(
+                        0,                     // pinX (left)
+                        0,                     // pinY (bottom)
+                        pageWidth,             // width
+                        pageHeight,            // height
+                        timestamp,             // watermark text
+                        "Calibri",             // font name
+                        "#a5a5a5",             // light gray color
+                        0.25);                 // font size in inches (~18 pt)
+
+                    // Assign a recognizable name to the shape for future updates.
+                    newShape.Name = "Watermark";
+                    newShape.NameU = "Watermark";
+                }
+            }
+
+            // Save the diagram. The watermark will reflect the current timestamp each time this code runs.
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    // Adds a timestamp watermark to every page of the diagram
-    static void AddTimestampWatermark(Diagram diagram)
-    {
-        // Current timestamp string
-        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-        // Font settings for the watermark
-        const string fontName = "Calibri";
-        const string fontColor = "#A0A0A0"; // Light gray
-        const double fontSizeInches = 0.2;   // Approx. 14.4 points (0.2 * 72)
-
-        foreach (Page page in diagram.Pages)
-        {
-            // Full page dimensions
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-            // Position the watermark at the bottom-right corner with a small margin
-            double margin = 0.2; // inches
-            double pinX = pageWidth - margin;
-            double pinY = margin;
-
-            // Add the watermark text shape
-            Shape watermarkShape = page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                                timestamp, fontName, fontColor, fontSizeInches);
-
-            // Optional: send the watermark to the back so it doesn't obscure other shapes
-            // Note: BringToFront/SendToBack use shape IDs (long)
-            page.SendToBack(watermarkShape.ID);
         }
     }
 }

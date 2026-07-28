@@ -1,46 +1,59 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the source Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Watermark configuration
-            string watermarkText = "CONFIDENTIAL";
-            string fontName = "Arial";
-            string fontColor = "#CCCCCC"; // Light gray
-            double fontSizePoints = 72; // 72 points = 1 inch
-            double fontSizeInches = fontSizePoints / 72.0;
-
-            // Add the watermark to every page – minimal per‑page work for performance
-            foreach (Page page in diagram.Pages)
+            try
             {
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Add a full‑page text shape; the shape will be rendered as a watermark
-                page.AddText(0, 0, pageWidth, pageHeight, watermarkText, fontName, fontColor, fontSizeInches);
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Collect pages into a list for parallel processing
+                List<Page> pages = new List<Page>();
+                foreach (Page page in diagram.Pages)
+                {
+                    pages.Add(page);
+                }
+
+                // Parallelize watermark addition across pages
+                Parallel.ForEach(pages, page =>
+                {
+                    // Retrieve page dimensions (in inches)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Center position for the watermark
+                    double pinX = pageWidth / 2.0;
+                    double pinY = pageHeight / 2.0;
+
+                    // Watermark text and style
+                    string watermarkText = "CONFIDENTIAL";
+                    string fontName = "Arial";
+                    string fontColor = "#CCCCCC"; // Light gray
+                    double fontSizeInInches = 0.5; // Approx. 36 points (0.5 inch)
+
+                    // Add full‑page watermark using the AddText overload
+                    // Width and height are set to the full page size
+                    page.AddText(pinX, pinY, pageWidth, pageHeight,
+                                 watermarkText, fontName, fontColor, fontSizeInInches);
+                });
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the diagram as PDF with a fallback font
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-
-            diagram.Save("output.pdf", pdfOptions);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

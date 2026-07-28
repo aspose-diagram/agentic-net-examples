@@ -1,11 +1,11 @@
 {
   "category": "working-with-text",
   "display_name": "Working With Text",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 89,
   "pass_rate": 100.0,
-  "generated": "2026-06-12",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,7 +14,8 @@
       "task": "Add a footer text watermark that includes document title and version number",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -35,6 +36,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -44,13 +46,11 @@
       "task": "Adjust watermark opacity to a configurable value between 10 and 90",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -61,14 +61,15 @@
       "task": "Allow users to specify watermark rotation angle in degrees via configuration",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -78,6 +79,7 @@
       "task": "Apply a custom color to the watermark text based on user defined palette",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -95,23 +97,6 @@
       "task": "Apply a custom stylesheet that changes text color based on shape type then validate color assignments",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Page",
-        "Pages",
-        "Save",
-        "Shapes"
-      ]
-    },
-    {
-      "slug": "apply-a-custom-stylesheet-that-defines-paragraph-spacing-then-verify-spacing-changes-on-target-shapes",
-      "file": "apply-a-custom-stylesheet-that-defines-paragraph-spacing-then-verify-spacing-changes-on-target-shapes.cs",
-      "task": "Apply a custom stylesheet that defines paragraph spacing then verify spacing changes on target shapes",
-      "namespaces": [
-        "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System"
       ],
@@ -124,13 +109,31 @@
       ]
     },
     {
+      "slug": "apply-a-custom-stylesheet-that-defines-paragraph-spacing-then-verify-spacing-changes-on-target-shapes",
+      "file": "apply-a-custom-stylesheet-that-defines-paragraph-spacing-then-verify-spacing-changes-on-target-shapes.cs",
+      "task": "Apply a custom stylesheet that defines paragraph spacing then verify spacing changes on target shapes",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "StyleSheet",
+        "StyleSheets",
+        "diagram"
+      ]
+    },
+    {
       "slug": "apply-a-custom-stylesheet-that-defines-text-alignment-then-align-all-paragraph-texts-to-center-on-page-two",
       "file": "apply-a-custom-stylesheet-that-defines-text-alignment-then-align-all-paragraph-texts-to-center-on-page-two.cs",
       "task": "Apply a custom stylesheet that defines text alignment then align all paragraph texts to center on page two",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -146,7 +149,8 @@
       "task": "Apply a custom stylesheet that defines underline style then underline all headings in the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -162,14 +166,15 @@
       "task": "Apply a custom stylesheet that sets line height then verify line spacing on multi line text shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "StyleSheet"
       ]
     },
     {
@@ -179,8 +184,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -196,8 +200,8 @@
       "task": "Apply a custom stylesheet with specific font and size to all title shapes across the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -213,13 +217,14 @@
       "task": "Apply built in caption style to all shapes on page five to ensure consistent footnote formatting",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "StyleSheets",
         "diagram"
       ]
     },
@@ -229,7 +234,8 @@
       "task": "Apply built in caption style to shapes whose text length is less than ten characters for uniform captions",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -245,8 +251,8 @@
       "task": "Apply built in emphasis style to all bullet list shapes to enhance readability in presentations",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -262,7 +268,8 @@
       "task": "Apply built in emphasis style to shapes containing the word alert to highlight critical information",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -278,7 +285,8 @@
       "task": "Apply built in subtitle style to shapes whose text starts with a numeric prefix for consistency",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -294,6 +302,7 @@
       "task": "Apply built in title style to shapes whose text length exceeds twenty characters for consistency",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -328,8 +337,8 @@
       "task": "Apply the built in heading 1 stylesheet to shape id 10 for standardized title formatting",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -345,6 +354,7 @@
       "task": "Apply the watermark to all pages in the loaded visio document",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -362,9 +372,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "Aspose.Drawing.Text",
         "System",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -394,7 +403,6 @@
       "task": "Create a batch operation that loads diagrams rotates all title shape texts by 180 degrees and saves",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -412,12 +420,12 @@
       "task": "Create a batch process that adds numbered text shapes to each page using the page index as label",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
         "Save",
         "diagram"
@@ -435,10 +443,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
-        "StyleSheet",
-        "StyleSheets",
-        "diagram"
+        "Shapes",
+        "StyleSheet"
       ]
     },
     {
@@ -464,11 +472,10 @@
       "task": "Create a macro that iterates through pages and appends the configured watermark",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
@@ -497,12 +504,10 @@
       "task": "Create a script that adds a footer text shape to every page displaying the page number dynamically",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -513,13 +518,11 @@
       "task": "Create a semi transparent text watermark layer for the current page",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "diagram"
@@ -531,14 +534,12 @@
       "task": "Create a utility that adds a legend text shape describing color codes used in styled shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.Collections.Generic"
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -548,7 +549,9 @@
       "task": "Create a utility that adds a watermark text shape diagonally across each page with thirty percent opacity",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -564,12 +567,12 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -581,14 +584,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -597,9 +601,7 @@
       "task": "Ensure the watermark respects page margins and does not extend beyond printable area",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -614,7 +616,6 @@
       "task": "Export the modified diagram to a new vsdx file preserving original content",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -633,6 +634,7 @@
         "System",
         "System.Collections.Generic",
         "System.IO",
+        "System.Linq",
         "System.Text.RegularExpressions"
       ],
       "key_apis": [
@@ -651,7 +653,8 @@
         "Aspose.Diagram",
         "System",
         "System.IO",
-        "System.Text"
+        "System.Text",
+        "System.Text.RegularExpressions"
       ],
       "key_apis": [
         "Diagram",
@@ -669,7 +672,7 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO",
+        "System.Linq",
         "System.Text",
         "System.Text.RegularExpressions"
       ],
@@ -741,6 +744,7 @@
       "task": "Extract plain text from each shape compute character count and annotate each shape with its length",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -795,6 +799,7 @@
       "task": "Find and replace the phrase draft with final across all shapes on page two of the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -818,7 +823,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -828,8 +832,7 @@
       "task": "Find and replace the string v1 0 with v2 0 in shapes that have a custom property version set",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -845,7 +848,6 @@
       "task": "Find and replace the string version 1 0 with version 2 0 only on shapes on the first page",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -862,7 +864,8 @@
       "task": "Find shapes containing the word confidential and replace it with public while preserving other text",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -878,6 +881,7 @@
       "task": "Find shapes with empty text fields and automatically populate them with a generated unique identifier",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -920,10 +924,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Fonts",
         "Pages",
         "PdfSaveOptions",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -957,7 +961,7 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -966,7 +970,8 @@
       "task": "Iterate through characters of a shape s text change font size for numeric characters and keep others unchanged",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -983,7 +988,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -999,6 +1005,7 @@
       "task": "Iterate through each character in shape id 7 assigning bold formatting to the first three characters",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1006,7 +1013,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -1016,14 +1022,13 @@
       "task": "Load a custom vss file and apply the customstyle stylesheet to shape id 12 for unique appearance",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "StyleSheet",
+        "Shapes",
         "StyleSheets"
       ]
     },
@@ -1033,7 +1038,6 @@
       "task": "Load a diagram find shapes with empty text and populate them with default placeholder values",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -1050,7 +1054,8 @@
       "task": "Load a diagram find shapes with text longer than one hundred characters and truncate them with ellipsis",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1081,8 +1086,7 @@
       "task": "Load an existing vdx file retrieve shape id 5 and replace its text with a dynamic string",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1097,7 +1101,6 @@
       "task": "Load multiple vdx files from a directory update their header shapes with the current date and save changes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1129,6 +1132,23 @@
       "task": "Optimize watermark rendering performance for large diagrams with many pages",
       "namespaces": [
         "Aspose.Diagram",
+        "System",
+        "System.Collections.Generic",
+        "System.Threading.Tasks"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "position-the-watermark-at-the-center-of-each-page-with-a-45-degree-rotation",
+      "file": "position-the-watermark-at-the-center-of-each-page-with-a-45-degree-rotation.cs",
+      "task": "Position the watermark at the center of each page with a 45 degree rotation",
+      "namespaces": [
+        "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
@@ -1142,28 +1162,12 @@
       ]
     },
     {
-      "slug": "position-the-watermark-at-the-center-of-each-page-with-a-45-degree-rotation",
-      "file": "position-the-watermark-at-the-center-of-each-page-with-a-45-degree-rotation.cs",
-      "task": "Position the watermark at the center of each page with a 45 degree rotation",
-      "namespaces": [
-        "Aspose.Diagram",
-        "System"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "Save",
-        "diagram"
-      ]
-    },
-    {
       "slug": "provide-an-api-method-to-retrieve-current-watermark-settings-from-a-diagram",
       "file": "provide-an-api-method-to-retrieve-current-watermark-settings-from-a-diagram.cs",
       "task": "Provide an api method to retrieve current watermark settings from a diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1179,7 +1183,6 @@
       "task": "Provide an option to remove existing watermarks from a diagram before adding new ones",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -1248,8 +1251,7 @@
       "task": "Replace all occurrences of the word confidential with public only in shapes tagged as review",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1282,9 +1284,9 @@
       "task": "Replace double spaces in shape texts with single spaces to improve text compactness across the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.AutoLayout",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text.RegularExpressions"
       ],
       "key_apis": [
         "Diagram",
@@ -1317,12 +1319,15 @@
       "task": "Replace placeholder text name with actual user names in every shape on the diagram page",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -1349,13 +1354,14 @@
       "task": "Rotate text of shapes on page five by minus thirty degrees to match diagonal layout of associated graphics",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -1372,7 +1378,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -1398,7 +1403,8 @@
       "task": "Set text rotation to 270 degrees for all side label shapes and verify orientation",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1414,26 +1420,7 @@
       "task": "Set text rotation to 90 degrees for all shapes on page three to create vertical labels",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "Save",
-        "diagram"
-      ]
-    },
-    {
-      "slug": "set-watermark-transparency-to-match-corporate-branding-guidelines-for-consistent-appearance",
-      "file": "set-watermark-transparency-to-match-corporate-branding-guidelines-for-consistent-appearance.cs",
-      "task": "Set watermark transparency to match corporate branding guidelines for consistent appearance",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1444,11 +1431,28 @@
       ]
     },
     {
+      "slug": "set-watermark-transparency-to-match-corporate-branding-guidelines-for-consistent-appearance",
+      "file": "set-watermark-transparency-to-match-corporate-branding-guidelines-for-consistent-appearance.cs",
+      "task": "Set watermark transparency to match corporate branding guidelines for consistent appearance",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
       "slug": "update-the-watermark-text-dynamically-based-on-metadata-stored-in-the-diagram",
       "file": "update-the-watermark-text-dynamically-based-on-metadata-stored-in-the-diagram.cs",
       "task": "Update the watermark text dynamically based on metadata stored in the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1465,7 +1469,6 @@
       "task": "Use a diagonal watermark pattern that repeats across the page background",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1484,14 +1487,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -1500,7 +1504,6 @@
       "task": "Verify that the watermark does not increase file size beyond a specified limit",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

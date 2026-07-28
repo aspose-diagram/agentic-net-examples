@@ -1,51 +1,55 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            using (Diagram diagram = new Diagram("input.vsdx"))
             {
-
-                // Load an existing Visio diagram (replace with your file path)
-                using (Diagram diagram = new Diagram("input.vsdx"))
+                // Process each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all pages in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Retrieve page dimensions (in inches)
-                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    // Retrieve page dimensions (in inches)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                        // Calculate the center point of the page
-                        double centerX = pageWidth / 2.0;
-                        double centerY = pageHeight / 2.0;
+                    // Calculate center coordinates
+                    double pinX = pageWidth / 2.0;
+                    double pinY = pageHeight / 2.0;
 
-                        // Add a full‑page text shape that will serve as the watermark
-                        // Font size is specified in inches (0.25 inch ≈ 18 pt)
-                        Shape watermark = page.AddText(
-                            centerX,               // PinX (center X)
-                            centerY,               // PinY (center Y)
-                            pageWidth,             // Width (full page)
-                            pageHeight,            // Height (full page)
-                            "Watermark",           // Text content
-                            "Arial",               // Font name
-                            "#A5A5A5",             // Font color (hex)
-                            0.25);                 // Font size (in inches)
+                    // Add a text shape that will serve as the watermark
+                    // Width and height are set to the full page size for full‑page coverage
+                    Shape watermark = page.AddText(
+                        pinX,
+                        pinY,
+                        pageWidth,
+                        pageHeight,
+                        "CONFIDENTIAL",
+                        "Calibri",
+                        "#A0A0A0",
+                        0.5); // font size in inches
 
-                        // Rotate the watermark 45 degrees (SetAngle expects radians)
-                        watermark.SetAngle(Math.PI / 4);
-                    }
-
-                    // Save the modified diagram
-                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                    // Rotate the watermark 45 degrees (angle in radians)
+                    watermark.SetAngle(Math.PI / 4);
                 }
 
+                // Save the modified diagram as PDF
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Calibri";
+                diagram.Save("output.pdf", pdfOptions);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

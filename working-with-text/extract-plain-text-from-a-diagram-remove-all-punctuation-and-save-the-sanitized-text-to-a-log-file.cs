@@ -11,33 +11,33 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file using the Diagram constructor (load rule)
-            string diagramPath = "input.vsdx";
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the Visio diagram from a file
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Collect sanitized text from all shapes
-            StringBuilder sanitizedText = new StringBuilder();
+            StringBuilder logBuilder = new StringBuilder();
 
-            // Iterate through each page and each shape on the page
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Get the plain text of the shape (GetPureText method)
-                    string raw = shape.GetPureText();
+                    // Get the raw text of the shape
+                    string rawText = shape.GetPureText();
 
-                    if (!string.IsNullOrEmpty(raw))
+                    if (!string.IsNullOrEmpty(rawText))
                     {
                         // Remove all punctuation characters
-                        string cleaned = Regex.Replace(raw, @"[^\w\s]", "");
-                        sanitizedText.AppendLine(cleaned);
+                        string sanitized = Regex.Replace(rawText, @"[^\w\s]", string.Empty);
+                        logBuilder.AppendLine(sanitized);
                     }
                 }
             }
 
-            // Save the sanitized text to a log file (standard .NET file I/O)
-            string logFilePath = "sanitized_log.txt";
-            File.WriteAllText(logFilePath, sanitizedText.ToString());
+            // Write the sanitized text to a log file
+            File.WriteAllText("sanitized_log.txt", logBuilder.ToString());
+
+            // Release resources held by the diagram
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

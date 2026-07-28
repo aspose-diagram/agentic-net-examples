@@ -1,50 +1,68 @@
-using System;
 using System.IO;
-using Aspose.Diagram;
+using System;
 using System.Collections.Generic;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class WatermarkExample
+class Program
 {
     static void Main()
     {
-        try
+        // Define a simple palette mapping names to hex colors
+        var palette = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
+            { "Red", "#FF0000" },
+            { "Green", "#00FF00" },
+            { "Blue", "#0000FF" },
+            { "Gray", "#A5A5A5" }
+        };
 
-            // Load an existing diagram
-            Diagram diagram = new Diagram("input.vsdx"); // load rule
+        // Choose a color key (could be obtained from user input; here we use "Gray")
+        string chosenKey = "Gray";
 
-            // User‑defined palette (hex RGB strings)
-            var palette = new Dictionary<string, string>
-            {
-                { "Primary",   "#1E90FF" }, // DodgerBlue
-                { "Secondary", "#FF4500" }, // OrangeRed
-                { "Accent",    "#32CD32" }  // LimeGreen
-            };
-
-            // Select the desired color from the palette
-            string watermarkColor = palette["Primary"]; // customize as needed
-
-            // Get the first page of the diagram
-            Page page = diagram.Pages[0];
-
-            // Add watermark text with the custom color
-            double pinX = 5.0;      // X coordinate of the text center
-            double pinY = 5.0;      // Y coordinate of the text center
-            double width = 2.0;    // Width of the text box
-            double height = 0.5;   // Height of the text box
-            Shape watermark = page.AddText(pinX, pinY, width, height,
-                                           "CONFIDENTIAL", "Arial", watermarkColor, 48);
-
-            // Optional: set transparency (0 = opaque, 1 = fully transparent)
-            // watermark.Char.ColorTrans = new DoubleValue(0.2); // 20% transparent
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx); // save rule
-
-        }
-        catch (System.IO.FileNotFoundException ex)
+        // Validate palette entry
+        if (!palette.TryGetValue(chosenKey, out string fontColor))
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Palette does not contain key '{chosenKey}'. Using default color.");
+            fontColor = "#000000"; // fallback to black
         }
+
+        // Create a new diagram
+        Diagram diagram = new Diagram();
+
+        // Get the first page (a new diagram always contains one page)
+        Page page = diagram.Pages[0];
+
+        // Retrieve page dimensions (in inches)
+        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+        // Define watermark text and appearance
+        string watermarkText = "CONFIDENTIAL";
+        string fontName = "Calibri";
+        double fontSizePoints = 72; // 1 inch
+        double fontSizeInches = fontSizePoints / 72.0;
+
+        // Position watermark at page center
+        double pinX = pageWidth / 2.0;
+        double pinY = pageHeight / 2.0;
+
+        // Use full page dimensions for the text box so the text is centered
+        double width = pageWidth;
+        double height = pageHeight;
+
+        // Add the watermark text shape with the selected color
+        Shape watermarkShape = page.AddText(pinX, pinY, width, height, watermarkText, fontName, fontColor, fontSizeInches);
+
+        // Optionally rotate the watermark (e.g., 45 degrees)
+        double rotationDegrees = 45;
+        double rotationRadians = (Math.PI / 180.0) * rotationDegrees;
+        watermarkShape.SetAngle(rotationRadians); // SetAngle expects radians
+
+        // Save the diagram
+        string outputPath = "WatermarkedDiagram.vsdx";
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        Console.WriteLine($"Diagram saved to '{outputPath}' with watermark color {fontColor}.");
     }
 }

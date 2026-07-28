@@ -12,17 +12,17 @@ class Program
             // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes
+            // Iterate through every page and shape in the diagram
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Replace every occurrence of the trademark symbol with the word 'Trademark'
+                    // Replace all occurrences of the trademark symbol with the word 'Trademark'
                     shape.ReplaceText("™", "Trademark");
                 }
             }
 
-            // Save the modified diagram
+            // Save the updated diagram to a new file
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             // Release resources

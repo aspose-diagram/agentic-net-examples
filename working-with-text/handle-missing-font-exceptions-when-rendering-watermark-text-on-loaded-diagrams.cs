@@ -11,79 +11,89 @@ class Program
             try
             {
 
-                // Paths for input diagram and output PDF
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the output PDF
                 string outputPath = "output.pdf";
 
-                try
+                // Desired watermark font
+                string desiredFont = "Calibri";
+                // Fallback font to use when the desired font is missing
+                string fallbackFont = "Arial";
+
+                // Configure global default font before loading the diagram
+                FontConfigs.DefaultFontName = fallbackFont;
+
+                // Check if the desired font is installed on the system
+                bool fontAvailable = false;
+                InstalledFontCollection installedFonts = new InstalledFontCollection();
+                foreach (var fontFamily in installedFonts.Families)
                 {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(inputPath);
-
-                    // Configure font folder (required before any rendering)
-                    string systemFontPath = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
-                    FontConfigs.SetFontFolder(systemFontPath, true);
-
-                    // Build a set of installed font names for quick lookup
-                    var installedFontNames = new InstalledFontCollection()
-                                                .Families
-                                                .Select(f => f.Name)
-                                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-                    // Detect if any diagram font is missing on the system
-                    bool missingFont = false;
-                    foreach (Font font in diagram.Fonts) // explicit type as required
+                    // FontFamily may not have a strongly typed definition; use dynamic property access
+                    try
                     {
-                        if (!installedFontNames.Contains(font.Name))
+                        if (string.Equals(fontFamily.Name, desiredFont, StringComparison.OrdinalIgnoreCase))
                         {
-                            missingFont = true;
+                            fontAvailable = true;
                             break;
                         }
                     }
-
-                    // If a font is missing, set a fallback default font
-                    if (missingFont)
+                    catch
                     {
-                        FontConfigs.DefaultFontName = "Arial";
+                        // Ignore any unexpected property access issues
                     }
-
-                    // Get the first page (you can adjust to target a specific page)
-                    Page page = diagram.Pages[0];
-
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Center position for the watermark
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
-
-                    // Watermark properties
-                    string watermarkText = "CONFIDENTIAL";
-                    string watermarkFont = "Arial";
-                    string watermarkColor = "#FF0000"; // Red color in HEX
-                    double fontSizePoints = 72; // 72 points = 1 inch
-                    double fontSizeInches = fontSizePoints / 72.0;
-
-                    // Add the watermark text covering the full page
-                    page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                 watermarkText, watermarkFont, watermarkColor, fontSizeInches);
-
-                    // Prepare PDF save options with a default font fallback
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.DefaultFont = "Arial";
-                    pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-                    // Save the diagram as PDF
-                    diagram.Save(outputPath, pdfOptions);
-
-                    Console.WriteLine("Diagram saved successfully with watermark.");
                 }
-                catch (Exception ex)
+
+                // Choose the font to use for the watermark
+                string watermarkFont = fontAvailable ? desiredFont : fallbackFont;
+                if (!fontAvailable)
                 {
-                    Console.WriteLine("Error: " + ex.Message);
-                    throw;
+                    Console.WriteLine($"Warning: Desired font \"{desiredFont}\" not found. Using fallback font \"{fallbackFont}\".");
                 }
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Get the first page (assumes at least one page exists)
+                Page page = diagram.Pages[0];
+
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Center position for the watermark
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
+
+                // Watermark text and styling
+                string watermarkText = "CONFIDENTIAL";
+                string fontColor = "#FF0000"; // Red color in hex
+                double fontSizePoints = 72; // 72 points = 1 inch
+                double fontSizeInches = fontSizePoints / 72.0;
+
+                // Add the watermark text shape covering the full page
+                Shape watermarkShape = page.AddText(
+                    pinX,                // PinX (center X)
+                    pinY,                // PinY (center Y)
+                    pageWidth,           // Width of the text box
+                    pageHeight,          // Height of the text box
+                    watermarkText,       // Text content
+                    watermarkFont,       // Font name
+                    fontColor,           // Font color
+                    fontSizeInches       // Font size in inches
+                );
+
+                // Optional: send the watermark to the back so it doesn't obscure other shapes
+                page.SendToBack(watermarkShape.ID);
+
+                // Configure PDF save options with the same fallback font
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = fallbackFont;
+
+                // Save the diagram as PDF
+                diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine("Diagram saved with watermark to: " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

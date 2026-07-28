@@ -1,40 +1,52 @@
-using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class WatermarkMacro
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Name of the master shape that represents the watermark
-            string watermarkMaster = "Watermark";
-
-            // Iterate through all pages in the diagram
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            try
             {
-                Page page = diagram.Pages[i];
 
-                // Position where the watermark will be placed (example: center of page)
-                double pinX = 5.0; // X coordinate in inches
-                double pinY = 5.0; // Y coordinate in inches
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+                // Output Visio file path
+                string outputPath = "output_with_watermark.vsdx";
 
-                // Append the watermark shape to the current page
-                page.AddShape(pinX, pinY, watermarkMaster);
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Iterate through each page in the diagram
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Retrieve page dimensions (in inches)
+                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                        // Center position for the watermark
+                        double pinX = pageWidth / 2.0;
+                        double pinY = pageHeight / 2.0;
+
+                        // Use full page size for the watermark text box
+                        double width = pageWidth;
+                        double height = pageHeight;
+
+                        // Add watermark text to the page
+                        // Font size is specified in inches (0.25 inches ≈ 18 points)
+                        page.AddText(pinX, pinY, width, height, "Watermark", "Calibri", "#a5a5a5", 0.25);
+                    }
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
+
+                Console.WriteLine("Watermark added to all pages and diagram saved successfully.");
+
             }
-
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,44 +1,59 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Check if the shape is tagged as "Review"
-                    // Assuming the tag is stored in the Data1 property
-                    if (!string.IsNullOrEmpty(shape.Data1) && shape.Data1.Equals("Review", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Replace the word "Confidential" with "Public" in the shape's text
-                        // Using ReplaceText method which updates the shape's text content
-                        shape.ReplaceText("Confidential", "Public");
 
-                        // Refresh shape data to recalculate geometry after text change
-                        shape.RefreshData();
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Determine if the shape is tagged as "Review"
+                        bool isReviewTag = false;
+                        foreach (Prop prop in shape.Props)
+                        {
+                            // Assuming a custom property named "Tag" holds the tag value
+                            if (prop.Name == "Tag" && prop.Value != null && prop.Value.Val == "Review")
+                            {
+                                isReviewTag = true;
+                                break;
+                            }
+                        }
+
+                        // If the shape is tagged, replace "Confidential" with "Public"
+                        if (isReviewTag)
+                        {
+                            shape.ReplaceText("Confidential", "Public");
+                        }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Replacement completed. Diagram saved to: " + outputPath);
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

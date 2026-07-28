@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,20 +8,19 @@ class Program
             // Expect input and output file paths as command‑line arguments.
             if (args.Length < 2)
             {
-                Console.WriteLine("Usage: DiagramPlaceholderUpdater <inputPath> <outputPath>");
+                Console.WriteLine("Usage: DiagramPlaceholderUpdater <input.vsdx> <output.vsdx>");
                 return;
             }
 
             string inputPath = args[0];
             string outputPath = args[1];
 
-            // Load the Visio diagram from the specified file.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram.
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip shapes that are marked as deleted.
@@ -30,23 +28,21 @@ class Program
                         continue;
 
                     // Retrieve the plain text of the shape.
-                    string currentText = shape.Text.Value.Text;
+                    string currentText = shape.Text.Value.ToString();
 
-                    // If the shape has no text (null, empty, or whitespace), populate it.
+                    // If the text is null, empty, or whitespace, set a placeholder.
                     if (string.IsNullOrWhiteSpace(currentText))
                     {
                         // Clear any existing text runs.
                         shape.Text.Value.Clear();
 
-                        // Add a default placeholder text run.
+                        // Add the placeholder text.
                         shape.Text.Value.Add(new Txt("Placeholder"));
-
-                        Console.WriteLine($"Updated shape ID {shape.ID} on page \"{page.Name}\" with placeholder text.");
                     }
                 }
             }
 
-            // Save the modified diagram to the output file in VSDX format.
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
     }

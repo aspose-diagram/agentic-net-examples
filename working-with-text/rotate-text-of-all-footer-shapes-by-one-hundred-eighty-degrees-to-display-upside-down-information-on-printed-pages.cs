@@ -4,36 +4,33 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
+            Console.WriteLine("Usage: <inputVisioFile> <outputVisioFile>");
+            return;
+        }
 
-            // Load the Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+        // Load the Visio diagram.
+        Diagram diagram = new Diagram(inputPath);
+
+        // Iterate through every page and every shape on each page.
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Identify footer shapes by name (case‑insensitive search for "Footer")
-                    if (!string.IsNullOrEmpty(shape.NameU) &&
-                        shape.NameU.IndexOf("Footer", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        // Rotate the text within the shape by 180 degrees (π radians)
-                        shape.TextXForm.TxtAngle.Value = Math.PI;
-                    }
-                }
+                // Rotate the shape's text by 180 degrees.
+                // Text rotation is specified in radians; 180° = π radians.
+                shape.TextXForm.TxtAngle.Value = Math.PI;
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+
+        // Save the modified diagram.
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
 }

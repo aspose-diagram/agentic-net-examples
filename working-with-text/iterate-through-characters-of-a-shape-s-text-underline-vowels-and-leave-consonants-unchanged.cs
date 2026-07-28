@@ -1,73 +1,77 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Get the first page
+            Page page = diagram.Pages[0];
+
+            // Get the first shape on the page (adjust as needed)
+            Shape shape = page.Shapes[0];
+
+            // Retrieve the plain text of the shape
+            string text = shape.Text.Value.ToString();
+
+            // If there is no text, nothing to process
+            if (string.IsNullOrWhiteSpace(text))
             {
+                Console.WriteLine("Shape contains no text.");
+                return;
+            }
 
-                // Load an existing Visio diagram (replace with your actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+            // Clear existing text runs and character formatting
+            shape.Text.Value.Clear();
+            shape.Chars.Clear();
 
-                // Get the first page of the diagram
-                Page page = diagram.Pages[0];
+            // Iterate through each character, add text runs and apply underline to vowels
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
 
-                // Retrieve the first shape on the page that contains text
-                // (adjust the shape ID or selection logic as needed)
-                Shape shape = page.Shapes.GetShape(1);
+                // Mark the start of a new character formatting run
+                shape.Text.Value.Add(new Cp(i));
 
-                // Get the plain text of the shape
-                string plainText = shape.Text.Value.ToString();
+                // Add the character as a text run
+                shape.Text.Value.Add(new Txt(c.ToString()));
 
-                // Clear existing text runs and character formatting
-                shape.Text.Value.Clear();
-                shape.Chars.Clear();
+                // Create character formatting
+                Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+                ch.IX = i;
 
-                // Iterate through each character, add a text run and apply underline to vowels
-                for (int i = 0; i < plainText.Length; i++)
+                // Check if the character is a vowel (case‑insensitive)
+                if ("AEIOUaeiou".IndexOf(c) >= 0)
                 {
-                    char ch = plainText[i];
-
-                    // Add a character position marker (Cp) before the character
-                    shape.Text.Value.Add(new Cp(i));
-
-                    // Add the character as a text run (Txt)
-                    shape.Text.Value.Add(new Txt(ch.ToString()));
-
-                    // Create a Char object to define formatting for this character
-                    Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
-                    charFormat.IX = i; // zero‑based index of the character
-
-                    // Check if the character is a vowel (case‑insensitive)
-                    if ("AEIOUaeiou".IndexOf(ch) >= 0)
-                    {
-                        // Apply underline style to vowels
-                        charFormat.Style.Value = StyleValue.Underline;
-                    }
-                    else
-                    {
-                        // No special style for consonants
-                        charFormat.Style.Value = StyleValue.Undefined;
-                    }
-
-                    // Add the Char formatting to the shape
-                    shape.Chars.Add(charFormat);
+                    // Apply underline style
+                    ch.Style.Value = StyleValue.Underline;
+                }
+                else
+                {
+                    // No special style
+                    ch.Style.Value = StyleValue.Undefined;
                 }
 
-                // Save the modified diagram to a new file
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Processing complete. Modified diagram saved to: " + outputPath);
-
+                // Add the character formatting to the shape
+                shape.Chars.Add(ch);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved with underlined vowels.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

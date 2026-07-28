@@ -1,53 +1,58 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+
+                // Load the Visio diagram (adjust the file path as needed)
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through custom properties (Props) of the shape
-                    foreach (Prop prop in shape.Props)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Check for the custom property named "Version"
-                        if (prop.Name == "Version")
+                        // Ensure the shape has a Props collection
+                        if (shape.Props == null)
+                            continue;
+
+                        // Check if the shape contains a custom property named "Version"
+                        bool hasVersionProp = false;
+                        foreach (Prop prop in shape.Props)
                         {
-                            string currentValue = prop.Value.Val;
-                            // Replace 'v1.0' with 'v2.0' if present
-                            if (!string.IsNullOrEmpty(currentValue) && currentValue.Contains("v1.0"))
+                            if (prop.Name == "Version")
                             {
-                                string newValue = currentValue.Replace("v1.0", "v2.0");
-                                prop.Value.Val = newValue;
-                                Console.WriteLine($"Shape ID {shape.ID}: Version updated to '{newValue}'.");
+                                hasVersionProp = true;
+                                break;
+                            }
+                        }
+
+                        // If the shape has the "Version" custom property, replace "v1.0" with "v2.0" in its text
+                        if (hasVersionProp && shape.Text != null && shape.Text.Value != null)
+                        {
+                            foreach (var item in shape.Text.Value)
+                            {
+                                if (item is Txt txt && txt.Text != null && txt.Text.Contains("v1.0"))
+                                {
+                                    txt.Text = txt.Text.Replace("v1.0", "v2.0");
+                                }
                             }
                         }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

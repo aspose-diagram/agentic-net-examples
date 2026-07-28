@@ -9,18 +9,14 @@ class Program
             try
             {
 
-                // Path to the source Visio file
-                const string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                const string outputPath = "output.vsdx";
+                // Paths – replace with actual file locations as needed
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Load the diagram
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Define the regular expression pattern for dates (e.g., 12/31/2023)
-                string datePattern = @"\b\d{1,2}/\d{1,2}/\d{4}\b";
-
-                // Locate the built‑in "Title" style sheet (if it exists)
+                // Locate the built‑in "Title" style sheet
                 StyleSheet titleStyle = null;
                 foreach (StyleSheet ss in diagram.StyleSheets)
                 {
@@ -33,33 +29,41 @@ class Program
 
                 if (titleStyle == null)
                 {
-                    Console.WriteLine("Title style not found in the document. No changes will be applied.");
+                    Console.WriteLine("The 'Title' style sheet was not found in the document.");
                     return;
                 }
+
+                // Regular expression to detect simple date patterns (e.g., 12/31/2023 or 2023-12-31)
+                string datePattern = @"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b";
 
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip shapes that are marked as deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
                         // Retrieve plain text from the shape
-                        string shapeText = shape.Text.Value.ToString();
+                        string plainText = shape.Text.Value.Text;
+
+                        if (string.IsNullOrWhiteSpace(plainText))
+                            continue;
 
                         // Apply the Title style if the text matches the date pattern
-                        if (!string.IsNullOrWhiteSpace(shapeText) && Regex.IsMatch(shapeText, datePattern))
+                        if (Regex.IsMatch(plainText, datePattern))
                         {
                             shape.TextStyle = titleStyle;
+                            shape.FillStyle = titleStyle;
+                            shape.LineStyle = titleStyle;
                         }
                     }
                 }
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved with Title style applied to matching shapes.");
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

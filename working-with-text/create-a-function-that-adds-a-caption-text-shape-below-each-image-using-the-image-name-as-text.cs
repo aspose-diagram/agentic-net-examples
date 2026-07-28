@@ -9,18 +9,15 @@ class Program
             try
             {
 
-                // Path to the source Visio file
+                // Load an existing Visio diagram
                 string inputPath = "input.vsdx";
-                // Path for the output Visio file with captions
-                string outputPath = "output_with_captions.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Add captions below each image shape
-                AddCaptionsBelowImages(diagram);
+                AddImageCaptions(diagram);
 
                 // Save the modified diagram
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
@@ -32,39 +29,35 @@ class Program
 
         /// <summary>
         /// Iterates through all pages and shapes, finds image (foreign) shapes,
-        /// and adds a text shape directly below each image using the shape's name as caption.
+        /// and adds a text shape directly below each image using the image's name as caption.
         /// </summary>
-        /// <param name="diagram">The Aspose.Diagram.Diagram instance to modify.</param>
-        private static void AddCaptionsBelowImages(Diagram diagram)
+        /// <param name="diagram">The diagram to process.</param>
+        static void AddImageCaptions(Diagram diagram)
         {
             // Offset in inches between the image bottom and the caption top
             const double verticalOffset = 0.2;
 
-            // Iterate over each page in the diagram
+            // Font settings for the caption
+            const string captionFont = "Arial";
+            const string captionColor = "#000000"; // black
+            const double captionFontSize = 0.2; // approx 14pt (points / 72)
+
             foreach (Page page in diagram.Pages)
             {
-                // Collect shape IDs first to avoid modifying the collection while iterating
-                var shapeIds = new System.Collections.Generic.List<long>();
+                // Collect shapes to avoid modifying the collection while iterating
+                var shapes = new System.Collections.Generic.List<Shape>();
                 foreach (Shape shape in page.Shapes)
                 {
-                    shapeIds.Add(shape.ID);
+                    shapes.Add(shape);
                 }
 
-                // Process each shape by its ID
-                foreach (long shapeId in shapeIds)
+                foreach (Shape shape in shapes)
                 {
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Identify image shapes by TypeValue.Foreign
+                    // Identify image shapes (foreign objects)
                     if (shape.Type == TypeValue.Foreign)
                     {
-                        // Determine caption text: use shape.Name if available, otherwise fallback to Data1
-                        string captionText = !string.IsNullOrWhiteSpace(shape.Name) ? shape.Name : shape.Data1;
-                        if (string.IsNullOrWhiteSpace(captionText))
-                            continue; // No meaningful name to use as caption
+                        // Use the shape's Name as the caption text
+                        string captionText = shape.Name ?? "Image";
 
                         // Retrieve image geometry
                         double pinX = shape.XForm.PinX.Value;
@@ -72,27 +65,24 @@ class Program
                         double width = shape.XForm.Width.Value;
                         double height = shape.XForm.Height.Value;
 
-                        // Calculate position for the caption (centered horizontally, below the image)
+                        // Calculate position for the caption (centered below the image)
                         double captionPinX = pinX;
-                        double captionPinY = pinY - (height / 2) - verticalOffset - (0.1); // additional half of caption height
+                        double captionPinY = pinY - (height / 2) - verticalOffset;
 
-                        // Define caption size (width matches image width, height small)
+                        // Width of the caption matches the image width; height is a small value
                         double captionWidth = width;
-                        double captionHeight = 0.2; // 0.2 inches height for the text box
+                        double captionHeight = verticalOffset;
 
-                        // Add the text shape to the page
-                        Shape captionShape = page.AddText(
+                        // Add the caption text shape to the page
+                        page.AddText(
                             captionPinX,
                             captionPinY,
                             captionWidth,
                             captionHeight,
                             captionText,
-                            "Calibri",          // Font name
-                            "#000000",          // Font color (black)
-                            0.12);              // Font size in inches (≈8.64 points)
-
-                        // Optional: ensure the caption is sent to back so it doesn't cover other content
-                        captionShape.SendToBack();
+                            captionFont,
+                            captionColor,
+                            captionFontSize);
                     }
                 }
             }

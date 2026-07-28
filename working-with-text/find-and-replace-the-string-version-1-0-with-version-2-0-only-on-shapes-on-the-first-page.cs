@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,22 +10,21 @@ class Program
         {
 
             // Load the Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the first page (index 0)
-            var firstPage = diagram.Pages[0];
+            // Access the first page (index 0)
+            Page firstPage = diagram.Pages[0];
 
-            // Iterate through all shapes on the first page
+            // Loop through each shape on the first page
             foreach (Shape shape in firstPage.Shapes)
             {
-                // Replace the target text if it exists in the shape
+                // Replace the exact text "Version 1.0" with "Version 2.0"
                 shape.ReplaceText("Version 1.0", "Version 2.0");
-
-                // Refresh shape data to update geometry after text change
+                // Refresh shape data after text replacement
                 shape.RefreshData();
             }
 
-            // Save the modified diagram
+            // Save the updated diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

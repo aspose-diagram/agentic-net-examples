@@ -1,52 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Folder containing diagram files; can be passed as first argument
-            string inputFolder = args.Length > 0 ? args[0] : "Diagrams";
+            // Determine the folder containing diagrams.
+            string inputFolder;
+            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
+                inputFolder = args[0];
+            else
+                inputFolder = "Diagrams";
 
+            // Verify the folder exists.
             if (!Directory.Exists(inputFolder))
             {
-                Console.WriteLine($"Folder not found: {inputFolder}");
+                Console.WriteLine($"Input folder does not exist: {inputFolder}");
                 return;
             }
 
-            // Process Visio files with .vsdx extension (add other extensions if needed)
+            // Find all Visio VSDX files in the folder.
             string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
 
             foreach (string filePath in diagramFiles)
             {
                 try
                 {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Iterate through all pages
-                    foreach (Aspose.Diagram.Page page in diagram.Pages)
+                    // Load the diagram.
+                    using (Diagram diagram = new Diagram(filePath))
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                        // Iterate through each page.
+                        foreach (Aspose.Diagram.Page page in diagram.Pages)
                         {
-                            // Identify title shapes by universal name (case‑insensitive)
-                            if (!string.IsNullOrEmpty(shape.NameU) &&
-                                shape.NameU.Equals("Title", StringComparison.OrdinalIgnoreCase))
+                            // Iterate through each shape on the page.
+                            foreach (Aspose.Diagram.Shape shape in page.Shapes)
                             {
-                                // Rotate the text block by 180 degrees (π radians)
-                                shape.TextXForm.TxtAngle.Value = Math.PI;
+                                // Identify title shapes by checking the universal name.
+                                if (!string.IsNullOrEmpty(shape.NameU) &&
+                                    shape.NameU.IndexOf("Title", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    // Rotate the text by 180 degrees (π radians).
+                                    shape.TextXForm.TxtAngle.Value = Math.PI;
+                                }
                             }
                         }
+
+                        // Build the output file name.
+                        string directory = Path.GetDirectoryName(filePath);
+                        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                        string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_rotated.vsdx");
+
+                        // Save the modified diagram.
+                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                        Console.WriteLine($"Processed and saved: {outputPath}");
                     }
-
-                    // Save the modified diagram, overwriting the original file
-                    diagram.Save(filePath, SaveFileFormat.Vsdx);
-                    diagram.Dispose();
-
-                    Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
                 }
                 catch (Exception ex)
                 {

@@ -10,35 +10,40 @@ class Program
             try
             {
 
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+
+                // Output text file path (UTF‑8 encoded)
+                string outputPath = "page1_text.txt";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+                Diagram diagram = new Diagram(inputPath);
 
                 // Access the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Collect plain text from all shapes on the page
-                StringBuilder sb = new StringBuilder();
+                // Collect plain text from all non‑deleted shapes on the page
+                StringBuilder textBuilder = new StringBuilder();
 
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve concatenated plain text of the shape
-                    string text = shape.Text.Value.Text;
-
-                    // Append non‑empty text lines
-                    if (!string.IsNullOrWhiteSpace(text))
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.False)
                     {
-                        sb.AppendLine(text);
+                        // Retrieve plain text; shape.Text may be null
+                        string shapeText = shape.Text?.Value?.Text;
+
+                        if (!string.IsNullOrWhiteSpace(shapeText))
+                        {
+                            textBuilder.AppendLine(shapeText);
+                        }
                     }
                 }
 
-                // Output file path (UTF‑8 encoded)
-                string outputPath = "page1_text.txt";
+                // Write the aggregated text to a UTF‑8 file
+                File.WriteAllText(outputPath, textBuilder.ToString(), Encoding.UTF8);
 
-                // Write the collected text to the file
-                File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
+                Console.WriteLine($"Extracted text from page 1 has been saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

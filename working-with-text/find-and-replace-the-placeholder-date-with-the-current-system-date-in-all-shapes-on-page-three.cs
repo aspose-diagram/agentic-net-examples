@@ -9,47 +9,27 @@ class Program
         try
         {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path to the output Visio file
-            string outputPath = "output.vsdx";
+            // Load the Visio diagram (use the provided load rule)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Access the third page (index 2 because collection is zero‑based)
+            Page pageThree = diagram.Pages[2];
 
-            // Ensure the diagram has at least three pages
-            if (diagram.Pages.Count < 3)
-            {
-                Console.WriteLine("The diagram does not contain a third page.");
-                return;
-            }
-
-            // Get the third page (zero‑based index)
-            Page page = diagram.Pages[2];
-
-            // Current system date string (you can adjust the format as needed)
+            // Current system date as a string (adjust format as needed)
             string currentDate = DateTime.Now.ToString("yyyy-MM-dd");
 
-            // Iterate over all shapes on the page
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all shapes on page three
+            foreach (Shape shape in pageThree.Shapes)
             {
-                // Skip deleted shapes
-                if (shape.Del == BOOL.True)
-                    continue;
+                // Replace the placeholder "[Date]" with the current date
+                shape.ReplaceText("[Date]", currentDate);
 
-                // Iterate over the text runs within the shape
-                foreach (var fmt in shape.Text.Value)
-                {
-                    if (fmt is Txt txt && txt.Text != null && txt.Text.Contains("[Date]"))
-                    {
-                        // Replace the placeholder with the current date
-                        txt.Text = txt.Text.Replace("[Date]", currentDate);
-                    }
-                }
+                // Refresh shape data after text change
+                shape.RefreshData();
             }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram (use the provided save rule)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

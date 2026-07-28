@@ -1,105 +1,84 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-
-public class WatermarkInfo
-{
-    public string Text { get; set; }
-    public string FontName { get; set; }
-    public string FontColor { get; set; }   // Hex color string, e.g. "#FF0000"
-    public double FontSizeInInches { get; set; }
-    public double PositionX { get; set; }   // PinX (inches)
-    public double PositionY { get; set; }   // PinY (inches)
-    public double Width { get; set; }       // Shape width (inches)
-    public double Height { get; set; }      // Shape height (inches)
-}
 
 public static class DiagramWatermarkHelper
 {
     /// <summary>
-    /// Retrieves the first shape named "Watermark" (case‑insensitive) from the diagram
-    /// and extracts its basic visual properties.
-    /// Returns null if no such shape is found.
+    /// Retrieves the text of the first shape that appears to be a watermark.
+    /// The method looks for a shape that either has a custom property named "Watermark"
+    /// or whose universal name contains the word "watermark". If such a shape is found,
+    /// its concatenated text is returned; otherwise, null is returned.
     /// </summary>
-    public static WatermarkInfo GetWatermarkInfo(Diagram diagram)
+    /// <param name="diagramPath">Full path to the Visio diagram file.</param>
+    /// <returns>Watermark text if found; otherwise, null.</returns>
+    public static string GetWatermarkText(string diagramPath)
     {
-        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
+        // Load the diagram from the specified file.
+        using var diagram = new Diagram(diagramPath);
 
+        // Iterate through all pages in the diagram.
         foreach (Page page in diagram.Pages)
         {
+            // Iterate through all shapes on the current page.
             foreach (Shape shape in page.Shapes)
             {
-                if (shape.NameU != null &&
-                    shape.NameU.Equals("Watermark", StringComparison.OrdinalIgnoreCase))
+                // Check for a custom property named "Watermark".
+                bool hasWatermarkProp = false;
+                foreach (Prop prop in shape.Props)
                 {
-                    var info = new WatermarkInfo
+                    if (prop.NameU != null &&
+                        prop.NameU.Equals("Watermark", StringComparison.OrdinalIgnoreCase))
                     {
-                        Text = shape.Text?.Value?.ToString() ?? string.Empty,
-                        PositionX = shape.XForm?.PinX?.Value ?? 0.0,
-                        PositionY = shape.XForm?.PinY?.Value ?? 0.0,
-                        Width = shape.XForm?.Width?.Value ?? 0.0,
-                        Height = shape.XForm?.Height?.Value ?? 0.0
-                    };
-
-                    if (shape.Chars != null && shape.Chars.Count > 0)
-                    {
-                        var firstChar = shape.Chars[0];
-                        info.FontName = firstChar.FontName?.Value ?? string.Empty;
-                        info.FontColor = firstChar.Color?.Value ?? string.Empty;
-                        info.FontSizeInInches = firstChar.Size?.Value ?? 0.0;
+                        hasWatermarkProp = true;
+                        break;
                     }
+                }
 
-                    return info;
+                // Retrieve the plain text of the shape.
+                string shapeText = shape.Text?.Value?.ToString();
+
+                // Determine if this shape qualifies as a watermark.
+                bool nameIndicatesWatermark = shape.NameU != null &&
+                    shape.NameU.IndexOf("watermark", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                if (!string.IsNullOrWhiteSpace(shapeText) && (hasWatermarkProp || nameIndicatesWatermark))
+                {
+                    // Return the first matching watermark text.
+                    return shapeText;
                 }
             }
         }
 
+        // No watermark shape was found.
         return null;
     }
 }
 
+// Example usage:
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        if (args.Length == 0)
-        {
-            Console.Error.WriteLine("Please provide the path to a Visio diagram file.");
-            return;
-        }
-
-        string diagramPath = args[0];
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
-
         try
         {
-            var diagram = new Diagram(diagramPath);
-            var watermark = DiagramWatermarkHelper.GetWatermarkInfo(diagram);
 
-            if (watermark == null)
+            string diagramFile = @"C:\Diagrams\sample.vsdx";
+
+            string watermark = DiagramWatermarkHelper.GetWatermarkText(diagramFile);
+
+            if (watermark != null)
             {
-                Console.WriteLine("No watermark shape named \"Watermark\" was found.");
+                Console.WriteLine($"Watermark found: {watermark}");
             }
             else
             {
-                Console.WriteLine("Watermark Information:");
-                Console.WriteLine($"Text: {watermark.Text}");
-                Console.WriteLine($"Font: {watermark.FontName}");
-                Console.WriteLine($"Color: {watermark.FontColor}");
-                Console.WriteLine($"Size (inches): {watermark.FontSizeInInches}");
-                Console.WriteLine($"PositionX: {watermark.PositionX}");
-                Console.WriteLine($"PositionY: {watermark.PositionY}");
-                Console.WriteLine($"Width: {watermark.Width}");
-                Console.WriteLine($"Height: {watermark.Height}");
+                Console.WriteLine("No watermark detected in the diagram.");
             }
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,56 +1,46 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram (replace with actual file path)
+            using (Diagram diagram = new Diagram("input.vsdx"))
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Ensure the diagram has at least five pages (page index is zero‑based)
+                if (diagram.Pages.Count < 5)
                 {
-                    // Ensure the diagram has at least five pages (zero‑based index)
-                    if (diagram.Pages.Count > 4)
-                    {
-                        // Retrieve page five (index 4)
-                        Page pageFive = diagram.Pages[4];
-
-                        // Angle in radians for -30 degrees
-                        double angleRad = -30.0 * Math.PI / 180.0;
-
-                        // Iterate all shapes on the page
-                        foreach (Shape shape in pageFive.Shapes)
-                        {
-                            // Skip deleted shapes
-                            if (shape.Del == BOOL.False)
-                            {
-                                // Rotate the text block within the shape
-                                shape.TextXForm.TxtAngle.Value = angleRad;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("The diagram does not contain a fifth page.");
-                    }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    throw new Exception("The diagram does not contain a fifth page.");
                 }
 
-                Console.WriteLine("Text rotation applied and diagram saved to: " + outputPath);
+                // Retrieve page five (index 4)
+                Page page = diagram.Pages[4];
 
+                // Rotation angle: -30 degrees converted to radians
+                double angleRad = -Math.PI / 6.0; // -30° = -π/6 rad
+
+                // Rotate the text of each non‑deleted shape on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Del == BOOL.False)
+                    {
+                        shape.TextXForm.TxtAngle.Value = angleRad;
+                    }
+                }
+
+                // Save the modified diagram (replace with desired output path)
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,34 +1,35 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        try
         {
-            try
+
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Locate the built‑in "Emphasis" style sheet (if it exists)
+            StyleSheet emphasisStyle = null;
+            foreach (StyleSheet ss in diagram.StyleSheets)
             {
-
-                // Load the Visio diagram (replace with your actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Locate the built‑in "Emphasis" style sheet in the document
-                StyleSheet emphasisStyle = null;
-                foreach (StyleSheet ss in diagram.StyleSheets)
+                if (ss.Name == "Emphasis")
                 {
-                    if (ss.Name == "Emphasis")
-                    {
-                        emphasisStyle = ss;
-                        break;
-                    }
+                    emphasisStyle = ss;
+                    break;
                 }
+            }
 
-                if (emphasisStyle == null)
-                {
-                    Console.WriteLine("Emphasis style not found in the diagram. No changes applied.");
-                    return;
-                }
-
+            // If the style is not found, no styling will be applied
+            if (emphasisStyle != null)
+            {
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
@@ -39,10 +40,10 @@ class Program
                             continue;
 
                         // Get the plain text of the shape
-                        string shapeText = shape.Text.Value.ToString();
+                        string shapeText = shape.Text.Value.Text ?? string.Empty;
 
-                        // Apply the Emphasis style if the text contains the word "Alert"
-                        if (!string.IsNullOrEmpty(shapeText) && shapeText.Contains("Alert"))
+                        // Apply the Emphasis style to shapes containing the word "Alert"
+                        if (shapeText.IndexOf("Alert", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
                             shape.TextStyle = emphasisStyle;
                             shape.FillStyle = emphasisStyle;
@@ -50,17 +51,15 @@ class Program
                         }
                     }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Diagram saved with Emphasis style applied to shapes containing 'Alert' at: {outputPath}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

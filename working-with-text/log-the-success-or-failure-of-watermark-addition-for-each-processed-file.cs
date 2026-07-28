@@ -4,11 +4,11 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Input folder containing Visio files
+        // Folder containing Visio files to process
         string inputFolder = @"C:\VisioFiles";
-        // Output folder for processed files
+        // Folder to save processed files
         string outputFolder = @"C:\VisioFiles\Processed";
 
         // Ensure output folder exists
@@ -18,15 +18,9 @@ class Program
         string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
         foreach (string filePath in files)
         {
-            if (!File.Exists(filePath))
-            {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                continue;
-            }
-
             // Process only supported Visio extensions
             string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx")
+            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx" && ext != ".vsx" && ext != ".vtx")
             {
                 continue;
             }
@@ -34,37 +28,40 @@ class Program
             try
             {
                 // Load the diagram
-                using (Diagram diagram = new Diagram(filePath))
+                Diagram diagram = new Diagram(filePath);
+
+                // Add watermark to each page
+                foreach (Page page in diagram.Pages)
                 {
-                    // Add watermark to each page
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Retrieve page dimensions
-                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    // Retrieve page dimensions
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                        // Add full‑page watermark text (positional arguments)
-                        page.AddText(
-                            0,               // pinX
-                            0,               // pinY
-                            pageWidth,       // width
-                            pageHeight,      // height
-                            "Watermark",     // text
-                            "Calibri",       // fontName
-                            "#a5a5a5",       // fontColor (hex)
-                            0.25);           // fontSize in inches
-                    }
+                    // Center position
+                    double pinX = pageWidth / 2.0;
+                    double pinY = pageHeight / 2.0;
 
-                    // Save the modified diagram to the output folder
-                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Watermark parameters
+                    string watermarkText = "CONFIDENTIAL";
+                    string fontName = "Calibri";
+                    string fontColor = "#FF0000"; // Red color in hex
+                    double fontSizeInPoints = 36; // 36 pt
+                    double fontSizeInInches = fontSizeInPoints / 72.0; // Convert points to inches
+
+                    // Add the watermark covering the full page
+                    page.AddText(pinX, pinY, pageWidth, pageHeight,
+                                 watermarkText, fontName, fontColor, fontSizeInInches);
                 }
 
-                Console.WriteLine($"SUCCESS: Watermark added to '{Path.GetFileName(filePath)}'.");
+                // Save the modified diagram
+                string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"SUCCESS: Watermark added to '{filePath}'.");
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"FAILURE: Could not process '{Path.GetFileName(filePath)}'. Error: {ex.Message}");
+                Console.WriteLine($"FAILURE: Could not add watermark to '{filePath}'. Error: {ex.Message}");
             }
         }
     }

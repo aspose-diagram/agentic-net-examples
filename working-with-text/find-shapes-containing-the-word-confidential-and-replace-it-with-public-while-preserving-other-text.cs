@@ -1,55 +1,38 @@
-using System;
+using System.IO;
 using Aspose.Diagram;
+using System;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram from file
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Loop through every page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input and output Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Loop through every shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    // Replace the word "Confidential" with "Public" wherever it appears in the shape's text
+                    shape.ReplaceText("Confidential", "Public");
 
-                        // Get the plain text of the shape
-                        string currentText = shape.Text.Value.ToString();
-
-                        // If the shape has no text, move on
-                        if (string.IsNullOrEmpty(currentText))
-                            continue;
-
-                        // Replace the target word if it exists
-                        if (currentText.Contains("Confidential"))
-                        {
-                            string newText = currentText.Replace("Confidential", "Public");
-
-                            // Clear existing text runs and add the updated text
-                            shape.Text.Value.Clear();
-                            shape.Text.Value.Add(new Txt(newText));
-                        }
-                    }
+                    // Refresh the shape to recalculate its geometry after the text change
+                    shape.RefreshData();
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the updated diagram to a new file
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

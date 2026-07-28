@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,27 +8,27 @@ class Program
             try
             {
 
-                // Paths to the source diagram, custom stencil (.vss) and output file.
-                string diagramPath = "input.vsdx";
+                // Path to the custom stencil file (.vss)
                 string stencilPath = "customStencil.vss";
-                string outputPath = "output.vsdx";
 
-                // Load the main diagram.
-                Diagram diagram = new Diagram(diagramPath);
+                // Load the stencil as a Diagram object
+                Diagram diagram = new Diagram(stencilPath);
 
-                // Load the custom stencil file (.vss). This demonstrates loading a .vss file.
-                // The stencil can be used later to add masters if needed.
-                Diagram stencil = new Diagram(stencilPath);
-
-                // Retrieve the shape with ID 12 from the first page.
-                // Shape IDs are of type long.
-                Shape targetShape = diagram.Pages[0].Shapes.GetShape(12L);
-                if (targetShape == null)
+                // Retrieve the shape with ID 12 from the first page of the stencil
+                // Ensure the page exists and the shape ID is valid
+                if (diagram.Pages.Count == 0)
                 {
-                    throw new Exception("Shape with ID 12 was not found in the diagram.");
+                    throw new Exception("The loaded stencil does not contain any pages.");
                 }
 
-                // Locate the stylesheet named "CustomStyle" in the diagram's stylesheet collection.
+                Page page = diagram.Pages[0];
+                Shape shape = page.Shapes.GetShape(12);
+                if (shape == null)
+                {
+                    throw new Exception("Shape with ID 12 was not found in the stencil.");
+                }
+
+                // Locate the stylesheet named "CustomStyle"
                 StyleSheet customStyle = null;
                 foreach (StyleSheet ss in diagram.StyleSheets)
                 {
@@ -40,33 +39,23 @@ class Program
                     }
                 }
 
-                // If the stylesheet does not exist, create a simple one and add it to the diagram.
                 if (customStyle == null)
                 {
-                    customStyle = new StyleSheet
-                    {
-                        Name = "CustomStyle",
-                        ID = diagram.StyleSheets.Count + 1
-                    };
-
-                    // Example: set a red fill foreground and a thick black line.
-                    customStyle.Fill.FillForegnd.Value = "#FF0000"; // Red fill.
-                    customStyle.Line.LineColor.Value = "#000000"; // Black line.
-                    customStyle.Line.LineWeight.Value = 0.05; // Thick line (in inches).
-
-                    diagram.StyleSheets.Add(customStyle);
+                    throw new Exception("Stylesheet 'CustomStyle' was not found in the stencil.");
                 }
 
                 // Apply the stylesheet to the shape.
-                // The style can be assigned to text, fill, and line formatting.
-                targetShape.TextStyle = customStyle;
-                targetShape.FillStyle = customStyle;
-                targetShape.LineStyle = customStyle;
+                // Assign the stylesheet to text, fill, and line style collections.
+                shape.TextStyle = customStyle;
+                shape.FillStyle = customStyle;
+                shape.LineStyle = customStyle;
 
-                // Save the modified diagram.
+                // Save the modified stencil (or export to a Visio drawing) to verify the changes.
+                // Here we save as a VSDX file.
+                string outputPath = "StyledStencil.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                Console.WriteLine("Custom style applied to shape ID 12 and diagram saved successfully.");
+                Console.WriteLine($"Stylesheet 'CustomStyle' applied to shape ID 12 and saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

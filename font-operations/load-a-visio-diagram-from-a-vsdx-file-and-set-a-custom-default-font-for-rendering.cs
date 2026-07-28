@@ -11,22 +11,23 @@ class Program
         {
 
             // Path to the source VSDX file
-            string sourcePath = "input.vsdx";
+            string inputPath = "input.vsdx";
 
-            // Load the Visio diagram specifying the VSDX format
-            Diagram diagram = new Diagram(sourcePath, LoadFileFormat.Vsdx);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create save options and set a custom default font.
-            // This font will be used when characters are missing or Unicode fonts are not installed.
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions();
-            saveOptions.DefaultFont = "MS Gothic";   // custom default font
+            // Set a custom default font for rendering
+            // This font will be used when the original font is missing or unavailable
+            FontConfigs.DefaultFontName = "Calibri";
 
-            // Save the diagram (any supported format, here VDX) using the options with the custom font.
-            string outputPath = "output.vdx";
+            // (Optional) If you need to add additional font folders:
+            // FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
+
+            // Save the diagram with the default font applied (optional step)
+            string outputPath = "output.vsdx";
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
+            saveOptions.DefaultFont = "Calibri";
             diagram.Save(outputPath, saveOptions);
-
-            // Clean up
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

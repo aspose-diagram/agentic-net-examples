@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,17 +10,27 @@ class Program
         try
         {
 
-            // Create a new diagram instance
+            // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Access the active page of the diagram
+            // Get the active page (the default page created with the diagram)
             Page page = diagram.ActivePage;
 
             // Add a text shape at coordinates (2, 3) with width 2, height 1 and the desired text
-            Shape textShape = page.AddText(2.0, 3.0, 2.0, 1.0, "Sample Text");
+            // Using the AddText overload that accepts pinX, pinY, width, height and text.
+            Shape textShape = page.AddText(
+                pinX: 2.0,          // X coordinate of the text pin
+                pinY: 3.0,          // Y coordinate of the text pin
+                width: 2.0,         // Width of the text box (in inches)
+                height: 1.0,        // Height of the text box (in inches)
+                text: "Sample Text" // Content of the text shape
+            );
 
-            // Save the diagram to a VDX file
-            diagram.Save("output.vdx", SaveFileFormat.Vdx);
+            // (Optional) Refresh the shape data to ensure proper layout
+            textShape.RefreshData();
+
+            // Save the diagram to a VSDX file using the provided Save method
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.NullReferenceException ex)

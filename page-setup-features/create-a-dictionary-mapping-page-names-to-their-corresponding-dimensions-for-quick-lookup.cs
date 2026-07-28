@@ -1,48 +1,46 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file (replace with your actual file path)
+            string filePath = "input.vsdx";
+
+            // Load the diagram within a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(filePath))
             {
-
-                // Path to the Visio file (provide via command line or replace with a literal path)
-                string filePath = args.Length > 0 ? args[0] : "example.vsdx";
-
-                // Dictionary to hold page name -> (width, height) mapping
+                // Dictionary to map page names to their dimensions (width, height) in inches
                 var pageDimensions = new Dictionary<string, (double Width, double Height)>();
 
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(filePath))
+                // Iterate over all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over each page in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Retrieve the page name
-                        string pageName = page.Name;
+                    string pageName = page.Name;
+                    double width = page.PageSheet.PageProps.PageWidth.Value;
+                    double height = page.PageSheet.PageProps.PageHeight.Value;
 
-                        // Retrieve page width and height (values are in inches)
-                        double width = page.PageSheet.PageProps.PageWidth.Value;
-                        double height = page.PageSheet.PageProps.PageHeight.Value;
-
-                        // Store the dimensions in the dictionary
-                        pageDimensions[pageName] = (width, height);
-                    }
+                    // Store the dimensions in the dictionary
+                    pageDimensions[pageName] = (width, height);
                 }
 
-                // Example usage: print the collected dimensions
-                foreach (var kvp in pageDimensions)
+                // Output the collected dimensions
+                foreach (var entry in pageDimensions)
                 {
-                    Console.WriteLine($"Page \"{kvp.Key}\": Width = {kvp.Value.Width} in, Height = {kvp.Value.Height} in");
+                    Console.WriteLine($"Page \"{entry.Key}\": Width = {entry.Value.Width} in, Height = {entry.Value.Height} in");
                 }
+            }
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

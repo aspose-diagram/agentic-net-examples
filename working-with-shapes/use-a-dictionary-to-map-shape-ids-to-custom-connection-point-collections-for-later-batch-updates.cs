@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
 class Program
     {
@@ -10,35 +10,72 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram
+                // Load an existing Visio diagram (replace with your actual file path)
                 string inputPath = "input.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
-                // Dictionary to map each shape ID to its collection of connection points
+                // Work with the first page
+                Page page = diagram.Pages[0];
+
+                // Add two shapes (Rectangle and Ellipse) and a dynamic connector
+                long rectId = page.AddShape(2.0, 2.0, "Rectangle");
+                long ellipseId = page.AddShape(5.0, 2.0, "Ellipse");
+                long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector");
+
+                // Retrieve the shape objects
+                Shape rectShape = page.Shapes.GetShape(rectId);
+                Shape ellipseShape = page.Shapes.GetShape(ellipseId);
+                Shape connectorShape = page.Shapes.GetShape(connectorId);
+
+                // Connect the rectangle to the ellipse using the connector
+                page.ConnectShapesViaConnector(
+                    rectId,
+                    ConnectionPointPlace.Bottom,
+                    ellipseId,
+                    ConnectionPointPlace.Top,
+                    connectorId);
+
+                // Dictionary to map shape IDs to their custom connection point collections
                 Dictionary<long, List<Connection>> shapeConnectionMap = new Dictionary<long, List<Connection>>();
 
-                // Populate the dictionary with connection points from all pages
-                foreach (Page page in diagram.Pages)
+                // Helper method to capture connections for a given shape
+                void CaptureConnections(Shape shape)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Ensure the shape has a Connections collection
+                    if (shape.Connections != null)
                     {
-                        long shapeId = shape.ID;
                         List<Connection> connections = new List<Connection>();
                         foreach (Connection conn in shape.Connections)
                         {
                             connections.Add(conn);
                         }
-                        shapeConnectionMap[shapeId] = connections;
+                        shapeConnectionMap[shape.ID] = connections;
+                    }
+                    else
+                    {
+                        // Store an empty list if no custom connections exist
+                        shapeConnectionMap[shape.ID] = new List<Connection>();
                     }
                 }
 
-                // Example batch update: move every connection point to the shape's center
-                foreach (var kvp in shapeConnectionMap)
+                // Capture connections for each shape we added
+                CaptureConnections(rectShape);
+                CaptureConnections(ellipseShape);
+                CaptureConnections(connectorShape);
+
+                // Example batch update: shift all custom connection points 0.5 inches right
+                foreach (KeyValuePair<long, List<Connection>> entry in shapeConnectionMap)
                 {
-                    foreach (Connection conn in kvp.Value)
+                    foreach (Connection conn in entry.Value)
                     {
-                        conn.X.Ufe.F = "Width*0.5";
-                        conn.Y.Ufe.F = "Height*0.5";
+                        // X and Y are stored as formulas; adjust using simple offset
+                        // Note: This example assumes the formulas are simple numeric values.
+                        if (double.TryParse(conn.X.Ufe.F, out double xVal) &&
+                            double.TryParse(conn.Y.Ufe.F, out double yVal))
+                        {
+                            conn.X.Ufe.F = (xVal + 0.5).ToString();
+                            conn.Y.Ufe.F = yVal.ToString(); // Y unchanged
+                        }
                     }
                 }
 

@@ -1,31 +1,54 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class ReplacePlaceholder
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file (use the provided load rule)
-            var diagram = new Diagram("input.vsdx");
+            // Path to the source Visio diagram
+            string inputPath = "input.vsdx";
 
-            // Define the actual user name to replace the placeholder with
+            // Path where the modified diagram will be saved
+            string outputPath = "output.vsdx";
+
+            // The actual name to replace the placeholder with
             string userName = "John Doe";
 
-            // Iterate through all shapes on the active page
-            foreach (Shape shape in diagram.ActivePage.Shapes)
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Replace the placeholder text "[Name]" with the actual user name
-                shape.ReplaceText("[Name]", userName);
-                // Refresh shape data to update its layout after text change
-                shape.RefreshData();
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Iterate through the text runs (Txt objects) within the shape's text collection
+                    foreach (var item in shape.Text.Value)
+                    {
+                        if (item is Txt txt)
+                        {
+                            // Replace the placeholder "[Name]" with the actual user name
+                            if (txt.Text != null && txt.Text.Contains("[Name]"))
+                            {
+                                txt.Text = txt.Text.Replace("[Name]", userName);
+                            }
+                        }
+                    }
+                }
             }
 
-            // Save the modified diagram to a new file (use the provided save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram back to a file (VSDX format)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

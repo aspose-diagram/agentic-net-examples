@@ -1,48 +1,43 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram
+            // Input and output file paths (adjust as needed)
             string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page
+            // Ensure there is at least one page and one shape
+            if (diagram.Pages.Count == 0)
+            {
+                throw new Exception("The diagram contains no pages.");
+            }
+
             Page page = diagram.Pages[0];
-
-            // Locate the first non‑deleted shape on the page
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            if (page.Shapes.Count == 0)
             {
-                if (shape.Del == BOOL.False)
-                {
-                    targetShape = shape;
-                    break;
-                }
+                throw new Exception("The first page contains no shapes.");
             }
 
-            if (targetShape == null)
-            {
-                throw new Exception("No shape found in the diagram.");
-            }
+            // Get the first shape on the page
+            Shape shape = page.Shapes[0];
 
-            // Rotate the shape by 45 degrees (SetAngle expects radians)
-            double angleDeg = 45;
-            double angleRad = (Math.PI / 180) * angleDeg;
-            targetShape.SetAngle(angleRad);
+            // Rotate the shape (angle in degrees)
+            shape.XForm.Angle.Value = 45; // Rotate 45 degrees
 
-            // Keep the text horizontal despite the rotation
-            targetShape.ThreeDFormat.KeepTextFlat.Value = BOOL.True;
+            // Keep the text horizontal despite rotation
+            shape.ThreeDFormat.KeepTextFlat.Value = BOOL.True;
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

@@ -6,33 +6,19 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Determine the folder containing .vsdx files
-            string folderPath;
-            if (args.Length > 0 && Directory.Exists(args[0]))
-            {
-                folderPath = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the full path to the folder containing .vsdx files: ");
-                folderPath = Console.ReadLine()?.Trim() ?? string.Empty;
+            // Folder containing the .vsdx files
+            string inputFolder = @"C:\VisioFiles";
+            // Folder to store watermarked files (can be the same as inputFolder)
+            string outputFolder = @"C:\VisioFiles\Watermarked";
 
-                if (!Directory.Exists(folderPath))
-                {
-                    Console.WriteLine("The specified folder does not exist.");
-                    return;
-                }
-            }
+            // Ensure output folder exists
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
 
-            // Get all .vsdx files in the folder
-            string[] vsdxFiles = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
-            if (vsdxFiles.Length == 0)
-            {
-                Console.WriteLine("No .vsdx files found in the specified folder.");
-                return;
-            }
+            // Get all .vsdx files in the input folder
+            string[] files = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
 
-            foreach (string filePath in vsdxFiles)
+            foreach (string filePath in files)
             {
                 try
                 {
@@ -46,21 +32,27 @@ class Program
                         double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                         double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                        // Add a full‑page text shape as watermark
+                        // Add a full‑page text watermark.
                         // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches)
-                        page.AddText(0, 0, pageWidth, pageHeight,
-                                     "CONFIDENTIAL", "Arial", "#808080", 0.5);
+                        page.AddText(
+                            0,                     // pinX (left edge)
+                            0,                     // pinY (bottom edge)
+                            pageWidth,             // width (full page width)
+                            pageHeight,            // height (full page height)
+                            "CONFIDENTIAL",        // watermark text
+                            "Calibri",             // font name
+                            "#a5a5a5",             // light gray color in hex
+                            0.25);                 // font size (0.25 inches ≈ 18 pt)
                     }
 
-                    // Save the modified diagram with a new name to avoid overwriting the original
-                    string directory = Path.GetDirectoryName(filePath) ?? string.Empty;
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
-                    string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_watermarked.vsdx");
+                    // Build output file name
+                    string fileName = Path.GetFileNameWithoutExtension(filePath);
+                    string outputPath = Path.Combine(outputFolder, $"{fileName}_watermarked.vsdx");
 
+                    // Save the modified diagram back to VSDX format
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    diagram.Dispose();
 
-                    Console.WriteLine($"Watermark added and saved: {outputPath}");
+                    Console.WriteLine($"Watermarked file saved: {outputPath}");
                 }
                 catch (Exception ex)
                 {
@@ -68,6 +60,6 @@ class Program
                 }
             }
 
-            Console.WriteLine("Batch processing completed.");
+            Console.WriteLine("Batch watermarking completed.");
         }
     }

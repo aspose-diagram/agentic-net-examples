@@ -4,29 +4,29 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Enable global protection for background pages to prevent editing or deletion
-                diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
+            // Path for the protected output file
+            string outputPath = "output_protected.vsdx";
 
-                // Optionally, you can also protect masters, shapes, and styles globally
-                // diagram.DocumentSettings.ProtectMasters = BOOL.True;
-                // diagram.DocumentSettings.ProtectShapes = BOOL.True;
-                // diagram.DocumentSettings.ProtectStyles = BOOL.True;
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Save the protected diagram
-                string outputPath = "output_protected.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
+            // Enable global protection to prevent editing or deletion of background pages
+            diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
 
-            Console.WriteLine("Diagram saved with background protection applied.");
+            // Save the protected diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            // Clean up resources
+            diagram.Dispose();
+
+            Console.WriteLine($"Diagram saved with background protection to '{outputPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

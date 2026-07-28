@@ -1,60 +1,77 @@
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+// Implements parallel conversion of each page in a Visio diagram to a separate PDF file.
+    class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Validate input arguments.
+            if (args.Length < 2)
             {
+                Console.WriteLine("Usage: DiagramBatchPdfExport <inputVisioFile> <outputFolder>");
+                return;
+            }
 
-                // Input Visio file path (first argument) or default.
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+            string inputPath = args[0];
+            string outputFolder = args[1];
 
-                // Output directory (second argument) or default.
-                string outputDir = args.Length > 1 ? args[1] : "output";
+            // Ensure the output folder exists.
+            if (!System.IO.Directory.Exists(outputFolder))
+            {
+                System.IO.Directory.CreateDirectory(outputFolder);
+            }
 
-                // Ensure the output directory exists.
-                if (!Directory.Exists(outputDir))
+            // Load the diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Collect pages into a typed list for Parallel.ForEach (type inference issue otherwise).
+            List<Page> pages = new List<Page>();
+            foreach (Page page in diagram.Pages)
+            {
+                pages.Add(page);
+            }
+
+            // Process each page in parallel.
+            Parallel.ForEach(pages, page =>
+            {
+                try
                 {
-                    Directory.CreateDirectory(outputDir);
-                }
+                    // Determine the page index (zero‑based) within the diagram.
+                    int pageIndex = page.ID - 1; // Page IDs start at 1 and are sequential.
 
-                // Load the diagram from the specified file.
-                Diagram diagram = new Diagram(inputPath);
-
-                int pageCount = diagram.Pages.Count;
-
-                // Export each page to a separate PDF file using parallel processing.
-                Parallel.For(0, pageCount, i =>
-                {
-                    // Configure PDF save options for the current page.
+                    // Prepare PDF save options to export only this page.
                     PdfSaveOptions pdfOptions = new PdfSaveOptions
                     {
-                        // Render only the page with index i.
-                        PageIndex = i,
-                        // Do not include hidden pages in the output.
-                        ExportHiddenPage = false,
-                        // Explicitly set the save format (optional, but safe).
-                        SaveFormat = SaveFileFormat.Pdf
+                        SaveFormat = SaveFileFormat.Pdf,
+                        PageIndex = pageIndex,
+                        PageCount = 1,
+                        // Optional: set a default font to avoid missing‑font issues.
+                        DefaultFont = "Arial"
                     };
 
-                    // Build the output file name (e.g., Page_1.pdf, Page_2.pdf, ...).
-                    string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.pdf");
+                    // Build output file name using page name (fallback to index if name is empty).
+                    string safePageName = string.IsNullOrWhiteSpace(page.Name) ? $"Page_{pageIndex + 1}" : page.Name;
+                    // Remove any invalid file name characters.
+                    foreach (char c in System.IO.Path.GetInvalidFileNameChars())
+                    {
+                        safePageName = safePageName.Replace(c, '_');
+                    }
 
-                    // Save the diagram page as PDF.
+                    string outputPath = System.IO.Path.Combine(outputFolder, $"{safePageName}.pdf");
+
+                    // Save the specific page as PDF.
                     diagram.Save(outputPath, pdfOptions);
-                });
 
-                Console.WriteLine($"Export completed. {pageCount} PDF files created in '{outputDir}'.");
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
-    }
+                    Console.WriteLine($"Successfully exported page '{safePageName}' to PDF.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error exporting page ID {page.ID}: {ex.Message}");
+                }
+            });
+        }
     }

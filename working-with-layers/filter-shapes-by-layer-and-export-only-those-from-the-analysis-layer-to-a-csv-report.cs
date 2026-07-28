@@ -1,8 +1,13 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
-class Program
+using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
+
+namespace DiagramLayerExport
+{
+    class Program
     {
         static void Main(string[] args)
         {
@@ -15,79 +20,78 @@ class Program
                 string outputCsv = "AnalysisLayerShapes.csv";
 
                 // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                Diagram diagram = new Diagram(inputPath);
+
+                // Prepare list to hold CSV rows
+                List<string> csvLines = new List<string>();
+                // Header row
+                csvLines.Add("ShapeID,ShapeName,ShapeText");
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Find the index of the layer named "Analysis"
+                    // Find the index (IX) of the layer named "Analysis"
                     int analysisLayerIndex = -1;
-                    foreach (Page page in diagram.Pages)
+                    foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // Layers are stored in the page's sheet
-                        foreach (Layer layer in page.PageSheet.Layers)
+                        if (layer.Name.Value == "Analysis")
                         {
-                            if (layer.Name.Value == "Analysis")
+                            analysisLayerIndex = layer.IX;
+                            break;
+                        }
+                    }
+
+                    // If the layer does not exist on this page, skip it
+                    if (analysisLayerIndex == -1)
+                        continue;
+
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Get the layer membership string (e.g., "0;2;5")
+                        string layerMember = shape.LayerMem.LayerMember.Value;
+                        if (string.IsNullOrEmpty(layerMember))
+                            continue;
+
+                        // Check if the shape belongs to the Analysis layer
+                        string[] memberIndexes = layerMember.Split(';');
+                        bool isInAnalysisLayer = false;
+                        foreach (string idxStr in memberIndexes)
+                        {
+                            if (int.TryParse(idxStr, out int idx) && idx == analysisLayerIndex)
                             {
-                                analysisLayerIndex = layer.IX;
+                                isInAnalysisLayer = true;
                                 break;
                             }
                         }
-                        if (analysisLayerIndex != -1)
-                            break;
+
+                        if (!isInAnalysisLayer)
+                            continue;
+
+                        // Retrieve shape information
+                        long shapeId = shape.ID;
+                        string shapeName = shape.Name ?? "";
+                        // Get plain text of the shape
+                        string shapeText = shape.Text?.Value?.Text ?? "";
+
+                        // Escape double quotes in CSV fields
+                        shapeName = shapeName.Replace("\"", "\"\"");
+                        shapeText = shapeText.Replace("\"", "\"\"");
+
+                        // Build CSV line
+                        string csvLine = $"{shapeId},\"{shapeName}\",\"{shapeText}\"";
+                        csvLines.Add(csvLine);
                     }
-
-                    if (analysisLayerIndex == -1)
-                    {
-                        Console.WriteLine("Layer 'Analysis' not found in the document.");
-                        return;
-                    }
-
-                    // Prepare CSV writer
-                    using (StreamWriter writer = new StreamWriter(outputCsv, false, System.Text.Encoding.UTF8))
-                    {
-                        // Write CSV header
-                        writer.WriteLine("PageName,ShapeID,ShapeName,ShapeText");
-
-                        // Iterate all pages and shapes
-                        foreach (Page page in diagram.Pages)
-                        {
-                            foreach (Shape shape in page.Shapes)
-                            {
-                                // Skip deleted shapes
-                                if (shape.Del == BOOL.True)
-                                    continue;
-
-                                // Get the layer membership string (e.g., "0;2;5")
-                                string layerMember = shape.LayerMem.LayerMember.Value;
-                                if (string.IsNullOrEmpty(layerMember))
-                                    continue;
-
-                                // Check if the shape belongs to the Analysis layer
-                                string[] memberIndexes = layerMember.Split(';');
-                                bool belongsToAnalysis = false;
-                                foreach (string idxStr in memberIndexes)
-                                {
-                                    if (int.TryParse(idxStr, out int idx) && idx == analysisLayerIndex)
-                                    {
-                                        belongsToAnalysis = true;
-                                        break;
-                                    }
-                                }
-
-                                if (!belongsToAnalysis)
-                                    continue;
-
-                                // Retrieve shape text (plain text)
-                                string shapeText = shape.Text.Value.ToString();
-                                // Escape double quotes in CSV fields
-                                shapeText = shapeText.Replace("\"", "\"\"");
-
-                                // Write CSV line
-                                writer.WriteLine($"{page.Name},{shape.ID},{shape.Name},\"{shapeText}\"");
-                            }
-                        }
-                    }
-
-                    Console.WriteLine($"CSV report generated at: {outputCsv}");
                 }
+
+                // Write all lines to the CSV file
+                File.WriteAllLines(outputCsv, csvLines);
+
+                Console.WriteLine($"Export completed. {csvLines.Count - 1} shape(s) written to '{outputCsv}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -96,3 +100,4 @@ class Program
             }
     }
     }
+}

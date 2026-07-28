@@ -4,35 +4,18 @@ using Aspose.Diagram;
 namespace DiagramUtilities
 {
     /// <summary>
-    /// Encapsulates display options for a Visio diagram:
-    /// ShowGrid, ShowGuides, ShowRulers, and ShowPageBreaks.
+    /// Encapsulates display options for a Visio diagram: grid, guides, rulers and page breaks.
     /// </summary>
     public class DiagramDisplayConfig
     {
-        // Aspose.Diagram uses the BOOL enum for these flags.
-        public BOOL ShowGrid { get; set; }
-        public BOOL ShowGuides { get; set; }
-        public BOOL ShowRulers { get; set; }
-        public BOOL ShowPageBreaks { get; set; }
+        // Public properties use native bool for easy consumption.
+        public bool ShowGrid { get; set; } = true;
+        public bool ShowGuides { get; set; } = true;
+        public bool ShowRulers { get; set; } = true;
+        public bool ShowPageBreaks { get; set; } = true;
 
         /// <summary>
-        /// Initializes a new configuration instance.
-        /// Parameters are plain bools for convenience and are converted to BOOL.
-        /// </summary>
-        public DiagramDisplayConfig(bool showGrid = true,
-                                    bool showGuides = true,
-                                    bool showRulers = true,
-                                    bool showPageBreaks = true)
-        {
-            ShowGrid = showGrid ? BOOL.True : BOOL.False;
-            ShowGuides = showGuides ? BOOL.True : BOOL.False;
-            ShowRulers = showRulers ? BOOL.True : BOOL.False;
-            ShowPageBreaks = showPageBreaks ? BOOL.True : BOOL.False;
-        }
-
-        /// <summary>
-        /// Applies the stored display settings to all windows of the provided diagram.
-        /// If the diagram has no windows, the method does nothing.
+        /// Applies the configured display settings to all windows of the supplied diagram.
         /// </summary>
         /// <param name="diagram">The Aspose.Diagram.Diagram instance to modify.</param>
         public void Apply(Diagram diagram)
@@ -40,16 +23,17 @@ namespace DiagramUtilities
             if (diagram == null)
                 throw new ArgumentNullException(nameof(diagram));
 
-            // Ensure there is at least one window before accessing index 0.
+            // Ensure the diagram contains at least one window; otherwise there is nothing to configure.
             if (diagram.Windows == null || diagram.Windows.Count == 0)
-                return;
+                throw new InvalidOperationException("The diagram does not contain any windows to configure.");
 
+            // Iterate over each window and set the visibility flags.
             foreach (Window window in diagram.Windows)
             {
-                window.ShowGrid = ShowGrid;
-                window.ShowGuides = ShowGuides;
-                window.ShowRulers = ShowRulers;
-                window.ShowPageBreaks = ShowPageBreaks;
+                window.ShowGrid = ShowGrid ? BOOL.True : BOOL.False;
+                window.ShowGuides = ShowGuides ? BOOL.True : BOOL.False;
+                window.ShowRulers = ShowRulers ? BOOL.True : BOOL.False;
+                window.ShowPageBreaks = ShowPageBreaks ? BOOL.True : BOOL.False;
             }
         }
     }
@@ -63,20 +47,24 @@ namespace DiagramUtilities
             {
 
                 // Load an existing diagram (replace with a valid path).
-                Diagram diagram = new Diagram("example.vsdx");
+                string inputPath = "example.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-                // Create a configuration: hide grid and guides, keep rulers and page breaks visible.
-                DiagramDisplayConfig config = new DiagramDisplayConfig(
-                    showGrid: false,
-                    showGuides: false,
-                    showRulers: true,
-                    showPageBreaks: true);
+                // Create a configuration instance and customize as needed.
+                DiagramDisplayConfig config = new DiagramDisplayConfig
+                {
+                    ShowGrid = true,
+                    ShowGuides = false,
+                    ShowRulers = true,
+                    ShowPageBreaks = false
+                };
 
-                // Apply the configuration to the diagram.
+                // Apply the settings to the diagram.
                 config.Apply(diagram);
 
                 // Save the modified diagram.
-                diagram.Save("example_modified.vsdx", SaveFileFormat.Vsdx);
+                string outputPath = "example_modified.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

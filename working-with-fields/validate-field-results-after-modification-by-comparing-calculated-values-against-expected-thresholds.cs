@@ -1,83 +1,75 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = "output.vsdx";
-
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
-
-        double threshold = 100.0;
-
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                if (shape.Del == BOOL.True)
-                    continue;
 
+                // Path to the source Visio file (replace with actual path)
+                string inputPath = "input.vsdx";
+                // Path to the output Visio file after modifications
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Ensure there is at least one page
+                if (diagram.Pages.Count == 0)
+                    throw new Exception("The diagram contains no pages.");
+
+                // Work with the first page
+                Page page = diagram.Pages[0];
+
+                // Example: target shape ID (replace with actual ID)
+                long targetShapeId = 1; // placeholder ID
+
+                // Retrieve the shape by ID
+                Shape shape = page.Shapes.GetShape(targetShapeId);
+                if (shape == null)
+                    throw new Exception($"Shape with ID {targetShapeId} not found.");
+
+                // Verify the shape has at least one field
                 if (shape.Fields.Count == 0)
-                    continue;
+                    throw new Exception("The selected shape does not contain any fields.");
 
-                for (int i = 0; i < shape.Fields.Count; i++)
+                // Access the first field
+                Field field = shape.Fields[0];
+
+                // Modify the field's displayed value
+                field.Value.Val = "123.45";
+
+                // Optionally, set a formula (example)
+                field.Value.Ufev.F = ""; // clear any existing formula
+                field.Value.Ufev.Unit = MeasureConst.Undefined;
+
+                // Parse the numeric value for validation
+                if (!double.TryParse(field.Value.Val, out double numericValue))
+                    throw new Exception("Failed to parse the field value to a number.");
+
+                // Define expected threshold
+                double expectedThreshold = 100.0;
+
+                // Validate the calculated value against the threshold
+                if (numericValue >= expectedThreshold)
                 {
-                    Field field = shape.Fields[i];
-                    double newValue = 150.0;
-                    field.Value.Val = newValue.ToString();
-
-                    if (double.TryParse(field.Value.Val, out double parsedValue))
-                    {
-                        if (parsedValue < threshold)
-                        {
-                            string message = $"Validation failed for shape ID {shape.ID}, field index {i}. Value {parsedValue} is below the threshold {threshold}.";
-                            Console.WriteLine(message);
-                            throw new Exception(message);
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Shape ID {shape.ID}, field index {i} passed validation. Value: {parsedValue}");
-                        }
-                    }
-                    else
-                    {
-                        string message = $"Field value '{field.Value.Val}' on shape ID {shape.ID} is not a valid number.";
-                        Console.WriteLine(message);
-                        throw new Exception(message);
-                    }
+                    Console.WriteLine($"Validation passed: {numericValue} >= {expectedThreshold}");
                 }
+                else
+                {
+                    // Throw an exception to indicate validation failure
+                    throw new Exception($"Validation failed: {numericValue} is less than the expected threshold of {expectedThreshold}.");
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-        }
-
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
-            return;
-        }
-
-        Console.WriteLine("Diagram processing completed successfully.");
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -8,30 +8,33 @@ class Program
             try
             {
 
-                // Path to the Visio file (replace with your actual file path)
-                string visioPath = "input.vsdx";
+                // Path to the Visio file (adjust as needed)
+                string inputPath = "input.vsdx";
 
                 // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
+                Diagram diagram = new Diagram(inputPath);
 
-                // Prepare markdown table header
+                // Print markdown table header
                 Console.WriteLine("| Shape ID | Comment |");
-                Console.WriteLine("|----------|---------|");
+                Console.WriteLine("|---|---|");
 
-                // Iterate through all pages in the diagram
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Annotations (comments) are stored at the page level
+                    // Annotations (comments) are stored in the page's PageSheet
                     foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // ShapeID is an integer; convert to long for consistency
-                        long shapeId = annotation.ShapeID;
+                        // ShapeID is an integer identifying the shape the comment is attached to
+                        int shapeId = annotation.ShapeID;
 
-                        // Retrieve the comment text
-                        string commentText = annotation.Comment.Value ?? string.Empty;
+                        // Comment text is stored in the Comment cell; use .Value to retrieve the string
+                        string commentText = annotation.Comment?.Value ?? string.Empty;
+
+                        // Escape pipe characters to keep markdown table integrity
+                        commentText = commentText.Replace("|", "\\|");
 
                         // Output a markdown table row
-                        Console.WriteLine($"| {shapeId} | {EscapeMarkdown(commentText)} |");
+                        Console.WriteLine($"| {shapeId} | {commentText} |");
                     }
                 }
 
@@ -41,10 +44,4 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
-
-        // Escape pipe characters to keep markdown table integrity
-        private static string EscapeMarkdown(string text)
-        {
-            return text.Replace("|", "\\|");
-        }
     }

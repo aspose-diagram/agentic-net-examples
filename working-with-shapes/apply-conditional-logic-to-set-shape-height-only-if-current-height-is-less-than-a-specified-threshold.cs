@@ -1,6 +1,7 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,38 +10,31 @@ class Program
         try
         {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Height threshold (in inches)
-            double heightThreshold = 2.0;
+            // Threshold height (in inches) and the height to set when below the threshold
+            double thresholdHeight = 2.0;
+            double newHeight = 3.0;
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Get the current height of the shape
+                    // Current height of the shape (in drawing units, typically inches)
                     double currentHeight = shape.XForm.Height.Value;
 
-                    // Apply new height only if current height is less than the threshold
-                    if (currentHeight < heightThreshold)
+                    // Apply new height only if the current height is less than the threshold
+                    if (currentHeight < thresholdHeight)
                     {
-                        shape.SetHeight(heightThreshold);
+                        shape.SetHeight(newHeight);
                     }
                 }
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

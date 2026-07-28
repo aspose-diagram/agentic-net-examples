@@ -1,43 +1,35 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            try
-            {
+            Console.WriteLine("Usage: <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+        // Load the Visio diagram from the specified file.
+        Diagram diagram = new Diagram(inputPath);
 
-                // Read the current center header text
-                string headerCenter = diagram.HeaderFooter.HeaderCenter;
+        // Retrieve the current text of the center header.
+        string headerCenter = diagram.HeaderFooter.HeaderCenter;
 
-                // Replace occurrences of "Draft" with "Final"
-                if (!string.IsNullOrEmpty(headerCenter) && headerCenter.Contains("Draft"))
-                {
-                    headerCenter = headerCenter.Replace("Draft", "Final");
-                    diagram.HeaderFooter.HeaderCenter = headerCenter;
-                    Console.WriteLine("Header center text updated.");
-                }
-                else
-                {
-                    Console.WriteLine("No 'Draft' text found in header center.");
-                }
+        // Replace any occurrence of "Draft" with "Final".
+        if (!string.IsNullOrEmpty(headerCenter) && headerCenter.Contains("Draft"))
+        {
+            string updatedHeader = headerCenter.Replace("Draft", "Final");
+            diagram.HeaderFooter.HeaderCenter = updatedHeader;
+        }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        // Save the modified diagram. Adjust the format as needed (Vsdx used here).
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
-    }
+}

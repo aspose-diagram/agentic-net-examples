@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,10 +10,10 @@ class Program
             {
 
                 // Path to the Visio file (adjust as needed)
-                string diagramPath = "input.vsdx";
+                string inputPath = "input.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+                Diagram diagram = new Diagram(inputPath);
 
                 double totalLength = 0.0;
 
@@ -29,36 +30,43 @@ class Program
                             double prevY = 0.0;
                             bool hasPrev = false;
 
-                            // Iterate through the coordinate collection (MoveTo, LineTo, etc.)
-                            foreach (var segment in geom.CoordinateCol)
+                            // CoordinateCol contains drawing commands such as MoveTo, LineTo, etc.
+                            foreach (object cmd in geom.CoordinateCol)
                             {
-                                if (segment is MoveTo move)
+                                if (cmd is MoveTo move)
                                 {
-                                    // Set the starting point for subsequent LineTo segments
+                                    // MoveTo sets the starting point for subsequent line segments
                                     prevX = move.X.Value;
                                     prevY = move.Y.Value;
                                     hasPrev = true;
                                 }
-                                else if (segment is LineTo line && hasPrev)
+                                else if (cmd is LineTo line)
                                 {
-                                    // Calculate Euclidean distance between current point and previous point
-                                    double dx = line.X.Value - prevX;
-                                    double dy = line.Y.Value - prevY;
-                                    double segmentLength = Math.Sqrt(dx * dx + dy * dy);
-                                    totalLength += segmentLength;
+                                    // LineTo draws a line from the previous point to the current point
+                                    if (hasPrev)
+                                    {
+                                        double dx = line.X.Value - prevX;
+                                        double dy = line.Y.Value - prevY;
+                                        totalLength += Math.Sqrt(dx * dx + dy * dy);
+                                    }
 
-                                    // Update previous point
+                                    // Update previous point for the next segment
                                     prevX = line.X.Value;
                                     prevY = line.Y.Value;
+                                    hasPrev = true;
                                 }
-                                // Other segment types (ArcTo, EllipticalArcTo, etc.) are ignored for this metric
+                                // Other command types (ArcTo, EllipticalArcTo, etc.) are ignored for simplicity
                             }
                         }
                     }
                 }
 
-                // Output the total length of all line segments
-                Console.WriteLine($"Total length of all line segments: {totalLength}");
+                // Output the total length of all line segments (in inches)
+                Console.WriteLine($"Total length of line segments: {totalLength} inches");
+
+                // Optionally save the diagram unchanged (demonstrates save usage)
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

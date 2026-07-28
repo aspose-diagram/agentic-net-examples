@@ -2,21 +2,24 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class Program
+class RetrievePageExample
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (provide the correct file path)
+            // Load the Visio diagram (assumes a load rule is defined elsewhere)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Retrieve the page with the name "Page-2"
+            // Retrieve the page named "Page-2" from the diagram's page collection
             Page targetPage = diagram.Pages.GetPage("Page-2");
 
-            // Example usage: display the page's ID and name
-            System.Console.WriteLine($"Page ID: {targetPage.ID}, Name: {targetPage.Name}");
+            // Example usage: output the page ID and name
+            System.Console.WriteLine($"Retrieved page ID: {targetPage.ID}, Name: {targetPage.Name}");
+
+            // Dispose the diagram when done
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

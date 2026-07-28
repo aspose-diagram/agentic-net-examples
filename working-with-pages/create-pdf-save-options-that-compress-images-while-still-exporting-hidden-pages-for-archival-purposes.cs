@@ -10,20 +10,35 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Create PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Path for the resulting PDF file
+            string outputPath = "output.pdf";
 
-            // Ensure hidden pages are exported (default is true, set explicitly for clarity)
-            pdfOptions.ExportHiddenPage = true;
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Compress images by reducing JPEG quality (e.g., 75 out of 100)
-            pdfOptions.JpegQuality = 75;
+                // Export hidden pages (required for archival purposes)
+                pdfOptions.ExportHiddenPage = true;
 
-            // Save the diagram as PDF with the specified options
-            diagram.Save("output.pdf", pdfOptions);
+                // Compress images by reducing JPEG quality (adjust as needed)
+                pdfOptions.JpegQuality = 75; // Value between 1 and 100
+
+                // Optional: compress text streams using Flate compression
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
+
+                // Explicitly set the save format (PDF)
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+                // Save the diagram as PDF with the configured options
+                diagram.Save(outputPath, pdfOptions);
+            }
+
+            Console.WriteLine("PDF saved successfully with image compression and hidden pages exported.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,50 +1,46 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Vba;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Vba;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+                // Path to the source Visio file (must be a format that supports VBA, e.g., .vsdx)
+                string inputPath = "input.vsdx";
 
-            // Access the VBA project (read‑only property)
-            VbaProject vba = diagram.VbaProject;
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Add a new procedural VBA module named "FlipFillInheritance"
-            int moduleIndex = vba.Modules.Add(VbaModuleType.Procedural, "FlipFillInheritance");
+                // Add a new VBA procedural module named "FlipFillInheritance"
+                int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "FlipFillInheritance");
+                VbaModule module = diagram.VbaProject.Modules[moduleIndex];
 
-            // Retrieve the module and assign the VBA macro code
-            VbaModule module = vba.Modules[moduleIndex];
-            module.Codes = @"
-            Sub FlipFillInheritance()
-            Dim shp As Visio.Shape
-            For Each shp In Visio.ActiveWindow.Selection
-            ' Determine if the shape currently inherits its fill color
-            If shp.CellsU(""FillForegnd"").FormulaU = shp.CellsU(""InheritFillForegnd"").FormulaU Then
-                ' Shape is inheriting – set a custom fill color (red)
-                shp.CellsU(""FillForegnd"").FormulaU = ""RGB(255,0,0)""
-            Else
-                ' Shape has a custom fill – revert to inherited fill color
-                shp.CellsU(""FillForegnd"").FormulaU = shp.CellsU(""InheritFillForegnd"").FormulaU
-            End If
-            Next shp
-            End Sub
-            ";
+                // VBA code that iterates over the current selection and toggles fill inheritance
+                module.Codes = 
+                @"Sub FlipFillInheritance()
+                Dim shp As Visio.Shape
+                For Each shp In Visio.ActiveWindow.Selection
+                ' Toggle between using the inherited fill color and a local fill color (set to no fill)
+                If shp.CellsU(""FillForegnd"").ResultIU = shp.CellsU(""InheritFill!FillForegnd"").ResultIU Then
+                shp.CellsU(""FillForegnd"").FormulaU = ""0""
+                Else
+                shp.CellsU(""FillForegnd"").FormulaU = ""=InheritFill!FillForegnd""
+                End If
+                Next shp
+                End Sub";
 
-            // Save the diagram as a macro‑enabled Visio file
-            diagram.Save("output.vsdm", SaveFileFormat.Vsdm);
+                // Save the diagram as a macro-enabled Visio file
+                diagram.Save("output.vsdm", SaveFileFormat.Vsdm);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

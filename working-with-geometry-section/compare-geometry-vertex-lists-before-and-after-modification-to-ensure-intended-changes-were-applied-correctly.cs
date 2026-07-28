@@ -10,39 +10,52 @@ class Program
             {
 
                 // Load an existing Visio diagram
-                string inputPath = "input.vsdx"; // replace with actual file path
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Get the first shape on the active page
-                Shape shape = diagram.ActivePage.Shapes[0];
+                // Access the first page and first shape
+                Page page = diagram.Pages[0];
+                Shape shape = page.Shapes[0];
 
-                // Capture the original vertex list
-                List<(double X, double Y)> originalVertices = GetVertexList(shape);
+                // Capture vertex list before modification
+                List<(double X, double Y)> beforeVertices = GetVertexList(shape);
 
-                // Modify geometry: add a new vertex to the first geometry path
-                AddVertex(shape, 5.0, 5.0);
+                // Modify geometry: add a new LineTo vertex to the first geometry path
+                Geom firstGeom = (Geom)shape.Geoms[0];
+                LineTo newVertex = new LineTo();
+                newVertex.X.Value = 5.0;
+                newVertex.Y.Value = 5.0;
+                firstGeom.CoordinateCol.Add(newVertex);
 
-                // Capture the modified vertex list
-                List<(double X, double Y)> modifiedVertices = GetVertexList(shape);
+                // Capture vertex list after modification
+                List<(double X, double Y)> afterVertices = GetVertexList(shape);
 
-                // Compare the vertex lists
-                if (modifiedVertices.Count != originalVertices.Count + 1)
+                // Compare the two vertex lists
+                if (beforeVertices.Count + 1 != afterVertices.Count)
                 {
-                    throw new Exception($"Vertex count mismatch. Expected {originalVertices.Count + 1}, but got {modifiedVertices.Count}.");
+                    throw new Exception("Vertex count mismatch after modification.");
                 }
 
-                // Verify that the new vertex is the last one and has the expected coordinates
-                var newVertex = modifiedVertices[modifiedVertices.Count - 1];
-                if (Math.Abs(newVertex.X - 5.0) > 0.0001 || Math.Abs(newVertex.Y - 5.0) > 0.0001)
+                for (int i = 0; i < beforeVertices.Count; i++)
                 {
-                    throw new Exception($"New vertex coordinates are incorrect. Expected (5.0,5.0) but got ({newVertex.X},{newVertex.Y}).");
+                    (double X, double Y) before = beforeVertices[i];
+                    (double X, double Y) after = afterVertices[i];
+                    if (Math.Abs(before.X - after.X) > 1e-6 || Math.Abs(before.Y - after.Y) > 1e-6)
+                    {
+                        throw new Exception($"Vertex at index {i} differs after modification.");
+                    }
                 }
 
-                Console.WriteLine("Geometry modification verified successfully.");
+                // Verify the newly added vertex matches expected values
+                (double X, double Y) addedVertex = afterVertices[afterVertices.Count - 1];
+                if (Math.Abs(addedVertex.X - 5.0) > 1e-6 || Math.Abs(addedVertex.Y - 5.0) > 1e-6)
+                {
+                    throw new Exception("Added vertex does not have the expected coordinates.");
+                }
 
-                // Optionally save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("Geometry vertex list comparison succeeded. Modification applied correctly.");
+
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -51,49 +64,36 @@ class Program
             }
     }
 
-        // Retrieves a flat list of vertex coordinates from all geometry paths of a shape
+        // Helper method to extract all vertex coordinates from a shape's geometry
         private static List<(double X, double Y)> GetVertexList(Shape shape)
         {
             List<(double X, double Y)> vertices = new List<(double X, double Y)>();
 
-            // Enumerate geometries explicitly as Geom
-            foreach (Geom geom in shape.Geoms)
+            for (int geomIndex = 0; geomIndex < shape.Geoms.Count; geomIndex++)
             {
-                // Enumerate coordinate collection; items are typed as objects
-                foreach (object coord in geom.CoordinateCol)
+                Geom geom = (Geom)shape.Geoms[geomIndex];
+                for (int segIndex = 0; segIndex < geom.CoordinateCol.Count; segIndex++)
                 {
-                    if (coord is MoveTo move)
+                    object segment = geom.CoordinateCol[segIndex];
+
+                    MoveTo moveTo = segment as MoveTo;
+                    if (moveTo != null)
                     {
-                        vertices.Add((move.X.Value, move.Y.Value));
+                        vertices.Add((moveTo.X.Value, moveTo.Y.Value));
+                        continue;
                     }
-                    else if (coord is LineTo line)
+
+                    LineTo lineTo = segment as LineTo;
+                    if (lineTo != null)
                     {
-                        vertices.Add((line.X.Value, line.Y.Value));
+                        vertices.Add((lineTo.X.Value, lineTo.Y.Value));
+                        continue;
                     }
-                    // Additional segment types (e.g., ArcTo) can be handled similarly if needed
+
+                    // Other segment types (e.g., ArcTo) can be handled similarly if needed
                 }
             }
 
             return vertices;
-        }
-
-        // Adds a new LineTo vertex with specified coordinates to the first geometry path of the shape
-        private static void AddVertex(Shape shape, double x, double y)
-        {
-            if (shape.Geoms.Count == 0)
-            {
-                throw new Exception("Shape does not contain any geometry paths.");
-            }
-
-            // Get the first geometry path
-            Geom targetGeom = (Geom)shape.Geoms[0];
-
-            // Create a new LineTo segment
-            LineTo newSegment = new LineTo();
-            newSegment.X.Value = x;
-            newSegment.Y.Value = y;
-
-            // Append the new segment to the coordinate collection
-            targetGeom.CoordinateCol.Add(newSegment);
         }
     }

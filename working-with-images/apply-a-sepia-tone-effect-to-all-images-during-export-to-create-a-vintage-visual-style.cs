@@ -4,38 +4,42 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Load the Visio diagram from a file
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+                // Path to the source Visio file
+                string sourcePath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(sourcePath);
 
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Identify image shapes (foreign objects)
+                        // Identify image (foreign) shapes
                         if (shape.Type == TypeValue.Foreign)
                         {
-                            // Apply sepia-like adjustments using image properties
+                            // Apply a sepia‑like effect by adjusting image properties
                             // Increase brightness slightly
-                            shape.Image.Brightness.Value = 0.1;
-                            // Increase contrast to enhance tones
-                            shape.Image.Contrast.Value = 0.2;
+                            shape.Image.Brightness.Value = 0.2;
+                            // Reduce contrast to soften the image
+                            shape.Image.Contrast.Value = 0.5;
                             // Adjust gamma to give a warm tone
-                            shape.Image.Gamma.Value = 0.9;
-                            // Optionally reduce transparency (make fully opaque)
-                            shape.Image.Transparency.Value = 0;
+                            shape.Image.Gamma.Value = 0.8;
                         }
                     }
                 }
 
-                // Export the modified diagram to a PNG image with the applied effects
+                // Configure image export options (PNG format)
                 ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                // Optional: set resolution if needed
+                saveOptions.Resolution = 300f;
+
+                // Export the diagram with the applied sepia effect
                 string outputPath = "output.png";
                 diagram.Save(outputPath, saveOptions);
 

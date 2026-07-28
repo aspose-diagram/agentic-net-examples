@@ -1,49 +1,63 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure there is at least one window; Visio diagrams may start with none
-            if (diagram.Windows.Count == 0)
+            try
             {
-                Window newWindow = new Window();
-                diagram.Windows.Add(newWindow);
-            }
 
-            // Restore default window settings for all windows in the diagram
-            foreach (Window window in diagram.Windows)
+                // Paths to the source and destination Visio files.
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                try
+                {
+                    // Load the diagram from the specified file.
+                    Diagram diagram = new Diagram(inputPath);
+
+                    // Ensure there is at least one window; if not, create a default drawing window.
+                    if (diagram.Windows.Count == 0)
+                    {
+                        Window defaultWindow = new Window
+                        {
+                            // Set the window type to a drawing window.
+                            WindowType = WindowTypeValue.Drawing,
+                            // Maximize the window for a typical default view.
+                            WindowState = WindowStateValue.Maximized,
+                            // Provide a reasonable size.
+                            WindowWidth = 1100,
+                            WindowHeight = 700
+                        };
+                        diagram.Windows.Add(defaultWindow);
+                    }
+
+                    // Restore default visibility settings for each window.
+                    foreach (Window window in diagram.Windows)
+                    {
+                        // Show grid, guides, rulers, and page breaks.
+                        window.ShowGrid = BOOL.True;
+                        window.ShowGuides = BOOL.True;
+                        window.ShowRulers = BOOL.True;
+                        window.ShowPageBreaks = BOOL.True;
+                    }
+
+                    // Save the modified diagram.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved with default window settings to '{outputPath}'.");
+                }
+                catch (Exception ex)
+                {
+                    // Report any errors that occur during processing.
+                    Console.WriteLine("An error occurred: " + ex.Message);
+                    throw;
+                }
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                // Grid, guides, rulers, and page breaks are shown by default
-                window.ShowGrid = BOOL.True;
-                window.ShowGuides = BOOL.True;
-                window.ShowRulers = BOOL.True;
-                window.ShowPageBreaks = BOOL.True;
-
-                // Optional defaults that are commonly enabled
-                window.DynamicGridEnabled = BOOL.True;
-                window.ShowConnectionPoints = BOOL.True;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save the modified diagram back to a file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

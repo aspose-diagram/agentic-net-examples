@@ -1,53 +1,46 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect two arguments: diagram file path and the shape ID (unique identifier)
+        if (args.Length < 2)
         {
-            try
-            {
+            Console.WriteLine("Usage: <exe> <diagramPath> <shapeId>");
+            return;
+        }
 
-                // Path to the Visio file
-                string diagramPath = "input.vsdx";
+        string diagramPath = args[0];
+        if (!long.TryParse(args[1], out long shapeId))
+        {
+            Console.WriteLine("Invalid shape ID.");
+            return;
+        }
 
-                // Unique identifier of the shape to locate
-                long shapeId = 12345; // replace with the actual shape ID
+        // Load the Visio diagram
+        Diagram diagram = new Diagram(diagramPath);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+        // Assume the shape is on the first page (index 0)
+        Page page = diagram.Pages[0];
 
-                // Ensure the diagram has at least one page
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.WriteLine("The diagram contains no pages.");
-                    return;
-                }
+        // Retrieve the shape by its unique identifier
+        Shape shape = page.Shapes.GetShape(shapeId);
+        if (shape == null)
+        {
+            Console.WriteLine($"Shape with ID {shapeId} not found.");
+            return;
+        }
 
-                // Retrieve the shape by its unique ID from the first page
-                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-                if (shape == null)
-                {
-                    Console.WriteLine($"Shape with ID {shapeId} not found.");
-                    return;
-                }
+        // Access the inherited fill information.
+        // For demonstration, we output the inherited foreground color and fill pattern.
+        string inheritedForeColor = shape.InheritFill.FillForegnd.Value;
+        int inheritedPattern = (int)shape.InheritFill.FillPattern.Value;
 
-                // Access the inherited fill information
-                // InheritFill provides the fill values inherited from the parent style and master
-                string inheritedForeColor = shape.InheritFill.FillForegnd.Value;
-                string inheritedBackColor = shape.InheritFill.FillBkgnd.Value;
-                int inheritedPattern = shape.InheritFill.FillPattern.Value;
-
-                // Output the inherited fill properties
-                Console.WriteLine($"Shape ID: {shapeId}");
-                Console.WriteLine($"Inherited Fill Foreground Color: {inheritedForeColor}");
-                Console.WriteLine($"Inherited Fill Background Color: {inheritedBackColor}");
-                Console.WriteLine($"Inherited Fill Pattern: {inheritedPattern}");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        Console.WriteLine($"Shape ID: {shapeId}");
+        Console.WriteLine($"Inherited Fill Foreground Color: {inheritedForeColor}");
+        Console.WriteLine($"Inherited Fill Pattern: {inheritedPattern}");
     }
-    }
+}

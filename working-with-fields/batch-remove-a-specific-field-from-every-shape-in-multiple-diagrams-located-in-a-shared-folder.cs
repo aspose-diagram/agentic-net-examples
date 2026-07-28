@@ -5,64 +5,78 @@ using Aspose.Diagram;
 
 class Program
     {
-        // Name of the custom property (field) to remove from each shape
-        private const string TargetFieldName = "MyField";
-
         static void Main(string[] args)
         {
-            // Path to the folder containing the Visio files
-            string folderPath = @"C:\VisioFiles";
+            // Expect two arguments: the folder containing diagrams and the name of the field to remove
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: BatchRemoveField <folderPath> <fieldName>");
+                return;
+            }
 
-            // Get all Visio files in the folder (adjust the pattern if needed)
-            string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx");
+            string folderPath = args[0];
+            string fieldName = args[1];
+
+            if (!Directory.Exists(folderPath))
+            {
+                Console.WriteLine($"Folder does not exist: {folderPath}");
+                return;
+            }
+
+            // Get all Visio files (VSDX) in the specified folder
+            string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
 
             foreach (string filePath in diagramFiles)
             {
                 try
                 {
-                    // Load the diagram using a using block to ensure proper disposal
-                    using (Diagram diagram = new Diagram(filePath))
-                    {
-                        // Iterate through each page in the diagram
-                        foreach (Page page in diagram.Pages)
-                        {
-                            // Iterate through each shape on the current page
-                            foreach (Shape shape in page.Shapes)
-                            {
-                                // Ensure the shape has a Props collection
-                                if (shape.Props != null)
-                                {
-                                    // Collect the properties that match the target field name
-                                    List<Prop> propsToRemove = new List<Prop>();
-                                    foreach (Prop prop in shape.Props)
-                                    {
-                                        if (prop.Name == TargetFieldName)
-                                        {
-                                            propsToRemove.Add(prop);
-                                        }
-                                    }
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
+                    bool modified = false;
 
-                                    // Remove the collected properties from the shape
-                                    foreach (Prop prop in propsToRemove)
+                    // Iterate through each page
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Iterate through each shape on the page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            if (shape.Props != null)
+                            {
+                                // Collect matching properties to remove (avoid modifying collection during iteration)
+                                List<Prop> toRemove = new List<Prop>();
+                                foreach (Prop prop in shape.Props)
+                                {
+                                    if (prop.Name == fieldName)
                                     {
-                                        shape.Props.Remove(prop);
+                                        toRemove.Add(prop);
                                     }
+                                }
+
+                                // Remove the collected properties
+                                foreach (Prop prop in toRemove)
+                                {
+                                    shape.Props.Remove(prop);
+                                    modified = true;
                                 }
                             }
                         }
-
-                        // Save the modified diagram, overwriting the original file
-                        diagram.Save(filePath, SaveFileFormat.Vsdx);
                     }
 
-                    Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
+                    // Save changes only if any field was removed
+                    if (modified)
+                    {
+                        diagram.Save(filePath, SaveFileFormat.Vsdx);
+                        Console.WriteLine($"Updated: {Path.GetFileName(filePath)}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"No changes needed: {Path.GetFileName(filePath)}");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
+                    Console.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
                 }
             }
-
-            Console.WriteLine("Batch field removal completed.");
         }
     }

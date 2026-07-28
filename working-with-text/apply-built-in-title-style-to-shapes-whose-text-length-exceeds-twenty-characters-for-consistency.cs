@@ -1,22 +1,19 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
 
-            // Paths – adjust as needed
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Locate the built‑in "Title" style sheet
+            // Locate the built‑in "Title" style sheet (if it exists)
             StyleSheet titleStyle = null;
             foreach (StyleSheet ss in diagram.StyleSheets)
             {
@@ -27,32 +24,35 @@ public class Program
                 }
             }
 
-            // If the style is not found, we simply skip styling
-            if (titleStyle != null)
+            if (titleStyle == null)
             {
-                // Iterate all pages and shapes
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.False)
-                        {
-                            // Retrieve plain text of the shape
-                            string plainText = shape.Text.Value.Text;
+                Console.WriteLine("The 'Title' style was not found in the diagram's style sheets.");
+                return;
+            }
 
-                            // Apply the Title style when text length exceeds 20 characters
-                            if (!string.IsNullOrEmpty(plainText) && plainText.Length > 20)
-                            {
-                                shape.TextStyle = titleStyle;
-                            }
-                        }
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Retrieve plain text of the shape
+                    string shapeText = shape.Text.Value.Text ?? string.Empty;
+
+                    // Apply the Title style if text length exceeds 20 characters
+                    if (shapeText.Length > 20)
+                    {
+                        shape.TextStyle = titleStyle;
                     }
                 }
             }
 
             // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved with Title style applied where needed.");
 
         }
         catch (System.IO.FileNotFoundException ex)

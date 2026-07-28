@@ -1,63 +1,72 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                // Iterate through all pages to add a watermark that stays within printable margins
+
+                // Load an existing Visio diagram (replace with your file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages to add a watermark that fits within printable area
                 foreach (Page page in diagram.Pages)
                 {
-                    // Page dimensions (in inches)
+                    // Retrieve page dimensions (in inches)
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Printable area margins (in inches)
+                    // Retrieve printable margins (in inches)
                     double leftMargin = page.PageSheet.PrintProps.PageLeftMargin.Value;
                     double rightMargin = page.PageSheet.PrintProps.PageRightMargin.Value;
                     double topMargin = page.PageSheet.PrintProps.PageTopMargin.Value;
                     double bottomMargin = page.PageSheet.PrintProps.PageBottomMargin.Value;
 
-                    // Compute printable width and height
+                    // Calculate printable area
                     double printableWidth = pageWidth - leftMargin - rightMargin;
                     double printableHeight = pageHeight - topMargin - bottomMargin;
 
-                    // Center position within printable area
-                    double centerX = leftMargin + printableWidth / 2.0;
-                    double centerY = bottomMargin + printableHeight / 2.0;
+                    // Center position for the watermark (pin point)
+                    double pinX = leftMargin + printableWidth / 2.0;
+                    double pinY = bottomMargin + printableHeight / 2.0;
 
-                    // Add watermark text covering the printable area
-                    // Font size is specified in inches (e.g., 0.5 inches ≈ 36 points)
-                    double fontSizeInInches = 0.5;
+                    // Watermark text and styling
+                    string watermarkText = "CONFIDENTIAL";
+                    string fontName = "Calibri";
+                    string fontColor = "#A0A0A0"; // Light gray in hex
+                    double fontSizeInPoints = 72; // 1 inch = 72 points
+                    double fontSizeInInches = fontSizeInPoints / 72.0;
+
+                    // Add the watermark as a text shape that occupies the printable width
+                    // Height is set to a small value; the text will be rendered within the shape bounds
                     page.AddText(
-                        pinX: centerX,
-                        pinY: centerY,
-                        width: printableWidth,
-                        height: printableHeight,
-                        text: "CONFIDENTIAL",
-                        fontName: "Arial",
-                        fontColor: "#808080",
-                        size: fontSizeInInches);
+                        pinX,                     // PinX (center X)
+                        pinY,                     // PinY (center Y)
+                        printableWidth,           // Width of the text shape (fits printable area)
+                        fontSizeInInches * 2,    // Height (enough to display the text)
+                        watermarkText,
+                        fontName,
+                        fontColor,
+                        fontSizeInInches          // Font size in inches
+                    );
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
+                string outputPath = "output_with_watermark.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Clean up
+                diagram.Dispose();
+
+                Console.WriteLine("Watermark added and diagram saved to: " + outputPath);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

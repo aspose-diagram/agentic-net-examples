@@ -1,7 +1,7 @@
-using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using System;
+using System.IO;
 
 class Program
 {
@@ -10,30 +10,29 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram from a file
-            string sourceFile = "input.vsdx";
-            Diagram diagram = new Diagram(sourceFile);
+            // Load an existing Visio diagram
+            var diagram = new Diagram("input.vsdx");
 
-            // Add a simple rectangle shape to the active page (if a page exists)
+            // Add a simple rectangle shape to the first page (if a page exists)
             if (diagram.Pages.Count > 0)
             {
-                // Parameters: PinX, PinY, Master name, Page index (0 = active page)
-                diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+                // Parameters: PinX, PinY, Master name, Page index (1‑based)
+                diagram.AddShape(2.0, 2.0, "Rectangle", 1);
             }
 
-            // Prepare save options – use VDX format and auto‑fit the page to the new content
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx)
+            // Prepare save options – use VDX format and auto‑fit the page to new content
+            var saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx)
             {
                 AutoFitPageToDrawingContent = true
             };
 
             // Save the modified diagram to a new file
-            string outputFile = "output.vdx";
-            diagram.Save(outputFile, saveOptions);
+            string outputPath = "output.vdx";
+            diagram.Save(outputPath, saveOptions);
 
             // Verify that the file size reflects the added content
-            long sizeInBytes = new FileInfo(outputFile).Length;
-            Console.WriteLine($"Saved diagram size: {sizeInBytes} bytes");
+            long fileSize = new FileInfo(outputPath).Length;
+            Console.WriteLine($"Saved diagram size: {fileSize} bytes");
 
         }
         catch (System.IO.FileNotFoundException ex)

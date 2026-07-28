@@ -1,61 +1,53 @@
 using System;
-using System.Threading;
+using System.IO;
+using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        // Paths to the source Visio file and the target PDF file
+        string inputPath = "input.vsdx";
+        // Guard against missing input file
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        string outputPath = "output.pdf";
+
+        // Create an InterruptMonitor to allow early termination
+        InterruptMonitor monitor = new InterruptMonitor();
+
+        // Start a background task that will interrupt after 5 seconds
+        Task.Run(async () =>
         {
-            try
-            {
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            monitor.Interrupt(); // Signal interruption if operation exceeds timeout
+        });
 
-                // Paths for input Visio file and output PDF
-                string inputPath = "input.vsdx";
-                string outputPath = "output.pdf";
+        try
+        {
+            // Prepare load options and assign the monitor for load interruption
+            LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsdx);
+            loadOptions.InterruptMonitor = monitor;
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Load the diagram with the interrupt monitor attached
+            Diagram diagram = new Diagram(inputPath, loadOptions);
 
-                // Create and assign an InterruptMonitor to the diagram
-                InterruptMonitor monitor = new InterruptMonitor();
-                diagram.InterruptMonitor = monitor;
+            // Assign the same monitor to the diagram for post‑load operations (e.g., PDF conversion)
+            diagram.InterruptMonitor = monitor;
 
-                // Start a background thread that will interrupt after 5 seconds
-                Thread interruptThread = new Thread(() =>
-                {
-                    Thread.Sleep(5000); // 5 seconds
-                    monitor.Interrupt();
-                });
-                interruptThread.Start();
+            // Configure PDF save options (default font can be set as needed)
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
 
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    DefaultFont = "Arial"
-                };
-
-                try
-                {
-                    // Save the diagram as PDF
-                    diagram.Save(outputPath, pdfOptions);
-                    Console.WriteLine("PDF saved successfully.");
-                }
-                catch (Exception ex)
-                {
-                    // Handle interruption or other errors
-                    Console.WriteLine("Operation was interrupted or failed: " + ex.Message);
-                }
-                finally
-                {
-                    // Ensure the interrupt thread has finished
-                    interruptThread.Join();
-                }
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the diagram as PDF using the configured options
+            diagram.Save(outputPath, pdfOptions);
+        }
+        catch (Exception ex)
+        {
+            // Handle any errors, including those caused by interruption
+            Console.Error.WriteLine("An error occurred: " + ex.Message);
+            throw;
+        }
     }
-    }
+}

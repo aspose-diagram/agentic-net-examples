@@ -1,47 +1,62 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is at least one page
+            if (diagram.Pages.Count == 0)
             {
-
-                // Load an existing Visio diagram
-                // Replace "input.vsdx" with the path to your source file
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Anchor the text block to the shape's geometric center
-                        // TxtPinX/Y define the pin point of the text block (center of rotation)
-                        // Setting them to the shape's PinX/Y aligns the text block with the shape's center
-                        shape.TextXForm.TxtPinX.Value = shape.XForm.PinX.Value;
-                        shape.TextXForm.TxtPinY.Value = shape.XForm.PinY.Value;
-
-                        // Optional: ensure the local pin of the text block is at its center
-                        // This makes the text block expand equally in all directions from the pin
-                        shape.TextXForm.TxtLocPinX.Value = shape.TextXForm.TxtWidth.Value / 2.0;
-                        shape.TextXForm.TxtLocPinY.Value = shape.TextXForm.TxtHeight.Value / 2.0;
-                    }
-                }
-
-                // Save the modified diagram
-                // Replace "output.vsdx" with the desired output path
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                Console.WriteLine("The diagram contains no pages.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            Page page = diagram.Pages[0];
+
+            // Ensure the page has at least one shape
+            if (page.Shapes.Count == 0)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("The first page contains no shapes.");
+                return;
             }
+
+            // Retrieve the first shape (ID typically starts at 1)
+            Shape shape = page.Shapes.GetShape(1);
+            if (shape == null)
+            {
+                Console.WriteLine("Unable to retrieve the shape.");
+                return;
+            }
+
+            // Anchor the text block to the exact center of the shape geometry
+            // Set the text block pin to the shape's PinX and PinY (center of the shape)
+            shape.TextXForm.TxtPinX.Value = shape.XForm.PinX.Value;
+            shape.TextXForm.TxtPinY.Value = shape.XForm.PinY.Value;
+
+            // Adjust the local pin so the text block itself is centered on its pin
+            // Use half of the text block's width and height as offsets
+            shape.TextXForm.TxtLocPinX.Value = shape.TextXForm.TxtWidth.Value / 2.0;
+            shape.TextXForm.TxtLocPinY.Value = shape.TextXForm.TxtHeight.Value / 2.0;
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -2,7 +2,6 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,54 +10,37 @@ class Program
         try
         {
 
-            // Paths to the source and destination Visio files
-            string sourceFile = "input.vsdx";
-            string destinationFile = "output.vsdx";
+            // Input and output Visio files
+            string inputFile = "input.vsdx";
+            string outputFile = "output.vsdx";
 
-            // Load the diagram from the source file
-            Diagram diagram = new Diagram(sourceFile);
-
-            // Dictionary containing placeholder keys and their replacement values
-            var replacements = new Dictionary<string, string>
+            // Load the diagram using the constructor that accepts a file path
+            using (Diagram diagram = new Diagram(inputFile))
             {
-                { "Name", "John Doe" },
-                { "Date", "2023-10-01" }
-                // Add more key/value pairs as needed
-            };
-
-            // Iterate through every page and shape in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Dictionary containing placeholder keys and their replacement values
+                var replacements = new Dictionary<string, string>
                 {
-                    // Ensure the shape has a Text cell with a value
-                    if (shape.Text != null && shape.Text.Value != null)
+                    { "{Name}", "John Doe" },
+                    { "{Date}", DateTime.Today.ToString("yyyy-MM-dd") },
+                    { "{Company}", "Acme Corp" }
+                };
+
+                // Iterate through all pages and shapes, replacing placeholders where found
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
                     {
-                        string originalText = shape.Text.Value.ToString();
-                        string updatedText = originalText;
-
-                        // Replace each placeholder found in the shape's text
-                        foreach (var kvp in replacements)
+                        foreach (KeyValuePair<string, string> kvp in replacements)
                         {
-                            string placeholder = $"{{{{{kvp.Key}}}}}";
-                            if (updatedText.Contains(placeholder))
-                            {
-                                updatedText = updatedText.Replace(placeholder, kvp.Value);
-                            }
-                        }
-
-                        // If any replacement occurred, apply it to the shape
-                        if (!updatedText.Equals(originalText, StringComparison.Ordinal))
-                        {
-                            shape.ReplaceText(originalText, updatedText);
-                            shape.RefreshData(); // Refresh shape geometry after text change
+                            // Replace placeholder text with the corresponding value
+                            shape.ReplaceText(kvp.Key, kvp.Value);
                         }
                     }
                 }
-            }
 
-            // Save the modified diagram using the provided Save method
-            diagram.Save(destinationFile, SaveFileFormat.Vdx);
+                // Save the updated diagram using the Save method with a file format enum
+                diagram.Save(outputFile, SaveFileFormat.Vsdx);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

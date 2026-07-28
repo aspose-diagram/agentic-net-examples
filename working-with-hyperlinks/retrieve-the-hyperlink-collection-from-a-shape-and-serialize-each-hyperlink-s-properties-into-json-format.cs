@@ -5,13 +5,13 @@ using Aspose.Diagram;
 
 namespace HyperlinkExport
 {
-    // DTO to hold hyperlink data for JSON serialization
+    // DTO for JSON serialization of hyperlink data
     public class HyperlinkInfo
     {
-        public string Name { get; set; }
-        public string Address { get; set; }
-        public string SubAddress { get; set; }
-        public string Description { get; set; }
+        public string? Address { get; set; }
+        public string? SubAddress { get; set; }
+        public string? Description { get; set; }
+        public string? Name { get; set; }
     }
 
     public class Program
@@ -22,28 +22,32 @@ namespace HyperlinkExport
             {
 
                 // Path to the Visio file (adjust as needed)
-                string inputPath = "input.vsdx";
+                string diagramPath = "input.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Collect all hyperlinks from all shapes in all pages
+                // Collect hyperlink information from all shapes
                 List<HyperlinkInfo> allLinks = new List<HyperlinkInfo>();
 
+                // Iterate through each page
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through each shape on the page
                     foreach (Shape shape in page.Shapes)
                     {
+                        // Ensure the Hyperlinks collection exists
                         if (shape.Hyperlinks != null)
                         {
+                            // Iterate explicitly over the Hyperlink collection
                             foreach (Hyperlink link in shape.Hyperlinks)
                             {
                                 HyperlinkInfo info = new HyperlinkInfo
                                 {
-                                    Name = link.Name,
                                     Address = link.Address?.Value,
                                     SubAddress = link.SubAddress?.Value,
-                                    Description = link.Description?.Value
+                                    Description = link.Description?.Value,
+                                    Name = link.Name
                                 };
                                 allLinks.Add(info);
                             }
@@ -51,7 +55,7 @@ namespace HyperlinkExport
                     }
                 }
 
-                // Serialize the collection to JSON
+                // Serialize the collected hyperlinks to JSON
                 string json = JsonSerializer.Serialize(allLinks, new JsonSerializerOptions { WriteIndented = true });
 
                 // Output JSON to console

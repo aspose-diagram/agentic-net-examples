@@ -1,11 +1,11 @@
 {
   "category": "visio-shape-gradient",
   "display_name": "Visio Shape Gradient",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-06-08",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -46,7 +46,6 @@
       "task": "Add a new gradient stop at position 0 25 with yellow color rgb 255 255 0",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -81,7 +80,6 @@
       "task": "Apply the modified gradientfill back to the shape s fill property to update appearance",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -99,9 +97,7 @@
       "task": "Change the color of gradient stop at index 0 to pure red rgb 255 0 0",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -117,7 +113,9 @@
       "task": "Change the color of gradient stop at index 1 to pure green rgb 0 255 0",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -134,7 +132,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -151,7 +149,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -173,9 +172,8 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -200,15 +198,14 @@
       "task": "Iterate through all gradient stops and log each stop s color and position values",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -234,6 +231,21 @@
       "task": "Read the current gradient angle of the selected shape to understand its orientation",
       "namespaces": [
         "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "read-the-current-gradient-direction-of-the-selected-shape-for-verification-purposes",
+      "file": "read-the-current-gradient-direction-of-the-selected-shape-for-verification-purposes.cs",
+      "task": "Read the current gradient direction of the selected shape for verification purposes",
+      "namespaces": [
+        "Aspose.Diagram",
         "System"
       ],
       "key_apis": [
@@ -245,29 +257,14 @@
       ]
     },
     {
-      "slug": "read-the-current-gradient-direction-of-the-selected-shape-for-verification-purposes",
-      "file": "read-the-current-gradient-direction-of-the-selected-shape-for-verification-purposes.cs",
-      "task": "Read the current gradient direction of the selected shape for verification purposes",
-      "namespaces": [
-        "Aspose.Diagram",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "diagram"
-      ]
-    },
-    {
       "slug": "remove-the-gradient-stop-at-index-2-from-the-collection-to-simplify-the-gradient",
       "file": "remove-the-gradient-stop-at-index-2-from-the-collection-to-simplify-the-gradient.cs",
       "task": "Remove the gradient stop at index 2 from the collection to simplify the gradient",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -284,7 +281,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -334,13 +332,13 @@
       "task": "Retrieve the gradient stop count and ensure it meets a minimum of three stops",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -366,13 +364,16 @@
       "file": "set-the-gradient-angle-of-the-shape-to-0-degrees-for-a-horizontal-fill.cs",
       "task": "Set the gradient angle of the shape to 0 degrees for a horizontal fill",
       "namespaces": [
+        "Aspose.Diagram",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
+        "Diagram",
         "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -398,15 +399,16 @@
       "task": "Set the gradient angle of the shape to 90 degrees to create a vertical fill",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -415,7 +417,6 @@
       "task": "Set the gradient direction of the shape to diagonal top left to bottom right",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -433,8 +434,8 @@
       "task": "Set the gradient direction of the shape to horizontal to achieve left to right fill",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "AddShape",
@@ -450,15 +451,12 @@
       "task": "Set the gradient direction of the shape to vertical for top to bottom fill effect",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -469,7 +467,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -486,7 +483,6 @@
       "task": "Update the color of all gradient stops to a uniform gray shade rgb 128 128 128",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -510,9 +506,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     }
   ]

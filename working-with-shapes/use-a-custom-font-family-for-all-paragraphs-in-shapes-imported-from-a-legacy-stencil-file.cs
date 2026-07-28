@@ -1,60 +1,72 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        string stencilPath = "legacyStencil.vss";
+        // Path to the legacy stencil file (e.g., .vss or .vssx)
+        string stencilPath = "legacyStencil.vssx";
+
+        // Verify that the stencil file exists before proceeding
         if (!File.Exists(stencilPath))
         {
             Console.Error.WriteLine($"File not found: {stencilPath}");
             return;
         }
 
-        string outputPath = "output.vsdx";
-
         try
         {
-            // Create a new empty diagram
+            // Load the stencil diagram which contains the masters
+            Diagram stencilDiagram = new Diagram(stencilPath);
+
+            // Create a new empty diagram where shapes will be placed
             Diagram diagram = new Diagram();
 
-            // Import a master shape from the legacy stencil.
-            diagram.AddMaster(stencilPath, "Rectangle");
-
-            // Add a shape based on the imported master to the first page
-            Page page = diagram.Pages[0];
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Define the custom font family to apply
-            string customFontFamily = "MyCustomFont";
-
-            // Apply the custom font to all characters of the newly added shape
-            foreach (Aspose.Diagram.Char ch in shape.Chars)
+            // Import all masters from the stencil into the new diagram
+            foreach (Master master in stencilDiagram.Masters)
             {
-                ch.FontName.Value = customFontFamily;
+                // Add master by name; this copies the master definition into the target diagram
+                diagram.AddMaster(stencilDiagram, master.Name);
             }
 
-            // Additionally, apply the custom font to all existing shapes in the diagram
-            foreach (Page pg in diagram.Pages)
+            // Example: add one shape for each imported master onto the first page
+            Page page = diagram.Pages[0];
+            double startX = 2.0;
+            double startY = 2.0;
+            double offset = 2.0;
+
+            foreach (Master master in diagram.Masters)
             {
-                foreach (Shape shp in pg.Shapes)
+                // Place the shape on the page using the master name
+                long shapeId = page.AddShape(startX, startY, master.Name);
+
+                // Retrieve the concrete Shape object for further modifications
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Apply the custom font to all characters within the shape
+                if (shape.Chars != null)
                 {
-                    foreach (Aspose.Diagram.Char ch in shp.Chars)
+                    foreach (Aspose.Diagram.Char ch in shape.Chars)
                     {
-                        ch.FontName.Value = customFontFamily;
+                        // Set the desired font family (must use .Value)
+                        ch.FontName.Value = "MyCustomFontFamily";
                     }
                 }
+
+                // Move the next shape position to avoid overlap
+                startX += offset;
+                startY += offset;
             }
 
-            // Save the diagram in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the resulting diagram to a VSDX file
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
+            // Write any Aspose.Diagram errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

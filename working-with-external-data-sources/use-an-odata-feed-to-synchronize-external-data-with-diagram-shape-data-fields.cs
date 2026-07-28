@@ -7,118 +7,95 @@ using Aspose.Diagram;
 
 namespace ODataDiagramSync
 {
-    // Simple POCO representing an OData entry
+    // Represents a single record from the OData feed.
     public class ODataItem
     {
-        public string Id { get; set; }
-        public string Value { get; set; }
+        public string ShapeName { get; set; }
+        public string Data1 { get; set; }
+        public string Data2 { get; set; }
+        public string Data3 { get; set; }
     }
 
     public class Program
     {
-        // Entry point – async to allow HTTP calls
+        // Entry point of the console application.
         public static async Task Main(string[] args)
         {
-            // Validate arguments
-            if (args.Length < 2)
+            if (args.Length < 3)
             {
-                Console.WriteLine("Usage: ODataDiagramSync <VisioFilePath> <ODataEndpointUrl>");
+                Console.WriteLine("Usage: ODataDiagramSync <inputVisioPath> <outputVisioPath> <odataUrl>");
                 return;
             }
 
-            string visioPath = args[0];
-            string odataUrl = args[1];
+            string inputVisioPath = args[0];
+            string outputVisioPath = args[1];
+            string odataUrl = args[2];
 
-            // Load the Visio diagram
-            Diagram diagram;
-            try
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputVisioPath);
+
+            // Retrieve OData feed.
+            List<ODataItem> odataItems = await FetchODataAsync(odataUrl);
+            if (odataItems == null)
             {
-                diagram = new Diagram(visioPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                Console.WriteLine("Failed to retrieve OData feed.");
                 return;
             }
 
-            // Retrieve OData feed
-            List<ODataItem> odataItems;
-            try
+            // Build a lookup dictionary for fast shape matching.
+            Dictionary<string, ODataItem> lookup = new Dictionary<string, ODataItem>(StringComparer.OrdinalIgnoreCase);
+            foreach (ODataItem item in odataItems)
             {
-                odataItems = await FetchODataAsync(odataUrl);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to fetch OData: {ex.Message}");
-                return;
-            }
-
-            // Build a lookup dictionary for fast access (keyed by Id)
-            var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var item in odataItems)
-            {
-                if (!string.IsNullOrEmpty(item.Id))
+                if (!string.IsNullOrWhiteSpace(item.ShapeName))
                 {
-                    lookup[item.Id] = item.Value ?? string.Empty;
+                    lookup[item.ShapeName] = item;
                 }
             }
 
-            // Iterate through all pages and shapes, updating Data1 where shape name matches OData Id
+            // Iterate through all pages and shapes, updating Data fields where a match is found.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Use the universal name (NameU) for matching
-                    string shapeKey = shape.NameU;
-                    if (string.IsNullOrEmpty(shapeKey))
-                        continue;
-
-                    if (lookup.TryGetValue(shapeKey, out string newValue))
+                    if (shape.NameU != null && lookup.TryGetValue(shape.NameU, out ODataItem match))
                     {
-                        // Update the custom data field
-                        shape.Data1 = newValue;
-                        Console.WriteLine($"Updated shape '{shapeKey}' Data1 to '{newValue}'.");
+                        // Update shape data fields directly (no .Value needed for Data1/Data2/Data3).
+                        shape.Data1 = match.Data1 ?? string.Empty;
+                        shape.Data2 = match.Data2 ?? string.Empty;
+                        shape.Data3 = match.Data3 ?? string.Empty;
+
+                        Console.WriteLine($"Updated shape '{shape.NameU}' (ID: {shape.ID}) with OData values.");
                     }
                 }
             }
 
-            // Save the updated diagram
-            string outputPath = System.IO.Path.Combine(
-                System.IO.Path.GetDirectoryName(visioPath) ?? string.Empty,
-                System.IO.Path.GetFileNameWithoutExtension(visioPath) + "_Updated.vsdx");
+            // Save the modified diagram.
+            diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputVisioPath}'.");
+        }
 
+        // Helper method to fetch and deserialize OData JSON.
+        private static async Task<List<ODataItem>> FetchODataAsync(string url)
+        {
             try
             {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                using HttpClient client = new HttpClient();
+                HttpResponseMessage response = await client.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                string json = await response.Content.ReadAsStringAsync();
+                List<ODataItem> items = JsonSerializer.Deserialize<List<ODataItem>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return items;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+                Console.WriteLine($"Error fetching OData: {ex.Message}");
+                return null;
             }
-        }
-
-        // Helper method to fetch and deserialize OData JSON array
-        private static async Task<List<ODataItem>> FetchODataAsync(string requestUrl)
-        {
-            using HttpClient client = new HttpClient();
-            HttpResponseMessage response = await client.GetAsync(requestUrl);
-            response.EnsureSuccessStatusCode();
-
-            string json = await response.Content.ReadAsStringAsync();
-
-            // Assuming the OData service returns a JSON array of objects with 'Id' and 'Value' properties
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
-
-            return JsonSerializer.Deserialize<List<ODataItem>>(json, options) 
-                   ?? new List<ODataItem>();
         }
     }
 }

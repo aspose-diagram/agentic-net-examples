@@ -15,30 +15,22 @@ class Program
             // Load the diagram from the file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            // Iterate through all pages in the diagram
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
                 // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Verify the shape is a foreign OLE object
-                    if (shape.Type == TypeValue.Foreign &&
-                        shape.ForeignData != null &&
-                        shape.ForeignData.ForeignType == ForeignType.Object)
+                    // Identify OLE (foreign) shapes
+                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
                     {
-                        // Retrieve the embedded OLE binary data
-                        byte[] oleData = shape.ForeignData.ObjectData;
-
-                        // Ensure the data is present
-                        if (oleData != null && oleData.Length > 0)
+                        // Verify the foreign type is an embedded object
+                        if (shape.ForeignData.ForeignType == ForeignType.Object)
                         {
-                            // Wrap the binary data in a MemoryStream as per guidelines
-                            using (MemoryStream ms = new MemoryStream(oleData))
+                            // Ensure the OLE binary data exists
+                            if (shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
                             {
-                                // Output basic information about the OLE object
-                                Console.WriteLine($"Found OLE object on Page '{page.Name}' (ID: {page.ID})");
-                                Console.WriteLine($"  Shape ID: {shape.ID}");
-                                Console.WriteLine($"  Data size: {ms.Length} bytes");
+                                Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, OLE size: {shape.ForeignData.ObjectData.Length} bytes");
                             }
                         }
                     }

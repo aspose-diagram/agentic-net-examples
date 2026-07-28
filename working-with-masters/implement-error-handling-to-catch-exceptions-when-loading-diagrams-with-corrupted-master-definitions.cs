@@ -2,37 +2,46 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class DiagramLoader
+class DiagramLoader
 {
-    // Loads a Visio diagram from the specified file path.
-    // Returns the Diagram object if successful; otherwise returns null.
-    public Diagram LoadDiagram(string filePath)
+    // Attempts to load a Visio diagram and handles corrupted master definitions.
+    public static Diagram LoadDiagram(string filePath)
     {
         try
         {
-            // Use the Diagram constructor that loads from a file.
+            // Load the diagram from the specified file.
+            // This may throw DiagramException if the file contains corrupted masters.
             Diagram diagram = new Diagram(filePath);
             return diagram;
         }
         catch (DiagramException dex)
         {
-            // Catches errors related to corrupted master definitions or other diagram issues.
+            // Specific handling for Aspose.Diagram loading errors.
             Console.Error.WriteLine($"Diagram loading failed: {dex.Message}");
             return null;
         }
         catch (Exception ex)
         {
-            // Catches any other unexpected exceptions.
+            // Fallback for any other unexpected errors.
             Console.Error.WriteLine($"Unexpected error: {ex.Message}");
             return null;
         }
     }
-}
 
-class Program
-{
-    static void Main(string[] args)
+    static void Main()
     {
-        // See classes above
+        string path = "sample.vsdx";
+
+        Diagram diagram = LoadDiagram(path);
+        if (diagram != null)
+        {
+            // Example usage: output number of masters in the loaded diagram.
+            Console.WriteLine($"Diagram loaded successfully. Masters count: {diagram.Masters.Count}");
+            diagram.Dispose();
+        }
+        else
+        {
+            Console.WriteLine("Failed to load diagram.");
+        }
     }
 }

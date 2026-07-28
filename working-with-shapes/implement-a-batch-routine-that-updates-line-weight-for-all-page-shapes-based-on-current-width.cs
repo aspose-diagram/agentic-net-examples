@@ -6,48 +6,45 @@ class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Expect input and output file paths as command‑line arguments.
+            if (args.Length < 2)
             {
+                Console.WriteLine("Usage: DiagramBatchProcessor <input.vsdx> <output.vsdx>");
+                return;
+            }
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through each shape on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through each shape on the current page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip shapes that are marked as deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
+                        // Skip shapes that are marked as deleted.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                            // Retrieve the current width of the shape (in inches)
-                            double width = shape.XForm.Width.Value;
+                        // Retrieve the current width of the shape (in inches).
+                        double width = shape.XForm.Width.Value;
 
-                            // Determine the new line weight based on the width.
-                            // Example logic: line weight is 1% of the shape's width, minimum 0.01 inches.
-                            double newLineWeight = Math.Max(0.01, width * 0.01);
+                        // Calculate a new line weight based on the width.
+                        // Example: 1% of the width.
+                        double newLineWeight = width * 0.01;
 
-                            // Update the line weight (in inches)
-                            shape.Line.LineWeight.Value = newLineWeight;
-                        }
+                        // Assign the calculated line weight to the shape.
+                        shape.Line.LineWeight.Value = newLineWeight;
                     }
-
-                    // Save the updated diagram using VSDX format
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("Batch update completed successfully.");
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+            Console.WriteLine("Diagram processing completed successfully.");
+        }
     }

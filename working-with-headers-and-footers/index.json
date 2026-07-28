@@ -1,11 +1,11 @@
 {
   "category": "working-with-headers-and-footers",
   "display_name": "Working With Headers And Footers",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-06-09",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,7 +14,8 @@
       "task": "Adjust the footer margin dynamically based on the number of shapes on the page to avoid overlap",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -61,7 +62,8 @@
       "task": "Apply italic style to the right footer text only when the document contains more than ten pages",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -92,7 +94,6 @@
       "task": "Automate the process of adding a page number placeholder to the right footer of each diagram in a collection",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -121,9 +122,9 @@
       "task": "Configure the footer margin to 0 3 centimeters and verify the change using print preview",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -152,9 +153,8 @@
       "task": "Create a script that reads header and footer configurations from an xml file and applies them to a diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Drawing",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Globalization",
         "System.IO",
         "System.Xml.Linq"
       ],
@@ -170,8 +170,6 @@
       "task": "Create a utility method that accepts a diagram path and header settings applies them and saves the file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "Aspose.Drawing",
         "System",
         "System.IO"
       ],
@@ -202,8 +200,6 @@
       "task": "Ensure that after modifying header text the diagram s print preview reflects the updated content accurately",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Printing",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -237,9 +233,7 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Save",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -249,9 +243,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram"
@@ -263,9 +255,7 @@
       "task": "Implement a function to copy header and footer settings from one diagram to another without altering page content",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram"
@@ -307,7 +297,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -321,7 +312,8 @@
       "task": "Read the center header text replace any occurrence of the word draft with final and save changes",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -348,6 +340,7 @@
       "task": "Retrieve the current header font style change it to italic and verify the change by reading back the property",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -378,6 +371,7 @@
       "task": "Set header font style to bold and underline for the center header preserving existing font name and size",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

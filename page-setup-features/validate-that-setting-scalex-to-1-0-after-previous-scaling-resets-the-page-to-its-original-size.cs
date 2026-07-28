@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,46 +8,54 @@ class Program
             try
             {
 
-                // Paths – replace with actual file locations as needed
+                // Path to the source Visio file (replace with an actual file path)
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Access the first page
+                    Page page = diagram.Pages[0];
 
-                // Access the first page (index 0)
-                Page page = diagram.Pages[0];
+                    // Store original page dimensions (in inches)
+                    double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Store original page dimensions
-                double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    // Apply a scaling factor (e.g., 50%)
+                    page.PageSheet.PrintProps.ScaleX.Value = 0.5;
+                    page.PageSheet.PrintProps.ScaleY.Value = 0.5;
 
-                // Store original scaling factor (should be 1.0 for a new document)
-                double originalScaleX = page.PageSheet.PrintProps.ScaleX.Value;
+                    // Save the diagram temporarily (optional, demonstrates save workflow)
+                    diagram.Save("temp_output.vsdx", SaveFileFormat.Vsdx);
 
-                // Apply a different scaling factor
-                page.PageSheet.PrintProps.ScaleX.Value = 0.5;
+                    // Reset scaling back to original (100%)
+                    page.PageSheet.PrintProps.ScaleX.Value = 1.0;
+                    page.PageSheet.PrintProps.ScaleY.Value = 1.0;
 
-                // Reset scaling back to 1.0
-                page.PageSheet.PrintProps.ScaleX.Value = 1.0;
+                    // Validation: ScaleX should be 1.0
+                    if (page.PageSheet.PrintProps.ScaleX.Value != 1.0)
+                    {
+                        throw new Exception("ScaleX was not reset to 1.0.");
+                    }
 
-                // Validation: ScaleX must be exactly 1.0
-                if (page.PageSheet.PrintProps.ScaleX.Value != 1.0)
-                    throw new Exception($"ScaleX reset failed. Current value: {page.PageSheet.PrintProps.ScaleX.Value}");
+                    // Validation: Page dimensions should remain unchanged
+                    double currentWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double currentHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Validation: Page dimensions must remain unchanged
-                if (page.PageSheet.PageProps.PageWidth.Value != originalWidth ||
-                    page.PageSheet.PageProps.PageHeight.Value != originalHeight)
-                    throw new Exception("Page dimensions changed after resetting ScaleX.");
+                    const double tolerance = 0.0001; // tolerance for floating‑point comparison
 
-                // Optional: Verify that the original scaling factor (if it was not 1.0) is restored
-                if (originalScaleX != 1.0 && page.PageSheet.PrintProps.ScaleX.Value != originalScaleX)
-                    throw new Exception("ScaleX did not return to its original value.");
+                    if (Math.Abs(currentWidth - originalWidth) > tolerance)
+                    {
+                        throw new Exception("Page width changed after resetting ScaleX.");
+                    }
 
-                // Save the diagram to confirm no errors during save
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    if (Math.Abs(currentHeight - originalHeight) > tolerance)
+                    {
+                        throw new Exception("Page height changed after resetting ScaleX.");
+                    }
 
-                Console.WriteLine("ScaleX reset validation completed successfully.");
+                    Console.WriteLine("ScaleX reset validation succeeded. Page dimensions are unchanged.");
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)

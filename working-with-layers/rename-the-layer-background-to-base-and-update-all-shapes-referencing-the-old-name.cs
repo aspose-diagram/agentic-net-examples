@@ -1,78 +1,85 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Input and output file paths – adjust as needed.
+                // Input and output file paths
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
-                // Load the Visio diagram.
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through each page in the document.
+                // Store the index of the layer named "Background"
+                int oldLayerIndex = -1;
+
+                // Rename the layer "Background" to "Base" on every page
                 foreach (Page page in diagram.Pages)
                 {
-                    // Locate the layer named "Background".
-                    Layer targetLayer = null;
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
                         if (layer.Name.Value == "Background")
                         {
-                            targetLayer = layer;
-                            break;
+                            Console.WriteLine($"Renaming layer on page '{page.Name}' from 'Background' to 'Base'.");
+                            layer.Name.Value = "Base";
+                            oldLayerIndex = layer.IX; // capture the layer's index for later use
                         }
                     }
+                }
 
-                    // If the layer exists, rename it to "Base".
-                    if (targetLayer != null)
+                if (oldLayerIndex == -1)
+                {
+                    Console.WriteLine("Layer named 'Background' was not found in the document.");
+                }
+                else
+                {
+                    // Update shapes that reference the old layer index (membership string)
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Preserve the layer index (IX) for later reference.
-                        int layerIndex = targetLayer.IX;
-                        targetLayer.Name.Value = "Base";
-
-                        // Update all shapes on this page that belong to the renamed layer.
                         foreach (Shape shape in page.Shapes)
                         {
-                            // The LayerMember cell holds a semicolon‑separated list of layer indexes.
-                            string memberValue = shape.LayerMem.LayerMember.Value;
-
-                            // If the shape already references the layer index, nothing to change.
-                            // Otherwise, add the layer index to the membership list.
-                            if (!string.IsNullOrEmpty(memberValue))
+                            // Ensure the shape has a LayerMem object
+                            if (shape.LayerMem != null && shape.LayerMem.LayerMember != null)
                             {
-                                string[] indices = memberValue.Split(';');
-                                bool alreadyMember = false;
-                                foreach (string idx in indices)
+                                string memberValue = shape.LayerMem.LayerMember.Value;
+                                if (!string.IsNullOrEmpty(memberValue))
                                 {
-                                    if (int.TryParse(idx, out int existingIdx) && existingIdx == layerIndex)
+                                    // Split the semicolon‑separated list of layer indexes
+                                    string[] indices = memberValue.Split(';');
+                                    bool needsUpdate = false;
+
+                                    for (int i = 0; i < indices.Length; i++)
                                     {
-                                        alreadyMember = true;
-                                        break;
+                                        if (int.TryParse(indices[i], out int idx) && idx == oldLayerIndex)
+                                        {
+                                            // The shape already references the renamed layer by index.
+                                            // No change to the index is required because the index stays the same.
+                                            // This block is kept for completeness and future logic.
+                                            needsUpdate = true;
+                                        }
+                                    }
+
+                                    if (needsUpdate)
+                                    {
+                                        // No modification needed; the index remains valid.
+                                        // If additional processing were required, it would be placed here.
+                                        Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' references the renamed layer.");
                                     }
                                 }
-
-                                if (!alreadyMember)
-                                {
-                                    shape.LayerMem.LayerMember.Value = memberValue + ";" + layerIndex;
-                                }
-                            }
-                            else
-                            {
-                                // Shape had no layer membership; assign the renamed layer.
-                                shape.LayerMem.LayerMember.Value = layerIndex.ToString();
                             }
                         }
                     }
                 }
 
-                // Save the modified diagram.
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

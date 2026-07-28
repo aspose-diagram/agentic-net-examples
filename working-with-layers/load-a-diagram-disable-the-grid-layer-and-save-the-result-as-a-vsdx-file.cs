@@ -1,40 +1,43 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths for input and output files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and disable the layer named "Grid"
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Layer layer in page.PageSheet.Layers)
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+
+                // Path for the resulting Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram from the file
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate over each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    if (layer.Name.Value == "Grid")
+                    // Iterate over each layer on the page
+                    foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        layer.Visible.Value = BOOL.False;
+                        // Disable the layer named "Grid"
+                        if (layer.Name.Value == "Grid")
+                        {
+                            layer.Visible.Value = BOOL.False;
+                        }
                     }
                 }
+
+                // Save the modified diagram as VSDX
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram as VSDX
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

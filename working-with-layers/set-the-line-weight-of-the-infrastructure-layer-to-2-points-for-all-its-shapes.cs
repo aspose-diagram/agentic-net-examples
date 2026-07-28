@@ -8,61 +8,60 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram (replace with actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
+                // Paths to the source and destination Visio files
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Find the index (IX) of the layer named "Infrastructure"
-                int infrastructureLayerIndex = -1;
-                // Layers are stored in the PageSheet of each page; they are shared across pages,
-                // so checking the first page is sufficient.
-                if (diagram.Pages.Count > 0)
+                // Load the diagram from the file system
+                Diagram diagram = new Diagram(inputPath);
+
+                // Locate the 'Infrastructure' layer and obtain its index (IX)
+                int infraLayerIndex = -1;
+                // Layers are stored in the first page's PageSheet collection
+                foreach (Layer layer in diagram.Pages[0].PageSheet.Layers)
                 {
-                    foreach (Layer layer in diagram.Pages[0].PageSheet.Layers)
+                    if (layer.Name.Value == "Infrastructure")
                     {
-                        if (layer.Name.Value == "Infrastructure")
-                        {
-                            infrastructureLayerIndex = layer.IX;
-                            break;
-                        }
+                        infraLayerIndex = layer.IX;
+                        break;
                     }
                 }
 
-                if (infrastructureLayerIndex == -1)
+                if (infraLayerIndex == -1)
                 {
-                    Console.WriteLine("Layer 'Infrastructure' not found.");
-                    return;
+                    throw new Exception("Layer named 'Infrastructure' was not found in the diagram.");
                 }
 
-                // Convert the layer index to string for comparison with the shape's layer membership cell
-                string layerIndexString = infrastructureLayerIndex.ToString();
+                // Convert 2 points to inches (Visio stores line weight in inches)
+                double lineWeightInInches = 2.0 / 72.0;
 
-                // Iterate through all pages and shapes, updating line weight where the shape belongs to the target layer
+                // Iterate through all pages and shapes, applying the line weight to shapes on the target layer
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // The LayerMember cell contains a semicolon‑separated list of layer indexes
+                        // Retrieve the layer membership string (e.g., "0;2;5")
                         string layerMember = shape.LayerMem.LayerMember.Value;
-                        if (string.IsNullOrEmpty(layerMember))
-                            continue;
 
-                        // Split the list and check for the target layer index
+                        if (string.IsNullOrEmpty(layerMember))
+                            continue; // Shape is not assigned to any layer
+
+                        // Split the semicolon‑separated list and check for the target layer index
                         string[] members = layerMember.Split(';');
                         foreach (string member in members)
                         {
-                            if (member.Trim() == layerIndexString)
+                            if (int.TryParse(member, out int idx) && idx == infraLayerIndex)
                             {
-                                // Set line weight to 2 points (2/72 inches)
-                                shape.Line.LineWeight.Value = 2.0 / 72.0;
-                                break;
+                                // Set the line weight for the shape (in inches)
+                                shape.Line.LineWeight.Value = lineWeightInInches;
+                                break; // No need to check other members for this shape
                             }
                         }
                     }
                 }
 
                 // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-                Console.WriteLine("Line weight updated for all shapes in the 'Infrastructure' layer.");
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

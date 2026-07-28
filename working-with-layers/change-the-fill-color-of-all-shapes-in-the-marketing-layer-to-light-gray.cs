@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -9,66 +10,56 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram (replace with actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Iterate through all pages in the diagram
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Locate the 'Marketing' layer on the current page
-                    Layer marketingLayer = null;
+                    // Find the index of the layer named "Marketing"
+                    int marketingLayerIndex = -1;
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
                         if (layer.Name.Value == "Marketing")
                         {
-                            marketingLayer = layer;
+                            marketingLayerIndex = layer.IX;
                             break;
                         }
                     }
 
-                    // If the layer does not exist on this page, skip to the next page
-                    if (marketingLayer == null)
+                    // If the Marketing layer does not exist on this page, skip to next page
+                    if (marketingLayerIndex == -1)
                         continue;
 
-                    // The index of the layer as a string (used in the shape's layer membership list)
-                    string marketingLayerIndex = marketingLayer.IX.ToString();
-
-                    // Iterate through all shapes on the page
+                    // Iterate through each shape on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve the layer membership string (e.g., "0;2;5")
-                        string layerMembers = shape.LayerMem.LayerMember.Value;
+                        // Get the layer membership string (e.g., "0;2;5")
+                        string layerMember = shape.LayerMem.LayerMember.Value;
 
-                        if (string.IsNullOrEmpty(layerMembers))
-                            continue;
-
-                        // Check if the shape belongs to the 'Marketing' layer
-                        string[] members = layerMembers.Split(';');
-                        bool belongsToMarketing = false;
-                        foreach (string member in members)
+                        // If the shape belongs to the Marketing layer, apply light gray fill
+                        if (!string.IsNullOrEmpty(layerMember) &&
+                            layerMember.Split(';').Contains(marketingLayerIndex.ToString()))
                         {
-                            if (member == marketingLayerIndex)
-                            {
-                                belongsToMarketing = true;
-                                break;
-                            }
+                            // Set solid fill pattern
+                            shape.Fill.FillPattern.Value = 1; // 1 = solid
+
+                            // Set foreground fill color to light gray (#D3D3D3)
+                            shape.Fill.FillForegnd.Value = "#D3D3D3";
                         }
-
-                        if (!belongsToMarketing)
-                            continue;
-
-                        // Set the fill pattern to solid (1) and the foreground color to light gray (#D3D3D3)
-                        shape.Fill.FillPattern.Value = 1;
-                        shape.Fill.FillForegnd.Value = "#D3D3D3";
                     }
                 }
 
-                // Save the modified diagram (replace with desired output path)
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

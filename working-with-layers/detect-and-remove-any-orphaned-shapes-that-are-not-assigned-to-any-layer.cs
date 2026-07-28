@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,51 +8,38 @@ class Program
             try
             {
 
-                // Input and output file paths (adjust as needed)
+                // Input Visio file path (modify as needed)
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Output Visio file path after orphan removal
+                string outputPath = "output_cleaned.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through each page in the diagram
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Collect shape IDs to delete (cannot modify collection while iterating)
-                    var shapesToDelete = new System.Collections.Generic.List<long>();
-
-                    // Iterate through shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure LayerMem and LayerMember are available
-                        if (shape.LayerMem != null && shape.LayerMem.LayerMember != null)
+                        // Skip shapes already marked as deleted
+                        if (shape.Del == BOOL.False)
                         {
-                            string layerMembership = shape.LayerMem.LayerMember.Value;
+                            // Retrieve the layer membership string (may be null)
+                            string layerMember = shape.LayerMem?.LayerMember?.Value;
 
-                            // If the shape is not assigned to any layer (empty string), mark for deletion
-                            if (string.IsNullOrEmpty(layerMembership))
+                            // If the shape is not assigned to any layer, mark it as deleted
+                            if (string.IsNullOrEmpty(layerMember))
                             {
-                                shapesToDelete.Add(shape.ID);
+                                shape.Del = BOOL.True;
+                                Console.WriteLine($"Removed orphan shape ID {shape.ID} on page \"{page.Name}\".");
                             }
-                        }
-                    }
-
-                    // Delete the identified orphaned shapes
-                    foreach (long shapeId in shapesToDelete)
-                    {
-                        Shape orphanShape = page.Shapes.GetShape(shapeId);
-                        if (orphanShape != null)
-                        {
-                            // Mark the shape as deleted
-                            orphanShape.Del = BOOL.True;
-                            Console.WriteLine($"Deleted orphaned shape ID {shapeId} on page '{page.Name}'.");
                         }
                     }
                 }
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Processing complete. Diagram saved to: " + outputPath);
+                Console.WriteLine($"Diagram saved to \"{outputPath}\".");
 
             }
             catch (System.IO.FileNotFoundException ex)

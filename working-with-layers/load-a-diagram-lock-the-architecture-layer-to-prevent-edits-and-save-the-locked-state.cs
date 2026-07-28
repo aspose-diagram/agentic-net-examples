@@ -1,46 +1,72 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
         {
-            try
+            Console.WriteLine("Usage: <exe> <inputPath> <outputPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Load the Visio diagram
+        Diagram diagram = new Diagram(inputPath);
+
+        // Assume the layer exists on the first page
+        Page page = diagram.Pages[0];
+
+        // Find the layer named "Architecture"
+        int architectureLayerIndex = -1;
+        foreach (Layer layer in page.PageSheet.Layers)
+        {
+            if (layer.Name.Value == "Architecture")
             {
+                architectureLayerIndex = layer.IX; // IX is the zero‑based index of the layer
+                break;
+            }
+        }
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
+        if (architectureLayerIndex == -1)
+        {
+            Console.WriteLine("Layer 'Architecture' not found.");
+            return;
+        }
 
-                // Load the diagram from file
-                Diagram diagram = new Diagram(inputPath);
+        // Lock all shapes that belong to the Architecture layer
+        foreach (Shape shape in page.Shapes)
+        {
+            string layerMember = shape.LayerMem.LayerMember.Value; // e.g., "0;2;5"
+            if (string.IsNullOrEmpty(layerMember))
+                continue;
 
-                // Iterate through all pages to find the layer named "Architecture"
-                foreach (Page page in diagram.Pages)
+            // Split the semicolon‑separated list of layer indexes
+            string[] parts = layerMember.Split(';');
+            foreach (string part in parts)
+            {
+                if (int.TryParse(part, out int idx) && idx == architectureLayerIndex)
                 {
-                    // Access the collection of layers on the page sheet
-                    foreach (Layer layer in page.PageSheet.Layers)
-                    {
-                        // Compare the layer name (case‑sensitive)
-                        if (layer.Name.Value == "Architecture")
-                        {
-                            // Lock the layer by setting its Status to TRUE
-                            // (Status is used by Aspose.Diagram to indicate a locked layer)
-                            layer.Status.Value = BOOL.True;
-
-                            // Optionally keep the layer visible
-                            layer.Visible.Value = BOOL.True;
-                        }
-                    }
+                    // Apply full protection to the shape
+                    shape.Protection.LockMoveX.Value = BOOL.True;
+                    shape.Protection.LockMoveY.Value = BOOL.True;
+                    shape.Protection.LockWidth.Value = BOOL.True;
+                    shape.Protection.LockHeight.Value = BOOL.True;
+                    shape.Protection.LockRotate.Value = BOOL.True;
+                    shape.Protection.LockVtxEdit.Value = BOOL.True;
+                    break; // No need to check other parts for this shape
                 }
-
-                // Save the modified diagram to a new file
-                string outputPath = "output_locked.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+
+        // Save the diagram with the locked layer state
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        Console.WriteLine($"Diagram saved to '{outputPath}' with 'Architecture' layer locked.");
     }
-    }
+}

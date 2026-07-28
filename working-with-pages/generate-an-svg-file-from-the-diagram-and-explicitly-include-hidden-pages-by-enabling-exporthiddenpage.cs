@@ -1,23 +1,23 @@
-using System.IO;
 using System;
-using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System.IO;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            var diagram = new Aspose.Diagram.Diagram("input.vsdx");
 
             // Create SVG save options and explicitly enable exporting hidden pages
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            svgOptions.ExportHiddenPage = true; // ensure hidden pages are included
+            var svgOptions = new Aspose.Diagram.Saving.SVGSaveOptions
+            {
+                ExportHiddenPage = true // Ensure hidden pages are included in the SVG output
+            };
 
-            // Save the diagram as an SVG file using the configured options
+            // Save the diagram as SVG using the configured options
             diagram.Save("output.svg", svgOptions);
 
         }

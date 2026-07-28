@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,69 +10,65 @@ class Program
         try
         {
 
-            // Load the Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Process each page in the document
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Locate the layer named "UI"
-                Layer uiLayer = null;
+                // Find the index of the layer named "UI"
+                int uiLayerIndex = -1;
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
                     if (layer.Name.Value == "UI")
                     {
-                        uiLayer = layer;
+                        uiLayerIndex = layer.IX;
                         break;
                     }
                 }
 
-                // If the UI layer does not exist on this page, skip it
-                if (uiLayer == null)
-                    continue;
-
-                // The layer index is stored in the IX property
-                string uiLayerIndex = uiLayer.IX.ToString();
-
-                // Apply drop shadow to every shape that belongs to the UI layer
-                foreach (Shape shape in page.Shapes)
+                // If the "UI" layer exists, apply shadow to its shapes
+                if (uiLayerIndex != -1)
                 {
-                    // Ignore shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Retrieve the layer membership string (semicolon‑separated indexes)
-                    string member = shape.LayerMem.LayerMember.Value;
-                    if (string.IsNullOrEmpty(member))
-                        continue;
-
-                    // Determine if the shape is assigned to the UI layer
-                    bool belongsToUi = false;
-                    foreach (string idx in member.Split(';'))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (idx == uiLayerIndex)
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Get the layer membership string (e.g., "0;2;5")
+                        string layerMember = shape.LayerMem.LayerMember.Value;
+
+                        // Check if the shape belongs to the UI layer
+                        bool belongsToUiLayer = false;
+                        if (!string.IsNullOrEmpty(layerMember))
                         {
-                            belongsToUi = true;
-                            break;
+                            string[] members = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (string m in members)
+                            {
+                                if (int.TryParse(m, out int idx) && idx == uiLayerIndex)
+                                {
+                                    belongsToUiLayer = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (belongsToUiLayer)
+                        {
+                            // Apply a simple drop shadow
+                            shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+                            shape.Fill.ShdwForegnd.Value = "#000000";          // Shadow color (black)
+                            shape.Fill.ShdwForegndTrans.Value = 0.3;          // 30% transparency
+                            shape.Fill.ShapeShdwOffsetX.Value = 0.1;          // Horizontal offset
+                            shape.Fill.ShapeShdwOffsetY.Value = 0.1;          // Vertical offset
                         }
                     }
-
-                    if (!belongsToUi)
-                        continue;
-
-                    // Configure a simple drop shadow for the shape
-                    shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;   // enable shadow
-                    shape.Fill.ShdwForegnd.Value = "#000000";                    // shadow color (black)
-                    shape.Fill.ShdwForegndTrans.Value = 0.3;                     // 30 % transparency
-                    shape.Fill.ShapeShdwOffsetX.Value = 0.1;                     // horizontal offset (inches)
-                    shape.Fill.ShapeShdwOffsetY.Value = 0.1;                     // vertical offset (inches)
                 }
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

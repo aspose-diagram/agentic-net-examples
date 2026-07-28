@@ -11,18 +11,26 @@ class Program
         {
 
             // Path to the original Visio diagram
-            string originalPath = "diagram.vdx";
+            string originalFilePath = "diagram.vdx";
 
-            // Path where the backup copy will be saved
-            string backupPath = "diagram_backup.vdx";
+            // Path for the backup copy
+            string backupFilePath = "diagram_backup.vdx";
 
             // Load the original diagram
-            Diagram diagram = new Diagram(originalPath);
+            using (Diagram diagram = new Diagram(originalFilePath))
+            {
+                // Save a backup copy before any modifications
+                diagram.Save(backupFilePath, SaveFileFormat.Vdx);
 
-            // Save a backup copy before applying any watermark changes
-            diagram.Save(backupPath, SaveFileFormat.Vdx);
+                // -----------------------------------------------------------------
+                // Place watermark modification logic here (e.g., adding shapes,
+                // updating headers/footers, etc.). This section is omitted as the
+                // task focuses on creating the backup.
+                // -----------------------------------------------------------------
 
-            // Continue with watermark modifications here...
+                // Example: after modifications, you might save the updated diagram
+                // diagram.Save(originalFilePath, SaveFileFormat.Vdx);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

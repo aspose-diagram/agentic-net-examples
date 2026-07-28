@@ -1,87 +1,64 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Work with the first page
-            Page page = diagram.Pages[0];
-
-            // Find the first group shape by its universal name
-            Shape group1 = null;
-            Shape group2 = null;
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                if (shape.NameU == "Group1")
-                    group1 = shape;
-                else if (shape.NameU == "Group2")
-                    group2 = shape;
-            }
 
-            if (group1 == null || group2 == null)
+                // Path to a stencil file that contains the required masters (e.g., "Rectangle" and "Dynamic connector").
+                // Replace with an actual .vss file path available in your environment.
+                string stencilPath = "basic.vss";
+
+                // Load the stencil as a diagram to gain access to its masters.
+                Diagram diagram = new Diagram(stencilPath);
+
+                // Use the first page (default page) for all operations.
+                Page page = diagram.Pages[0];
+
+                // Add two rectangle shapes that will become sub‑shapes of separate groups.
+                long rect1Id = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+                long rect2Id = diagram.AddShape(5.0, 2.0, "Rectangle", 0);
+
+                // Retrieve the shape objects (optional, needed if we want to manipulate them further).
+                Shape rect1 = page.Shapes.GetShape(rect1Id);
+                Shape rect2 = page.Shapes.GetShape(rect2Id);
+
+                // Group each rectangle into its own group shape.
+                Shape group1 = page.Shapes.Group(new Shape[] { rect1 });
+                Shape group2 = page.Shapes.Group(new Shape[] { rect2 });
+
+                // Add a dynamic connector shape (position will be adjusted automatically when connected).
+                long connectorId = diagram.AddShape(0.0, 0.0, "Dynamic connector", 0);
+                Shape connector = page.Shapes.GetShape(connectorId);
+
+                // Optionally set connector routing style (right‑angle in this example).
+                connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+
+                // Connect the sub‑shapes (the original rectangles) via the connector.
+                // Use ConnectionPointPlace.Bottom for the first shape and ConnectionPointPlace.Top for the second.
+                page.ConnectShapesViaConnector(
+                    rect1Id,
+                    ConnectionPointPlace.Bottom,
+                    rect2Id,
+                    ConnectionPointPlace.Top,
+                    connectorId);
+
+                // Save the resulting diagram.
+                diagram.Save("ConnectedGroups.vsdx", SaveFileFormat.Vsdx);
+
+                // Clean up resources.
+                diagram.Dispose();
+
+                Console.WriteLine("Diagram created and saved successfully.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                throw new Exception("Required group shapes not found.");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Find sub‑shapes inside each group by their universal names
-            Shape subShape1 = null;
-            Shape subShape2 = null;
-
-            foreach (Shape sub in group1.Shapes)
-            {
-                if (sub.NameU == "Rect1")
-                {
-                    subShape1 = sub;
-                    break;
-                }
-            }
-
-            foreach (Shape sub in group2.Shapes)
-            {
-                if (sub.NameU == "Rect2")
-                {
-                    subShape2 = sub;
-                    break;
-                }
-            }
-
-            if (subShape1 == null || subShape2 == null)
-            {
-                throw new Exception("Required sub‑shapes not found inside the groups.");
-            }
-
-            // Add a dynamic connector shape to the page
-            long connectorId = diagram.AddShape(0.0, 0.0, "Dynamic connector", 0);
-            Shape connector = page.Shapes.GetShape(connectorId);
-
-            // Set connector routing style (optional)
-            connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-
-            // Connect the two sub‑shapes via the connector
-            page.ConnectShapesViaConnector(
-                subShape1.ID,
-                ConnectionPointPlace.Bottom,
-                subShape2.ID,
-                ConnectionPointPlace.Top,
-                connectorId);
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

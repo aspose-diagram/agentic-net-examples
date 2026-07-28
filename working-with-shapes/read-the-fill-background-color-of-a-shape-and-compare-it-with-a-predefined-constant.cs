@@ -3,41 +3,45 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        // Predefined constant for the expected fill background color (hex string)
+        private const string ExpectedFillColor = "#FF0000";
+
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the Visio file
-                string inputPath = "input.vsdx";
+                // Path to the Visio diagram file
+                string diagramPath = "input.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Define the page index (0‑based) and shape ID to inspect
-                int pageIndex = 0;
-                long shapeId = 1; // replace with the actual shape ID you want to check
+                // Example: target shape ID (adjust as needed)
+                long targetShapeId = 1;
 
-                // Retrieve the page
-                Page page = diagram.Pages[pageIndex];
+                // Retrieve the first page (index 0)
+                Page page = diagram.Pages[0];
 
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(shapeId);
+                // Get the shape by ID (cast to int if required by the overload)
+                Shape shape = page.Shapes.GetShape((int)targetShapeId);
 
-                // Predefined fill background color constant (hex string)
-                const string ExpectedFillColor = "#FF0000";
+                if (shape == null)
+                {
+                    throw new Exception($"Shape with ID {targetShapeId} not found.");
+                }
 
-                // Read the shape's fill background color
+                // Read the fill background color (hex string) from the shape
                 string actualFillColor = shape.Fill.FillBkgnd.Value;
 
-                // Compare and act accordingly
+                // Compare with the predefined constant (case‑insensitive)
                 if (string.Equals(actualFillColor, ExpectedFillColor, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("The shape's fill background color matches the expected value.");
+                    Console.WriteLine($"Shape ID {targetShapeId} has the expected fill background color: {actualFillColor}");
                 }
                 else
                 {
-                    throw new Exception($"Fill color mismatch. Expected: {ExpectedFillColor}, Actual: {actualFillColor}");
+                    throw new Exception($"Fill background color mismatch. Expected: {ExpectedFillColor}, Actual: {actualFillColor}");
                 }
 
             }

@@ -3,51 +3,72 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load the Visio diagram from file
-                string inputPath = "input.vsdx";
+                // Expect the input Visio file path as the first argument.
+                if (args.Length == 0)
+                {
+                    Console.WriteLine("Please provide the path to the Visio file as an argument.");
+                    return;
+                }
+
+                string inputPath = args[0];
+                string outputPath = System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(inputPath) ?? "",
+                    System.IO.Path.GetFileNameWithoutExtension(inputPath) + "_reviewed.vsdx");
+
+                // Load the diagram.
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages in the diagram
+                bool foundIsolated = false;
+
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    Console.WriteLine($"Page: {page.NameU}");
-
-                    // Iterate through all shapes on the current page
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
+                        // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve IDs of shapes connected to this shape
+                        // Retrieve IDs of shapes connected to this shape.
                         long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
 
-                        // If there are no connections, flag the shape for review
+                        // If there are no connections, flag the shape.
                         if (connectedIds == null || connectedIds.Length == 0)
                         {
-                            // Example flagging: output shape details to console
-                            Console.WriteLine($"  Unconnected Shape - ID: {shape.ID}, NameU: {shape.NameU}");
+                            Console.WriteLine($"Isolated shape detected - Page: '{page.NameU}', ID: {shape.ID}, NameU: '{shape.NameU}'");
 
-                            // Optionally, add a comment to the shape to mark it for review
-                            // Note: AddComment adds a comment visible in Visio
-                            page.AddComment(shape.ID, "Unconnected shape - review required");
+                            // Add a custom property to mark the shape for review.
+                            Prop reviewProp = new Prop();
+                            reviewProp.Name = "ReviewFlag";
+                            reviewProp.Value.Val = "True";
+                            shape.Props.Add(reviewProp);
+
+                            foundIsolated = true;
                         }
                     }
                 }
 
-                // Optionally, save the diagram with comments added
-                string outputPath = "output_review.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the diagram with the added review flags if any isolated shapes were found.
+                if (foundIsolated)
+                {
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved with review flags to: {outputPath}");
+                }
+                else
+                {
+                    Console.WriteLine("No isolated shapes were found.");
+                }
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

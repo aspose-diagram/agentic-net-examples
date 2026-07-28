@@ -1,6 +1,6 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
 {
@@ -9,28 +9,25 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Retrieve the target shape (replace with the actual shape ID or name)
+            // Identify the shape whose hyperlinks you want to enumerate.
+            // Here we use a shape ID; adjust as needed (e.g., by name or index).
             long shapeId = 1; // example shape ID
             Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-            // Get the Hyperlink collection of the shape
-            HyperlinkCollection hyperlinks = shape.Hyperlinks;
-
-            // Enumerate all hyperlinks and output their details
-            for (int i = 0; i < hyperlinks.Count; i++)
+            // Enumerate all hyperlinks associated with the shape.
+            foreach (Hyperlink hyperlink in shape.Hyperlinks)
             {
-                Hyperlink hl = hyperlinks[i];
-                Console.WriteLine($"Hyperlink {i + 1}:");
-                Console.WriteLine($"  Address: {hl.Address}");
-                Console.WriteLine($"  Description: {hl.Description}");
-                Console.WriteLine($"  SubAddress: {hl.SubAddress}");
-                Console.WriteLine($"  NewWindow: {hl.NewWindow}");
+                // Output hyperlink details.
+                Console.WriteLine($"Address    : {hyperlink.Address}");
+                Console.WriteLine($"Description: {hyperlink.Description}");
+                Console.WriteLine($"SubAddress : {hyperlink.SubAddress}");
+                Console.WriteLine(new string('-', 30));
             }
 
-            // Save the diagram if any changes were made (optional)
+            // Optionally save the diagram if any modifications were made.
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

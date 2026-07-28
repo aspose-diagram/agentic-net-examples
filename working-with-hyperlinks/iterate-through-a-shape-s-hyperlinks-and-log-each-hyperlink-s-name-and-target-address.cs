@@ -10,23 +10,19 @@ class Program
         {
 
             // Load an existing Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the first page (adjust index as needed)
-            var page = diagram.Pages[0];
+            // Access the first page (modify index as needed)
+            Page page = diagram.Pages[0];
 
-            // Get a specific shape (adjust index or search criteria as needed)
-            var shape = page.Shapes[0];
+            // Retrieve a shape from the page (modify index as needed)
+            Shape shape = page.Shapes[0];
 
-            // Iterate through all hyperlinks of the shape
+            // Iterate through each hyperlink in the shape's Hyperlinks collection
             foreach (Hyperlink hyperlink in shape.Hyperlinks)
             {
-                // Retrieve the hyperlink's name (if set) and its target address
-                string name = hyperlink.Name;
-                string address = hyperlink.Address?.Value;
-
-                // Log the information to the console
-                Console.WriteLine($"Hyperlink Name: {name}, Address: {address}");
+                // Log the hyperlink's name and its target address
+                Console.WriteLine($"Hyperlink Name: {hyperlink.Name}, Address: {hyperlink.Address}");
             }
 
         }

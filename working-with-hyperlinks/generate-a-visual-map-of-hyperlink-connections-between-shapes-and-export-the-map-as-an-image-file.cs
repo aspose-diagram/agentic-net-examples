@@ -1,117 +1,72 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.Manipulation;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string sourcePath = "input.vsdx";
-        if (!File.Exists(sourcePath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {sourcePath}");
-            return;
-        }
-
-        try
-        {
-            // Load the source diagram
-            Diagram sourceDiagram = new Diagram(sourcePath);
-
-            // Create a new blank diagram that will hold the visual map
-            Diagram mapDiagram = new Diagram();
-
-            // Get the first page of both diagrams (assumes single‑page documents)
-            Page sourcePage = sourceDiagram.Pages[0];
-            Page mapPage = mapDiagram.Pages[0];
-
-            // Mapping from source shape ID to map shape ID
-            Dictionary<long, long> shapeIdMap = new Dictionary<long, long>();
-
-            // Layout parameters for the map shapes
-            double startX = 1.0;
-            double startY = 1.0;
-            double boxWidth = 2.5;
-            double boxHeight = 1.0;
-            double verticalSpacing = 1.5;
-
-            int index = 0;
-
-            // First pass: create a rectangle for each source shape and store the mapping
-            foreach (Shape srcShape in sourcePage.Shapes)
+            try
             {
-                // Calculate position for the rectangle
-                double posY = startY + index * (boxHeight + verticalSpacing);
 
-                // Draw a rectangle on the map page
-                long mapShapeId = mapPage.DrawRectangle(startX, posY, boxWidth, boxHeight);
+                // Input Visio file containing shapes with hyperlinks
+                string inputPath = "input.vsdx"; // TODO: replace with actual file path
+                // Output image file path
+                string outputPath = "hyperlink_map.png";
 
-                // Retrieve the rectangle shape to set its text
-                Shape mapShape = mapPage.Shapes.GetShape(mapShapeId);
-                mapShape.Text.Value.Clear();
-                mapShape.Text.Value.Add(new Txt(srcShape.NameU));
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Store the correspondence between source shape ID and map shape ID
-                shapeIdMap[srcShape.ID] = mapShapeId;
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
 
-                index++;
-            }
-
-            // Second pass: create connectors based on hyperlinks
-            foreach (Shape srcShape in sourcePage.Shapes)
-            {
-                // Skip shapes without hyperlinks
-                if (srcShape.Hyperlinks == null) continue;
-
-                foreach (Hyperlink link in srcShape.Hyperlinks)
+                // Build a lookup of shape universal names to their IDs
+                Dictionary<string, long> shapeNameToId = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Expect the SubAddress to contain the target shape's NameU
-                    string targetName = link.SubAddress.Value;
-                    if (string.IsNullOrWhiteSpace(targetName)) continue;
-
-                    // Find the target shape in the source diagram
-                    Shape targetShape = null;
-                    foreach (Shape s in sourcePage.Shapes)
+                    if (!string.IsNullOrWhiteSpace(shape.NameU))
                     {
-                        if (s.NameU == targetName)
-                        {
-                            targetShape = s;
-                            break;
-                        }
+                        shapeNameToId[shape.NameU] = shape.ID;
                     }
-
-                    if (targetShape == null) continue; // target not found
-
-                    // Retrieve corresponding map shape IDs
-                    long fromMapId = shapeIdMap[srcShape.ID];
-                    long toMapId = shapeIdMap[targetShape.ID];
-
-                    // Add a connector shape (Dynamic connector) to the map page
-                    long connectorId = mapPage.AddShape(0, 0, "Dynamic connector", false);
-
-                    // Connect the two rectangles using the connector
-                    mapPage.ConnectShapesViaConnector(
-                        fromMapId,
-                        ConnectionPointPlace.Right,
-                        toMapId,
-                        ConnectionPointPlace.Left,
-                        connectorId);
                 }
+
+                // Iterate shapes and create connectors based on hyperlinks
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Hyperlinks == null) continue;
+
+                    foreach (Hyperlink link in shape.Hyperlinks)
+                    {
+                        // Use SubAddress to reference another shape by its universal name
+                        string targetName = link.SubAddress?.Value;
+                        if (string.IsNullOrWhiteSpace(targetName)) continue;
+
+                        if (!shapeNameToId.TryGetValue(targetName, out long targetId)) continue;
+
+                        // Add a dynamic connector shape (position will be adjusted automatically)
+                        long connectorId = page.AddShape(0, 0, "Dynamic connector");
+                        // Connect the source shape to the target shape via the connector
+                        page.ConnectShapesViaConnector(
+                            shape.ID,
+                            ConnectionPointPlace.Bottom,
+                            targetId,
+                            ConnectionPointPlace.Top,
+                            connectorId);
+                    }
+                }
+
+                // Export the diagram (with added connectors) as a PNG image
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                diagram.Save(outputPath, saveOptions);
+
+                Console.WriteLine($"Hyperlink map exported to: {outputPath}");
+
             }
-
-            // Export the visual map as a PNG image
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            mapDiagram.Save("hyperlink_map.png", imgOptions);
-
-            Console.WriteLine("Hyperlink map generated and saved as 'hyperlink_map.png'.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

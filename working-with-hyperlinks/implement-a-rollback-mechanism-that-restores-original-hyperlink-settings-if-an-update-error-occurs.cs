@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-namespace HyperlinkRollbackDemo
+namespace HyperlinkRollbackExample
 {
-    // Simple DTO to store hyperlink properties
-    public class HyperlinkData
+    // Simple DTO to store hyperlink properties for rollback
+    public class HyperlinkInfo
     {
         public string Name { get; set; }
         public string Address { get; set; }
@@ -13,41 +13,33 @@ namespace HyperlinkRollbackDemo
         public string Description { get; set; }
     }
 
-    // Holds backup info for a shape on a specific page
-    public class ShapeLinkInfo
+    class Program
     {
-        public int PageIndex { get; set; }
-        public long ShapeId { get; set; }
-        public List<HyperlinkData> Links { get; set; } = new();
-    }
-
-    public class Program
-    {
-        public static void Main()
+        static void Main()
         {
             try
             {
 
+                // Paths (adjust as needed)
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Backup original hyperlink settings
-                List<ShapeLinkInfo> backup = new List<ShapeLinkInfo>();
+                // Backup original hyperlink settings per shape
+                var hyperlinkBackup = new Dictionary<long, List<HyperlinkInfo>>();
 
-                for (int p = 0; p < diagram.Pages.Count; p++)
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[p];
                     foreach (Shape shape in page.Shapes)
                     {
                         if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
                         {
-                            var linkList = new List<HyperlinkData>();
+                            var list = new List<HyperlinkInfo>();
                             foreach (Hyperlink link in shape.Hyperlinks)
                             {
-                                linkList.Add(new HyperlinkData
+                                list.Add(new HyperlinkInfo
                                 {
                                     Name = link.Name,
                                     Address = link.Address.Value,
@@ -55,23 +47,16 @@ namespace HyperlinkRollbackDemo
                                     Description = link.Description.Value
                                 });
                             }
-
-                            backup.Add(new ShapeLinkInfo
-                            {
-                                PageIndex = p,
-                                ShapeId = shape.ID,
-                                Links = linkList
-                            });
+                            hyperlinkBackup[shape.ID] = list;
                         }
                     }
                 }
 
                 try
                 {
-                    // Example update: change every hyperlink address to a new URL
-                    for (int p = 0; p < diagram.Pages.Count; p++)
+                    // Example update: append a query string to each hyperlink address
+                    foreach (Page page in diagram.Pages)
                     {
-                        Page page = diagram.Pages[p];
                         foreach (Shape shape in page.Shapes)
                         {
                             if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
@@ -79,7 +64,10 @@ namespace HyperlinkRollbackDemo
                                 foreach (Hyperlink link in shape.Hyperlinks)
                                 {
                                     // Simulate an update that could throw an exception
-                                    link.Address.Value = "https://newexample.com";
+                                    if (string.IsNullOrWhiteSpace(link.Address.Value))
+                                        throw new InvalidOperationException("Invalid hyperlink address.");
+
+                                    link.Address.Value = link.Address.Value + "?updated";
                                 }
                             }
                         }
@@ -91,57 +79,36 @@ namespace HyperlinkRollbackDemo
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error during update: {ex.Message}");
-                    Console.WriteLine("Restoring original hyperlink settings...");
+                    Console.WriteLine($"Error occurred: {ex.Message}");
+                    Console.WriteLine("Rolling back to original hyperlink settings...");
 
-                    // Rollback: restore each shape's hyperlinks from backup
-                    foreach (ShapeLinkInfo info in backup)
+                    // Restore original hyperlink values from backup
+                    foreach (Page page in diagram.Pages)
                     {
-                        Page page = diagram.Pages[info.PageIndex];
-                        Shape shape = page.Shapes.GetShape(info.ShapeId);
-                        if (shape == null || shape.Hyperlinks == null)
-                            continue;
-
-                        int existingCount = shape.Hyperlinks.Count;
-                        int originalCount = info.Links.Count;
-                        int minCount = Math.Min(existingCount, originalCount);
-
-                        // Restore values for existing hyperlinks
-                        for (int i = 0; i < minCount; i++)
+                        foreach (Shape shape in page.Shapes)
                         {
-                            Hyperlink link = shape.Hyperlinks[i];
-                            HyperlinkData data = info.Links[i];
-                            link.Name = data.Name;
-                            link.Address.Value = data.Address;
-                            link.SubAddress.Value = data.SubAddress;
-                            link.Description.Value = data.Description;
-                        }
-
-                        // Add missing original hyperlinks if any
-                        for (int i = existingCount; i < originalCount; i++)
-                        {
-                            HyperlinkData data = info.Links[i];
-                            Hyperlink newLink = new Hyperlink
+                            if (hyperlinkBackup.TryGetValue(shape.ID, out List<HyperlinkInfo> originalLinks))
                             {
-                                Name = data.Name
-                            };
-                            newLink.Address.Value = data.Address;
-                            newLink.SubAddress.Value = data.SubAddress;
-                            newLink.Description.Value = data.Description;
-                            shape.Hyperlinks.Add(newLink);
+                                // Ensure the shape still has the same number of hyperlinks
+                                if (shape.Hyperlinks != null && shape.Hyperlinks.Count == originalLinks.Count)
+                                {
+                                    for (int i = 0; i < shape.Hyperlinks.Count; i++)
+                                    {
+                                        Hyperlink link = shape.Hyperlinks[i];
+                                        HyperlinkInfo info = originalLinks[i];
+                                        link.Name = info.Name;
+                                        link.Address.Value = info.Address;
+                                        link.SubAddress.Value = info.SubAddress;
+                                        link.Description.Value = info.Description;
+                                    }
+                                }
+                            }
                         }
                     }
 
-                    // Attempt to save the rolled-back diagram
-                    try
-                    {
-                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                        Console.WriteLine("Diagram saved after rollback.");
-                    }
-                    catch (Exception saveEx)
-                    {
-                        Console.WriteLine($"Failed to save after rollback: {saveEx.Message}");
-                    }
+                    // Save the rolled‑back diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine("Rollback completed and diagram saved.");
                 }
 
             }

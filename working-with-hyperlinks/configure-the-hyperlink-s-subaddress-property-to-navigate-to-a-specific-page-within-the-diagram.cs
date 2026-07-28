@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
@@ -12,19 +12,22 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Select a shape to which the hyperlink will be added (first shape on the first page)
-            Shape shape = diagram.Pages[0].Shapes[0];
+            // Choose the page and shape to which the hyperlink will be added
+            // Here we use the first page and its first shape as an example
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes[0];
 
             // Create a new hyperlink instance
             Hyperlink hyperlink = new Hyperlink();
 
-            // Set the SubAddress to the target page name within the same diagram (e.g., "Page-2")
-            hyperlink.SubAddress.Value = "Page-2";
+            // Set the SubAddress to the target page name within the same diagram
+            // This makes the hyperlink navigate to the specified page when activated
+            hyperlink.SubAddress.Value = "TargetPageName"; // replace with actual page name
 
-            // Address must be set (empty string indicates internal navigation)
-            hyperlink.Address.Value = "";
+            // (Optional) Clear the Address since we are linking within the same document
+            hyperlink.Address.Value = string.Empty;
 
-            // Add the configured hyperlink to the shape's Hyperlinks collection
+            // Add the hyperlink to the shape's Hyperlinks collection
             shape.Hyperlinks.Add(hyperlink);
 
             // Save the modified diagram

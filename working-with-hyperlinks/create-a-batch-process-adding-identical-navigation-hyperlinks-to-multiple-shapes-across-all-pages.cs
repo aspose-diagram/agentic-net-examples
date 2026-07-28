@@ -1,47 +1,49 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input Visio file path
+                // Input and output Visio file paths
                 string inputPath = "input.vsdx";
-                // Output Visio file path
                 string outputPath = "output.vsdx";
-                // The hyperlink to add to each shape
-                string hyperlinkUrl = "https://example.com";
-                string hyperlinkDescription = "Navigate to Example";
 
                 // Load the diagram inside a using block to ensure proper disposal
                 using (Diagram diagram = new Diagram(inputPath))
                 {
+                    // Define the hyperlink that will be added to each target shape
+                    Hyperlink hyperlinkTemplate = new Hyperlink
+                    {
+                        Name = "WebLink",
+                        Address = { Value = "https://example.com" },
+                        Description = { Value = "Example Site" }
+                    };
+
                     // Iterate through all pages in the diagram
                     foreach (Page page in diagram.Pages)
                     {
                         // Iterate through all shapes on the current page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Create a new hyperlink instance
-                            Hyperlink link = new Hyperlink();
-                            link.Name = "NavLink";
-                            link.Address.Value = hyperlinkUrl;          // Set the external URL
-                            link.Description.Value = hyperlinkDescription; // Optional tooltip text
-
-                            // Add the hyperlink to the shape's Hyperlinks collection
+                            // Add a copy of the hyperlink to the shape's Hyperlinks collection
+                            // (Hyperlinks collection is always instantiated by Aspose.Diagram)
+                            Hyperlink link = new Hyperlink
+                            {
+                                Name = hyperlinkTemplate.Name,
+                                Address = { Value = hyperlinkTemplate.Address.Value },
+                                Description = { Value = hyperlinkTemplate.Description.Value }
+                            };
                             shape.Hyperlinks.Add(link);
                         }
                     }
 
-                    // Save the modified diagram to a new file (VSDX format)
+                    // Save the modified diagram
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-
-                Console.WriteLine("Hyperlinks added and diagram saved successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

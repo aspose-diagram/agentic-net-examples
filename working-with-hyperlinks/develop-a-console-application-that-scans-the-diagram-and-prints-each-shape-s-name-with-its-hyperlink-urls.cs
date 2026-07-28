@@ -9,27 +9,25 @@ class Program
             {
 
                 // Path to the Visio diagram file (VSD, VDX, VSDX, etc.)
-                // You can pass the file path as a command‑line argument or modify the string below.
+                // You can pass the path as a command‑line argument or set it directly here.
                 string diagramPath = args.Length > 0 ? args[0] : "sample.vsdx";
 
-                // Load the diagram using the appropriate constructor.
-                // The Diagram class implements IDisposable, so we use a using block.
+                // Load the diagram using Aspose.Diagram
                 using (Diagram diagram = new Diagram(diagramPath))
                 {
-                    // Iterate through all pages in the diagram.
+                    // Iterate through all pages in the diagram
                     foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through all shapes on the current page.
+                        // Iterate through all shapes on the current page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Retrieve the shape's name; fallback to NameU if Name is null or empty.
-                            string shapeName = !string.IsNullOrEmpty(shape.Name) ? shape.Name : shape.NameU;
-
-                            // Check if the shape contains any hyperlinks.
+                            // Check if the shape has any hyperlinks
                             if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
                             {
-                                Console.WriteLine($"Shape: {shapeName}");
-                                // Iterate through each hyperlink and print its address (URL or file path).
+                                // Print the shape's name
+                                Console.WriteLine($"Shape: {shape.Name}");
+
+                                // Iterate through each hyperlink and print its address (URL)
                                 foreach (Hyperlink link in shape.Hyperlinks)
                                 {
                                     Console.WriteLine($"  Hyperlink: {link.Address}");

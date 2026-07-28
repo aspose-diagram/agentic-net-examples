@@ -9,32 +9,39 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
+            // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages
+            bool allValid = true;
+
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // If the shape contains hyperlinks, validate each one
+                    // Check if the shape contains any hyperlinks
                     if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
                     {
                         foreach (Hyperlink hyperlink in shape.Hyperlinks)
                         {
-                            // Description is a Str2Value; retrieve its string value
+                            // Retrieve the description text (may be null)
                             string description = hyperlink.Description?.Value;
 
-                            // Report shapes where the description is null, empty, or whitespace
+                            // Validate that the description is not empty or whitespace
                             if (string.IsNullOrWhiteSpace(description))
                             {
+                                allValid = false;
                                 Console.WriteLine(
-                                    $"Shape ID {shape.ID} on Page ID {page.ID} has a hyperlink with an empty description.");
+                                    $"Shape ID {shape.ID} on page \"{page.Name}\" has a hyperlink with an empty description.");
                             }
                         }
                     }
                 }
+            }
+
+            if (allValid)
+            {
+                Console.WriteLine("All shapes with hyperlinks have non‑empty description properties.");
             }
 
         }

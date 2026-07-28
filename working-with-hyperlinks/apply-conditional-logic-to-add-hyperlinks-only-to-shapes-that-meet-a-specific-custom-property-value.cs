@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,63 +9,79 @@ class Program
             try
             {
 
-                // Paths to the source and destination Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Create a new diagram
+                Diagram diagram = new Diagram();
 
-                // Custom property criteria
-                string targetPropName = "AddLinkFlag";   // Name of the custom property to evaluate
-                string targetPropValue = "True";         // Desired value that triggers hyperlink addition
+                // Add a new page (the diagram starts with one page by default)
+                Page page = diagram.Pages[0];
 
-                // Hyperlink details to be added
-                string hyperlinkUrl = "https://www.example.com";
-                string hyperlinkName = "ExternalLink";
+                // Add three shapes using the built‑in "Rectangle" master
+                long shapeId1 = page.AddShape(2.0, 2.0, "Rectangle");
+                long shapeId2 = page.AddShape(4.0, 2.0, "Rectangle");
+                long shapeId3 = page.AddShape(6.0, 2.0, "Rectangle");
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Retrieve the shape objects
+                Shape shape1 = page.Shapes.GetShape(shapeId1);
+                Shape shape2 = page.Shapes.GetShape(shapeId2);
+                Shape shape3 = page.Shapes.GetShape(shapeId3);
 
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Helper method to add a custom string property named "Category"
+                void AddCategoryProperty(Shape shape, string value)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Create a new Prop (custom property)
+                    Prop prop = new Prop();
+                    prop.Name = "Category";
+                    prop.Value.Val = value;
+                    // Optional: explicitly set the property type to string
+                    prop.Type.Value = TypePropValue.String;
+
+                    // Add the property to the shape
+                    shape.Props.Add(prop);
+                }
+
+                // Assign custom property values
+                AddCategoryProperty(shape1, "Target");   // This shape should receive a hyperlink
+                AddCategoryProperty(shape2, "Other");    // No hyperlink
+                AddCategoryProperty(shape3, "Target");   // This shape should receive a hyperlink
+
+                // Define the hyperlink to be added
+                string hyperlinkAddress = "https://example.com";
+
+                // Iterate over all shapes on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Look for the custom property "Category"
+                    bool isTarget = false;
+                    foreach (Prop prop in shape.Props)
                     {
-                        // Ensure the shape has a Props collection
-                        if (shape.Props == null)
-                            continue;
-
-                        // Look for the custom property with the specified name and value
-                        bool shouldAddLink = false;
-                        foreach (Prop prop in shape.Props)
+                        if (prop.Name == "Category" && prop.Value.Val == "Target")
                         {
-                            if (prop.Name == targetPropName && prop.Value.Val == targetPropValue)
-                            {
-                                shouldAddLink = true;
-                                break;
-                            }
+                            isTarget = true;
+                            break;
                         }
+                    }
 
-                        // If the condition is met, add a hyperlink to the shape
-                        if (shouldAddLink)
-                        {
-                            // Ensure the Hyperlinks collection is instantiated
-                            if (shape.Hyperlinks == null)
-                                continue; // Safety check; normally this collection is always available
+                    // If the shape meets the condition, add a hyperlink
+                    if (isTarget)
+                    {
+                        Hyperlink link = new Hyperlink();
+                        link.Name = "WebLink";
+                        link.Address.Value = hyperlinkAddress;
+                        // Optional: add a description (tooltip)
+                        link.Description.Value = "Open example website";
 
-                            Hyperlink link = new Hyperlink();
-                            link.Name = hyperlinkName;
-                            link.Address.Value = hyperlinkUrl;
-                            shape.Hyperlinks.Add(link);
-                        }
+                        // Ensure the Hyperlinks collection is not null (it is always instantiated)
+                        shape.Hyperlinks.Add(link);
                     }
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the diagram to a VSDX file
+                diagram.Save("ConditionalHyperlinks.vsdx", SaveFileFormat.Vsdx);
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

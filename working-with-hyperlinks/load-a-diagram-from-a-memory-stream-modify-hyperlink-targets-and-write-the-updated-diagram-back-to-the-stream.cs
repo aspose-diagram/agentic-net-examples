@@ -2,73 +2,73 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class Program
+public class Program
+{
+    // Updates all hyperlink addresses in the diagram loaded from the given memory stream.
+    // The stream is reset and the modified diagram is written back into the same stream.
+    public static void UpdateHyperlinksInStream(MemoryStream diagramStream)
     {
-        static void Main()
+        // Load the diagram from the provided stream.
+        Diagram diagram = new Diagram(diagramStream);
+
+        // Iterate through each page in the diagram.
+        foreach (Page page in diagram.Pages)
         {
-            try
+            // Iterate through each shape on the current page.
+            foreach (Shape shape in page.Shapes)
             {
-
-                // Example usage:
-                // Load a Visio file into a memory stream (replace with your own source).
-                byte[] fileBytes = File.ReadAllBytes("input.vsdx");
-                using (MemoryStream inputStream = new MemoryStream(fileBytes))
+                // Ensure the shape has a Hyperlinks collection.
+                if (shape.Hyperlinks != null)
                 {
-                    // Update all hyperlink targets to a new URL.
-                    ModifyHyperlinks(inputStream, "https://newtarget.example.com");
-
-                    // At this point inputStream contains the updated diagram.
-                    // For demonstration, write it back to a file.
-                    File.WriteAllBytes("output.vsdx", inputStream.ToArray());
-                }
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Loads a diagram from the provided memory stream, updates every hyperlink's address,
-        /// and writes the modified diagram back into the same stream.
-        /// </summary>
-        /// <param name="stream">Memory stream containing the original diagram. The stream will be reset and overwritten.</param>
-        /// <param name="newAddress">The new hyperlink target URL to assign.</param>
-        static void ModifyHyperlinks(MemoryStream stream, string newAddress)
-        {
-            // Ensure the stream is positioned at the beginning before loading.
-            stream.Position = 0;
-
-            // Load the diagram from the stream.
-            using (Diagram diagram = new Diagram(stream))
-            {
-                // Iterate through all pages and shapes.
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through each hyperlink attached to the shape.
+                    foreach (Hyperlink link in shape.Hyperlinks)
                     {
-                        // Hyperlinks collection may be null; check before iterating.
-                        if (shape.Hyperlinks != null)
+                        // Example modification: replace occurrences of "old.com" with "new.com".
+                        if (!string.IsNullOrEmpty(link.Address.Value) && link.Address.Value.Contains("old.com"))
                         {
-                            foreach (Hyperlink link in shape.Hyperlinks)
-                            {
-                                // Update the hyperlink address. Hyperlink properties are cell-based, so use .Value.
-                                link.Address.Value = newAddress;
-                            }
+                            link.Address.Value = link.Address.Value.Replace("old.com", "new.com");
                         }
                     }
                 }
+            }
+        }
 
-                // Prepare the stream for writing the updated diagram.
-                stream.Position = 0;
-                stream.SetLength(0);
+        // Prepare the stream for writing the updated diagram.
+        diagramStream.Position = 0;
+        diagramStream.SetLength(0);
 
-                // Save the diagram back into the stream using VSDX format.
-                diagram.Save(stream, SaveFileFormat.Vsdx);
+        // Save the modified diagram back into the stream using VSDX format.
+        diagram.Save(diagramStream, SaveFileFormat.Vsdx);
+
+        // Reset position so the caller can read from the beginning.
+        diagramStream.Position = 0;
+    }
+
+    // Example entry point demonstrating usage.
+    public static void Main()
+    {
+        try
+        {
+
+            // Load an existing Visio file into a memory stream.
+            string inputPath = "input.vsdx";
+            byte[] fileBytes = File.ReadAllBytes(inputPath);
+            using (MemoryStream ms = new MemoryStream(fileBytes))
+            {
+                // Update hyperlinks within the diagram.
+                UpdateHyperlinksInStream(ms);
+
+                // Write the updated diagram to a new file.
+                string outputPath = "output.vsdx";
+                File.WriteAllBytes(outputPath, ms.ToArray());
+
+                Console.WriteLine("Hyperlink update completed and saved to " + outputPath);
             }
 
-            // After saving, reset position to the beginning for any further reading.
-            stream.Position = 0;
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

@@ -1,44 +1,29 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
-class HyperlinkReport
+class HyperlinkSummary
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Path to the Visio diagram file
-            string diagramPath = "input.vsdx";
+            // Load the Visio diagram from a file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram using Aspose.Diagram (lifecycle: load)
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Prepare a StringWriter to collect the report
-                StringWriter reportWriter = new StringWriter();
+                // Retrieve the number of hyperlinks on the current page
+                int hyperlinkCount = page.PageSheet.Hyperlinks.Count;
 
-                // Header for the report
-                reportWriter.WriteLine("Hyperlink Count per Page");
-                reportWriter.WriteLine("--------------------------");
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Access the Hyperlink collection of the page's PageSheet
-                    int hyperlinkCount = page.PageSheet.Hyperlinks.Count;
-
-                    // Write the page name and hyperlink count to the report
-                    reportWriter.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}): {hyperlinkCount} hyperlink(s)");
-                }
-
-                // Output the report to console
-                Console.WriteLine(reportWriter.ToString());
-
-                // Optionally, save the report to a text file (lifecycle: save)
-                string reportPath = "HyperlinkReport.txt";
-                File.WriteAllText(reportPath, reportWriter.ToString());
+                // Output the page name and its hyperlink count
+                Console.WriteLine($"Page: {page.Name}, Hyperlinks: {hyperlinkCount}");
             }
+
+            // Clean up resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,11 +1,11 @@
 {
   "category": "working-with-hyperlinks",
   "display_name": "Working With Hyperlinks",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 35,
   "pass_rate": 100.0,
-  "generated": "2026-06-09",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -31,7 +31,8 @@
       "task": "Add a new hyperlink to the selected shape pointing to an external website with a descriptive name",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -63,14 +64,15 @@
       "task": "Apply conditional logic to add hyperlinks only to shapes that meet a specific custom property value",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
-        "Save",
-        "Shapes",
-        "diagram"
+        "Prop",
+        "Save"
       ]
     },
     {
@@ -97,7 +99,6 @@
       "task": "Clone an existing hyperlink and attach it to another shape with a modified description",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -105,7 +106,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -115,10 +115,13 @@
       "task": "Compare two diagrams and list shapes where hyperlink targets differ outputting differences to the console",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Shapes",
+        "page"
       ]
     },
     {
@@ -134,6 +137,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -143,7 +147,6 @@
       "task": "Create a batch process adding identical navigation hyperlinks to multiple shapes across all pages",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -178,12 +181,11 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "Shapes"
@@ -195,11 +197,15 @@
       "task": "Create a unit test verifying hyperlink addition correctly updates the hyperlinkcollection count",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "Shape",
-        "shape"
+        "AddShape",
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -259,12 +265,14 @@
         "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
+        "AddShape",
+        "ConnectShapesViaConnector",
         "Diagram",
-        "ImageSaveOptions"
+        "ImageSaveOptions",
+        "Pages"
       ]
     },
     {
@@ -290,15 +298,13 @@
       "task": "Implement a routine to remove all hyperlinks from shapes on a specified page before exporting",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -309,14 +315,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Net.Http"
+        "System.Net.Http",
+        "System.Threading.Tasks"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -383,9 +390,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -394,8 +399,9 @@
       "task": "Locate shapes by their names within the diagram and assign page link hyperlinks for navigation",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -411,7 +417,6 @@
       "task": "Programmatically set the hyperlink s target frame to open in the same window",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -429,9 +434,8 @@
       "task": "Remove a hyperlink from a shape by matching its name and save the updated diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -499,12 +503,14 @@
       "task": "Set the hyperlink s description property to provide tooltip text on mouse hover",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -553,11 +559,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {

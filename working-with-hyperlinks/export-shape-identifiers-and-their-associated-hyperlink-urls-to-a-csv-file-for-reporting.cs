@@ -3,58 +3,62 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect two arguments: input Visio file path and output CSV file path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramHyperlinkExport <inputVisioFile> <outputCsvFile>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputCsvPath = args[1];
+            // Path to the Visio file to be processed
+            string diagramPath = "input.vsdx";
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Path where the CSV report will be saved
+            string csvPath = "shape_hyperlinks.csv";
 
-            // Prepare to write CSV
-            using (StreamWriter writer = new StreamWriter(outputCsvPath, false))
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Create a StreamWriter for the CSV output
+            using (StreamWriter writer = new StreamWriter(csvPath))
             {
                 // Write CSV header
                 writer.WriteLine("ShapeID,HyperlinkURL");
 
-                // Iterate through all pages
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip shapes that are marked as deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // If the shape has hyperlinks, write each one; otherwise write an empty URL
+                        // Ensure the shape has a Hyperlinks collection with entries
                         if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
                         {
+                            // Iterate through each hyperlink associated with the shape
                             foreach (Hyperlink link in shape.Hyperlinks)
                             {
-                                // Ensure the address cell is not null
-                                string address = link.Address?.Value ?? string.Empty;
-                                // Escape double quotes in the address
-                                address = address.Replace("\"", "\"\"");
-                                writer.WriteLine($"{shape.ID},\"{address}\"");
+                                // Retrieve the URL; skip if the address is empty or whitespace
+                                string address = link.Address?.Value;
+                                if (string.IsNullOrWhiteSpace(address))
+                                    continue;
+
+                                // Write a CSV line with the shape ID and hyperlink URL
+                                writer.WriteLine($"{shape.ID},{address}");
                             }
-                        }
-                        else
-                        {
-                            writer.WriteLine($"{shape.ID},");
                         }
                     }
                 }
             }
 
-            Console.WriteLine($"Export completed. CSV saved to: {outputCsvPath}");
+            Console.WriteLine($"Export completed. CSV saved to: {csvPath}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

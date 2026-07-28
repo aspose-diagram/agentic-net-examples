@@ -4,10 +4,10 @@ display_name: Working With Hyperlinks
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.5.0
+version: 26.7.0
 examples: 35
 pass_rate: 100.0
-generated: 2026-06-23
+generated: 2026-07-28
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 35 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.5.0 |
+| Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-28 |
 
 ## Persona
 
@@ -63,13 +63,13 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 35 | Core diagram API |
 | `System` | 35 | Console, Math, DateTime, Exception |
-| `System.IO` | 19 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 10 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 7 | List, Dictionary, HashSet |
+| `System.IO` | 24 | File, Stream, Path, Directory operations |
+| `System.Collections.Generic` | 6 | List, Dictionary, HashSet |
+| `Aspose.Diagram.Saving` | 5 | Save options (PDF, PNG, HTML, SVG, XPS) |
 | `System.Text.Json` | 2 | JSON serialization |
+| `System.Threading.Tasks` | 2 | Supporting utilities |
 | `Aspose.Diagram.Manipulation` | 1 | Supporting utilities |
 | `System.Net.Http` | 1 | Supporting utilities |
-| `System.Threading.Tasks` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -103,26 +103,26 @@ class Program
 | [add-a-hyperlink-using-a-mailto-address-to-enable-sending-email-directly-from-the-shape.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/add-a-hyperlink-using-a-mailto-address-to-enable-sending-email-directly-from-the-shape.cs) | `AddShape`, `Diagram`, `Pages` | Add a hyperlink using a mailto address to enable sending email directly from the shape |
 | [add-a-new-hyperlink-to-the-selected-shape-pointing-to-an-external-website-with-a-descriptive-name.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/add-a-new-hyperlink-to-the-selected-shape-pointing-to-an-external-website-with-a-descriptive-name.cs) | `Diagram`, `Pages`, `Save` | Add a new hyperlink to the selected shape pointing to an external website with a descriptive name |
 | [apply-a-filter-to-select-only-shapes-whose-hyperlinks-target-external-domains-and-list-their-identifiers.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/apply-a-filter-to-select-only-shapes-whose-hyperlinks-target-external-domains-and-list-their-identifiers.cs) | `Diagram`, `Pages`, `Shapes` | Apply a filter to select only shapes whose hyperlinks target external domains and list their identifiers |
-| [apply-conditional-logic-to-add-hyperlinks-only-to-shapes-that-meet-a-specific-custom-property-value.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/apply-conditional-logic-to-add-hyperlinks-only-to-shapes-that-meet-a-specific-custom-property-value.cs) | `Diagram`, `Pages`, `Save` | Apply conditional logic to add hyperlinks only to shapes that meet a specific custom property value |
+| [apply-conditional-logic-to-add-hyperlinks-only-to-shapes-that-meet-a-specific-custom-property-value.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/apply-conditional-logic-to-add-hyperlinks-only-to-shapes-that-meet-a-specific-custom-property-value.cs) | `AddShape`, `Diagram`, `Pages` | Apply conditional logic to add hyperlinks only to shapes that meet a specific custom property value |
 | [check-for-duplicate-hyperlink-names-within-a-shape-and-consolidate-them-into-a-single-entry.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/check-for-duplicate-hyperlink-names-within-a-shape-and-consolidate-them-into-a-single-entry.cs) | `Diagram`, `Pages`, `Save` | Check for duplicate hyperlink names within a shape and consolidate them into a single entry |
 | [clone-an-existing-hyperlink-and-attach-it-to-another-shape-with-a-modified-description.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/clone-an-existing-hyperlink-and-attach-it-to-another-shape-with-a-modified-description.cs) | `Diagram`, `Pages`, `Save` | Clone an existing hyperlink and attach it to another shape with a modified description |
-| [compare-two-diagrams-and-list-shapes-where-hyperlink-targets-differ-outputting-differences-to-the-console.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/compare-two-diagrams-and-list-shapes-where-hyperlink-targets-differ-outputting-differences-to-the-console.cs) | `Diagram` | Compare two diagrams and list shapes where hyperlink targets differ outputting differences to the console |
+| [compare-two-diagrams-and-list-shapes-where-hyperlink-targets-differ-outputting-differences-to-the-console.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/compare-two-diagrams-and-list-shapes-where-hyperlink-targets-differ-outputting-differences-to-the-console.cs) | `Diagram`, `Shapes`, `page` | Compare two diagrams and list shapes where hyperlink targets differ outputting differences to the console |
 | [configure-the-hyperlink-s-subaddress-property-to-navigate-to-a-specific-page-within-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/configure-the-hyperlink-s-subaddress-property-to-navigate-to-a-specific-page-within-the-diagram.cs) | `Diagram`, `Pages`, `Save` | Configure the hyperlink s subaddress property to navigate to a specific page within the diagram |
 | [create-a-batch-process-adding-identical-navigation-hyperlinks-to-multiple-shapes-across-all-pages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/create-a-batch-process-adding-identical-navigation-hyperlinks-to-multiple-shapes-across-all-pages.cs) | `Diagram`, `Pages`, `Save` | Create a batch process adding identical navigation hyperlinks to multiple shapes across all pages |
 | [create-a-configuration-file-defining-default-hyperlink-properties-and-apply-them-programmatically-to-new-hyperlinks.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/create-a-configuration-file-defining-default-hyperlink-properties-and-apply-them-programmatically-to-new-hyperlinks.cs) | `AddShape`, `Diagram`, `Save` | Create a configuration file defining default hyperlink properties and apply them programmatically to new hyperlinks |
-| [create-a-hyperlink-that-opens-a-pdf-document-in-a-new-browser-window.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/create-a-hyperlink-that-opens-a-pdf-document-in-a-new-browser-window.cs) | `Diagram`, `Page`, `Pages` | Create a hyperlink that opens a pdf document in a new browser window |
-| [create-a-unit-test-verifying-hyperlink-addition-correctly-updates-the-hyperlinkcollection-count.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/create-a-unit-test-verifying-hyperlink-addition-correctly-updates-the-hyperlinkcollection-count.cs) | `Shape`, `shape` | Create a unit test verifying hyperlink addition correctly updates the hyperlinkcollection count |
+| [create-a-hyperlink-that-opens-a-pdf-document-in-a-new-browser-window.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/create-a-hyperlink-that-opens-a-pdf-document-in-a-new-browser-window.cs) | `AddShape`, `Diagram`, `Pages` | Create a hyperlink that opens a pdf document in a new browser window |
+| [create-a-unit-test-verifying-hyperlink-addition-correctly-updates-the-hyperlinkcollection-count.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/create-a-unit-test-verifying-hyperlink-addition-correctly-updates-the-hyperlinkcollection-count.cs) | `AddShape`, `Diagram`, `Pages` | Create a unit test verifying hyperlink addition correctly updates the hyperlinkcollection count |
 | [develop-a-console-application-that-scans-the-diagram-and-prints-each-shape-s-name-with-its-hyperlink-urls.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/develop-a-console-application-that-scans-the-diagram-and-prints-each-shape-s-name-with-its-hyperlink-urls.cs) | `Diagram`, `Pages`, `Shapes` | Develop a console application that scans the diagram and prints each shape s name with its hyperlink urls |
 | [export-shape-identifiers-and-their-associated-hyperlink-urls-to-a-csv-file-for-reporting.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/export-shape-identifiers-and-their-associated-hyperlink-urls-to-a-csv-file-for-reporting.cs) | `Diagram`, `Pages`, `Shapes` | Export shape identifiers and their associated hyperlink urls to a csv file for reporting |
 | [generate-a-summary-report-showing-the-number-of-hyperlinks-per-page-in-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/generate-a-summary-report-showing-the-number-of-hyperlinks-per-page-in-the-diagram.cs) | `Diagram`, `Pages`, `diagram` | Generate a summary report showing the number of hyperlinks per page in the diagram |
-| [generate-a-visual-map-of-hyperlink-connections-between-shapes-and-export-the-map-as-an-image-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/generate-a-visual-map-of-hyperlink-connections-between-shapes-and-export-the-map-as-an-image-file.cs) | `Diagram`, `ImageSaveOptions` | Generate a visual map of hyperlink connections between shapes and export the map as an image file |
+| [generate-a-visual-map-of-hyperlink-connections-between-shapes-and-export-the-map-as-an-image-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/generate-a-visual-map-of-hyperlink-connections-between-shapes-and-export-the-map-as-an-image-file.cs) | `AddShape`, `ConnectShapesViaConnector`, `Diagram` | Generate a visual map of hyperlink connections between shapes and export the map as an image file |
 | [implement-a-rollback-mechanism-that-restores-original-hyperlink-settings-if-an-update-error-occurs.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/implement-a-rollback-mechanism-that-restores-original-hyperlink-settings-if-an-update-error-occurs.cs) | `Diagram`, `Pages`, `Save` | Implement a rollback mechanism that restores original hyperlink settings if an update error occurs |
 | [implement-a-routine-to-remove-all-hyperlinks-from-shapes-on-a-specified-page-before-exporting.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/implement-a-routine-to-remove-all-hyperlinks-from-shapes-on-a-specified-page-before-exporting.cs) | `Diagram`, `Pages`, `Save` | Implement a routine to remove all hyperlinks from shapes on a specified page before exporting |
-| [implement-error-handling-for-malformed-or-unreachable-hyperlink-addresses-during-addition.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/implement-error-handling-for-malformed-or-unreachable-hyperlink-addresses-during-addition.cs) | `Diagram`, `Pages`, `Save` | Implement error handling for malformed or unreachable hyperlink addresses during addition |
+| [implement-error-handling-for-malformed-or-unreachable-hyperlink-addresses-during-addition.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/implement-error-handling-for-malformed-or-unreachable-hyperlink-addresses-during-addition.cs) | `Diagram`, `Pages`, `Shapes` | Implement error handling for malformed or unreachable hyperlink addresses during addition |
 | [implement-pagination-logic-that-adds-page-specific-hyperlinks-to-navigate-sequentially-through-diagram-pages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/implement-pagination-logic-that-adds-page-specific-hyperlinks-to-navigate-sequentially-through-diagram-pages.cs) | `AddShape`, `Diagram`, `Pages` | Implement pagination logic that adds page specific hyperlinks to navigate sequentially through diagram pages |
 | [iterate-through-a-shape-s-hyperlinks-and-log-each-hyperlink-s-name-and-target-address.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/iterate-through-a-shape-s-hyperlinks-and-log-each-hyperlink-s-name-and-target-address.cs) | `Diagram`, `Pages`, `Shapes` | Iterate through a shape s hyperlinks and log each hyperlink s name and target address |
 | [load-a-diagram-from-a-memory-stream-modify-hyperlink-targets-and-write-the-updated-diagram-back-to-the-stream.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/load-a-diagram-from-a-memory-stream-modify-hyperlink-targets-and-write-the-updated-diagram-back-to-the-stream.cs) | `Diagram`, `Pages`, `Save` | Load a diagram from a memory stream modify hyperlink targets and write the updated diagram back to the stream |
-| [load-the-visio-diagram-from-file-and-access-a-shape-using-its-unique-identifier.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/load-the-visio-diagram-from-file-and-access-a-shape-using-its-unique-identifier.cs) | `Diagram`, `Pages`, `Shapes` | Load the visio diagram from file and access a shape using its unique identifier |
+| [load-the-visio-diagram-from-file-and-access-a-shape-using-its-unique-identifier.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/load-the-visio-diagram-from-file-and-access-a-shape-using-its-unique-identifier.cs) | `Diagram`, `Pages`, `diagram` | Load the visio diagram from file and access a shape using its unique identifier |
 | [locate-shapes-by-their-names-within-the-diagram-and-assign-page-link-hyperlinks-for-navigation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/locate-shapes-by-their-names-within-the-diagram-and-assign-page-link-hyperlinks-for-navigation.cs) | `Diagram`, `Pages`, `Save` | Locate shapes by their names within the diagram and assign page link hyperlinks for navigation |
 | [programmatically-set-the-hyperlink-s-target-frame-to-open-in-the-same-window.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/programmatically-set-the-hyperlink-s-target-frame-to-open-in-the-same-window.cs) | `Diagram`, `Pages`, `Save` | Programmatically set the hyperlink s target frame to open in the same window |
 | [remove-a-hyperlink-from-a-shape-by-matching-its-name-and-save-the-updated-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/remove-a-hyperlink-from-a-shape-by-matching-its-name-and-save-the-updated-diagram.cs) | `Diagram`, `Pages`, `Save` | Remove a hyperlink from a shape by matching its name and save the updated diagram |
@@ -132,7 +132,7 @@ class Program
 | [set-the-hyperlink-s-description-property-to-provide-tooltip-text-on-mouse-hover.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/set-the-hyperlink-s-description-property-to-provide-tooltip-text-on-mouse-hover.cs) | `Diagram`, `Pages`, `Save` | Set the hyperlink s description property to provide tooltip text on mouse hover |
 | [update-all-hyperlinks-referencing-an-old-domain-to-a-new-domain-via-string-replacement.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/update-all-hyperlinks-referencing-an-old-domain-to-a-new-domain-via-string-replacement.cs) | `Diagram`, `Pages`, `Save` | Update all hyperlinks referencing an old domain to a new domain via string replacement |
 | [use-asynchronous-i-o-to-load-the-diagram-modify-hyperlinks-and-save-without-blocking-the-ui-thread.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/use-asynchronous-i-o-to-load-the-diagram-modify-hyperlinks-and-save-without-blocking-the-ui-thread.cs) | `Diagram`, `Pages`, `Save` | Use asynchronous i o to load the diagram modify hyperlinks and save without blocking the ui thread |
-| [use-hyperlinkcollection-add-overload-to-set-name-address-and-subaddress-simultaneously.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/use-hyperlinkcollection-add-overload-to-set-name-address-and-subaddress-simultaneously.cs) | `Diagram`, `Pages`, `Save` | Use hyperlinkcollection add overload to set name address and subaddress simultaneously |
+| [use-hyperlinkcollection-add-overload-to-set-name-address-and-subaddress-simultaneously.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/use-hyperlinkcollection-add-overload-to-set-name-address-and-subaddress-simultaneously.cs) | `AddShape`, `Diagram`, `Pages` | Use hyperlinkcollection add overload to set name address and subaddress simultaneously |
 | [use-the-hyperlinkcollection-class-to-enumerate-all-hyperlinks-associated-with-a-specific-shape.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/use-the-hyperlinkcollection-class-to-enumerate-all-hyperlinks-associated-with-a-specific-shape.cs) | `Diagram`, `Pages`, `Save` | Use the hyperlinkcollection class to enumerate all hyperlinks associated with a specific shape |
 | [validate-that-each-shape-with-a-hyperlink-has-a-non-empty-description-property.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-hyperlinks/validate-that-each-shape-with-a-hyperlink-has-a-non-empty-description-property.cs) | `Diagram`, `Pages`, `Shapes` | Validate that each shape with a hyperlink has a non empty description property |
 
@@ -221,17 +221,15 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 ## Key API Surface
 
 - `AddShape`
+- `ConnectShapesViaConnector`
 - `Diagram`
 - `ImageSaveOptions`
-- `Page`
 - `Pages`
+- `Prop`
 - `Save`
-- `Shape`
 - `Shapes`
 - `diagram`
 - `page`
-- `shape`
-- `window`
 
 ## Real-World Use Cases
 
@@ -247,7 +245,7 @@ Frequently asked questions about **Working With Hyperlinks** in **Aspose.Diagram
 
 **Q: How do I get started with Working With Hyperlinks in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.5.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -279,4 +277,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-06-23 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-07-28 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

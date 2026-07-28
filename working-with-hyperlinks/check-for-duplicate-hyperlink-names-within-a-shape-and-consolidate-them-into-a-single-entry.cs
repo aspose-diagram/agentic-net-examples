@@ -1,9 +1,9 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
+using System.Collections.Generic;
 
-class HyperlinkConsolidator
+class Program
 {
     static void Main()
     {
@@ -13,33 +13,40 @@ class HyperlinkConsolidator
             // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Dictionary to track first occurrence of each hyperlink name
-                    var seenNames = new Dictionary<string, Hyperlink>(StringComparer.OrdinalIgnoreCase);
+                    HyperlinkCollection hyperlinks = shape.Hyperlinks;
+                    if (hyperlinks == null || hyperlinks.Count <= 1)
+                        continue; // No possible duplicates
 
-                    // Iterate backwards so that removal does not affect the index
-                    for (int i = shape.Hyperlinks.Count - 1; i >= 0; i--)
+                    // Track first occurrence of each hyperlink name
+                    var firstByName = new Dictionary<string, Hyperlink>();
+                    var duplicates = new List<Hyperlink>();
+
+                    foreach (Hyperlink link in hyperlinks)
                     {
-                        Hyperlink hl = shape.Hyperlinks[i];
+                        string name = link.Name;
+                        if (string.IsNullOrEmpty(name))
+                            continue; // Skip unnamed hyperlinks
 
-                        // Use Name property as the identifier; fall back to empty string if null
-                        string name = hl.Name ?? string.Empty;
-
-                        if (seenNames.ContainsKey(name))
+                        if (firstByName.ContainsKey(name))
                         {
-                            // Duplicate found – remove this hyperlink
-                            shape.Hyperlinks.Remove(hl);
+                            // Duplicate name found – mark for removal
+                            duplicates.Add(link);
                         }
                         else
                         {
-                            // First time we see this name – keep it
-                            seenNames[name] = hl;
+                            firstByName[name] = link;
                         }
+                    }
+
+                    // Remove duplicate hyperlinks, keeping the first occurrence
+                    foreach (Hyperlink dup in duplicates)
+                    {
+                        hyperlinks.Remove(dup);
                     }
                 }
             }

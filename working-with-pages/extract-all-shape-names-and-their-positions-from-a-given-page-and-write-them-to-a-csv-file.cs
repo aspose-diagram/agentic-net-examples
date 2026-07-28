@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
 
 class Program
@@ -12,29 +13,32 @@ class Program
             // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Select the page you want to process (here we use the first page)
-            Page page = diagram.Pages[0];
+            // Select the page you want to process (0‑based index)
+            int pageIndex = 0;
+            Page page = diagram.Pages[pageIndex];
 
-            // Create a CSV file to store shape names and positions
-            using (StreamWriter writer = new StreamWriter("shapes.csv"))
+            // Prepare CSV content
+            StringBuilder csv = new StringBuilder();
+            csv.AppendLine("ShapeName,PinX,PinY");
+
+            // Iterate through all shapes on the page
+            foreach (Shape shape in page.Shapes)
             {
-                // Write CSV header
-                writer.WriteLine("ShapeName,PinX,PinY");
+                // Shape name (fallback to empty string if null)
+                string name = shape.Name ?? string.Empty;
 
-                // Iterate through all shapes on the selected page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Retrieve the shape's name (fallback to universal name if needed)
-                    string shapeName = shape.Name ?? shape.NameU ?? string.Empty;
+                // Position values (fallback to 0 if not available)
+                double pinX = shape.XForm?.PinX?.Value ?? 0;
+                double pinY = shape.XForm?.PinY?.Value ?? 0;
 
-                    // Retrieve the shape's position (PinX and PinY are in inches)
-                    double pinX = shape.XForm.PinX.Value;
-                    double pinY = shape.XForm.PinY.Value;
+                // Escape commas or quotes in the name
+                string escapedName = EscapeCsv(name);
 
-                    // Write a CSV line, escaping the name if it contains special characters
-                    writer.WriteLine($"{EscapeCsv(shapeName)},{pinX},{pinY}");
-                }
+                csv.AppendLine($"{escapedName},{pinX},{pinY}");
             }
+
+            // Write CSV to file (replace with desired output path)
+            File.WriteAllText("shapes.csv", csv.ToString());
 
         }
         catch (System.IO.FileNotFoundException ex)
@@ -43,14 +47,14 @@ class Program
         }
     }
 
-    // Helper method to escape commas, quotes, and newlines for CSV compliance
-    static string EscapeCsv(string value)
+    // Helper to escape CSV fields containing special characters
+    static string EscapeCsv(string field)
     {
-        if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
+        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
         {
-            value = value.Replace("\"", "\"\"");
-            return $"\"{value}\"";
+            field = field.Replace("\"", "\"\"");
+            return $"\"{field}\"";
         }
-        return value;
+        return field;
     }
 }

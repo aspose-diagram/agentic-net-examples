@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,29 +9,34 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            var diagram = new Diagram(@"input.vsdx");
+            // Path to the source Visio diagram
+            string sourcePath = "input.vsdx";
 
-            // Access the first page (adjust index as needed)
-            var page = diagram.Pages[0];
+            // Load the diagram (uses the provided load rule)
+            Diagram diagram = new Diagram(sourcePath);
 
-            // Access the shape you want to rotate (adjust index or use a search)
-            var shape = page.Shapes[0];
+            // Choose the page and shape to rotate
+            // Here we use the first page and a shape with a known ID (replace with your actual ID)
+            Page page = diagram.Pages[0];
+            int shapeId = 1; // TODO: set the actual shape ID you want to rotate
+            Shape shape = page.Shapes.GetShape(shapeId);
 
             // Desired rotation angle in degrees
-            double angleDegrees = 45;
+            double angleDegrees = 45.0;
 
-            // Convert degrees to radians because the API expects radians
+            // Convert degrees to radians because Shape.SetAngle expects radians
             double angleRadians = angleDegrees * Math.PI / 180.0;
 
-            // Rotate the shape using the SetAngle method (angle in radians)
+            // Rotate the shape by setting its angle
+            // Option 1: using the convenience method
             shape.SetAngle(angleRadians);
 
-            // Alternatively, you could set the XForm.Angle property directly:
-            // shape.XForm.Angle = new DoubleValue(angleRadians);
+            // Option 2: directly modifying the XForm.Angle property
+            // shape.XForm.Angle.Value = angleRadians;
 
-            // Save the modified diagram
-            diagram.Save(@"output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram (uses the provided save rule)
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

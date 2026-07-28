@@ -18,19 +18,14 @@ class Program
                 Diagram diagram = new Diagram(inputPath);
 
                 // Define the desired line color (hex format)
-                string lineColorHex = "#FF0000"; // Red
+                const string lineColorHex = "#FF0000"; // Red
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Process only connector shapes (1‑D shapes)
+                        // Identify connector shapes (1‑D shapes)
                         if (shape.OneD)
                         {
                             // Apply the uniform line color
@@ -40,9 +35,13 @@ class Program
                 }
 
                 // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                {
+                    // Set a default font to avoid missing‑font issues
+                    DefaultFont = "Arial",
+                    // Explicitly specify the save format
+                    SaveFormat = SaveFileFormat.Pdf
+                };
 
                 // Save the modified diagram as PDF
                 diagram.Save(outputPath, pdfOptions);

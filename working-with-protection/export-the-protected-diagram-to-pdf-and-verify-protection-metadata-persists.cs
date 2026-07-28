@@ -1,70 +1,63 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define input Visio file (protected diagram) and output PDF path
+        string inputPath = "protected.vsdx";
+        string outputPdfPath = "protected.pdf";
+
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Capture global protection settings before export (BOOL is an enum, no .Value)
+            BOOL protectBkgnds = diagram.DocumentSettings.ProtectBkgnds;
+            BOOL protectMasters = diagram.DocumentSettings.ProtectMasters;
+            BOOL protectShapes = diagram.DocumentSettings.ProtectShapes;
+            BOOL protectStyles = diagram.DocumentSettings.ProtectStyles;
+
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
             {
+                // Set a fallback font for any missing fonts during export
+                DefaultFont = "Arial",
+                // Explicitly specify the output format
+                SaveFormat = SaveFileFormat.Pdf
+                // Encryption can be added here if needed:
+                // EncryptionDetails = new PdfEncryptionDetails("userPwd", "ownerPwd", PdfEncryptionAlgorithm.RC4_128)
+            };
 
-                // Input Visio file (protected diagram) and output PDF path
-                string visioPath = "protected_diagram.vsdx";
-                string pdfPath = "protected_diagram.pdf";
+            // Export the diagram to PDF using the configured options
+            diagram.Save(outputPdfPath, pdfOptions);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Capture protection metadata before export
-                BOOL protectBkgndsBefore = diagram.DocumentSettings.ProtectBkgnds;
-                BOOL protectMastersBefore = diagram.DocumentSettings.ProtectMasters;
-                BOOL protectShapesBefore = diagram.DocumentSettings.ProtectShapes;
-                BOOL protectStylesBefore = diagram.DocumentSettings.ProtectStyles;
-
-                Console.WriteLine("Protection metadata before export:");
-                Console.WriteLine($"ProtectBkgnds: {protectBkgndsBefore}");
-                Console.WriteLine($"ProtectMasters: {protectMastersBefore}");
-                Console.WriteLine($"ProtectShapes: {protectShapesBefore}");
-                Console.WriteLine($"ProtectStyles: {protectStylesBefore}");
-
-                // Configure PDF save options (optional encryption can be added here)
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                // Example: enable encryption (user password: "user", owner password: "owner")
-                // pdfOptions.EncryptionDetails = new PdfEncryptionDetails("user", "owner", PdfEncryptionAlgorithm.RC4_128);
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set format
-
-                // Export diagram to PDF
-                diagram.Save(pdfPath, pdfOptions);
-
-                // Verify that protection metadata still matches after export
-                BOOL protectBkgndsAfter = diagram.DocumentSettings.ProtectBkgnds;
-                BOOL protectMastersAfter = diagram.DocumentSettings.ProtectMasters;
-                BOOL protectShapesAfter = diagram.DocumentSettings.ProtectShapes;
-                BOOL protectStylesAfter = diagram.DocumentSettings.ProtectStyles;
-
-                Console.WriteLine("\nProtection metadata after export:");
-                Console.WriteLine($"ProtectBkgnds: {protectBkgndsAfter}");
-                Console.WriteLine($"ProtectMasters: {protectMastersAfter}");
-                Console.WriteLine($"ProtectShapes: {protectShapesAfter}");
-                Console.WriteLine($"ProtectStyles: {protectStylesAfter}");
-
-                // Simple validation – throw if any value changed
-                if (protectBkgndsBefore != protectBkgndsAfter ||
-                    protectMastersBefore != protectMastersAfter ||
-                    protectShapesBefore != protectShapesAfter ||
-                    protectStylesBefore != protectStylesAfter)
-                {
-                    throw new Exception("Protection metadata changed during PDF export.");
-                }
-
-                Console.WriteLine("\nExport completed successfully. Protection metadata persisted.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
+            // Verify that protection metadata remains unchanged after export
+            if (diagram.DocumentSettings.ProtectBkgnds != protectBkgnds ||
+                diagram.DocumentSettings.ProtectMasters != protectMasters ||
+                diagram.DocumentSettings.ProtectShapes != protectShapes ||
+                diagram.DocumentSettings.ProtectStyles != protectStyles)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                throw new Exception("Protection metadata was altered during PDF export.");
             }
+
+            Console.WriteLine("PDF export completed successfully. Protection metadata verified.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

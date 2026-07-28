@@ -7,27 +7,28 @@ class Program
     static void Main()
     {
         // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        using (Diagram diagram = new Diagram())
+        {
+            // Create a new stylesheet
+            StyleSheet style = new StyleSheet();
 
-        // Create a new stylesheet
-        StyleSheet style = new StyleSheet();
+            // Assign a unique ID (next available)
+            style.ID = diagram.StyleSheets.Count + 1;
 
-        // Assign a unique ID (next available)
-        style.ID = diagram.StyleSheets.Count + 1;
+            // Give the stylesheet a name (optional but helpful)
+            style.Name = "LightGrayFill";
 
-        // Optional: give the stylesheet a name
-        style.Name = "LightGrayFill";
+            // Set the fill foreground color to light gray (hex code #D3D3D3)
+            style.Fill.FillForegnd.Value = "#D3D3D3";
 
-        // Set fill pattern to solid (1)
-        style.Fill.FillPattern.Value = 1;
+            // Ensure the fill pattern is solid (value 1)
+            style.Fill.FillPattern.Value = 1;
 
-        // Set fill foreground color to light gray
-        style.Fill.FillForegnd.Value = "#D3D3D3";
+            // Add the stylesheet to the diagram's stylesheet collection
+            diagram.StyleSheets.Add(style);
 
-        // Add the stylesheet to the diagram's collection
-        diagram.StyleSheets.Add(style);
-
-        // Save the diagram to a VSDX file
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Confirmation output
+            Console.WriteLine($"Added stylesheet '{style.Name}' with ID {style.ID} and fill color {style.Fill.FillForegnd.Value}");
+        }
     }
 }

@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,15 +10,20 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access a specific shape (e.g., the first shape on the first page)
+            // Access the first page (adjust index as needed)
             Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
 
-            // Convert the selected shape to PDF and save it to a file
-            shape.ToPdf("shape.pdf");
+            // Retrieve a shape from the page (e.g., shape with ID 1)
+            Shape shape = page.Shapes.GetShape(1);
+
+            // Destination PDF file for the shape
+            string pdfFile = "shape.pdf";
+
+            // Convert the shape to PDF using the built‑in ToPdf method
+            shape.ToPdf(pdfFile);
 
         }
         catch (System.IO.FileNotFoundException ex)

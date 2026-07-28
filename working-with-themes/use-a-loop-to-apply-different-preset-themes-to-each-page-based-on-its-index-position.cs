@@ -2,7 +2,7 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class ApplyPresetThemes
 {
     static void Main()
     {
@@ -12,7 +12,7 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Define a list of preset themes to apply
+            // Define a list of preset themes to apply cyclically
             PresetThemeValue[] themes = new PresetThemeValue[]
             {
                 PresetThemeValue.Office,
@@ -24,32 +24,23 @@ class Program
                 PresetThemeValue.Daybreak,
                 PresetThemeValue.Parallel,
                 PresetThemeValue.Sequence,
-                PresetThemeValue.Slice,
-                PresetThemeValue.Ion,
-                PresetThemeValue.Retrospect,
-                PresetThemeValue.Organic,
-                PresetThemeValue.Bubble,
-                PresetThemeValue.Clouds,
-                PresetThemeValue.Gemstone,
-                PresetThemeValue.Lines,
-                PresetThemeValue.Facet,
-                PresetThemeValue.Prominence,
-                PresetThemeValue.Smoke,
-                PresetThemeValue.Radiance,
-                PresetThemeValue.Shade,
-                PresetThemeValue.Pencil,
-                PresetThemeValue.Pen,
-                PresetThemeValue.Marker,
-                PresetThemeValue.WhiteBoard
+                PresetThemeValue.Slice
             };
 
-            // Apply a theme to each page based on its index
+            // Loop through each page and assign a theme based on its index
             for (int i = 0; i < diagram.Pages.Count; i++)
             {
                 Page page = diagram.Pages[i];
-                // Cycle through the theme array if there are more pages than themes
+
+                // Select a theme from the array using modulo to wrap around
                 PresetThemeValue selectedTheme = themes[i % themes.Length];
+
+                // Apply the selected preset theme to the page
                 page.PresetTheme = selectedTheme;
+
+                // Optionally, also set a theme variant and quick style for richer styling
+                page.PresetThemeVariant = (PresetThemeVariantValue)(i % 4); // Variant1‑4
+                page.PresetThemeQuickStyle = (PresetQuickStyleValue)(100 + (i % 4)); // VariantStyle1‑4
             }
 
             // Save the modified diagram

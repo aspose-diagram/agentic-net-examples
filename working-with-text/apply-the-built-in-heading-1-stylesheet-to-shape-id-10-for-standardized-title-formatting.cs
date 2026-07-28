@@ -1,57 +1,56 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Access the first page (avoid using ActivePage)
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shape with ID 10
+            long shapeId = 10L;
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Find the built‑in stylesheet named "Heading 1"
+            StyleSheet headingStyle = null;
+            foreach (StyleSheet ss in diagram.StyleSheets)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";   // replace with actual file path
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page (avoid using ActivePage)
-                Page page = diagram.Pages[0];
-
-                // Retrieve the shape with ID 10
-                Shape shape = page.Shapes.GetShape(10L);
-                if (shape == null)
+                if (ss.Name == "Heading 1")
                 {
-                    throw new Exception("Shape with ID 10 not found.");
+                    headingStyle = ss;
+                    break;
                 }
+            }
 
-                // Find the built‑in stylesheet named "Heading 1"
-                StyleSheet headingStyle = null;
-                foreach (StyleSheet ss in diagram.StyleSheets)
-                {
-                    if (ss.Name == "Heading 1")
-                    {
-                        headingStyle = ss;
-                        break;
-                    }
-                }
-
-                if (headingStyle == null)
-                {
-                    throw new Exception("StyleSheet 'Heading 1' not found in the diagram.");
-                }
-
-                // Apply the stylesheet to the shape (text, fill, and line styles)
+            if (headingStyle != null)
+            {
+                // Apply the stylesheet to the shape's text, fill, and line formatting
                 shape.TextStyle = headingStyle;
                 shape.FillStyle = headingStyle;
                 shape.LineStyle = headingStyle;
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx"; // replace with desired output path
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+            else
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // If the stylesheet is not found, report the issue
+                Console.WriteLine("Error: 'Heading 1' stylesheet not found in the diagram.");
+                return;
             }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

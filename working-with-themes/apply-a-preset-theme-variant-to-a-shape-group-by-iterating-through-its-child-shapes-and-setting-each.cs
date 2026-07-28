@@ -1,51 +1,47 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Assume the first page contains the group shape
-            Page page = diagram.Pages[0];
-
-            // Find the first group shape on the page
-            Shape? groupShape = null;
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                if (shape.Type == TypeValue.Group)
+
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    groupShape = shape;
-                    break;
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Identify group shapes
+                        if (shape.Type == TypeValue.Group)
+                        {
+                            // Apply preset theme and variant to the group shape
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+
+                            // Apply the same theme settings to each child shape within the group
+                            foreach (Shape child in shape.Shapes)
+                            {
+                                child.PresetTheme = PresetThemeValue.Bubble;
+                                child.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+                            }
+                        }
+                    }
                 }
-            }
 
-            if (groupShape == null)
+                // Save the modified diagram to a new file
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                throw new Exception("No group shape found on the page.");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Iterate through child shapes of the group and apply a preset theme variant
-            foreach (Shape child in groupShape.Shapes)
-            {
-                // Apply the desired theme and variant to each child shape
-                child.PresetTheme = PresetThemeValue.Bubble;
-                child.PresetThemeVariant = PresetThemeVariantValue.Variant2;
-            }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

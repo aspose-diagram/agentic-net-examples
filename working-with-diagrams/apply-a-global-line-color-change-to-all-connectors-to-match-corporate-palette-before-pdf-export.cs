@@ -1,50 +1,53 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        // Verify the input file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Define the corporate line color (hex format)
+            const string corporateLineColor = "#1A73E8"; // Example corporate blue
+
+            // Apply the line color to all connector shapes (OneD shapes) on each page
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
-                // Output PDF file path
-                string outputPath = "output.pdf";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the corporate line color (hex format)
-                string corporateLineColor = "#FF0000"; // Example: red
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Connectors are 1‑D shapes; set their line color
+                    if (shape.OneD)
                     {
-                        // Identify connector shapes (1-D shapes)
-                        if (shape.OneD)
-                        {
-                            // Apply the corporate line color
-                            shape.Line.LineColor.Value = corporateLineColor;
-                        }
+                        shape.Line.LineColor.Value = corporateLineColor;
                     }
                 }
-
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-                // Save the diagram as PDF with updated connector colors
-                diagram.Save(outputPath, pdfOptions);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Prepare PDF save options (no unsupported properties are set)
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+            // Export the diagram to PDF using the configured options
+            string outputPath = "output.pdf";
+            diagram.Save(outputPath, pdfOptions);
+        }
+        catch (Exception ex)
+        {
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

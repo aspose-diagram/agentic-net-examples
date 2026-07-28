@@ -1,53 +1,54 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths to the source Visio file and the resulting PDF.
+            string inputPath = "input.vsdx";
+            string outputPath = "output.pdf";
+
+            // Load the Visio diagram.
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Desired line thickness for all connectors (in inches).
+                double uniformLineWeight = 0.02; // ~0.5 mm
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output PDF file path
-                string outputPath = "output.pdf";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Desired uniform line thickness (in inches)
-                double uniformLineWeight = 0.02; // example: 0.02 inches
-
-                // Iterate through all pages and shapes
+                // Iterate over every page and shape.
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Apply line weight only to connector (1‑D) shapes
-                        if (shape.OneD)
+                        // Identify connector shapes: 1‑D shapes whose master is "Dynamic connector".
+                        if (shape.OneD && shape.Master != null && shape.Master.Name == "Dynamic connector")
                         {
+                            // Apply the uniform line thickness.
                             shape.Line.LineWeight.Value = uniformLineWeight;
                         }
                     }
                 }
 
-                // Configure PDF save options
+                // Set up PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
                 pdfOptions.DefaultFont = "Arial";
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the modified diagram as PDF
+                // Export the diagram to PDF.
                 diagram.Save(outputPath, pdfOptions);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine("Export completed successfully.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

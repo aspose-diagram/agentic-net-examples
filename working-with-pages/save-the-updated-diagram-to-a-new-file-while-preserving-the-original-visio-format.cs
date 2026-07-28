@@ -1,31 +1,34 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Path to the original Visio file
-                string inputPath = "original.vsdx";
+            // Load the original Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Path for the new file that will contain the saved diagram
-                string outputPath = "copy.vsdx";
+            // -----------------------------------------------------------------
+            // Perform any required modifications to the diagram here.
+            // -----------------------------------------------------------------
 
-                // Load the existing diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Create save options that preserve the original Visio format (VSDX)
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
+            // Example of an additional option (optional):
+            // saveOptions.AutoFitPageToDrawingContent = true;
 
-                // Save the diagram to a new file, preserving the Visio format (VSDX)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the updated diagram to a new file while keeping the same format
+            diagram.Save("output.vsdx", saveOptions);
 
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -9,44 +9,38 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with actual file path)
-            string diagramPath = "input.vsdx";
-            Diagram diagram = new Diagram(diagramPath);
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Ensure there is at least one page
-            if (diagram.Pages.Count == 0)
-            {
-                Console.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
-            // Use the first page
+            // Access the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Find the first shape on the page
-            Shape targetShape = null;
-            foreach (Shape shp in page.Shapes)
-            {
-                targetShape = shp;
-                break;
-            }
+            // Retrieve a shape by its ID (example uses ID = 1)
+            Shape shape = page.Shapes.GetShape(1);
 
-            if (targetShape == null)
-            {
-                Console.WriteLine("No shapes found on the first page.");
-                return;
-            }
+            // Get the Fill property of the shape
+            Fill fill = shape.Fill;
 
-            // Retrieve the Fill property of the shape
-            Fill fill = targetShape.Fill;
-
-            // Obtain the associated GradientFill object
+            // Obtain the GradientFill object associated with the shape's fill
             GradientFill gradient = fill.GradientFill;
 
-            // Output some gradient fill details
-            Console.WriteLine("Gradient Enabled: " + gradient.GradientEnabled.Value);
-            Console.WriteLine("Gradient Direction: " + gradient.GradientDir.Value);
-            Console.WriteLine("Gradient Stops Count: " + gradient.GradientStops.Count);
+            // Example: check whether the gradient is enabled
+            if (gradient.GradientEnabled.Value == BOOL.True)
+            {
+                Console.WriteLine("Gradient fill is enabled for this shape.");
+            }
+            else
+            {
+                Console.WriteLine("Gradient fill is not enabled for this shape.");
+            }
+
+            // Iterate through gradient stops and display their positions and colors
+            foreach (GradientStop stop in gradient.GradientStops)
+            {
+                double position = stop.Position.Value; // position (0 to 1)
+                string colorHex = stop.Color.Value;   // color as hex string, e.g., "#FF0000"
+                Console.WriteLine($"Stop at {position} with color {colorHex}");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

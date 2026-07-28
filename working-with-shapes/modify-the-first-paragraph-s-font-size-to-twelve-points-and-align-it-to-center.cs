@@ -1,55 +1,69 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define input and output file paths
+        string inputPath = "input.vsdx";
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the specified file
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                bool modified = false;
 
-                // Load the Visio diagram (replace with actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page
-                Page firstPage = diagram.Pages[0];
-
-                // Access the first shape on the page
-                Shape firstShape = firstPage.Shapes[0];
-
-                // Ensure the shape contains text and at least one paragraph
-                if (firstShape.Text != null && !string.IsNullOrWhiteSpace(firstShape.Text.Value.ToString()) && firstShape.Paras.Count > 0)
+                // Iterate through pages and shapes to locate the first shape containing text
+                foreach (Page page in diagram.Pages)
                 {
-                    // Center align the first paragraph
-                    firstShape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
-
-                    // Set font size of all characters in the shape to 12 points (12/72 inches)
-                    double sizeInInches = 12.0 / 72.0;
-                    foreach (Aspose.Diagram.Char ch in firstShape.Chars)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        ch.Size.Value = sizeInInches;
+                        // Verify the shape has non‑empty text
+                        if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.ToString()))
+                        {
+                            // ----- Modify the first paragraph -----
+                            if (shape.Paras.Count > 0)
+                            {
+                                // Align the first paragraph to center (use correct enum member)
+                                shape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+                            }
+
+                            // ----- Modify the first character (font size) -----
+                            if (shape.Chars.Count > 0)
+                            {
+                                // Set font size to 12 points (12/72 inches)
+                                shape.Chars[0].Size.Value = 12.0 / 72.0;
+                            }
+
+                            modified = true;
+                            break; // Only modify the first shape with text
+                        }
                     }
-                }
-                else
-                {
-                    Console.WriteLine("The first shape does not contain text or paragraphs.");
+
+                    if (modified)
+                        break;
                 }
 
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
+                // Save the modified diagram using the appropriate SaveFileFormat enum
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Clean up
-                diagram.Dispose();
-
-                Console.WriteLine("Diagram processing completed.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors encountered during processing to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

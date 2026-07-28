@@ -10,23 +10,26 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Replace with the actual path to your .vsdx file
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page and each shape on the page
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Determine if the shape has a master and an inherited fill definition
-                    bool inheritsFill = shape.Master != null && shape.InheritFill != null;
+                    // Check if the shape has a master (i.e., it can inherit formatting)
+                    bool inheritsFill = shape.Master != null;
 
                     // Log the inheritance status
-                    Console.WriteLine($"Shape ID {shape.ID} on Page ID {page.ID} inherits fill from master: {inheritsFill}");
+                    Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Inherits Fill from Master: {inheritsFill}");
                 }
             }
 
-            // Save the diagram (optional, demonstrates usage of save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Optionally, save the diagram (if any modifications were made)
+            // string outputPath = "output.vsdx";
+            // diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

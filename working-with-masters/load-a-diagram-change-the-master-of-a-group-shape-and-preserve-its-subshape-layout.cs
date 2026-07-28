@@ -1,32 +1,41 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramGroupMasterChange
 {
-    static void Main()
+    // Helper class to store sub‑shape geometry
+    class SubShapeInfo
     {
-        try
+        public long Id { get; set; }
+        public double PinX { get; set; }
+        public double PinY { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+        public double Angle { get; set; }
+    }
+
+    class Program
+    {
+        static void Main()
         {
-
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Name of the master that will replace the current group master
-            string newMasterName = "NewGroupMaster";
-
-            // Load the diagram from file
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                // Access the first page (adjust if needed)
+
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Access the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Locate a group shape on the page
-                Shape? groupShape = null;
-                foreach (Shape shape in page.Shapes)
+                // Find the first group shape on the page
+                Aspose.Diagram.Shape? groupShape = null;
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
                     if (shape.Type == TypeValue.Group)
                     {
@@ -37,57 +46,60 @@ class Program
 
                 if (groupShape == null)
                 {
-                    Console.WriteLine("No group shape found on the page.");
-                    return;
+                    throw new Exception("No group shape found on the page.");
                 }
 
-                // Preserve the layout of all sub‑shapes inside the group
-                var layoutMap = new Dictionary<long, (double pinX, double pinY, double width, double height, double angle)>();
-                foreach (Shape subShape in groupShape.Shapes)
+                // Preserve layout of sub‑shapes
+                List<SubShapeInfo> subShapeInfos = new List<SubShapeInfo>();
+                foreach (Aspose.Diagram.Shape subShape in groupShape.Shapes)
                 {
-                    layoutMap[subShape.ID] = (
-                        subShape.XForm.PinX.Value,
-                        subShape.XForm.PinY.Value,
-                        subShape.XForm.Width.Value,
-                        subShape.XForm.Height.Value,
-                        subShape.XForm.Angle.Value
-                    );
+                    SubShapeInfo info = new SubShapeInfo
+                    {
+                        Id = subShape.ID,
+                        PinX = subShape.XForm.PinX.Value,
+                        PinY = subShape.XForm.PinY.Value,
+                        Width = subShape.XForm.Width.Value,
+                        Height = subShape.XForm.Height.Value,
+                        Angle = subShape.XForm.Angle.Value
+                    };
+                    subShapeInfos.Add(info);
                 }
 
-                // Verify that the target master exists in the diagram
-                if (!diagram.Masters.IsExist(newMasterName))
+                // Specify the new master name (must exist in the diagram's masters collection)
+                string newMasterName = "NewGroupMaster";
+
+                // Retrieve the new master
+                Master? newMaster = diagram.Masters.GetMasterByName(newMasterName);
+                if (newMaster == null)
                 {
-                    Console.WriteLine($"Master \"{newMasterName}\" does not exist in the diagram.");
-                    return;
+                    throw new Exception($"Master \"{newMasterName}\" not found in the diagram.");
                 }
 
                 // Change the master of the group shape
-                Master newMaster = diagram.Masters.GetMasterByName(newMasterName);
                 groupShape.Master = newMaster;
 
-                // Re‑apply the preserved layout to each sub‑shape
-                foreach (Shape subShape in groupShape.Shapes)
+                // Re‑apply the preserved sub‑shape geometry
+                foreach (SubShapeInfo info in subShapeInfos)
                 {
-                    if (layoutMap.TryGetValue(subShape.ID, out var vals))
+                    Aspose.Diagram.Shape? subShape = groupShape.Shapes.GetShape(info.Id);
+                    if (subShape != null)
                     {
-                        subShape.XForm.PinX.Value = vals.pinX;
-                        subShape.XForm.PinY.Value = vals.pinY;
-                        subShape.XForm.Width.Value = vals.width;
-                        subShape.XForm.Height.Value = vals.height;
-                        subShape.XForm.Angle.Value = vals.angle;
+                        subShape.XForm.PinX.Value = info.PinX;
+                        subShape.XForm.PinY.Value = info.PinY;
+                        subShape.XForm.Width.Value = info.Width;
+                        subShape.XForm.Height.Value = info.Height;
+                        subShape.XForm.Angle.Value = info.Angle;
                     }
                 }
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            Console.WriteLine("Diagram saved successfully.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

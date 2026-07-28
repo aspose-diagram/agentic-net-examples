@@ -1,25 +1,17 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class ShapeCountReport
+class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Path to the Visio diagram file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram using Aspose.Diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prepare a StringWriter to build the report
-            StringWriter reportWriter = new StringWriter();
-
-            reportWriter.WriteLine("Shape Count Summary per Page");
-            reportWriter.WriteLine(new string('=', 30));
+            // Load the Visio diagram from file
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
@@ -27,19 +19,12 @@ class ShapeCountReport
                 // Count the shapes on the current page
                 int shapeCount = page.Shapes.Count;
 
-                // Write the page information and shape count to the report
-                reportWriter.WriteLine($"Page ID: {page.ID}, Name: {page.Name}, Shapes: {shapeCount}");
+                // Output the summary for the page
+                Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) contains {shapeCount} shape(s).");
             }
 
-            // Output the report to the console
-            Console.WriteLine(reportWriter.ToString());
-
-            // Optionally, save the report to a text file
-            string outputPath = "ShapeCountReport.txt";
-            File.WriteAllText(outputPath, reportWriter.ToString());
-
-            // Clean up resources
-            diagram.Dispose();
+            // Save the diagram (optional, demonstrates save usage)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

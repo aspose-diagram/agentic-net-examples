@@ -9,27 +9,27 @@ class Program
             {
 
                 // Path to the sample Visio file (ensure this file exists at the specified location)
-                const string sampleFilePath = "sample.vsdx";
+                string filePath = "sample.vsdx";
 
                 // Expected page width in inches for the known sample file
-                const double expectedPageWidth = 8.5; // Example: standard US Letter width
+                double expectedWidth = 8.5; // Example: standard US Letter width
 
                 // Load the diagram
-                using (Diagram diagram = new Diagram(sampleFilePath))
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Retrieve the first page (index 0)
+                    // Retrieve the first page
                     Page page = diagram.Pages[0];
 
-                    // Get the page width value (in inches)
-                    double actualPageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    // Get the page width (value is in inches)
+                    double actualWidth = page.PageSheet.PageProps.PageWidth.Value;
 
-                    // Verify the page width matches the expected value
-                    if (Math.Abs(actualPageWidth - expectedPageWidth) > 0.001)
+                    // Verify the width matches the expected value
+                    if (Math.Abs(actualWidth - expectedWidth) > 0.001)
                     {
-                        throw new Exception($"Page width verification failed. Expected: {expectedPageWidth}, Actual: {actualPageWidth}");
+                        throw new Exception($"Page width mismatch. Expected {expectedWidth}, but got {actualWidth}.");
                     }
 
-                    Console.WriteLine("Page width verification passed.");
+                    Console.WriteLine("Page width test passed.");
                 }
 
             }

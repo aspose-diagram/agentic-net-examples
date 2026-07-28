@@ -1,45 +1,40 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
+            // Prompt user for input and output file paths
+            Console.Write("Enter the path of the Visio diagram to load: ");
+            string inputPath = Console.ReadLine();
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            Console.Write("Enter the path where the updated diagram will be saved: ");
+            string outputPath = Console.ReadLine();
 
-            // Load the diagram
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and shapes to apply the line style change
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip shapes that are marked as deleted
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Apply global line style changes
+                    // Apply new line style
                     shape.Line.LineColor.Value = "#FF0000";               // Red line color
-                    shape.Line.LineWeight.Value = 0.02;                  // Line weight in inches
+                    shape.Line.LineWeight.Value = 0.02;                  // Line weight (in inches)
                     shape.Line.LinePattern.Value = LinePatternValue.Solid; // Solid line pattern
                 }
             }
 
-            // Save the updated diagram
+            // Save the updated diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine("Diagram saved successfully.");
         }
     }
-}

@@ -1,94 +1,91 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        // Target theme to apply
-        private const PresetThemeValue TargetTheme = PresetThemeValue.Bubble;
-        private const PresetThemeVariantValue TargetVariant = PresetThemeVariantValue.Variant1;
-        private const PresetQuickStyleValue TargetQuickStyle = PresetQuickStyleValue.VariantStyle1;
-        private const string ThemePropName = "AppliedTheme";
-
-        static void Main()
+        try
         {
-            try
+
+            // Input and output file paths (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Define the target theme components
+            PresetThemeValue targetTheme = PresetThemeValue.Bubble;
+            PresetThemeVariantValue targetVariant = PresetThemeVariantValue.Variant1;
+            PresetQuickStyleValue targetQuickStyle = PresetQuickStyleValue.VariantStyle1;
+
+            // Create a string identifier to store in a custom property
+            string themeIdentifier = $"{targetTheme}_{targetVariant}_{targetQuickStyle}";
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load the Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the Props collection is available
+                    if (shape.Props == null)
+                        continue;
+
+                    // Check if the shape already has the target theme applied
+                    bool alreadyApplied = false;
+                    foreach (Prop prop in shape.Props)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Check if the shape already has the target theme applied
-                        if (HasTargetThemeApplied(shape))
-                            continue; // Skip processing for this shape
-
-                        // Apply the theme to the shape
-                        shape.PresetTheme = TargetTheme;
-                        shape.PresetThemeVariant = TargetVariant;
-                        shape.PresetThemeQuickStyle = TargetQuickStyle;
-
-                        // Record that the theme has been applied using a custom property
-                        SetAppliedThemeProperty(shape);
+                        if (prop.Name == "ThemeApplied" && prop.Value != null && prop.Value.Val == themeIdentifier)
+                        {
+                            alreadyApplied = true;
+                            break;
+                        }
                     }
+
+                    // Skip processing if the theme is already applied
+                    if (alreadyApplied)
+                        continue;
+
+                    // Apply the target theme to the shape
+                    shape.PresetTheme = targetTheme;
+                    shape.PresetThemeVariant = targetVariant;
+                    shape.PresetThemeQuickStyle = targetQuickStyle;
+
+                    // Record the applied theme in a custom property for future runs
+                    Prop themeProp = null;
+                    foreach (Prop prop in shape.Props)
+                    {
+                        if (prop.Name == "ThemeApplied")
+                        {
+                            themeProp = prop;
+                            break;
+                        }
+                    }
+
+                    if (themeProp == null)
+                    {
+                        themeProp = new Prop();
+                        themeProp.Name = "ThemeApplied";
+                        shape.Props.Add(themeProp);
+                    }
+
+                    themeProp.Value.Val = themeIdentifier;
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
 
-        // Determines whether the shape already has the target theme applied
-        private static bool HasTargetThemeApplied(Shape shape)
-        {
-            if (shape.Props == null)
-                return false;
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            foreach (Prop prop in shape.Props)
-            {
-                if (prop.Name == ThemePropName && prop.Value != null && prop.Value.Val == TargetTheme.ToString())
-                {
-                    return true;
-                }
-            }
-            return false;
         }
-
-        // Adds or updates the custom property indicating the applied theme
-        private static void SetAppliedThemeProperty(Shape shape)
+        catch (System.IO.FileNotFoundException ex)
         {
-            if (shape.Props == null)
-                return;
-
-            // Look for existing property
-            foreach (Prop prop in shape.Props)
-            {
-                if (prop.Name == ThemePropName)
-                {
-                    prop.Value.Val = TargetTheme.ToString();
-                    return;
-                }
-            }
-
-            // Property not found; create a new one
-            Prop newProp = new Prop();
-            newProp.Name = ThemePropName;
-            newProp.Value.Val = TargetTheme.ToString();
-            shape.Props.Add(newProp);
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

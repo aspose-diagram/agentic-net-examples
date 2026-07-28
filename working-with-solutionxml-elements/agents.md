@@ -4,10 +4,10 @@ display_name: Working With Solutionxml Elements
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.5.0
+version: 26.7.0
 examples: 34
 pass_rate: 100.0
-generated: 2026-06-23
+generated: 2026-07-28
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 34 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.5.0 |
+| Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-28 |
 
 ## Persona
 
@@ -61,16 +61,16 @@ You always use explicit types (never `var`), include all required `using` direct
 
 | Namespace | Files | Purpose |
 |-----------|-------|---------|
+| `Aspose.Diagram` | 34 | Core diagram API |
 | `System` | 34 | Console, Math, DateTime, Exception |
-| `Aspose.Diagram` | 32 | Core diagram API |
 | `System.IO` | 27 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 10 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `Aspose.Diagram.Saving` | 11 | Save options (PDF, PNG, HTML, SVG, XPS) |
 | `System.Xml.Linq` | 7 | Supporting utilities |
-| `System.Collections.Generic` | 7 | List, Dictionary, HashSet |
-| `System.Xml` | 5 | Supporting utilities |
-| `System.Linq` | 4 | LINQ queries on collections |
-| `System.Text` | 4 | StringBuilder |
-| `System.Text.Json` | 2 | JSON serialization |
+| `System.Collections.Generic` | 6 | List, Dictionary, HashSet |
+| `System.Linq` | 3 | LINQ queries on collections |
+| `System.Text` | 3 | StringBuilder |
+| `System.Text.Json` | 3 | JSON serialization |
+| `System.Xml` | 2 | Supporting utilities |
 | `System.Xml.Xsl` | 1 | Supporting utilities |
 | `System.IO.Compression` | 1 | Supporting utilities |
 | `System.Security.Cryptography` | 1 | Supporting utilities |
@@ -120,37 +120,37 @@ Category-specific API rules and gotchas:
 
 | File | Key APIs | Task |
 |------|----------|------|
-| [add-a-custom-data-row-to-a-specific-shape-within-the-solutionxml-and-update-the-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/add-a-custom-data-row-to-a-specific-shape-within-the-solutionxml-and-update-the-file.cs) | `Diagram`, `Pages`, `Save` | Add a custom data row to a specific shape within the solutionxml and update the file |
-| [add-a-hyperlink-element-to-a-shape-in-the-solutionxml-and-define-its-target-url.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/add-a-hyperlink-element-to-a-shape-in-the-solutionxml-and-define-its-target-url.cs) | `AddShape`, `Diagram`, `Pages` | Add a hyperlink element to a shape in the solutionxml and define its target url |
+| [add-a-custom-data-row-to-a-specific-shape-within-the-solutionxml-and-update-the-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/add-a-custom-data-row-to-a-specific-shape-within-the-solutionxml-and-update-the-file.cs) | `Diagram`, `Save`, `SolutionXMLs` | Add a custom data row to a specific shape within the solutionxml and update the file |
+| [add-a-hyperlink-element-to-a-shape-in-the-solutionxml-and-define-its-target-url.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/add-a-hyperlink-element-to-a-shape-in-the-solutionxml-and-define-its-target-url.cs) | `Diagram`, `Pages`, `Save` | Add a hyperlink element to a shape in the solutionxml and define its target url |
 | [apply-a-conditional-formatting-rule-in-the-solutionxml-that-highlights-shapes-based-on-data-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/apply-a-conditional-formatting-rule-in-the-solutionxml-that-highlights-shapes-based-on-data-values.cs) | `Diagram`, `Save`, `SolutionXMLs` | Apply a conditional formatting rule in the solutionxml that highlights shapes based on data values |
-| [apply-a-security-policy-that-removes-all-external-references-from-the-solutionxml-before-distribution.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/apply-a-security-policy-that-removes-all-external-references-from-the-solutionxml-before-distribution.cs) | `SolutionXMLs`, `diagram` | Apply a security policy that removes all external references from the solutionxml before distribution |
+| [apply-a-security-policy-that-removes-all-external-references-from-the-solutionxml-before-distribution.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/apply-a-security-policy-that-removes-all-external-references-from-the-solutionxml-before-distribution.cs) | `Diagram`, `Save`, `SolutionXMLs` | Apply a security policy that removes all external references from the solutionxml before distribution |
 | [apply-a-transformation-xslt-to-the-solutionxml-to-generate-a-custom-shape-properties-report.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/apply-a-transformation-xslt-to-the-solutionxml-to-generate-a-custom-shape-properties-report.cs) | `Diagram`, `SolutionXMLs`, `diagram` | Apply a transformation xslt to the solutionxml to generate a custom shape properties report |
 | [batch-process-a-folder-of-visio-files-updating-each-solutionxml-to-include-a-timestamp-attribute.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/batch-process-a-folder-of-visio-files-updating-each-solutionxml-to-include-a-timestamp-attribute.cs) | `Diagram`, `Save`, `SolutionXMLs` | Batch process a folder of visio files updating each solutionxml to include a timestamp attribute |
-| [clone-an-existing-shape-node-in-the-solutionxml-and-reposition-the-duplicate-on-the-same-page.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/clone-an-existing-shape-node-in-the-solutionxml-and-reposition-the-duplicate-on-the-same-page.cs) | `Diagram`, `Save`, `SolutionXMLs` | Clone an existing shape node in the solutionxml and reposition the duplicate on the same page |
-| [compare-two-solutionxml-files-to-identify-added-removed-or-modified-shapes-between-versions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/compare-two-solutionxml-files-to-identify-added-removed-or-modified-shapes-between-versions.cs) | `Diagram`, `Pages`, `Shapes` | Compare two solutionxml files to identify added removed or modified shapes between versions |
+| [clone-an-existing-shape-node-in-the-solutionxml-and-reposition-the-duplicate-on-the-same-page.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/clone-an-existing-shape-node-in-the-solutionxml-and-reposition-the-duplicate-on-the-same-page.cs) | `AddShape`, `Diagram`, `Pages` | Clone an existing shape node in the solutionxml and reposition the duplicate on the same page |
+| [compare-two-solutionxml-files-to-identify-added-removed-or-modified-shapes-between-versions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/compare-two-solutionxml-files-to-identify-added-removed-or-modified-shapes-between-versions.cs) | `Diagram` | Compare two solutionxml files to identify added removed or modified shapes between versions |
 | [compress-the-solutionxml-content-using-gzip-before-embedding-it-into-a-vsdx-package.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/compress-the-solutionxml-content-using-gzip-before-embedding-it-into-a-vsdx-package.cs) | `Diagram`, `Save`, `SolutionXMLs` | Compress the solutionxml content using gzip before embedding it into a vsdx package |
-| [create-a-custom-xml-namespace-mapping-for-solutionxml-to-avoid-naming-collisions-with-other-schemas.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/create-a-custom-xml-namespace-mapping-for-solutionxml-to-avoid-naming-collisions-with-other-schemas.cs) | `Save`, `SolutionXMLs`, `diagram` | Create a custom xml namespace mapping for solutionxml to avoid naming collisions with other schemas |
-| [create-a-new-page-node-in-the-solutionxml-and-assign-a-background-style.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/create-a-new-page-node-in-the-solutionxml-and-assign-a-background-style.cs) | `AddShape`, `Diagram`, `Page` | Create a new page node in the solutionxml and assign a background style |
-| [create-a-reusable-function-that-injects-a-predefined-style-sheet-into-any-solutionxml-document.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/create-a-reusable-function-that-injects-a-predefined-style-sheet-into-any-solutionxml-document.cs) | `SolutionXMLs`, `diagram` | Create a reusable function that injects a predefined style sheet into any solutionxml document |
+| [create-a-custom-xml-namespace-mapping-for-solutionxml-to-avoid-naming-collisions-with-other-schemas.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/create-a-custom-xml-namespace-mapping-for-solutionxml-to-avoid-naming-collisions-with-other-schemas.cs) | `Diagram`, `Save`, `SolutionXMLs` | Create a custom xml namespace mapping for solutionxml to avoid naming collisions with other schemas |
+| [create-a-new-page-node-in-the-solutionxml-and-assign-a-background-style.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/create-a-new-page-node-in-the-solutionxml-and-assign-a-background-style.cs) | `Diagram`, `Page`, `Pages` | Create a new page node in the solutionxml and assign a background style |
+| [create-a-reusable-function-that-injects-a-predefined-style-sheet-into-any-solutionxml-document.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/create-a-reusable-function-that-injects-a-predefined-style-sheet-into-any-solutionxml-document.cs) | `Diagram`, `Save`, `SolutionXMLs` | Create a reusable function that injects a predefined style sheet into any solutionxml document |
 | [decrypt-an-encrypted-solutionxml-segment-with-a-provided-key-and-verify-its-integrity.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/decrypt-an-encrypted-solutionxml-segment-with-a-provided-key-and-verify-its-integrity.cs) | `Diagram`, `Save`, `SolutionXMLs` | Decrypt an encrypted solutionxml segment with a provided key and verify its integrity |
 | [export-the-solutionxml-to-a-formatted-json-file-for-easier-consumption-by-web-services.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/export-the-solutionxml-to-a-formatted-json-file-for-easier-consumption-by-web-services.cs) | `Diagram`, `SolutionXMLs`, `diagram` | Export the solutionxml to a formatted json file for easier consumption by web services |
-| [extract-all-custom-data-sections-from-the-solutionxml-and-export-them-to-a-csv-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/extract-all-custom-data-sections-from-the-solutionxml-and-export-them-to-a-csv-file.cs) | `Diagram`, `SolutionXMLs`, `diagram` | Extract all custom data sections from the solutionxml and export them to a csv file |
-| [generate-a-summary-report-of-shape-counts-per-page-by-analyzing-the-solutionxml-hierarchy.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/generate-a-summary-report-of-shape-counts-per-page-by-analyzing-the-solutionxml-hierarchy.cs) | `Diagram`, `Pages`, `Shapes` | Generate a summary report of shape counts per page by analyzing the solutionxml hierarchy |
+| [extract-all-custom-data-sections-from-the-solutionxml-and-export-them-to-a-csv-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/extract-all-custom-data-sections-from-the-solutionxml-and-export-them-to-a-csv-file.cs) | `Diagram`, `Save`, `SolutionXMLs` | Extract all custom data sections from the solutionxml and export them to a csv file |
+| [generate-a-summary-report-of-shape-counts-per-page-by-analyzing-the-solutionxml-hierarchy.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/generate-a-summary-report-of-shape-counts-per-page-by-analyzing-the-solutionxml-hierarchy.cs) | `Diagram`, `Pages`, `Save` | Generate a summary report of shape counts per page by analyzing the solutionxml hierarchy |
 | [generate-a-thumbnail-image-from-the-solutionxml-by-rendering-the-first-page-at-low-resolution.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/generate-a-thumbnail-image-from-the-solutionxml-by-rendering-the-first-page-at-low-resolution.cs) | `Diagram`, `ImageSaveOptions`, `Save` | Generate a thumbnail image from the solutionxml by rendering the first page at low resolution |
-| [implement-a-version-control-system-that-stores-incremental-solutionxml-changes-as-separate-diff-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/implement-a-version-control-system-that-stores-incremental-solutionxml-changes-as-separate-diff-files.cs) | `Diagram`, `SolutionXMLs` | Implement a version control system that stores incremental solutionxml changes as separate diff files |
+| [implement-a-version-control-system-that-stores-incremental-solutionxml-changes-as-separate-diff-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/implement-a-version-control-system-that-stores-incremental-solutionxml-changes-as-separate-diff-files.cs) | `Diagram`, `SolutionXMLs`, `diagram` | Implement a version control system that stores incremental solutionxml changes as separate diff files |
 | [implement-error-handling-to-catch-malformed-solutionxml-nodes-and-log-detailed-diagnostics.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/implement-error-handling-to-catch-malformed-solutionxml-nodes-and-log-detailed-diagnostics.cs) | `Diagram`, `Save`, `SolutionXMLs` | Implement error handling to catch malformed solutionxml nodes and log detailed diagnostics |
-| [import-a-json-representation-of-diagram-elements-and-merge-it-into-the-existing-solutionxml.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/import-a-json-representation-of-diagram-elements-and-merge-it-into-the-existing-solutionxml.cs) | `Diagram`, `Save`, `SolutionXMLs` | Import a json representation of diagram elements and merge it into the existing solutionxml |
+| [import-a-json-representation-of-diagram-elements-and-merge-it-into-the-existing-solutionxml.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/import-a-json-representation-of-diagram-elements-and-merge-it-into-the-existing-solutionxml.cs) | `Diagram` | Import a json representation of diagram elements and merge it into the existing solutionxml |
 | [integrate-a-third-party-library-to-validate-xml-namespaces-within-the-solutionxml-before-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/integrate-a-third-party-library-to-validate-xml-namespaces-within-the-solutionxml-before-saving.cs) | `Diagram`, `Save`, `SolutionXMLs` | Integrate a third party library to validate xml namespaces within the solutionxml before saving |
 | [iterate-through-all-connectors-in-the-solutionxml-and-adjust-their-line-weight-uniformly.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/iterate-through-all-connectors-in-the-solutionxml-and-adjust-their-line-weight-uniformly.cs) | `Diagram`, `Pages`, `Save` | Iterate through all connectors in the solutionxml and adjust their line weight uniformly |
 | [load-a-visio-file-and-obtain-its-solutionxml-representation-for-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/load-a-visio-file-and-obtain-its-solutionxml-representation-for-analysis.cs) | `Diagram`, `SolutionXMLs`, `diagram` | Load a visio file and obtain its solutionxml representation for analysis |
 | [optimize-the-solutionxml-size-by-removing-redundant-style-definitions-and-consolidating-identical-elements.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/optimize-the-solutionxml-size-by-removing-redundant-style-definitions-and-consolidating-identical-elements.cs) | `Diagram`, `Save`, `SolutionXMLs` | Optimize the solutionxml size by removing redundant style definitions and consolidating identical elements |
 | [parse-the-solutionxml-to-extract-each-shape-s-id-and-corresponding-name.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/parse-the-solutionxml-to-extract-each-shape-s-id-and-corresponding-name.cs) | `Diagram`, `Pages`, `Shapes` | Parse the solutionxml to extract each shape s id and corresponding name |
-| [remove-all-comments-from-the-solutionxml-document-to-clean-up-metadata-before-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/remove-all-comments-from-the-solutionxml-document-to-clean-up-metadata-before-saving.cs) | `SolutionXMLs`, `diagram` | Remove all comments from the solutionxml document to clean up metadata before saving |
+| [remove-all-comments-from-the-solutionxml-document-to-clean-up-metadata-before-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/remove-all-comments-from-the-solutionxml-document-to-clean-up-metadata-before-saving.cs) | `Diagram`, `Save`, `SolutionXMLs` | Remove all comments from the solutionxml document to clean up metadata before saving |
 | [remove-orphaned-shape-references-from-the-solutionxml-to-prevent-rendering-errors.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/remove-orphaned-shape-references-from-the-solutionxml-to-prevent-rendering-errors.cs) | `Diagram`, `Pages`, `Save` | Remove orphaned shape references from the solutionxml to prevent rendering errors |
 | [replace-all-instances-of-a-specific-font-name-in-the-solutionxml-with-a-new-font.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/replace-all-instances-of-a-specific-font-name-in-the-solutionxml-with-a-new-font.cs) | `Diagram`, `Save`, `SolutionXMLs` | Replace all instances of a specific font name in the solutionxml with a new font |
-| [search-the-solutionxml-for-shapes-containing-a-specific-keyword-and-list-their-ids.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/search-the-solutionxml-for-shapes-containing-a-specific-keyword-and-list-their-ids.cs) | `Diagram`, `Pages`, `Save` | Search the solutionxml for shapes containing a specific keyword and list their ids |
+| [search-the-solutionxml-for-shapes-containing-a-specific-keyword-and-list-their-ids.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/search-the-solutionxml-for-shapes-containing-a-specific-keyword-and-list-their-ids.cs) | `Diagram`, `Pages`, `Shapes` | Search the solutionxml for shapes containing a specific keyword and list their ids |
 | [serialize-the-modified-solutionxml-back-into-the-original-vsdx-package-while-preserving-all-resources.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/serialize-the-modified-solutionxml-back-into-the-original-vsdx-package-while-preserving-all-resources.cs) | `Diagram`, `Save`, `SolutionXMLs` | Serialize the modified solutionxml back into the original vsdx package while preserving all resources |
-| [set-a-custom-document-level-property-in-the-solutionxml-for-version-tracking.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/set-a-custom-document-level-property-in-the-solutionxml-for-version-tracking.cs) | `Save`, `SolutionXMLs`, `diagram` | Set a custom document level property in the solutionxml for version tracking |
+| [set-a-custom-document-level-property-in-the-solutionxml-for-version-tracking.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/set-a-custom-document-level-property-in-the-solutionxml-for-version-tracking.cs) | `Diagram`, `Save`, `SolutionXMLs` | Set a custom document level property in the solutionxml for version tracking |
 | [update-page-dimensions-in-the-solutionxml-to-modify-the-diagram-canvas-size-programmatically.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/update-page-dimensions-in-the-solutionxml-to-modify-the-diagram-canvas-size-programmatically.cs) | `Diagram`, `Pages`, `Save` | Update page dimensions in the solutionxml to modify the diagram canvas size programmatically |
 | [use-linq-to-xml-for-efficiently-querying-shape-attributes-within-the-solutionxml.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/use-linq-to-xml-for-efficiently-querying-shape-attributes-within-the-solutionxml.cs) | `Diagram`, `Save`, `SolutionXMLs` | Use linq to xml for efficiently querying shape attributes within the solutionxml |
 | [validate-the-solutionxml-against-the-visio-schema-to-ensure-structural-integrity.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-solutionxml-elements/validate-the-solutionxml-against-the-visio-schema-to-ensure-structural-integrity.cs) | `Diagram`, `SolutionXMLs`, `diagram` | Validate the solutionxml against the visio schema to ensure structural integrity |
@@ -247,9 +247,11 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - `Save`
 - `Shapes`
 - `SolutionXMLs`
+- `StyleSheet`
 - `StyleSheets`
 - `diagram`
 - `page`
+- `shape`
 
 ## Real-World Use Cases
 
@@ -264,7 +266,7 @@ Frequently asked questions about **Working With Solutionxml Elements** in **Aspo
 
 **Q: How do I get started with Working With Solutionxml Elements in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.5.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -295,4 +297,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-06-23 | Examples: 34 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-07-28 | Examples: 34 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

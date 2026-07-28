@@ -1,65 +1,52 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the Visio file
+            string filePath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
+
+            // Get the first page (you can change the index or use a specific page name)
+            Page page = diagram.Pages[0];
+
+            // Retrieve a shape (example: first shape on the page)
+            // Adjust the shape ID as needed, e.g., by name or specific ID
+            Shape shape = page.Shapes.GetShape(1);
+
+            // Extract the line color value (hex string, e.g., "#FF0000")
+            string lineColorHex = shape.Line.LineColor.Value;
+
+            // Ensure the string is in the expected format
+            if (string.IsNullOrEmpty(lineColorHex) || !lineColorHex.StartsWith("#") || lineColorHex.Length != 7)
             {
-
-                // Load the Visio diagram from a file.
-                // Replace "input.vsdx" with the actual path to your diagram.
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Iterate through pages and shapes to find the first shape.
-                // Adjust the logic as needed to target a specific shape.
-                Shape targetShape = null;
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        targetShape = shape;
-                        break;
-                    }
-                    if (targetShape != null)
-                        break;
-                }
-
-                if (targetShape == null)
-                {
-                    Console.WriteLine("No shape found in the diagram.");
-                    return;
-                }
-
-                // Retrieve the line color value (hex string, e.g., "#FF0000").
-                string lineColorHex = targetShape.Line.LineColor.Value;
-
-                if (string.IsNullOrWhiteSpace(lineColorHex) || !lineColorHex.StartsWith("#") || lineColorHex.Length != 7)
-                {
-                    Console.WriteLine("Line color is not defined or not in expected hex format.");
-                    return;
-                }
-
-                // Parse the hex string to obtain RGB components.
-                int red   = Convert.ToInt32(lineColorHex.Substring(1, 2), 16);
-                int green = Convert.ToInt32(lineColorHex.Substring(3, 2), 16);
-                int blue  = Convert.ToInt32(lineColorHex.Substring(5, 2), 16);
-
-                // Output the RGB components.
-                Console.WriteLine($"Line Color Hex: {lineColorHex}");
-                Console.WriteLine($"Red:   {red}");
-                Console.WriteLine($"Green: {green}");
-                Console.WriteLine($"Blue:  {blue}");
-
+                Console.WriteLine("Line color is not set or has an unexpected format.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Remove the leading '#'
+            string hex = lineColorHex.Substring(1);
+
+            // Parse RGB components from the hex string
+            int r = Convert.ToInt32(hex.Substring(0, 2), 16);
+            int g = Convert.ToInt32(hex.Substring(2, 2), 16);
+            int b = Convert.ToInt32(hex.Substring(4, 2), 16);
+
+            // Output the RGB components
+            Console.WriteLine($"Line color RGB: {r}, {g}, {b}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

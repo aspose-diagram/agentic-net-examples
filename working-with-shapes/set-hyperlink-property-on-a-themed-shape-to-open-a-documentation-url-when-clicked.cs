@@ -8,33 +8,35 @@ class Program
             try
             {
 
-                // Create a new empty diagram
+                // Create a new diagram
                 Diagram diagram = new Diagram();
 
-                // Add a rectangle shape to the active page at position (2,2)
-                long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle");
+                // Get the active page where the shape will be added
+                Page page = diagram.ActivePage;
 
-                // Retrieve the shape instance using the returned ID
-                Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
+                // Add a rectangle shape at position (2,2) inches
+                // This overload returns the shape ID as a long
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
 
-                // Apply a preset theme to the shape (theme is write‑only)
+                // Retrieve the concrete Shape object using the ID
+                Shape shape = page.Shapes.GetShape((int)shapeId);
+
+                // Apply a preset theme to the shape (optional, demonstrates a themed shape)
                 shape.PresetTheme = PresetThemeValue.Bubble;
                 shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
 
-                // Create a hyperlink that points to the documentation URL
-                Hyperlink link = new Hyperlink
-                {
-                    Name = "DocumentationLink"
-                };
+                // Create a new hyperlink instance
+                Hyperlink link = new Hyperlink();
+                // Set the URL that will be opened when the shape is clicked
                 link.Address.Value = "https://example.com/documentation";
+                // Optional: set a description (tooltip) for the hyperlink
+                link.Description.Value = "Open documentation";
 
                 // Add the hyperlink to the shape's Hyperlinks collection
                 shape.Hyperlinks.Add(link);
 
                 // Save the diagram to a VSDX file
                 diagram.Save("ThemedShapeWithLink.vsdx", SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Diagram saved with a themed shape containing a hyperlink.");
 
             }
             catch (System.NullReferenceException ex)

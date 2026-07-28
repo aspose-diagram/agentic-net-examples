@@ -1,11 +1,10 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
@@ -13,34 +12,17 @@ public class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the first page
+            // Access the first page
             Page page = diagram.Pages[0];
 
-            // Retrieve the first shape on the page
-            Shape shape = page.Shapes[0];
+            // Retrieve a shape (example: shape with ID 1)
+            Shape shape = page.Shapes.GetShape(1);
 
-            // Set fill pattern to gradient (value 25)
-            shape.Fill.FillPattern.Value = 25;
-
-            // Enable gradient fill
+            // Set gradient fill pattern
+            shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
             shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-
-            // Set gradient direction to diagonal (top‑left to bottom‑right)
-            // Using RectangleFromTopLeft which represents a diagonal rectangle gradient
-            shape.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.RectangleFromTopLeft;
-
-            // Clear any existing gradient stops
-            shape.Fill.GradientFill.GradientStops.Clear();
-
-            // Add gradient stop at start (position 0) with red color
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(0, MeasureConst.NUM),
-                new ColorValue("#FF0000", MeasureConst.Undefined));
-
-            // Add gradient stop at end (position 1) with green color
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(1, MeasureConst.NUM),
-                new ColorValue("#00FF00", MeasureConst.Undefined));
+            // Diagonal direction from top‑left to bottom‑right
+            shape.Fill.GradientFill.GradientDir.Value = 2;
 
             // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);

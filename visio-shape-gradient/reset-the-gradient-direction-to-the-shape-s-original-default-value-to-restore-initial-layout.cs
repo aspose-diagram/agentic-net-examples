@@ -9,8 +9,11 @@ class Program
             try
             {
 
-                // Load the Visio diagram from a file
+                // Paths for input and output Visio files
                 string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram from the input file
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages and shapes
@@ -19,13 +22,15 @@ class Program
                     foreach (Shape shape in page.Shapes)
                     {
                         // Check if the shape has a gradient fill enabled
-                        // GradientFill is always present; we reset its direction regardless
-                        shape.Fill.GradientFill.GradientDir.Value = 0; // Reset to default direction
+                        if (shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
+                        {
+                            // Reset the gradient direction to the default (0)
+                            shape.Fill.GradientFill.GradientDir.Value = 0;
+                        }
                     }
                 }
 
-                // Save the modified diagram back to a file
-                string outputPath = "output.vsdx";
+                // Save the modified diagram, preserving the original format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

@@ -1,6 +1,6 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
+using System;
 
 class Program
 {
@@ -9,22 +9,23 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file (uses the Diagram(string) constructor)
-            var diagram = new Diagram("sample.vsdx");
+            // Path to the Visio file to be loaded
+            string filePath = "sample.vsdx";
 
-            // Identifier of the shape we want to locate
-            long shapeId = 12345; // replace with the actual shape ID
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(filePath);
 
-            // Access the first page (or any specific page as needed)
-            var page = diagram.Pages[0];
+            // Access the first page (adjust index if needed)
+            Page page = diagram.Pages[0];
 
-            // Locate the shape by its ID using the ShapeCollection.GetShape method
+            // Identifier of the shape to locate (replace with actual ID)
+            long shapeId = 5;
+
+            // Retrieve the shape by its ID
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Example processing: display some basic information about the shape
-            Console.WriteLine($"Found shape with ID: {shape.ID}");
-            Console.WriteLine($"Shape Name: {shape.Name}");
-            Console.WriteLine($"Shape Type: {shape.Type}");
+            // Example processing: display shape details
+            Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
 
         }
         catch (System.IO.FileNotFoundException ex)

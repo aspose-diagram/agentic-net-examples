@@ -1,31 +1,44 @@
-using System;
 using System.IO;
+using System;
+using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Access a specific shape (e.g., first shape on the first page)
-            Aspose.Diagram.Shape shape = diagram.Pages[0].Shapes[1];
+            // Load an existing diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the shape has a Fill object (it always does) and a GradientFill object
-            Aspose.Diagram.GradientFill gradientFill = shape.Fill.GradientFill;
+            // Work with the first page
+            Page page = diagram.Pages[0];
 
-            // Set the gradient angle to 0 degrees (horizontal fill)
-            // GradientAngle is a DoubleValue; assign its Value property
-            gradientFill.GradientAngle.Value = 0;
+            // Add a rectangle shape (you can replace this with an existing shape ID)
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+            Shape shape = page.Shapes.GetShape((int)shapeId);
 
-            // Optionally enable the gradient if it was disabled
-            // gradientFill.GradientEnabled.Value = true;
+            // Enable gradient fill and set it to horizontal (0 degrees)
+            shape.Fill.FillPattern.Value = 25;                         // Gradient fill pattern
+            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True; // Turn on gradient
+            shape.Fill.GradientFill.GradientAngle.Value = 0;           // 0° = horizontal
+
+            // Optional: define gradient stops (e.g., red to green)
+            shape.Fill.GradientFill.GradientStops.Clear();
+            shape.Fill.GradientFill.GradientStops.Add(
+                new DoubleValue(0, MeasureConst.NUM),
+                new ColorValue("#FF0000", MeasureConst.Undefined));
+            shape.Fill.GradientFill.GradientStops.Add(
+                new DoubleValue(1, MeasureConst.NUM),
+                new ColorValue("#00FF00", MeasureConst.Undefined));
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

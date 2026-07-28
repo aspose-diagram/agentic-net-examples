@@ -1,50 +1,51 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Create a new diagram
-            Diagram diagram = new Diagram();
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
 
-            // Ensure there is at least one page
-            Page page = diagram.Pages[0];
+                // Get the first (default) page
+                Page page = diagram.Pages[0];
 
-            // Add a rectangle shape to the page
-            // Parameters: pinX, pinY, width, height, master name
-            long shapeId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle");
+                // Add a rectangle shape to the page
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+                Shape shape = page.Shapes.GetShape((int)shapeId);
 
-            // Retrieve the shape instance
-            Shape shape = page.Shapes.GetShape(shapeId);
+                // Enable gradient fill
+                shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
+                shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Enable gradient fill
-            shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
-            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+                // Set gradient direction to horizontal (left‑to‑right)
+                // 0 = left‑to‑right, 1 = top‑to‑bottom, etc.
+                shape.Fill.GradientFill.GradientDir.Value = 0;
 
-            // Set gradient direction to horizontal (left‑to‑right)
-            shape.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.Linear;
+                // Clear any existing gradient stops
+                shape.Fill.GradientFill.GradientStops.Clear();
 
-            // Define gradient stops (red to green)
-            shape.Fill.GradientFill.GradientStops.Clear();
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(0, MeasureConst.NUM),
-                new ColorValue("#FF0000", MeasureConst.Undefined));
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(1, MeasureConst.NUM),
-                new ColorValue("#00FF00", MeasureConst.Undefined));
+                // Add gradient stops (red at start, green at end)
+                shape.Fill.GradientFill.GradientStops.Add(
+                    new DoubleValue(0, MeasureConst.NUM),
+                    new ColorValue("#FF0000", MeasureConst.Undefined));
 
-            // Save the diagram to a VSDX file
-            diagram.Save("GradientShape.vsdx", SaveFileFormat.Vsdx);
+                shape.Fill.GradientFill.GradientStops.Add(
+                    new DoubleValue(1, MeasureConst.NUM),
+                    new ColorValue("#00FF00", MeasureConst.Undefined));
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+                // Save the diagram to a VSDX file
+                diagram.Save("GradientShape.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,35 +1,63 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+                // Path to the Visio file (adjust as needed)
+                string inputPath = "input.vsdx";
 
-            // Identify the shape you want to inspect.
-            // Here we assume the shape ID is known (e.g., 1) and it resides on the first page.
-            int shapeId = 1;
-            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the gradient direction value from the shape's fill formatting.
-            IntValue gradientDirValue = shape.Fill.GradientFill.GradientDir;
+                // Ensure there is at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-            // Cast the integer value to the GradientFillDir enumeration for readability.
-            GradientFillDir gradientDirection = (GradientFillDir)gradientDirValue.Value;
+                // Work with the first page
+                Page page = diagram.Pages[0];
 
-            // Output the current gradient direction for verification.
-            Console.WriteLine($"Gradient Direction of shape {shapeId}: {gradientDirection}");
+                // Ensure the page has shapes
+                if (page.Shapes.Count == 0)
+                {
+                    Console.WriteLine("The first page contains no shapes.");
+                    return;
+                }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Find the first shape that has a gradient fill enabled
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+
+                if (targetShape == null)
+                {
+                    Console.WriteLine("No shape with a gradient fill was found on the first page.");
+                    return;
+                }
+
+                // Read the gradient direction value
+                double gradientDirection = targetShape.Fill.GradientFill.GradientDir.Value;
+
+                // Output the result for verification
+                Console.WriteLine($"Gradient direction (numeric value) of the selected shape: {gradientDirection}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

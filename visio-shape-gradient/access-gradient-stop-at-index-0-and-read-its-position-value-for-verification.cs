@@ -2,46 +2,37 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class GradientStopReader
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (index 0) and the first shape on that page (index 1)
-            // (index 0 on a page is the page itself, so shapes start at 1)
-            Shape shape = diagram.Pages[0].Shapes[1];
+            // Access the first page and the first shape (adjust indices as needed)
+            Shape shape = diagram.Pages[0].Shapes[0];
 
-            // Ensure the shape has a fill and that fill is a gradient
-            if (shape.Fill != null && shape.Fill.GradientFill != null)
+            // Retrieve the gradient fill of the shape
+            GradientFill gradientFill = shape.Fill.GradientFill;
+
+            // Access the gradient stop at index 0
+            GradientStop firstStop = gradientFill.GradientStops[0];
+
+            // Read the position value of the gradient stop
+            double position = firstStop.Position.Value;
+
+            // Example verification against an expected value
+            double expected = 0.0; // replace with the expected position
+            if (Math.Abs(position - expected) < 0.0001)
             {
-                // Get the gradient stop collection
-                GradientStopCollection stops = shape.Fill.GradientFill.GradientStops;
-
-                // Verify that at least one gradient stop exists
-                if (stops.Count > 0)
-                {
-                    // Access the gradient stop at index 0
-                    GradientStop firstStop = stops[0];
-
-                    // Read its position value (DoubleValue contains a .Value property)
-                    double position = firstStop.Position.Value;
-
-                    // Output the position for verification
-                    Console.WriteLine($"First gradient stop position: {position}");
-                }
-                else
-                {
-                    Console.WriteLine("No gradient stops found in the collection.");
-                }
+                Console.WriteLine("Gradient stop position matches the expected value.");
             }
             else
             {
-                Console.WriteLine("The selected shape does not have a gradient fill.");
+                Console.WriteLine($"Gradient stop position {position} does not match expected {expected}.");
             }
 
         }

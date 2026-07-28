@@ -9,46 +9,37 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (index 0)
+            // Access the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Retrieve the shape to modify (example: shape with ID 1)
+            // Retrieve a shape to inspect.
+            // Here we assume the shape with ID 1 exists; adjust as needed.
             Shape shape = page.Shapes.GetShape(1);
+            if (shape == null)
+                throw new Exception("Target shape not found.");
 
-            // Enable gradient fill
-            shape.Fill.FillPattern.Value = 25;                     // Set fill pattern to gradient
-            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-            shape.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.Linear;
+            // Access the gradient stops collection of the shape's fill.
+            var gradientStops = shape.Fill.GradientFill.GradientStops;
 
-            // Clear any existing gradient stops
-            shape.Fill.GradientFill.GradientStops.Clear();
-
-            // Add exactly four gradient stops
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(0.0, MeasureConst.NUM), new ColorValue("#FF0000", MeasureConst.Undefined)); // Red at start
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(0.33, MeasureConst.NUM), new ColorValue("#00FF00", MeasureConst.Undefined)); // Green
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(0.66, MeasureConst.NUM), new ColorValue("#0000FF", MeasureConst.Undefined)); // Blue
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(1.0, MeasureConst.NUM), new ColorValue("#FFFF00", MeasureConst.Undefined)); // Yellow at end
-
-            // Verify that the shape now contains exactly four gradient stops
-            int stopCount = shape.Fill.GradientFill.GradientStops.Count;
-            if (stopCount != 4)
+            // Count the number of gradient stops.
+            int stopCount = 0;
+            foreach (GradientStop stop in gradientStops)
             {
-                throw new Exception($"Gradient stop verification failed. Expected 4 stops, but found {stopCount}.");
+                stopCount++;
+            }
+
+            // Verify that there are exactly four gradient stops.
+            if (stopCount == 4)
+            {
+                Console.WriteLine("Shape contains exactly four gradient stops.");
             }
             else
             {
-                Console.WriteLine("Verification succeeded: shape contains exactly four gradient stops.");
+                throw new Exception($"Gradient stop count mismatch: expected 4, found {stopCount}.");
             }
-
-            // (Optional) Save the diagram to persist changes
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

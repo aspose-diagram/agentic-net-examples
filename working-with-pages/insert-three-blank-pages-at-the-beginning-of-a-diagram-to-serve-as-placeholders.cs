@@ -3,31 +3,33 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class InsertBlankPages
 {
     static void Main()
     {
         try
         {
 
-            // Load the existing diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the existing Visio diagram (uses the provided load rule)
+            string inputFile = "input.vsdx";
+            Diagram diagram = new Diagram(inputFile);
 
-            // Insert three blank pages at the beginning of the diagram
+            // Insert three blank pages at the beginning
             for (int i = 0; i < 3; i++)
             {
-                // Create a new blank page
+                // Create a new empty page
                 Page blankPage = new Page();
 
-                // Add the page to the diagram (adds at the end of the collection)
+                // Add the page to the document's page collection
                 diagram.Pages.Add(blankPage);
 
                 // Move the newly added page to the first position (index 0)
                 blankPage.MoveTo(0);
             }
 
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram (uses the provided save rule)
+            string outputFile = "output.vsdx";
+            diagram.Save(outputFile, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

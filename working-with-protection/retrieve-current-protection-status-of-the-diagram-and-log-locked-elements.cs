@@ -4,85 +4,75 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect the diagram file path as the first argument
-        if (args.Length == 0)
-        {
-            Console.WriteLine("Please provide the path to the Visio diagram file as an argument.");
-            return;
-        }
+        // Path to the Visio file (replace with actual path)
+        string filePath = "input.vsdx";
 
-        string diagramPath = args[0];
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(filePath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"File not found: {filePath}");
             return;
         }
 
         try
         {
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(filePath);
 
-            // ----- Global document protection status -----
+            // Log global document protection settings (BOOL values are compared directly)
             Console.WriteLine("=== Global Document Protection ===");
-            Console.WriteLine($"Protect Backgrounds: {diagram.DocumentSettings.ProtectBkgnds}");
-            Console.WriteLine($"Protect Masters: {diagram.DocumentSettings.ProtectMasters}");
-            Console.WriteLine($"Protect Shapes: {diagram.DocumentSettings.ProtectShapes}");
-            Console.WriteLine($"Protect Styles: {diagram.DocumentSettings.ProtectStyles}");
+            Console.WriteLine($"Protect Backgrounds: {diagram.DocumentSettings.ProtectBkgnds == BOOL.True}");
+            Console.WriteLine($"Protect Masters:      {diagram.DocumentSettings.ProtectMasters == BOOL.True}");
+            Console.WriteLine($"Protect Shapes:      {diagram.DocumentSettings.ProtectShapes == BOOL.True}");
+            Console.WriteLine($"Protect Styles:      {diagram.DocumentSettings.ProtectStyles == BOOL.True}");
             Console.WriteLine();
 
-            // ----- Shape-level protection status -----
-            Console.WriteLine("=== Locked Shapes ===");
+            // Iterate through all pages and shapes to find locked elements
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Accumulate names of lock properties that are set to TRUE
+                    var lockedProps = "";
 
-                    var protection = shape.Protection;
-                    bool anyLock = false;
-                    System.Text.StringBuilder lockedProps = new System.Text.StringBuilder();
+                    if (shape.Protection.LockAspect.Value == BOOL.True)          lockedProps += "LockAspect, ";
+                    if (shape.Protection.LockBegin.Value == BOOL.True)           lockedProps += "LockBegin, ";
+                    if (shape.Protection.LockCalcWH.Value == BOOL.True)          lockedProps += "LockCalcWH, ";
+                    if (shape.Protection.LockCrop.Value == BOOL.True)            lockedProps += "LockCrop, ";
+                    if (shape.Protection.LockCustProp.Value == BOOL.True)        lockedProps += "LockCustProp, ";
+                    if (shape.Protection.LockDelete.Value == BOOL.True)          lockedProps += "LockDelete, ";
+                    if (shape.Protection.LockEnd.Value == BOOL.True)             lockedProps += "LockEnd, ";
+                    if (shape.Protection.LockFormat.Value == BOOL.True)          lockedProps += "LockFormat, ";
+                    if (shape.Protection.LockFromGroupFormat.Value == BOOL.True)lockedProps += "LockFromGroupFormat, ";
+                    if (shape.Protection.LockGroup.Value == BOOL.True)           lockedProps += "LockGroup, ";
+                    if (shape.Protection.LockHeight.Value == BOOL.True)          lockedProps += "LockHeight, ";
+                    if (shape.Protection.LockMoveX.Value == BOOL.True)           lockedProps += "LockMoveX, ";
+                    if (shape.Protection.LockMoveY.Value == BOOL.True)           lockedProps += "LockMoveY, ";
+                    if (shape.Protection.LockRotate.Value == BOOL.True)          lockedProps += "LockRotate, ";
+                    if (shape.Protection.LockSelect.Value == BOOL.True)          lockedProps += "LockSelect, ";
+                    if (shape.Protection.LockTextEdit.Value == BOOL.True)        lockedProps += "LockTextEdit, ";
+                    if (shape.Protection.LockThemeColors.Value == BOOL.True)     lockedProps += "LockThemeColors, ";
+                    if (shape.Protection.LockThemeEffects.Value == BOOL.True)    lockedProps += "LockThemeEffects, ";
+                    if (shape.Protection.LockVtxEdit.Value == BOOL.True)         lockedProps += "LockVtxEdit, ";
+                    if (shape.Protection.LockWidth.Value == BOOL.True)           lockedProps += "LockWidth, ";
 
-                    // Check each lock property
-                    if (protection.LockAspect.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockAspect, "); }
-                    if (protection.LockBegin.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockBegin, "); }
-                    if (protection.LockCalcWH.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockCalcWH, "); }
-                    if (protection.LockCrop.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockCrop, "); }
-                    if (protection.LockCustProp.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockCustProp, "); }
-                    if (protection.LockDelete.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockDelete, "); }
-                    if (protection.LockEnd.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockEnd, "); }
-                    if (protection.LockFormat.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockFormat, "); }
-                    if (protection.LockFromGroupFormat.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockFromGroupFormat, "); }
-                    if (protection.LockGroup.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockGroup, "); }
-                    if (protection.LockHeight.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockHeight, "); }
-                    if (protection.LockMoveX.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockMoveX, "); }
-                    if (protection.LockMoveY.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockMoveY, "); }
-                    if (protection.LockRotate.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockRotate, "); }
-                    if (protection.LockSelect.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockSelect, "); }
-                    if (protection.LockTextEdit.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockTextEdit, "); }
-                    if (protection.LockThemeColors.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockThemeColors, "); }
-                    if (protection.LockThemeEffects.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockThemeEffects, "); }
-                    if (protection.LockVtxEdit.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockVtxEdit, "); }
-                    if (protection.LockWidth.Value == BOOL.True) { anyLock = true; lockedProps.Append("LockWidth, "); }
-
-                    if (anyLock)
+                    if (!string.IsNullOrEmpty(lockedProps))
                     {
-                        // Remove trailing comma and space
-                        if (lockedProps.Length >= 2)
-                            lockedProps.Length -= 2;
+                        // Trim trailing comma and space
+                        lockedProps = lockedProps.TrimEnd(' ', ',');
 
-                        Console.WriteLine($"Page: {page.Name} | Shape ID: {shape.ID} | Name: {shape.Name} | Locked: {lockedProps}");
+                        // Output locked shape information
+                        Console.WriteLine($"Page: {page.NameU} | Shape ID: {shape.ID} | Name: {shape.NameU} | Locked: {lockedProps}");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

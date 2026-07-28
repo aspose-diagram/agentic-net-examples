@@ -1,99 +1,89 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the source diagram from a file.
+            string sourcePath = "source.vsdx";
+            using (Diagram sourceDiagram = new Diagram(sourcePath))
             {
-
-                // Paths to source and destination Visio files
-                string sourcePath = "source.vsdx";
-                string targetPath = "target.vsdx";
-
-                // Load the source diagram
-                Diagram sourceDiagram = new Diagram(sourcePath);
-
-                // Create a new empty diagram
-                Diagram targetDiagram = new Diagram();
-
-                // Ensure the target diagram has at least one page
-                if (targetDiagram.Pages.Count == 0)
+                // Create a new empty diagram.
+                using (Diagram targetDiagram = new Diagram())
                 {
-                    targetDiagram.Pages.Add(new Page());
-                }
-
-                // Use the first page of each diagram for simplicity
-                Page sourcePage = sourceDiagram.Pages[0];
-                Page targetPage = targetDiagram.Pages[0];
-
-                // ------------------------------------------------------------
-                // 1. Copy masters from source to target to avoid missing master errors
-                // ------------------------------------------------------------
-                foreach (Master srcMaster in sourceDiagram.Masters)
-                {
-                    // Add master by name; if already exists, Aspose.Diagram ignores duplicate addition
-                    targetDiagram.AddMaster(sourceDiagram, srcMaster.Name);
-                }
-
-                // ------------------------------------------------------------
-                // 2. Copy each shape from source page to target page
-                // ------------------------------------------------------------
-                foreach (Shape srcShape in sourcePage.Shapes)
-                {
-                    // Skip deleted shapes
-                    if (srcShape.Del == BOOL.True)
-                        continue;
-
-                    // Determine master name; if the shape has no master, skip it
-                    string masterName = srcShape.Master?.Name;
-                    if (string.IsNullOrEmpty(masterName))
-                        continue;
-
-                    // Retrieve geometry information
-                    double pinX = srcShape.XForm.PinX.Value;
-                    double pinY = srcShape.XForm.PinY.Value;
-                    double width = srcShape.XForm.Width.Value;
-                    double height = srcShape.XForm.Height.Value;
-
-                    // Add a new shape to the target page using the same master and geometry
-                    long newShapeId = targetPage.AddShape(pinX, pinY, width, height, masterName);
-
-                    // Retrieve the newly added shape object
-                    Shape newShape = targetPage.Shapes.GetShape(newShapeId);
-
-                    // --------------------------------------------------------
-                    // 3. Copy basic visual properties (text, fill, line)
-                    // --------------------------------------------------------
-                    // Copy text
-                    string plainText = srcShape.Text.Value.ToString();
-                    if (!string.IsNullOrWhiteSpace(plainText))
+                    // Ensure the target diagram has at least one page.
+                    if (targetDiagram.Pages.Count == 0)
                     {
-                        newShape.Text.Value.Clear();
-                        newShape.Text.Value.Add(new Txt(plainText));
+                        targetDiagram.Pages.Add(new Page());
                     }
 
-                    // Copy fill foreground color
-                    newShape.Fill.FillForegnd.Value = srcShape.Fill.FillForegnd.Value;
+                    // Copy all masters from the source to the target to preserve shape types.
+                    foreach (Master srcMaster in sourceDiagram.Masters)
+                    {
+                        // AddMaster adds a master by its universal name.
+                        targetDiagram.AddMaster(sourceDiagram, srcMaster.NameU);
+                    }
 
-                    // Copy line color and weight
-                    newShape.Line.LineColor.Value = srcShape.Line.LineColor.Value;
-                    newShape.Line.LineWeight.Value = srcShape.Line.LineWeight.Value;
+                    // For each page in the source diagram, create a corresponding page in the target.
+                    foreach (Page srcPage in sourceDiagram.Pages)
+                    {
+                        // Create a new page in the target diagram.
+                        Page tgtPage = new Page();
+                        targetDiagram.Pages.Add(tgtPage);
 
-                    // Copy rotation angle
-                    newShape.XForm.Angle.Value = srcShape.XForm.Angle.Value;
+                        // Copy each shape from the source page to the target page.
+                        foreach (Shape srcShape in srcPage.Shapes)
+                        {
+                            // Retrieve the master name; if the shape has no master, skip it.
+                            string masterName = srcShape.Master?.Name;
+                            if (string.IsNullOrEmpty(masterName))
+                                continue;
+
+                            // Get geometry values.
+                            double pinX = srcShape.XForm.PinX.Value;
+                            double pinY = srcShape.XForm.PinY.Value;
+                            double width = srcShape.XForm.Width.Value;
+                            double height = srcShape.XForm.Height.Value;
+
+                            // Add the shape to the target page. The returned ID is unique within the target diagram.
+                            long newShapeId = tgtPage.AddShape(pinX, pinY, width, height, masterName);
+
+                            // Retrieve the newly added shape to copy additional properties.
+                            Shape tgtShape = tgtPage.Shapes.GetShape(newShapeId);
+
+                            // Copy plain text (if any) from the source shape.
+                            string plainText = srcShape.Text.Value.Text;
+                            if (!string.IsNullOrWhiteSpace(plainText))
+                            {
+                                tgtShape.Text.Value.Clear();
+                                tgtShape.Text.Value.Add(new Txt(plainText));
+                            }
+
+                            // Example of copying fill foreground color (optional).
+                            tgtShape.Fill.FillForegnd.Value = srcShape.Fill.FillForegnd.Value;
+
+                            // Example of copying line color (optional).
+                            tgtShape.Line.LineColor.Value = srcShape.Line.LineColor.Value;
+                        }
+                    }
+
+                    // Save the target diagram to a new file.
+                    string targetPath = "target.vsdx";
+                    targetDiagram.Save(targetPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram copied successfully to '{targetPath}'.");
                 }
-
-                // ------------------------------------------------------------
-                // 4. Save the target diagram
-                // ------------------------------------------------------------
-                targetDiagram.Save(targetPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

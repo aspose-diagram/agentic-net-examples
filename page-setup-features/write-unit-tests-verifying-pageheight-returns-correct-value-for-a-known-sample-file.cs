@@ -1,44 +1,45 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the known sample Visio file
-            string filePath = "sample.vsdx";
-
-            // Load the diagram using the Aspose.Diagram constructor
-            using (Diagram diagram = new Diagram(filePath))
+            try
             {
-                // Access the first page in the document
-                Page page = diagram.Pages[0];
 
-                // Retrieve the page height (in inches)
-                double actualHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Path to the sample Visio file (ensure the file exists at this location)
+                const string sampleFilePath = "sample.vsdx";
 
-                // Expected height for the sample file (adjust as needed for the actual file)
-                double expectedHeight = 11.0;
+                // Expected page height in inches for the known sample file
+                const double expectedPageHeight = 11.0;
 
-                // Verify the height; throw an exception on failure, otherwise write success message
-                if (Math.Abs(actualHeight - expectedHeight) > 0.001)
+                // Load the diagram using the Aspose.Diagram constructor
+                using (Diagram diagram = new Diagram(sampleFilePath))
                 {
-                    throw new Exception($"PageHeight test failed. Expected {expectedHeight}, but got {actualHeight}.");
+                    // Retrieve the first page (index 0)
+                    Page page = diagram.Pages[0];
+
+                    // Access the page height value (in inches)
+                    double actualPageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Output the retrieved value for diagnostic purposes
+                    Console.WriteLine($"Actual Page Height: {actualPageHeight} inches");
+
+                    // Verify the height matches the expected value
+                    if (Math.Abs(actualPageHeight - expectedPageHeight) > 0.0001)
+                    {
+                        throw new Exception($"Page height mismatch. Expected: {expectedPageHeight}, Actual: {actualPageHeight}");
+                    }
+
+                    // If the check passes, indicate success
+                    Console.WriteLine("Page height verification passed.");
                 }
-                else
-                {
-                    Console.WriteLine("PageHeight test passed.");
-                }
+
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

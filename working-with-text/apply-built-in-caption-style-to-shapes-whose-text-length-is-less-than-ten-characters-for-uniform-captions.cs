@@ -1,63 +1,65 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Locate the built‑in "Caption" style sheet
+            StyleSheet captionStyle = null;
+            foreach (StyleSheet ss in diagram.StyleSheets)
             {
-
-                // Load the Visio diagram (replace with your actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Find the built‑in style named "Caption"
-                StyleSheet captionStyle = null;
-                foreach (StyleSheet ss in diagram.StyleSheets)
+                if (ss.Name == "Caption")
                 {
-                    if (ss.Name == "Caption")
-                    {
-                        captionStyle = ss;
-                        break;
-                    }
+                    captionStyle = ss;
+                    break;
                 }
+            }
 
-                if (captionStyle == null)
-                {
-                    Console.WriteLine("Caption style not found in the document.");
-                    return;
-                }
-
+            if (captionStyle == null)
+            {
+                Console.WriteLine("Caption style sheet not found in the document.");
+            }
+            else
+            {
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip shapes that are marked as deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Get plain text of the shape
-                        string shapeText = shape.Text?.Value?.ToString() ?? string.Empty;
+                        // Retrieve plain text of the shape
+                        string text = shape.Text.Value.ToString();
 
                         // Apply the Caption style if text length is less than 10 characters
-                        if (shapeText.Length > 0 && shapeText.Length < 10)
+                        if (text.Length < 10)
                         {
                             shape.TextStyle = captionStyle;
                         }
                     }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved with Caption style applied to short‑text shapes: {outputPath}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

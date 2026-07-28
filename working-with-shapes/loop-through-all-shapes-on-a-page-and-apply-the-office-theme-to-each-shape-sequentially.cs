@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class ApplyOfficeThemeToShapes
@@ -9,21 +9,20 @@ class ApplyOfficeThemeToShapes
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Assume we work with the first page; adjust index as needed
+            Page page = diagram.Pages[0];
+
+            // Iterate through each shape on the page and set the Office preset theme
+            foreach (Shape shape in page.Shapes)
             {
-                // Loop through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Apply the "Office" preset theme to the shape
-                    shape.PresetTheme = PresetThemeValue.Office;
-                }
+                // Apply the "Office" theme to the current shape
+                shape.PresetTheme = PresetThemeValue.Office;
             }
 
-            // Save the modified diagram
+            // Save the modified diagram (replace with your desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

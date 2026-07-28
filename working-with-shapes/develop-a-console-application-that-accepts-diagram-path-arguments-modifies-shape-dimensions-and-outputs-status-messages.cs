@@ -1,74 +1,68 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments
+        if (args.Length == 0)
         {
-            // Validate arguments
-            if (args.Length == 0)
-            {
-                Console.WriteLine("Usage: DiagramModifier <inputPath> [outputPath]");
-                return;
-            }
+            Console.WriteLine("Usage: DiagramModifier <inputFilePath> [outputFilePath]");
+            return;
+        }
 
-            string inputPath = args[0];
-            if (!File.Exists(inputPath))
-            {
-                Console.WriteLine($"Error: File not found - {inputPath}");
-                return;
-            }
+        string inputPath = args[0];
+        string outputPath;
 
-            // Determine output path
-            string outputPath;
-            if (args.Length >= 2)
-            {
-                outputPath = args[1];
-            }
-            else
-            {
-                string directory = Path.GetDirectoryName(inputPath);
-                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-                outputPath = Path.Combine(directory, fileNameWithoutExt + "_modified.vsdx");
-            }
+        if (args.Length > 1)
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            // Create a default output file name with "_modified" suffix
+            string directory = Path.GetDirectoryName(inputPath) ?? string.Empty;
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_modified.vsdx");
+        }
 
-            try
-            {
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-                Console.WriteLine($"Loaded diagram: {inputPath}");
+        // Check that the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.WriteLine($"Error: Input file '{inputPath}' does not exist.");
+            return;
+        }
 
-                // Iterate through each page
-                foreach (Page page in diagram.Pages)
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+            Console.WriteLine($"Diagram loaded from '{inputPath}'.");
+
+            // Iterate through all pages and shapes to modify dimensions
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through each shape on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Store original dimensions
-                        double originalWidth = shape.XForm.Width.Value;
-                        double originalHeight = shape.XForm.Height.Value;
-
-                        // Increase width and height by 1 inch
-                        shape.XForm.Width.Value = originalWidth + 1.0;
-                        shape.XForm.Height.Value = originalHeight + 1.0;
-
-                        Console.WriteLine($"Shape ID {shape.ID}: {originalWidth}x{originalHeight} -> {shape.XForm.Width.Value}x{shape.XForm.Height.Value}");
-                    }
+                    // Set new width and height (in inches)
+                    shape.XForm.Width.Value = 2.0;   // Example width
+                    shape.XForm.Height.Value = 1.0;  // Example height
                 }
+            }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+            // Save the modified diagram to the output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Modified diagram saved to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

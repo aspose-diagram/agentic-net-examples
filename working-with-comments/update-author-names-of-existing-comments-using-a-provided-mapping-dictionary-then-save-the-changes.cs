@@ -1,61 +1,46 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the existing diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Mapping of old author names to new author names
-            var authorMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            try
             {
-                { "John Doe", "Jane Smith" },
-                { "Alice", "Bob" }
-            };
 
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                // Access comments (annotations) via the page's PageSheet
-                foreach (Annotation annotation in page.PageSheet.Annotations)
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Mapping of old author names to new author names
+                var authorMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    // Retrieve the current comment text
-                    string commentText = annotation.Comment.Value;
+                    { "Alice", "Alice Johnson" },
+                    { "Bob", "Robert Smith" },
+                    { "Charlie", "Charles Brown" }
+                };
 
-                    // Assume the author name appears before the first colon, e.g., "John Doe: Comment text"
-                    int colonPos = commentText.IndexOf(':');
-                    if (colonPos > 0)
+                // Load the existing diagram
+                var diagram = new Diagram(inputPath);
+
+                // Iterate through the reviewers collection and update names based on the mapping
+                foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
+                {
+                    string currentName = reviewer.Name.Value;
+                    if (authorMapping.TryGetValue(currentName, out string newName))
                     {
-                        string currentAuthor = commentText.Substring(0, colonPos).Trim();
-
-                        // If the author exists in the mapping, replace it with the new name
-                        if (authorMapping.TryGetValue(currentAuthor, out string newAuthor))
-                        {
-                            string updatedComment = newAuthor + commentText.Substring(colonPos);
-                            annotation.Comment.Value = updatedComment;
-                        }
+                        reviewer.Name.Value = newName;
                     }
                 }
+
+                // Save the updated diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram back to a file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

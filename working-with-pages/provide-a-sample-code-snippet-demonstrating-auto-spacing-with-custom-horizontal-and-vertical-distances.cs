@@ -1,8 +1,8 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
-class AutoSpaceExample
+class Program
 {
     static void Main()
     {
@@ -12,21 +12,18 @@ class AutoSpaceExample
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the first page of the diagram
+            // Access the first page (or any specific page)
             Page page = diagram.Pages[0];
 
-            // Retrieve all shapes on the page (excluding background shapes)
-            ShapeCollection shapes = page.Shapes;
-
-            // Create AutoSpaceOptions with custom horizontal and vertical distances (in inches)
+            // Create AutoSpaceOptions and set custom distances (in inches)
             AutoSpaceOptions options = new AutoSpaceOptions();
             options.DistanceInHorizontal = 1.0; // 1 inch horizontal spacing
             options.DistanceInVertical = 0.5;   // 0.5 inch vertical spacing
 
-            // Apply auto‑spacing to the selected shapes using the custom options
-            page.AutoSpaceShapes(shapes, options);
+            // Apply auto‑spacing to all shapes on the page
+            page.AutoSpaceShapes(page.Shapes, options);
 
-            // Save the modified diagram
+            // Save the updated diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

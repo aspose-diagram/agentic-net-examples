@@ -6,95 +6,102 @@ using Aspose.Diagram;
 
 class SolutionXmlDecryptor
 {
-    // Decrypts a base64‑encoded AES encrypted string using the provided key and IV.
-    private static string Decrypt(string base64Cipher, byte[] key, byte[] iv)
+    // Decrypts a base64‑encoded AES‑CBC encrypted string using the supplied key and IV.
+    private static string DecryptString(string encryptedBase64, byte[] key, byte[] iv)
     {
-        byte[] cipherBytes = Convert.FromBase64String(base64Cipher);
+        byte[] cipherBytes = Convert.FromBase64String(encryptedBase64);
         using (Aes aes = Aes.Create())
         {
             aes.Key = key;
             aes.IV = iv;
+            aes.Mode = CipherMode.CBC;
             aes.Padding = PaddingMode.PKCS7;
+
             using (ICryptoTransform decryptor = aes.CreateDecryptor())
-            using (MemoryStream ms = new MemoryStream(cipherBytes))
-            using (CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-            using (StreamReader sr = new StreamReader(cs, Encoding.UTF8))
             {
-                return sr.ReadToEnd();
+                byte[] plainBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
+                return Encoding.UTF8.GetString(plainBytes);
             }
         }
     }
 
-    // Computes SHA‑256 hash of a string and returns it as a hex string.
-    private static string ComputeHash(string data)
+    // Computes a SHA256 hash of the supplied text and returns it as a hex string.
+    private static string ComputeSha256Hash(string text)
     {
         using (SHA256 sha = SHA256.Create())
         {
-            byte[] bytes = Encoding.UTF8.GetBytes(data);
-            byte[] hash = sha.ComputeHash(bytes);
+            byte[] hashBytes = sha.ComputeHash(Encoding.UTF8.GetBytes(text));
             StringBuilder sb = new StringBuilder();
-            foreach (byte b in hash) sb.Append(b.ToString("x2"));
+            foreach (byte b in hashBytes)
+                sb.Append(b.ToString("x2"));
             return sb.ToString();
         }
     }
 
-    static void Main(string[] args)
+    // Main routine: loads a diagram, decrypts each SolutionXML entry, verifies integrity,
+    // and saves the diagram with the decrypted XML values.
+    public static void DecryptSolutionXml(string diagramPath, string outputPath, byte[] key, byte[] iv)
+    {
+        // Load the diagram (Aspose.Diagram handles the lifecycle internally).
+        Diagram diagram = new Diagram(diagramPath);
+
+        // Iterate over all SolutionXML objects stored in the diagram.
+        foreach (SolutionXML solXml in diagram.SolutionXMLs)
+        {
+            // Assume the encrypted data is stored in XmlValue.
+            string encryptedData = solXml.XmlValue;
+
+            // Decrypt the XML content.
+            string decryptedXml = DecryptString(encryptedData, key, iv);
+
+            // Optional integrity check:
+            // Assume the original XML contains a <Hash> element with a SHA256 hash of the clear XML.
+            // Extract the hash from the decrypted XML (simple example, real XML parsing recommended).
+            string expectedHash = null;
+            int hashStart = decryptedXml.IndexOf("<Hash>", StringComparison.Ordinal);
+            int hashEnd = decryptedXml.IndexOf("</Hash>", StringComparison.Ordinal);
+            if (hashStart != -1 && hashEnd != -1 && hashEnd > hashStart)
+            {
+                expectedHash = decryptedXml.Substring(hashStart + 6, hashEnd - (hashStart + 6)).Trim();
+                // Remove the <Hash> element to obtain the actual payload.
+                decryptedXml = decryptedXml.Remove(hashStart, (hashEnd + 7) - hashStart);
+            }
+
+            // Compute hash of the payload.
+            string actualHash = ComputeSha256Hash(decryptedXml);
+
+            // Verify integrity if a hash was present.
+            if (expectedHash != null && !string.Equals(expectedHash, actualHash, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException($"Integrity check failed for SolutionXML named '{solXml.Name}'.");
+            }
+
+            // Replace the encrypted value with the decrypted XML.
+            solXml.XmlValue = decryptedXml;
+        }
+
+        // Save the modified diagram.
+        diagram.Save(outputPath, SaveFileFormat.Vdx);
+    }
+
+    // Example usage.
+    static void Main()
     {
         try
         {
 
-            // Input parameters (adjust as needed)
-            string diagramPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-            string solutionXmlName = "EncryptedData"; // name of the SolutionXML to process
-            string keyHex = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"; // 64‑char hex (256‑bit)
-            string ivHex = "ABCDEF0123456789ABCDEF0123456789"; // 32‑char hex (128‑bit)
-            string expectedHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+            // Path to the diagram containing encrypted SolutionXML.
+            string inputDiagram = @"C:\Diagrams\encrypted.vdx";
 
-            // Convert hex strings to byte arrays
-            byte[] key = new byte[keyHex.Length / 2];
-            for (int i = 0; i < key.Length; i++) key[i] = Convert.ToByte(keyHex.Substring(i * 2, 2), 16);
-            byte[] iv = new byte[ivHex.Length / 2];
-            for (int i = 0; i < iv.Length; i++) iv[i] = Convert.ToByte(ivHex.Substring(i * 2, 2), 16);
+            // Path where the diagram with decrypted XML will be saved.
+            string outputDiagram = @"C:\Diagrams\decrypted.vdx";
 
-            // Load diagram (lifecycle rule)
-            Diagram diagram = new Diagram(diagramPath);
+            // Example 256‑bit key and 128‑bit IV (must match the encryption parameters).
+            byte[] key = Encoding.UTF8.GetBytes("0123456789ABCDEF0123456789ABCDEF"); // 32 bytes
+            byte[] iv  = Encoding.UTF8.GetBytes("ABCDEF0123456789");               // 16 bytes
 
-            // Find the targeted SolutionXML entry
-            SolutionXML target = null;
-            foreach (SolutionXML sx in diagram.SolutionXMLs)
-            {
-                if (sx.Name == solutionXmlName)
-                {
-                    target = sx;
-                    break;
-                }
-            }
-
-            if (target == null)
-            {
-                Console.WriteLine($"SolutionXML named '{solutionXmlName}' not found.");
-                return;
-            }
-
-            // Decrypt the encrypted XML value
-            string decryptedXml = Decrypt(target.XmlValue, key, iv);
-
-            // Verify integrity by comparing SHA‑256 hash
-            string actualHash = ComputeHash(decryptedXml);
-            if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
-            {
-                Console.WriteLine("Integrity verification failed: hash mismatch.");
-                return;
-            }
-
-            // Replace encrypted content with decrypted XML
-            target.XmlValue = decryptedXml;
-
-            // Save the updated diagram (lifecycle rule)
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Decryption succeeded and integrity verified.");
+            DecryptSolutionXml(inputDiagram, outputDiagram, key, iv);
+            Console.WriteLine("Decryption completed successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

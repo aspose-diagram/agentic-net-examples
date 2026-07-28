@@ -9,7 +9,7 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load the diagram (replace with your actual file path)
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
@@ -18,20 +18,17 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Enable line inheritance only for connector shapes (1‑D shapes)
-                    if (shape.OneD)
+                    if (shape.OneD) // Connector shape
                     {
-                        // Copy inherited line formatting to the shape's explicit line cells
-                        // This effectively makes the connector use the inherited line style
+                        // Enable line inheritance by copying inherited line values
                         shape.Line.LineColor.Value = shape.InheritLine.LineColor.Value;
                         shape.Line.LineWeight.Value = shape.InheritLine.LineWeight.Value;
                         shape.Line.LinePattern.Value = shape.InheritLine.LinePattern.Value;
-                        shape.Line.BeginArrow.Value = shape.InheritLine.BeginArrow.Value;
-                        shape.Line.EndArrow.Value = shape.InheritLine.EndArrow.Value;
-                        shape.Line.BeginArrowSize.Value = shape.InheritLine.BeginArrowSize.Value;
-                        shape.Line.EndArrowSize.Value = shape.InheritLine.EndArrowSize.Value;
-                        shape.Line.LineCap.Value = shape.InheritLine.LineCap.Value;
-                        shape.Line.Rounding.Value = shape.InheritLine.Rounding.Value;
+                    }
+                    else
+                    {
+                        // For non‑connector shapes, set an explicit line color (example: black)
+                        shape.Line.LineColor.Value = "#000000";
                     }
                 }
             }
@@ -39,6 +36,7 @@ class Program
             // Save the modified diagram
             string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

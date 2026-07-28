@@ -1,6 +1,7 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,39 +10,30 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // ID of the shape to modify
-            int targetShapeId = 5; // TODO: replace with the actual shape ID
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Locate the shape by its ID across all pages
-            Shape targetShape = null;
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.ID == targetShapeId)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-                if (targetShape != null) break;
-            }
+            // ID of the shape to modify (replace with actual ID)
+            long targetShapeId = 5;
 
-            if (targetShape != null)
-            {
-                // Apply a preset theme to the found shape
-                targetShape.PresetTheme = PresetThemeValue.Office; // choose desired theme
-            }
-            else
+            // Retrieve the shape from the first page
+            Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+            if (shape == null)
             {
                 Console.WriteLine($"Shape with ID {targetShapeId} not found.");
+                return;
             }
 
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Apply a preset theme to the shape
+            shape.PresetTheme = PresetThemeValue.Bubble;
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved with updated shape theme.");
 
         }
         catch (System.IO.FileNotFoundException ex)

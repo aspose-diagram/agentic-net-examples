@@ -3,75 +3,120 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Config
-{
-    // List of shape IDs that should keep their custom fill.
-    public List<long>? ShapeIds { get; set; }
-}
-
-public class Program
-{
-    public static void Main(string[] args)
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Paths – adjust as needed or pass via command‑line arguments.
-            string diagramPath = "input.vsdx";
-            string configPath = "config.json";
-            string outputPath = "output.vsdx";
-
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Load configuration (JSON) that contains shape IDs to retain custom fill.
-            HashSet<long> retainFillIds = new HashSet<long>();
-            if (File.Exists(configPath))
+            try
             {
-                string json = File.ReadAllText(configPath);
-                Config? cfg = JsonSerializer.Deserialize<Config>(json);
-                if (cfg?.ShapeIds != null)
+
+                // Paths for input diagram, configuration file and output diagram
+                string diagramPath = "input.vsdx";
+                string configPath = "shapeConfig.json";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Read and parse the configuration file (expects JSON: {"retainCustomFill":[1,2,5]})
+                List<long> targetShapeIds = LoadShapeIdsFromConfig(configPath);
+
+                // Process each target shape
+                foreach (long shapeId in targetShapeIds)
                 {
-                    foreach (long id in cfg.ShapeIds)
+                    // Attempt to locate the shape on any page
+                    Shape shape = FindShapeById(diagram, shapeId);
+                    if (shape == null)
                     {
-                        retainFillIds.Add(id);
-                    }
-                }
-            }
-
-            // Iterate through all pages and shapes.
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
+                        Console.WriteLine($"Shape with ID {shapeId} not found.");
                         continue;
+                    }
 
-                    // ALWAYS inherit line style from the parent/style.
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                    {
+                        Console.WriteLine($"Shape ID {shapeId} is marked as deleted. Skipping.");
+                        continue;
+                    }
+
+                    // Inherit line style from the shape's inherited line values
                     shape.Line.LineColor.Value = shape.InheritLine.LineColor.Value;
                     shape.Line.LineWeight.Value = shape.InheritLine.LineWeight.Value;
                     shape.Line.LinePattern.Value = shape.InheritLine.LinePattern.Value;
+                    shape.Line.BeginArrow.Value = shape.InheritLine.BeginArrow.Value;
+                    shape.Line.EndArrow.Value = shape.InheritLine.EndArrow.Value;
+                    shape.Line.BeginArrowSize.Value = shape.InheritLine.BeginArrowSize.Value;
+                    shape.Line.EndArrowSize.Value = shape.InheritLine.EndArrowSize.Value;
+                    shape.Line.LineCap.Value = shape.InheritLine.LineCap.Value;
+                    shape.Line.Rounding.Value = shape.InheritLine.Rounding.Value;
+                    shape.Line.LineColorTrans.Value = shape.InheritLine.LineColorTrans.Value;
 
-                    // For shapes NOT listed in the config, also inherit fill.
-                    if (!retainFillIds.Contains(shape.ID))
-                    {
-                        shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
-                        shape.Fill.FillBkgnd.Value = shape.InheritFill.FillBkgnd.Value;
-                        shape.Fill.FillPattern.Value = shape.InheritFill.FillPattern.Value;
-                    }
-                    // Shapes listed in the config keep their existing Fill values.
+                    Console.WriteLine($"Processed shape ID {shapeId}: custom fill retained, line style inherited.");
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
+
+        // Loads a list of shape IDs from a JSON configuration file
+        private static List<long> LoadShapeIdsFromConfig(string configFilePath)
+        {
+            var ids = new List<long>();
+
+            if (!File.Exists(configFilePath))
+            {
+                Console.WriteLine($"Configuration file '{configFilePath}' not found.");
+                return ids;
             }
 
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            try
+            {
+                string json = File.ReadAllText(configFilePath);
+                using JsonDocument doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("retainCustomFill", out JsonElement array))
+                {
+                    foreach (JsonElement element in array.EnumerateArray())
+                    {
+                        if (element.TryGetInt64(out long id))
+                        {
+                            ids.Add(id);
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Configuration does not contain 'retainCustomFill' array.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error reading configuration: {ex.Message}");
+            }
 
+            return ids;
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Searches all pages for a shape with the specified ID
+        private static Shape FindShapeById(Diagram diagram, long shapeId)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            foreach (Page page in diagram.Pages)
+            {
+                // Shapes.GetShape expects a long ID; it returns null if not found
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape != null)
+                {
+                    return shape;
+                }
+            }
+            return null;
         }
     }
-}

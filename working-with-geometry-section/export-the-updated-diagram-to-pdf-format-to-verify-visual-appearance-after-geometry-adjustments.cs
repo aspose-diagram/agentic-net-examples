@@ -3,28 +3,35 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ExportDiagramToPdf
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio diagram (already modified as needed)
+            string sourceFile = @"C:\Diagrams\UpdatedDiagram.vsdx";
 
-            // TODO: Perform any geometry adjustments on the diagram here
+            // Path where the PDF will be saved
+            string pdfFile = @"C:\Diagrams\UpdatedDiagram.pdf";
 
-            // Create PDF save options (default settings can be used or customized)
+            // Load the diagram using the standard constructor (lifecycle rule)
+            Diagram diagram = new Diagram(sourceFile);
+
+            // Create PDF save options (rule-provided class)
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Example of a custom option:
-            // pdfOptions.EnlargePage = true;
 
-            // Export the diagram to PDF to verify visual appearance
-            diagram.Save("output.pdf", pdfOptions);
+            // Optional: explicitly set the format to PDF (default is PDF)
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+            // Save the diagram as PDF using the Save method with SaveOptions (rule-provided)
+            diagram.Save(pdfFile, pdfOptions);
 
             // Clean up resources
             diagram.Dispose();
+
+            Console.WriteLine("Diagram exported to PDF successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

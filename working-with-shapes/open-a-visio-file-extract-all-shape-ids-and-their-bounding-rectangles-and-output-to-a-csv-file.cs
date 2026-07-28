@@ -2,59 +2,57 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class Program
+class VisioShapeExtractor
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Path to the Visio file to process
-            string inputPath = "input.vsdx";
+            // Input Visio file path and output CSV file path
+            string visioFilePath = "input.vsdx";
+            string csvOutputPath = "shapes.csv";
 
-            // Path for the CSV output
-            string outputCsv = "shapes.csv";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Create a CSV writer
-            using (StreamWriter writer = new StreamWriter(outputCsv))
+            // Load the Visio diagram using the appropriate constructor
+            using (Diagram diagram = new Diagram(visioFilePath))
             {
-                // Write CSV header
-                writer.WriteLine("ShapeID,Left,Top,Right,Bottom");
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Prepare a StreamWriter for CSV output
+                using (StreamWriter writer = new StreamWriter(csvOutputPath))
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Write CSV header
+                    writer.WriteLine("ShapeID,Left,Top,Right,Bottom");
+
+                    // Iterate through all pages in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Iterate through all shapes on the current page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Retrieve shape ID
+                            long shapeId = shape.ID;
 
-                        // Shape identifier
-                        long id = shape.ID;
+                            // Retrieve positioning information from XForm
+                            // PinX and PinY represent the center of the shape
+                            // Width and Height represent the size of the shape
+                            double pinX = shape.XForm.PinX.Value;
+                            double pinY = shape.XForm.PinY.Value;
+                            double width = shape.XForm.Width.Value;
+                            double height = shape.XForm.Height.Value;
 
-                        // Retrieve position and size (center based)
-                        double pinX = shape.XForm.PinX.Value;
-                        double pinY = shape.XForm.PinY.Value;
-                        double width = shape.XForm.Width.Value;
-                        double height = shape.XForm.Height.Value;
+                            // Calculate bounding rectangle coordinates
+                            double left = pinX - width / 2.0;
+                            double right = pinX + width / 2.0;
+                            double top = pinY + height / 2.0;
+                            double bottom = pinY - height / 2.0;
 
-                        // Calculate bounding rectangle coordinates
-                        double left = pinX - width / 2.0;
-                        double right = pinX + width / 2.0;
-                        double top = pinY + height / 2.0;
-                        double bottom = pinY - height / 2.0;
-
-                        // Write a line to the CSV file
-                        writer.WriteLine($"{id},{left},{top},{right},{bottom}");
+                            // Write shape data to CSV
+                            writer.WriteLine($"{shapeId},{left},{top},{right},{bottom}");
+                        }
                     }
                 }
             }
 
-            Console.WriteLine($"Shape data exported to '{outputCsv}'.");
+            Console.WriteLine("Shape extraction completed. CSV saved to: " + csvOutputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

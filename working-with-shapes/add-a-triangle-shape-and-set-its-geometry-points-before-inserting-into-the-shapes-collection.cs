@@ -1,69 +1,67 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Access the first page (default page is created automatically)
+            // Add a new page to the diagram
+            diagram.Pages.Add(new Page());
             Page page = diagram.Pages[0];
 
-            // Add a temporary rectangle shape – we will replace its geometry with a triangle
-            long shapeId = page.AddShape(2.0, 2.0, 2.0, 2.0, "Rectangle");
+            // Create a new shape instance (triangle)
+            Shape triangle = new Shape();
 
-            // Retrieve the shape object using its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Set basic shape properties
+            triangle.Type = TypeValue.Shape;          // Shape type
+            triangle.Name = "Triangle";                // Optional name
 
-            // Remove any existing geometry definitions
-            shape.Geoms.Clear();
+            // Define geometry for an equilateral triangle
+            // Coordinates are in inches; adjust as needed
+            Geom geom = new Geom();
 
-            // Create a new geometry collection for the triangle
-            Geom triangleGeom = new Geom();
+            // Move to the first vertex (0,0)
+            MoveTo move = new MoveTo();
+            move.X.Value = 0.0;
+            move.Y.Value = 0.0;
+            geom.CoordinateCol.Add(move);
 
-            // Define the triangle vertices using MoveTo and LineTo segments
-            MoveTo start = new MoveTo();
-            start.X.Value = 0.0;
-            start.Y.Value = 0.0;
-            triangleGeom.CoordinateCol.Add(start);
+            // Line to second vertex (1,0)
+            LineTo line1 = new LineTo();
+            line1.X.Value = 1.0;
+            line1.Y.Value = 0.0;
+            geom.CoordinateCol.Add(line1);
 
-            LineTo pt1 = new LineTo();
-            pt1.X.Value = 2.0;
-            pt1.Y.Value = 0.0;
-            triangleGeom.CoordinateCol.Add(pt1);
+            // Line to third vertex (0.5,0.866) – height of equilateral triangle
+            LineTo line2 = new LineTo();
+            line2.X.Value = 0.5;
+            line2.Y.Value = 0.8660254037844386; // sqrt(3)/2
+            geom.CoordinateCol.Add(line2);
 
-            LineTo pt2 = new LineTo();
-            pt2.X.Value = 1.0;
-            pt2.Y.Value = 2.0;
-            triangleGeom.CoordinateCol.Add(pt2);
+            // Close the triangle by returning to the first vertex
+            LineTo line3 = new LineTo();
+            line3.X.Value = 0.0;
+            line3.Y.Value = 0.0;
+            geom.CoordinateCol.Add(line3);
 
-            // Close the triangle by returning to the start point
-            LineTo pt3 = new LineTo();
-            pt3.X.Value = 0.0;
-            pt3.Y.Value = 0.0;
-            triangleGeom.CoordinateCol.Add(pt3);
+            // Add the geometry to the shape
+            triangle.Geoms.Add(geom);
 
-            // Attach the new geometry to the shape
-            shape.Geoms.Add(triangleGeom);
+            // Set the shape's size and position on the page
+            triangle.XForm.Width.Value = 1.0;   // Width of the triangle
+            triangle.XForm.Height.Value = 0.8660254037844386; // Height matches geometry
+            triangle.XForm.PinX.Value = 2.0;   // Horizontal position on page
+            triangle.XForm.PinY.Value = 2.0;   // Vertical position on page
 
-            // Optional: set fill and line colors for visibility
-            shape.Fill.FillForegnd.Value = "#FF0000"; // red fill
-            shape.Line.LineColor.Value = "#000000"; // black border
+            // Insert the shape into the page's Shapes collection
+            page.Shapes.Add(triangle);
 
             // Save the diagram to a VSDX file
-            diagram.Save("TriangleShape.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save("TriangleDiagram.vsdx", SaveFileFormat.Vsdx);
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.WriteLine("Triangle shape added and diagram saved successfully.");
         }
     }
-}

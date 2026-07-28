@@ -4,59 +4,63 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input Visio file and watermark image paths
+            string visioPath = "input.vsdx";
+            string watermarkImagePath = "watermark.png";
+            string outputPdfPath = "output.pdf";
+
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(visioPath))
             {
-
-                // Input Visio file, output PDF file, and watermark image file paths.
-                string inputVisioPath = "input.vsdx";
-                string outputPdfPath = "output.pdf";
-                string watermarkImagePath = "watermark.png";
-
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(inputVisioPath);
-
-                // Iterate through each page and add the watermark image as a background shape.
-                foreach (Page page in diagram.Pages)
+                // Open the watermark image once and reuse the stream for each page
+                using (FileStream imgStream = new FileStream(watermarkImagePath, FileMode.Open, FileAccess.Read))
                 {
-                    // Retrieve page dimensions (in inches).
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Center coordinates for the shape (PinX, PinY).
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
-
-                    // Add the image shape covering the entire page.
-                    using (FileStream imgStream = new FileStream(watermarkImagePath, FileMode.Open, FileAccess.Read))
+                    // Iterate over all pages in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        // AddShape returns the shape ID (long).
+                        // Retrieve page dimensions (in inches)
+                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                        // Center position for the image shape
+                        double pinX = pageWidth / 2.0;
+                        double pinY = pageHeight / 2.0;
+
+                        // Add the image as a shape covering the whole page
                         long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, imgStream);
 
-                        // Retrieve the shape object to modify its properties.
+                        // Retrieve the shape object to adjust its properties
                         Shape watermarkShape = page.Shapes.GetShape(shapeId);
 
-                        // Send the watermark to the back so it does not obscure other content.
+                        // Send the watermark to the back so other content appears above it
                         watermarkShape.SendToBack();
 
-                        // Make the watermark non‑selectable.
+                        // Make the watermark non‑selectable
                         watermarkShape.Protection.LockSelect.Value = BOOL.True;
                     }
                 }
 
-                // Configure PDF save options (optional: set default font for missing glyphs).
+                // Configure PDF save options
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
                 pdfOptions.DefaultFont = "Arial";
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the modified diagram as a PDF.
+                // Save the diagram as a PDF with the watermarks applied
                 diagram.Save(outputPdfPath, pdfOptions);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine("Watermarked PDF saved to: " + outputPdfPath);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

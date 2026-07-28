@@ -7,23 +7,21 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Folder containing Visio files
+            // Input folder containing Visio files
             string inputFolder = @"C:\VisioFiles";
-            // Folder to save the modified files (can be the same as inputFolder)
-            string outputFolder = @"C:\VisioFiles\Processed";
+            // Output folder for processed files
+            string outputFolder = Path.Combine(inputFolder, "Processed");
 
-            // Ensure output folder exists
             if (!Directory.Exists(outputFolder))
                 Directory.CreateDirectory(outputFolder);
 
-            // Get all Visio files in the input folder (supports .vsdx, .vsd, .vdx, etc.)
+            // Get all Visio files in the folder (common extensions)
             string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
             foreach (string filePath in visioFiles)
             {
                 string extension = Path.GetExtension(filePath).ToLowerInvariant();
-                // Process only known Visio extensions
-                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx" && extension != ".vsx" && extension != ".vtx")
-                    continue;
+                if (!IsVisioExtension(extension))
+                    continue; // Skip non‑Visio files
 
                 try
                 {
@@ -36,21 +34,13 @@ class Program
                         page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                     }
 
-                    // Determine output file path (overwrite original or save to new location)
+                    // Determine the appropriate SaveFileFormat based on the original extension
+                    SaveFileFormat format = GetSaveFileFormat(extension);
+
+                    // Build output file path
                     string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
 
-                    // Save using the same format as the original file
-                    // Choose appropriate SaveFileFormat based on extension
-                    SaveFileFormat format = extension switch
-                    {
-                        ".vsdx" => SaveFileFormat.Vsdx,
-                        ".vsd" => SaveFileFormat.Vsd,
-                        ".vdx" => SaveFileFormat.Vdx,
-                        ".vsx" => SaveFileFormat.Vsx,
-                        ".vtx" => SaveFileFormat.Vtx,
-                        _ => SaveFileFormat.Vsdx
-                    };
-
+                    // Save the modified diagram
                     diagram.Save(outputPath, format);
                 }
                 catch (Exception ex)
@@ -60,5 +50,35 @@ class Program
             }
 
             Console.WriteLine("Batch processing completed.");
+        }
+
+        // Checks if the file extension corresponds to a supported Visio format
+        private static bool IsVisioExtension(string ext)
+        {
+            return ext == ".vsdx" || ext == ".vsd" || ext == ".vdx" ||
+                   ext == ".vsx" || ext == ".vtx" || ext == ".vssx" ||
+                   ext == ".vstx" || ext == ".vsdm" || ext == ".vssm" ||
+                   ext == ".vstm" || ext == ".vss" || ext == ".vst";
+        }
+
+        // Maps file extensions to the corresponding SaveFileFormat enum values
+        private static SaveFileFormat GetSaveFileFormat(string ext)
+        {
+            return ext switch
+            {
+                ".vsdx" => SaveFileFormat.Vsdx,
+                ".vsd"  => SaveFileFormat.Vsd,
+                ".vdx"  => SaveFileFormat.Vdx,
+                ".vsx"  => SaveFileFormat.Vsx,
+                ".vtx"  => SaveFileFormat.Vtx,
+                ".vssx" => SaveFileFormat.Vssx,
+                ".vstx" => SaveFileFormat.Vstx,
+                ".vsdm" => SaveFileFormat.Vsdm,
+                ".vssm" => SaveFileFormat.Vssm,
+                ".vstm" => SaveFileFormat.Vstm,
+                ".vss"  => SaveFileFormat.Vss,
+                ".vst"  => SaveFileFormat.Vst,
+                _ => throw new NotSupportedException($"Unsupported Visio file extension: {ext}")
+            };
         }
     }

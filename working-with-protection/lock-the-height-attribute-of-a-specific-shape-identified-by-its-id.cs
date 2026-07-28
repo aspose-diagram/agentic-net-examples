@@ -2,49 +2,39 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
-
-namespace DiagramLockHeightExample
+public class Program
 {
-    class Program
+    public static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // The ID of the shape whose height should be locked
-                long targetShapeId = 123; // replace with the actual shape ID
+            // ID of the shape whose height should be locked
+            long targetShapeId = 5; // replace with the actual shape ID
 
-                // Locate the shape. This example assumes the shape is on the first page.
-                // If the shape could be on any page, iterate through diagram.Pages to find it.
-                Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+            // Retrieve the shape from the first page (adjust page index if needed)
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes.GetShape(targetShapeId);
 
-                if (shape == null)
-                {
-                    throw new Exception($"Shape with ID {targetShapeId} not found on page 0.");
-                }
+            // Lock the height attribute
+            shape.Protection.LockHeight.Value = BOOL.True;
 
-                // Lock the height attribute of the shape
-                shape.Protection.LockHeight.Value = BOOL.True;
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                // Save the modified diagram
-                string outputPath = "output_locked.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Height of shape ID {targetShapeId} has been locked and diagram saved to '{outputPath}'.");
 
-                Console.WriteLine($"Height of shape ID {targetShapeId} has been locked and diagram saved to '{outputPath}'.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

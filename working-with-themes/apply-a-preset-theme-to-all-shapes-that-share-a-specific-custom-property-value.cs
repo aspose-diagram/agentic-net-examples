@@ -1,56 +1,60 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Paths for input and output diagrams
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Define the custom property name and the value to match
+            string targetPropName = "Category";
+            string targetPropValue = "Important";
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the modified Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram from file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the custom property name and the value to match
-                const string targetPropName = "Category";
-                const string targetPropValue = "Important";
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Ensure the shape has custom properties
-                        if (shape.Props == null) continue;
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Look for the target custom property
+                    // Ensure the shape has custom properties
+                    if (shape.Props != null)
+                    {
                         foreach (Prop prop in shape.Props)
                         {
+                            // Check for the specific custom property name and value
                             if (prop.Name == targetPropName && prop.Value.Val == targetPropValue)
                             {
                                 // Apply a preset theme to the matching shape
                                 shape.PresetTheme = PresetThemeValue.Bubble;
                                 shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                                 shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
-                                // No need to continue checking other properties for this shape
-                                break;
+                                break; // Property matched; no need to check further properties
                             }
                         }
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

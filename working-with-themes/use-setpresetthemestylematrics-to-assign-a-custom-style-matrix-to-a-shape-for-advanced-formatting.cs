@@ -15,13 +15,14 @@ class Program
             // Access the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape by its ID (example uses shape ID 1)
+            // Retrieve a shape by its ID (replace 1 with the actual shape ID you want to format)
             Shape shape = page.Shapes.GetShape(1);
 
-            // Apply a preset theme style matrix:
-            //   - Style2 corresponds to the second row of the style matrix
-            //   - Color3 corresponds to the third column of the color matrix
-            shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2, PresetColorMatricsValue.Color3);
+            // Apply a preset theme style matrix to the shape.
+            // Example: use Style2 (row) and Color3 (column) from the preset matrices.
+            shape.SetPresetThemeStyleMatrics(
+                PresetStyleMatricsValue.Style2,
+                PresetColorMatricsValue.Color3);
 
             // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);

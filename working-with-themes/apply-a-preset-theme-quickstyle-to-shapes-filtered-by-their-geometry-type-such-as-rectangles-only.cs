@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
@@ -12,17 +12,20 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through each page in the diagram
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Filter only rectangle shapes (master shape name is "Rectangle")
-                    if (shape.MasterShape != null && shape.MasterShape.NameU == "Rectangle")
+                    // Filter shapes that are rectangles (geometry type)
+                    // In Visio, rectangle shapes often have the NameU "Rectangle"
+                    if (shape.NameU == "Rectangle")
                     {
                         // Apply a preset theme quickstyle to the rectangle shape
-                        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+                        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+
+                        // Alternatively, you can use the matrix method:
+                        // shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style1, PresetColorMatricsValue.Color1);
                     }
                 }
             }

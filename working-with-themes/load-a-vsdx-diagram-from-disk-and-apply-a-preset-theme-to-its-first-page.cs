@@ -3,33 +3,38 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ApplyThemeExample
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string targetFilePath = "input.vsdx";          // Path to the diagram to modify
-        string themeFilePath = "theme.vsdx";           // Path to a diagram that contains the desired preset theme
-        if (!System.IO.File.Exists(themeFilePath))
+        try
         {
-            Console.Error.WriteLine($"File not found: {themeFilePath}");
-            return;
+
+            // Paths to the source diagram, the theme diagram and the output file
+            string sourceDiagramPath = "input.vsdx";
+            string themeDiagramPath = "theme.vsdx";
+            string outputDiagramPath = "output.vsdx";
+
+            // Load the diagram that will receive the theme
+            Diagram targetDiagram = new Diagram(sourceDiagramPath);
+
+            // Load the diagram that contains the desired preset theme
+            Diagram themeDiagram = new Diagram(themeDiagramPath);
+
+            // Apply the theme from the source diagram to the target diagram
+            targetDiagram.CopyTheme(themeDiagram);
+
+            // Save the modified diagram back to disk (preserving VSDX format)
+            targetDiagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+
+            // Clean up resources
+            targetDiagram.Dispose();
+            themeDiagram.Dispose();
+
         }
-        string outputFilePath = "output.vsdx";        // Path where the themed diagram will be saved
-
-        // Load the target diagram (VSDX) from disk
-        Diagram targetDiagram = new Diagram(targetFilePath);
-
-        // Load the source diagram that holds the preset theme
-        Diagram themeDiagram = new Diagram(themeFilePath);
-
-        // Apply the theme from the source diagram to the target diagram
-        targetDiagram.CopyTheme(themeDiagram);
-
-        // Save the modified diagram back to VSDX format
-        targetDiagram.Save(outputFilePath, SaveFileFormat.Vsdx);
-
-        // Clean up resources
-        targetDiagram.Dispose();
-        themeDiagram.Dispose();
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

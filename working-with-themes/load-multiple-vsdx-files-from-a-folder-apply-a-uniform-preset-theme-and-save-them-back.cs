@@ -4,40 +4,38 @@ using Aspose.Diagram;
 
 class ApplyUniformTheme
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Expect two arguments: the folder containing VSDX files and a template file that has the desired theme.
+        if (args.Length < 2)
         {
+            Console.WriteLine("Usage: ApplyUniformTheme <folderPath> <themeTemplatePath>");
+            return;
+        }
 
-            // Folder containing the VSDX files to process
-            string sourceFolder = @"C:\Diagrams";
+        string folderPath = args[0];
+        string themeTemplatePath = args[1];
 
-            // Path to a template diagram that already has the desired theme applied
-            string themeTemplatePath = @"C:\Template\themeTemplate.vsdx";
+        // Load the template diagram that already contains the preset theme.
+        Diagram themeDiagram = new Diagram(themeTemplatePath);
 
-            // Load the template diagram once
-            Diagram templateDiagram = new Diagram(themeTemplatePath);
+        // Retrieve all VSDX files in the specified folder (non‑recursive).
+        string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
 
-            // Process each VSDX file in the folder
-            foreach (string filePath in Directory.GetFiles(sourceFolder, "*.vsdx"))
+        foreach (string filePath in diagramFiles)
+        {
+            // Load each diagram file.
+            using (Diagram diagram = new Diagram(filePath))
             {
-                // Load the current diagram
-                Diagram diagram = new Diagram(filePath);
+                // Copy the theme from the template diagram to the current diagram.
+                diagram.CopyTheme(themeDiagram);
 
-                // Apply the preset theme from the template diagram
-                diagram.CopyTheme(templateDiagram);
-
-                // Save the modified diagram, overwriting the original file
+                // Save the modified diagram, overwriting the original file.
                 diagram.Save(filePath, SaveFileFormat.Vsdx);
             }
-
-            // Clean up the template diagram
-            templateDiagram.Dispose();
-
         }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-        }
+
+        // Clean up the template diagram.
+        themeDiagram.Dispose();
     }
 }

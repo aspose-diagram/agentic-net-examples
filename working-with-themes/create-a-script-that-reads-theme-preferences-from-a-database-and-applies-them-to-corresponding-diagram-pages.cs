@@ -1,80 +1,36 @@
 using System.IO;
 using System;
-using System.Data;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ApplyThemeFromDatabase
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the diagram that will receive the themes
-            string targetDiagramPath = @"C:\Diagrams\TargetDiagram.vsdx";
+            // Load the target diagram using the provided constructor (load rule)
+            Diagram diagram = new Diagram("target.vsdx");
 
-            // Load the target diagram (uses the provided load rule)
-            Diagram targetDiagram = new Diagram(targetDiagramPath);
+            // Retrieve theme preferences from the database
+            Dictionary<int, int> pageThemeMap = GetPageThemePreferences();
 
-            // Connection string to the database that stores theme preferences
-            string connectionString = @"Data Source=SERVER;Initial Catalog=ThemeDB;Integrated Security=True";
-
-            // Query that returns page name (or index) and the desired theme name
-            string query = @"SELECT PageName, ThemeName FROM PageThemePreferences";
-
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            // Apply the retrieved theme to each corresponding page
+            foreach (Page page in diagram.Pages)
             {
-                conn.Open();
-                using (SqlDataReader reader = cmd.ExecuteReader())
+                if (pageThemeMap.TryGetValue(page.ID, out int themeInt))
                 {
-                    while (reader.Read())
-                    {
-                        string pageName = reader.GetString(0);
-                        string themeName = reader.GetString(1);
-
-                        // Find the page in the diagram by name
-                        Page page = null;
-                        foreach (Page p in targetDiagram.Pages)
-                        {
-                            if (p.Name == pageName)
-                            {
-                                page = p;
-                                break;
-                            }
-                        }
-
-                        if (page == null)
-                        {
-                            Console.WriteLine($"Page '{pageName}' not found in diagram.");
-                            continue;
-                        }
-
-                        // Map the theme name from the database to a PresetThemeValue enum
-                        PresetThemeValue themeValue = MapThemeNameToEnum(themeName);
-
-                        // Load a temporary diagram that contains the desired theme.
-                        // Each theme is stored as a separate Visio file in a Themes folder.
-                        string themeDiagramPath = $@"C:\Themes\{themeName}.vsdx";
-                        Diagram themeDiagram = new Diagram(themeDiagramPath);
-
-                        // Apply the theme to the target diagram (uses the provided CopyTheme rule)
-                        targetDiagram.CopyTheme(themeDiagram);
-
-                        // Optionally, set the page's quick style if needed
-                        // page.PresetThemeQuickStyle = (PresetQuickStyleValue)themeValue; // Uncomment if quick style enum is available
-                    }
+                    // Cast the integer value to the PresetQuickStyleValue enum and assign
+                    page.PresetThemeQuickStyle = (PresetQuickStyleValue)themeInt;
                 }
             }
 
-            // Save the modified diagram (uses the provided save rule)
-            string outputPath = @"C:\Diagrams\TargetDiagram_Themed.vsdx";
-            targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Clean up
-            targetDiagram.Dispose();
+            // Save the updated diagram using the provided Save method (save rule)
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
+            diagram.Save("target_updated.vdx", saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)
@@ -83,38 +39,32 @@ class ApplyThemeFromDatabase
         }
     }
 
-    // Helper method to convert a theme name string to the corresponding PresetThemeValue enum.
-    private static PresetThemeValue MapThemeNameToEnum(string themeName)
+    // Reads theme preferences from a database table and returns a mapping of Page ID to theme value
+    static Dictionary<int, int> GetPageThemePreferences()
     {
-        return themeName switch
+        var map = new Dictionary<int, int>();
+
+        // Replace with your actual connection string
+        string connectionString = "Data Source=SERVER;Initial Catalog=Database;Integrated Security=True";
+
+        // Expected table schema: PageId (int), ThemeValue (int) where ThemeValue matches PresetQuickStyleValue enum
+        string query = "SELECT PageId, ThemeValue FROM PageThemePreferences";
+
+        using (SqlConnection conn = new SqlConnection(connectionString))
+        using (SqlCommand cmd = new SqlCommand(query, conn))
         {
-            "Office" => PresetThemeValue.Office,
-            "Linear" => PresetThemeValue.Linear,
-            "Zephyr" => PresetThemeValue.Zephyr,
-            "Integral" => PresetThemeValue.Integral,
-            "Simple" => PresetThemeValue.Simple,
-            "Whisp" => PresetThemeValue.Whisp,
-            "Daybreak" => PresetThemeValue.Daybreak,
-            "Parallel" => PresetThemeValue.Parallel,
-            "Sequence" => PresetThemeValue.Sequence,
-            "Slice" => PresetThemeValue.Slice,
-            "Ion" => PresetThemeValue.Ion,
-            "Retrospect" => PresetThemeValue.Retrospect,
-            "Organic" => PresetThemeValue.Organic,
-            "Bubble" => PresetThemeValue.Bubble,
-            "Clouds" => PresetThemeValue.Clouds,
-            "Gemstone" => PresetThemeValue.Gemstone,
-            "Lines" => PresetThemeValue.Lines,
-            "Facet" => PresetThemeValue.Facet,
-            "Prominence" => PresetThemeValue.Prominence,
-            "Smoke" => PresetThemeValue.Smoke,
-            "Radiance" => PresetThemeValue.Radiance,
-            "Shade" => PresetThemeValue.Shade,
-            "Pencil" => PresetThemeValue.Pencil,
-            "Pen" => PresetThemeValue.Pen,
-            "Marker" => PresetThemeValue.Marker,
-            "WhiteBoard" => PresetThemeValue.WhiteBoard,
-            _ => PresetThemeValue.NoTheme
-        };
+            conn.Open();
+            using (SqlDataReader reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    int pageId = reader.GetInt32(0);
+                    int themeValue = reader.GetInt32(1);
+                    map[pageId] = themeValue;
+                }
+            }
+        }
+
+        return map;
     }
 }

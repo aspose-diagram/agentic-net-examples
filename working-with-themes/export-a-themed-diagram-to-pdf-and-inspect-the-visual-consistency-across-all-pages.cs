@@ -1,7 +1,21 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+
+class PdfPageCallback : IPageSavingCallback
+{
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+    }
+
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1}.");
+        // Example: stop after first page (not required, just demonstration)
+        // args.HasMorePages = false;
+    }
+}
 
 class Program
 {
@@ -10,40 +24,48 @@ class Program
         try
         {
 
-            // Path to the source Visio diagram (VDX, VSDX, etc.)
-            string sourceDiagramPath = "input.vsdx";
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output PDF file path
+            string outputPath = "output.pdf";
 
-            // Path where the resulting PDF will be saved
-            string outputPdfPath = "output.pdf";
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram from the file system
-            Diagram diagram = new Diagram(sourceDiagramPath);
-
-            // Create PDF save options to control the export
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                // Export all pages (default is MaxValue, set explicitly for clarity)
-                PageCount = int.MaxValue,
-                // Ensure that both foreground and background pages are included
-                SaveForegroundPagesOnly = false,
-                // Keep the original page size
-                PageSize = null
-            };
-
-            // Export the diagram to PDF using the save options
-            diagram.Save(outputPdfPath, pdfOptions);
-
-            // Simple inspection: list all page names to verify that every page was processed
-            Console.WriteLine("Exported pages:");
+            // Apply a preset theme to each page
             foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine($"- Page {page.ID}: {page.Name}");
+                // Apply the Bubble theme to the page
+                page.PresetTheme = PresetThemeValue.Bubble;
+                // Optionally set a variant
+                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
             }
 
-            // Clean up resources
-            diagram.Dispose();
+            // Verify visual consistency: check that all pages have the same dimensions
+            double firstWidth = diagram.Pages[0].PageSheet.PageProps.PageWidth.Value;
+            double firstHeight = diagram.Pages[0].PageSheet.PageProps.PageHeight.Value;
 
-            Console.WriteLine($"Diagram successfully exported to PDF at '{outputPdfPath}'.");
+            for (int i = 1; i < diagram.Pages.Count; i++)
+            {
+                Page p = diagram.Pages[i];
+                double w = p.PageSheet.PageProps.PageWidth.Value;
+                double h = p.PageSheet.PageProps.PageHeight.Value;
+
+                if (Math.Abs(w - firstWidth) > 0.001 || Math.Abs(h - firstHeight) > 0.001)
+                {
+                    throw new Exception($"Page {p.Name} dimensions ({w}x{h}) differ from first page ({firstWidth}x{firstHeight}).");
+                }
+            }
+
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            pdfOptions.ExportHiddenPage = false;
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            pdfOptions.PageSavingCallback = new PdfPageCallback();
+
+            // Save the diagram as PDF
+            diagram.Save(outputPath, pdfOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

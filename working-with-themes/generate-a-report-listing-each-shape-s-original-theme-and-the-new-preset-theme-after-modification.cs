@@ -1,44 +1,49 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Paths to the source and destination Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Original theme cannot be read (write‑only), so we record it as unknown
-                        string originalTheme = "Unknown";
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Apply a new preset theme to the shape
-                        shape.PresetTheme = PresetThemeValue.Bubble;
-                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                    // Original theme cannot be read (write‑only), so we note it as unknown
+                    string originalTheme = "Unknown (write‑only property)";
 
-                        // Log the change
-                        Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}, Original Theme: {originalTheme}, New Theme: Bubble Variant1");
-                    }
+                    // Apply a new preset theme to the shape
+                    shape.PresetTheme = PresetThemeValue.Bubble;
+                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+                    shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3;
+
+                    // Build a description of the new theme settings
+                    string newTheme = $"Bubble, Variant2, QuickStyle VariantStyle3";
+
+                    // Output the report line for this shape
+                    Console.WriteLine($"Shape ID {shape.ID}: Original Theme = {originalTheme}, New Theme = {newTheme}");
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

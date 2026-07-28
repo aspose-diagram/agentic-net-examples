@@ -1,69 +1,55 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram (replace with actual file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page and the first shape on that page
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes.GetShape(1); // assumes shape with ID 1 exists
+
+            // Capture theme‑related visual properties before applying a quickstyle
+            string originalFillColor = shape.Fill.FillForegnd.Value;
+            string originalLineColor = shape.Line.LineColor.Value;
+
+            // Apply a preset theme, variant, and quickstyle to the shape
+            shape.PresetTheme = PresetThemeValue.Bubble;
+            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+
+            // Capture the same properties after the quickstyle is applied
+            string newFillColor = shape.Fill.FillForegnd.Value;
+            string newLineColor = shape.Line.LineColor.Value;
+
+            // Verify that the visual properties have changed
+            if (originalFillColor == newFillColor && originalLineColor == newLineColor)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page and the first shape on that page
-                Page page = diagram.Pages[0];
-                Shape shape = page.Shapes[0];
-
-                // Capture theme‑related inherited formatting before applying a quickstyle
-                string beforeFillColor = shape.InheritFill.FillForegnd.Value;
-                string beforeLineColor = shape.InheritLine.LineColor.Value;
-
-                Console.WriteLine("Before applying quickstyle:");
-                Console.WriteLine($"  Inherited Fill Foreground Color: {beforeFillColor}");
-                Console.WriteLine($"  Inherited Line Color: {beforeLineColor}");
-
-                // Apply a preset theme, variant, and quickstyle to the shape
-                shape.PresetTheme = PresetThemeValue.Bubble;
-                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
-
-                // Capture the inherited formatting after the quickstyle is applied
-                string afterFillColor = shape.InheritFill.FillForegnd.Value;
-                string afterLineColor = shape.InheritLine.LineColor.Value;
-
-                Console.WriteLine("\nAfter applying quickstyle:");
-                Console.WriteLine($"  Inherited Fill Foreground Color: {afterFillColor}");
-                Console.WriteLine($"  Inherited Line Color: {afterLineColor}");
-
-                // Verify that the theme changes have affected the shape's appearance
-                bool fillChanged = !string.Equals(beforeFillColor, afterFillColor, StringComparison.OrdinalIgnoreCase);
-                bool lineChanged = !string.Equals(beforeLineColor, afterLineColor, StringComparison.OrdinalIgnoreCase);
-
-                if (fillChanged || lineChanged)
-                {
-                    Console.WriteLine("\nTheme quickstyle applied successfully. Changes detected:");
-                    if (fillChanged)
-                        Console.WriteLine($"  Fill color changed from {beforeFillColor} to {afterFillColor}");
-                    if (lineChanged)
-                        Console.WriteLine($"  Line color changed from {beforeLineColor} to {afterLineColor}");
-                }
-                else
-                {
-                    throw new Exception("Theme quickstyle did not produce any visible changes on the shape.");
-                }
-
-                // Optionally save the modified diagram to verify the result visually
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"\nModified diagram saved to: {outputPath}");
-
+                throw new Exception("Quickstyle did not modify the shape's theme‑related properties.");
             }
-            catch (System.IO.FileNotFoundException ex)
+            else
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("Quickstyle applied successfully.");
+                Console.WriteLine($"Fill color changed from {originalFillColor} to {newFillColor}");
+                Console.WriteLine($"Line color changed from {originalLineColor} to {newLineColor}");
             }
+
+            // Save the modified diagram to verify persistence (optional)
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

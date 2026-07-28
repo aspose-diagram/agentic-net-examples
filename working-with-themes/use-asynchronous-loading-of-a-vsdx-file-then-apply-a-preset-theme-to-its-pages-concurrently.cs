@@ -4,47 +4,63 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Threading;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    // Asynchronously loads a Visio diagram from a file path.
+    private static async Task<Diagram> LoadDiagramAsync(string filePath)
     {
-        static async Task Main(string[] args)
+        // Read the file into a memory stream to avoid keeping the FileStream open.
+        var memoryStream = new MemoryStream();
+        using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
         {
-            try
+            await fileStream.CopyToAsync(memoryStream);
+        }
+
+        memoryStream.Position = 0; // Reset stream position for reading.
+        // Create the Diagram from the in‑memory stream.
+        return new Diagram(memoryStream);
+    }
+
+    static async Task Main(string[] args)
+    {
+        try
+        {
+
+            // Input and output file paths.
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram asynchronously.
+            using (Diagram diagram = await LoadDiagramAsync(inputPath))
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Asynchronously read the Visio file into a byte array
-                byte[] fileBytes = await File.ReadAllBytesAsync(inputPath);
-
-                // Load the diagram from a memory stream
-                using var stream = new MemoryStream(fileBytes);
-                using var diagram = new Diagram(stream);
-
-                // Collect pages into a list for Parallel.ForEach (required by API)
+                // Collect pages into a list for Parallel.ForEach (type inference does not work directly on the collection).
                 List<Page> pages = new List<Page>();
-                foreach (Page pg in diagram.Pages)
+                foreach (Page p in diagram.Pages)
                 {
-                    pages.Add(pg);
+                    pages.Add(p);
                 }
 
-                // Apply a preset theme to each page concurrently
+                // Apply a preset theme to each page concurrently.
                 Parallel.ForEach(pages, page =>
                 {
-                    // Example theme: Bubble with Variant1
+                    // Example theme: Bubble. Adjust as needed.
                     page.PresetTheme = PresetThemeValue.Bubble;
+                    // Optionally set a variant.
                     page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                 });
 
-                // Save the modified diagram back to VSDX format
+                // Save the modified diagram.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine("Diagram processing completed.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

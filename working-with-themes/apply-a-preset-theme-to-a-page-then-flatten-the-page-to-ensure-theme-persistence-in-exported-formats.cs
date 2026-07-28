@@ -10,23 +10,30 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
 
-            // Apply a preset theme to the first page
-            Page page = diagram.Pages[0];
-            page.PresetTheme = PresetThemeValue.Bubble;
-            page.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+            // Load the diagram inside a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Access the first page (index 0)
+                Page page = diagram.Pages[0];
 
-            // Save the diagram; the theme is persisted in the saved file
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Apply a preset theme and a variant to the page
+                page.PresetTheme = PresetThemeValue.Bubble;
+                page.PresetThemeVariant = PresetThemeVariantValue.Variant2;
 
-            // Clean up resources
-            diagram.Dispose();
+                // Prepare save options; using DiagramSaveOptions ensures the theme is baked into the file
+                DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
+                // Optional: adjust page size to fit content after theme changes
+                saveOptions.AutoFitPageToDrawingContent = true;
 
-            Console.WriteLine("Theme applied and diagram saved to " + outputPath);
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, saveOptions);
+            }
+
+            Console.WriteLine("Preset theme applied and diagram saved successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -4,7 +4,7 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
@@ -14,38 +14,41 @@ class Program
                 string outputPath = "output.vsdx";
 
                 // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the preset theme to apply
-                PresetThemeValue presetTheme = PresetThemeValue.Bubble;
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Apply the preset theme to the page
-                    page.PresetTheme = presetTheme;
+                    // Define the preset theme and variant to apply
+                    PresetThemeValue presetTheme = PresetThemeValue.Bubble;
+                    PresetThemeVariantValue presetVariant = PresetThemeVariantValue.Variant1;
+                    PresetQuickStyleValue quickStyle = PresetQuickStyleValue.VariantStyle1;
 
-                    // Log the page theme application
-                    Console.WriteLine($"Applied theme '{presetTheme}' to page '{page.Name}'.");
-
-                    // Iterate through each shape on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through each page in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Apply the same preset theme to the shape
-                        shape.PresetTheme = presetTheme;
+                        // Apply the preset theme to the page
+                        page.PresetTheme = presetTheme;
+                        page.PresetThemeVariant = presetVariant;
 
-                        // Log the shape theme application
-                        Console.WriteLine($"Applied theme '{presetTheme}' to shape ID {shape.ID} on page '{page.Name}'.");
+                        // Log the page theme application
+                        Console.WriteLine($"Page '{page.Name}' (ID: {page.ID}) - Applied PresetTheme: {presetTheme}, Variant: {presetVariant}");
+
+                        // Iterate through each shape on the current page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Apply the preset theme to the shape
+                            shape.PresetTheme = presetTheme;
+                            shape.PresetThemeVariant = presetVariant;
+                            shape.PresetThemeQuickStyle = quickStyle;
+
+                            // Log the shape theme application
+                            long shapeId = shape.ID;
+                            Console.WriteLine($"    Shape ID {shapeId} on page '{page.Name}' - Applied PresetTheme: {presetTheme}, Variant: {presetVariant}, QuickStyle: {quickStyle}");
+                        }
                     }
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Clean up resources
-                diagram.Dispose();
-
-                Console.WriteLine("Theme application completed and diagram saved.");
 
             }
             catch (System.IO.FileNotFoundException ex)

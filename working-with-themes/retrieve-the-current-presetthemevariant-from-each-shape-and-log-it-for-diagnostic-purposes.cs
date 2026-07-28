@@ -8,25 +8,18 @@ class Program
             try
             {
 
-                // Path to the Visio file
+                // Load the Visio diagram (replace with your actual file path)
                 string diagramPath = "input.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Shape ID and Name for identification
-                        long shapeId = shape.ID;
-                        string shapeName = shape.NameU;
-
                         // PresetThemeVariant is write‑only; it cannot be read back.
-                        // Log that the value is not retrievable.
-                        Console.WriteLine($"Shape ID: {shapeId}, Name: {shapeName} - PresetThemeVariant: <unavailable (write‑only)>");
+                        // Log the shape ID and indicate that the variant cannot be retrieved.
+                        Console.WriteLine($"Shape ID: {shape.ID} - PresetThemeVariant is write‑only and cannot be read.");
                     }
                 }
 

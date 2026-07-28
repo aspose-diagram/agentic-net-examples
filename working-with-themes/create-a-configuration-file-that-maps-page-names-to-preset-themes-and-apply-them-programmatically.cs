@@ -1,66 +1,48 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Aspose.Diagram;
 using System.Text.Json;
+using Aspose.Diagram;
 
-// Define a class that represents the mapping from a page name to its theme settings.
-public class PageThemeMapping
+class Program
 {
-    public string PageName { get; set; }
-    public PresetThemeValue Theme { get; set; }
-    public PresetThemeVariantValue? Variant { get; set; }
-    public PresetQuickStyleValue? QuickStyle { get; set; }
-}
+    // Path to the diagram file to be processed
+    private const string InputDiagramPath = "input.vsdx";
+    // Path where the modified diagram will be saved
+    private const string OutputDiagramPath = "output.vsdx";
+    // Path to the configuration file that maps page names to preset themes
+    private const string ConfigPath = "pageThemeConfig.json";
 
-public class ThemeApplier
-{
-    // Path to the configuration file (JSON format).
-    private const string ConfigFilePath = "PageThemeConfig.json";
-
-    // Path to the source Visio diagram.
-    private const string InputDiagramPath = "InputDiagram.vsdx";
-
-    // Path where the modified diagram will be saved.
-    private const string OutputDiagramPath = "OutputDiagram.vsdx";
-
-    public static void Main()
+    static void Main()
     {
         try
         {
 
-            // Load the configuration that maps page names to theme values.
-            List<PageThemeMapping> mappings = LoadConfiguration(ConfigFilePath);
-
-            // Load the Visio diagram using Aspose.Diagram (lifecycle rule: load).
+            // Load the diagram (uses the provided load rule)
             Diagram diagram = new Diagram(InputDiagramPath);
 
-            // Apply the preset themes to the corresponding pages.
+            // Load the configuration mapping page names to theme names
+            Dictionary<string, string> pageThemeMap = LoadConfiguration(ConfigPath);
+
+            // Apply the preset theme to each page according to the configuration
             foreach (Page page in diagram.Pages)
             {
-                // Find a mapping entry that matches the current page name.
-                PageThemeMapping mapping = mappings.Find(m => string.Equals(m.PageName, page.Name, StringComparison.OrdinalIgnoreCase));
-
-                if (mapping != null)
+                if (pageThemeMap.TryGetValue(page.Name, out string themeName))
                 {
-                    // Apply the main preset theme.
-                    page.PresetTheme = mapping.Theme;
-
-                    // Optionally apply a variant if it is specified.
-                    if (mapping.Variant.HasValue)
+                    // Convert the theme name string to the corresponding enum value
+                    if (Enum.TryParse<PresetThemeValue>(themeName, ignoreCase: true, out var themeValue))
                     {
-                        page.PresetThemeVariant = mapping.Variant.Value;
+                        // Apply the preset theme to the page (uses the provided property)
+                        page.PresetTheme = themeValue;
                     }
-
-                    // Optionally apply a quick style if it is specified.
-                    if (mapping.QuickStyle.HasValue)
+                    else
                     {
-                        page.PresetThemeQuickStyle = mapping.QuickStyle.Value;
+                        Console.WriteLine($"Warning: Theme '{themeName}' is not a valid PresetThemeValue.");
                     }
                 }
             }
 
-            // Save the modified diagram (lifecycle rule: save).
+            // Save the modified diagram (uses the provided save rule)
             diagram.Save(OutputDiagramPath, SaveFileFormat.Vsdx);
 
         }
@@ -70,8 +52,8 @@ public class ThemeApplier
         }
     }
 
-    // Helper method to read the JSON configuration file and deserialize it into a list of mappings.
-    private static List<PageThemeMapping> LoadConfiguration(string path)
+    // Helper method to read the JSON configuration file
+    private static Dictionary<string, string> LoadConfiguration(string path)
     {
         if (!File.Exists(path))
         {
@@ -79,11 +61,7 @@ public class ThemeApplier
         }
 
         string json = File.ReadAllText(path);
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
-        };
-        return JsonSerializer.Deserialize<List<PageThemeMapping>>(json, options);
+        // Expected JSON format: { "PageName1": "Office", "PageName2": "Linear", ... }
+        return JsonSerializer.Deserialize<Dictionary<string, string>>(json);
     }
 }

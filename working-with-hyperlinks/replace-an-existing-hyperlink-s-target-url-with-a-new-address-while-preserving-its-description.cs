@@ -1,49 +1,35 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
+using System;
 
-class ReplaceHyperlinkAddress
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Define the new URL you want to set
-            string newUrl = "https://www.newaddress.com";
+            // New hyperlink target URL
+            string newUrl = "https://www.example.com";
 
-            // Optional: define a description to match a specific hyperlink
-            // If you want to replace all hyperlinks, remove the condition check
-            string targetDescription = "Original hyperlink description";
-
-            // Iterate through all pages, shapes, and their hyperlinks
+            // Traverse all pages and shapes to locate hyperlinks
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Hyperlinks collection may be null; check before iterating
-                    if (shape.Hyperlinks != null)
+                    // Each shape may contain one or more hyperlinks
+                    foreach (Hyperlink hyperlink in shape.Hyperlinks)
                     {
-                        foreach (Hyperlink link in shape.Hyperlinks)
-                        {
-                            // Preserve the description; only replace the address if it matches the target description
-                            if (link.Description != null && link.Description.Value == targetDescription)
-                            {
-                                // Set the new address (URL) while keeping the description unchanged
-                                if (link.Address != null)
-                                {
-                                    link.Address.Value = newUrl;
-                                }
-                            }
-                        }
+                        // Update the address while preserving the description
+                        hyperlink.Address.Value = newUrl;
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Save the updated diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

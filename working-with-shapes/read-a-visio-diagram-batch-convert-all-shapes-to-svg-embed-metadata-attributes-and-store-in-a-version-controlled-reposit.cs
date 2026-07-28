@@ -3,58 +3,87 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VisioToSvgBatch
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
+            // Input folder containing Visio files
+            string inputFolder = args.Length > 0 ? args[0] : @"C:\Visio\Input";
+            // Output folder that acts as a simple version‑controlled repository
+            string outputFolder = args.Length > 1 ? args[1] : @"C:\Visio\Repo";
 
-            // Path to the source Visio file
-            string inputFile = @"C:\Visio\source.vsdx";
+            if (!Directory.Exists(inputFolder))
+            {
+                Console.WriteLine($"Input folder does not exist: {inputFolder}");
+                return;
+            }
 
-            // Folder where individual SVG files will be stored
-            string outputFolder = @"C:\Visio\SvgExport";
-
-            // Load the Visio diagram using the Diagram(string) constructor (load rule)
-            Diagram diagram = new Diagram(inputFile);
-
-            // Ensure the output directory exists
             Directory.CreateDirectory(outputFolder);
 
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Process each Visio file in the input folder
+            foreach (string visioPath in Directory.GetFiles(inputFolder, "*.vsdx"))
             {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                try
                 {
-                    // ---- Embed metadata into the shape ----
-                    // Example: prepend a custom tag to the shape's NameU property
-                    // (In a real scenario you might add a Prop row to the ShapeSheet)
-                    shape.NameU = $"[Converted]{shape.NameU}";
+                    Console.WriteLine($"Processing file: {Path.GetFileName(visioPath)}");
 
-                    // ---- Export the shape to an SVG file ----
-                    // Build a unique file name for the shape SVG
-                    string svgFileName = Path.Combine(
-                        outputFolder,
-                        $"Page{page.ID}_Shape{shape.ID}.svg");
+                    // Load the diagram
+                    Diagram diagram = new Diagram(visioPath);
 
-                    // Create ImageSaveOptions specifying SVG format
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Svg);
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Iterate through all shapes on the page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Skip deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                    // Use Shape.ToImage (image conversion rule) to save the shape as SVG
-                    shape.ToImage(svgFileName, saveOptions);
+                            // Embed a custom property with export timestamp
+                            const string metaPropName = "ExportedOn";
+                            bool propExists = false;
+                            foreach (Prop existingProp in shape.Props)
+                            {
+                                if (existingProp.Name == metaPropName)
+                                {
+                                    propExists = true;
+                                    break;
+                                }
+                            }
+
+                            if (!propExists)
+                            {
+                                Prop exportProp = new Prop();
+                                exportProp.Name = metaPropName;
+                                exportProp.Value.Val = DateTime.UtcNow.ToString("o");
+                                // Set the property type to string
+                                exportProp.Type.Value = TypePropValue.String;
+                                shape.Props.Add(exportProp);
+                            }
+
+                            // Build a unique SVG file name: Diagram_Page_ShapeId.svg
+                            string diagramName = Path.GetFileNameWithoutExtension(visioPath);
+                            string pageName = string.IsNullOrEmpty(page.Name) ? $"Page{page.ID}" : page.Name;
+                            string svgFileName = $"{diagramName}_{pageName}_Shape{shape.ID}.svg";
+                            string svgPath = Path.Combine(outputFolder, svgFileName);
+
+                            // Export the shape to SVG
+                            SVGSaveOptions svgOptions = new SVGSaveOptions();
+                            shape.ToSvg(svgPath, svgOptions);
+                        }
+                    }
+
+                    // Save the modified diagram (with embedded metadata) back to the repository
+                    string savedDiagramPath = Path.Combine(outputFolder, Path.GetFileName(visioPath));
+                    diagram.Save(savedDiagramPath, SaveFileFormat.Vsdx);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{visioPath}': {ex.Message}");
                 }
             }
 
-            // Optionally, save the modified diagram (metadata embedded) back to disk
-            string modifiedDiagramPath = Path.Combine(outputFolder, "source_modified.vsdx");
-            diagram.Save(modifiedDiagramPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine("Batch SVG export completed.");
         }
     }
-}

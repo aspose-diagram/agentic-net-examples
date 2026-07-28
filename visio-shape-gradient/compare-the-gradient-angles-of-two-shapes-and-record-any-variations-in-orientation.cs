@@ -9,64 +9,42 @@ class Program
         try
         {
 
-            // Path to the Visio file (replace with actual path)
-            string diagramPath = "input.vsdx";
+            // Load the Visio diagram (lifecycle rule: load)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // IDs of the two shapes to compare (replace with actual IDs)
+            // IDs of the two shapes whose gradient angles will be compared
             long shapeId1 = 1;
             long shapeId2 = 2;
 
-            CompareGradientAngles(diagramPath, shapeId1, shapeId2);
+            // Retrieve the shapes from the first page
+            Shape shape1 = diagram.Pages[0].Shapes.GetShape(shapeId1);
+            Shape shape2 = diagram.Pages[0].Shapes.GetShape(shapeId2);
+
+            // Extract gradient angles; use NaN if the shape has no gradient fill defined
+            double angle1 = shape1.Fill?.GradientFill?.GradientAngle?.Value ?? double.NaN;
+            double angle2 = shape2.Fill?.GradientFill?.GradientAngle?.Value ?? double.NaN;
+
+            // Compare the angles and record any variation
+            if (double.IsNaN(angle1) || double.IsNaN(angle2))
+            {
+                Console.WriteLine("One or both shapes do not have a gradient angle defined.");
+            }
+            else if (Math.Abs(angle1 - angle2) > 0.0001) // tolerance for floating‑point comparison
+            {
+                Console.WriteLine($"Gradient angles differ: Shape {shapeId1} = {angle1}°, Shape {shapeId2} = {angle2}°");
+            }
+            else
+            {
+                Console.WriteLine($"Gradient angles are identical: {angle1}°");
+            }
+
+            // Save the diagram (lifecycle rule: save)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-    }
-
-    static void CompareGradientAngles(string filePath, long shapeId1, long shapeId2)
-    {
-        // Load the diagram
-        using (Diagram diagram = new Diagram(filePath))
-        {
-            // Assume both shapes are on the first page
-            Page page = diagram.Pages[0];
-
-            Shape shape1 = page.Shapes.GetShape(shapeId1);
-            Shape shape2 = page.Shapes.GetShape(shapeId2);
-
-            if (shape1 == null || shape2 == null)
-            {
-                Console.WriteLine("One or both shapes were not found.");
-                return;
-            }
-
-            double angle1 = GetGradientAngle(shape1);
-            double angle2 = GetGradientAngle(shape2);
-
-            Console.WriteLine($"Shape {shapeId1} gradient angle: {angle1}");
-            Console.WriteLine($"Shape {shapeId2} gradient angle: {angle2}");
-
-            // Record any variation in orientation
-            if (Math.Abs(angle1 - angle2) > 0.0001)
-            {
-                Console.WriteLine("Gradient angles differ between the two shapes.");
-            }
-            else
-            {
-                Console.WriteLine("Gradient angles are identical.");
-            }
-        }
-    }
-
-    static double GetGradientAngle(Shape shape)
-    {
-        // Return the gradient angle if a gradient fill is defined; otherwise, default to 0
-        if (shape.Fill != null && shape.Fill.GradientFill != null && shape.Fill.GradientFill.GradientAngle != null)
-        {
-            return shape.Fill.GradientFill.GradientAngle.Value;
-        }
-        return 0.0;
     }
 }

@@ -1,59 +1,66 @@
 using System;
-using Aspose.Diagram;
-using System.Xml;
 using System.IO;
-
-public class DiagramCleaner
-{
-    // Removes XML comments from all SolutionXML entries in the diagram.
-    public static void RemoveSolutionXmlComments(Diagram diagram)
-    {
-        // Iterate through each SolutionXML in the diagram.
-        foreach (SolutionXML solXml in diagram.SolutionXMLs)
-        {
-            if (string.IsNullOrEmpty(solXml.XmlValue))
-                continue;
-
-            // Load the XML content into an XmlDocument.
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.PreserveWhitespace = true; // Preserve original formatting.
-            xmlDoc.LoadXml(solXml.XmlValue);
-
-            // Select all comment nodes in the document.
-            XmlNodeList commentNodes = xmlDoc.SelectNodes("//comment()");
-
-            // Remove each comment node from its parent.
-            foreach (XmlNode comment in commentNodes)
-            {
-                if (comment.ParentNode != null)
-                {
-                    comment.ParentNode.RemoveChild(comment);
-                }
-            }
-
-            // Save the cleaned XML back to a string.
-            using (StringWriter writer = new StringWriter())
-            {
-                xmlDoc.Save(writer);
-                solXml.XmlValue = writer.ToString();
-            }
-        }
-    }
-}
+using System.Linq;
+using System.Xml.Linq;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
+        // Paths for input and output diagrams
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        string outputPath = "output.vsdx";
+
+        // Load the diagram from file with error handling
+        Diagram diagram;
         try
         {
-
-            DiagramCleaner.RemoveSolutionXmlComments(null);
-
+            diagram = new Diagram(inputPath);
         }
-        catch (System.NullReferenceException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Iterate through each SolutionXML element and clean its XML content
+        foreach (SolutionXML solXml in diagram.SolutionXMLs)
+        {
+            if (!string.IsNullOrEmpty(solXml.XmlValue))
+            {
+                try
+                {
+                    // Parse the XML string
+                    XDocument xdoc = XDocument.Parse(solXml.XmlValue);
+
+                    // Remove all comment nodes from the XML
+                    foreach (var comment in xdoc.Descendants().OfType<XComment>().ToList())
+                    {
+                        comment.Remove();
+                    }
+
+                    // Store the cleaned XML back into the SolutionXML element
+                    solXml.XmlValue = xdoc.ToString(System.Xml.Linq.SaveOptions.DisableFormatting);
+                }
+                catch
+                {
+                    // If parsing fails, skip this element
+                }
+            }
+        }
+
+        // Save the modified diagram to the output file with error handling
+        try
+        {
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
         }
     }
 }

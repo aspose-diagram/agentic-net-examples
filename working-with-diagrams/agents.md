@@ -4,10 +4,10 @@ display_name: Working With Diagrams
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.5.0
+version: 26.7.0
 examples: 40
 pass_rate: 100.0
-generated: 2026-06-23
+generated: 2026-07-28
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 40 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.5.0 |
+| Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-28 |
 
 ## Persona
 
@@ -63,16 +63,15 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 40 | Core diagram API |
 | `System` | 40 | Console, Math, DateTime, Exception |
-| `System.IO` | 32 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 28 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 5 | List, Dictionary, HashSet |
-| `System.Threading` | 2 | Supporting utilities |
-| `System.Linq` | 2 | LINQ queries on collections |
-| `System.Diagnostics` | 2 | Supporting utilities |
+| `Aspose.Diagram.Saving` | 30 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.IO` | 30 | File, Stream, Path, Directory operations |
+| `System.Linq` | 3 | LINQ queries on collections |
+| `System.Collections.Generic` | 3 | List, Dictionary, HashSet |
+| `System.Threading.Tasks` | 2 | Supporting utilities |
+| `Aspose.Drawing.Text` | 2 | Font enumeration via InstalledFontCollection |
 | `Aspose.Diagram.AutoLayout` | 1 | Supporting utilities |
-| `Aspose.Drawing.Text` | 1 | Font enumeration via InstalledFontCollection |
 | `System.Text.Json` | 1 | JSON serialization |
-| `System.Threading.Tasks` | 1 | Supporting utilities |
+| `System.Diagnostics` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -106,7 +105,7 @@ class Program
 | [add-a-digital-watermark-to-each-pdf-page-after-conversion-using-a-pdf-library.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/add-a-digital-watermark-to-each-pdf-page-after-conversion-using-a-pdf-library.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Add a digital watermark to each pdf page after conversion using a pdf library |
 | [after-merging-diagrams-generate-a-thumbnail-image-of-the-first-page-and-save-as-png.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/after-merging-diagrams-generate-a-thumbnail-image-of-the-first-page-and-save-as-png.cs) | `Diagram`, `ImageSaveOptions` | After merging diagrams generate a thumbnail image of the first page and save as png |
 | [after-removing-hidden-data-compare-file-size-before-and-after-to-confirm-reduction.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/after-removing-hidden-data-compare-file-size-before-and-after-to-confirm-reduction.cs) | `Diagram`, `Save`, `diagram` | After removing hidden data compare file size before and after to confirm reduction |
-| [apply-a-custom-page-background-color-before-exporting-the-diagram-to-pdf-for-branding.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/apply-a-custom-page-background-color-before-exporting-the-diagram-to-pdf-for-branding.cs) | `Diagram`, `Page`, `Pages` | Apply a custom page background color before exporting the diagram to pdf for branding |
+| [apply-a-custom-page-background-color-before-exporting-the-diagram-to-pdf-for-branding.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/apply-a-custom-page-background-color-before-exporting-the-diagram-to-pdf-for-branding.cs) | `AddShape`, `Diagram`, `Page` | Apply a custom page background color before exporting the diagram to pdf for branding |
 | [apply-a-global-line-color-change-to-all-connectors-to-match-corporate-palette-before-pdf-export.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/apply-a-global-line-color-change-to-all-connectors-to-match-corporate-palette-before-pdf-export.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Apply a global line color change to all connectors to match corporate palette before pdf export |
 | [apply-a-uniform-line-thickness-to-all-connectors-before-exporting-the-diagram-to-pdf.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/apply-a-uniform-line-thickness-to-all-connectors-before-exporting-the-diagram-to-pdf.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Apply a uniform line thickness to all connectors before exporting the diagram to pdf |
 | [apply-auto-fit-layout-to-all-shapes-in-the-diagram-before-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/apply-auto-fit-layout-to-all-shapes-in-the-diagram-before-saving.cs) | `Diagram`, `Layout`, `LayoutOptions` | Apply auto fit layout to all shapes in the diagram before saving |
@@ -116,33 +115,33 @@ class Program
 | [configure-pdf-conversion-to-use-custom-page-margins-matching-corporate-standards.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/configure-pdf-conversion-to-use-custom-page-margins-matching-corporate-standards.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Configure pdf conversion to use custom page margins matching corporate standards |
 | [convert-the-diagram-to-html-and-embed-all-shape-images-as-base64-data-uris.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/convert-the-diagram-to-html-and-embed-all-shape-images-as-base64-data-uris.cs) | `Diagram`, `HTMLSaveOptions`, `Save` | Convert the diagram to html and embed all shape images as base64 data uris |
 | [convert-the-diagram-to-pdf-format-while-preserving-original-page-orientation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/convert-the-diagram-to-pdf-format-while-preserving-original-page-orientation.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Convert the diagram to pdf format while preserving original page orientation |
-| [convert-the-diagram-to-pdf-with-grayscale-color-mode-to-reduce-archival-file-size.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/convert-the-diagram-to-pdf-with-grayscale-color-mode-to-reduce-archival-file-size.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Convert the diagram to pdf with grayscale color mode to reduce archival file size |
-| [create-a-pipeline-that-loads-a-diagram-merges-it-with-a-template-and-outputs-html-with-embedded-css.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/create-a-pipeline-that-loads-a-diagram-merges-it-with-a-template-and-outputs-html-with-embedded-css.cs) | `Diagram`, `HTMLSaveOptions` | Create a pipeline that loads a diagram merges it with a template and outputs html with embedded css |
+| [convert-the-diagram-to-pdf-with-grayscale-color-mode-to-reduce-archival-file-size.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/convert-the-diagram-to-pdf-with-grayscale-color-mode-to-reduce-archival-file-size.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Convert the diagram to pdf with grayscale color mode to reduce archival file size |
+| [create-a-pipeline-that-loads-a-diagram-merges-it-with-a-template-and-outputs-html-with-embedded-css.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/create-a-pipeline-that-loads-a-diagram-merges-it-with-a-template-and-outputs-html-with-embedded-css.cs) | `Diagram`, `HTMLSaveOptions`, `Save` | Create a pipeline that loads a diagram merges it with a template and outputs html with embedded css |
 | [create-a-utility-that-removes-hidden-information-from-diagrams-and-logs-amount-of-data-removed.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/create-a-utility-that-removes-hidden-information-from-diagrams-and-logs-amount-of-data-removed.cs) | `Diagram`, `Save`, `diagram` | Create a utility that removes hidden information from diagrams and logs amount of data removed |
 | [embed-fonts-during-pdf-conversion-and-verify-that-all-fonts-are-embedded-in-the-output.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/embed-fonts-during-pdf-conversion-and-verify-that-all-fonts-are-embedded-in-the-output.cs) | `Diagram`, `Fonts`, `PdfSaveOptions` | Embed fonts during pdf conversion and verify that all fonts are embedded in the output |
 | [embed-pdf-metadata-such-as-author-and-creation-date-using-diagram-properties-after-conversion.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/embed-pdf-metadata-such-as-author-and-creation-date-using-diagram-properties-after-conversion.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Embed pdf metadata such as author and creation date using diagram properties after conversion |
-| [export-connector-routing-information-and-generate-a-visual-diagram-of-connections-using-a-third-party-graph-library.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/export-connector-routing-information-and-generate-a-visual-diagram-of-connections-using-a-third-party-graph-library.cs) | `Diagram`, `Pages`, `Shapes` | Export connector routing information and generate a visual diagram of connections using a third party graph library |
-| [export-connector-start-and-end-points-from-the-diagram-to-a-json-file-for-external-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/export-connector-start-and-end-points-from-the-diagram-to-a-json-file-for-external-analysis.cs) | `Diagram`, `Pages`, `diagram` | Export connector start and end points from the diagram to a json file for external analysis |
+| [export-connector-routing-information-and-generate-a-visual-diagram-of-connections-using-a-third-party-graph-library.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/export-connector-routing-information-and-generate-a-visual-diagram-of-connections-using-a-third-party-graph-library.cs) | `Diagram`, `ImageSaveOptions`, `Layout` | Export connector routing information and generate a visual diagram of connections using a third party graph library |
+| [export-connector-start-and-end-points-from-the-diagram-to-a-json-file-for-external-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/export-connector-start-and-end-points-from-the-diagram-to-a-json-file-for-external-analysis.cs) | `Diagram`, `Pages`, `Shapes` | Export connector start and end points from the diagram to a json file for external analysis |
 | [extract-font-names-used-in-a-vsd-diagram-and-compare-them-against-a-corporate-whitelist.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/extract-font-names-used-in-a-vsd-diagram-and-compare-them-against-a-corporate-whitelist.cs) | `Diagram`, `Fonts`, `diagram` | Extract font names used in a vsd diagram and compare them against a corporate whitelist |
-| [flatten-all-groups-into-individual-shapes-after-merging-to-simplify-further-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/flatten-all-groups-into-individual-shapes-after-merging-to-simplify-further-processing.cs) | `Diagram`, `Pages`, `Save` | Flatten all groups into individual shapes after merging to simplify further processing |
+| [flatten-all-groups-into-individual-shapes-after-merging-to-simplify-further-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/flatten-all-groups-into-individual-shapes-after-merging-to-simplify-further-processing.cs) | `Diagram`, `Shapes`, `page` | Flatten all groups into individual shapes after merging to simplify further processing |
 | [generate-a-summary-report-listing-page-counts-and-shape-totals-for-each-source-diagram-after-merging.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/generate-a-summary-report-listing-page-counts-and-shape-totals-for-each-source-diagram-after-merging.cs) | `Diagram`, `Pages`, `Shapes` | Generate a summary report listing page counts and shape totals for each source diagram after merging |
 | [implement-error-handling-that-catches-interruptmonitor-exceptions-and-logs-the-aborted-operation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/implement-error-handling-that-catches-interruptmonitor-exceptions-and-logs-the-aborted-operation.cs) | `Diagram`, `Save`, `diagram` | Implement error handling that catches interruptmonitor exceptions and logs the aborted operation |
 | [load-a-vsd-file-with-custom-loadoptions-enabling-interruptmonitor-for-cancellation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/load-a-vsd-file-with-custom-loadoptions-enabling-interruptmonitor-for-cancellation.cs) | `Diagram` | Load a vsd file with custom loadoptions enabling interruptmonitor for cancellation |
 | [load-a-vsdx-file-into-a-diagram-object-using-default-load-options.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/load-a-vsdx-file-into-a-diagram-object-using-default-load-options.cs) | `Diagram`, `Pages`, `diagram` | Load a vsdx file into a diagram object using default load options |
 | [load-multiple-diagrams-concurrently-using-asynchronous-tasks-then-combine-them-into-a-single-output-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/load-multiple-diagrams-concurrently-using-asynchronous-tasks-then-combine-them-into-a-single-output-file.cs) | `Diagram` | Load multiple diagrams concurrently using asynchronous tasks then combine them into a single output file |
-| [measure-conversion-time-for-pdf-output-with-and-without-interruptmonitor-to-assess-performance-impact.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/measure-conversion-time-for-pdf-output-with-and-without-interruptmonitor-to-assess-performance-impact.cs) | `Diagram`, `Save`, `diagram` | Measure conversion time for pdf output with and without interruptmonitor to assess performance impact |
+| [measure-conversion-time-for-pdf-output-with-and-without-interruptmonitor-to-assess-performance-impact.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/measure-conversion-time-for-pdf-output-with-and-without-interruptmonitor-to-assess-performance-impact.cs) | `Diagram` | Measure conversion time for pdf output with and without interruptmonitor to assess performance impact |
 | [merge-two-vsdx-diagrams-into-a-single-diagram-automatically-resolving-duplicate-shape-ids.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/merge-two-vsdx-diagrams-into-a-single-diagram-automatically-resolving-duplicate-shape-ids.cs) | `Diagram` | Merge two vsdx diagrams into a single diagram automatically resolving duplicate shape ids |
 | [protect-the-pdf-with-a-password-and-verify-that-opening-without-password-fails.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/protect-the-pdf-with-a-password-and-verify-that-opening-without-password-fails.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Protect the pdf with a password and verify that opening without password fails |
 | [remove-hidden-information-from-the-diagram-and-verify-that-hidden-layers-are-absent.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/remove-hidden-information-from-the-diagram-and-verify-that-hidden-layers-are-absent.cs) | `Diagram`, `Save`, `diagram` | Remove hidden information from the diagram and verify that hidden layers are absent |
-| [rename-all-pages-sequentially-after-merging-to-avoid-naming-conflicts.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/rename-all-pages-sequentially-after-merging-to-avoid-naming-conflicts.cs) | `Diagram` | Rename all pages sequentially after merging to avoid naming conflicts |
+| [rename-all-pages-sequentially-after-merging-to-avoid-naming-conflicts.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/rename-all-pages-sequentially-after-merging-to-avoid-naming-conflicts.cs) | `Diagram`, `page` | Rename all pages sequentially after merging to avoid naming conflicts |
 | [retrieve-and-log-the-font-size-of-each-text-shape-for-accessibility-auditing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/retrieve-and-log-the-font-size-of-each-text-shape-for-accessibility-auditing.cs) | `Diagram`, `Pages`, `Shapes` | Retrieve and log the font size of each text shape for accessibility auditing |
-| [retrieve-connector-information-from-the-loaded-diagram-and-export-it-to-a-csv-report.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/retrieve-connector-information-from-the-loaded-diagram-and-export-it-to-a-csv-report.cs) | `Diagram`, `Pages`, `Shapes` | Retrieve connector information from the loaded diagram and export it to a csv report |
-| [save-the-converted-pdf-to-a-memory-stream-for-immediate-network-transmission.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/save-the-converted-pdf-to-a-memory-stream-for-immediate-network-transmission.cs) | `Diagram`, `Save`, `diagram` | Save the converted pdf to a memory stream for immediate network transmission |
-| [set-loadoptions-interruptmonitor-to-abort-loading-after-ten-seconds-for-large-diagrams.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/set-loadoptions-interruptmonitor-to-abort-loading-after-ten-seconds-for-large-diagrams.cs) | `Diagram` | Set loadoptions interruptmonitor to abort loading after ten seconds for large diagrams |
+| [retrieve-connector-information-from-the-loaded-diagram-and-export-it-to-a-csv-report.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/retrieve-connector-information-from-the-loaded-diagram-and-export-it-to-a-csv-report.cs) | `Diagram`, `Pages`, `diagram` | Retrieve connector information from the loaded diagram and export it to a csv report |
+| [save-the-converted-pdf-to-a-memory-stream-for-immediate-network-transmission.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/save-the-converted-pdf-to-a-memory-stream-for-immediate-network-transmission.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Save the converted pdf to a memory stream for immediate network transmission |
+| [set-loadoptions-interruptmonitor-to-abort-loading-after-ten-seconds-for-large-diagrams.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/set-loadoptions-interruptmonitor-to-abort-loading-after-ten-seconds-for-large-diagrams.cs) | `Diagram`, `Save`, `diagram` | Set loadoptions interruptmonitor to abort loading after ten seconds for large diagrams |
 | [strip-hidden-metadata-from-a-vsdx-file-then-save-the-cleaned-diagram-back-to-vsdx.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/strip-hidden-metadata-from-a-vsdx-file-then-save-the-cleaned-diagram-back-to-vsdx.cs) | `Diagram`, `Save`, `diagram` | Strip hidden metadata from a vsdx file then save the cleaned diagram back to vsdx |
 | [update-shape-text-in-the-diagram-to-include-a-timestamp-before-pdf-conversion.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/update-shape-text-in-the-diagram-to-include-a-timestamp-before-pdf-conversion.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Update shape text in the diagram to include a timestamp before pdf conversion |
 | [validate-that-no-hidden-comments-remain-after-calling-removehiddeninfo-by-inspecting-diagram-metadata.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/validate-that-no-hidden-comments-remain-after-calling-removehiddeninfo-by-inspecting-diagram-metadata.cs) | `Diagram`, `Save`, `diagram` | Validate that no hidden comments remain after calling removehiddeninfo by inspecting diagram metadata |
-| [validate-that-the-pdf-conversion-respects-page-orientation-by-checking-width-to-height-ratios.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/validate-that-the-pdf-conversion-respects-page-orientation-by-checking-width-to-height-ratios.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Validate that the pdf conversion respects page orientation by checking width to height ratios |
+| [validate-that-the-pdf-conversion-respects-page-orientation-by-checking-width-to-height-ratios.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams/validate-that-the-pdf-conversion-respects-page-orientation-by-checking-width-to-height-ratios.cs) | `Diagram`, `Pages`, `Save` | Validate that the pdf conversion respects page orientation by checking width to height ratios |
 
 ## Command Reference
 
@@ -228,6 +227,7 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ## Key API Surface
 
+- `AddShape`
 - `Diagram`
 - `Fonts`
 - `HTMLSaveOptions`
@@ -240,8 +240,8 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - `Save`
 - `Shapes`
 - `diagram`
-- `master`
 - `page`
+- `shape`
 
 ## Real-World Use Cases
 
@@ -257,7 +257,7 @@ Frequently asked questions about **Working With Diagrams** in **Aspose.Diagram f
 
 **Q: How do I get started with Working With Diagrams in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.5.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -289,4 +289,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-06-23 | Examples: 40 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-07-28 | Examples: 40 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

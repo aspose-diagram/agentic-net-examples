@@ -5,76 +5,75 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output Visio file path
-        string outputPath = "output.vsdx";
-
-        try
-        {
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Collect shape IDs first to avoid modification during iteration
-                List<long> shapeIds = new List<long>();
-                foreach (Shape s in page.Shapes)
-                {
-                    shapeIds.Add(s.ID);
-                }
 
-                foreach (long shapeId in shapeIds)
-                {
-                    Shape shape = page.Shapes.GetShape(shapeId);
+                // Input Visio file (adjust the path as needed)
+                string inputPath = "input.vsdx";
 
-                    // Verify the shape is an OLE object
-                    if (shape.Type == TypeValue.Foreign &&
-                        shape.ForeignData != null &&
-                        shape.ForeignData.ForeignType == ForeignType.Object &&
-                        shape.ForeignData.ObjectData != null &&
-                        shape.ForeignData.ObjectData.Length > 0)
+                // Output Visio file with OLE thumbnails embedded
+                string outputPath = "output_with_thumbnails.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Collect OLE shapes first to avoid modifying the collection while iterating
+                    List<Shape> oleShapes = new List<Shape>();
+
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Generate a PNG thumbnail of the OLE shape into a memory stream
-                        using (MemoryStream thumbnailStream = new MemoryStream())
+                        // Verify the shape is an OLE object
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ObjectData != null &&
+                            shape.ForeignData.ForeignType == ForeignType.Object)
                         {
-                            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                            shape.ToImage(thumbnailStream, imgOptions);
-                            thumbnailStream.Position = 0; // Reset stream position for reading
-
-                            // Determine placement for the thumbnail (offset to the right of the original shape)
-                            double thumbPinX = shape.XForm.PinX.Value + shape.XForm.Width.Value + 0.5; // 0.5 inch offset
-                            double thumbPinY = shape.XForm.PinY.Value;
-                            double thumbWidth = shape.XForm.Width.Value;
-                            double thumbHeight = shape.XForm.Height.Value;
-
-                            // Add the thumbnail as a new picture shape on the same page
-                            long thumbShapeId = page.AddShape(thumbPinX, thumbPinY, thumbWidth, thumbHeight, thumbnailStream);
-
-                            // Optional: set a name for the thumbnail shape
-                            Shape thumbShape = page.Shapes.GetShape(thumbShapeId);
-                            thumbShape.Name = $"Thumbnail_{shape.ID}";
+                            oleShapes.Add(shape);
                         }
                     }
-                }
-            }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+                    // Process each OLE shape
+                    foreach (Shape oleShape in oleShapes)
+                    {
+                        // Preserve original geometry
+                        double pinX = oleShape.XForm.PinX.Value;
+                        double pinY = oleShape.XForm.PinY.Value;
+                        double width = oleShape.XForm.Width.Value;
+                        double height = oleShape.XForm.Height.Value;
+
+                        // Render the OLE object to a PNG image in memory
+                        using (MemoryStream imageStream = new MemoryStream())
+                        {
+                            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                            oleShape.ToImage(imageStream, imgOptions);
+                            imageStream.Position = 0; // Reset stream for reading
+
+                            // Add a new shape that uses the rendered image as its picture
+                            long newShapeId = page.AddShape(pinX, pinY, width, height, imageStream);
+                            Shape newShape = page.Shapes.GetShape(newShapeId);
+
+                            // Optionally copy the original shape's name for reference
+                            newShape.Name = oleShape.Name;
+                        }
+
+                        // Remove the original OLE shape from the page
+                        page.Shapes.Remove(oleShape);
+                    }
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

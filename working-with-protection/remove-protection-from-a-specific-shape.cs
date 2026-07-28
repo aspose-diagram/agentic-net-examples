@@ -4,33 +4,79 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expected arguments: inputVisioPath shapeId outputVisioPath
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <inputVisioPath> <shapeId> <outputVisioPath>");
+            return;
+        }
+
+        // Assign input and output paths
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Parse shape ID (may throw if not a number)
+        long shapeIdLong = long.Parse(args[1]);
+        string outputPath = args[2];
+
         try
         {
+            // Load the diagram from the input file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram (using the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Locate the shape with the specified ID across all pages
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
+            {
+                // GetShape expects an int ID; cast safely
+                int shapeId = (int)shapeIdLong;
+                targetShape = page.Shapes.GetShape(shapeId);
+                if (targetShape != null)
+                    break;
+            }
 
-            // Identify the shape to modify (replace with the actual shape ID)
-            int shapeId = 5; // example shape ID
-            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeIdLong} not found.");
+                return;
+            }
 
-            // Remove protection flags from the shape
-            shape.Protection.LockDelete.Value = 0;
-            shape.Protection.LockMoveX.Value = 0;
-            shape.Protection.LockMoveY.Value = 0;
-            shape.Protection.LockSelect.Value = 0;
-            shape.Protection.LockFormat.Value = 0;
-            shape.Protection.LockTextEdit.Value = 0;
+            // Remove all protection locks from the shape
+            targetShape.Protection.LockAspect.Value = BOOL.False;
+            targetShape.Protection.LockBegin.Value = BOOL.False;
+            // LockCalcWH is not a valid property; omitted per API rules
+            targetShape.Protection.LockCrop.Value = BOOL.False;
+            targetShape.Protection.LockCustProp.Value = BOOL.False;
+            targetShape.Protection.LockDelete.Value = BOOL.False;
+            targetShape.Protection.LockEnd.Value = BOOL.False;
+            targetShape.Protection.LockFormat.Value = BOOL.False;
+            targetShape.Protection.LockFromGroupFormat.Value = BOOL.False;
+            targetShape.Protection.LockGroup.Value = BOOL.False;
+            targetShape.Protection.LockHeight.Value = BOOL.False;
+            targetShape.Protection.LockMoveX.Value = BOOL.False;
+            targetShape.Protection.LockMoveY.Value = BOOL.False;
+            targetShape.Protection.LockRotate.Value = BOOL.False;
+            targetShape.Protection.LockSelect.Value = BOOL.False;
+            targetShape.Protection.LockTextEdit.Value = BOOL.False;
+            targetShape.Protection.LockThemeColors.Value = BOOL.False;
+            targetShape.Protection.LockThemeEffects.Value = BOOL.False;
+            targetShape.Protection.LockVtxEdit.Value = BOOL.False;
+            targetShape.Protection.LockWidth.Value = BOOL.False;
 
-            // Save the updated diagram (using the provided save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram to the output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

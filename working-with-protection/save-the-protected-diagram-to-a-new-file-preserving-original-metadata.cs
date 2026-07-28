@@ -13,18 +13,17 @@ class Program
             // Path to the protected source diagram
             string sourcePath = "protected_input.vsdx";
 
-            // Path for the new copy that will preserve all original metadata
-            string destinationPath = "preserved_output.vsdx";
+            // Path for the new diagram file (metadata will be preserved)
+            string destinationPath = "protected_output.vsdx";
 
             // Load the diagram from the source file
-            using (Diagram diagram = new Diagram(sourcePath))
-            {
-                // Create save options for the same format as the source (VSDX)
-                DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
+            Diagram diagram = new Diagram(sourcePath);
 
-                // Save the diagram to the new file, preserving metadata
-                diagram.Save(destinationPath, saveOptions);
-            }
+            // Create save options for the same format (VSDX) to keep original metadata
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
+
+            // Save the diagram to the new file using the specified options
+            diagram.Save(destinationPath, saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

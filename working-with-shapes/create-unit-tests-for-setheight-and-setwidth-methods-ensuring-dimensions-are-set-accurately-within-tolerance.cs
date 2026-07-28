@@ -1,64 +1,78 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 public class Program
 {
-    // Tolerance for dimension comparison (in inches)
+    // Tolerance for dimension comparison
     private const double Tolerance = 0.001;
 
     public static void Main()
     {
+        try
+        {
+            TestSetWidthAndHeight();
+            Console.WriteLine("All SetWidth/SetHeight tests passed.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Test failed: {ex.Message}");
+            throw;
+        }
+    }
+
+    private static void TestSetWidthAndHeight()
+    {
         // Create a new empty diagram
         Diagram diagram = new Diagram();
 
-        // Access the first (default) page
+        // Use the first (default) page
         Page page = diagram.Pages[0];
 
-        // Draw an initial rectangle shape (pinX, pinY, width, height)
-        // Initial dimensions are arbitrary; they will be changed by the test
-        double initialPinX = 2.0;
-        double initialPinY = 2.0;
-        double initialWidth = 1.0;
+        // Initial dimensions (center point and desired size)
+        double initialPinX = 5.0;
+        double initialPinY = 5.0;
+        double initialWidth = 2.0;
         double initialHeight = 1.0;
-        long shapeId = page.DrawRectangle(initialPinX, initialPinY, initialWidth, initialHeight);
 
-        // Retrieve the shape instance
+        // DrawRectangle expects opposite corner coordinates, not width/height.
+        // Compute corner coordinates by adding width/height to the pin point.
+        long shapeId = page.DrawRectangle(
+            initialPinX,
+            initialPinY,
+            initialPinX + initialWidth,
+            initialPinY + initialHeight);
+
+        // Retrieve the created shape by its ID
         Shape shape = page.Shapes.GetShape(shapeId);
 
-        // Desired dimensions for the test
-        double expectedWidth = 2.5;
-        double expectedHeight = 1.75;
+        // Verify initial dimensions match the intended size
+        VerifyDimension(shape.XForm.Width.Value, initialWidth, "Initial Width");
+        VerifyDimension(shape.XForm.Height.Value, initialHeight, "Initial Height");
+
+        // New dimensions to set
+        double newWidth = 3.456;
+        double newHeight = 2.789;
 
         // Apply new dimensions using SetWidth and SetHeight
-        shape.SetWidth(expectedWidth);
-        shape.SetHeight(expectedHeight);
+        shape.SetWidth(newWidth);
+        shape.SetHeight(newHeight);
 
-        // Read back the actual dimensions from the shape's XForm cells
-        double actualWidth = shape.XForm.Width.Value;
-        double actualHeight = shape.XForm.Height.Value;
+        // Verify that dimensions were updated within tolerance
+        VerifyDimension(shape.XForm.Width.Value, newWidth, "Updated Width");
+        VerifyDimension(shape.XForm.Height.Value, newHeight, "Updated Height");
+    }
 
-        // Verify width within tolerance
-        if (Math.Abs(actualWidth - expectedWidth) > Tolerance)
+    private static void VerifyDimension(double actual, double expected, string description)
+    {
+        double diff = Math.Abs(actual - expected);
+        if (diff > Tolerance)
         {
-            throw new Exception($"SetWidth failed: expected {expectedWidth}, actual {actualWidth}");
+            throw new Exception($"{description} mismatch. Expected: {expected}, Actual: {actual}, Diff: {diff}");
         }
         else
         {
-            Console.WriteLine($"SetWidth passed: expected {expectedWidth}, actual {actualWidth}");
+            Console.WriteLine($"{description} verified. Expected: {expected}, Actual: {actual}");
         }
-
-        // Verify height within tolerance
-        if (Math.Abs(actualHeight - expectedHeight) > Tolerance)
-        {
-            throw new Exception($"SetHeight failed: expected {expectedHeight}, actual {actualHeight}");
-        }
-        else
-        {
-            Console.WriteLine($"SetHeight passed: expected {expectedHeight}, actual {actualHeight}");
-        }
-
-        // Optional: save the diagram to verify no runtime errors (not required for the test)
-        // diagram.Save("SetDimensionsTest.vsdx", SaveFileFormat.Vsdx);
     }
 }

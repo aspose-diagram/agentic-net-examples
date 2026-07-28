@@ -1,39 +1,39 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            Page page = diagram.Pages[0];
-            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+            // Set page orientation to Landscape for all pages
+            foreach (Page page in diagram.Pages)
+            {
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+            }
 
+            // Apply global document protection to prevent modifications
             diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
             diagram.DocumentSettings.ProtectMasters = BOOL.True;
             diagram.DocumentSettings.ProtectShapes = BOOL.True;
             diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
+            // Save the protected diagram
             string outputPath = "output_protected.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            Console.WriteLine("Diagram saved with page orientation locked and global protection applied.");
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

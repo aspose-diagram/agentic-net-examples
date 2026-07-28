@@ -12,65 +12,72 @@ class Program
             try
             {
 
-                // Path to the Visio diagram to be processed
-                const string diagramPath = "input.vsdx";
-
-                // Load the diagram using the Aspose.Diagram constructor
-                Diagram diagram = new Diagram(diagramPath);
+                // Paths for the source Visio diagram and the output file
+                string diagramPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
                 // REST endpoint that returns JSON data
-                const string apiUrl = "https://example.com/api/data";
+                string jsonEndpoint = "https://example.com/api/shapes";
 
-                // Retrieve JSON payload from the REST endpoint
+                // Load the diagram from file
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Retrieve JSON data from the REST endpoint
                 using HttpClient httpClient = new HttpClient();
-                string jsonResponse = await httpClient.GetStringAsync(apiUrl);
+                HttpResponseMessage response = await httpClient.GetAsync(jsonEndpoint);
+                response.EnsureSuccessStatusCode();
+                string jsonContent = await response.Content.ReadAsStringAsync();
 
-                // Parse the JSON document
-                using JsonDocument jsonDoc = JsonDocument.Parse(jsonResponse);
-                JsonElement root = jsonDoc.RootElement;
-
-                // Iterate through all pages and shapes in the diagram
-                foreach (Page page in diagram.Pages)
+                // Expected JSON format:
+                // [
+                //   { "ShapeId": 5, "PropertyName": "Status", "PropertyValue": "Approved" },
+                //   { "ShapeId": 12, "PropertyName": "Owner", "PropertyValue": "John Doe" }
+                // ]
+                JsonDocument jsonDoc = JsonDocument.Parse(jsonContent);
+                foreach (JsonElement element in jsonDoc.RootElement.EnumerateArray())
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Extract values from JSON
+                    long shapeId = element.GetProperty("ShapeId").GetInt64();
+                    string propName = element.GetProperty("PropertyName").GetString();
+                    string propValue = element.GetProperty("PropertyValue").GetString();
+
+                    // Locate the shape by ID across all pages
+                    Shape targetShape = null;
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Use the shape's universal name (NameU) as the key to look up data in the JSON
-                        if (root.TryGetProperty(shape.NameU, out JsonElement valueElement))
+                        // Shape IDs are long; GetShape expects an int, so cast safely
+                        if (page.Shapes.GetShape((int)shapeId) != null)
                         {
-                            // Look for an existing user-defined cell named "CustomData"
-                            User? customUser = null;
-                            foreach (User existingUser in shape.Users)
-                            {
-                                if (existingUser.Name == "CustomData")
-                                {
-                                    customUser = existingUser;
-                                    break;
-                                }
-                            }
-
-                            // If the user-defined cell does not exist, create and add it
-                            if (customUser == null)
-                            {
-                                customUser = new User();
-                                customUser.Name = "CustomData";
-                                shape.Users.Add(customUser);
-                            }
-
-                            // Assign the JSON value (as string) to the user-defined cell
-                            // For non-string JSON types, fallback to the raw JSON text
-                            string valueAsString = valueElement.ValueKind == JsonValueKind.String
-                                ? valueElement.GetString()!
-                                : valueElement.GetRawText();
-
-                            customUser.Value.Val = valueAsString;
+                            targetShape = page.Shapes.GetShape((int)shapeId);
+                            break;
                         }
                     }
+
+                    if (targetShape == null)
+                    {
+                        Console.WriteLine($"Shape with ID {shapeId} not found.");
+                        continue;
+                    }
+
+                    // Create a new custom property (Prop) and assign values
+                    Prop customProp = new Prop
+                    {
+                        Name = propName,
+                        // Optional: set a label; using the same name if not required
+                        Label = { Value = propName },
+                        // Assign the actual value
+                        Value = { Val = propValue },
+                        // Define the property type as string
+                        Type = { Value = TypePropValue.String }
+                    };
+
+                    // Add the custom property to the shape
+                    targetShape.Props.Add(customProp);
+                    Console.WriteLine($"Added property '{propName}' with value '{propValue}' to shape ID {shapeId}.");
                 }
 
-                // Save the updated diagram to a new file
-                const string outputPath = "output.vsdx";
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
                 Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
             }

@@ -3,7 +3,7 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class RemoveHiddenInfoExample
+class Program
 {
     static void Main()
     {
@@ -13,29 +13,23 @@ class RemoveHiddenInfoExample
             // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Check if the diagram contains any hidden information
-            bool hasHiddenBefore = diagram.HasHiddenInfo();
-            Console.WriteLine($"Has hidden information before removal: {hasHiddenBefore}");
+            // Combine all hidden‑info flags to remove everything that can be hidden
+            int removeMask = (int)(
+                RemoveHiddenInfoItem.PersonalInfo |
+                RemoveHiddenInfoItem.Shapes |
+                RemoveHiddenInfoItem.Masters |
+                RemoveHiddenInfoItem.Styles |
+                RemoveHiddenInfoItem.DataRecordSets);
 
-            // Remove all types of hidden information (PersonalInfo, Shapes, Masters, Styles, DataRecordSets)
-            // The enum values are not marked with [Flags], so we combine them manually by summing their integer values.
-            int allHiddenInfo = (int)RemoveHiddenInfoItem.PersonalInfo |
-                                (int)RemoveHiddenInfoItem.Shapes |
-                                (int)RemoveHiddenInfoItem.Masters |
-                                (int)RemoveHiddenInfoItem.Styles |
-                                (int)RemoveHiddenInfoItem.DataRecordSets;
+            // Remove hidden information from the diagram
+            diagram.RemoveHiddenInformation(removeMask);
 
-            diagram.RemoveHiddenInformation(allHiddenInfo);
+            // Verify that no hidden information remains
+            bool hasHiddenInfo = diagram.HasHiddenInfo();
+            Console.WriteLine("Has hidden information after removal: " + hasHiddenInfo);
 
-            // Verify that hidden information has been removed
-            bool hasHiddenAfter = diagram.HasHiddenInfo();
-            Console.WriteLine($"Has hidden information after removal: {hasHiddenAfter}");
-
-            // Save the cleaned diagram to a new file
+            // Save the cleaned diagram (optional)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            // Dispose the diagram object
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

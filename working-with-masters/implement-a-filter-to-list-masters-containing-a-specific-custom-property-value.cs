@@ -5,55 +5,81 @@ class Program
     {
         static void Main(string[] args)
         {
+            // Prompt for the Visio file path
+            Console.Write("Enter the path to the Visio file: ");
+            string filePath = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                Console.WriteLine("File path cannot be empty.");
+                return;
+            }
+
+            // Prompt for the custom property name to search
+            Console.Write("Enter the custom property name: ");
+            string propName = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(propName))
+            {
+                Console.WriteLine("Property name cannot be empty.");
+                return;
+            }
+
+            // Prompt for the custom property value to match
+            Console.Write("Enter the custom property value to match: ");
+            string propValue = Console.ReadLine();
+
+            if (propValue == null)
+            {
+                Console.WriteLine("Property value cannot be null.");
+                return;
+            }
+
+            // Load the diagram
+            Diagram diagram;
             try
             {
+                diagram = new Diagram(filePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
 
-                // Path to the Visio file
-                string diagramPath = "input.vsdx";
+            bool anyMatch = false;
 
-                // The custom property name and the value to search for
-                string targetPropName = "MyCustomProp";
-                string targetPropValue = "DesiredValue";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through all masters in the diagram
-                foreach (Master master in diagram.Masters)
+            // Iterate through all masters in the diagram
+            foreach (Master master in diagram.Masters)
+            {
+                // Check each shape within the master for the custom property
+                foreach (Shape shape in master.Shapes)
                 {
-                    bool masterMatches = false;
-
-                    // Check each shape within the master for the custom property
-                    foreach (Shape shape in master.Shapes)
+                    // Ensure the shape has custom properties
+                    if (shape.Props != null && shape.Props.Count > 0)
                     {
-                        // Ensure the shape has custom properties
-                        if (shape.Props == null) continue;
-
                         foreach (Prop prop in shape.Props)
                         {
-                            // Compare property name and value
-                            if (prop.Label != null && prop.Label.Value == targetPropName &&
-                                prop.Value != null && prop.Value.Val == targetPropValue)
+                            // Compare property name and value (case-insensitive)
+                            if (string.Equals(prop.Name, propName, StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(prop.Value.Val, propValue, StringComparison.OrdinalIgnoreCase))
                             {
-                                masterMatches = true;
-                                break;
+                                Console.WriteLine($"Master '{master.Name}' contains the property '{propName}' with value '{propValue}'.");
+                                anyMatch = true;
+                                // Break out of inner loops once a match is found for this master
+                                goto NextMaster;
                             }
                         }
-
-                        if (masterMatches) break;
-                    }
-
-                    // Output matching masters
-                    if (masterMatches)
-                    {
-                        Console.WriteLine($"Master found: Name = {master.Name}, ID = {master.ID}");
                     }
                 }
 
+            NextMaster:
+                continue;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (!anyMatch)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("No masters found with the specified custom property value.");
             }
-    }
+        }
     }

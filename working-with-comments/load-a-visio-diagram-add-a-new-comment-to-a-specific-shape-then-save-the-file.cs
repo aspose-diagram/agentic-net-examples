@@ -1,44 +1,42 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class AddCommentExample
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Paths to the source and destination Visio files
-            string inputFile = "input.vsdx";
-            string outputFile = "output.vsdx";
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+                // Output Visio file path
+                string outputPath = "output.vsdx";
 
-            // Load the Visio diagram from the file
-            Diagram diagram = new Diagram(inputFile);
+                // Load the diagram from file
+                Diagram diagram = new Diagram(inputPath);
 
-            // Get the active page (the page where the shape resides)
-            Page page = diagram.ActivePage;
+                // Get the first page (index 0)
+                Page page = diagram.Pages[0];
 
-            // Identifier of the shape to which the comment will be added
-            long shapeId = 1; // replace with the actual shape ID
+                // Identify the shape to which the comment will be added.
+                // Here we assume the shape ID is known (e.g., 1). Adjust as needed.
+                int shapeId = 1;
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-            // The comment text
-            string comment = "This is a comment added via Aspose.Diagram";
+                // Add a comment associated with the shape
+                string commentText = "Review this shape - added via Aspose.Diagram.";
+                page.AddComment(shape, commentText);
 
-            // Add the comment to the specified shape
-            page.AddComment(shapeId, comment);
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Save the modified diagram back to a file (preserving the original format)
-            diagram.Save(outputFile, SaveFileFormat.Vsdx);
+                Console.WriteLine("Comment added and diagram saved successfully.");
 
-            // Release resources
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

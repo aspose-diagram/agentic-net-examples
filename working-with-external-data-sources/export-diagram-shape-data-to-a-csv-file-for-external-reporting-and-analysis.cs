@@ -1,7 +1,6 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,20 +9,49 @@ class Program
         try
         {
 
-            // Path to the source Visio diagram (replace with actual file path)
-            string diagramPath = "input.vsdx";
+            // Path to the Visio file to be processed
+            string inputPath = "input.vsdx";
 
-            // Path where the CSV export will be saved
-            string csvPath = "output.csv";
+            // Path where the CSV file will be created
+            string csvPath = "shapes.csv";
 
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Export shape data to CSV using the built‑in CSV format
-            diagram.Save(csvPath, SaveFileFormat.Csv);
+            // Create a StreamWriter to write CSV content
+            using (StreamWriter writer = new StreamWriter(csvPath))
+            {
+                // Write CSV header
+                writer.WriteLine("PageName,ShapeID,Name,NameU,Data1,Data2,Data3,Text");
 
-            // Inform the user that the export has completed
-            Console.WriteLine("Diagram shape data exported to CSV at: " + csvPath);
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through each shape on the current page
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve plain text from the shape
+                        string plainText = shape.Text.Value.Text;
+
+                        // Escape double quotes and wrap the text in quotes to handle commas
+                        plainText = plainText.Replace("\"", "\"\"");
+                        plainText = $"\"{plainText}\"";
+
+                        // Build a CSV line with the required shape information
+                        string line = $"{page.Name},{shape.ID},{shape.Name},{shape.NameU},{shape.Data1},{shape.Data2},{shape.Data3},{plainText}";
+
+                        // Write the line to the CSV file
+                        writer.WriteLine(line);
+                    }
+                }
+            }
+
+            // Optional: Save the diagram back to a file if modifications were made
+            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

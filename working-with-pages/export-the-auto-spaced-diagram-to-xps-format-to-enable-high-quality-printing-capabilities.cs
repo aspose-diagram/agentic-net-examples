@@ -10,19 +10,20 @@ class Program
         try
         {
 
-            // Load the source diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("inputDiagram.vsdx");
+            // Load the Visio diagram (auto‑spaced diagram)
+            Diagram diagram = new Diagram("input.vsd");
 
-            // Initialize XPS save options
-            XPSSaveOptions xpsOptions = new XPSSaveOptions();
-            // Example: do not export hidden pages (optional)
-            xpsOptions.ExportHiddenPage = false;
-            // Example: export only foreground pages (optional)
-            xpsOptions.SaveForegroundPagesOnly = true;
-            // You can set other options such as DefaultFont, PageCount, etc., if needed
+            // Configure XPS save options
+            XPSSaveOptions xpsOptions = new XPSSaveOptions
+            {
+                // Do not export hidden pages (optional, adjust as needed)
+                ExportHiddenPage = false,
+                // Save only foreground pages for a cleaner output (optional)
+                SaveForegroundPagesOnly = true
+            };
 
-            // Save the diagram to XPS format using the specified options
-            diagram.Save("outputDiagram.xps", xpsOptions);
+            // Save the diagram to XPS format for high‑quality printing
+            diagram.Save("output.xps", xpsOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -2,41 +2,53 @@ using System.IO;
 using System;
 using System.Diagnostics;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+class PdfConversionPerformance
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string sourceFile = "input.vsdx";
+
+            // Output PDF files
+            string outputWithoutInterrupt = "output_without_interrupt.pdf";
+            string outputWithInterrupt = "output_with_interrupt.pdf";
 
             // ------------------------------
             // Conversion without InterruptMonitor
             // ------------------------------
-            Stopwatch sw = Stopwatch.StartNew();
+            // Load the diagram with default LoadOptions (no interrupt monitor)
+            Diagram diagramWithoutInterrupt = new Diagram(sourceFile);
 
-            // Save the diagram as PDF (no interrupt monitor attached)
-            diagram.Save("output_without_monitor.pdf", SaveFileFormat.Pdf);
+            // Measure the time taken to save as PDF
+            Stopwatch swWithout = Stopwatch.StartNew();
+            diagramWithoutInterrupt.Save(outputWithoutInterrupt, SaveFileFormat.Pdf);
+            swWithout.Stop();
 
-            sw.Stop();
-            Console.WriteLine($"Conversion without InterruptMonitor: {sw.ElapsedMilliseconds} ms");
+            Console.WriteLine($"Conversion without InterruptMonitor took: {swWithout.ElapsedMilliseconds} ms");
 
             // ------------------------------
             // Conversion with InterruptMonitor
             // ------------------------------
-            // Attach the default InterruptMonitor (does not request interruption)
-            diagram.InterruptMonitor = new InterruptMonitor();
+            // Create a LoadOptions instance and assign an InterruptMonitor
+            LoadOptions loadOptions = new LoadOptions
+            {
+                InterruptMonitor = new InterruptMonitor()
+            };
 
-            sw.Restart();
+            // Load the diagram using the LoadOptions that includes the interrupt monitor
+            Diagram diagramWithInterrupt = new Diagram(sourceFile, loadOptions);
 
-            // Save the diagram as PDF with the monitor attached
-            diagram.Save("output_with_monitor.pdf", SaveFileFormat.Pdf);
+            // Measure the time taken to save as PDF
+            Stopwatch swWith = Stopwatch.StartNew();
+            diagramWithInterrupt.Save(outputWithInterrupt, SaveFileFormat.Pdf);
+            swWith.Stop();
 
-            sw.Stop();
-            Console.WriteLine($"Conversion with InterruptMonitor: {sw.ElapsedMilliseconds} ms");
+            Console.WriteLine($"Conversion with InterruptMonitor took: {swWith.ElapsedMilliseconds} ms");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -3,51 +3,49 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public static class DiagramHiddenInfoCleaner
+public class HiddenInfoCleaner
 {
     // Removes hidden information and macros from a Visio diagram,
-    // then saves the cleaned diagram and logs the actions performed.
-    public static void Clean(string inputFilePath, string outputFilePath)
+    // then saves the cleaned diagram to a new file.
+    public void Clean(string inputFilePath, string outputFilePath)
     {
-        // Load the diagram from the specified file (lifecycle: load)
+        // Load the diagram from the specified file.
         using (Diagram diagram = new Diagram(inputFilePath))
         {
-            // Check if the diagram contains hidden information before cleaning
-            bool hadHiddenInfo = diagram.HasHiddenInfo();
+            // Check if the diagram contains hidden information before cleaning.
+            bool hasHiddenInfoBefore = diagram.HasHiddenInfo();
+            Console.WriteLine($"Hidden information present before cleaning: {hasHiddenInfoBefore}");
 
-            // Log initial state
-            Console.WriteLine($"Diagram loaded: \"{inputFilePath}\"");
-            Console.WriteLine($"Has hidden information before cleaning: {hadHiddenInfo}");
+            // Remove all categories of hidden information.
+            int allHiddenInfoItems =
+                (int)RemoveHiddenInfoItem.PersonalInfo |
+                (int)RemoveHiddenInfoItem.Shapes |
+                (int)RemoveHiddenInfoItem.Masters |
+                (int)RemoveHiddenInfoItem.Styles |
+                (int)RemoveHiddenInfoItem.DataRecordSets;
 
-            // Define the items to remove (PersonalInfo | Shapes | Masters | Styles | DataRecordSets)
-            int itemsToRemove = (int)(
-                RemoveHiddenInfoItem.PersonalInfo |
-                RemoveHiddenInfoItem.Shapes |
-                RemoveHiddenInfoItem.Masters |
-                RemoveHiddenInfoItem.Styles |
-                RemoveHiddenInfoItem.DataRecordSets);
+            diagram.RemoveHiddenInformation(allHiddenInfoItems);
+            Console.WriteLine("Removed hidden information categories: PersonalInfo, Shapes, Masters, Styles, DataRecordSets.");
 
-            // Remove hidden information (feature: RemoveHiddenInformation)
-            diagram.RemoveHiddenInformation(itemsToRemove);
-            Console.WriteLine("Removed hidden information (PersonalInfo, Shapes, Masters, Styles, DataRecordSets).");
-
-            // Remove any VBA/macros present (feature: RemoveMacro)
+            // Remove any VBA/macros that may be embedded.
             diagram.RemoveMacro();
             Console.WriteLine("Removed VBA/macros from the diagram.");
 
-            // Verify hidden information after cleaning
+            // Check if hidden information still exists after cleaning.
             bool hasHiddenInfoAfter = diagram.HasHiddenInfo();
-            Console.WriteLine($"Has hidden information after cleaning: {hasHiddenInfoAfter}");
+            Console.WriteLine($"Hidden information present after cleaning: {hasHiddenInfoAfter}");
 
-            // Save the cleaned diagram to the output path (lifecycle: save)
+            // Save the cleaned diagram using the same format as the source.
+            // SaveFileFormat.Vdx is used as a common Visio format; adjust if needed.
             diagram.Save(outputFilePath, SaveFileFormat.Vdx);
-            Console.WriteLine($"Cleaned diagram saved to: \"{outputFilePath}\"");
+            Console.WriteLine($"Cleaned diagram saved to: {outputFilePath}");
         }
     }
 }
 
 // Example usage:
-// DiagramHiddenInfoCleaner.Clean("input.vsdx", "output_cleaned.vdx");
+// var cleaner = new HiddenInfoCleaner();
+// cleaner.Clean("input.vsdx", "output.vsdx");
 
 class Program
 {
@@ -56,7 +54,8 @@ class Program
         try
         {
 
-            DiagramHiddenInfoCleaner.Clean("", "");
+            var obj = new HiddenInfoCleaner();
+            obj.Clean("", "");
 
         }
         catch (Aspose.Diagram.DiagramException ex)

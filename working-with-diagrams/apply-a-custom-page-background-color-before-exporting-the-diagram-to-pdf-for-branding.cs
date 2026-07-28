@@ -1,107 +1,88 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path and output PDF path
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        string outputPath = "output.pdf";
+
+        // Load the diagram (Diagram does not implement IDisposable, so no using block)
+        Diagram diagram = new Diagram(inputPath);
         try
         {
-
-            // Load an existing Visio diagram or create a new one.
-            // Replace "input.vsdx" with the path to your source file if needed.
-            Diagram diagram;
-            string inputPath = "input.vsdx";
-            if (System.IO.File.Exists(inputPath))
+            // Ensure there is at least one page to work with
+            if (diagram.Pages.Count == 0)
             {
-                diagram = new Diagram(inputPath);
-            }
-            else
-            {
-                diagram = new Diagram(); // creates an empty diagram with a default page
+                Console.WriteLine("The diagram contains no pages.");
+                return;
             }
 
-            // Get the first (foreground) page.
+            // Get the first (foreground) page
             Page foregroundPage = diagram.Pages[0];
 
-            // Retrieve page dimensions (in inches).
+            // Create a new background page
+            Page backgroundPage = new Page();
+            backgroundPage.Background = BOOL.True; // Mark as background page
+
+            // Match the size of the foreground page
             double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
-
-            // -------------------------------------------------
-            // Create a background page that will hold the color.
-            // -------------------------------------------------
-            Page backgroundPage = new Page();
-
-            // Assign a unique ID to the background page.
-            int maxPageId = 0;
-            foreach (Page p in diagram.Pages)
-            {
-                if (p.ID > maxPageId)
-                    maxPageId = p.ID;
-            }
-            backgroundPage.ID = maxPageId + 1;
-
-            // Mark the page as a background page.
-            backgroundPage.Background = BOOL.True;
-
-            // Ensure the background page has the same size as the foreground page.
             backgroundPage.PageSheet.PageProps.PageWidth.Value = pageWidth;
             backgroundPage.PageSheet.PageProps.PageHeight.Value = pageHeight;
 
-            // Add the background page to the diagram.
-            diagram.Pages.Add(backgroundPage);
+            // Add a rectangle shape that spans the entire page
+            // Master name "Rectangle" is a standard Visio master
+            long rectShapeId = backgroundPage.AddShape(
+                pinX: pageWidth / 2.0,   // Center X
+                pinY: pageHeight / 2.0,  // Center Y
+                width: pageWidth,
+                height: pageHeight,
+                masterName: "Rectangle"); // No pageNumber parameter for Page.AddShape
 
-            // -------------------------------------------------
-            // Add a rectangle shape that spans the whole page.
-            // -------------------------------------------------
-            // PinX and PinY represent the centre of the shape.
-            double pinX = pageWidth / 2.0;
-            double pinY = pageHeight / 2.0;
-
-            // Use the built‑in "Rectangle" master.
-            long rectShapeId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle");
-
-            // Retrieve the shape object to modify its appearance.
+            // Retrieve the shape object
             Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
 
-            // Set a solid fill pattern.
-            rectShape.Fill.FillPattern.Value = 1;               // 1 = solid
-            rectShape.Fill.FillForegnd.Value = "#ADD8E6";       // Light blue background color
+            // Set solid fill pattern
+            rectShape.Fill.FillPattern.Value = 1; // Solid fill
+            // Set desired background color (hex string)
+            rectShape.Fill.FillForegnd.Value = "#ADD8E6"; // Light blue
 
-            // Remove any outline.
-            rectShape.Line.LinePattern.Value = 0;               // No line pattern
-            rectShape.Line.LineWeight.Value = 0;                // Zero weight
+            // Remove outline
+            rectShape.Line.LinePattern.Value = 0; // No line
 
-            // Make the background shape non‑selectable.
+            // Send the shape to back so other content appears above it
+            rectShape.SendToBack();
+
+            // Make the background shape non‑selectable
             rectShape.Protection.LockSelect.Value = BOOL.True;
 
-            // Send the rectangle to the back of the page's Z‑order.
-            backgroundPage.SendToBack(rectShapeId);
+            // Add the background page to the diagram
+            diagram.Pages.Add(backgroundPage);
 
-            // Link the foreground page to the background page.
+            // Link the foreground page to its background page
             foregroundPage.BackPage = backgroundPage;
 
-            // -------------------------------------------------
-            // Export the diagram to PDF with branding.
-            // -------------------------------------------------
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                DefaultFont = "Arial",               // Fallback font
-                SaveFormat = SaveFileFormat.Pdf      // Explicitly set the format
-            };
+            // Prepare PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            string outputPath = "branded_output.pdf";
+            // Save the diagram as PDF
             diagram.Save(outputPath, pdfOptions);
 
-            Console.WriteLine($"Diagram saved to '{outputPath}' with custom background color.");
-
+            Console.WriteLine($"Diagram exported to PDF with custom background: {outputPath}");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

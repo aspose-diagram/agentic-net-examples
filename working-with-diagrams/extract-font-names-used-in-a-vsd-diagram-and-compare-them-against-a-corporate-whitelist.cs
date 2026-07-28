@@ -1,8 +1,8 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Aspose.Diagram;
+using Aspose.Drawing.Text;
 
 class Program
 {
@@ -11,44 +11,41 @@ class Program
         try
         {
 
-            // Path to the Visio diagram (VSD) file
-            string diagramPath = "input.vsd";
+            // Path to the Visio diagram file
+            string diagramPath = "input.vsdx";
 
-            // Load the diagram using the provided constructor (lifecycle rule)
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Corporate whitelist of allowed font names
+            var whitelist = new[] { "Arial", "Calibri", "Times New Roman" };
+
+            // Retrieve installed system fonts using Aspose.Drawing.Text
+            var installedFonts = new InstalledFontCollection();
+            var installedFontNames = installedFonts.Families
+                .Select(f => f.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // Iterate over fonts used in the diagram
+            foreach (Font font in diagram.Fonts)
             {
-                // Collect all font names used in the diagram
-                HashSet<string> usedFonts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (Font font in diagram.Fonts)
+                string fontName = font.Name;
+
+                bool inWhitelist = whitelist.Contains(fontName, StringComparer.OrdinalIgnoreCase);
+                bool isInstalled = installedFontNames.Contains(fontName);
+
+                if (!inWhitelist)
                 {
-                    // The Font class exposes the Name property (font name)
-                    usedFonts.Add(font.Name);
+                    Console.WriteLine($"Font '{fontName}' is NOT in the corporate whitelist.");
                 }
 
-                // Corporate whitelist of allowed fonts
-                HashSet<string> whitelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                if (!isInstalled)
                 {
-                    "Arial",
-                    "Calibri",
-                    "Times New Roman",
-                    // Add additional approved fonts here
-                };
-
-                // Determine fonts that are not in the whitelist
-                List<string> nonWhitelisted = usedFonts.Except(whitelist).ToList();
-
-                // Output results
-                Console.WriteLine("Fonts used in the diagram:");
-                foreach (string f in usedFonts)
-                    Console.WriteLine($"- {f}");
-
-                Console.WriteLine("\nFonts not in the corporate whitelist:");
-                if (nonWhitelisted.Count == 0)
-                    Console.WriteLine("All fonts are compliant.");
-                else
-                    foreach (string f in nonWhitelisted)
-                        Console.WriteLine($"- {f}");
+                    Console.WriteLine($"Font '{fontName}' is NOT installed on the system.");
+                }
             }
+
+            Console.WriteLine("Font validation completed.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,27 +1,22 @@
 using System;
-using System.Diagnostics;
 using Aspose.Diagram;
 
-// Custom interrupt monitor that signals interruption after a specified time span
-class TimedInterruptMonitor : AbstractInterruptMonitor
+// Custom interrupt monitor that aborts after a specified time interval
+class TimeBasedInterruptMonitor : AbstractInterruptMonitor
 {
-    private readonly Stopwatch _stopwatch;
+    private readonly DateTime _startTime;
     private readonly TimeSpan _maxDuration;
 
-    public TimedInterruptMonitor(TimeSpan maxDuration)
+    public TimeBasedInterruptMonitor(TimeSpan maxDuration)
     {
         _maxDuration = maxDuration;
-        _stopwatch = Stopwatch.StartNew(); // Start timing immediately
+        _startTime = DateTime.UtcNow;
     }
 
-    // Aspose.Diagram checks this property during loading
+    // Returns true when the elapsed time exceeds the allowed duration
     public override bool IsInterruptionRequested
     {
-        get
-        {
-            // Request interruption if elapsed time exceeds the allowed duration
-            return _stopwatch.Elapsed > _maxDuration;
-        }
+        get { return (DateTime.UtcNow - _startTime) > _maxDuration; }
     }
 }
 
@@ -29,23 +24,23 @@ class Program
 {
     static void Main()
     {
-        // Initialize load options
-        var loadOptions = new LoadOptions();
-
-        // Assign the interrupt monitor to abort loading after 10 seconds
-        loadOptions.InterruptMonitor = new TimedInterruptMonitor(TimeSpan.FromSeconds(10));
-
         try
         {
-            // Load the diagram using the configured load options
-            var diagram = new Diagram("largeDiagram.vsd", loadOptions);
 
-            // Diagram loaded successfully; proceed with further processing if needed
+            // Create LoadOptions and assign the custom interrupt monitor (10 seconds)
+            LoadOptions loadOptions = new LoadOptions();
+            loadOptions.InterruptMonitor = new TimeBasedInterruptMonitor(TimeSpan.FromSeconds(10));
+
+            // Load the diagram using the LoadOptions with the interrupt monitor
+            Diagram diagram = new Diagram("input.vsd", loadOptions);
+
+            // Example: save the diagram after successful load (optional)
+            diagram.Save("output.vsd", SaveFileFormat.Vsd);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Loading was interrupted (or another error occurred)
-            Console.WriteLine("Diagram loading was interrupted or failed: " + ex.Message);
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -10,40 +10,36 @@ class RemoveHiddenInfoValidator
         try
         {
 
-            // Paths to the source and destination Visio files
+            // Path to the source Visio file
             string sourcePath = "input.vsdx";
-            string destinationPath = "output.vsdx";
 
-            // Load the diagram using the provided constructor (load rule)
-            using (Diagram diagram = new Diagram(sourcePath))
-            {
-                // Combine all hidden‑info items to be removed
-                int itemsToRemove =
-                    (int)(RemoveHiddenInfoItem.PersonalInfo |
-                          RemoveHiddenInfoItem.Shapes |
-                          RemoveHiddenInfoItem.Masters |
-                          RemoveHiddenInfoItem.Styles |
-                          RemoveHiddenInfoItem.DataRecordSets);
+            // Load the diagram using the built‑in constructor (load rule)
+            Diagram diagram = new Diagram(sourcePath);
 
-                // Remove hidden information (remove‑hidden‑info rule)
-                diagram.RemoveHiddenInformation(itemsToRemove);
+            // Remove all types of hidden information
+            // Combine enum values using bitwise OR as the method expects an int flag
+            int removeFlags = (int)RemoveHiddenInfoItem.PersonalInfo |
+                              (int)RemoveHiddenInfoItem.Shapes |
+                              (int)RemoveHiddenInfoItem.Masters |
+                              (int)RemoveHiddenInfoItem.Styles |
+                              (int)RemoveHiddenInfoItem.DataRecordSets;
 
-                // Validate that no hidden information remains
-                if (diagram.HasHiddenInfo())
-                {
-                    throw new InvalidOperationException("Hidden information still exists after removal.");
-                }
+            diagram.RemoveHiddenInformation(removeFlags);
 
-                // Optional: inspect validation issues for any residual hidden comments
-                // (The Issue class details are not required for this validation step)
-                foreach (var issue in diagram.Validation.Issues)
-                {
-                    // If needed, add custom checks on issue properties here
-                }
+            // Validate that no hidden information remains
+            bool hasHiddenInfo = diagram.HasHiddenInfo();
 
-                // Save the cleaned diagram using the provided save rule
-                diagram.Save(destinationPath, SaveFileFormat.Vdx);
-            }
+            // Additionally, inspect validation issues (if any)
+            var issues = diagram.Validation?.Issues;
+            int issueCount = issues != null ? issues.Count : 0;
+
+            // Output the validation result
+            Console.WriteLine("HasHiddenInfo after removal: " + hasHiddenInfo);
+            Console.WriteLine("Number of validation issues: " + issueCount);
+
+            // Optionally, save the cleaned diagram (save rule)
+            string outputPath = "output_cleaned.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

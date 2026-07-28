@@ -5,33 +5,30 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Path to the source VSDX file
+            // Paths to the source and cleaned Visio files
             string inputPath = "input.vsdx";
-
-            // Path where the cleaned VSDX file will be saved
-            string outputPath = "output_cleaned.vsdx";
+            string outputPath = "output.vsdx";
 
             // Load the diagram from the VSDX file
             Diagram diagram = new Diagram(inputPath);
 
-            // Remove any VBA macros that may be embedded in the diagram
-            diagram.RemoveMacro();
+            // Combine all hidden‑information flags that should be removed
+            int hiddenInfoMask = (int)RemoveHiddenInfoItem.PersonalInfo |
+                                 (int)RemoveHiddenInfoItem.Shapes |
+                                 (int)RemoveHiddenInfoItem.Masters |
+                                 (int)RemoveHiddenInfoItem.Styles |
+                                 (int)RemoveHiddenInfoItem.DataRecordSets;
 
-            // Build a mask that includes all hidden information categories to be removed
-            int hiddenInfoMask = (int)(
-                RemoveHiddenInfoItem.PersonalInfo |
-                RemoveHiddenInfoItem.Shapes |
-                RemoveHiddenInfoItem.Masters |
-                RemoveHiddenInfoItem.Styles |
-                RemoveHiddenInfoItem.DataRecordSets);
-
-            // Remove the hidden information based on the mask
+            // Remove hidden metadata from the diagram
             diagram.RemoveHiddenInformation(hiddenInfoMask);
+
+            // Remove any VBA/macros that may be present
+            diagram.RemoveMacro();
 
             // Save the cleaned diagram back to VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);

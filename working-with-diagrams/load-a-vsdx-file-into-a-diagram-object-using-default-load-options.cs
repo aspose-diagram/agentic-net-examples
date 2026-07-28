@@ -1,6 +1,6 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
+using System;
 
 class Program
 {
@@ -10,9 +10,9 @@ class Program
         {
 
             // Path to the VSDX file to be loaded
-            string filePath = "example.vsdx";
+            string filePath = "sample.vsdx";
 
-            // Load the diagram using the default load options (auto-detect format)
+            // Load the diagram using the default constructor that applies default load options
             Diagram diagram = new Diagram(filePath);
 
             // Example usage: output the number of pages in the loaded diagram

@@ -1,11 +1,11 @@
 {
   "category": "working-with-diagrams",
   "display_name": "Working With Diagrams",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 40,
   "pass_rate": 100.0,
-  "generated": "2026-06-08",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -46,7 +46,6 @@
       "task": "After removing hidden data compare file size before and after to confirm reduction",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -67,11 +66,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Page",
         "Pages",
-        "PdfSaveOptions",
-        "Save"
+        "PdfSaveOptions"
       ]
     },
     {
@@ -81,7 +80,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -98,8 +98,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -117,7 +116,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -166,7 +166,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Threading"
+        "System.IO",
+        "System.Threading.Tasks"
       ],
       "key_apis": [
         "Diagram",
@@ -182,8 +183,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -234,13 +234,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "PdfSaveOptions",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -255,7 +257,9 @@
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions"
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -283,7 +287,6 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
-        "System.Collections.Generic",
         "System.Linq"
       ],
       "key_apis": [
@@ -317,16 +320,15 @@
       "task": "Export connector routing information and generate a visual diagram of connections using a third party graph library",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
+        "Layout",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "Save"
       ]
     },
     {
@@ -343,7 +345,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "diagram"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -352,8 +356,8 @@
       "task": "Extract font names used in a vsd diagram and compare them against a corporate whitelist",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Drawing.Text",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Linq"
       ],
@@ -371,14 +375,12 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "page"
       ]
     },
     {
@@ -387,6 +389,7 @@
       "task": "Generate a summary report listing page counts and shape totals for each source diagram after merging",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -396,7 +399,7 @@
         "Pages",
         "Shapes",
         "diagram",
-        "master"
+        "page"
       ]
     },
     {
@@ -405,8 +408,7 @@
       "task": "Implement error handling that catches interruptmonitor exceptions and logs the aborted operation",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -420,9 +422,7 @@
       "task": "Load a vsd file with custom loadoptions enabling interruptmonitor for cancellation",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO",
-        "System.Threading"
+        "System"
       ],
       "key_apis": [
         "Diagram"
@@ -449,9 +449,9 @@
       "task": "Load multiple diagrams concurrently using asynchronous tasks then combine them into a single output file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
+        "System.Linq",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -464,14 +464,13 @@
       "task": "Measure conversion time for pdf output with and without interruptmonitor to assess performance impact",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Diagnostics",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Save",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -527,11 +526,13 @@
       "task": "Rename all pages sequentially after merging to avoid naming conflicts",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "page"
       ]
     },
     {
@@ -562,9 +563,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -579,6 +578,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -589,11 +589,12 @@
       "task": "Set loadoptions interruptmonitor to abort loading after ten seconds for large diagrams",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.Diagnostics"
+        "System"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -619,8 +620,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -653,11 +653,12 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]

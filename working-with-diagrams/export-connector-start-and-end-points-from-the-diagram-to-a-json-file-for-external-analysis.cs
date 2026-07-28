@@ -6,55 +6,76 @@ using Aspose.Diagram;
 
 namespace DiagramConnectorExport
 {
-    // DTO for JSON serialization
+    // Simple DTO for JSON serialization
     public class ConnectorInfo
     {
-        public long FromShapeId { get; set; }
-        public long ToShapeId { get; set; }
+        public long ShapeId { get; set; }
+        public double StartX { get; set; }
+        public double StartY { get; set; }
+        public double EndX { get; set; }
+        public double EndY { get; set; }
     }
 
     public class Program
     {
-        // args[0] = input Visio file path, args[1] = output JSON file path
-        public static void Main(string[] args)
+        static void Main(string[] args)
         {
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: DiagramConnectorExport <input.vsdx> <output.json>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+                // Input Visio file path (adjust as needed)
+                string inputPath = "input.vsdx";
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                var connectors = new List<ConnectorInfo>();
+                // Output JSON file path
+                string outputPath = "connectors.json";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // List to hold connector data
+                List<ConnectorInfo> connectors = new List<ConnectorInfo>();
 
                 // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Each Connect element represents a link between two shapes
-                    foreach (Connect connection in page.Connects)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // FromSheet and ToSheet hold the IDs of the connected shapes
-                        connectors.Add(new ConnectorInfo
+                        // Identify connector shapes (1‑D shapes)
+                        if (shape.OneD)
                         {
-                            FromShapeId = connection.FromSheet,
-                            ToShapeId = connection.ToSheet
-                        });
+                            // Retrieve start and end coordinates from XForm1D
+                            double startX = shape.XForm1D.BeginX.Value;
+                            double startY = shape.XForm1D.BeginY.Value;
+                            double endX = shape.XForm1D.EndX.Value;
+                            double endY = shape.XForm1D.EndY.Value;
+
+                            connectors.Add(new ConnectorInfo
+                            {
+                                ShapeId = shape.ID,
+                                StartX = startX,
+                                StartY = startY,
+                                EndX = endX,
+                                EndY = endY
+                            });
+                        }
                     }
                 }
 
-                // Serialize to JSON with indentation for readability
+                // Serialize the list to JSON with indentation for readability
                 var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
                 string json = JsonSerializer.Serialize(connectors, jsonOptions);
 
-                // Write JSON to the specified file
+                // Write JSON to file
                 File.WriteAllText(outputPath, json);
-                Console.WriteLine($"Connector data exported to: {outputPath}");
+
+                Console.WriteLine($"Exported {connectors.Count} connectors to '{outputPath}'.");
+
             }
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

@@ -1,72 +1,56 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class RemoveHiddenInfoAndCompareSize
+class Program
 {
     static void Main(string[] args)
     {
+        // Define file paths for the original and cleaned diagrams
+        string inputPath = "input.vsdx";
+        string outputPath = "output_cleaned.vsdx";
+
+        // Verify that the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Capture the original file size for later comparison
+        long originalSize = new FileInfo(inputPath).Length;
+
         try
         {
-
-            // Input Visio file path
-            string inputPath = @"C:\VisioFiles\sample.vsdx";
-
-            // Load the diagram (lifecycle rule: load)
-            Diagram diagram = new Diagram(inputPath);
-
-            // Get file size before removing hidden information (using metered consumption)
-            decimal sizeBefore = Metered.GetConsumptionQuantity();
-
-            // Check if the diagram contains hidden information
-            if (diagram.HasHiddenInfo())
+            // Load the diagram from the input file
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Combine all hidden info items to be removed
-                int itemsToRemove = (int)(
-                    RemoveHiddenInfoItem.PersonalInfo |
-                    RemoveHiddenInfoItem.Shapes |
-                    RemoveHiddenInfoItem.Masters |
-                    RemoveHiddenInfoItem.Styles |
-                    RemoveHiddenInfoItem.DataRecordSets);
+                // Remove hidden shapes and masters (Pages flag is not available in this enum)
+                diagram.RemoveHiddenInformation((int)(RemoveHiddenInfoItem.Shapes |
+                                                       RemoveHiddenInfoItem.Masters));
 
-                // Remove hidden information (feature rule)
-                diagram.RemoveHiddenInformation(itemsToRemove);
+                // Save the cleaned diagram using the same format as the original
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Define a temporary output file path
-            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath), "sample_cleaned.vsdx");
-
-            // Save the cleaned diagram (lifecycle rule: save)
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Load the cleaned diagram to get its consumption size
-            Diagram cleanedDiagram = new Diagram(outputPath);
-            decimal sizeAfter = Metered.GetConsumptionQuantity();
-
-            // Compare sizes and display the result
-            Console.WriteLine($"Size before cleaning: {sizeBefore} bytes");
-            Console.WriteLine($"Size after cleaning : {sizeAfter} bytes");
-
-            if (sizeAfter < sizeBefore)
-            {
-                decimal reduction = sizeBefore - sizeAfter;
-                Console.WriteLine($"File size reduced by {reduction} bytes.");
-            }
-            else if (sizeAfter == sizeBefore)
-            {
-                Console.WriteLine("No size reduction detected.");
-            }
-            else
-            {
-                decimal increase = sizeAfter - sizeBefore;
-                Console.WriteLine($"File size increased by {increase} bytes.");
-            }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during Aspose operations
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            return;
+        }
+
+        // Capture the cleaned file size after saving
+        long cleanedSize = new FileInfo(outputPath).Length;
+
+        // Compare sizes and report the result
+        if (cleanedSize < originalSize)
+        {
+            Console.WriteLine($"Size reduced from {originalSize} bytes to {cleanedSize} bytes.");
+        }
+        else
+        {
+            Console.WriteLine($"No size reduction. Original size: {originalSize} bytes, Cleaned size: {cleanedSize} bytes.");
         }
     }
 }

@@ -1,8 +1,9 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class BoundingBoxAnalyzer
+class Program
 {
     static void Main()
     {
@@ -12,23 +13,23 @@ class BoundingBoxAnalyzer
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine($"Page: {page.Name}");
-                // Iterate through all shapes on the page
+                // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve width and height from the shape's XForm (bounding box)
+                    // Retrieve the bounding box dimensions from the shape's XForm
                     double width = shape.XForm.Width.Value;
                     double height = shape.XForm.Height.Value;
 
-                    // Log the dimensions for layout analysis
-                    Console.WriteLine($"Shape ID: {shape.ID}, Width: {width}, Height: {height}");
+                    // Log the page name, shape ID, shape name, width and height
+                    Console.WriteLine(
+                        $"Page: {page.Name}, Shape ID: {shape.ID}, Name: {shape.Name}, Width: {width}, Height: {height}");
                 }
             }
 
-            // Optionally, save the diagram if any modifications were made
+            // Save the diagram (no modifications made, just demonstrating the save lifecycle)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Aspose.Diagram Examples Agent",
-  "description": "AI agent that generates, validates, and publishes C# examples for Aspose.Diagram for .NET. Produces 1840 compiler-validated examples across 31 categories targeting net8.0 and Aspose.Diagram v26.5.0.",
+  "description": "AI agent that generates, validates, and publishes C# examples for Aspose.Diagram for .NET. Produces 1840 compiler-validated examples across 31 categories targeting net8.0 and Aspose.Diagram v26.7.0.",
   "url": "https://github.com/aspose-diagram/agentic-net-examples",
   "capabilities": [
     "Generate C# console examples for Aspose.Diagram for .NET",
@@ -39,7 +39,7 @@
   "input_format": "Natural language task description",
   "output_format": "Compiler-validated C# console application (.cs file)",
   "product": "Aspose.Diagram for .NET",
-  "product_version": "26.5.0",
+  "product_version": "26.7.0",
   "framework": "net8.0",
   "language": "csharp",
   "repository": {
@@ -59,6 +59,6 @@
     "total_examples": 1840,
     "total_categories": 31,
     "pass_rate": 100.0,
-    "last_updated": "2026-06-23"
+    "last_updated": "2026-07-28"
   }
 }

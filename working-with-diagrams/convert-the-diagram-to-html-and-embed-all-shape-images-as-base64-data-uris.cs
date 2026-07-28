@@ -3,7 +3,7 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramToHtml
+class Program
 {
     static void Main()
     {
@@ -11,12 +11,12 @@ class DiagramToHtml
         {
 
             // Load the Visio diagram from a file
-            var diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Configure HTML save options to embed all shape images as Base64 data URIs
-            var htmlOptions = new HTMLSaveOptions
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                // When true, the generated HTML is saved as a single file with images embedded.
+                // When true, the HTML is saved as a single file with images embedded as Base64 strings
                 SaveAsSingleFile = true
             };
 

@@ -1,45 +1,46 @@
 using System;
 using System.IO;
 using System.Text.Json;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-namespace PageSizeUtility
+namespace DiagramPageSizeUtility
 {
-    // Represents the page size configuration (in inches)
+    // Configuration model matching the JSON structure
     public class PageSizeConfig
     {
-        public double Width { get; set; }
-        public double Height { get; set; }
+        public double Width { get; set; }   // Width in inches
+        public double Height { get; set; }  // Height in inches
     }
 
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        // Entry point: args[0] = input diagram path, args[1] = config json path, args[2] = output diagram path
+        public static void Main(string[] args)
         {
-            // Expected arguments:
-            // args[0] - path to the configuration file (JSON)
-            // args[1] - input Visio diagram file path
-            // args[2] - output Visio diagram file path
             if (args.Length < 3)
             {
-                Console.WriteLine("Usage: PageSizeUtility <config.json> <input.vsdx> <output.vsdx>");
+                Console.WriteLine("Usage: DiagramPageSizeUtility <inputDiagram> <configJson> <outputDiagram>");
                 return;
             }
 
-            string configPath = args[0];
-            string inputDiagramPath = args[1];
+            string inputDiagramPath = args[0];
+            string configPath = args[1];
             string outputDiagramPath = args[2];
 
-            // Validate configuration file existence
+            // Validate input files
+            if (!File.Exists(inputDiagramPath))
+            {
+                Console.WriteLine($"Input diagram file not found: {inputDiagramPath}");
+                return;
+            }
+
             if (!File.Exists(configPath))
             {
                 Console.WriteLine($"Configuration file not found: {configPath}");
                 return;
             }
 
-            // Read and deserialize the configuration
+            // Read and deserialize configuration
             PageSizeConfig config;
             try
             {
@@ -47,7 +48,7 @@ namespace PageSizeUtility
                 config = JsonSerializer.Deserialize<PageSizeConfig>(json);
                 if (config == null)
                 {
-                    Console.WriteLine("Failed to deserialize configuration.");
+                    Console.WriteLine("Failed to parse configuration file.");
                     return;
                 }
             }
@@ -57,14 +58,7 @@ namespace PageSizeUtility
                 return;
             }
 
-            // Validate page size values
-            if (config.Width <= 0 || config.Height <= 0)
-            {
-                Console.WriteLine("Page width and height must be positive numbers.");
-                return;
-            }
-
-            // Load the diagram, apply page size to each page, and save
+            // Load diagram, apply page size to each page, and save
             try
             {
                 using (Diagram diagram = new Diagram(inputDiagramPath))
@@ -76,7 +70,7 @@ namespace PageSizeUtility
                         page.PageSheet.PageProps.PageHeight.Value = config.Height;
                     }
 
-                    // Save the modified diagram
+                    // Save the modified diagram in VSDX format
                     diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
                 }
 

@@ -10,17 +10,13 @@ class Program
         try
         {
 
-            // Load the Visio document
+            // Load the Visio diagram from file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Verify that the document has at least three pages
-            if (diagram.Pages.Count >= 3)
-            {
-                // Move the third page (index 2) to the first position (index 0)
-                diagram.Pages[2].MoveTo(0);
-            }
+            // Move the third page (zero‑based index 2) to the first position (index 0)
+            diagram.Pages[2].MoveTo(0);
 
-            // Save the updated document
+            // Save the modified diagram back to file
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

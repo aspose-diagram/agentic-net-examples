@@ -10,32 +10,33 @@ class Program
         try
         {
 
-            // Input Visio file path
-            string inputPath = "input.vsdx";
+            // Path to the source Visio file
+            string sourcePath = "input.vsdx";
 
-            // Output directory for PNG files
-            string outputDir = "ExportedPages";
-            Directory.CreateDirectory(outputDir);
+            // Folder where PNG files will be saved
+            string outputFolder = "output";
+            Directory.CreateDirectory(outputFolder);
 
             // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            Diagram diagram = new Diagram(sourcePath);
+
+            // Export each page as a PNG image
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Iterate through each page in the diagram
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    // Configure PNG export options
-                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    pngOptions.PageIndex = i;      // Export the current page
-                    pngOptions.PageCount = 1;      // Export only this page
+                // Configure PNG export options
+                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+                options.PageIndex = i; // zero‑based page index
 
-                    // NOTE: Aspose.Diagram does not provide an Interlaced property for PNG export.
-                    // Interlaced PNGs are not supported, so we export standard PNG files.
+                // Note: Aspose.Diagram does not expose an Interlaced property for PNG.
+                // Interlaced PNG export is not supported directly.
 
-                    string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.png");
-                    diagram.Save(outputPath, pngOptions);
-                    Console.WriteLine($"Exported page {i + 1} to {outputPath}");
-                }
+                string outputPath = Path.Combine(outputFolder, $"Page_{i + 1}.png");
+                diagram.Save(outputPath, options);
+                Console.WriteLine($"Saved page {i + 1} to {outputPath}");
             }
+
+            // Clean up resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

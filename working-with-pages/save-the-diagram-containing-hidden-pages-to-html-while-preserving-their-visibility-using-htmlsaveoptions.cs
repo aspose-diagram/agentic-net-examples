@@ -1,37 +1,40 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Input Visio file path
-            string inputPath = "input.vsdx";
+                // Path to the source Visio file (replace with actual file path)
+                string inputPath = "input.vsdx";
 
-            // Output HTML file path
-            string outputPath = "output.html";
+                // Path for the exported HTML file
+                string outputPath = "output.html";
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Load the diagram from the file
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Configure HTML export options
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                    {
+                        // Preserve hidden pages in the exported HTML
+                        ExportHiddenPage = true
+                    };
 
-            // Set HTML save options to include hidden pages
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.ExportHiddenPage = true;
+                    // Save the diagram as HTML with the specified options
+                    diagram.Save(outputPath, htmlOptions);
+                }
 
-            // Save the diagram as HTML
-            diagram.Save(outputPath, htmlOptions);
+                Console.WriteLine("Diagram exported to HTML successfully.");
 
-            Console.WriteLine("Diagram saved to HTML with hidden pages preserved.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -6,63 +7,77 @@ class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Validate arguments
+            if (args.Length != 2)
             {
+                Console.WriteLine("Usage: DiagramImageResizer <inputVisioFile> <outputFolder>");
+                return;
+            }
 
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
+            string inputPath = args[0];
+            string outputFolder = args[1];
 
-                // Load the diagram
-                using (Diagram diagram = new Diagram(sourcePath))
+            if (!File.Exists(inputPath))
+            {
+                Console.WriteLine($"Error: Input file not found: {inputPath}");
+                return;
+            }
+
+            if (!Directory.Exists(outputFolder))
+            {
+                Console.WriteLine($"Output folder does not exist. Creating: {outputFolder}");
+                Directory.CreateDirectory(outputFolder);
+            }
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Desired image height in pixels
+            const int targetHeightPixels = 500;
+
+            // Iterate through each page and export it as a PNG with uniform height
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                Page page = diagram.Pages[i];
+
+                // Page height in inches (Visio uses inches for page dimensions)
+                double pageHeightInches = page.PageSheet.PageProps.PageHeight.Value;
+
+                if (pageHeightInches <= 0)
                 {
-                    // Iterate through all pages in the diagram
-                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
-                    {
-                        // Retrieve the current page
-                        Page page = diagram.Pages[pageIndex];
-
-                        // Get page height in inches
-                        double pageHeightInches = page.PageSheet.PageProps.PageHeight.Value;
-
-                        // Define the desired output height in pixels
-                        const int targetHeightPixels = 500;
-
-                        // Use a standard resolution (dots per inch) for the image
-                        const int resolutionDpi = 96;
-
-                        // Calculate the current height in pixels
-                        double currentHeightPixels = pageHeightInches * resolutionDpi;
-
-                        // Compute scaling factor to achieve the target height while preserving aspect ratio
-                        float scaleFactor = (float)(targetHeightPixels / currentHeightPixels);
-
-                        // Configure image save options
-                        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                        {
-                            // Apply the scaling factor
-                            Scale = scaleFactor,
-                            // Set the resolution (optional, keeps DPI consistent)
-                            Resolution = resolutionDpi,
-                            // Export only the current page
-                            PageIndex = pageIndex,
-                            // Do not export hidden pages
-                            ExportHiddenPage = false
-                        };
-
-                        // Build output file name
-                        string outputPath = $"Page_{page.ID}_Export.png";
-
-                        // Save the page as an image with the calculated scaling
-                        diagram.Save(outputPath, saveOptions);
-                    }
+                    Console.WriteLine($"Warning: Page {i} has non‑positive height. Skipping.");
+                    continue;
                 }
 
-                Console.WriteLine("All pages have been exported with a uniform height of 500 pixels.");
+                // Calculate the resolution needed to achieve the target pixel height
+                // pixels = inches * resolution  =>  resolution = pixels / inches
+                float requiredResolution = (float)(targetHeightPixels / pageHeightInches);
 
+                // Configure image save options
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    // Export only the current page
+                    PageIndex = i,
+                    PageCount = 1,
+
+                    // Set the calculated resolution to get the desired height
+                    Resolution = requiredResolution,
+
+                    // Preserve aspect ratio (default behavior)
+                    // No need to set Scale; it remains 1.0
+                };
+
+                // Build output file name
+                string outputFile = Path.Combine(outputFolder, $"Page_{i + 1}.png");
+
+                // Save the page as an image
+                diagram.Save(outputFile, saveOptions);
+
+                Console.WriteLine($"Exported page {i + 1} to {outputFile} (Resolution: {requiredResolution:F2} DPI)");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Clean up
+            diagram.Dispose();
+            Console.WriteLine("All pages processed.");
+        }
     }

@@ -1,53 +1,64 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths for input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Ensure the shape has a Props collection
-                    if (shape.Props == null)
-                        continue;
 
-                    // Look for the custom property named "IsSpecial"
-                    foreach (Prop prop in shape.Props)
+                // Input and output file paths (use defaults if not provided)
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Name of the custom property that must be true
+                const string targetPropName = "MyFlag";
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Check property name and its value (true as string)
-                        if (prop.NameU == "IsSpecial" && prop.Value != null && prop.Value.Val == "True")
+                        bool hasTrueFlag = false;
+
+                        // Check the shape's custom properties (Props collection)
+                        if (shape.Props != null)
                         {
-                            // Add a new field to the shape
-                            Field field = new Field();
-                            field.Value.Val = "Added"; // example field value
-                            shape.Fields.Add(field);
-                            break; // field added, move to next shape
+                            foreach (Prop prop in shape.Props)
+                            {
+                                if (prop.Name == targetPropName &&
+                                    prop.Value != null &&
+                                    prop.Value.Val != null &&
+                                    prop.Value.Val.Equals("true", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    hasTrueFlag = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // If the custom property is set to true, add a new field to the shape
+                        if (hasTrueFlag)
+                        {
+                            Field newField = new Field();
+                            // Set the field's displayed value
+                            newField.Value.Val = "Added";
+                            shape.Fields.Add(newField);
                         }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

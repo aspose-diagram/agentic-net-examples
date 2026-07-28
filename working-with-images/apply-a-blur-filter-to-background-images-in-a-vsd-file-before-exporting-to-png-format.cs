@@ -13,12 +13,11 @@ class Program
             // Load the VSD diagram
             Diagram diagram = new Diagram("input.vsd");
 
-            // Iterate through all pages and shapes
+            // Apply blur to every shape that contains an image (typically background images)
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // If the shape contains an image (background picture), apply blur
                     if (shape.Image != null)
                     {
                         // Blur value must be between 0 and 1; here we set it to 0.5 (50% blur)
@@ -28,10 +27,10 @@ class Program
             }
 
             // Prepare PNG save options
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
-            // Export the diagram (all pages) to a PNG file
-            diagram.Save("output.png", pngOptions);
+            // Export the diagram (first page) to PNG format
+            diagram.Save("output.png", saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

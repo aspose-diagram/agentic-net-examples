@@ -1,8 +1,6 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Xml.Linq;
 using Aspose.Diagram;
 
 class Program
@@ -12,46 +10,31 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
+            // Load the Visio diagram (uses Aspose.Diagram's load functionality)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Prepare the CSV output file
-            using (StreamWriter writer = new StreamWriter("output.csv", false, Encoding.UTF8))
+            // Path for the CSV output
+            string csvFilePath = "SolutionXmlData.csv";
+
+            // Create a StreamWriter for the CSV file
+            using (StreamWriter writer = new StreamWriter(csvFilePath, false, Encoding.UTF8))
             {
                 // Write CSV header
-                writer.WriteLine("SolutionXMLName,CustomDataSection");
+                writer.WriteLine("Name,XmlValue");
 
-                // Iterate over all SolutionXML entries in the diagram
+                // Iterate through all SolutionXML entries in the diagram
                 foreach (SolutionXML solXml in diagram.SolutionXMLs)
                 {
-                    // Skip if the XML value is empty
-                    if (string.IsNullOrEmpty(solXml.XmlValue))
-                        continue;
+                    // Ensure the XML value is not null and escape double quotes
+                    string xmlValue = solXml.XmlValue?.Replace("\"", "\"\"") ?? string.Empty;
 
-                    // Parse the XML content; if parsing fails, skip this entry
-                    XDocument xDoc;
-                    try
-                    {
-                        xDoc = XDocument.Parse(solXml.XmlValue);
-                    }
-                    catch
-                    {
-                        continue;
-                    }
-
-                    // Find all elements named "CustomData" regardless of namespace
-                    var customDataElements = xDoc.Descendants()
-                                                 .Where(e => e.Name.LocalName.Equals("CustomData", StringComparison.OrdinalIgnoreCase));
-
-                    // Write each custom data section to the CSV
-                    foreach (var elem in customDataElements)
-                    {
-                        // Escape double quotes for CSV compliance
-                        string escapedXml = elem.ToString().Replace("\"", "\"\"");
-                        writer.WriteLine($"\"{solXml.Name}\",\"{escapedXml}\"");
-                    }
+                    // Enclose fields in double quotes to handle commas, newlines, etc.
+                    writer.WriteLine($"\"{solXml.Name}\",\"{xmlValue}\"");
                 }
             }
+
+            // (Optional) Save the diagram if any modifications were made
+            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

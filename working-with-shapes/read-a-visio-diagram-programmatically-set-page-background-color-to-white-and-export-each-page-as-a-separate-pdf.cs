@@ -1,74 +1,77 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output folder for individual PDFs
+        string outputDir = "OutputPdfs";
+        Directory.CreateDirectory(outputDir);
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate over each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Input Visio file path (provide as first argument or modify the string)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Calculate the center point for the background rectangle
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Draw a rectangle that spans the entire page
+                long bgShapeId = page.DrawRectangle(pinX, pinY, pageWidth, pageHeight);
+                Shape bgShape = page.Shapes.GetShape(bgShapeId);
 
-                // Iterate through each page to set a white background
-                foreach (Page page in diagram.Pages)
+                // Set the rectangle fill to solid white
+                bgShape.Fill.FillPattern.Value = 1;          // 1 = solid fill
+                bgShape.Fill.FillForegnd.Value = "#FFFFFF"; // white color
+
+                // Remove any border from the background shape
+                bgShape.Line.LinePattern.Value = 0; // no line
+
+                // Send the background shape to the back so other content appears on top
+                bgShape.SendToBack();
+
+                // Prepare PDF save options to export only the current page
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
                 {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    PageIndex = page.ID, // export this page
+                    PageCount = 1,       // only one page per file
+                    ExportHiddenPage = false,
+                    DefaultFont = "Arial"
+                };
 
-                    // Center coordinates for the rectangle shape
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
+                // Build the output PDF file name (e.g., Page-1.pdf)
+                string outputPath = Path.Combine(outputDir, $"Page-{page.ID}.pdf");
 
-                    // Draw a rectangle that covers the entire page
-                    long rectShapeId = page.DrawRectangle(pinX, pinY, pageWidth, pageHeight);
-                    Shape rectShape = page.Shapes.GetShape((int)rectShapeId);
-
-                    // Set solid white fill
-                    rectShape.Fill.FillPattern.Value = 1;               // Solid fill
-                    rectShape.Fill.FillForegnd.Value = "#FFFFFF";       // White color
-
-                    // Remove outline
-                    rectShape.Line.LinePattern.Value = 0;               // No line
-
-                    // Send the rectangle to the back so it acts as a background
-                    page.SendToBack(rectShapeId);
-
-                    // Make the background shape non‑selectable
-                    rectShape.Protection.LockSelect.Value = BOOL.True;
-                }
-
-                // Export each page as a separate PDF
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    // Configure PDF save options for a single page
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions
-                    {
-                        ExportHiddenPage = false,
-                        PageIndex = i,      // Zero‑based page index
-                        PageCount = 1,      // Export only one page
-                        DefaultFont = "Arial"
-                    };
-
-                    // Build output file name
-                    string baseName = Path.GetFileNameWithoutExtension(inputPath);
-                    string outputPath = $"{baseName}_Page{i + 1}.pdf";
-
-                    // Save the diagram (only the specified page) as PDF
-                    diagram.Save(outputPath, pdfOptions);
-                }
-
+                // Save the diagram page as a separate PDF
+                diagram.Save(outputPath, pdfOptions);
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Log any Aspose or I/O errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

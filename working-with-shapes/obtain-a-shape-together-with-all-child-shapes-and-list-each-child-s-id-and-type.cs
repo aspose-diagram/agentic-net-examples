@@ -9,21 +9,18 @@ class Program
         try
         {
 
-            // Load the Visio diagram using the prescribed load rule
-            Diagram diagram = LoadDiagram("input.vsdx");
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Identify the parent shape (replace with the actual ID or name as needed)
-            int parentShapeId = 1; // example ID
-            Shape parentShape = diagram.Pages[0].Shapes.GetShapeIncludingChild(parentShapeId);
+            // Identify the shape you want to inspect (replace with the actual ID or name)
+            int targetShapeId = 1; // example ID
+            Shape targetShape = diagram.Pages[0].Shapes.GetShapeIncludingChild(targetShapeId);
 
-            // Iterate through all child shapes of the parent and output their ID and Type
-            foreach (Shape child in parentShape.Shapes)
-            {
-                Console.WriteLine($"Child ID: {child.ID}, Type: {child.Type}");
-            }
+            // Output the target shape's ID and type
+            Console.WriteLine($"Shape ID: {targetShape.ID}, Type: {targetShape.Type}");
 
-            // Save the diagram using the prescribed save rule
-            SaveDiagram(diagram, "output.vsdx");
+            // Recursively list all child shapes with their IDs and types
+            ListChildShapes(targetShape);
 
         }
         catch (System.IO.FileNotFoundException ex)
@@ -32,15 +29,18 @@ class Program
         }
     }
 
-    // Load rule placeholder – actual implementation is provided by the lifecycle rule set
-    static Diagram LoadDiagram(string filePath)
+    static void ListChildShapes(Shape parentShape)
     {
-        return new Diagram(filePath);
-    }
+        // Iterate through direct child shapes
+        foreach (Shape child in parentShape.Shapes)
+        {
+            Console.WriteLine($"Child Shape ID: {child.ID}, Type: {child.Type}");
 
-    // Save rule placeholder – actual implementation is provided by the lifecycle rule set
-    static void SaveDiagram(Diagram diagram, string filePath)
-    {
-        diagram.Save(filePath, SaveFileFormat.Vsdx);
+            // If the child itself contains further children, process them recursively
+            if (child.Shapes.Count > 0)
+            {
+                ListChildShapes(child);
+            }
+        }
     }
 }

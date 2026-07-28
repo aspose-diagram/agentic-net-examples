@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,25 +8,34 @@ class Program
             try
             {
 
-                // Path to the source Visio file
+                // Define the input and output file paths
                 string inputPath = "input.vsdx";
-
-                // Load the diagram using the built‑in constructor (lifecycle rule)
-                Diagram diagram = new Diagram(inputPath);
+                string outputPath = "output.vsdx";
 
                 // Define the Y‑offset to add (in inches)
                 double yOffset = 2.0;
 
-                // Example: adjust the Y coordinate of shape with ID = 1 on the first page
-                // Retrieve the shape from the page's shape collection
-                Shape shape = diagram.Pages[0].Shapes.GetShape(1);
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Add the offset to the PinY (center Y) coordinate
-                shape.XForm.PinY.Value = shape.XForm.PinY.Value + yOffset;
+                // Work with the first page (index 0)
+                Page page = diagram.Pages[0];
 
-                // Save the modified diagram (lifecycle rule)
-                string outputPath = "output.vsdx";
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.False)
+                    {
+                        // Add the offset to the current PinY value
+                        shape.XForm.PinY.Value += yOffset;
+                    }
+                }
+
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Y coordinate of all non‑deleted shapes increased by {yOffset} inches.");
 
             }
             catch (System.IO.FileNotFoundException ex)

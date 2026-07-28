@@ -1,42 +1,53 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            // Prompt user for the folder containing Visio diagram files
+            Console.WriteLine("Enter the full path to the folder containing Visio diagrams (e.g., C:\\Diagrams):");
+            string folderPath = Console.ReadLine();
 
-            // Folder that contains the Visio files
-            string diagramsFolder = @"C:\Visio\Diagrams";
+            if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+            {
+                Console.WriteLine("Invalid folder path. Exiting.");
+                return;
+            }
 
-            // Get all Visio files (adjust the extension if needed)
-            string[] diagramFiles = Directory.GetFiles(diagramsFolder, "*.vsdx");
+            // Get all Visio files with .vsdx extension in the specified folder
+            string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
+
+            if (diagramFiles.Length == 0)
+            {
+                Console.WriteLine("No .vsdx files found in the specified folder.");
+                return;
+            }
 
             foreach (string filePath in diagramFiles)
             {
-                // Load the diagram (lifecycle rule)
-                Diagram diagram = new Diagram(filePath);
+                try
+                {
+                    // Load the diagram from file
+                    Diagram diagram = new Diagram(filePath);
 
-                // Set the right‑hand footer placeholder for the whole document.
-                // Visio uses field codes like &[Page] for the current page number.
-                // Aspose.Diagram exposes the HeaderFooter object on the Diagram.
-                diagram.HeaderFooter.FooterRight = "Page &[Page]";
+                    // Set the right footer to display the page number placeholder
+                    // '&p' is the Visio field code for the current page number
+                    diagram.HeaderFooter.FooterRight = "Page: &p";
 
-                // Save the diagram back to the same file (lifecycle rule)
-                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                    // Save the diagram back to the same file (overwrites original)
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
 
-                // Release resources
-                diagram.Dispose();
+                    Console.WriteLine($"Updated footer for: {Path.GetFileName(filePath)}");
+                }
+                catch (Exception ex)
+                {
+                    // Report any errors but continue processing other files
+                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
+                }
             }
 
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.WriteLine("Footer update operation completed.");
         }
     }
-}

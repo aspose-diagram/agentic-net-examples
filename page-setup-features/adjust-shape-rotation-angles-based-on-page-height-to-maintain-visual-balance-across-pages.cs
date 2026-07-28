@@ -1,9 +1,10 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
@@ -21,23 +22,19 @@ class Program
                         // Retrieve the page height (in inches)
                         double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                        // Define a factor to calculate rotation based on page height
-                        // This example uses 5 degrees per inch of page height
-                        double degreesPerInch = 5.0;
-                        double angleDeg = pageHeight * degreesPerInch;
-
-                        // Convert degrees to radians because the Angle cell expects radians
-                        double angleRad = Math.PI * angleDeg / 180.0;
-
-                        // Adjust rotation for each shape on the current page
+                        // Iterate through each shape on the current page
                         foreach (Shape shape in page.Shapes)
                         {
                             // Skip deleted shapes
                             if (shape.Del == BOOL.True)
                                 continue;
 
-                            // Set the rotation angle (in radians)
-                            shape.XForm.Angle.Value = angleRad;
+                            // Compute a new rotation angle based on page height.
+                            // Example: 10 degrees per inch of page height, wrapped to 0‑360.
+                            double newAngle = (pageHeight * 10) % 360;
+
+                            // Apply the new rotation angle (degrees)
+                            shape.XForm.Angle.Value = newAngle;
                         }
                     }
 
@@ -45,7 +42,7 @@ class Program
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("Shape rotation angles have been adjusted based on page height.");
+                Console.WriteLine("Shape rotation angles have been adjusted and saved to: " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -5,69 +5,60 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
 
-        // Ensure there is at least one page and one shape
-        if (diagram.Pages.Count == 0)
-        {
-            Console.Error.WriteLine("Diagram contains no pages.");
-            return;
-        }
-
-        Page page = diagram.Pages[0];
-        Shape shape = null;
-        double originalPinX = 0, originalPinY = 0;
-
-        try
-        {
-            // Retrieve a shape by its ID (assuming ID 1 exists)
-            shape = page.Shapes.GetShape(1);
-            if (shape == null)
-            {
-                Console.Error.WriteLine("Shape with ID 1 not found.");
-                return;
-            }
-
-            // Store original geometry for rollback
-            originalPinX = shape.XForm.PinX.Value;
-            originalPinY = shape.XForm.PinY.Value;
-
-            // Modify shape position
-            shape.XForm.PinX.Value += 1.0; // shift right by 1 inch
-            shape.XForm.PinY.Value += 0.5; // shift up by 0.5 inch
-
-            // Save the updated diagram
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path to the output Visio file after successful updates
             string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved successfully.");
-        }
-        catch (Exception ex)
-        {
-            // Roll back geometry changes if shape was modified
-            if (shape != null)
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Preserve original state in a memory stream for rollback
+            MemoryStream backupStream = new MemoryStream();
+            diagram.Save(backupStream, SaveFileFormat.Vsdx);
+            // Reset stream position for later reading
+            backupStream.Position = 0;
+
+            try
             {
-                shape.XForm.PinX.Value = originalPinX;
-                shape.XForm.PinY.Value = originalPinY;
+                // Example geometry update: move the first shape on the first page
+                Page page = diagram.Pages[0];
+                if (page.Shapes.Count > 0)
+                {
+                    // Retrieve the shape by its ID (first shape)
+                    Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
+                    // Move shape by 1 inch right and 0.5 inch up
+                    shape.Move(1.0, -0.5);
+                }
+
+                // Additional geometry modifications can be placed here
+                // ...
+
+                // Save the updated diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            catch (Exception ex)
+            {
+                // Rollback: reload the original diagram from the backup stream
+                backupStream.Position = 0;
+                Diagram restoredDiagram = new Diagram(backupStream);
+                // Save the restored diagram to the output path to maintain integrity
+                restoredDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                // Log the error
+                Console.WriteLine("An error occurred during updates. Changes have been rolled back.");
+                Console.WriteLine($"Error details: {ex.Message}");
+            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

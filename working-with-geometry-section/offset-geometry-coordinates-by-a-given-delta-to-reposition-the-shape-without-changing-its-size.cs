@@ -1,34 +1,29 @@
-using System.IO;
 using System;
-using Aspose.Diagram;
+using System.IO;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
 
-            // Identify the shape to move (e.g., first shape on the first page)
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[1]; // index 0 is the page background
+            // Define the shape ID (or use any other method to locate the shape)
+            int shapeId = 1; // example shape ID
+            Aspose.Diagram.Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-            // Define the offset in inches (Visio uses inches for positioning)
-            double offsetX = 1.5; // move 1.5 inches to the right
-            double offsetY = 0.75; // move 0.75 inches upward
+            // Offset values in inches (positive = right/down, negative = left/up)
+            double deltaX = 0.5; // move 0.5 inches to the right
+            double deltaY = -0.25; // move 0.25 inches up
 
-            // Reposition the shape by applying the offset.
-            // This moves the shape without altering its geometry or size.
-            shape.Move(offsetX, offsetY);
-
-            // Refresh shape data to ensure internal geometry is updated
-            shape.RefreshData();
+            // Reposition the shape without altering its size
+            shape.Move(deltaX, deltaY);
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -6,15 +6,24 @@ using Aspose.Diagram;
 
 namespace DiagramGeometryModifier
 {
-    // Represents a single geometry modification instruction read from the configuration file.
-    public class GeometryModification
+    // Represents a point coordinate in the configuration.
+    public class Vertex
     {
-        public int ShapeId { get; set; }          // ID of the shape to modify.
-        public int GeomIndex { get; set; }        // Index of the geometry within the shape.
-        public string Action { get; set; }        // "AddLine" or "DeleteSegment".
-        public int SegmentIndex { get; set; }     // Index of the segment to delete (used when Action == "DeleteSegment").
-        public double X { get; set; }             // X coordinate for a new line segment (used when Action == "AddLine").
-        public double Y { get; set; }             // Y coordinate for a new line segment (used when Action == "AddLine").
+        public double X { get; set; }
+        public double Y { get; set; }
+    }
+
+    // Represents a single geometry modification instruction.
+    public class GeometryConfig
+    {
+        // Shape identifier (as stored in the Visio file).
+        public int ShapeId { get; set; }
+
+        // Index of the geometry within the shape's Geoms collection.
+        public int GeomIndex { get; set; }
+
+        // New vertices that will replace the existing geometry.
+        public List<Vertex> Vertices { get; set; }
     }
 
     class Program
@@ -24,12 +33,12 @@ namespace DiagramGeometryModifier
             try
             {
 
-                // Paths can be hard‑coded or supplied via command‑line arguments.
+                // Paths – adjust as needed.
                 string diagramPath = "input.vsdx";
                 string configPath = "config.json";
-                string outputPath = "output.vsdx";
+                string outputPath = "output_modified.vsdx";
 
-                // Load the Visio diagram.
+                // Load the diagram.
                 Diagram diagram = new Diagram(diagramPath);
 
                 // Read and deserialize the configuration file.
@@ -40,69 +49,80 @@ namespace DiagramGeometryModifier
                 }
 
                 string json = File.ReadAllText(configPath);
-                List<GeometryModification> modifications = JsonSerializer.Deserialize<List<GeometryModification>>(json);
+                List<GeometryConfig> configs = JsonSerializer.Deserialize<List<GeometryConfig>>(json);
 
-                // Apply each modification.
-                foreach (GeometryModification mod in modifications)
+                if (configs == null || configs.Count == 0)
                 {
-                    // Locate the target shape by its ID on the first page.
+                    Console.WriteLine("No geometry modifications defined in the configuration.");
+                    return;
+                }
+
+                // Process each configuration entry.
+                foreach (var cfg in configs)
+                {
+                    // Locate the shape with the specified ShapeId on any page.
                     Shape targetShape = null;
-                    foreach (Shape s in diagram.Pages[0].Shapes)
+                    foreach (Page page in diagram.Pages)
                     {
-                        if (s.ID == mod.ShapeId)
+                        foreach (Shape shape in page.Shapes)
                         {
-                            targetShape = s;
-                            break;
+                            if (shape.ID == cfg.ShapeId)
+                            {
+                                targetShape = shape;
+                                break;
+                            }
                         }
+                        if (targetShape != null) break;
                     }
 
                     if (targetShape == null)
                     {
-                        Console.WriteLine($"Shape with ID {mod.ShapeId} not found.");
+                        Console.WriteLine($"Shape with ID {cfg.ShapeId} not found.");
                         continue;
                     }
 
-                    // Ensure the requested geometry index exists.
-                    if (mod.GeomIndex < 0 || mod.GeomIndex >= targetShape.Geoms.Count)
+                    // Validate geometry index.
+                    if (cfg.GeomIndex < 0 || cfg.GeomIndex >= targetShape.Geoms.Count)
                     {
-                        Console.WriteLine($"GeomIndex {mod.GeomIndex} out of range for shape ID {mod.ShapeId}.");
+                        Console.WriteLine($"Invalid GeomIndex {cfg.GeomIndex} for shape ID {cfg.ShapeId}.");
                         continue;
                     }
 
-                    // Cast the geometry to a strongly typed Geom object.
-                    Geom geom = (Geom)targetShape.Geoms[mod.GeomIndex];
+                    // Retrieve the specific geometry.
+                    Geom geom = (Geom)targetShape.Geoms[cfg.GeomIndex];
 
-                    if (mod.Action.Equals("AddLine", StringComparison.OrdinalIgnoreCase))
+                    // Clear existing coordinates (optional – here we mark them as deleted).
+                    foreach (var coord in geom.CoordinateCol)
                     {
-                        // Create a new line segment and append it to the geometry.
+                        // All coordinate objects inherit from a base that has a Del property.
+                        // Mark each existing segment for deletion.
+                        coord.Del = BOOL.True;
+                    }
+
+                    // Ensure we have at least one vertex to start the path.
+                    if (cfg.Vertices == null || cfg.Vertices.Count == 0)
+                    {
+                        Console.WriteLine($"No vertices provided for shape ID {cfg.ShapeId}, geom index {cfg.GeomIndex}.");
+                        continue;
+                    }
+
+                    // Build new geometry: start with MoveTo, then LineTo for remaining points.
+                    // First vertex becomes MoveTo.
+                    MoveTo move = new MoveTo();
+                    move.X.Value = cfg.Vertices[0].X;
+                    move.Y.Value = cfg.Vertices[0].Y;
+                    geom.CoordinateCol.Add(move);
+
+                    // Subsequent vertices become LineTo segments.
+                    for (int i = 1; i < cfg.Vertices.Count; i++)
+                    {
                         LineTo line = new LineTo();
-                        line.X.Value = mod.X;
-                        line.Y.Value = mod.Y;
+                        line.X.Value = cfg.Vertices[i].X;
+                        line.Y.Value = cfg.Vertices[i].Y;
                         geom.CoordinateCol.Add(line);
-                        Console.WriteLine($"Added LineTo ({mod.X}, {mod.Y}) to shape ID {mod.ShapeId}, geom {mod.GeomIndex}.");
                     }
-                    else if (mod.Action.Equals("DeleteSegment", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Validate segment index.
-                        if (mod.SegmentIndex < 0 || mod.SegmentIndex >= geom.CoordinateCol.Count)
-                        {
-                            Console.WriteLine($"SegmentIndex {mod.SegmentIndex} out of range for shape ID {mod.ShapeId}, geom {mod.GeomIndex}.");
-                            continue;
-                        }
 
-                        // Mark the specified segment for deletion.
-                        // The segment can be any type derived from Geometry; we treat it generically.
-                        object segmentObj = geom.CoordinateCol[mod.SegmentIndex];
-                        // All geometry segment types inherit from GeometryBase which has a Del property.
-                        // Use dynamic to set the property safely.
-                        dynamic segment = segmentObj;
-                        segment.Del = BOOL.True;
-                        Console.WriteLine($"Deleted segment index {mod.SegmentIndex} from shape ID {mod.ShapeId}, geom {mod.GeomIndex}.");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Unsupported action '{mod.Action}' in configuration.");
-                    }
+                    Console.WriteLine($"Modified geometry of shape ID {cfg.ShapeId}, geom index {cfg.GeomIndex}.");
                 }
 
                 // Save the modified diagram.

@@ -1,6 +1,5 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
@@ -10,41 +9,54 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the source Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // -----------------------------------------------------------------
-            // 1. Retrieve the master that contains the template geometry.
-            //    Assume the master is identified by its ID (replace with actual ID or name).
-            // -----------------------------------------------------------------
-            int masterId = 1;                     // TODO: set the correct master ID
-            Master master = diagram.Masters[masterId];
+            // Name of the shape that serves as the geometry template
+            const string templateShapeName = "TemplateShape";
 
-            // The master usually contains a single shape that defines the geometry.
-            // If there are multiple shapes, select the appropriate one (e.g., by name).
-            Shape templateShape = master.Shapes[0];
-
-            // -----------------------------------------------------------------
-            // 2. Define the target shapes that should receive the template geometry.
-            //    Here we use a list of shape IDs on the first page as an example.
-            // -----------------------------------------------------------------
+            // Retrieve the first page (adjust if needed)
             Page page = diagram.Pages[0];
-            List<long> targetShapeIds = new List<long> { 5, 7, 9 }; // TODO: replace with actual IDs
 
-            // -----------------------------------------------------------------
-            // 3. Copy the geometry (and related properties) from the template shape
-            //    to each target shape using Shape.Copy.
-            // -----------------------------------------------------------------
-            foreach (long shapeId in targetShapeIds)
+            // Locate the template shape on the page
+            Shape templateShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-                Shape targetShape = page.Shapes.GetShape(shapeId);
-                targetShape.Copy(templateShape);
+                if (shape.NameU == templateShapeName)
+                {
+                    templateShape = shape;
+                    break;
+                }
             }
 
-            // -----------------------------------------------------------------
-            // 4. Save the modified diagram.
-            // -----------------------------------------------------------------
-            diagram.Save("output.vsdx", SaveFileFormat.Vdx);
+            if (templateShape == null)
+            {
+                throw new Exception($"Template shape '{templateShapeName}' not found on page '{page.Name}'.");
+            }
+
+            // Iterate over all shapes on the page and copy geometry from the template
+            foreach (Shape targetShape in page.Shapes)
+            {
+                // Skip the template shape itself
+                if (targetShape.ID == templateShape.ID)
+                    continue;
+
+                // Remove any existing geometry from the target shape
+                targetShape.Geoms.Clear();
+
+                // Clone each geometry element from the template and add it to the target shape
+                foreach (Geom geom in templateShape.Geoms)
+                {
+                    // Clone returns an object; cast it back to Geom
+                    Geom clonedGeom = (Geom)geom.Clone();
+                    targetShape.Geoms.Add(clonedGeom);
+                }
+            }
+
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

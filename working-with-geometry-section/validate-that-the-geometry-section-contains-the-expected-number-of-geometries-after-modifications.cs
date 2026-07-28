@@ -10,59 +10,45 @@ class GeometryValidation
         {
 
             // Load an existing Visio diagram
-            // Replace with the actual path to your .vsdx file
-            string inputPath = "inputDiagram.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Choose a shape to work with (e.g., the first shape on the first page)
+            // Choose the first page and first shape for demonstration
             Page page = diagram.Pages[0];
             Shape shape = page.Shapes[0];
 
-            // Store the original number of geometries
-            int originalCount = shape.Geoms.Count;
+            // Expected number of Geom objects after modifications
+            int expectedGeomCount = 3;
 
-            // ------------------------------
-            // Modification: add a new Geom
-            // ------------------------------
-            Geom newGeom = new Geom();
-            // (Optionally configure the newGeom properties here)
-            shape.Geoms.Add(newGeom);
+            // --- Begin modifications to the Geometry section ---
 
-            // Expected count after addition
-            int expectedAfterAdd = originalCount + 1;
+            // Clear existing geometries (optional, depending on scenario)
+            shape.Geoms.Clear();
 
-            // Validate the count
-            if (shape.Geoms.Count == expectedAfterAdd)
+            // Add new Geom objects to the shape
+            for (int i = 0; i < expectedGeomCount; i++)
             {
-                Console.WriteLine($"Add operation successful. Geometry count is {shape.Geoms.Count} as expected.");
+                Geom geom = new Geom();
+                // Example: add a simple line coordinate (optional)
+                // Each Geom can have its own CoordinateCol, but for count validation we only need the Geom objects
+                shape.Geoms.Add(geom);
+            }
+
+            // --- End modifications ---
+
+            // Validate that the Geometry section contains the expected number of Geom objects
+            int actualGeomCount = shape.Geoms.Count;
+
+            if (actualGeomCount == expectedGeomCount)
+            {
+                Console.WriteLine($"Validation succeeded: Geometry contains {actualGeomCount} Geom objects as expected.");
             }
             else
             {
-                Console.WriteLine($"Add operation failed. Expected {expectedAfterAdd} geometries, but found {shape.Geoms.Count}.");
-            }
-
-            // ------------------------------
-            // Modification: remove the previously added Geom
-            // ------------------------------
-            shape.Geoms.Remove(newGeom);
-
-            // Expected count after removal (should be back to original)
-            int expectedAfterRemove = originalCount;
-
-            // Validate the count again
-            if (shape.Geoms.Count == expectedAfterRemove)
-            {
-                Console.WriteLine($"Remove operation successful. Geometry count is {shape.Geoms.Count} as expected.");
-            }
-            else
-            {
-                Console.WriteLine($"Remove operation failed. Expected {expectedAfterRemove} geometries, but found {shape.Geoms.Count}.");
+                Console.WriteLine($"Validation failed: Geometry contains {actualGeomCount} Geom objects, expected {expectedGeomCount}.");
             }
 
             // Save the modified diagram (optional)
-            // Replace with the desired output path
-            string outputPath = "outputDiagram.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

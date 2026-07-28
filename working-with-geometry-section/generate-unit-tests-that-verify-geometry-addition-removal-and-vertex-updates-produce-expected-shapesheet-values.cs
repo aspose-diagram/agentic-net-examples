@@ -2,78 +2,97 @@ using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main()
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            try
+            {
 
-            // Use the first page (created by default)
-            Page page = diagram.Pages[0];
+                // Create a new empty diagram (contains a default page)
+                Diagram diagram = new Diagram();
 
-            // Draw a simple rectangle (PinX, PinY, Width, Height)
-            long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
-            Shape rectShape = page.Shapes.GetShape(rectId);
+                // Add a rectangle shape to the first page
+                // Parameters: pinX, pinY, width, height, masterName
+                long shapeId = diagram.Pages[0].AddShape(2.0, 2.0, 1.0, 1.0, "Rectangle");
+                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-            // -------------------------------------------------
-            // Test 1: Add a new vertex (LineTo) to the geometry
-            // -------------------------------------------------
-            // Access the first geometry section
-            Geom geom = (Geom)rectShape.Geoms[0];
-            var coordCol = geom.CoordinateCol;
+                // Ensure the shape has at least one geometry section
+                if (shape.Geoms == null || shape.Geoms.Count == 0)
+                    throw new Exception("Shape does not contain any geometry sections.");
 
-            int countBeforeAdd = coordCol.Count;
+                // Use the first geometry section for tests
+                Geom geom = (Geom)shape.Geoms[0];
+                var coordCol = geom.CoordinateCol;
 
-            // Create a new vertex at (3.0, 3.0)
-            LineTo newVertex = new LineTo();
-            newVertex.X.Value = 3.0;
-            newVertex.Y.Value = 3.0;
-            coordCol.Add(newVertex);
+                // Record initial count of geometry vertices
+                int initialCount = coordCol.Count;
 
-            // Verify the vertex was added
-            if (coordCol.Count != countBeforeAdd + 1)
-                throw new Exception("Vertex addition failed: count mismatch.");
+                // ------------------------------
+                // Test 1: Add a new vertex (LineTo)
+                // ------------------------------
+                LineTo newVertex = new LineTo();
+                newVertex.X.Value = 2.5; // X coordinate in inches
+                newVertex.Y.Value = 2.5; // Y coordinate in inches
+                coordCol.Add(newVertex);
 
-            // Verify the added vertex coordinates directly
-            AssertEqual(3.0, newVertex.X.Value, "Added vertex X coordinate incorrect.");
-            AssertEqual(3.0, newVertex.Y.Value, "Added vertex Y coordinate incorrect.");
+                // Verify that the count increased by one
+                if (coordCol.Count != initialCount + 1)
+                    throw new Exception($"Vertex addition failed. Expected count {initialCount + 1}, actual {coordCol.Count}.");
 
-            // -------------------------------------------------
-            // Test 2: Mark the newly added vertex as deleted
-            // -------------------------------------------------
-            newVertex.Del = BOOL.True;
+                // Verify that the newly added vertex has the expected coordinates
+                // The newly added vertex is the last item in the collection
+                var addedVertex = (LineTo)coordCol[coordCol.Count - 1];
+                if (Math.Abs(addedVertex.X.Value - 2.5) > 0.0001 || Math.Abs(addedVertex.Y.Value - 2.5) > 0.0001)
+                    throw new Exception("Added vertex coordinates do not match expected values.");
 
-            if (newVertex.Del != BOOL.True)
-                throw new Exception("Vertex deletion flag not set correctly.");
+                Console.WriteLine("Test 1 (Add Vertex) passed.");
 
-            // -------------------------------------------------
-            // Test 3: Update an existing vertex coordinates
-            // -------------------------------------------------
-            // The rectangle geometry starts with a MoveTo followed by LineTo segments.
-            // Update the second vertex (first LineTo after MoveTo)
-            LineTo vertexToUpdate = (LineTo)coordCol[1];
-            vertexToUpdate.X.Value = 5.5;
-            vertexToUpdate.Y.Value = 6.5;
+                // ---------------------------------
+                // Test 2: Update an existing vertex
+                // ---------------------------------
+                // Find the first existing LineTo vertex (skip MoveTo if present)
+                LineTo firstLineTo = null;
+                foreach (var item in coordCol)
+                {
+                    if (item is LineTo lt)
+                    {
+                        firstLineTo = lt;
+                        break;
+                    }
+                }
 
-            // Verify the update
-            AssertEqual(5.5, vertexToUpdate.X.Value, "Vertex X update failed.");
-            AssertEqual(6.5, vertexToUpdate.Y.Value, "Vertex Y update failed.");
+                if (firstLineTo == null)
+                    throw new Exception("No existing LineTo vertex found to update.");
 
-            Console.WriteLine("All geometry tests passed successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+                // Update its coordinates
+                firstLineTo.X.Value = 3.0;
+                firstLineTo.Y.Value = 3.0;
+
+                // Verify the update
+                if (Math.Abs(firstLineTo.X.Value - 3.0) > 0.0001 || Math.Abs(firstLineTo.Y.Value - 3.0) > 0.0001)
+                    throw new Exception("Vertex update failed: coordinates do not match expected values.");
+
+                Console.WriteLine("Test 2 (Update Vertex) passed.");
+
+                // ---------------------------------
+                // Test 3: Remove (logically delete) a vertex
+                // ---------------------------------
+                // Mark the previously added vertex as deleted
+                addedVertex.Del = BOOL.True;
+
+                // Verify the deletion flag
+                if (addedVertex.Del != BOOL.True)
+                    throw new Exception("Vertex removal failed: deletion flag not set.");
+
+                Console.WriteLine("Test 3 (Remove Vertex) passed.");
+
+                // All tests succeeded
+                Console.WriteLine("All geometry unit tests completed successfully.");
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-
-    // Simple equality check with tolerance for double values
-    static void AssertEqual(double expected, double actual, string message)
-    {
-        const double Tolerance = 1e-6;
-        if (Math.Abs(expected - actual) > Tolerance)
-            throw new Exception($"{message} Expected: {expected}, Actual: {actual}");
     }
-}

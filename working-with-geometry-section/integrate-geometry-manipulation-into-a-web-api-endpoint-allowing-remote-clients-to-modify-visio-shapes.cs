@@ -1,119 +1,114 @@
 using System;
 using System.IO;
+using System.Net;
+using System.Text;
 using System.Text.Json;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace VisioWebApi
+namespace VisioGeometryWebApi
 {
-    public class ModifyRequest
+    // DTO for incoming JSON payload
+    public class ShapeUpdateRequest
     {
         public long ShapeId { get; set; }
-        public double PinX { get; set; }
-        public double PinY { get; set; }
-        public double AngleDeg { get; set; }
+        public double? PinX { get; set; }
+        public double? PinY { get; set; }
+        public double? Width { get; set; }
+        public double? Height { get; set; }
+        public double? Angle { get; set; } // Radians
     }
 
     class Program
     {
-        static void Main(string[] args)
+        // Path to the source Visio file (adjust as needed)
+        private const string SourceDiagramPath = "sample.vsdx";
+        // Path where the modified diagram will be saved
+        private const string OutputDiagramPath = "modified.vsdx";
+
+        static void Main()
         {
-            if (args.Length < 3)
-            {
-                Console.Error.WriteLine("Usage: <inputDiagramPath> <outputDiagramPath> <requestJsonPath>");
-                return;
-            }
+            // Simple HTTP listener acting as a minimal web API
+            HttpListener listener = new HttpListener();
+            listener.Prefixes.Add("http://localhost:8080/modify/");
+            listener.Start();
+            Console.WriteLine("Listening for POST requests at http://localhost:8080/modify/ ...");
 
-            string inputPath = args[0];
-            if (!File.Exists(inputPath))
+            while (true)
             {
-                Console.Error.WriteLine($"File not found: {inputPath}");
-                return;
-            }
+                HttpListenerContext context = listener.GetContext();
+                HttpListenerRequest request = context.Request;
+                HttpListenerResponse response = context.Response;
 
-            string outputPath = args[1];
-            string requestJsonPath = args[2];
-            if (!File.Exists(requestJsonPath))
-            {
-                Console.Error.WriteLine($"File not found: {requestJsonPath}");
-                return;
-            }
-
-            ModifyRequest request;
-            try
-            {
-                string json = File.ReadAllText(requestJsonPath);
-                request = JsonSerializer.Deserialize<ModifyRequest>(json);
-                if (request == null)
+                if (request.HttpMethod != "POST")
                 {
-                    Console.Error.WriteLine("Invalid request payload.");
-                    return;
+                    response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
+                    WriteResponse(response, "Only POST method is supported.");
+                    continue;
+                }
+
+                try
+                {
+                    // Read request body
+                    string requestBody;
+                    using (StreamReader reader = new StreamReader(request.InputStream, request.ContentEncoding))
+                    {
+                        requestBody = reader.ReadToEnd();
+                    }
+
+                    // Deserialize JSON payload
+                    ShapeUpdateRequest update = JsonSerializer.Deserialize<ShapeUpdateRequest>(requestBody);
+                    if (update == null)
+                        throw new Exception("Invalid JSON payload.");
+
+                    // Load the diagram
+                    Diagram diagram = new Diagram(SourceDiagramPath);
+                    // Use the first page (adjust if needed)
+                    Page page = diagram.Pages[0];
+
+                    // Retrieve the target shape by ID
+                    Shape shape = page.Shapes.GetShape(update.ShapeId);
+                    if (shape == null)
+                        throw new Exception($"Shape with ID {update.ShapeId} not found.");
+
+                    // Apply geometry modifications if values are provided
+                    if (update.PinX.HasValue)
+                        shape.XForm.PinX.Value = update.PinX.Value;
+                    if (update.PinY.HasValue)
+                        shape.XForm.PinY.Value = update.PinY.Value;
+                    if (update.Width.HasValue)
+                        shape.XForm.Width.Value = update.Width.Value;
+                    if (update.Height.HasValue)
+                        shape.XForm.Height.Value = update.Height.Value;
+                    if (update.Angle.HasValue)
+                        shape.XForm.Angle.Value = update.Angle.Value; // Angle in radians
+
+                    // Save the modified diagram
+                    diagram.Save(OutputDiagramPath, SaveFileFormat.Vsdx);
+
+                    // Respond with success
+                    response.StatusCode = (int)HttpStatusCode.OK;
+                    WriteResponse(response, $"Shape {update.ShapeId} updated successfully.");
+                }
+                catch (Exception ex)
+                {
+                    // Return error details
+                    response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    WriteResponse(response, $"Error: {ex.Message}");
                 }
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to read or deserialize request: {ex.Message}");
-                return;
-            }
+        }
 
-            Diagram diagram;
-            try
+        // Helper method to write plain text response
+        private static void WriteResponse(HttpListenerResponse response, string message)
+        {
+            byte[] buffer = Encoding.UTF8.GetBytes(message);
+            response.ContentLength64 = buffer.Length;
+            response.ContentType = "text/plain; charset=utf-8";
+            using (Stream output = response.OutputStream)
             {
-                diagram = new Diagram(inputPath);
+                output.Write(buffer, 0, buffer.Length);
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
-
-            if (diagram.Pages.Count == 0)
-            {
-                Console.Error.WriteLine("Diagram contains no pages.");
-                return;
-            }
-
-            var page = diagram.Pages[0];
-            Shape shape;
-            try
-            {
-                shape = page.Shapes.GetShape(request.ShapeId);
-            }
-            catch (Exception)
-            {
-                Console.Error.WriteLine($"Shape with ID {request.ShapeId} not found.");
-                return;
-            }
-
-            // Update position
-            shape.XForm.PinX.Value = request.PinX;
-            shape.XForm.PinY.Value = request.PinY;
-
-            // Update rotation (Angle expects radians)
-            double angleRad = request.AngleDeg * Math.PI / 180.0;
-            shape.XForm.Angle.Value = angleRad;
-
-            // Example geometry manipulation: add a new vertex to the first geometry path
-            if (shape.Geoms.Count > 0)
-            {
-                var geom = shape.Geoms[0];
-                var lineTo = new LineTo();
-                lineTo.X.Value = shape.XForm.PinX.Value + 0.5;
-                lineTo.Y.Value = shape.XForm.PinY.Value;
-                geom.CoordinateCol.Add(lineTo);
-            }
-
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
-                return;
-            }
-
-            Console.WriteLine("Shape geometry updated successfully.");
         }
     }
 }

@@ -1,32 +1,25 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
 {
-    static void Main(string[] args)
+    public static void Main()
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            // Load the source Visio diagram
-            Diagram diagram = new Diagram(inputPath);
 
-            // Assume both shapes are on the first page (index 0)
+            // Load the source Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Work with the first page (adjust if needed)
             Page page = diagram.Pages[0];
 
-            // IDs of the source and target shapes (replace with actual IDs)
-            long sourceShapeId = 1; // ID of the shape to copy geometry from
-            long targetShapeId = 2; // ID of the shape to receive the geometry
+            // IDs of the shapes to copy from and to (replace with actual IDs)
+            long sourceShapeId = 1;
+            long targetShapeId = 2;
 
-            // Retrieve the shapes using their IDs
+            // Retrieve the source and target shapes
             Shape sourceShape = page.Shapes.GetShape(sourceShapeId);
             Shape targetShape = page.Shapes.GetShape(targetShapeId);
 
@@ -34,44 +27,29 @@ class Program
             {
                 throw new Exception($"Source shape with ID {sourceShapeId} not found.");
             }
-
             if (targetShape == null)
             {
                 throw new Exception($"Target shape with ID {targetShapeId} not found.");
             }
 
-            // Clear existing geometry of the target shape by marking each existing Geom as deleted
-            foreach (Geom geom in targetShape.Geoms)
+            // Remove any existing geometry from the target shape
+            targetShape.Geoms.Clear();
+
+            // Clone geometry sections from the source shape to the target shape
+            foreach (Geom geom in sourceShape.Geoms)
             {
-                geom.Del = BOOL.True;
+                // Add each geometry section to the target shape
+                targetShape.Geoms.Add(geom);
             }
 
-            // Copy geometry from source shape to target shape
-            foreach (Geom sourceGeom in sourceShape.Geoms)
-            {
-                // Create a new Geom instance and copy its properties
-                Geom newGeom = new Geom();
+            // Save the updated diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Geometry cloned successfully and diagram saved.");
 
-                // Copy the coordinate collection (MoveTo, LineTo, etc.)
-                foreach (Coordinate coord in sourceGeom.CoordinateCol)
-                {
-                    // Add the coordinate to the new geometry
-                    newGeom.CoordinateCol.Add(coord);
-                }
-
-                // Add the new geometry to the target shape
-                targetShape.Geoms.Add(newGeom);
-            }
-
-            // Save the modified diagram to a new file
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Geometry cloned successfully.");
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

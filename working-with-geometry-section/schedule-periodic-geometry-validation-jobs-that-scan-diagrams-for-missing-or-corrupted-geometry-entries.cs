@@ -2,133 +2,112 @@ using System;
 using System.IO;
 using System.Threading;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramGeometryValidator
 {
-    // Interval for the periodic job (e.g., 60 seconds)
-    private const int ValidationIntervalMs = 60_000;
-
-    // Path to the Visio diagram to be validated
-    private static readonly string DiagramPath = @"C:\Diagrams\sample.vsdx";
-
-    // Timer that triggers the validation job
-    private static Timer _validationTimer;
-
-    static void Main()
+    // Helper class that performs geometry validation on Visio diagrams
+    public static class GeometryValidator
     {
-        Console.WriteLine("Starting periodic geometry validation job...");
-
-        // Set up the timer to run ValidateAndReport every ValidationIntervalMs milliseconds
-        _validationTimer = new Timer(ValidateAndReport, null, 0, ValidationIntervalMs);
-
-        Console.WriteLine("Press ENTER to stop the scheduler.");
-        Console.ReadLine(); // Wait for user input to stop
-
-        // Clean up
-        _validationTimer.Dispose();
-        Console.WriteLine("Scheduler stopped.");
-    }
-
-    // Timer callback that loads the diagram, validates geometry, and reports results
-    private static void ValidateAndReport(object state)
-    {
-        try
+        // Scans all diagram files in the specified folder
+        public static void ValidateAll(string folderPath)
         {
-            Console.WriteLine($"[{DateTime.Now}] Validation started.");
-
-            // Load the diagram (using the constructor that accepts a file path)
-            using (Diagram diagram = new Diagram(DiagramPath))
+            if (!Directory.Exists(folderPath))
             {
-                bool hasIssues = ValidateDiagramGeometry(diagram, out string report);
-
-                // Output the validation report
-                Console.WriteLine(report);
-
-                // If issues are found, optionally take action (e.g., throw an exception)
-                if (hasIssues)
-                {
-                    // Throwing an exception will surface the problem in logs
-                    throw new Exception("Geometry validation failed: missing or corrupted geometry detected.");
-                }
-                else
-                {
-                    Console.WriteLine("Geometry validation passed. No issues found.");
-                }
+                Console.WriteLine($"Folder not found: {folderPath}");
+                return;
             }
 
-            Console.WriteLine($"[{DateTime.Now}] Validation completed.\n");
-        }
-        catch (Exception ex)
-        {
-            // Log any unexpected errors during validation
-            Console.WriteLine($"Error during validation: {ex.Message}");
-        }
-    }
-
-    // Scans all pages and shapes for missing or corrupted geometry entries
-    private static bool ValidateDiagramGeometry(Diagram diagram, out string report)
-    {
-        bool hasIssues = false;
-        var reportBuilder = new System.Text.StringBuilder();
-
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.AllDirectories);
+            if (diagramFiles.Length == 0)
             {
-                // Skip deleted shapes
-                if (shape.Del == BOOL.True)
-                    continue;
+                Console.WriteLine($"No Visio files found in folder: {folderPath}");
+                return;
+            }
 
-                // Check for missing geometry (no Geoms defined)
-                if (shape.Geoms == null || shape.Geoms.Count == 0)
+            foreach (string file in diagramFiles)
+            {
+                Console.WriteLine($"Validating diagram: {Path.GetFileName(file)}");
+                try
                 {
-                    hasIssues = true;
-                    reportBuilder.AppendLine($"[Missing Geometry] Page '{page.Name}' Shape ID {shape.ID} ('{shape.Name}') has no geometry.");
-                    continue;
-                }
+                    // Load the diagram
+                    Diagram diagram = new Diagram(file);
 
-                // Check each Geom for corrupted segments (Del flag set)
-                for (int g = 0; g < shape.Geoms.Count; g++)
-                {
-                    Geom geom = (Geom)shape.Geoms[g];
-                    if (geom == null || geom.CoordinateCol == null)
+                    // Iterate through pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        hasIssues = true;
-                        reportBuilder.AppendLine($"[Corrupted Geometry] Page '{page.Name}' Shape ID {shape.ID} ('{shape.Name}') has a null Geom or CoordinateCol.");
-                        continue;
-                    }
-
-                    foreach (var segment in geom.CoordinateCol)
-                    {
-                        // All geometry segment types inherit from a base class that contains a Del property
-                        // The Del property is of type BOOL; true indicates the segment is marked for deletion
-                        // Use reflection to safely access the Del property without assuming a specific segment type
-                        var delProp = segment.GetType().GetProperty("Del");
-                        if (delProp != null)
+                        // Iterate through shapes on the page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            var delValue = delProp.GetValue(segment) as BOOL?;
-                            if (delValue == BOOL.True)
+                            // Skip deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            // Check for missing geometry
+                            if (shape.Geoms == null || shape.Geoms.Count == 0)
                             {
-                                hasIssues = true;
-                                reportBuilder.AppendLine($"[Corrupted Geometry] Page '{page.Name}' Shape ID {shape.ID} ('{shape.Name}') has a deleted geometry segment.");
-                                break;
+                                Console.WriteLine($"  Shape ID {shape.ID} ('{shape.NameU}') has no geometry.");
+                                continue;
+                            }
+
+                            // Validate each geometry segment
+                            foreach (Geom geom in shape.Geoms)
+                            {
+                                if (geom == null)
+                                {
+                                    Console.WriteLine($"  Shape ID {shape.ID} contains a null Geom object.");
+                                    continue;
+                                }
+
+                                if (geom.CoordinateCol == null)
+                                {
+                                    Console.WriteLine($"  Shape ID {shape.ID} has a Geom with null CoordinateCol.");
+                                    continue;
+                                }
+
+                                // Simple sanity check: ensure at least one coordinate exists
+                                if (geom.CoordinateCol.Count == 0)
+                                {
+                                    Console.WriteLine($"  Shape ID {shape.ID} has an empty CoordinateCol.");
+                                }
                             }
                         }
                     }
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{file}': {ex.Message}");
+                }
             }
         }
+    }
 
-        if (!hasIssues)
-        {
-            report = "No geometry issues detected.";
-        }
-        else
-        {
-            report = reportBuilder.ToString();
-        }
+    // Main program that schedules periodic validation
+    public class Program
+    {
+        // Interval for periodic validation (e.g., 1 hour)
+        private static readonly TimeSpan ValidationInterval = TimeSpan.FromHours(1);
+        // Folder containing Visio diagrams to validate
+        private const string DiagramsFolder = "Diagrams";
 
-        return hasIssues;
+        private static Timer _validationTimer;
+
+        public static void Main(string[] args)
+        {
+            // Initial run
+            GeometryValidator.ValidateAll(DiagramsFolder);
+
+            // Schedule periodic validation
+            _validationTimer = new Timer(
+                callback: state => GeometryValidator.ValidateAll(DiagramsFolder),
+                state: null,
+                dueTime: ValidationInterval,
+                period: ValidationInterval);
+
+            Console.WriteLine("Geometry validation scheduler started. Press Enter to exit.");
+            Console.ReadLine();
+
+            // Clean up timer
+            _validationTimer?.Dispose();
+        }
     }
 }

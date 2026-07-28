@@ -10,29 +10,65 @@ class VisioSaveExample
         try
         {
 
-            // Original Visio file path
-            string filePath = @"C:\Diagrams\MyDiagram.vsdx";
+            // Path to the original Visio file (could be .vsdx, .vsd, .vdx, etc.)
+            string originalFilePath = @"C:\Diagrams\MyDiagram.vsdx";
 
             // Load the diagram from the original file
-            Diagram diagram = new Diagram(filePath);
+            Diagram diagram = new Diagram(originalFilePath);
 
             // -------------------------------------------------
-            // Perform geometry modifications on the diagram here
-            // Example: move the first shape on the active page
+            // Example geometry modification (adjust as needed)
             // -------------------------------------------------
-            if (diagram.ActivePage != null && diagram.ActivePage.Shapes.Count > 0)
+            if (diagram.Pages.Count > 0)
             {
-                Shape shape = diagram.ActivePage.Shapes[0];
-                // Set new position (PinX, PinY) and size (Width, Height)
-                shape.XForm.PinX.Value = 5.0;   // new X coordinate
-                shape.XForm.PinY.Value = 5.0;   // new Y coordinate
-                shape.XForm.Width.Value = 2.0; // new width
-                shape.XForm.Height.Value = 1.0; // new height
+                // Get the first page
+                Page page = diagram.Pages[0];
+
+                if (page.Shapes.Count > 0)
+                {
+                    // Get the first shape on the page
+                    Shape shape = page.Shapes[0];
+
+                    // Modify the shape's position (PinX, PinY) as an example
+                    shape.XForm.PinX.Value = 5.0; // new X coordinate
+                    shape.XForm.PinY.Value = 5.0; // new Y coordinate
+                }
             }
 
-            // Save the modified diagram back to the original file,
-            // preserving all changes (including geometry).
-            diagram.Save(filePath, SaveFileFormat.Vsdx);
+            // Determine the appropriate SaveFileFormat based on the file extension
+            SaveFileFormat saveFormat;
+            string extension = System.IO.Path.GetExtension(originalFilePath).ToLowerInvariant();
+
+            switch (extension)
+            {
+                case ".vsdx":
+                    saveFormat = SaveFileFormat.Vsdx;
+                    break;
+                case ".vsd":
+                    // .vsd is a binary format; Aspose.Diagram can save it using Vdx (XML) as fallback
+                    saveFormat = SaveFileFormat.Vdx;
+                    break;
+                case ".vdx":
+                    saveFormat = SaveFileFormat.Vdx;
+                    break;
+                case ".vsx":
+                    saveFormat = SaveFileFormat.Vsx;
+                    break;
+                case ".vtx":
+                    saveFormat = SaveFileFormat.Vtx;
+                    break;
+                default:
+                    // Default to Vdx if the extension is unrecognized
+                    saveFormat = SaveFileFormat.Vdx;
+                    break;
+            }
+
+            // Save the modified diagram back to the original file path,
+            // preserving all geometry changes.
+            diagram.Save(originalFilePath, saveFormat);
+
+            // Clean up resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -3,17 +3,24 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Paths to the input and output Visio files
+                // Input and output file paths
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
+
+                // Define the required custom properties and their default values
+                var requiredProperties = new (string Name, string Label, string DefaultValue)[]
+                {
+                    ("Prop1", "Property One", "Default1"),
+                    ("Prop2", "Property Two", "Default2")
+                };
 
                 // Iterate through all pages
                 foreach (Page page in diagram.Pages)
@@ -21,39 +28,41 @@ class Program
                     // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // If the shape has no custom properties, add a default one
-                        if (shape.Props.Count == 0)
+                        // Ensure the Props collection is available
+                        if (shape.Props == null)
+                            continue;
+
+                        // Check each required property
+                        foreach (var (Name, Label, DefaultValue) in requiredProperties)
                         {
-                            // Create a new custom property (Prop)
-                            Prop defaultProp = new Prop();
+                            // Try to get the property by name
+                            Prop existingProp = shape.Props.GetProp(Name);
 
-                            // Set the property name (identifier)
-                            defaultProp.Name = "DefaultProp";
+                            // If the property is missing, add it with default values
+                            if (existingProp == null)
+                            {
+                                Prop newProp = new Prop();
+                                newProp.Name = Name;
+                                newProp.Label.Value = Label;
+                                // Set the property type to String
+                                newProp.Type.Value = TypePropValue.String;
+                                // Assign the default value
+                                newProp.Value.Val = DefaultValue;
 
-                            // Set the label shown in the ShapeSheet UI
-                            defaultProp.Label.Value = "Default Property";
-
-                            // Set the prompt (tooltip) for the property
-                            defaultProp.Prompt.Value = "Enter value";
-
-                            // Define the property type as string
-                            defaultProp.Type.Value = TypePropValue.String;
-
-                            // Set the default value for the property
-                            defaultProp.Value.Val = "DefaultValue";
-
-                            // Add the property to the shape's Props collection
-                            shape.Props.Add(defaultProp);
+                                shape.Props.Add(newProp);
+                                Console.WriteLine($"Added missing property '{Name}' to shape ID {shape.ID} on page '{page.Name}'.");
+                            }
                         }
                     }
                 }
 
-                // Save the modified diagram
+                // Save the updated diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram saved with updated custom properties.");
 
             }
             catch (System.IO.FileNotFoundException ex)

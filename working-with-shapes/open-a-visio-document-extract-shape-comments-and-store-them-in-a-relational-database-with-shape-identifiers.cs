@@ -1,71 +1,110 @@
 using System;
-using Aspose.Diagram;
+using System.IO;
 using System.Data;
 using System.Data.SqlClient;
+using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (first argument or default)
+        string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the Visio file exists
+        if (!File.Exists(visioPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {visioPath}");
+            return;
+        }
+
+        // Database connection string (second argument or default)
+        string connectionString = args.Length > 1 ? args[1] : "Data Source=.;Initial Catalog=VisioComments;Integrated Security=True";
+
+        // Load the Visio document inside a try/catch to capture Aspose errors
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(visioPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading Visio file: {ex.Message}");
+            return;
+        }
+
+        // Ensure the target table exists (simple schema)
+        try
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
             {
-
-                // Path to the Visio file
-                string visioPath = "input.vsdx";
-
-                // Connection string to the relational database
-                string connectionString = "Data Source=SERVER;Initial Catalog=DatabaseName;Integrated Security=True";
-
-                // Open the Visio document
-                using (Diagram diagram = new Diagram(visioPath))
+                conn.Open();
+                string createTableSql = @"
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ShapeComments' AND xtype='U')
+CREATE TABLE ShapeComments (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    DiagramPath NVARCHAR(260),
+    PageName NVARCHAR(100),
+    ShapeId INT,
+    CommentText NVARCHAR(MAX),
+    ReviewerId INT
+);";
+                using (SqlCommand cmd = new SqlCommand(createTableSql, conn))
                 {
-                    // Iterate through all pages in the diagram
-                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Database setup error: {ex.Message}");
+            return;
+        }
+
+        // Iterate each page and extract annotations (comments)
+        foreach (Page page in diagram.Pages)
+        {
+            // Retrieve the page's universal name for reporting
+            string pageName = page.NameU;
+
+            // Access the collection of annotations via the page's PageSheet
+            foreach (Annotation annotation in page.PageSheet.Annotations)
+            {
+                // Extract the shape identifier the comment is attached to
+                int shapeId = annotation.ShapeID;
+                // Extract the comment text (use .Value to get the string)
+                string commentText = annotation.Comment.Value;
+                // Extract the reviewer identifier (author index)
+                int reviewerId = annotation.ReviewerID.Value;
+
+                // Insert the comment record into the database
+                try
+                {
+                    using (SqlConnection conn = new SqlConnection(connectionString))
                     {
-                        Page page = diagram.Pages[pageIndex];
-
-                        // Iterate through all annotations (comments) on the page
-                        foreach (Annotation annotation in page.PageSheet.Annotations)
+                        conn.Open();
+                        string insertSql = @"
+INSERT INTO ShapeComments (DiagramPath, PageName, ShapeId, CommentText, ReviewerId)
+VALUES (@DiagramPath, @PageName, @ShapeId, @CommentText, @ReviewerId);";
+                        using (SqlCommand cmd = new SqlCommand(insertSql, conn))
                         {
-                            // Extract shape identifier, comment text, and reviewer identifier
-                            long shapeId = annotation.ShapeID;                     // Primitive long
-                            string commentText = annotation.Comment.Value ?? string.Empty;
-                            int reviewerId = annotation.ReviewerID.Value;          // Primitive int
-
-                            // Insert the comment into the database
-                            InsertComment(connectionString, shapeId, commentText, reviewerId);
+                            // Parameterize to avoid SQL injection and handle special characters
+                            cmd.Parameters.Add("@DiagramPath", SqlDbType.NVarChar, 260).Value = visioPath;
+                            cmd.Parameters.Add("@PageName", SqlDbType.NVarChar, 100).Value = pageName;
+                            cmd.Parameters.Add("@ShapeId", SqlDbType.Int).Value = shapeId;
+                            cmd.Parameters.Add("@CommentText", SqlDbType.NVarChar).Value = commentText;
+                            cmd.Parameters.Add("@ReviewerId", SqlDbType.Int).Value = reviewerId;
+                            cmd.ExecuteNonQuery();
                         }
                     }
                 }
-
-                Console.WriteLine("Comment extraction and database insertion completed.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Inserts a comment record into the Comments table.
-        /// Expected table schema: Comments(ShapeId BIGINT, CommentText NVARCHAR(MAX), ReviewerId INT)
-        /// </summary>
-        static void InsertComment(string connStr, long shapeId, string comment, int reviewerId)
-        {
-            const string insertSql = @"
-                INSERT INTO Comments (ShapeId, CommentText, ReviewerId)
-                VALUES (@ShapeId, @CommentText, @ReviewerId);";
-
-            using (SqlConnection conn = new SqlConnection(connStr))
-            using (SqlCommand cmd = new SqlCommand(insertSql, conn))
-            {
-                cmd.Parameters.Add("@ShapeId", SqlDbType.BigInt).Value = shapeId;
-                cmd.Parameters.Add("@CommentText", SqlDbType.NVarChar, -1).Value = comment;
-                cmd.Parameters.Add("@ReviewerId", SqlDbType.Int).Value = reviewerId;
-
-                conn.Open();
-                cmd.ExecuteNonQuery();
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error inserting comment for shape {shapeId} on page '{pageName}': {ex.Message}");
+                    // Continue processing other comments despite the error
+                }
             }
         }
+
+        Console.WriteLine("Comment extraction and storage completed successfully.");
     }
+}

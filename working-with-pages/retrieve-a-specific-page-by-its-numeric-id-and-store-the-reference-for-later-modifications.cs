@@ -2,22 +2,22 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-public class DiagramPageHandler
+class DiagramPageRetriever
 {
-    // Loads a diagram, retrieves a page by its numeric ID, and stores the reference for later use.
     public void RetrieveSpecificPage()
     {
-        // Load the Visio diagram from a file (replace with your actual file path)
+        // Load an existing Visio document (replace with your file path)
         Diagram diagram = new Diagram("input.vsdx");
 
-        // Specify the numeric ID of the page you want to retrieve
-        int targetPageId = 2; // Example ID; set to the desired page ID
+        // Numeric ID of the page you want to work with
+        int pageId = 3;
 
-        // Retrieve the page using the GetPage method that accepts an integer ID
-        Page targetPage = diagram.Pages.GetPage(targetPageId);
+        // Retrieve the page by its ID from the Pages collection
+        Page targetPage = diagram.Pages.GetPage(pageId);
 
-        // The 'targetPage' variable now holds a reference to the requested page
-        // and can be used for further modifications later in the code.
+        // The 'targetPage' reference can now be used for further modifications
+        // Example modification (optional):
+        // targetPage.Name = "Updated Page Name";
     }
 }
 
@@ -28,7 +28,7 @@ class Program
         try
         {
 
-            var obj = new DiagramPageHandler();
+            var obj = new DiagramPageRetriever();
             obj.RetrieveSpecificPage();
 
         }

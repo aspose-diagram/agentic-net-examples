@@ -1,11 +1,11 @@
 {
   "category": "working-with-masters",
   "display_name": "Working With Masters",
-  "version": "26.5.0",
+  "version": "26.7.0",
   "framework": "net8.0",
   "total": 29,
   "pass_rate": 100.0,
-  "generated": "2026-06-10",
+  "generated": "2026-07-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,13 +14,11 @@
       "task": "Add a hyperlink to a master shape that opens a help document when clicked",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Masters",
         "Save",
         "diagram"
       ]
@@ -47,7 +45,6 @@
       "task": "Apply a rotation transformation to all masters that have a specific tag attribute",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -87,7 +84,7 @@
         "Masters",
         "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -120,8 +117,8 @@
         "AddMaster",
         "AddShape",
         "Diagram",
-        "Save",
-        "diagram"
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -129,14 +126,12 @@
       "file": "create-a-master-that-includes-a-background-image-and-apply-it-to-all-pages-automatically.cs",
       "task": "Create a master that includes a background image and apply it to all pages automatically",
       "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Page",
+        "AddMaster",
+        "AddShape",
         "Pages",
         "Save",
         "diagram"
@@ -149,15 +144,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
         "Master",
         "Masters",
-        "Save"
+        "Pages"
       ]
     },
     {
@@ -173,6 +167,7 @@
       "key_apis": [
         "Diagram",
         "Masters",
+        "Save",
         "diagram"
       ]
     },
@@ -215,16 +210,14 @@
       "task": "Export master shape thumbnails as png images for use in a custom shape picker ui",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Imaging",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
         "Masters",
-        "Page",
-        "Pages"
+        "diagram"
       ]
     },
     {
@@ -234,14 +227,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Masters",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -268,7 +262,9 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Masters",
+        "diagram"
       ]
     },
     {
@@ -278,10 +274,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Xml.Linq"
       ],
       "key_apis": [
-        "Diagram"
+        "AddMaster",
+        "Diagram",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -292,8 +292,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -309,8 +308,7 @@
       "task": "Load a visio file and list all master shapes with their unique identifiers",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -340,11 +338,15 @@
       "task": "Programmatically reorder masters in the stencil to prioritize frequently used shapes for faster access",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Masters",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -371,15 +373,15 @@
       "task": "Replace all instances of a specific master with another master while preserving connections",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "AddMaster",
+        "AddShape",
         "Diagram",
         "Masters",
-        "Pages",
-        "Save"
+        "Pages"
       ]
     },
     {
@@ -388,7 +390,6 @@
       "task": "Set a default master for newly added shapes when creating diagrams programmatically",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -396,7 +397,7 @@
         "AddMaster",
         "AddShape",
         "Diagram",
-        "Page",
+        "Masters",
         "Pages"
       ]
     },
@@ -422,12 +423,13 @@
       "task": "Synchronize master definitions across multiple visio files to ensure consistent branding organization wide",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "master"
       ]
     },
     {
@@ -453,14 +455,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Masters",
         "Pages",
-        "Shapes",
-        "diagram"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -471,11 +474,10 @@
         "Aspose.Diagram",
         "Aspose.Drawing.Text",
         "System",
-        "System.Collections.Generic"
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
-        "Fonts",
         "Masters",
         "diagram"
       ]

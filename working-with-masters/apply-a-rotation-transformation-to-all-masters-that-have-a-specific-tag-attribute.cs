@@ -1,51 +1,69 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load an existing Visio diagram
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
+                string outputPath = "output_rotated.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Define the tag name and the value that identifies masters to rotate
-                const string tagName = "Tag";
-                const string tagValue = "RotateMe";
+                // Define the tag name and value to look for
+                const string tagPropName = "Tag";
+                const string tagPropValue = "Rotate";
 
                 // Desired rotation angle in degrees
-                const double rotationAngle = 45.0;
+                double rotationDegrees = 45.0;
+                // Convert degrees to radians (Angle cell expects radians)
+                double rotationRadians = rotationDegrees * Math.PI / 180.0;
 
                 // Iterate through all masters in the diagram
                 foreach (Master master in diagram.Masters)
                 {
-                    // Iterate through each shape that belongs to the master
-                    foreach (Shape shape in master.Shapes)
-                    {
-                        // Ensure the shape has custom properties (Props) before accessing them
-                        if (shape.Props == null) continue;
+                    bool masterHasTag = false;
 
-                        // Look for a custom property with the specified tag name and value
-                        foreach (Prop prop in shape.Props)
+                    // Check each shape within the master for the specific tag property
+                    foreach (Shape masterShape in master.Shapes)
+                    {
+                        if (masterShape.Props != null)
                         {
-                            if (prop.Label != null && prop.Label.Value == tagName &&
-                                prop.Value != null && prop.Value.Val == tagValue)
+                            foreach (Prop prop in masterShape.Props)
                             {
-                                // Apply the rotation to the shape within the master
-                                shape.XForm.Angle.Value = rotationAngle;
-                                // No need to continue checking other properties for this shape
-                                break;
+                                if (prop.Name == tagPropName && prop.Value.Val == tagPropValue)
+                                {
+                                    masterHasTag = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (masterHasTag)
+                            break;
+                    }
+
+                    // If the master contains the tag, apply rotation to all its shapes
+                    if (masterHasTag)
+                    {
+                        foreach (Shape masterShape in master.Shapes)
+                        {
+                            // Ensure the shape has an XForm cell collection
+                            if (masterShape.XForm != null && masterShape.XForm.Angle != null)
+                            {
+                                // Set the rotation angle (in radians)
+                                masterShape.XForm.Angle.Value = rotationRadians;
                             }
                         }
                     }
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

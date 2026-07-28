@@ -2,25 +2,27 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class AssignCustomMasterIds
 {
     static void Main()
     {
         try
         {
 
-            // Load the existing Visio diagram
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Assign a custom integer ID to each master for easier lookup
-            int customId = 1000; // starting point for custom IDs
+            // Starting value for custom IDs (choose any scheme you prefer)
+            int customId = 1000;
+
+            // Iterate through all masters in the diagram and assign a custom ID
             foreach (Master master in diagram.Masters)
             {
-                master.ID = customId++;               // set custom ID
-                master.BaseID = Guid.NewGuid();       // optional: give each master a unique GUID
+                master.ID = customId;
+                customId++;
             }
 
-            // Save the modified diagram
+            // Save the modified diagram (replace with your desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

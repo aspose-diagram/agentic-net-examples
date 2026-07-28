@@ -4,128 +4,141 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace VisioGeometryExport
+namespace MasterGeometryExport
 {
-    // DTO for a coordinate point
-    public class CoordinateDto
-    {
-        public double X { get; set; }
-        public double Y { get; set; }
-    }
-
-    // DTO for a single Geom (path) of a shape
-    public class GeomDto
-    {
-        public int Index { get; set; }                     // Index of the Geom within the shape
-        public List<CoordinateDto> Coordinates { get; set; } = new List<CoordinateDto>();
-    }
-
-    // DTO for a shape inside a master
-    public class ShapeGeometryDto
-    {
-        public long ShapeId { get; set; }                  // Unique ID of the shape within the master
-        public string ShapeName { get; set; }
-        public List<GeomDto> Geoms { get; set; } = new List<GeomDto>();
-    }
-
-    // DTO for a master (stencil shape)
+    // DTO for a master shape geometry
     public class MasterGeometryDto
     {
-        public string MasterName { get; set; }
-        public string MasterNameU { get; set; }
-        public List<ShapeGeometryDto> Shapes { get; set; } = new List<ShapeGeometryDto>();
+        public string MasterName { get; set; } = string.Empty;
+        public List<GeomDto> Geoms { get; set; } = new();
     }
 
-    class Program
+    // DTO for a single geometry (a path)
+    public class GeomDto
+    {
+        public List<SegmentDto> Segments { get; set; } = new();
+    }
+
+    // DTO for a geometry segment (MoveTo, LineTo, etc.)
+    public class SegmentDto
+    {
+        public string Type { get; set; } = string.Empty;
+        public double? X { get; set; }
+        public double? Y { get; set; }
+    }
+
+    public class Program
     {
         static void Main(string[] args)
         {
+            // Validate arguments
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: MasterGeometryExport <inputVisioFile> <outputJsonFile>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputPath = args[1];
+
+            // Load the Visio diagram
+            Diagram diagram;
             try
             {
+                diagram = new Diagram(inputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
 
-                // Path to the Visio file to be processed
-                string visioFilePath = @"C:\Input\sample.vsdx";
+            var masterGeometries = new List<MasterGeometryDto>();
 
-                // Path where the resulting JSON will be saved
-                string jsonOutputPath = @"C:\Output\master_geometry.json";
+            // Iterate through all masters in the diagram
+            foreach (Master master in diagram.Masters)
+            {
+                // Each master typically contains a single shape that defines its geometry
+                if (master.Shapes.Count == 0)
+                    continue; // Skip masters without shapes
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioFilePath);
+                Shape masterShape = master.Shapes[0];
 
-                // Prepare a list to hold geometry information for all masters
-                List<MasterGeometryDto> mastersGeometry = new List<MasterGeometryDto>();
-
-                // Iterate through each master in the document
-                foreach (Master master in diagram.Masters)
+                var masterDto = new MasterGeometryDto
                 {
-                    var masterDto = new MasterGeometryDto
+                    MasterName = master.Name ?? string.Empty
+                };
+
+                // Extract geometry sections
+                foreach (Aspose.Diagram.Geom geom in masterShape.Geoms)
+                {
+                    var geomDto = new GeomDto();
+
+                    foreach (object coord in geom.CoordinateCol)
                     {
-                        MasterName = master.Name,
-                        MasterNameU = master.NameU
-                    };
+                        var segment = new SegmentDto();
 
-                    // Each master can contain multiple shapes (sub‑shapes)
-                    foreach (Shape shape in master.Shapes)
-                    {
-                        var shapeDto = new ShapeGeometryDto
+                        switch (coord)
                         {
-                            ShapeId = shape.ID,
-                            ShapeName = shape.Name
-                        };
-
-                        // Extract geometry (paths) from the shape
-                        int geomIndex = 0;
-                        foreach (Geom geom in shape.Geoms)
-                        {
-                            var geomDto = new GeomDto
-                            {
-                                Index = geomIndex++
-                            };
-
-                            // Each Geom has a collection of coordinates defining its path
-                            foreach (var coord in geom.CoordinateCol)
-                            {
-                                // The Coordinate class exposes X and Y properties (in inches)
-                                // If the type differs, adjust accordingly.
-                                double x = Convert.ToDouble(coord.GetType().GetProperty("X")?.GetValue(coord));
-                                double y = Convert.ToDouble(coord.GetType().GetProperty("Y")?.GetValue(coord));
-
-                                geomDto.Coordinates.Add(new CoordinateDto
-                                {
-                                    X = x,
-                                    Y = y
-                                });
-                            }
-
-                            shapeDto.Geoms.Add(geomDto);
+                            case Aspose.Diagram.MoveTo moveTo:
+                                segment.Type = "MoveTo";
+                                segment.X = moveTo.X.Value;
+                                segment.Y = moveTo.Y.Value;
+                                break;
+                            case Aspose.Diagram.LineTo lineTo:
+                                segment.Type = "LineTo";
+                                segment.X = lineTo.X.Value;
+                                segment.Y = lineTo.Y.Value;
+                                break;
+                            case Aspose.Diagram.ArcTo arcTo:
+                                segment.Type = "ArcTo";
+                                segment.X = arcTo.X.Value;
+                                segment.Y = arcTo.Y.Value;
+                                break;
+                            case Aspose.Diagram.EllipticalArcTo ellArc:
+                                segment.Type = "EllipticalArcTo";
+                                segment.X = ellArc.X.Value;
+                                segment.Y = ellArc.Y.Value;
+                                break;
+                            case Aspose.Diagram.SplineStart splineStart:
+                                segment.Type = "SplineStart";
+                                break;
+                            case Aspose.Diagram.SplineKnot splineKnot:
+                                segment.Type = "SplineKnot";
+                                break;
+                            case Aspose.Diagram.PolylineTo polylineTo:
+                                segment.Type = "PolylineTo";
+                                segment.X = polylineTo.X.Value;
+                                segment.Y = polylineTo.Y.Value;
+                                break;
+                            default:
+                                segment.Type = coord.GetType().Name;
+                                break;
                         }
 
-                        masterDto.Shapes.Add(shapeDto);
+                        geomDto.Segments.Add(segment);
                     }
 
-                    mastersGeometry.Add(masterDto);
+                    masterDto.Geoms.Add(geomDto);
                 }
 
-                // Serialize the collected geometry to JSON with indentation for readability
-                var jsonOptions = new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                };
-                string jsonString = JsonSerializer.Serialize(mastersGeometry, jsonOptions);
-
-                // Ensure the output directory exists
-                Directory.CreateDirectory(Path.GetDirectoryName(jsonOutputPath));
-
-                // Write JSON to file
-                File.WriteAllText(jsonOutputPath, jsonString);
-
-                Console.WriteLine($"Master geometry exported successfully to: {jsonOutputPath}");
-
+                masterGeometries.Add(masterDto);
             }
-            catch (System.IO.DirectoryNotFoundException ex)
+
+            // Serialize to JSON
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            string json = JsonSerializer.Serialize(masterGeometries, jsonOptions);
+
+            // Write JSON to file
+            try
             {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                File.WriteAllText(outputPath, json);
+                Console.WriteLine($"Master geometry exported successfully to '{outputPath}'.");
             }
-    }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to write JSON file: {ex.Message}");
+            }
+        }
     }
 }

@@ -10,42 +10,51 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
+            // Load the diagram (replace with the appropriate load rule if needed)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Collect IDs of masters that are actually used by shapes on any page
-            HashSet<int> usedMasterIds = new HashSet<int>();
+            // Gather the names of masters that are actually used by shapes on any page
+            HashSet<string> usedMasterNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Some shapes may not be based on a master; skip those
+                    // Shapes that are instances of a master have the Master property set
                     if (shape.Master != null)
                     {
-                        usedMasterIds.Add(shape.Master.ID);
+                        // Prefer the universal name; fall back to the local name
+                        string masterName = !string.IsNullOrEmpty(shape.Master.NameU)
+                                            ? shape.Master.NameU
+                                            : shape.Master.Name;
+
+                        if (!string.IsNullOrEmpty(masterName))
+                            usedMasterNames.Add(masterName);
                     }
                 }
             }
 
-            // Determine which masters are unused
+            // Determine which masters are not referenced
             List<Master> mastersToRemove = new List<Master>();
             foreach (Master master in diagram.Masters)
             {
-                if (!usedMasterIds.Contains(master.ID))
-                {
+                string masterName = !string.IsNullOrEmpty(master.NameU)
+                                    ? master.NameU
+                                    : master.Name;
+
+                if (!usedMasterNames.Contains(masterName))
                     mastersToRemove.Add(master);
-                }
             }
 
-            // Remove the unused masters from the collection
+            // Remove the unreferenced masters from the collection
             foreach (Master master in mastersToRemove)
             {
                 diagram.Masters.Remove(master);
-                master.Dispose(); // optional cleanup of unmanaged resources
+                master.Dispose(); // release unmanaged resources
             }
 
-            // Save the cleaned diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the cleaned diagram (replace with the appropriate save rule if needed)
+            diagram.Save("output.vsdx", SaveFileFormat.Vdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

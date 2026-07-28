@@ -9,16 +9,12 @@ class Program
             try
             {
 
-                // Path to the source Visio file
+                // Input and output file paths (replace with actual paths as needed)
                 string inputPath = "input.vsdx";
-                // Path to the output Visio file
                 string outputPath = "output.vsdx";
 
-                // Load the diagram
+                // Load the diagram from the specified file
                 Diagram diagram = new Diagram(inputPath);
-
-                // Define a thin line weight (in inches)
-                double thinLineWeight = 0.01; // Adjust as needed for "thin"
 
                 // Iterate through all masters in the diagram
                 foreach (Master master in diagram.Masters)
@@ -26,12 +22,12 @@ class Program
                     // Iterate through each shape within the master
                     foreach (Shape shape in master.Shapes)
                     {
-                        // Set the line weight for the shape
-                        shape.Line.LineWeight.Value = thinLineWeight;
+                        // Set the line weight to a thin value (e.g., 0.02 inches)
+                        shape.Line.LineWeight.Value = 0.02;
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the output file
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

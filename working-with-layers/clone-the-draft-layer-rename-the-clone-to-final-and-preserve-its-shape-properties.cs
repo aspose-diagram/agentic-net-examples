@@ -1,74 +1,77 @@
 using System;
-using System.IO;
-using System.Linq;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        try
-        {
-            Diagram diagram = new Diagram(inputPath);
-            Page page = diagram.Pages[0];
-
-            Layer draftLayer = null;
-            foreach (Layer layer in page.PageSheet.Layers)
+            try
             {
-                if (layer.Name.Value == "Draft")
+
+                // Load the Visio diagram (replace with your actual file path)
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
+
+                // Find the source layer named "Draft"
+                Layer draftLayer = null;
+                foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    draftLayer = layer;
-                    break;
-                }
-            }
-
-            if (draftLayer == null)
-            {
-                throw new Exception("Layer 'Draft' not found in the diagram.");
-            }
-
-            Layer finalLayer = new Layer();
-            finalLayer.Name.Value = "Final";
-            finalLayer.Visible.Value = draftLayer.Visible.Value;
-            finalLayer.IsColorChecked = draftLayer.IsColorChecked;
-            page.PageSheet.Layers.Add(finalLayer);
-
-            int draftIndex = draftLayer.IX;
-            int finalIndex = finalLayer.IX;
-
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.LayerMem != null && shape.LayerMem.LayerMember != null)
-                {
-                    string members = shape.LayerMem.LayerMember.Value;
-                    if (!string.IsNullOrEmpty(members) &&
-                        (members == draftIndex.ToString() || members.Split(';').Contains(draftIndex.ToString())))
+                    if (layer.Name.Value == "Draft")
                     {
-                        if (!members.Split(';').Contains(finalIndex.ToString()))
+                        draftLayer = layer;
+                        break;
+                    }
+                }
+
+                if (draftLayer == null)
+                {
+                    throw new Exception("Layer named 'Draft' was not found.");
+                }
+
+                // Create a new layer and copy relevant properties from the Draft layer
+                Layer finalLayer = new Layer();
+                finalLayer.Name.Value = "Final";
+                finalLayer.Visible.Value = draftLayer.Visible.Value;
+                finalLayer.Print.Value = draftLayer.Print.Value;
+                // Add the new layer to the page's layer collection
+                page.PageSheet.Layers.Add(finalLayer);
+
+                // Retrieve the indexes of the original and cloned layers
+                int draftIndex = draftLayer.IX;
+                int finalIndex = finalLayer.IX;
+
+                // Assign shapes that belong to the Draft layer to also belong to the Final layer
+                foreach (Shape shape in page.Shapes)
+                {
+                    string memberValue = shape.LayerMem.LayerMember.Value;
+                    if (string.IsNullOrEmpty(memberValue))
+                        continue;
+
+                    // Split the semicolon‑separated list of layer indexes
+                    string[] indexes = memberValue.Split(';');
+                    // Check if the shape is on the Draft layer
+                    if (Array.Exists(indexes, i => i == draftIndex.ToString()))
+                    {
+                        // Ensure the shape also references the new Final layer
+                        List<string> updated = new List<string>(indexes);
+                        if (!updated.Contains(finalIndex.ToString()))
                         {
-                            string newMembers = string.IsNullOrEmpty(members)
-                                ? finalIndex.ToString()
-                                : members + ";" + finalIndex.ToString();
-                            shape.LayerMem.LayerMember.Value = newMembers;
+                            updated.Add(finalIndex.ToString());
+                            shape.LayerMem.LayerMember.Value = string.Join(";", updated);
                         }
                     }
                 }
-            }
 
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

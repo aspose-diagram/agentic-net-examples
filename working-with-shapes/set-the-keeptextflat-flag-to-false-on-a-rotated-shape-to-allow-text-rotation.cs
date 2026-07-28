@@ -10,31 +10,29 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your actual file path)
+            // Load an existing Visio diagram
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page of the diagram
+            // Access the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape to the page (master name "Rectangle")
-            // The method returns the shape ID (long)
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+            // Retrieve a shape by its ID (example: ID = 1)
+            // Adjust the ID as needed for your diagram
+            Shape shape = page.Shapes.GetShape(1);
 
-            // Retrieve the Shape object using the returned ID
-            Shape shape = page.Shapes.GetShape((int)shapeId);
-
-            // Rotate the shape by 45 degrees (SetAngle expects radians)
-            double angleDegrees = 45.0;
-            double angleRadians = (Math.PI / 180.0) * angleDegrees;
+            // Rotate the shape by 90 degrees (angle in radians)
+            double angleRadians = Math.PI / 2; // 90 degrees
             shape.SetAngle(angleRadians);
 
-            // Disable KeepTextFlat to allow the text to rotate with the shape
+            // Disable KeepTextFlat to allow text rotation on the shape
             shape.ThreeDFormat.KeepTextFlat.Value = BOOL.False;
 
             // Save the modified diagram
             string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Shape rotated and KeepTextFlat set to false. Diagram saved to " + outputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

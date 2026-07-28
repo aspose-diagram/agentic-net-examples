@@ -1,128 +1,100 @@
 using System;
 using System.IO;
 using System.Xml.Linq;
-using System.Globalization;
 using Aspose.Diagram;
-using Aspose.Drawing;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: HeaderFooterUpdater <diagramPath> <configXmlPath>");
-            return;
-        }
-
-        string diagramPath = args[0];
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
-
-        string configPath = args[1];
-        if (!File.Exists(configPath))
-        {
-            Console.Error.WriteLine($"File not found: {configPath}");
-            return;
-        }
-
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(diagramPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        XDocument configDoc;
-        try
-        {
-            configDoc = XDocument.Load(configPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading XML configuration: {ex.Message}");
-            return;
-        }
-
-        XElement root = configDoc.Element("HeaderFooter");
-        if (root == null)
-        {
-            Console.Error.WriteLine("Invalid configuration file: missing <HeaderFooter> root element.");
-            return;
-        }
-
-        string headerLeft = (string)root.Element("HeaderLeft");
-        if (headerLeft != null) diagram.HeaderFooter.HeaderLeft = headerLeft;
-
-        string headerCenter = (string)root.Element("HeaderCenter");
-        if (headerCenter != null) diagram.HeaderFooter.HeaderCenter = headerCenter;
-
-        string headerRight = (string)root.Element("HeaderRight");
-        if (headerRight != null) diagram.HeaderFooter.HeaderRight = headerRight;
-
-        string footerLeft = (string)root.Element("FooterLeft");
-        if (footerLeft != null) diagram.HeaderFooter.FooterLeft = footerLeft;
-
-        string footerCenter = (string)root.Element("FooterCenter");
-        if (footerCenter != null) diagram.HeaderFooter.FooterCenter = footerCenter;
-
-        string footerRight = (string)root.Element("FooterRight");
-        if (footerRight != null) diagram.HeaderFooter.FooterRight = footerRight;
-
-        XElement headerMarginElem = root.Element("HeaderMargin");
-        if (headerMarginElem != null && double.TryParse(headerMarginElem.Value, out double headerMargin))
-            diagram.HeaderFooter.HeaderMargin.Value = headerMargin;
-
-        XElement footerMarginElem = root.Element("FooterMargin");
-        if (footerMarginElem != null && double.TryParse(footerMarginElem.Value, out double footerMargin))
-            diagram.HeaderFooter.FooterMargin.Value = footerMargin;
-
-        XElement colorElem = root.Element("Color");
-        if (colorElem != null)
-        {
-            string hex = colorElem.Value.TrimStart('#');
-            if (int.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int argb))
+            // Expect three arguments: input diagram path, header/footer XML config path, output diagram path
+            if (args.Length != 3)
             {
-                if (hex.Length == 6)
-                    argb = (0xFF << 24) | argb; // assume fully opaque if alpha not provided
-                diagram.HeaderFooter.HeaderFooterColor = Color.FromArgb(argb);
+                Console.WriteLine("Usage: HeaderFooterUpdater <inputDiagram> <configXml> <outputDiagram>");
+                return;
             }
-        }
 
-        XElement fontElem = root.Element("Font");
-        if (fontElem != null)
-        {
-            var font = diagram.HeaderFooter.HeaderFooterFont;
+            string diagramPath = args[0];
+            string configPath = args[1];
+            string outputPath = args[2];
 
-            string faceName = (string)fontElem.Element("FaceName");
-            if (faceName != null) font.FaceName = faceName;
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            string weightStr = (string)fontElem.Element("Weight");
-            if (int.TryParse(weightStr, out int weight)) font.Weight = weight;
+            // Load the XML configuration
+            XDocument configDoc = XDocument.Load(configPath);
+            XElement root = configDoc.Root;
+            if (root == null)
+            {
+                throw new Exception("Invalid XML configuration file.");
+            }
 
-            string heightStr = (string)fontElem.Element("Height");
-            if (int.TryParse(heightStr, out int height)) font.Height = height;
-        }
+            // Apply header text
+            XElement headerLeft = root.Element("HeaderLeft");
+            if (headerLeft != null) diagram.HeaderFooter.HeaderLeft = headerLeft.Value;
 
-        string outputPath = Path.Combine(
-            Path.GetDirectoryName(diagramPath) ?? "",
-            Path.GetFileNameWithoutExtension(diagramPath) + "_Updated.vsdx");
+            XElement headerCenter = root.Element("HeaderCenter");
+            if (headerCenter != null) diagram.HeaderFooter.HeaderCenter = headerCenter.Value;
 
-        try
-        {
+            XElement headerRight = root.Element("HeaderRight");
+            if (headerRight != null) diagram.HeaderFooter.HeaderRight = headerRight.Value;
+
+            // Apply footer text
+            XElement footerLeft = root.Element("FooterLeft");
+            if (footerLeft != null) diagram.HeaderFooter.FooterLeft = footerLeft.Value;
+
+            XElement footerCenter = root.Element("FooterCenter");
+            if (footerCenter != null) diagram.HeaderFooter.FooterCenter = footerCenter.Value;
+
+            XElement footerRight = root.Element("FooterRight");
+            if (footerRight != null) diagram.HeaderFooter.FooterRight = footerRight.Value;
+
+            // Apply margins (values are in inches)
+            XElement headerMargin = root.Element("HeaderMargin");
+            if (headerMargin != null && double.TryParse(headerMargin.Value, out double hMargin))
+            {
+                diagram.HeaderFooter.HeaderMargin.Value = hMargin;
+            }
+
+            XElement footerMargin = root.Element("FooterMargin");
+            if (footerMargin != null && double.TryParse(footerMargin.Value, out double fMargin))
+            {
+                diagram.HeaderFooter.FooterMargin.Value = fMargin;
+            }
+
+            // Apply global font settings for header/footer
+            HeaderFooterFont font = diagram.HeaderFooter.HeaderFooterFont;
+
+            XElement fontFace = root.Element("FontFaceName");
+            if (fontFace != null) font.FaceName = fontFace.Value;
+
+            XElement fontWeight = root.Element("FontWeight");
+            if (fontWeight != null && int.TryParse(fontWeight.Value, out int weight))
+            {
+                font.Weight = weight; // 700 = bold, 400 = regular
+            }
+
+            XElement fontHeight = root.Element("FontHeight");
+            if (fontHeight != null && int.TryParse(fontHeight.Value, out int height))
+            {
+                // Height uses negative calculation mapping; assign directly as per API
+                font.Height = height;
+            }
+
+            XElement fontItalic = root.Element("FontItalic");
+            if (fontItalic != null && bool.TryParse(fontItalic.Value, out bool italic))
+            {
+                font.Italic = italic ? BOOL.True : BOOL.False;
+            }
+
+            XElement fontUnderline = root.Element("FontUnderline");
+            if (fontUnderline != null && bool.TryParse(fontUnderline.Value, out bool underline))
+            {
+                font.Underline = underline ? BOOL.True : BOOL.False;
+            }
+
+            // Save the updated diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with updated header/footer to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
         }
     }
-}

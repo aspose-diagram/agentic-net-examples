@@ -1,66 +1,59 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Expect two arguments: input Visio file path and output CSV file path
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: DiagramTextExport <inputVisioFile> <outputCsvFile>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+                // Input Visio file path (replace with actual path)
+                string inputPath = "input.vsdx";
 
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Prepare a list to hold CSV rows
-                List<string> csvLines = new List<string>();
-                // Add header row
-                csvLines.Add("PageName,ShapeID,ShapeName,Text");
+                // Output CSV file path
+                string outputCsv = "output.csv";
 
-                // Iterate through each page
-                foreach (Page page in diagram.Pages)
+                // Load the Visio diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate through each shape on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Prepare the CSV file for writing
+                    using (StreamWriter writer = new StreamWriter(outputCsv, false))
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Write CSV header
+                        writer.WriteLine("PageName,ShapeID,ShapeName,Text");
 
-                        // Retrieve plain text from the shape
-                        string text = shape.Text.Value.Text ?? string.Empty;
+                        // Iterate through each page in the diagram
+                        foreach (Page page in diagram.Pages)
+                        {
+                            // Iterate through each shape on the current page
+                            foreach (Shape shape in page.Shapes)
+                            {
+                                // Retrieve plain text from the shape
+                                string text = shape.Text.Value.Text;
 
-                        // Clean up the text for CSV (remove line breaks and commas)
-                        text = text.Replace("\r\n", " ").Replace("\n", " ").Replace(",", " ");
+                                // Clean the text: replace line breaks and commas to keep CSV format simple
+                                if (!string.IsNullOrEmpty(text))
+                                {
+                                    text = text.Replace("\r\n", " ")
+                                               .Replace("\n", " ")
+                                               .Replace(",", " ");
+                                }
 
-                        // Prepare CSV line (escape double quotes if present)
-                        string safeText = text.Contains("\"") ? $"\"{text.Replace("\"", "\"\"")}\"" : text;
-                        string safePageName = page.Name?.Contains(",") == true ? $"\"{page.Name}\"" : page.Name;
-                        string safeShapeName = shape.Name?.Contains(",") == true ? $"\"{shape.Name}\"" : shape.Name;
-
-                        string csvLine = $"{safePageName},{shape.ID},{safeShapeName},{safeText}";
-                        csvLines.Add(csvLine);
+                                // Write a CSV line with page name, shape ID, shape name, and cleaned text
+                                writer.WriteLine($"{page.Name},{shape.ID},{shape.Name},{text}");
+                            }
+                        }
                     }
                 }
 
-                // Write all lines to the CSV file
-                try
-                {
-                    File.WriteAllLines(outputPath, csvLines);
-                    Console.WriteLine($"Export completed successfully. CSV saved to: {outputPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error writing CSV file: {ex.Message}");
-                }
+                Console.WriteLine($"Text extraction completed. CSV saved to: {outputCsv}");
+
             }
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }

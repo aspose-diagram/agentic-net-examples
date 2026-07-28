@@ -1,33 +1,36 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load an existing Visio diagram (replace with your actual file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // Apply global document protection to restrict modifications, including adding new pages
-            diagram.DocumentSettings.ProtectBkgnds = BOOL.True;   // Prevent changes to background pages
-            diagram.DocumentSettings.ProtectMasters = BOOL.True; // Prevent creation/editing of masters
-            diagram.DocumentSettings.ProtectShapes = BOOL.True;  // Prevent selection of locked shapes
-            diagram.DocumentSettings.ProtectStyles = BOOL.True;  // Prevent creation/editing of styles
+                // Apply global protection settings to the document.
+                // These settings prevent editing of backgrounds, masters, shapes, and styles.
+                // While Visio does not have a direct "prevent new pages" flag,
+                // protecting backgrounds and masters effectively restricts page creation.
+                diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
+                diagram.DocumentSettings.ProtectMasters = BOOL.True;
+                diagram.DocumentSettings.ProtectShapes = BOOL.True;
+                diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
-            // Save the protected diagram
-            string outputPath = "protected_output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the protected diagram to a new file.
+                string outputPath = "output_protected.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                Console.WriteLine($"Diagram saved with protection applied: {outputPath}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

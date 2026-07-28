@@ -6,132 +6,102 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Get file paths for the two diagrams
-        string path1;
-        string path2;
-
-        if (args.Length >= 2)
+        // Expect two file paths: first diagram, second diagram
+        if (args.Length < 2)
         {
-            path1 = args[0];
-            path2 = args[1];
-        }
-        else
-        {
-            Console.Write("Enter path for first diagram: ");
-            path1 = Console.ReadLine();
-            Console.Write("Enter path for second diagram: ");
-            path2 = Console.ReadLine();
+            Console.WriteLine("Usage: CompareProtection <DiagramPath1> <DiagramPath2>");
+            return;
         }
 
-        // Load diagrams
+        string path1 = args[0];
+        string path2 = args[1];
+
+        // Load the two diagrams
         Diagram diagram1 = new Diagram(path1);
         Diagram diagram2 = new Diagram(path2);
 
-        // Compare protection settings
+        Console.WriteLine("=== Global Document Protection Comparison ===");
         CompareDocumentProtection(diagram1, diagram2);
-        CompareShapeProtection(diagram1, diagram2);
+
+        Console.WriteLine("\n=== Shape-Level Protection Comparison ===");
+        CompareShapeProtectionAcrossDiagrams(diagram1, diagram2);
     }
 
-    // Compare global document protection flags
     static void CompareDocumentProtection(Diagram d1, Diagram d2)
     {
-        Console.WriteLine("=== Document Protection Comparison ===");
+        var ds1 = d1.DocumentSettings;
+        var ds2 = d2.DocumentSettings;
 
-        CompareBool("ProtectBkgnds", d1.DocumentSettings.ProtectBkgnds, d2.DocumentSettings.ProtectBkgnds);
-        CompareBool("ProtectMasters", d1.DocumentSettings.ProtectMasters, d2.DocumentSettings.ProtectMasters);
-        CompareBool("ProtectShapes", d1.DocumentSettings.ProtectShapes, d2.DocumentSettings.ProtectShapes);
-        CompareBool("ProtectStyles", d1.DocumentSettings.ProtectStyles, d2.DocumentSettings.ProtectStyles);
+        CompareBoolProperty("ProtectBkgnds", ds1.ProtectBkgnds, ds2.ProtectBkgnds);
+        CompareBoolProperty("ProtectMasters", ds1.ProtectMasters, ds2.ProtectMasters);
+        CompareBoolProperty("ProtectShapes", ds1.ProtectShapes, ds2.ProtectShapes);
+        CompareBoolProperty("ProtectStyles", ds1.ProtectStyles, ds2.ProtectStyles);
     }
 
-    // Compare shape‑level protection flags page by page
-    static void CompareShapeProtection(Diagram d1, Diagram d2)
+    static void CompareBoolProperty(string name, BOOL val1, BOOL val2)
     {
-        Console.WriteLine("=== Shape Protection Comparison ===");
+        if (val1 != val2)
+        {
+            Console.WriteLine($"Mismatch in {name}: Diagram1={val1}, Diagram2={val2}");
+        }
+    }
 
+    static void CompareShapeProtectionAcrossDiagrams(Diagram d1, Diagram d2)
+    {
+        // Assume pages are in the same order and have the same count
         if (d1.Pages.Count != d2.Pages.Count)
         {
-            Console.WriteLine($"Page count mismatch: Diagram1 has {d1.Pages.Count}, Diagram2 has {d2.Pages.Count}");
-            // Continue with the minimum number of pages
+            Console.WriteLine($"Page count differs: Diagram1={d1.Pages.Count}, Diagram2={d2.Pages.Count}");
+            return;
         }
 
-        int pageCount = Math.Min(d1.Pages.Count, d2.Pages.Count);
-        for (int i = 0; i < pageCount; i++)
+        for (int pageIndex = 0; pageIndex < d1.Pages.Count; pageIndex++)
         {
-            Page page1 = d1.Pages[i];
-            Page page2 = d2.Pages[i];
-
-            Console.WriteLine($"--- Page {i + 1} (Name: {page1.Name}) ---");
+            Page page1 = d1.Pages[pageIndex];
+            Page page2 = d2.Pages[pageIndex];
 
             // Build a lookup for shapes in diagram2 by ID for quick access
-            var shapeLookup2 = new System.Collections.Generic.Dictionary<long, Shape>();
+            var shapeMap2 = new System.Collections.Generic.Dictionary<long, Shape>();
             foreach (Shape s2 in page2.Shapes)
             {
-                shapeLookup2[s2.ID] = s2;
+                shapeMap2[s2.ID] = s2;
             }
 
             foreach (Shape s1 in page1.Shapes)
             {
-                if (!shapeLookup2.TryGetValue(s1.ID, out Shape s2))
+                if (!shapeMap2.TryGetValue(s1.ID, out Shape s2))
                 {
-                    Console.WriteLine($"Shape ID {s1.ID} present in Diagram1 but missing in Diagram2.");
+                    Console.WriteLine($"Shape ID {s1.ID} exists in Diagram1 page '{page1.Name}' but not in Diagram2.");
                     continue;
                 }
 
-                // Compare each protection property
-                CompareProtectionProperty("LockAspect", s1, s2);
-                CompareProtectionProperty("LockBegin", s1, s2);
-                CompareProtectionProperty("LockCalcWH", s1, s2);
-                CompareProtectionProperty("LockCrop", s1, s2);
-                CompareProtectionProperty("LockCustProp", s1, s2);
-                CompareProtectionProperty("LockDelete", s1, s2);
-                CompareProtectionProperty("LockEnd", s1, s2);
-                CompareProtectionProperty("LockFormat", s1, s2);
-                CompareProtectionProperty("LockFromGroupFormat", s1, s2);
-                CompareProtectionProperty("LockGroup", s1, s2);
-                CompareProtectionProperty("LockHeight", s1, s2);
-                CompareProtectionProperty("LockMoveX", s1, s2);
-                CompareProtectionProperty("LockMoveY", s1, s2);
-                CompareProtectionProperty("LockRotate", s1, s2);
-                CompareProtectionProperty("LockSelect", s1, s2);
-                CompareProtectionProperty("LockTextEdit", s1, s2);
-                CompareProtectionProperty("LockThemeColors", s1, s2);
-                CompareProtectionProperty("LockThemeEffects", s1, s2);
-                CompareProtectionProperty("LockVtxEdit", s1, s2);
-                CompareProtectionProperty("LockWidth", s1, s2);
+                CompareShapeProtection(s1, s2, page1.Name, s1.ID);
             }
         }
     }
 
-    // Helper to compare a single BOOL property on shape protection
-    static void CompareProtectionProperty(string propName, Shape s1, Shape s2)
+    static void CompareShapeProtection(Shape s1, Shape s2, string pageName, long shapeId)
     {
-        // Use reflection to get the property from the Protection object
-        var propInfo = typeof(Protection).GetProperty(propName);
-        if (propInfo == null)
+        // Helper to compare individual lock properties
+        void Check(string propName, BOOL val1, BOOL val2)
         {
-            // Property name not found; skip
-            return;
+            if (val1 != val2)
+            {
+                Console.WriteLine($"Page '{pageName}', Shape ID {shapeId}: Mismatch in {propName} - Diagram1={val1}, Diagram2={val2}");
+            }
         }
 
-        var val1Obj = propInfo.GetValue(s1.Protection);
-        var val2Obj = propInfo.GetValue(s2.Protection);
-
-        // Each property is a BoolValue; compare its .Value
-        var boolVal1 = (BOOL?)val1Obj?.GetType().GetProperty("Value")?.GetValue(val1Obj);
-        var boolVal2 = (BOOL?)val2Obj?.GetType().GetProperty("Value")?.GetValue(val2Obj);
-
-        if (boolVal1 != boolVal2)
-        {
-            Console.WriteLine($"Shape ID {s1.ID} ({s1.NameU}) - {propName} mismatch: Diagram1={boolVal1}, Diagram2={boolVal2}");
-        }
-    }
-
-    // Helper to compare two BOOL values and report differences
-    static void CompareBool(string name, BOOL val1, BOOL val2)
-    {
-        if (val1 != val2)
-        {
-            Console.WriteLine($"{name} mismatch: Diagram1={val1}, Diagram2={val2}");
-        }
+        // Compare a selection of common protection flags
+        Check("LockMoveX", s1.Protection.LockMoveX.Value, s2.Protection.LockMoveX.Value);
+        Check("LockMoveY", s1.Protection.LockMoveY.Value, s2.Protection.LockMoveY.Value);
+        Check("LockWidth", s1.Protection.LockWidth.Value, s2.Protection.LockWidth.Value);
+        Check("LockHeight", s1.Protection.LockHeight.Value, s2.Protection.LockHeight.Value);
+        Check("LockRotate", s1.Protection.LockRotate.Value, s2.Protection.LockRotate.Value);
+        Check("LockVtxEdit", s1.Protection.LockVtxEdit.Value, s2.Protection.LockVtxEdit.Value);
+        Check("LockAspect", s1.Protection.LockAspect.Value, s2.Protection.LockAspect.Value);
+        Check("LockSelect", s1.Protection.LockSelect.Value, s2.Protection.LockSelect.Value);
+        Check("LockTextEdit", s1.Protection.LockTextEdit.Value, s2.Protection.LockTextEdit.Value);
+        Check("LockDelete", s1.Protection.LockDelete.Value, s2.Protection.LockDelete.Value);
+        // Add more checks as needed following the same pattern
     }
 }

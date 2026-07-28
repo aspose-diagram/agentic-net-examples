@@ -3,7 +3,7 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
@@ -15,24 +15,23 @@ class Program
                 string outputPath = "output.vsdx";
 
                 // ID of the shape whose rotation lock should be removed
-                long shapeId = 123; // <-- replace with the actual shape ID
+                long targetShapeId = 12345; // replace with the actual shape ID
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Assume the shape is on the first page; adjust if necessary
-                Page page = diagram.Pages[0];
+                // Retrieve the shape by ID from the first page
+                Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+                if (shape == null)
+                {
+                    throw new Exception($"Shape with ID {targetShapeId} not found.");
+                }
 
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Unlock the rotation attribute (allow the shape to be rotated)
+                // Unlock the rotation attribute
                 shape.Protection.LockRotate.Value = BOOL.False;
 
-                // Save the modified diagram
+                // Save the updated diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Rotation lock removed and diagram saved to: " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

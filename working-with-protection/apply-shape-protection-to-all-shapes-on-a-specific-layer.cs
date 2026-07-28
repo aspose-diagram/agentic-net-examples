@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,81 +9,65 @@ class Program
             try
             {
 
-                // Input and output Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
 
                 // Name of the layer whose shapes should be protected
                 string targetLayerName = "MyLayer";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Find the target layer index on the first page (layers are stored per page sheet)
-                int? targetLayerIndex = null;
-                if (diagram.Pages.Count > 0)
+                // Locate the target layer on the first page (layers are shared across pages)
+                Layer targetLayer = null;
+                foreach (Layer layer in diagram.Pages[0].PageSheet.Layers)
                 {
-                    Page firstPage = diagram.Pages[0];
-                    foreach (Layer layer in firstPage.PageSheet.Layers)
+                    if (layer.Name.Value == targetLayerName)
                     {
-                        if (layer.Name.Value == targetLayerName)
-                        {
-                            targetLayerIndex = layer.IX;
-                            break;
-                        }
+                        targetLayer = layer;
+                        break;
                     }
                 }
 
-                if (targetLayerIndex == null)
+                if (targetLayer == null)
                 {
-                    Console.WriteLine($"Layer \"{targetLayerName}\" not found. No protection applied.");
+                    Console.WriteLine($"Layer \"{targetLayerName}\" not found.");
                     return;
                 }
 
-                // Apply protection to all shapes that belong to the target layer on every page
+                // The layer index is stored as a zero‑based integer in the IX property
+                string layerIndex = targetLayer.IX.ToString();
+
+                // Iterate through all pages and all shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Retrieve the semicolon‑separated list of layer indexes the shape belongs to
+                        string membership = shape.LayerMem.LayerMember.Value;
 
-                        // Ensure the shape has layer membership information
-                        if (shape.LayerMem == null || shape.LayerMem.LayerMember == null)
+                        if (string.IsNullOrEmpty(membership))
                             continue;
-
-                        string memberValue = shape.LayerMem.LayerMember.Value ?? string.Empty;
-                        // LayerMember stores semicolon‑separated layer indexes (e.g., "0;2")
-                        string[] memberIndexes = memberValue.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
 
                         // Check if the shape is assigned to the target layer
-                        bool isInTargetLayer = false;
-                        foreach (string idxStr in memberIndexes)
+                        string[] members = membership.Split(';');
+                        foreach (string member in members)
                         {
-                            if (int.TryParse(idxStr, out int idx) && idx == targetLayerIndex.Value)
+                            if (member == layerIndex)
                             {
-                                isInTargetLayer = true;
+                                // Apply protection flags to the shape
+                                shape.Protection.LockMoveX.Value = BOOL.True;
+                                shape.Protection.LockMoveY.Value = BOOL.True;
+                                shape.Protection.LockWidth.Value = BOOL.True;
+                                shape.Protection.LockHeight.Value = BOOL.True;
+                                shape.Protection.LockRotate.Value = BOOL.True;
+                                shape.Protection.LockVtxEdit.Value = BOOL.True;
                                 break;
                             }
                         }
-
-                        if (!isInTargetLayer)
-                            continue;
-
-                        // Apply desired protection flags
-                        shape.Protection.LockMoveX.Value = BOOL.True;
-                        shape.Protection.LockMoveY.Value = BOOL.True;
-                        shape.Protection.LockWidth.Value = BOOL.True;
-                        shape.Protection.LockHeight.Value = BOOL.True;
-                        shape.Protection.LockRotate.Value = BOOL.True;
-                        shape.Protection.LockVtxEdit.Value = BOOL.True;
                     }
                 }
 
                 // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Shape protection applied and diagram saved.");
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                Console.WriteLine("Shape protection applied and diagram saved as output.vsdx.");
 
             }
             catch (System.IO.FileNotFoundException ex)

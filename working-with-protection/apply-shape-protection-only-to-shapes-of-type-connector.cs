@@ -1,49 +1,45 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
-
-public class Program
-{
-    public static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Apply protection only to connector shapes (1‑D shapes)
-                    if (shape.OneD)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Lock movement, size, rotation and vertex editing
-                        shape.Protection.LockMoveX.Value = BOOL.True;
-                        shape.Protection.LockMoveY.Value = BOOL.True;
-                        shape.Protection.LockWidth.Value = BOOL.True;
-                        shape.Protection.LockHeight.Value = BOOL.True;
-                        shape.Protection.LockRotate.Value = BOOL.True;
-                        shape.Protection.LockVtxEdit.Value = BOOL.True;
+                        // Apply protection only to connector shapes (1‑D shapes)
+                        if (shape.OneD)
+                        {
+                            // Lock movement, size, rotation and vertex editing
+                            shape.Protection.LockMoveX.Value = BOOL.True;
+                            shape.Protection.LockMoveY.Value = BOOL.True;
+                            shape.Protection.LockWidth.Value = BOOL.True;
+                            shape.Protection.LockHeight.Value = BOOL.True;
+                            shape.Protection.LockRotate.Value = BOOL.True;
+                            shape.Protection.LockVtxEdit.Value = BOOL.True;
+                        }
                     }
                 }
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

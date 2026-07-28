@@ -4,10 +4,10 @@ display_name: Working With Protection
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.5.0
+version: 26.7.0
 examples: 35
 pass_rate: 100.0
-generated: 2026-06-23
+generated: 2026-07-28
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 35 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.5.0 |
+| Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-28 |
 
 ## Persona
 
@@ -63,9 +63,8 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 35 | Core diagram API |
 | `System` | 35 | Console, Math, DateTime, Exception |
-| `System.IO` | 15 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 14 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 1 | List, Dictionary, HashSet |
+| `System.IO` | 21 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 11 | Save options (PDF, PNG, HTML, SVG, XPS) |
 | `System.Text.Json` | 1 | JSON serialization |
 
 ## Common Code Pattern
@@ -97,7 +96,7 @@ class Program
 
 | File | Key APIs | Task |
 |------|----------|------|
-| [after-clearing-protection-validate-that-no-shape-attributes-remain-locked.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/after-clearing-protection-validate-that-no-shape-attributes-remain-locked.cs) | `Diagram`, `Pages`, `Save` | After clearing protection validate that no shape attributes remain locked |
+| [after-clearing-protection-validate-that-no-shape-attributes-remain-locked.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/after-clearing-protection-validate-that-no-shape-attributes-remain-locked.cs) | `Diagram`, `Pages`, `Shapes` | After clearing protection validate that no shape attributes remain locked |
 | [apply-diagram-level-protection-to-block-modification-of-page-orientation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/apply-diagram-level-protection-to-block-modification-of-page-orientation.cs) | `Diagram`, `Pages`, `Save` | Apply diagram level protection to block modification of page orientation |
 | [apply-diagram-level-protection-to-disable-changing-the-document-theme.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/apply-diagram-level-protection-to-disable-changing-the-document-theme.cs) | `Diagram`, `Save`, `diagram` | Apply diagram level protection to disable changing the document theme |
 | [apply-diagram-level-protection-to-prevent-adding-new-pages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/apply-diagram-level-protection-to-prevent-adding-new-pages.cs) | `Diagram`, `Save`, `diagram` | Apply diagram level protection to prevent adding new pages |
@@ -113,7 +112,7 @@ class Program
 | [compare-protection-settings-between-two-diagrams-to-detect-inconsistencies.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/compare-protection-settings-between-two-diagrams-to-detect-inconsistencies.cs) | `Diagram` | Compare protection settings between two diagrams to detect inconsistencies |
 | [enable-shape-protection-for-all-shapes-locking-width-height-x-position-y-position-and-rotation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/enable-shape-protection-for-all-shapes-locking-width-height-x-position-y-position-and-rotation.cs) | `Diagram`, `Pages`, `Save` | Enable shape protection for all shapes locking width height x position y position and rotation |
 | [export-the-protected-diagram-to-pdf-and-verify-protection-metadata-persists.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/export-the-protected-diagram-to-pdf-and-verify-protection-metadata-persists.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Export the protected diagram to pdf and verify protection metadata persists |
-| [export-the-protected-diagram-to-vdx-and-verify-style-locks-are-retained.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/export-the-protected-diagram-to-vdx-and-verify-style-locks-are-retained.cs) | `Diagram`, `Pages`, `Save` | Export the protected diagram to vdx and verify style locks are retained |
+| [export-the-protected-diagram-to-vdx-and-verify-style-locks-are-retained.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/export-the-protected-diagram-to-vdx-and-verify-style-locks-are-retained.cs) | `Diagram` | Export the protected diagram to vdx and verify style locks are retained |
 | [generate-a-json-summary-counting-locked-widths-heights-and-rotations-across-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/generate-a-json-summary-counting-locked-widths-heights-and-rotations-across-the-diagram.cs) | `Diagram`, `Pages`, `Shapes` | Generate a json summary counting locked widths heights and rotations across the diagram |
 | [implement-error-handling-that-logs-attempts-to-modify-locked-diagram-elements.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/implement-error-handling-that-logs-attempts-to-modify-locked-diagram-elements.cs) | `Diagram`, `Pages`, `Save` | Implement error handling that logs attempts to modify locked diagram elements |
 | [load-a-visio-diagram-into-memory-and-verify-successful-parsing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-protection/load-a-visio-diagram-into-memory-and-verify-successful-parsing.cs) | `Diagram`, `Pages`, `diagram` | Load a visio diagram into memory and verify successful parsing |
@@ -239,7 +238,7 @@ Frequently asked questions about **Working With Protection** in **Aspose.Diagram
 
 **Q: How do I get started with Working With Protection in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.5.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -271,4 +270,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-06-23 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-07-28 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

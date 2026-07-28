@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,34 +9,45 @@ class Program
             try
             {
 
-                // Load the Visio diagram from file
-                Diagram diagram = new Diagram("input.vsdx");
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages in the diagram
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Check each custom property (Prop) of the shape
+                        // Ensure the shape has custom properties collection
+                        if (shape.Props == null)
+                            continue;
+
+                        // Look for a custom property named "FixedAngle"
                         foreach (Prop prop in shape.Props)
                         {
-                            // If a property named "FixedAngle" is set to "True"
                             if (prop.Name == "FixedAngle" &&
-                                string.Equals(prop.Value.Val, "True", StringComparison.OrdinalIgnoreCase))
+                                prop.Value != null &&
+                                prop.Value.Val != null &&
+                                prop.Value.Val.Equals("true", StringComparison.OrdinalIgnoreCase))
                             {
-                                // Apply rotation lock protection to the shape
+                                // Apply protection: lock rotation of the shape
                                 shape.Protection.LockRotate.Value = BOOL.True;
 
-                                // Additional protection can be added here if required
-                                // e.g., shape.Protection.LockAspect.Value = BOOL.True;
+                                // Optionally, you can lock other aspects if needed, e.g.:
+                                // shape.Protection.LockMoveX.Value = BOOL.True;
+                                // shape.Protection.LockMoveY.Value = BOOL.True;
+
+                                // No need to continue checking other properties for this shape
+                                break;
                             }
                         }
                     }
                 }
 
-                // Save the modified diagram to a new file
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

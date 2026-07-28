@@ -1,48 +1,41 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram (replace with your actual file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through every page and every shape on each page
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram (replace with your file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Lock horizontal position (X)
-                        shape.Protection.LockMoveX.Value = BOOL.True;
-                        // Lock vertical position (Y)
-                        shape.Protection.LockMoveY.Value = BOOL.True;
-                        // Lock width
-                        shape.Protection.LockWidth.Value = BOOL.True;
-                        // Lock height
-                        shape.Protection.LockHeight.Value = BOOL.True;
-                        // Lock rotation
-                        shape.Protection.LockRotate.Value = BOOL.True;
-                    }
+                    // Lock horizontal position (X), vertical position (Y), width, height, and rotation
+                    shape.Protection.LockMoveX.Value = BOOL.True;
+                    shape.Protection.LockMoveY.Value = BOOL.True;
+                    shape.Protection.LockWidth.Value = BOOL.True;
+                    shape.Protection.LockHeight.Value = BOOL.True;
+                    shape.Protection.LockRotate.Value = BOOL.True;
                 }
-
-                // Save the modified diagram (replace with desired output path)
-                string outputPath = "output_protected.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the diagram with the applied protection
+            string outputPath = "output_protected.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with shape protection to {outputPath}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

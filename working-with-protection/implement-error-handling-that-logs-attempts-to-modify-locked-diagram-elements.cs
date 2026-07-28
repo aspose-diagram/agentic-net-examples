@@ -1,107 +1,111 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    // Path to the source Visio file
+    private const string InputPath = "input.vsdx";
+    // Path to the output Visio file after attempted modifications
+    private const string OutputPath = "output.vsdx";
+
+    static void Main()
     {
-        static void Main(string[] args)
+        // Verify that the input file exists before attempting to load it
+        if (!File.Exists(InputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {InputPath}");
+            return;
+        }
+
+        Diagram diagram;
+        try
+        {
+            // Load the diagram from the specified file
+            diagram = new Diagram(InputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Iterate through all pages and shapes to apply modifications
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the modified Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Example: attempt to move the shape and change its line color
-                            TryModifyShape(shape);
-                        }
-                    }
-
-                    // Save the diagram after processing
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-
-                Console.WriteLine("Processing completed.");
-
+                // Attempt to modify the shape only if it is not locked
+                ModifyShapeIfUnlocked(shape);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+
+        try
+        {
+            // Save the diagram (even if no changes were made)
+            diagram.Save(OutputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+        }
     }
 
-        /// <summary>
-        /// Attempts to modify a shape while respecting its protection settings.
-        /// Logs any attempt to change a locked attribute.
-        /// </summary>
-        /// <param name="shape">The shape to modify.</param>
-        private static void TryModifyShape(Shape shape)
+    /// <summary>
+    /// Tries to modify a shape only if it is not locked.
+    /// Logs any attempt to modify a locked attribute.
+    /// </summary>
+    /// <param name="shape">The shape to process.</param>
+    private static void ModifyShapeIfUnlocked(Shape shape)
+    {
+        // Example modification: increase width by 1 inch
+        if (shape.Protection.LockWidth.Value == BOOL.True)
         {
-            // Attempt to move the shape (change PinX and PinY)
-            bool canMoveX = shape.Protection.LockMoveX.Value != BOOL.True;
-            bool canMoveY = shape.Protection.LockMoveY.Value != BOOL.True;
-
-            if (canMoveX && canMoveY)
-            {
-                // Move the shape by adding an offset of 0.5 inches
-                shape.XForm.PinX.Value += 0.5;
-                shape.XForm.PinY.Value += 0.5;
-                Console.WriteLine($"Shape ID {shape.ID} moved.");
-            }
-            else
-            {
-                if (!canMoveX)
-                {
-                    Console.WriteLine($"Attempted to modify PinX of shape ID {shape.ID}, but LockMoveX is enabled.");
-                }
-                if (!canMoveY)
-                {
-                    Console.WriteLine($"Attempted to modify PinY of shape ID {shape.ID}, but LockMoveY is enabled.");
-                }
-            }
-
-            // Attempt to resize the shape (change Width and Height)
-            bool canResizeWidth = shape.Protection.LockWidth.Value != BOOL.True;
-            bool canResizeHeight = shape.Protection.LockHeight.Value != BOOL.True;
-
-            if (canResizeWidth && canResizeHeight)
-            {
-                shape.XForm.Width.Value += 0.2;   // increase width by 0.2 inches
-                shape.XForm.Height.Value += 0.2; // increase height by 0.2 inches
-                Console.WriteLine($"Shape ID {shape.ID} resized.");
-            }
-            else
-            {
-                if (!canResizeWidth)
-                {
-                    Console.WriteLine($"Attempted to modify Width of shape ID {shape.ID}, but LockWidth is enabled.");
-                }
-                if (!canResizeHeight)
-                {
-                    Console.WriteLine($"Attempted to modify Height of shape ID {shape.ID}, but LockHeight is enabled.");
-                }
-            }
-
-            // Attempt to change line color (no specific lock, but we still log the action)
+            Console.WriteLine($"[Lock] Shape ID {shape.ID} - Width is locked. Modification skipped.");
+        }
+        else
+        {
             try
             {
-                shape.Line.LineColor.Value = "#FF0000"; // set line color to red
-                Console.WriteLine($"Line color of shape ID {shape.ID} set to red.");
+                double originalWidth = shape.XForm.Width.Value;
+                shape.XForm.Width.Value = originalWidth + 1.0;
+                Console.WriteLine($"[Modify] Shape ID {shape.ID} - Width changed from {originalWidth} to {shape.XForm.Width.Value}.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to set line color for shape ID {shape.ID}: {ex.Message}");
+                Console.WriteLine($"[Error] Shape ID {shape.ID} - Failed to modify width: {ex.Message}");
+            }
+        }
+
+        // Example modification: change line color to red (no specific lock property exists for line)
+        try
+        {
+            shape.Line.LineColor.Value = "#FF0000";
+            Console.WriteLine($"[Modify] Shape ID {shape.ID} - Line color set to red.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Error] Shape ID {shape.ID} - Failed to set line color: {ex.Message}");
+        }
+
+        // Example modification: move shape horizontally by 0.5 inch
+        if (shape.Protection.LockMoveX.Value == BOOL.True)
+        {
+            Console.WriteLine($"[Lock] Shape ID {shape.ID} - Horizontal move is locked. Modification skipped.");
+        }
+        else
+        {
+            try
+            {
+                double originalPinX = shape.XForm.PinX.Value;
+                shape.XForm.PinX.Value = originalPinX + 0.5;
+                Console.WriteLine($"[Modify] Shape ID {shape.ID} - PinX moved from {originalPinX} to {shape.XForm.PinX.Value}.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Error] Shape ID {shape.ID} - Failed to move shape: {ex.Message}");
             }
         }
     }
+}

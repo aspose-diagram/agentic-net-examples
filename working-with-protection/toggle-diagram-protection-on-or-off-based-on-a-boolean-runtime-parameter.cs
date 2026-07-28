@@ -1,50 +1,41 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expected arguments: input file, output file, optional protect flag (true/false)
+        if (args.Length < 2)
         {
-            try
+            Console.WriteLine("Usage: <input.vsdx> <output.vsdx> [protect:true|false]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        bool protect = false;
+
+        if (args.Length >= 3)
+        {
+            if (!bool.TryParse(args[2], out protect))
             {
-
-                // Determine whether protection should be enabled.
-                // Accept a command‑line argument like "true" or "false".
-                bool protect = false;
-                if (args.Length > 0 && bool.TryParse(args[0], out bool parsed))
-                    protect = parsed;
-
-                // Paths to the source diagram and the output file.
-                // Adjust these paths as needed for your environment.
-                string inputPath = "input.vsdx";
-                string outputPath = protect ? "protected.vsdx" : "unprotected.vsdx";
-
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Toggle global document protection flags.
-                if (protect)
-                {
-                    diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
-                    diagram.DocumentSettings.ProtectMasters = BOOL.True;
-                    diagram.DocumentSettings.ProtectShapes = BOOL.True;
-                    diagram.DocumentSettings.ProtectStyles = BOOL.True;
-                }
-                else
-                {
-                    diagram.DocumentSettings.ProtectBkgnds = BOOL.False;
-                    diagram.DocumentSettings.ProtectMasters = BOOL.False;
-                    diagram.DocumentSettings.ProtectShapes = BOOL.False;
-                    diagram.DocumentSettings.ProtectStyles = BOOL.False;
-                }
-
-                // Save the modified diagram.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine("Invalid protect flag; defaulting to false.");
+                protect = false;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+
+        // Load the diagram from the specified file
+        Diagram diagram = new Diagram(inputPath);
+
+        // Toggle global protection settings based on the runtime flag
+        diagram.DocumentSettings.ProtectBkgnds = protect ? BOOL.True : BOOL.False;
+        diagram.DocumentSettings.ProtectMasters = protect ? BOOL.True : BOOL.False;
+        diagram.DocumentSettings.ProtectShapes = protect ? BOOL.True : BOOL.False;
+        diagram.DocumentSettings.ProtectStyles = protect ? BOOL.True : BOOL.False;
+
+        // Save the modified diagram to the output file
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
-    }
+}

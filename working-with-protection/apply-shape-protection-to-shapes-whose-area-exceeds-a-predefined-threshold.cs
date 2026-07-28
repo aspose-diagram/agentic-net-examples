@@ -9,28 +9,28 @@ class Program
             try
             {
 
-                // Path to the source Visio file
+                // Path to the input Visio file
                 string inputPath = "input.vsdx";
-
-                // Path for the protected output file
+                // Path to the output Visio file
                 string outputPath = "output_protected.vsdx";
 
-                // Area threshold (in square inches) – shapes larger than this will be protected
-                double areaThreshold = 4.0; // example: 2" x 2" = 4 sq.in.
+                // Define the area threshold (in square inches)
+                double areaThreshold = 5.0;
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve width and height (in inches) from the shape's XForm
+                        // Retrieve width and height (in inches)
                         double width = shape.XForm.Width.Value;
                         double height = shape.XForm.Height.Value;
 
@@ -40,19 +40,13 @@ class Program
                         // Apply protection if area exceeds the threshold
                         if (area > areaThreshold)
                         {
-                            // Lock movement
                             shape.Protection.LockMoveX.Value = BOOL.True;
                             shape.Protection.LockMoveY.Value = BOOL.True;
-
-                            // Lock resizing
                             shape.Protection.LockWidth.Value = BOOL.True;
                             shape.Protection.LockHeight.Value = BOOL.True;
-
-                            // Lock rotation
                             shape.Protection.LockRotate.Value = BOOL.True;
-
-                            // Lock vertex editing
                             shape.Protection.LockVtxEdit.Value = BOOL.True;
+                            shape.Protection.LockAspect.Value = BOOL.True;
                         }
                     }
                 }

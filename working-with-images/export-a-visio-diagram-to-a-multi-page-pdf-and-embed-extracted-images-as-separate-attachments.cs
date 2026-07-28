@@ -3,55 +3,53 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class VisioToPdfWithAttachments
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Paths
+            string inputVisio = @"C:\Docs\sample.vsdx";
+            string outputPdf = @"C:\Docs\sample_multi_page.pdf";
+            string attachmentsFolder = @"C:\Docs\Attachments";
 
-            // Configure PDF save options for a multi‑page PDF
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.SplitMultiPages = false;               // keep all pages in one PDF
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;       // ensure PDF format
+            // Load the Visio diagram (uses the Diagram(string) constructor)
+            Diagram diagram = new Diagram(inputVisio);
 
-            // Export the whole diagram as a multi‑page PDF
-            diagram.Save("output.pdf", pdfOptions);
+            // Configure PDF save options to split diagram into multiple pages
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                SplitMultiPages = true // ensures each Visio page becomes a PDF page
+            };
 
-            // -----------------------------------------------------------------
-            // Extract each shape as an individual PDF (acting as an image file)
-            // and store them in a folder to be used as separate attachments.
-            // -----------------------------------------------------------------
-            string attachmentsDir = Path.Combine(Directory.GetCurrentDirectory(), "ShapeAttachments");
-            Directory.CreateDirectory(attachmentsDir);
+            // Save the diagram as a multi‑page PDF (uses Diagram.Save(string, SaveOptions))
+            diagram.Save(outputPdf, pdfOptions);
 
+            // Create folder for extracted shape PDFs (each shape saved as a separate PDF)
+            Directory.CreateDirectory(attachmentsFolder);
+
+            int shapeCounter = 0;
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Export the shape to a PDF file; the PDF can be treated as an image attachment.
-                    string shapePdfPath = Path.Combine(
-                        attachmentsDir,
-                        $"Page{page.ID}_Shape{shape.ID}.pdf");
-
+                    // Save each shape to its own PDF file (uses Shape.ToPdf(string))
+                    string shapePdfPath = Path.Combine(attachmentsFolder, $"Shape_{shapeCounter}.pdf");
                     shape.ToPdf(shapePdfPath);
+                    shapeCounter++;
                 }
             }
 
-            // At this point:
-            // - "output.pdf" contains the full multi‑page diagram.
-            // - The folder "ShapeAttachments" holds individual PDFs for each shape,
-            //   which can be attached to the main PDF using a PDF library if needed.
             // Cleanup
             diagram.Dispose();
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

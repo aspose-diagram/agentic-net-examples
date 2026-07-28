@@ -1,55 +1,48 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect input Visio file path and output PDF file path as arguments
-            if (args.Length < 2)
+
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output PDF file path
+            string outputPath = "output.pdf";
+
+            // Margin of 10 mm converted to inches (1 inch = 25.4 mm)
+            double marginInches = 10.0 / 25.4; // ≈0.3937 inches
+
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("Usage: VisioMarginPdfExport <inputVisioPath> <outputPdfPath>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            try
-            {
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define margin of 10 mm (converted to inches)
-                double marginInches = 10.0 / 25.4; // 1 inch = 25.4 mm
-
-                // Apply the margin to each page
+                // Apply the same margin to every page
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the PrintProps of the page sheet
-                    PrintProps printProps = page.PageSheet.PrintProps;
-
-                    // Set all four margins
-                    printProps.PageTopMargin.Value = marginInches;
-                    printProps.PageBottomMargin.Value = marginInches;
-                    printProps.PageLeftMargin.Value = marginInches;
-                    printProps.PageRightMargin.Value = marginInches;
+                    // PrintProps holds page margin settings (values are in inches)
+                    page.PageSheet.PrintProps.PageTopMargin.Value = marginInches;
+                    page.PageSheet.PrintProps.PageBottomMargin.Value = marginInches;
+                    page.PageSheet.PrintProps.PageLeftMargin.Value = marginInches;
+                    page.PageSheet.PrintProps.PageRightMargin.Value = marginInches;
                 }
 
-                // Configure PDF save options
+                // Configure PDF save options (optional: set a default font)
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
                 pdfOptions.DefaultFont = "Arial";
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the diagram as PDF
+                // Save the modified diagram as PDF
                 diagram.Save(outputPath, pdfOptions);
+            }
 
-                Console.WriteLine($"Successfully saved PDF to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

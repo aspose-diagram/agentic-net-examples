@@ -1,6 +1,8 @@
 using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -12,40 +14,35 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Retrieve the first page (index 0) and a shape with ID 1
+            // Get the first shape on the first page (adjust the shape ID as needed)
             Shape shape = diagram.Pages[0].Shapes.GetShape(1);
 
             // Ensure the shape uses a gradient fill
             shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
             shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Store existing gradient stops, modifying the stop at index 1 to pure green
-            var updatedStops = new System.Collections.Generic.List<(double position, string color)>();
-
-            int stopIndex = 0;
+            // Capture existing gradient stop positions and colors
+            List<double> positions = new List<double>();
+            List<string> colors = new List<string>();
             foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
             {
-                double pos = stop.Position.Value;
-                string col = stop.Color.Value;
-
-                if (stopIndex == 1)
-                {
-                    // Change color to pure green (RGB 0,255,0) using hex notation
-                    col = "#00FF00";
-                }
-
-                updatedStops.Add((pos, col));
-                stopIndex++;
+                positions.Add(stop.Position.Value);
+                colors.Add(stop.Color.Value);
             }
 
-            // Clear existing stops and re-add them with the updated colors
-            shape.Fill.GradientFill.GradientStops.Clear();
+            // Change the color of the gradient stop at index 1 to pure green (#00FF00)
+            if (colors.Count > 1)
+            {
+                colors[1] = "#00FF00";
+            }
 
-            foreach (var (position, color) in updatedStops)
+            // Rebuild the gradient stops collection with the updated colors
+            shape.Fill.GradientFill.GradientStops.Clear();
+            for (int i = 0; i < positions.Count; i++)
             {
                 shape.Fill.GradientFill.GradientStops.Add(
-                    new DoubleValue(position, MeasureConst.NUM),
-                    new ColorValue(color, MeasureConst.Undefined));
+                    new DoubleValue(positions[i], MeasureConst.NUM),
+                    new ColorValue(colors[i], MeasureConst.Undefined));
             }
 
             // Save the modified diagram

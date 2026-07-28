@@ -1,7 +1,6 @@
+using Aspose.Diagram;
 using System;
 using System.IO;
-using Aspose.Diagram;
-using Aspose.Diagram.AutoLayout;
 
 class Program
 {
@@ -10,45 +9,42 @@ class Program
         try
         {
 
-            // Input Visio file and output CSV file paths
-            string diagramPath = "input.vsdx";
-            string csvPath = "shape_coords.csv";
+            // Load the Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram from file
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Create CSV file and write header
-            using (StreamWriter csvWriter = new StreamWriter(csvPath))
+            // Configure autospace options (distance in inches)
+            AutoSpaceOptions options = new AutoSpaceOptions
             {
-                csvWriter.WriteLine("PageName,ShapeID,PinX,PinY");
+                DistanceInHorizontal = 0.5, // horizontal spacing
+                DistanceInVertical = 0.5    // vertical spacing
+            };
 
-                // Process each page in the diagram
+            // Apply autospace to all pages in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                page.AutoSpaceShapes(page.Shapes, options);
+            }
+
+            // Create CSV file to store shape IDs and their new PinX/PinY coordinates
+            using (StreamWriter writer = new StreamWriter("ShapeCoordinates.csv"))
+            {
+                // CSV header
+                writer.WriteLine("ShapeID,PinX,PinY");
+
+                // Write each shape's ID and coordinates after autospace
                 foreach (Page page in diagram.Pages)
                 {
-                    // Apply auto‑spacing to the shapes on the current page
-                    AutoSpaceOptions options = new AutoSpaceOptions();
-                    options.DistanceInHorizontal = 2; // horizontal spacing in inches
-                    options.DistanceInVertical = 2;   // vertical spacing in inches
-                    page.AutoSpaceShapes(page.Shapes, options);
-
-                    // Record the new coordinates of each non‑deleted shape
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        long shapeId = shape.ID;
-                        double pinX = shape.XForm.PinX.Value;
-                        double pinY = shape.XForm.PinY.Value;
-
-                        csvWriter.WriteLine($"{page.Name},{shapeId},{pinX},{pinY}");
+                        // shape.ID is the unique identifier
+                        // shape.XForm.PinX and shape.XForm.PinY hold the coordinates
+                        writer.WriteLine($"{shape.ID},{shape.XForm.PinX},{shape.XForm.PinY}");
                     }
                 }
             }
 
-            // Diagram can be saved later if needed
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram (optional)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

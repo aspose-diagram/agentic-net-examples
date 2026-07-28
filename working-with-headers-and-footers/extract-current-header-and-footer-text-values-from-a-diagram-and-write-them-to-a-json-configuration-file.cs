@@ -3,44 +3,60 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-class Program
+namespace HeaderFooterExtractor
 {
-    static void Main(string[] args)
+    // DTO for JSON serialization
+    public class HeaderFooterConfig
     {
-        try
+        public string HeaderLeft { get; set; }
+        public string HeaderCenter { get; set; }
+        public string HeaderRight { get; set; }
+        public string FooterLeft { get; set; }
+        public string FooterCenter { get; set; }
+        public string FooterRight { get; set; }
+    }
+
+    public class Program
+    {
+        public static void Main(string[] args)
         {
-
-            // Path to the Visio diagram file
-            string diagramPath = "input.vsdx";
-            // Path where the JSON configuration will be saved
-            string jsonOutputPath = "headerFooterConfig.json";
-
-            // Load the diagram using the provided constructor (lifecycle rule)
-            using (Diagram diagram = new Diagram(diagramPath))
+            try
             {
+
+                // Input Visio file path (modify as needed)
+                string diagramPath = "input.vsdx";
+
+                // Output JSON configuration file path
+                string jsonPath = "headerFooterConfig.json";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
                 // Extract header and footer text values
-                var headerFooterConfig = new
+                HeaderFooterConfig config = new HeaderFooterConfig
                 {
-                    HeaderLeft   = diagram.HeaderFooter.HeaderLeft,
+                    HeaderLeft = diagram.HeaderFooter.HeaderLeft,
                     HeaderCenter = diagram.HeaderFooter.HeaderCenter,
-                    HeaderRight  = diagram.HeaderFooter.HeaderRight,
-                    FooterLeft   = diagram.HeaderFooter.FooterLeft,
+                    HeaderRight = diagram.HeaderFooter.HeaderRight,
+                    FooterLeft = diagram.HeaderFooter.FooterLeft,
                     FooterCenter = diagram.HeaderFooter.FooterCenter,
-                    FooterRight  = diagram.HeaderFooter.FooterRight
+                    FooterRight = diagram.HeaderFooter.FooterRight
                 };
 
-                // Serialize the extracted values to formatted JSON
+                // Serialize to JSON with indentation for readability
                 var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                string json = JsonSerializer.Serialize(headerFooterConfig, jsonOptions);
+                string jsonContent = JsonSerializer.Serialize(config, jsonOptions);
 
-                // Write the JSON string to the output file
-                File.WriteAllText(jsonOutputPath, json);
+                // Write JSON to file
+                File.WriteAllText(jsonPath, jsonContent);
+
+                Console.WriteLine($"Header and footer values have been exported to '{jsonPath}'.");
+
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

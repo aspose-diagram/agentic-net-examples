@@ -11,9 +11,9 @@ class Program
         Diagram diagram = new Diagram();
 
         // Set the right footer text
-        diagram.HeaderFooter.FooterRight = "Confidential – Draft Version";
+        diagram.HeaderFooter.FooterRight = "My custom right footer text";
 
-        // Save the diagram as VDX using the built‑in Save method
-        diagram.Save("OutputDiagram.vdx", SaveFileFormat.Vdx);
+        // Save the diagram as VDX using the built‑in Save method with SaveFileFormat
+        diagram.Save("output.vdx", SaveFileFormat.Vdx);
     }
 }

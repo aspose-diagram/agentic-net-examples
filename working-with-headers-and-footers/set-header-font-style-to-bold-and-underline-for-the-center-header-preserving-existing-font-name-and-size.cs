@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,27 +10,21 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load the existing Visio diagram
             string inputPath = "input.vsdx";
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Preserve the current font name and size of the header/footer font
-                var headerFont = diagram.HeaderFooter.HeaderFooterFont;
-                string existingFaceName = headerFont.FaceName;
-                int existingHeight = headerFont.Height; // Height is stored as a negative value per Aspose.Diagram spec
+            Diagram diagram = new Diagram(inputPath);
 
-                // Apply bold (weight 700) and underline while keeping the original font name and size
-                headerFont.Weight = 700;          // Bold weight
-                headerFont.Underline = BOOL.True; // Underline
-                headerFont.FaceName = existingFaceName;
-                headerFont.Height = existingHeight;
+            // Access the global header/footer font settings
+            var headerFont = diagram.HeaderFooter.HeaderFooterFont;
 
-                // (Optional) Set the center header text if needed
-                // diagram.HeaderFooter.HeaderCenter = "Center Header Text";
+            // Preserve existing font name (FaceName) and size (Height)
+            // Apply bold style by setting the weight to 700 and enable underline
+            headerFont.Weight = 700;          // Bold
+            headerFont.Underline = BOOL.True; // Underline
 
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            }
+            // Save the diagram with the updated header formatting
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

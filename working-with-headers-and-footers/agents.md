@@ -4,10 +4,10 @@ display_name: Working With Headers And Footers
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.5.0
+version: 26.7.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-06-23
+generated: 2026-07-28
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.5.0 |
+| Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-28 |
 
 ## Persona
 
@@ -63,15 +63,13 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 30 | Core diagram API |
 | `System` | 30 | Console, Math, DateTime, Exception |
-| `System.IO` | 27 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 9 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `Aspose.Drawing` | 3 | Supporting utilities |
-| `System.Globalization` | 1 | Supporting utilities |
-| `System.Xml.Linq` | 1 | Supporting utilities |
+| `System.IO` | 28 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 8 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `Aspose.Drawing` | 1 | Supporting utilities |
 | `Aspose.Diagram.Printing` | 1 | Supporting utilities |
+| `System.Xml.Linq` | 1 | Supporting utilities |
 | `System.Text.Json` | 1 | JSON serialization |
-| `System.Collections.Generic` | 1 | List, Dictionary, HashSet |
-| `System.Text` | 1 | StringBuilder |
+| `System.Linq` | 1 | LINQ queries on collections |
 | `System.Text.RegularExpressions` | 1 | Supporting utilities |
 
 ## Common Code Pattern
@@ -117,7 +115,7 @@ class Program
 | [define-header-font-name-as-arial-size-10-points-and-apply-bold-style-to-the-left-header.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/define-header-font-name-as-arial-size-10-points-and-apply-bold-style-to-the-left-header.cs) | `Diagram`, `Save`, `diagram` | Define header font name as arial size 10 points and apply bold style to the left header |
 | [ensure-that-after-modifying-header-text-the-diagram-s-print-preview-reflects-the-updated-content-accurately.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/ensure-that-after-modifying-header-text-the-diagram-s-print-preview-reflects-the-updated-content-accurately.cs) | `Diagram`, `Save`, `diagram` | Ensure that after modifying header text the diagram s print preview reflects the updated content accurately |
 | [extract-current-header-and-footer-text-values-from-a-diagram-and-write-them-to-a-json-configuration-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/extract-current-header-and-footer-text-values-from-a-diagram-and-write-them-to-a-json-configuration-file.cs) | `Diagram` | Extract current header and footer text values from a diagram and write them to a json configuration file |
-| [generate-a-report-listing-each-diagram-s-left-center-and-right-header-texts-after-batch-modifications.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/generate-a-report-listing-each-diagram-s-left-center-and-right-header-texts-after-batch-modifications.cs) | `Diagram`, `Save`, `diagram` | Generate a report listing each diagram s left center and right header texts after batch modifications |
+| [generate-a-report-listing-each-diagram-s-left-center-and-right-header-texts-after-batch-modifications.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/generate-a-report-listing-each-diagram-s-left-center-and-right-header-texts-after-batch-modifications.cs) | `Diagram` | Generate a report listing each diagram s left center and right header texts after batch modifications |
 | [generate-a-summary-csv-file-listing-each-diagram-s-file-name-header-margins-and-footer-font-sizes-after-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/generate-a-summary-csv-file-listing-each-diagram-s-file-name-header-margins-and-footer-font-sizes-after-processing.cs) | `Diagram` | Generate a summary csv file listing each diagram s file name header margins and footer font sizes after processing |
 | [implement-a-function-to-copy-header-and-footer-settings-from-one-diagram-to-another-without-altering-page-content.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/implement-a-function-to-copy-header-and-footer-settings-from-one-diagram-to-another-without-altering-page-content.cs) | `Diagram` | Implement a function to copy header and footer settings from one diagram to another without altering page content |
 | [load-a-diagram-clear-all-existing-footer-texts-then-assign-a-standardized-disclaimer-to-each-footer-region.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/load-a-diagram-clear-all-existing-footer-texts-then-assign-a-standardized-disclaimer-to-each-footer-region.cs) | `Diagram`, `Save`, `diagram` | Load a diagram clear all existing footer texts then assign a standardized disclaimer to each footer region |
@@ -240,7 +238,7 @@ Frequently asked questions about **Working With Headers And Footers** in **Aspos
 
 **Q: How do I get started with Working With Headers And Footers in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.5.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -272,4 +270,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-06-23 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-07-28 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

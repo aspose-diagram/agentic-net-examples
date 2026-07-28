@@ -3,31 +3,21 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class UpdateHeaderCenter
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio diagram
-            string inputPath = "input.vsdx";
+            // Load an existing Visio diagram from file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Path where the modified diagram will be saved
-            string outputPath = "output.vsdx";
+            // Update the center portion of the document's header with a custom company name
+            diagram.HeaderFooter.HeaderCenter = "Acme Corporation";
 
-            // Custom company name to set in the header center
-            string companyName = "Acme Corp";
-
-            // Load the diagram from file (using the Diagram(string) constructor)
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Update the center portion of the document's header
-                diagram.HeaderFooter.HeaderCenter = companyName;
-
-                // Save the modified diagram back to a file (using VSDX format)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
+            // Save the modified diagram back to disk
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

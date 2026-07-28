@@ -3,34 +3,38 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class FooterUpdater
 {
     static void Main()
     {
         try
         {
 
-            // Load the existing Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Clear any existing footer text
-            diagram.HeaderFooter.FooterLeft = string.Empty;
-            diagram.HeaderFooter.FooterCenter = string.Empty;
-            diagram.HeaderFooter.FooterRight = string.Empty;
+            // Path where the modified Visio file will be saved
+            string outputPath = "output.vsdx";
 
-            // Standardized disclaimer to be applied
-            const string disclaimer = "Confidential – For internal use only";
+            // Load the diagram from the file (using the Diagram constructor that accepts a file path)
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Clear any existing footer text
+                diagram.HeaderFooter.FooterLeft = string.Empty;
+                diagram.HeaderFooter.FooterCenter = string.Empty;
+                diagram.HeaderFooter.FooterRight = string.Empty;
 
-            // Assign the disclaimer to each footer region
-            diagram.HeaderFooter.FooterLeft = disclaimer;
-            diagram.HeaderFooter.FooterCenter = disclaimer;
-            diagram.HeaderFooter.FooterRight = disclaimer;
+                // Standardized disclaimer to apply to all footer regions
+                string disclaimer = "Confidential – For internal use only.";
 
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Assign the disclaimer to each footer region
+                diagram.HeaderFooter.FooterLeft = disclaimer;
+                diagram.HeaderFooter.FooterCenter = disclaimer;
+                diagram.HeaderFooter.FooterRight = disclaimer;
 
-            // Release resources
-            diagram.Dispose();
+                // Save the modified diagram back to a file (using the Save method with VDX format)
+                diagram.Save(outputPath, SaveFileFormat.Vdx);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

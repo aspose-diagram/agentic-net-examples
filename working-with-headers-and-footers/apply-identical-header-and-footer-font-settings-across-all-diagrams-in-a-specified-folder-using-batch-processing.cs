@@ -1,66 +1,65 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Drawing;
 
-using Aspose.Drawing; // For Color structure
-
-namespace DiagramHeaderFooterBatch
+class Program
 {
-    class Program
+    static void Main(string[] args)
     {
-        static void Main()
+        // Determine the folder to process: use first argument or current directory
+        string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+
+        if (!Directory.Exists(folderPath))
         {
-            // Folder containing the Visio files to process
-            string inputFolder = @"C:\VisioFiles";
-            // Folder where the updated files will be saved
-            string outputFolder = @"C:\VisioFiles\Updated";
-
-            // Ensure the output directory exists
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
-
-            // Process all Visio files (VSDX, VSD, VDX, etc.) in the input folder
-            string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (string filePath in visioFiles)
-            {
-                // Filter supported Visio extensions
-                string ext = Path.GetExtension(filePath).ToLowerInvariant();
-                if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx" && ext != ".vssx" && ext != ".vstx")
-                    continue;
-
-                try
-                {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Apply identical header and footer font settings
-                    // Set font family
-                    diagram.HeaderFooter.HeaderFooterFont.FaceName = "Arial";
-                    // Set bold weight (700 = Bold)
-                    diagram.HeaderFooter.HeaderFooterFont.Weight = 700;
-                    // Set point size using negative mapping (e.g., -16 corresponds to 12pt)
-                    diagram.HeaderFooter.HeaderFooterFont.Height = -16;
-                    // Optional: set text color to black
-                    diagram.HeaderFooter.HeaderFooterColor = Color.Black;
-
-                    // Example of setting header/footer text (can be customized)
-                    diagram.HeaderFooter.HeaderLeft = "Company Confidential";
-                    diagram.HeaderFooter.FooterRight = "Page: &p";
-
-                    // Save the updated diagram with a new name
-                    string outputPath = Path.Combine(
-                        outputFolder,
-                        Path.GetFileNameWithoutExtension(filePath) + "_updated" + ext);
-
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
-            }
-
-            Console.WriteLine("Batch processing completed.");
+            Console.WriteLine($"Folder does not exist: {folderPath}");
+            return;
         }
+
+        // Supported Visio file extensions
+        string[] extensions = new[] { "*.vsdx", "*.vsd", "*.vdx", "*.vsdm", "*.vssx", "*.vstx" };
+
+        // Collect all diagram files in the folder (non‑recursive)
+        var diagramFiles = new System.Collections.Generic.List<string>();
+        foreach (var ext in extensions)
+        {
+            diagramFiles.AddRange(Directory.GetFiles(folderPath, ext, SearchOption.TopDirectoryOnly));
+        }
+
+        if (diagramFiles.Count == 0)
+        {
+            Console.WriteLine("No Visio diagram files found in the specified folder.");
+            return;
+        }
+
+        foreach (var filePath in diagramFiles)
+        {
+            try
+            {
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Apply global header/footer font settings
+                var headerFooterFont = diagram.HeaderFooter.HeaderFooterFont;
+                headerFooterFont.FaceName = "Arial";          // Font family
+                headerFooterFont.Weight = 700;                // Bold (700 = Bold, 400 = Regular)
+                headerFooterFont.Height = -16;                // Point size mapping (e.g., -16 ≈ 12pt)
+                headerFooterFont.Italic = BOOL.True;          // Italic style
+                headerFooterFont.Underline = BOOL.False;      // No underline
+
+                // Optional: set a common color for header/footer text
+                diagram.HeaderFooter.HeaderFooterColor = Color.Black;
+
+                // Save the diagram back to the same file (overwrites original)
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
+            }
+        }
+
+        Console.WriteLine("Batch processing completed.");
     }
 }

@@ -2,9 +2,9 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
@@ -15,11 +15,11 @@ public class Program
             // Load the diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Retrieve the footer margin (in inches) from the global HeaderFooter settings
-            double footerMarginInches = diagram.HeaderFooter.FooterMargin.Value;
+            // Retrieve the footer margin (in inches)
+            double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
 
             // Log the value to the console for debugging
-            Console.WriteLine($"Current footer margin: {footerMarginInches} inches");
+            Console.WriteLine($"Footer margin: {footerMargin} inches");
 
         }
         catch (System.IO.FileNotFoundException ex)

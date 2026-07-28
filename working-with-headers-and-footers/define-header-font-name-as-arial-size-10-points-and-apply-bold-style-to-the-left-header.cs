@@ -4,30 +4,24 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load an existing diagram (replace with actual load logic as per your lifecycle rule)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the header/footer font object
+            // Set the left header text
+            diagram.HeaderFooter.HeaderLeft = "Your Header Text";
+
+            // Configure the header/footer font
             HeaderFooterFont headerFont = diagram.HeaderFooter.HeaderFooterFont;
+            headerFont.FaceName = "Arial";   // Font name
+            headerFont.Height = 10;          // Font size in points
+            headerFont.Weight = 700;         // Bold weight (typically 700)
 
-            // Set font name to Arial
-            headerFont.FaceName = "Arial";
-
-            // Set font size to 10 points
-            headerFont.Height = 10;
-
-            // Apply bold style (weight 700 corresponds to bold)
-            headerFont.Weight = 700;
-
-            // (Optional) Set the left header text if needed
-            // diagram.HeaderFooter.HeaderLeft = "Your Header Text";
-
-            // Save the modified diagram (replace with desired output path)
+            // Save the modified diagram (replace with actual save logic as per your lifecycle rule)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

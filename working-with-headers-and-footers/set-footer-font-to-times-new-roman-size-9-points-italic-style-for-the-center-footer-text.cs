@@ -6,21 +6,31 @@ class Program
 {
     static void Main()
     {
-        // Create a new empty Visio diagram
-        using (Diagram diagram = new Diagram())
+        try
         {
-            // Configure the global footer font (applies to all footer fields)
+
+            // Load an existing Visio diagram (replace with your actual file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Set the center footer text
+            diagram.HeaderFooter.FooterCenter = "Center Footer Text";
+
+            // Configure the footer font: Times New Roman, 9 pt, italic
             var footerFont = diagram.HeaderFooter.HeaderFooterFont;
-            footerFont.FaceName = "Times New Roman";   // Font family
-            footerFont.Weight = 400;                  // Regular weight (400)
-            footerFont.Height = -12;                  // 9 pt => -12 (9 * -1.333 ≈ -12)
-            footerFont.Italic = BOOL.True;            // Italic style
+            footerFont.FaceName = "Times New Roman";
+            footerFont.Height = 9;               // point size
+            footerFont.Italic = BOOL.True;       // italic style
+            footerFont.Weight = 400;             // normal weight (optional)
 
-            // Set the center footer text (example content)
-            diagram.HeaderFooter.FooterCenter = "Center Footer";
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -9,18 +9,18 @@ class Program
             try
             {
 
-                // Input Visio file path (provide as first argument or use default)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Path to the input Visio file
+                string inputPath = "input.vsdx";
 
-                // Output summary report file path
-                string outputPath = "summary.txt";
+                // Path for the generated summary report
+                string reportPath = "summary.txt";
 
-                // Load the diagram inside a using block to ensure proper disposal
+                // Variable to hold concatenated text from all pages
+                string allPagesText = string.Empty;
+
+                // Load the diagram within a using block to ensure proper disposal
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Use StringBuilder for efficient concatenation
-                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
-
                     // Iterate through each page in the diagram
                     foreach (Page page in diagram.Pages)
                     {
@@ -28,26 +28,28 @@ class Program
                         foreach (Shape shape in page.Shapes)
                         {
                             // Retrieve plain text from the shape
-                            string text = shape.Text.Value.Text;
+                            string shapeText = shape.Text.Value.Text;
 
-                            // Append non‑empty text to the builder
-                            if (!string.IsNullOrWhiteSpace(text))
+                            // If the shape contains non‑empty text, append it
+                            if (!string.IsNullOrWhiteSpace(shapeText))
                             {
-                                sb.AppendLine(text);
+                                // Separate entries with a newline for readability
+                                allPagesText += shapeText + Environment.NewLine;
                             }
                         }
                     }
-
-                    // Write the concatenated text to the summary report file
-                    File.WriteAllText(outputPath, sb.ToString());
                 }
 
-                Console.WriteLine("Summary report generated at: " + Path.GetFullPath(outputPath));
+                // Write the concatenated text to the summary report file
+                File.WriteAllText(reportPath, allPagesText);
+
+                // Inform the user that the operation completed
+                Console.WriteLine($"Summary report generated at: {Path.GetFullPath(reportPath)}");
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

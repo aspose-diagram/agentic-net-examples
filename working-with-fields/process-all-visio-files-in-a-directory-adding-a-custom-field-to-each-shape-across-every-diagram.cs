@@ -1,72 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+class VisioBatchProcessor
+{
+    // Custom field value to add to each shape
+    private const string CustomFieldValue = "MyCustomField";
+
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Directory containing Visio files; adjust as needed
+        string directoryPath = @"C:\VisioFiles";
+
+        // Process each Visio file in the directory
+        foreach (string filePath in Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly))
         {
-            // Determine the directory to process. Use the first argument if provided,
-            // otherwise use the current working directory.
-            string inputDirectory = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+            // Filter supported Visio extensions
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            if (extension != ".vsd" && extension != ".vsdx" && extension != ".vdx")
+                continue;
 
-            if (!Directory.Exists(inputDirectory))
+            // Load the diagram using the provided constructor
+            Diagram diagram = new Diagram(filePath);
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine($"Error: Directory \"{inputDirectory}\" does not exist.");
-                return;
-            }
-
-            // Create an output subfolder to store the modified diagrams.
-            string outputDirectory = Path.Combine(inputDirectory, "Processed");
-            Directory.CreateDirectory(outputDirectory);
-
-            // Define Visio file extensions to process.
-            string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vsdm", ".vssx", ".vss", ".vstx", ".vst" };
-
-            // Gather all matching files.
-            var files = Directory.GetFiles(inputDirectory, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (var filePath in files)
-            {
-                if (Array.IndexOf(extensions, Path.GetExtension(filePath).ToLower()) < 0)
-                    continue; // Skip non‑Visio files.
-
-                try
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Load the Visio diagram.
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Iterate through each page and each shape.
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip shapes that are marked as deleted.
-                            if (shape.Del == BOOL.True)
-                                continue;
-
-                            // Create a new custom field.
-                            Field customField = new Field();
-
-                            // Assign a value to the field. Adjust as needed.
-                            customField.Value.Val = "CustomValue";
-
-                            // Add the field to the shape.
-                            shape.Fields.Add(customField);
-                        }
-                    }
-
-                    // Save the modified diagram to the output folder in VSDX format.
-                    string outputPath = Path.Combine(outputDirectory, Path.GetFileName(filePath));
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                    Console.WriteLine($"Processed and saved: {outputPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Failed to process \"{filePath}\": {ex.Message}");
+                    // Add or update a custom field (using Data1 as an example)
+                    shape.Data1 = CustomFieldValue;
                 }
             }
 
-            Console.WriteLine("Batch processing completed.");
+            // Save the modified diagram back to the original file using the provided Save method
+            // Preserve the original format based on file extension
+            SaveFileFormat saveFormat = GetSaveFormatFromExtension(extension);
+            diagram.Save(filePath, saveFormat);
         }
     }
+
+    // Helper to map file extension to SaveFileFormat enumeration
+    private static SaveFileFormat GetSaveFormatFromExtension(string extension)
+    {
+        switch (extension)
+        {
+            case ".vsd":
+                return SaveFileFormat.Vsdx; // Save as VSDX to retain compatibility
+            case ".vsdx":
+                return SaveFileFormat.Vsdx;
+            case ".vdx":
+                return SaveFileFormat.Vdx;
+            default:
+                return SaveFileFormat.Vsdx;
+        }
+    }
+}

@@ -11,36 +11,30 @@ class VisioToSvgBatch
         {
 
             // Path to the source Visio file
-            string visioFilePath = @"C:\VisioFiles\sample.vsdx";
+            string visioPath = "input.vsdx";
 
             // Root folder where SVG files will be stored
-            string outputRootFolder = @"C:\VisioFiles\SVG_Output";
+            string outputRoot = "output";
 
-            // Ensure the root output folder exists
-            Directory.CreateDirectory(outputRootFolder);
-
-            // Load the Visio diagram using the provided constructor
-            using (Diagram diagram = new Diagram(visioFilePath))
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(visioPath))
             {
                 // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Create a subfolder for the current page (hierarchical structure)
-                    string pageFolder = Path.Combine(outputRootFolder, page.Name);
+                    // Create a subfolder for the current page
+                    string pageFolder = Path.Combine(outputRoot, SanitizeFileName(page.Name));
                     Directory.CreateDirectory(pageFolder);
 
-                    // Iterate through each shape on the current page
+                    // Iterate through each shape on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Build a unique file name for the shape SVG
-                        string shapeFileName = $"shape_{shape.ID}.svg";
-                        string shapeFilePath = Path.Combine(pageFolder, shapeFileName);
+                        // Build a file name for the shape SVG
+                        string shapeFileName = $"Shape_{shape.ID}.svg";
+                        string shapePath = Path.Combine(pageFolder, shapeFileName);
 
-                        // Create SVG save options (default options are sufficient for basic export)
-                        SVGSaveOptions svgOptions = new SVGSaveOptions();
-
-                        // Export the shape to SVG using the provided ToSvg method
-                        shape.ToSvg(shapeFilePath, svgOptions);
+                        // Export the shape to SVG using Aspose.Diagram's ToSvg method
+                        shape.ToSvg(shapePath, new SVGSaveOptions());
                     }
                 }
             }
@@ -50,5 +44,13 @@ class VisioToSvgBatch
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    // Helper method to ensure folder names are valid for the file system
+    static string SanitizeFileName(string name)
+    {
+        foreach (char c in Path.GetInvalidFileNameChars())
+            name = name.Replace(c, '_');
+        return name;
     }
 }

@@ -1,56 +1,53 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
 {
     static void Main()
     {
-        // Create a new diagram (lifecycle rule)
-        // {CreateDiagram}
+        // Create a new diagram (using the provided creation rule)
         Diagram diagram = new Diagram();
 
-        // Define custom position and size for the text block
-        double pinX = 5.0;      // X coordinate of the text shape pin
-        double pinY = 5.0;      // Y coordinate of the text shape pin
-        double customWidth = 3.0;   // Desired width of the text block
-        double customHeight = 2.0;  // Desired height of the text block
-        string text = "Sample Text";
+        // Access the first page (a diagram always has at least one page)
+        Page page = diagram.Pages[0];
 
-        // Add a text shape with the custom width and height (method rule)
-        // {AddText}
-        Shape textShape = diagram.Pages[0].AddText(pinX, pinY, customWidth, customHeight, text);
+        // Define initial position for the text shape
+        double pinX = 5.0;   // X coordinate of the text's pin
+        double pinY = 5.0;   // Y coordinate of the text's pin
 
-        // Ensure the TextXForm reflects the custom dimensions
+        // Add a text shape with default width/height (these will be overridden)
+        Shape textShape = page.AddText(pinX, pinY, 1.0, 1.0, "Custom size text");
+
+        // Set custom width and height for the text block
+        double customWidth = 3.0;   // desired width of the text block
+        double customHeight = 2.0;  // desired height of the text block
+
+        // TxtWidth and TxtHeight are DoubleValue objects; assign the numeric values
         textShape.TextXForm.TxtWidth.Value = customWidth;
         textShape.TextXForm.TxtHeight.Value = customHeight;
 
-        // Refresh shape data so that internal calculations are up‑to‑date
+        // Refresh shape data so that internal calculations (e.g., geometry) are updated
         textShape.RefreshData();
 
         // Retrieve the shape's pin position (center of rotation)
         double shapePinX = textShape.XForm.PinX.Value;
         double shapePinY = textShape.XForm.PinY.Value;
 
-        // Retrieve the actual text block dimensions
-        double txtWidth = textShape.TextXForm.TxtWidth.Value;
-        double txtHeight = textShape.TextXForm.TxtHeight.Value;
+        // Calculate the bounding box of the text block (assuming no rotation)
+        double left   = shapePinX - (textShape.TextXForm.TxtWidth.Value  / 2.0);
+        double right  = shapePinX + (textShape.TextXForm.TxtWidth.Value  / 2.0);
+        double bottom = shapePinY - (textShape.TextXForm.TxtHeight.Value / 2.0);
+        double top    = shapePinY + (textShape.TextXForm.TxtHeight.Value / 2.0);
 
-        // Calculate bounding box coordinates
-        double left   = shapePinX - txtWidth / 2.0;
-        double right  = shapePinX + txtWidth / 2.0;
-        double top    = shapePinY + txtHeight / 2.0;
-        double bottom = shapePinY - txtHeight / 2.0;
+        // Output the bounding box coordinates
+        Console.WriteLine("Text Block Bounding Box:");
+        Console.WriteLine($"Left   : {left}");
+        Console.WriteLine($"Right  : {right}");
+        Console.WriteLine($"Bottom : {bottom}");
+        Console.WriteLine($"Top    : {top}");
 
-        // Output the bounding box values
-        Console.WriteLine($"Bounding Box:");
-        Console.WriteLine($"Left   = {left}");
-        Console.WriteLine($"Right  = {right}");
-        Console.WriteLine($"Top    = {top}");
-        Console.WriteLine($"Bottom = {bottom}");
-
-        // Save the diagram (lifecycle rule)
-        // {SaveDiagram}
-        diagram.Save("Result.vsdx", SaveFileFormat.Vsdx);
+        // Save the diagram (using the provided saving rule)
+        diagram.Save("Output.vsdx", SaveFileFormat.Vsdx);
     }
 }

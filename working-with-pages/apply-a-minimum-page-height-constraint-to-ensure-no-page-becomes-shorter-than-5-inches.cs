@@ -9,34 +9,31 @@ class Program
             try
             {
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Input and output file paths can be passed as command‑line arguments.
+                // If not provided, default placeholders are used.
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(inputPath);
+
+                // Ensure every page has a height of at least 5 inches.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Minimum page height in inches
-                    const double MinHeightInches = 5.0;
-
-                    // Iterate through all pages and enforce the minimum height
-                    foreach (Page page in diagram.Pages)
+                    double currentHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    if (currentHeight < 5.0)
                     {
-                        double currentHeight = page.PageSheet.PageProps.PageHeight.Value;
-                        if (currentHeight < MinHeightInches)
-                        {
-                            page.PageSheet.PageProps.PageHeight.Value = MinHeightInches;
-                        }
+                        page.PageSheet.PageProps.PageHeight.Value = 5.0;
                     }
-
-                    // Save the modified diagram back to Visio format
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
+                // Save the modified diagram back to Visio format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

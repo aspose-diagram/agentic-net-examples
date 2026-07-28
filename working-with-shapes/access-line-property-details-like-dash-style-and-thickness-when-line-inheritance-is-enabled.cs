@@ -1,50 +1,53 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file (replace with actual path)
+            string inputPath = "input.vsdx";
+            // Path for the optional output copy
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file (replace with your actual file path)
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Check if the shape has line inheritance enabled by comparing its line values
-                        // with the inherited line values. If they are equal, the shape is inheriting
-                        // the line formatting from its master or parent style.
-                        bool isLineInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value &&
-                                               shape.Line.LineWeight.Value == shape.InheritLine.LineWeight.Value &&
-                                               shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value;
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        if (isLineInherited)
-                        {
-                            // Retrieve dash style (LinePattern) and thickness (LineWeight) from the inherited line
-                            LinePatternValue dashStyle = shape.InheritLine.LinePattern.Value;
-                            double thickness = shape.InheritLine.LineWeight.Value; // thickness is in inches
+                    // Get the current line pattern (dash style) and line weight (thickness)
+                    var linePattern = shape.Line.LinePattern.Value;   // enum LinePatternValue
+                    var lineWeight = shape.Line.LineWeight.Value;     // double, inches
 
-                            // Output the details
-                            Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
-                            Console.WriteLine($"  Inherited Dash Style: {dashStyle}");
-                            Console.WriteLine($"  Inherited Thickness: {thickness} inches");
-                        }
-                    }
+                    // Determine whether each property is inherited from the master/style
+                    bool patternInherited = linePattern == shape.InheritLine.LinePattern.Value;
+                    bool weightInherited = lineWeight == shape.InheritLine.LineWeight.Value;
+
+                    // Output the details
+                    Console.WriteLine($"Shape ID {shape.ID} on Page ID {page.ID}:");
+                    Console.WriteLine($"  Line Pattern: {linePattern} (Inherited: {patternInherited})");
+                    Console.WriteLine($"  Line Weight: {lineWeight} inches (Inherited: {weightInherited})");
                 }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save a copy of the diagram (optional)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

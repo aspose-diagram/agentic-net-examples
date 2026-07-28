@@ -10,20 +10,21 @@ class Program
         try
         {
 
-            // Path to the source Visio file
+            // Input Visio file path
             string inputPath = "input.vsdx";
-            // Path for the generated PDF
+            // Output PDF file path
             string outputPath = "output.pdf";
 
             // Load the diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages and their layers
+                // Iterate through all pages to locate the 'Confidential' layer
                 foreach (Page page in diagram.Pages)
                 {
+                    // Access the layer collection of the current page
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // Find the layer named "Confidential"
+                        // Compare layer name (use .Value to get the string)
                         if (layer.Name.Value == "Confidential")
                         {
                             // Set the print visibility to false
@@ -32,14 +33,15 @@ class Program
                     }
                 }
 
-                // Configure PDF save options (optional settings)
+                // Configure PDF save options
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.ExportHiddenPage = false; // Do not export hidden pages
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set format
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
                 // Save the diagram as a PDF
                 diagram.Save(outputPath, pdfOptions);
             }
+
+            Console.WriteLine("PDF generated with 'Confidential' layer hidden from printing.");
 
         }
         catch (System.IO.FileNotFoundException ex)

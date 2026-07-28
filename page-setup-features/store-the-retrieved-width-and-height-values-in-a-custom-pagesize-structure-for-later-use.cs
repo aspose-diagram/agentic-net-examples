@@ -1,63 +1,55 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
-// Simple structure to hold page dimensions.
-    public struct PageSize
+struct PageSize
+{
+    public double Width;
+    public double Height;
+
+    public PageSize(double width, double height)
     {
-        public double Width;   // Page width in inches.
-        public double Height;  // Page height in inches.
-
-        public PageSize(double width, double height)
-        {
-            Width = width;
-            Height = height;
-        }
-
-        public override string ToString()
-        {
-            return $"Width: {Width} in, Height: {Height} in";
-        }
+        Width = width;
+        Height = height;
     }
 
-    class Program
+    public override string ToString()
     {
-        static void Main(string[] args)
+        return $"Width: {Width}, Height: {Height}";
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        try
         {
-            try
+
+            // Path to the Visio file (replace with actual file path)
+            string diagramPath = "input.vsdx";
+
+            // Load the diagram within a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(diagramPath))
             {
+                // Access the first page (index 0)
+                Page page = diagram.Pages[0];
 
-                // Path to the Visio file. Adjust as needed.
-                string diagramPath = "sample.vsdx";
+                // Retrieve page width and height (values are in inches)
+                double width = page.PageSheet.PageProps.PageWidth.Value;
+                double height = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Load the diagram using Aspose.Diagram.
-                using (Diagram diagram = new Diagram(diagramPath))
-                {
-                    // Ensure there is at least one page.
-                    if (diagram.Pages.Count == 0)
-                    {
-                        Console.WriteLine("The diagram contains no pages.");
-                        return;
-                    }
+                // Store the dimensions in a custom PageSize structure
+                PageSize pageSize = new PageSize(width, height);
 
-                    // Access the first page (index 0).
-                    Page page = diagram.Pages[0];
-
-                    // Retrieve page width and height (values are in inches).
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Store the dimensions in the custom PageSize struct.
-                    PageSize size = new PageSize(pageWidth, pageHeight);
-
-                    // Use the stored size as needed; here we simply display it.
-                    Console.WriteLine("Page dimensions stored in PageSize struct:");
-                    Console.WriteLine(size);
-                }
-
+                // Output the stored values
+                Console.WriteLine($"Retrieved page size: {pageSize}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

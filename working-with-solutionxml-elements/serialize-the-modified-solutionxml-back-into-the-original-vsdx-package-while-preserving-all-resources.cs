@@ -7,50 +7,33 @@ class Program
 {
     static void Main()
     {
-        try
+        // Paths to the original VSDX file and the output file
+        string inputPath = "original.vsdx";
+        string outputPath = "modified.vsdx";
+
+        // Load the diagram from the VSDX package
+        Diagram diagram = new Diagram(inputPath);
+
+        // Define the name of the SolutionXML element and the new XML content
+        string solutionXmlName = "CustomData";
+        string newXmlContent = "<root><value>123</value></root>";
+
+        // Try to locate an existing SolutionXML with the specified name
+        SolutionXML existingXml = diagram.SolutionXMLs[solutionXmlName];
+
+        if (existingXml != null)
         {
-
-            // Paths to the original and the target VSDX files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Define the SolutionXML name and its XML content
-            string xmlName = "MyCustomData";
-            string xmlContent = "<root><value>123</value></root>";
-
-            // Check if a SolutionXML with the same name already exists
-            SolutionXML existing = null;
-            foreach (SolutionXML sx in diagram.SolutionXMLs)
-            {
-                if (sx.Name == xmlName)
-                {
-                    existing = sx;
-                    break;
-                }
-            }
-
-            if (existing != null)
-            {
-                // Update the existing entry
-                existing.XmlValue = xmlContent;
-            }
-            else
-            {
-                // Add a new SolutionXML entry to the collection
-                SolutionXML newXml = new SolutionXML(xmlName, xmlContent);
-                diagram.SolutionXMLs.Add(newXml);
-            }
-
-            // Save the diagram back to a VSDX package, preserving all resources
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            // Update the XML value of the existing element
+            existingXml.XmlValue = newXmlContent;
         }
-        catch (System.IO.FileNotFoundException ex)
+        else
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Create a new SolutionXML instance and add it to the collection
+            SolutionXML newSolutionXml = new SolutionXML(solutionXmlName, newXmlContent);
+            diagram.SolutionXMLs.Add(newSolutionXml);
         }
+
+        // Save the diagram back into a VSDX package, preserving all resources
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
 }

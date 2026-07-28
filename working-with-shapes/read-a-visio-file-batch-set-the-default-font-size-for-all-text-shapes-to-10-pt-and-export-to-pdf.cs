@@ -6,50 +6,44 @@ class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Expect two arguments: input Visio file path and output PDF file path.
+            if (args.Length < 2)
             {
+                Console.WriteLine("Usage: VisioBatchProcessing <inputVisioPath> <outputPdfPath>");
+                return;
+            }
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output PDF file path
-                string outputPath = "output.pdf";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-                // Configure default fallback font for rendering
-                FontConfigs.DefaultFontName = "Arial";
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+            // Iterate through all pages.
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through all shapes on the page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Check if the shape contains any text.
+                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
                     {
-                        // Ensure the shape contains text
-                        if (shape.Text != null && shape.Text.Value != null && shape.Text.Value.Count > 0)
+                        // Set the font size for each character run to 10 points (10/72 inches).
+                        foreach (Aspose.Diagram.Char ch in shape.Chars)
                         {
-                            // Iterate through character formatting entries
-                            foreach (Aspose.Diagram.Char ch in shape.Chars)
-                            {
-                                // Set font size to 10 points (converted to inches)
-                                ch.Size.Value = 10.0 / 72.0;
-                            }
+                            ch.Size.Value = 10.0 / 72.0;
                         }
                     }
                 }
-
-                // Prepare PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-
-                // Save the diagram as PDF
-                diagram.Save(outputPath, pdfOptions);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Configure PDF save options (optional: set a default font to avoid missing font issues).
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+
+            // Save the modified diagram as PDF.
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"Diagram processed and saved to PDF at: {outputPath}");
+        }
     }

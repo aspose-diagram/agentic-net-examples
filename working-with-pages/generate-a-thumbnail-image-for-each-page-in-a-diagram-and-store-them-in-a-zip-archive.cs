@@ -6,47 +6,48 @@ using Aspose.Diagram.Saving;
 
 class DiagramThumbnailsToZip
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Path to the source Visio diagram
-            string diagramPath = "input.vsdx";
+            // Input Visio file path
+            string visioFilePath = @"C:\Input\sample.vsdx";
 
-            // Path where the zip archive with thumbnails will be saved
-            string zipPath = "thumbnails.zip";
+            // Output ZIP file path that will contain the thumbnails
+            string zipFilePath = @"C:\Output\thumbnails.zip";
 
-            // Load the diagram using the provided constructor
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the diagram using the provided constructor (lifecycle rule)
+            using (Diagram diagram = new Diagram(visioFilePath))
             {
-                // Create the zip archive (will be created anew)
-                using (FileStream zipStream = new FileStream(zipPath, FileMode.Create))
+                // Create a ZIP archive for the thumbnails
+                using (FileStream zipStream = new FileStream(zipFilePath, FileMode.Create))
                 using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
                 {
-                    int pageCount = diagram.Pages.Count;
-
                     // Iterate through each page in the diagram
-                    for (int i = 0; i < pageCount; i++)
+                    for (int i = 0; i < diagram.Pages.Count; i++)
                     {
-                        // Configure image save options for a single page
+                        // Configure image save options for the current page
                         ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
                         {
-                            PageIndex = i,   // zero‑based index of the page to render
-                            PageCount = 1    // render only this page
+                            PageIndex = i,          // 0‑based index of the page to render
+                            PageCount = 1,          // Render only this page
+                            Resolution = 96,        // DPI (optional, adjust as needed)
+                            // Additional options can be set here if required
                         };
 
-                        // Render the page to a memory stream using the provided Save method
+                        // Render the page to a memory stream
                         using (MemoryStream imgStream = new MemoryStream())
                         {
+                            // Save the diagram page as an image using the provided Save overload (lifecycle rule)
                             diagram.Save(imgStream, imgOptions);
-                            imgStream.Position = 0; // reset stream position for reading
+                            imgStream.Seek(0, SeekOrigin.Begin);
 
-                            // Create an entry in the zip archive for this thumbnail
+                            // Create an entry in the ZIP archive for this thumbnail
                             string entryName = $"page_{i + 1}.png";
                             ZipArchiveEntry entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
 
-                            // Write the image data into the zip entry
+                            // Write the image data into the ZIP entry
                             using (Stream entryStream = entry.Open())
                             {
                                 imgStream.CopyTo(entryStream);
@@ -56,10 +57,12 @@ class DiagramThumbnailsToZip
                 }
             }
 
+            Console.WriteLine("Thumbnails have been generated and stored in the ZIP archive.");
+
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

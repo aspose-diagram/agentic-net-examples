@@ -1,74 +1,84 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-class Program
+class DiagramMerger
 {
     static void Main()
     {
         try
         {
 
-            // Paths to the source diagram, JSON file and the output diagram
-            string diagramPath = "input.vsdx";
-            string jsonPath = "elements.json";
-            string outputPath = "output.vsdx";
+            // Paths for the existing diagram, JSON input and the output diagram
+            string existingDiagramPath = "ExistingDiagram.vsdx";
+            string jsonInputPath = "Elements.json";
+            string outputDiagramPath = "MergedDiagram.vsdx";
 
-            // Load the existing diagram using the provided constructor
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the existing Visio diagram using the constructor that accepts a file name
+            Diagram mainDiagram = new Diagram(existingDiagramPath);
 
-            // Read and deserialize the JSON representation of SolutionXML items
-            string json = File.ReadAllText(jsonPath);
-            List<SolutionItem> items = JsonSerializer.Deserialize<List<SolutionItem>>(json);
+            // Read and parse the JSON representation of diagram elements
+            string jsonContent = File.ReadAllText(jsonInputPath);
+            using JsonDocument jsonDoc = JsonDocument.Parse(jsonContent);
+            JsonElement root = jsonDoc.RootElement;
 
-            if (items != null)
+            // Create a secondary (temporary) diagram that will hold the elements from JSON
+            Diagram secondaryDiagram = new Diagram(); // default constructor creates an empty diagram
+
+            // --------------------------------------------------------------------
+            // Add shapes defined in the JSON to the secondary diagram
+            // Expected JSON format:
+            // {
+            //   "shapes": [
+            //     { "masterName": "Rectangle", "pinX": 2.0, "pinY": 3.0, "pageIndex": 0 },
+            //     ...
+            //   ],
+            //   "solutionXml": { "name": "MyData", "xmlValue": "<data>...</data>" }
+            // }
+            // --------------------------------------------------------------------
+            if (root.TryGetProperty("shapes", out JsonElement shapesElement) &&
+                shapesElement.ValueKind == JsonValueKind.Array)
             {
-                foreach (SolutionItem item in items)
+                foreach (JsonElement shape in shapesElement.EnumerateArray())
                 {
-                    // Create a new SolutionXML instance (constructor is allowed)
-                    SolutionXML newSolutionXml = new SolutionXML(item.Name, item.Xml);
+                    string masterName = shape.GetProperty("masterName").GetString();
+                    double pinX = shape.GetProperty("pinX").GetDouble();
+                    double pinY = shape.GetProperty("pinY").GetDouble();
+                    int pageIndex = shape.GetProperty("pageIndex").GetInt32();
 
-                    // Check if an entry with the same name already exists
-                    SolutionXML existing = FindSolutionXML(diagram, item.Name);
-                    if (existing != null)
-                    {
-                        // Replace the existing entry (remove then add)
-                        diagram.SolutionXMLs.Remove(existing);
-                    }
-
-                    // Add the new SolutionXML to the diagram's collection
-                    diagram.SolutionXMLs.Add(newSolutionXml);
+                    // AddShape(double pinX, double pinY, string masterName, int pageIndex)
+                    secondaryDiagram.AddShape(pinX, pinY, masterName, pageIndex);
                 }
             }
 
-            // Save the merged diagram using the provided Save method
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // --------------------------------------------------------------------
+            // Merge SolutionXML data from JSON into the main diagram (if present)
+            // --------------------------------------------------------------------
+            if (root.TryGetProperty("solutionXml", out JsonElement solXmlElement))
+            {
+                string name = solXmlElement.GetProperty("name").GetString();
+                string xmlValue = solXmlElement.GetProperty("xmlValue").GetString();
+
+                // Create a SolutionXML instance and add it to the collection
+                SolutionXML solutionXml = new SolutionXML(name, xmlValue);
+                mainDiagram.SolutionXMLs.Add(solutionXml);
+            }
+
+            // Combine the secondary diagram into the main diagram
+            mainDiagram.Combine(secondaryDiagram);
+
+            // Save the merged diagram to a new file using the Save(string, SaveFileFormat) method
+            mainDiagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+
+            // Clean up resources
+            mainDiagram.Dispose();
+            secondaryDiagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-    }
-
-    // Helper method to locate a SolutionXML by its name within the diagram
-    static SolutionXML FindSolutionXML(Diagram diagram, string name)
-    {
-        foreach (SolutionXML sx in diagram.SolutionXMLs)
-        {
-            // Assuming SolutionXML exposes a Name property
-            if (sx.Name == name)
-                return sx;
-        }
-        return null;
-    }
-
-    // DTO matching the JSON structure
-    class SolutionItem
-    {
-        public string Name { get; set; }
-        public string Xml { get; set; }
     }
 }

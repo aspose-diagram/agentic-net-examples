@@ -2,63 +2,54 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+public class Program
 {
-    // Simple translation stub – replace with real translation service as needed
-    static string Translate(string text, string targetLanguage)
+    // Simple placeholder translation method.
+    // In a real scenario, replace this with a call to a translation service.
+    private static string Translate(string text, string targetLanguage)
     {
-        // Example: English to Spanish dictionary
-        var dictionary = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "Hello", "Hola" },
-            { "World", "Mundo" },
-            { "Sample", "Ejemplo" }
-            // Add more entries as required
-        };
+        if (string.IsNullOrEmpty(text))
+            return text;
 
-        if (dictionary.TryGetValue(text, out var translated))
-            return translated;
-
-        // If no translation found, return the original text
-        return text;
+        // Example: append language code to simulate translation.
+        return $"{text}_{targetLanguage}";
     }
 
-    static void Main()
+    public static void Main()
     {
         try
         {
 
-            // Path to the source Visio diagram
-            const string inputPath = "input.vsdx";
-            // Path for the translated output diagram
-            const string outputPath = "output_translated.vsdx";
-            // Target language code (e.g., "es" for Spanish)
-            const string targetLanguage = "es";
+            // Paths to the source and destination Visio files.
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Load the diagram
+            // Target language code (e.g., "fr" for French, "es" for Spanish).
+            string targetLanguage = "fr";
+
+            // Load the diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages, shapes, and user-defined cells.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Process user-defined cells (custom properties)
                     foreach (User userCell in shape.Users)
                     {
-                        // Original cell value
+                        // Original cell value.
                         string originalValue = userCell.Value.Val;
 
-                        // Translate the value
+                        // Translate the value.
                         string translatedValue = Translate(originalValue, targetLanguage);
 
-                        // Assign the translated text back to the cell
+                        // Update the cell with the translated text.
                         userCell.Value.Val = translatedValue;
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

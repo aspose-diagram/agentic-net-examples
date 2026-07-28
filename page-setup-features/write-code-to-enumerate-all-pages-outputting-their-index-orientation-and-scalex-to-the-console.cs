@@ -9,19 +9,19 @@ class Program
         try
         {
 
-            // Path to the Visio file (replace with your actual file path)
+            // Path to the Visio file to be loaded
             string filePath = "input.vsdx";
 
             // Load the diagram inside a using block to ensure proper disposal
             using (Diagram diagram = new Diagram(filePath))
             {
-                // Enumerate all pages by index
+                // Iterate through all pages by index
                 for (int i = 0; i < diagram.Pages.Count; i++)
                 {
                     // Retrieve the page object
                     Aspose.Diagram.Page page = diagram.Pages[i];
 
-                    // Get the page orientation (Landscape, Portrait, SameAsPrinter)
+                    // Get the page orientation (Landscape, Portrait, etc.)
                     PrintPageOrientationValue orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
 
                     // Get the horizontal scaling factor (ScaleX)

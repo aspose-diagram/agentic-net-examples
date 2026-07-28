@@ -1,132 +1,117 @@
 using System;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static async Task Main(string[] args)
         {
-            // Path to the source Visio file (replace with actual path)
-            string sourcePath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram;
             try
             {
-                diagram = new Diagram(sourcePath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
 
-            // Example: add a hyperlink to the first shape on the first page
-            if (diagram.Pages.Count == 0)
-            {
-                Console.WriteLine("Diagram contains no pages.");
-                return;
-            }
+                // Load an existing diagram (replace with actual file path)
+                Diagram diagram = new Diagram("input.vsdx");
 
-            var page = diagram.Pages[0];
-            if (page.Shapes.Count == 0)
-            {
-                Console.WriteLine("First page contains no shapes.");
-                return;
-            }
+                // Get the first page and first shape for demonstration
+                Page page = diagram.Pages[0];
+                if (page.Shapes.Count == 0)
+                {
+                    Console.WriteLine("No shapes found on the first page.");
+                    return;
+                }
 
-            // Retrieve the shape (using the first shape's ID)
-            var shape = page.Shapes.GetShape(page.Shapes[0].ID);
-            if (shape == null)
-            {
-                Console.WriteLine("Failed to retrieve the shape.");
-                return;
-            }
+                Shape shape = page.Shapes[0];
 
-            // Hyperlink details
-            string hyperlinkAddress = "https://example.com";
-            string hyperlinkDescription = "Example website";
+                // Example hyperlink data
+                string url = "https://example.com";
+                string description = "Example website";
 
-            // Validate and add the hyperlink
-            try
-            {
-                AddHyperlinkWithValidation(diagram, shape, hyperlinkAddress, hyperlinkDescription);
-                Console.WriteLine("Hyperlink added successfully.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error adding hyperlink: {ex.Message}");
-            }
+                // Attempt to add a validated hyperlink
+                await AddValidatedHyperlinkAsync(shape, url, description);
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
+    }
 
         /// <summary>
-        /// Validates the hyperlink address and adds it to the specified shape.
-        /// Throws an exception if the address is malformed or unreachable.
+        /// Validates the URL format and reachability before adding it as a hyperlink to the shape.
         /// </summary>
-        static void AddHyperlinkWithValidation(Diagram diagram, Shape shape, string address, string description)
+        /// <param name="shape">The target shape.</param>
+        /// <param name="url">The hyperlink address.</param>
+        /// <param name="description">Optional description for the hyperlink.</param>
+        private static async Task AddValidatedHyperlinkAsync(Shape shape, string url, string description)
         {
-            // Basic URI format validation
-            if (!Uri.IsWellFormedUriString(address, UriKind.Absolute))
-                throw new Exception("The hyperlink address is not a well‑formed absolute URI.");
-
-            Uri uri = new Uri(address, UriKind.Absolute);
-
-            // For HTTP/HTTPS schemes, attempt a HEAD request to verify reachability
-            if (uri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase) ||
-                uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+            if (shape == null)
             {
-                using (var httpClient = new HttpClient())
-                {
-                    // Set a short timeout to avoid long waits
-                    httpClient.Timeout = TimeSpan.FromSeconds(5);
-                    HttpResponseMessage response;
-                    try
-                    {
-                        // HEAD request is sufficient; fallback to GET if HEAD not supported
-                        var request = new HttpRequestMessage(HttpMethod.Head, uri);
-                        response = httpClient.SendAsync(request).Result;
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            // Try GET as a fallback
-                            response = httpClient.GetAsync(uri).Result;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception($"Unable to reach the hyperlink address: {ex.Message}");
-                    }
-
-                    if (!response.IsSuccessStatusCode)
-                        throw new Exception($"Hyperlink address returned an unsuccessful status code: {(int)response.StatusCode}");
-                }
+                Console.WriteLine("Shape is null.");
+                return;
             }
-            // For other schemes (file, ftp, etc.) we assume the format validation is sufficient
+
+            // Ensure the Hyperlinks collection exists
+            if (shape.Hyperlinks == null)
+            {
+                Console.WriteLine("Hyperlinks collection is null.");
+                return;
+            }
+
+            // Validate URL format
+            if (!IsValidUrl(url))
+            {
+                Console.WriteLine($"Malformed URL: '{url}'. Hyperlink not added.");
+                return;
+            }
+
+            // Check if the URL is reachable
+            if (!await IsUrlReachableAsync(url))
+            {
+                Console.WriteLine($"Unreachable URL: '{url}'. Hyperlink not added.");
+                return;
+            }
 
             // Create and configure the hyperlink
             Hyperlink link = new Hyperlink
             {
-                Name = "AddedLink",
-                Description = { Value = description }
+                Name = "Link_" + Guid.NewGuid().ToString("N")
             };
-            link.Address.Value = address;
-
-            // Ensure the Hyperlinks collection exists
-            if (shape.Hyperlinks == null)
-                throw new Exception("The shape does not support hyperlinks.");
+            link.Address.Value = url;
+            link.Description.Value = description;
 
             // Add the hyperlink to the shape
             shape.Hyperlinks.Add(link);
+            Console.WriteLine($"Hyperlink added to shape ID {shape.ID}: {url}");
+        }
+
+        /// <summary>
+        /// Checks whether the provided string is a well‑formed absolute HTTP/HTTPS URL.
+        /// </summary>
+        private static bool IsValidUrl(string url)
+        {
+            return Uri.TryCreate(url, UriKind.Absolute, out Uri uriResult) &&
+                   (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+        }
+
+        /// <summary>
+        /// Attempts a simple GET request to determine if the URL is reachable.
+        /// </summary>
+        private static async Task<bool> IsUrlReachableAsync(string url)
+        {
+            try
+            {
+                using HttpClient client = new HttpClient
+                {
+                    Timeout = TimeSpan.FromSeconds(5)
+                };
+                using HttpResponseMessage response = await client.GetAsync(url);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error checking URL reachability: {ex.Message}");
+                return false;
+            }
         }
     }

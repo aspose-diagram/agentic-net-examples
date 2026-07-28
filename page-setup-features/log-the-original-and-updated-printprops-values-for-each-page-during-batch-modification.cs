@@ -9,26 +9,27 @@ class Program
         try
         {
 
-            // Load the diagram from a file
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
             // Iterate through each page in the diagram
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[i];
-                PrintProps props = page.PageSheet.PrintProps;
+                // Access the PrintProps of the current page
+                PrintProps printProps = page.PageSheet.PrintProps;
 
-                // Log original PrintProps values
-                Console.WriteLine($"Page {i + 1} - Original PrintProps:");
-                LogPrintProps(props);
+                // Log original values (example: ScaleX and ScaleY)
+                Console.WriteLine($"Page ID: {page.ID}");
+                Console.WriteLine($"  Original ScaleX: {printProps.ScaleX.Value}");
+                Console.WriteLine($"  Original ScaleY: {printProps.ScaleY.Value}");
 
-                // Example modification: set scaling to 100% (no scaling)
-                props.ScaleX.Value = 100;
-                props.ScaleY.Value = 100;
+                // Perform batch modification (example: set both scales to 100%)
+                printProps.ScaleX.Value = 100.0;
+                printProps.ScaleY.Value = 100.0;
 
-                // Log updated PrintProps values
-                Console.WriteLine($"Page {i + 1} - Updated PrintProps:");
-                LogPrintProps(props);
+                // Log updated values
+                Console.WriteLine($"  Updated ScaleX: {printProps.ScaleX.Value}");
+                Console.WriteLine($"  Updated ScaleY: {printProps.ScaleY.Value}");
             }
 
             // Save the modified diagram
@@ -39,20 +40,5 @@ class Program
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-    }
-
-    // Helper method to output selected PrintProps properties
-    static void LogPrintProps(PrintProps props)
-    {
-        Console.WriteLine($"  CenterX: {props.CenterX.Value}");
-        Console.WriteLine($"  CenterY: {props.CenterY.Value}");
-        Console.WriteLine($"  OnPage: {props.OnPage.Value}");
-        Console.WriteLine($"  PagesX: {props.PagesX.Value}");
-        Console.WriteLine($"  PagesY: {props.PagesY.Value}");
-        Console.WriteLine($"  ScaleX: {props.ScaleX.Value}");
-        Console.WriteLine($"  ScaleY: {props.ScaleY.Value}");
-        Console.WriteLine($"  PaperKind: {props.PaperKind.Value}");
-        Console.WriteLine($"  PrintGrid: {props.PrintGrid.Value}");
-        // Add more properties here if needed
     }
 }

@@ -1,39 +1,42 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Path to the Visio file (replace with actual file path)
-                string diagramPath = "input.vsdx";
+            // Path to the Visio file
+            string filePath = "input.vsdx";
 
-                // The ID of the shape whose dimensions are required (replace with actual ID)
-                long shapeId = 5;
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+            // ID of the shape whose dimensions are needed
+            long shapeId = 5; // replace with the actual shape ID
 
-                // Access the first page (adjust if needed)
-                Page page = diagram.Pages[0];
+            // Access the first page (adjust if the shape is on a different page)
+            Page page = diagram.Pages[0];
 
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(shapeId);
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Get width and height (values are in inches)
-                double width = shape.XForm.Width.Value;
-                double height = shape.XForm.Height.Value;
+            // Get width and height from the shape's XForm
+            double width = shape.XForm.Width.Value;
+            double height = shape.XForm.Height.Value;
 
-                // Output the dimensions
-                Console.WriteLine($"Shape ID {shapeId}: Width = {width} inches, Height = {height} inches");
+            // Output the dimensions
+            Console.WriteLine($"Shape ID: {shapeId}");
+            Console.WriteLine($"Width: {width} inches");
+            Console.WriteLine($"Height: {height} inches");
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

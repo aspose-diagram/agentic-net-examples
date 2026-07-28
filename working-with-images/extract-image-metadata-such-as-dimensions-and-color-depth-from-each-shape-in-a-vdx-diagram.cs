@@ -1,64 +1,73 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Drawing;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Path to the VDX diagram file
+        string diagramPath = "input.vdx";
+
+        // Guard to ensure the file exists before proceeding
+        if (!File.Exists(diagramPath))
         {
-            // Get the VDX file path from command line or prompt the user
-            string filePath;
-            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
-            {
-                filePath = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the path to the VDX diagram file: ");
-                filePath = Console.ReadLine();
-            }
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
 
-            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
-            {
-                Console.WriteLine("Invalid file path.");
-                return;
-            }
-
+        try
+        {
             // Load the diagram using the VDX format
-            Diagram diagram = new Diagram(filePath, LoadFileFormat.Vdx);
+            Diagram diagram = new Diagram(diagramPath, LoadFileFormat.Vdx);
 
-            // Iterate through each page in the diagram
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through each shape on the current page
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Identify image shapes (foreign objects)
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
+                    // Identify image (foreign) shapes by their type
+                    if (shape.Type == TypeValue.Foreign)
                     {
-                        // Retrieve shape dimensions (in inches)
+                        // Retrieve shape dimensions on the page (in inches)
                         double widthInches = shape.XForm.Width.Value;
                         double heightInches = shape.XForm.Height.Value;
+                        Console.WriteLine($"Shape ID {shape.ID}: Page dimensions = {widthInches:F2}\" x {heightInches:F2}\"");
 
-                        // Extract raw image bytes
-                        byte[] imageBytes = shape.ForeignData.Value;
-
-                        // Load the image using Aspose.Drawing to obtain pixel format information
-                        using (MemoryStream ms = new MemoryStream(imageBytes))
-                        using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
+                        // Check for embedded image data within the foreign shape
+                        if (shape.ForeignData != null && shape.ForeignData.Value != null && shape.ForeignData.Value.Length > 0)
                         {
-                            // Get color depth (bits per pixel)
-                            int bitsPerPixel = Aspose.Drawing.Image.GetPixelFormatSize(img.PixelFormat);
+                            // Load the raw image bytes into a memory stream
+                            using (MemoryStream ms = new MemoryStream(shape.ForeignData.Value))
+                            {
+                                // Use the fully qualified Aspose.Drawing.Image to avoid ambiguity
+                                using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
+                                {
+                                    // Extract pixel dimensions
+                                    int pixelWidth = img.Width;
+                                    int pixelHeight = img.Height;
 
-                            // Output the metadata
-                            Console.WriteLine($"Page: {page.Name} | Shape ID: {shape.ID}");
-                            Console.WriteLine($"  Dimensions: {widthInches:F2} in (W) x {heightInches:F2} in (H)");
-                            Console.WriteLine($"  Color Depth: {bitsPerPixel} bits per pixel");
-                            Console.WriteLine();
+                                    // Determine color depth (bits per pixel)
+                                    int bitsPerPixel = Aspose.Drawing.Image.GetPixelFormatSize(img.PixelFormat);
+
+                                    Console.WriteLine($"    Pixel dimensions = {pixelWidth} x {pixelHeight}");
+                                    Console.WriteLine($"    Color depth = {bitsPerPixel} bits per pixel");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("    No embedded image data found.");
                         }
                     }
                 }
             }
         }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
+}

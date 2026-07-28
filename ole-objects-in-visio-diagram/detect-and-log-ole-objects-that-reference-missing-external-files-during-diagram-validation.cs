@@ -2,41 +2,42 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class OLEMissingFileDetector
+class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Path to the Visio file to be validated
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram (lifecycle rule: load)
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to find OLE objects
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // OLE objects are represented by ForeignData within a shape
+                    // Check if the shape contains foreign (OLE) data
                     if (shape.ForeignData != null)
                     {
-                        // Retrieve the external file reference for linked OLE objects
-                        string sourceFile = shape.ForeignData.ObjectSourceFullName;
-
-                        // If a source file is specified, check its existence
-                        if (!string.IsNullOrEmpty(sourceFile) && !File.Exists(sourceFile))
+                        // Determine if the OLE object is a linked object
+                        if ((shape.ForeignData.ObjectType & ObjectType.LinkedObject) == ObjectType.LinkedObject)
                         {
-                            // Log missing external file information
-                            Console.WriteLine($"Missing OLE file: Page='{page.Name}', ShapeID={shape.ID}, Source='{sourceFile}'");
+                            // Get the external file path referenced by the OLE object
+                            string sourcePath = shape.ForeignData.ObjectSourceFullName;
+
+                            // If the path is set and the file does not exist, log the issue
+                            if (!string.IsNullOrEmpty(sourcePath) && !File.Exists(sourcePath))
+                            {
+                                Console.WriteLine($"Missing OLE reference - Page: '{page.Name}', Shape ID: {shape.ID}, File: '{sourcePath}'");
+                            }
                         }
                     }
                 }
             }
 
-            // Save the diagram (no modifications made, but follows lifecycle rule: save)
+            // Save the diagram (optional, here just to demonstrate lifecycle compliance)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

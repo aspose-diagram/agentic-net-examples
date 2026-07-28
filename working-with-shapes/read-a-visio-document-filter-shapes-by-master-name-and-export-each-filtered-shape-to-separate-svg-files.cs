@@ -1,53 +1,60 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the Visio file to process
-            string inputPath = "input.vsdx";
-
-            // Name of the master to filter shapes by (case‑sensitive)
-            string targetMasterName = "Rectangle";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate over all pages in the document
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate over all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+
+                // Directory where individual SVG files will be saved
+                string outputDirectory = "ExportedSvgs";
+
+                // Master name to filter shapes (case‑sensitive)
+                string targetMasterName = "Rectangle";
+
+                // Ensure the output directory exists
+                Directory.CreateDirectory(outputDirectory);
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Prepare SVG save options (default options are sufficient)
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Check if the shape is based on the desired master
-                    if (shape.Master != null && shape.Master.Name == targetMasterName)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Create a unique file name for each exported shape
-                        string outputFile = $"shape_{shape.ID}_{Guid.NewGuid():N}.svg";
+                        // Filter shapes that are based on the specified master
+                        if (shape.Master != null && shape.Master.Name == targetMasterName)
+                        {
+                            // Build a unique file name for each shape
+                            string safeShapeName = string.IsNullOrWhiteSpace(shape.Name) ? "Unnamed" : shape.Name.Replace(' ', '_');
+                            string fileName = $"Shape_{shape.ID}_{safeShapeName}.svg";
+                            string outputPath = Path.Combine(outputDirectory, fileName);
 
-                        // Export the shape to SVG using default options
-                        SVGSaveOptions svgOptions = new SVGSaveOptions();
-                        shape.ToSvg(outputFile, svgOptions);
+                            // Export the shape to SVG
+                            shape.ToSvg(outputPath, svgOptions);
 
-                        Console.WriteLine($"Exported shape ID {shape.ID} to {outputFile}");
+                            Console.WriteLine($"Exported shape ID {shape.ID} to {outputPath}");
+                        }
                     }
                 }
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                Console.WriteLine("Export completed.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

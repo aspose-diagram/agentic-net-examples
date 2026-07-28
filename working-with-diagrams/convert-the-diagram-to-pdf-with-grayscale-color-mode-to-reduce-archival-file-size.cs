@@ -1,41 +1,84 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the output PDF file
+            string outputPath = "output.pdf";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Convert all shape colors to grayscale to reduce file size
+            foreach (Page page in diagram.Pages)
             {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Process fill foreground color
+                    if (!string.IsNullOrEmpty(shape.Fill.FillForegnd.Value))
+                    {
+                        shape.Fill.FillForegnd.Value = ToGrayscaleHex(shape.Fill.FillForegnd.Value);
+                    }
 
-                // Input Visio file path (replace with actual path)
-                string inputPath = "input.vsdx";
+                    // Process fill background color
+                    if (!string.IsNullOrEmpty(shape.Fill.FillBkgnd.Value))
+                    {
+                        shape.Fill.FillBkgnd.Value = ToGrayscaleHex(shape.Fill.FillBkgnd.Value);
+                    }
 
-                // Output PDF file path
-                string outputPath = "output.pdf";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-                // Set a default font to avoid missing font issues
-                pdfOptions.DefaultFont = "Arial";
-
-                // NOTE: Aspose.Diagram's PdfSaveOptions does not provide a direct
-                // property to force grayscale rendering. Grayscale conversion must be
-                // handled externally (e.g., post‑processing the PDF) or by using a
-                // different library that supports such a feature.
-
-                // Save the diagram as PDF
-                diagram.Save(outputPath, pdfOptions);
-
+                    // Process line color
+                    if (!string.IsNullOrEmpty(shape.Line.LineColor.Value))
+                    {
+                        shape.Line.LineColor.Value = ToGrayscaleHex(shape.Line.LineColor.Value);
+                    }
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Exclude hidden pages to keep the file size minimal
+            pdfOptions.ExportHiddenPage = false;
+            // Use default font fallback to avoid missing font issues
+            pdfOptions.DefaultFont = "Arial";
+
+            // Save the diagram as a PDF
+            diagram.Save(outputPath, pdfOptions);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
+
+    // Converts a hex color string (e.g., "#FFAA33") to its grayscale equivalent.
+    private static string ToGrayscaleHex(string hexColor)
+    {
+        // Ensure the string starts with '#'
+        if (!hexColor.StartsWith("#") || hexColor.Length != 7)
+            return hexColor; // Return original if format is unexpected
+
+        // Parse RGB components
+        int r = Convert.ToInt32(hexColor.Substring(1, 2), 16);
+        int g = Convert.ToInt32(hexColor.Substring(3, 2), 16);
+        int b = Convert.ToInt32(hexColor.Substring(5, 2), 16);
+
+        // Compute average for grayscale
+        int gray = (r + g + b) / 3;
+
+        // Clamp to 0-255 just in case
+        gray = Math.Max(0, Math.Min(255, gray));
+
+        // Return new hex string
+        return $"#{gray:X2}{gray:X2}{gray:X2}";
     }
+}

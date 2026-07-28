@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,40 +8,27 @@ class Program
             try
             {
 
-                // Create a new empty diagram
-                using (Diagram diagram = new Diagram())
-                {
-                    // Ensure there is at least one page (the default diagram contains one)
-                    Page page = diagram.Pages[0];
+                // Create a new blank diagram
+                Diagram diagram = new Diagram();
 
-                    // Define position and size for the rectangle (in inches)
-                    double pinX = 2.0;   // X coordinate of the shape's pin (center)
-                    double pinY = 2.0;   // Y coordinate of the shape's pin (center)
-                    double width = 2.0;  // Width of the rectangle
-                    double height = 1.0; // Height of the rectangle
+                // Get the first (default) page
+                Page page = diagram.Pages[0];
 
-                    // Add a rectangle shape using the built‑in "Rectangle" master.
-                    // The fourth parameter (isCalculate) must be a boolean.
-                    long shapeId = page.AddShape(pinX, pinY, width, height, "Rectangle", false);
+                // Add a rectangle shape at position (2,2) inches
+                // The AddShape overload returns the shape ID (long)
+                long rectShapeId = page.AddShape(2.0, 2.0, "Rectangle");
 
-                    // Retrieve the Shape object from the returned ID
-                    Shape rectangle = page.Shapes.GetShape(shapeId);
+                // Retrieve the shape object using the returned ID
+                Shape rectShape = page.Shapes.GetShape(rectShapeId);
 
-                    // Apply a preset theme to the shape.
-                    // The specific "flowchart" theme is not a defined PresetThemeValue,
-                    // so we use a valid theme (e.g., Bubble) as an example.
-                    rectangle.PresetTheme = PresetThemeValue.Bubble;
+                // Apply a preset theme.
+                // The Visio "Flowchart" theme is not exposed as a PresetThemeValue enum member,
+                // so we use an available theme (e.g., Bubble) as an example.
+                // Replace with the appropriate enum value if a Flowchart theme becomes available.
+                page.PresetTheme = PresetThemeValue.Bubble;
 
-                    // Optionally, set a variant and quick style for completeness
-                    rectangle.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                    rectangle.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
-
-                    // Save the diagram to a VSDX file
-                    string outputPath = "FlowchartRectangle.vsdx";
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-
-                Console.WriteLine("Diagram created and saved successfully.");
+                // Save the diagram to a VSDX file
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (Aspose.Diagram.DiagramException ex)

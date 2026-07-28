@@ -1,21 +1,22 @@
 using System;
+using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
+                // Path to the Visio file
+                string diagramPath = "input.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Define the pattern to look for in user‑defined cell names
-                string pattern = "MyCustomCell";
+                // Define the pattern to match user-defined cell names (e.g., names starting with "MyCell")
+                string pattern = @"^MyCell";
 
                 // Iterate through all pages
                 foreach (Page page in diagram.Pages)
@@ -23,35 +24,33 @@ class Program
                     // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Ensure the Users collection is present
-                        if (shape.Users == null)
-                            continue;
-
-                        // Check if any user‑defined cell name contains the pattern
                         bool matchesPattern = false;
-                        foreach (User userCell in shape.Users)
+
+                        // Check each user-defined cell (User) in the shape
+                        if (shape.Users != null)
                         {
-                            if (userCell.Name != null && userCell.Name.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                            foreach (User userCell in shape.Users)
                             {
-                                matchesPattern = true;
-                                break;
+                                // Match against Name or NameU
+                                if (Regex.IsMatch(userCell.Name ?? string.Empty, pattern) ||
+                                    Regex.IsMatch(userCell.NameU ?? string.Empty, pattern))
+                                {
+                                    matchesPattern = true;
+                                    break;
+                                }
                             }
                         }
 
-                        // Process only the shapes that matched the pattern
+                        // Process only shapes that contain a matching user-defined cell
                         if (matchesPattern)
                         {
-                            Console.WriteLine($"Shape ID {shape.ID} on page \"{page.Name}\" matches pattern \"{pattern}\".");
-                            // Place additional processing logic here
+                            Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}, Page: {page.Name}");
+                            // Additional processing logic for the matched shape can be placed here
                         }
                     }
                 }
 
-                // Optionally save the diagram after processing
+                // Optional: Save the diagram if modifications were made
                 // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }

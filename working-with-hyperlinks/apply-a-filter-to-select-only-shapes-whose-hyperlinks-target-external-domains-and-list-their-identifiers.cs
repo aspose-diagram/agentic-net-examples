@@ -3,62 +3,49 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Path to the Visio file (provide via command line or use a default)
-                string filePath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Path to the Visio diagram file
+                string diagramPath = "input.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(filePath);
+                Diagram diagram = new Diagram(diagramPath);
 
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Ensure the shape has a Hyperlinks collection
-                        if (shape.Hyperlinks == null)
-                            continue;
-
-                        bool hasExternalLink = false;
-
-                        // Enumerate hyperlinks with explicit type (no var)
-                        foreach (Hyperlink link in shape.Hyperlinks)
+                        // Ensure the shape has hyperlinks collection
+                        if (shape.Hyperlinks != null)
                         {
-                            // Ensure the Address cell exists and has a value
-                            if (link.Address == null || link.Address.Value == null)
-                                continue;
-
-                            string address = link.Address.Value;
-
-                            // Simple check for external HTTP/HTTPS URLs
-                            if (address.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                                address.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                            foreach (Hyperlink link in shape.Hyperlinks)
                             {
-                                hasExternalLink = true;
-                                break; // No need to check further links for this shape
-                            }
-                        }
+                                // Retrieve the hyperlink address (cell-based, use .Value)
+                                string address = link.Address.Value;
 
-                        if (hasExternalLink)
-                        {
-                            // Output the identifier of the shape
-                            Console.WriteLine($"Shape ID: {shape.ID}");
+                                // Check if the address points to an external HTTP/HTTPS URL
+                                if (!string.IsNullOrEmpty(address) &&
+                                    (address.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                                     address.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+                                {
+                                    // Output the shape identifier and the external hyperlink
+                                    Console.WriteLine($"Shape ID: {shape.ID} -> External Link: {address}");
+                                    // One external link per shape is enough for listing
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

@@ -4,51 +4,37 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Determine input and output file paths
-        string inputPath;
-        string outputPath;
-
-        if (args.Length >= 2)
-        {
-            inputPath = args[0];
-            outputPath = args[1];
-        }
-        else
-        {
-            Console.Write("Enter the path of the Visio file to process: ");
-            inputPath = Console.ReadLine();
-
-            Console.Write("Enter the path where the modified file should be saved: ");
-            outputPath = Console.ReadLine();
-        }
-
         try
         {
-            // Load the diagram
+
+            // Load the Visio diagram from a file
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes, setting text direction to vertical
+            // Iterate through every page and every shape on each page
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the TextBlock exists before setting its direction
-                    if (shape.TextBlock != null)
-                    {
-                        shape.TextBlock.TextDirection.Value = TextDirectionValue.Vertical;
-                    }
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Set the text direction of the shape to vertical
+                    shape.TextBlock.TextDirection.Value = TextDirectionValue.Vertical;
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram back to a file
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("All shape text directions set to vertical and diagram saved successfully.");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,57 +1,61 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Access the first page of the diagram
+                Page page = diagram.Pages[0];
+
+                // Retrieve a shape to modify.
+                // Here we simply take the first shape on the page.
+                // Adjust the logic if you need to target a specific shape by ID or name.
+                if (page.Shapes.Count == 0)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Ensure the shape has a text block
-                        if (shape.Text == null || shape.Text.Value == null)
-                            continue;
-
-                        // Align text to the right side of the shape
-                        // Set the local pin of the text block to the right edge (0 means right‑hand side)
-                        shape.TextXForm.TxtLocPinX.Value = 0;
-                        // Position the text block pin at the shape's right edge
-                        shape.TextXForm.TxtPinX.Value = shape.XForm.Width.Value;
-
-                        // Optional: keep vertical positioning centered
-                        shape.TextXForm.TxtLocPinY.Value = shape.XForm.Height.Value / 2;
-                        shape.TextXForm.TxtPinY.Value = shape.XForm.Height.Value / 2;
-
-                        // Ensure no rotation (orientation) is applied
-                        shape.TextXForm.TxtAngle.Value = 0;
-                    }
+                    Console.WriteLine("No shapes found on the page.");
+                    return;
                 }
 
-                // Save the modified diagram
+                // Get the first shape (ID is a long)
+                Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
+
+                // Ensure the shape has a text block; otherwise, add some sample text.
+                if (string.IsNullOrWhiteSpace(shape.Text.Value.ToString()))
+                {
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt("Sample Text"));
+                }
+
+                // Align text to the right side of the shape.
+                // TxtLocPinX defines the local pin (reference point) inside the text block.
+                // Setting it to 0 aligns the text block's left edge to the shape's right edge.
+                // TxtPinX defines the absolute position of the text block within the shape.
+                // Setting it to the shape's width positions the text block at the right side.
+                shape.TextXForm.TxtLocPinX.Value = 0;                         // Left edge of text block
+                shape.TextXForm.TxtPinX.Value = shape.XForm.Width.Value;     // Position at shape's right edge
+
+                // Optional: Ensure no rotation is applied to the text.
+                shape.TextXForm.TxtAngle.Value = 0; // Angle is in radians
+
+                // Save the modified diagram to a new file.
                 string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                Console.WriteLine($"Diagram saved with right-aligned text to '{outputPath}'.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

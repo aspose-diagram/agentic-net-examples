@@ -1,7 +1,6 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,28 +10,13 @@ class Program
         {
 
             // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page in the diagram
-            Page page = diagram.Pages[0];
+            // Get the first page (index 0) and a shape by its ID (example ID = 1)
+            Shape shape = diagram.Pages[0].Shapes.GetShape(1);
 
-            // Find the first shape on the page (if any)
-            Shape? targetShape = null;
-            foreach (Shape shape in page.Shapes)
-            {
-                targetShape = shape;
-                break;
-            }
-
-            if (targetShape != null)
-            {
-                // Rotate the shape's text by 45 degrees.
-                // TxtAngle expects radians, so convert degrees to radians.
-                double angleDegrees = 45.0;
-                double angleRadians = (Math.PI / 180.0) * angleDegrees;
-                targetShape.TextXForm.TxtAngle.Value = angleRadians;
-            }
+            // Rotate the shape's text block by 45 degrees
+            shape.TextXForm.TxtAngle.Value = 45.0;
 
             // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);

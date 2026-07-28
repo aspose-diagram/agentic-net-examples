@@ -1,89 +1,50 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace DiagramTextBlockBackup
+class Program
 {
-    // DTO for serializing TextBlock properties
-    public class TextBlockConfig
+    static void Main()
     {
-        public double LeftMargin { get; set; }
-        public double RightMargin { get; set; }
-        public double TopMargin { get; set; }
-        public double BottomMargin { get; set; }
-        public string TextDirection { get; set; }
-        public string VerticalAlign { get; set; }
-        public string TextBackground { get; set; }
-        public double TextBackgroundTransparency { get; set; }
-        public double DefaultTabStop { get; set; }
-    }
-
-    public class Program
-    {
-        public static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Retrieve a shape (example: first shape on the first page)
+            Shape shape = diagram.Pages[0].Shapes[0];
+
+            // Access the shape's TextBlock
+            TextBlock textBlock = shape.TextBlock;
+
+            // Collect TextBlock properties into a dictionary for serialization
+            var textBlockData = new Dictionary<string, object>
             {
+                { "BottomMargin", textBlock.BottomMargin },
+                { "DefaultTabStop", textBlock.DefaultTabStop },
+                { "Del", textBlock.Del },
+                { "LeftMargin", textBlock.LeftMargin },
+                { "RightMargin", textBlock.RightMargin },
+                { "TextBkgnd", textBlock.TextBkgnd?.ToString() },
+                { "TextBkgndTrans", textBlock.TextBkgndTrans },
+                { "TextDirection", textBlock.TextDirection?.ToString() },
+                { "TopMargin", textBlock.TopMargin },
+                { "VerticalAlign", textBlock.VerticalAlign?.ToString() }
+            };
 
-                // Path to the Visio file
-                const string inputPath = "input.vsdx";
-                // Path where the JSON configuration will be saved
-                const string outputJsonPath = "textblock_config.json";
+            // Serialize the dictionary to formatted JSON
+            string json = JsonSerializer.Serialize(textBlockData, new JsonSerializerOptions { WriteIndented = true });
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Write the JSON to a file for backup/reuse
+            File.WriteAllText("shape_textblock.json", json);
 
-                // Ensure there is at least one page and one shape
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                Page page = diagram.Pages[0];
-
-                if (page.Shapes.Count == 0)
-                {
-                    Console.WriteLine("The first page contains no shapes.");
-                    return;
-                }
-
-                // Retrieve the first shape (adjust the ID as needed)
-                Shape shape = page.Shapes.GetShape(1);
-                if (shape == null)
-                {
-                    Console.WriteLine("Shape with ID 1 not found.");
-                    return;
-                }
-
-                // Extract TextBlock properties
-                TextBlockConfig config = new TextBlockConfig
-                {
-                    LeftMargin = shape.TextBlock.LeftMargin.Value,
-                    RightMargin = shape.TextBlock.RightMargin.Value,
-                    TopMargin = shape.TextBlock.TopMargin.Value,
-                    BottomMargin = shape.TextBlock.BottomMargin.Value,
-                    TextDirection = shape.TextBlock.TextDirection.Value.ToString(),
-                    VerticalAlign = shape.TextBlock.VerticalAlign.Value.ToString(),
-                    TextBackground = shape.TextBlock.TextBkgnd?.Ufe?.F ?? string.Empty,
-                    TextBackgroundTransparency = shape.TextBlock.TextBkgndTrans.Value,
-                    DefaultTabStop = shape.TextBlock.DefaultTabStop.Value
-                };
-
-                // Serialize to JSON with indentation
-                string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
-
-                // Write JSON to file
-                File.WriteAllText(outputJsonPath, json);
-
-                Console.WriteLine($"TextBlock configuration saved to '{outputJsonPath}'.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

@@ -1,50 +1,52 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Placeholder background color (yellow) using RGB formula
+            const string placeholderColor = "RGB(255,255,0)";
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load the Visio diagram (replace with your actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the placeholder background color (yellow) using RGB string format
-                const string placeholderColor = "RGB(255,255,0)";
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Check if the shape's text block is empty or whitespace
+                    string textContent = shape.Text.Value.ToString();
+                    if (string.IsNullOrWhiteSpace(textContent))
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve the plain text of the shape
-                        string shapeText = shape.Text.Value.ToString();
-
-                        // Check if the shape's text block is empty or whitespace
-                        if (string.IsNullOrWhiteSpace(shapeText))
-                        {
-                            // Assign the placeholder background color to the text block
-                            shape.TextBlock.TextBkgnd.Ufe.F = placeholderColor;
-                        }
+                        // Assign placeholder background color to the text block
+                        shape.TextBlock.TextBkgnd.Ufe.F = placeholderColor;
+                        // Ensure the background is fully opaque
+                        shape.TextBlock.TextBkgndTrans.Value = 0;
                     }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

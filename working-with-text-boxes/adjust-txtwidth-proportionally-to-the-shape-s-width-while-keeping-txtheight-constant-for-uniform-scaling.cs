@@ -1,46 +1,42 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class AdjustTextBlock
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Load an existing Visio diagram (replace with your actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Ensure the shape has a TextXForm (text block) and XForm (geometry)
-                        if (shape.TextXForm != null && shape.XForm != null)
-                        {
-                            // Preserve the current TxtHeight (do not modify)
-                            double currentTxtHeight = shape.TextXForm.TxtHeight.Value;
+            // Assume we work with the first page and a specific shape (ID = 1)
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes.GetShape(1);
 
-                            // Set TxtWidth to match the shape's width for proportional scaling
-                            shape.TextXForm.TxtWidth.Value = shape.XForm.Width.Value;
+            // Example: increase the shape's width by 20%
+            double originalWidth = shape.XForm.Width.Value;
+            double newWidth = originalWidth * 1.20;
 
-                            // Re-assign the preserved TxtHeight (optional, demonstrates intent)
-                            shape.TextXForm.TxtHeight.Value = currentTxtHeight;
-                        }
-                    }
-                }
+            // Apply the new width to the shape
+            shape.SetWidth(newWidth);
 
-                // Save the modified diagram (replace with your desired output path)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Adjust TxtWidth proportionally to the new shape width
+            // Keep TxtHeight unchanged (no modification needed)
+            shape.TextXForm.TxtWidth = new DoubleValue { Value = newWidth };
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Refresh shape data so that Visio recalculates dependent values
+            shape.RefreshData();
+
+            // Save the modified diagram (replace with your desired output path)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

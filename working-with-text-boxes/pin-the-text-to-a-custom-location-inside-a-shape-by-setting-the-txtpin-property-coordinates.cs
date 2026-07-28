@@ -1,52 +1,39 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+            // Create a new diagram instance
+            Diagram diagram = new Diagram();
 
-                // Access the first page
-                Page page = diagram.Pages[0];
+            // Add a rectangle shape to the active page at (2,2) inches
+            long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle");
 
-                // Retrieve a shape to modify (example: shape with ID 1)
-                // Adjust the ID as needed for your specific diagram
-                long shapeId = 1;
-                Shape shape = page.Shapes.GetShape(shapeId);
+            // Retrieve the shape object using its ID
+            Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
 
-                // Ensure the shape exists
-                if (shape == null)
-                {
-                    throw new Exception($"Shape with ID {shapeId} not found.");
-                }
+            // Replace any existing text with new content
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt("Custom positioned text"));
 
-                // Set custom text pin coordinates (in inches)
-                // These coordinates define where the text block is positioned within the shape
-                double customPinX = 2.0; // example X coordinate
-                double customPinY = 1.5; // example Y coordinate
+            // Pin the text to a custom location inside the shape
+            // Coordinates are in inches relative to the shape's origin
+            shape.TextXForm.TxtPinX.Value = 0.5; // X offset
+            shape.TextXForm.TxtPinY.Value = 0.2; // Y offset
 
-                shape.TextXForm.TxtPinX.Value = customPinX;
-                shape.TextXForm.TxtPinY.Value = customPinY;
+            // Save the diagram to a VSDX file
+            diagram.Save("PinnedTextDiagram.vsdx", SaveFileFormat.Vsdx);
 
-                // Optionally, update the shape's text to see the effect
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt("Pinned Text"));
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+        }
     }
-    }
+}

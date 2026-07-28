@@ -13,30 +13,29 @@ class Program
                 string inputPath = "input.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
-                // Get the first page (index 0)
+                // Ensure there is at least one page and one shape
+                if (diagram.Pages.Count == 0)
+                    throw new Exception("The diagram contains no pages.");
+
                 Page page = diagram.Pages[0];
+                if (page.Shapes.Count == 0)
+                    throw new Exception("The first page contains no shapes.");
 
                 // Retrieve the first shape on the page
-                // Ensure there is at least one shape
-                if (page.Shapes.Count == 0)
-                {
-                    throw new Exception("No shapes found on the first page.");
-                }
+                Shape shape = page.Shapes.GetShape(0);
 
-                // Get the shape by its ID
-                long shapeId = page.Shapes[0].ID;
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Apply a solid background color to the shape's text block
-                // Using RGB string format as required by the API
+                // Apply a solid background color to the shape's text block.
+                // The TextBkgnd cell defines the background color; using an RGB formula.
                 shape.TextBlock.TextBkgnd.Ufe.F = "RGB(255,0,0)"; // Red background
 
-                // Optionally set background transparency (0 = opaque)
+                // Ensure the background is fully opaque (0% transparency)
                 shape.TextBlock.TextBkgndTrans.Value = 0;
 
                 // Save the modified diagram
                 string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Text background color applied and diagram saved successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

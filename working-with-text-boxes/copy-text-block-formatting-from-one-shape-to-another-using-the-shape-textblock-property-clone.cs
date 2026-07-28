@@ -1,12 +1,12 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Input Visio file path
         string inputPath = "input.vsdx";
         if (!File.Exists(inputPath))
         {
@@ -14,50 +14,61 @@ class Program
             return;
         }
 
+        // Output Visio file path
         string outputPath = "output.vsdx";
 
         try
         {
+            // Load the source diagram
             Diagram diagram = new Diagram(inputPath);
+
+            // Use the first page (avoid ActivePage)
             Page page = diagram.Pages[0];
 
-            Shape? sourceShape = null;
-            Shape? targetShape = null;
-
+            // Locate source and target shapes by name
+            Shape sourceShape = null;
+            Shape targetShape = null;
             foreach (Shape shape in page.Shapes)
             {
-                if (shape.NameU == "SourceShape")
+                if (shape.Name == "SourceShape")
                     sourceShape = shape;
-                else if (shape.NameU == "TargetShape")
+                else if (shape.Name == "TargetShape")
                     targetShape = shape;
-
-                if (sourceShape != null && targetShape != null)
-                    break;
             }
 
+            // Validate shape existence
             if (sourceShape == null)
-                throw new Exception("Source shape with NameU 'SourceShape' not found.");
+                throw new Exception("Source shape not found.");
             if (targetShape == null)
-                throw new Exception("Target shape with NameU 'TargetShape' not found.");
+                throw new Exception("Target shape not found.");
 
-            // Copy TextBlock formatting properties
-            TextBlock srcTB = sourceShape.TextBlock;
-            TextBlock tgtTB = targetShape.TextBlock;
+            // Copy TextBlock formatting property‑by‑property (TextBlock is read‑only)
+            var srcBlock = sourceShape.TextBlock;
+            var tgtBlock = targetShape.TextBlock;
 
-            tgtTB.LeftMargin = srcTB.LeftMargin;
-            tgtTB.RightMargin = srcTB.RightMargin;
-            tgtTB.TopMargin = srcTB.TopMargin;
-            tgtTB.BottomMargin = srcTB.BottomMargin;
-            tgtTB.TextDirection = srcTB.TextDirection;
-            tgtTB.VerticalAlign = srcTB.VerticalAlign;
-            tgtTB.TextBkgnd = srcTB.TextBkgnd;
-            tgtTB.TextBkgndTrans = srcTB.TextBkgndTrans;
-            tgtTB.DefaultTabStop = srcTB.DefaultTabStop;
+            // Clone margin values
+            tgtBlock.LeftMargin = (DoubleValue)srcBlock.LeftMargin.Clone();
+            tgtBlock.RightMargin = (DoubleValue)srcBlock.RightMargin.Clone();
+            tgtBlock.TopMargin = (DoubleValue)srcBlock.TopMargin.Clone();
+            tgtBlock.BottomMargin = (DoubleValue)srcBlock.BottomMargin.Clone();
 
+            // Copy text direction and vertical alignment enums
+            tgtBlock.TextDirection.Value = srcBlock.TextDirection.Value;
+            tgtBlock.VerticalAlign.Value = srcBlock.VerticalAlign.Value;
+
+            // Clone background color formula (Ufe.F) and transparency
+            tgtBlock.TextBkgnd.Ufe.F = srcBlock.TextBkgnd.Ufe.F;
+            tgtBlock.TextBkgndTrans = (DoubleValue)srcBlock.TextBkgndTrans.Clone();
+
+            // Clone default tab stop
+            tgtBlock.DefaultTabStop = (DoubleValue)srcBlock.DefaultTabStop.Clone();
+
+            // Save the modified diagram using a valid overload
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

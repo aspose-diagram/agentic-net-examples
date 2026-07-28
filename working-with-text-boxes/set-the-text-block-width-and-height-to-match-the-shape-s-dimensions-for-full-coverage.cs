@@ -1,25 +1,24 @@
-using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all shapes on each page
+            // Loop through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has a TextXForm (most shapes do)
-                    if (shape.TextXForm != null && shape.XForm != null)
+                    // Verify that the shape has XForm (size) and TextXForm (text block) objects
+                    if (shape.XForm != null && shape.TextXForm != null)
                     {
                         // Set the text block width to the shape's width
                         shape.TextXForm.TxtWidth = shape.XForm.Width;
@@ -33,7 +32,7 @@ class Program
                 }
             }
 
-            // Save the modified diagram (replace with your desired output path)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

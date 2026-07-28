@@ -6,53 +6,49 @@ class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Expect two arguments: input Visio file path and output PDF file path
+            if (args.Length < 2)
             {
+                Console.WriteLine("Usage: DiagramRotationExport <inputVisioFile> <outputPdfFile>");
+                return;
+            }
 
-                // Path to the source Visio file (adjust as needed)
-                string inputPath = "input.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Conversion factor: 1 point = 1/72 inch
-                const double pointsToInches = 1.0 / 72.0;
-                const double heightThresholdInPoints = 200.0;
+            // Threshold: 200 points = 200/72 inches
+            double heightThresholdInches = 200.0 / 72.0;
 
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Check shape height
+                    double shapeHeight = shape.XForm.Height.Value;
+                    if (shapeHeight > heightThresholdInches)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Height in inches
-                        double heightInInches = shape.XForm.Height.Value;
-
-                        // Convert height to points
-                        double heightInPoints = heightInInches / pointsToInches;
-
-                        // Apply 5-degree RotationXAngle if height exceeds 200 points
-                        if (heightInPoints > heightThresholdInPoints)
-                        {
-                            shape.ThreeDFormat.RotationXAngle.Value = 5;
-                        }
+                        // Apply 5-degree rotation around X axis
+                        shape.ThreeDFormat.RotationXAngle.Value = 5.0;
                     }
                 }
-
-                // Prepare PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-
-                // Export the modified diagram to PDF
-                diagram.Save("output.pdf", pdfOptions);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Prepare PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Optional: set a default font to avoid missing font warnings
+            pdfOptions.DefaultFont = "Arial";
+
+            // Save the diagram as PDF
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"Diagram processed and saved to PDF: {outputPath}");
+        }
     }

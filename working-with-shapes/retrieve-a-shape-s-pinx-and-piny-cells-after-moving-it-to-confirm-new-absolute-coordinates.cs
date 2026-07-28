@@ -9,13 +9,13 @@ class Program
         try
         {
 
-            // Load the Visio diagram
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the first page (index 0)
+            // Access the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Get a shape to move (skip the page shape at index 0)
+            // Retrieve a shape; index 1 typically skips the page background shape
             Shape shape = page.Shapes[1];
 
             // Define new absolute coordinates for the shape's pin
@@ -25,19 +25,18 @@ class Program
             // Move the shape to the new position
             shape.MoveTo(newPinX, newPinY);
 
-            // Refresh shape data to ensure internal cells are updated
+            // Refresh shape data to ensure internal values are updated
             shape.RefreshData();
 
-            // Retrieve the updated PinX and PinY values
+            // Retrieve the updated PinX and PinY values from the shape's XForm
             double pinX = shape.XForm.PinX.Value;
             double pinY = shape.XForm.PinY.Value;
 
-            // Output the results
-            Console.WriteLine($"Shape ID: {shape.ID}");
-            Console.WriteLine($"New PinX: {pinX}");
-            Console.WriteLine($"New PinY: {pinY}");
+            // Output the coordinates to verify the move
+            Console.WriteLine($"Updated PinX: {pinX}");
+            Console.WriteLine($"Updated PinY: {pinY}");
 
-            // Optionally save the modified diagram
+            // Save the modified diagram (optional)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

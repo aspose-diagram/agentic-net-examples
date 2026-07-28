@@ -2,14 +2,14 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class ActiveXControlProcessor
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (uses the provided load rule)
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Iterate through all pages in the diagram
@@ -18,16 +18,19 @@ class Program
                 // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Process only shapes that contain an ActiveX control
+                    // Check if the shape contains an ActiveX control
                     if (shape.ActiveXControl != null)
                     {
-                        // Example processing: display shape information
+                        // Process the shape as needed.
+                        // Example: output shape information to the console.
                         Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}, ActiveX Type: {shape.ActiveXControl.Type}");
+
+                        // Additional processing can be added here.
                     }
                 }
             }
 
-            // Save the diagram (uses the provided save rule)
+            // Save the diagram after processing (replace with your desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

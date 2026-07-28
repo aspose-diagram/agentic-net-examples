@@ -10,12 +10,8 @@ class Program
         try
         {
 
-            // Input Visio file path
+            // Load the Visio diagram from a file
             string inputPath = "input.vsdx";
-            // Output PDF file path
-            string outputPath = "output.pdf";
-
-            // Load the diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Ensure all pages are visible in the UI
@@ -26,18 +22,15 @@ class Program
                 }
 
                 // Configure PDF save options to exclude hidden pages
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    ExportHiddenPage = false,
-                    // Optional: set a default font to avoid missing glyphs
-                    DefaultFont = "Arial"
-                };
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.ExportHiddenPage = false;
 
-                // Save the diagram as PDF
+                // Export the diagram to PDF
+                string outputPath = "output.pdf";
                 diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine("Diagram exported to PDF successfully.");
+            Console.WriteLine("Diagram exported to PDF with all pages visible.");
 
         }
         catch (System.IO.FileNotFoundException ex)

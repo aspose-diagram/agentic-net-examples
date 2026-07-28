@@ -1,76 +1,109 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path
+        string outputPath = "output_with_navigation.vsdx";
+
         try
         {
-
-            // Input and output file paths (adjust as needed)
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the diagram from the input file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Iterate through each page to add navigation hyperlinks
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                Page page = diagram.Pages[i];
+                // Retrieve the current page
+                Page page = diagram.Pages[pageIndex];
 
-                // Determine target pages for navigation
-                Page nextPage = (i < diagram.Pages.Count - 1) ? diagram.Pages[i + 1] : null;
-                Page prevPage = (i > 0) ? diagram.Pages[i - 1] : null;
+                // Page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Add a "Next" navigation shape if there is a subsequent page
-                if (nextPage != null)
+                // Common button size (in inches)
+                double btnWidth = 1.0;
+                double btnHeight = 0.5;
+
+                // -------------------------------------------------------------
+                // Add "Previous" button (if not the first page)
+                // -------------------------------------------------------------
+                if (pageIndex > 0)
                 {
-                    // Add a rectangle shape (master name "Rectangle") at a fixed position
-                    long nextShapeId = page.AddShape(1.0, 1.0, "Rectangle");
-                    Shape nextShape = page.Shapes.GetShape(nextShapeId);
+                    // Position the button at bottom‑left corner with a small margin
+                    double pinXPrev = btnWidth / 2.0 + 0.2;
+                    double pinYPrev = btnHeight / 2.0 + 0.2;
 
-                    // Set the shape's text
-                    nextShape.Text.Value.Clear();
-                    nextShape.Text.Value.Add(new Txt("Next Page"));
+                    // Add a rectangle shape using the built‑in "Rectangle" master
+                    long prevShapeId = page.AddShape(pinXPrev, pinYPrev, btnWidth, btnHeight, "Rectangle");
+                    Shape prevShape = page.Shapes.GetShape((int)prevShapeId);
 
-                    // Create and assign a hyperlink that points to the next page
-                    Hyperlink nextLink = new Hyperlink();
-                    nextLink.Name = "NextLink";
-                    // SubAddress refers to the target page name
-                    nextLink.SubAddress.Value = nextPage.Name;
-                    nextShape.Hyperlinks.Add(nextLink);
+                    // Set visual appearance
+                    prevShape.Fill.FillForegnd.Value = "#D3D3D3"; // light gray background
+                    prevShape.Line.LinePattern.Value = LinePatternValue.Solid;
+                    prevShape.Line.LineWeight.Value = 0.02;
+
+                    // Set the button text
+                    prevShape.Text.Value.Clear();
+                    prevShape.Text.Value.Add(new Txt("Previous"));
+
+                    // Create hyperlink to the previous page (internal link via SubAddress)
+                    Hyperlink prevLink = new Hyperlink();
+                    prevLink.SubAddress.Value = diagram.Pages[pageIndex - 1].Name; // target page name
+                    prevLink.Description.Value = "Go to previous page";
+                    prevShape.Hyperlinks.Add(prevLink);
                 }
 
-                // Add a "Previous" navigation shape if there is a preceding page
-                if (prevPage != null)
+                // -------------------------------------------------------------
+                // Add "Next" button (if not the last page)
+                // -------------------------------------------------------------
+                if (pageIndex < diagram.Pages.Count - 1)
                 {
-                    // Add a rectangle shape at a different position
-                    long prevShapeId = page.AddShape(5.0, 1.0, "Rectangle");
-                    Shape prevShape = page.Shapes.GetShape(prevShapeId);
+                    // Position the button at bottom‑right corner with a margin from the right edge
+                    double pinXNext = pageWidth - (btnWidth / 2.0) - 0.2;
+                    double pinYNext = btnHeight / 2.0 + 0.2;
 
-                    // Set the shape's text
-                    prevShape.Text.Value.Clear();
-                    prevShape.Text.Value.Add(new Txt("Previous Page"));
+                    // Add a rectangle shape for the "Next" button
+                    long nextShapeId = page.AddShape(pinXNext, pinYNext, btnWidth, btnHeight, "Rectangle");
+                    Shape nextShape = page.Shapes.GetShape((int)nextShapeId);
 
-                    // Create and assign a hyperlink that points to the previous page
-                    Hyperlink prevLink = new Hyperlink();
-                    prevLink.Name = "PrevLink";
-                    prevLink.SubAddress.Value = prevPage.Name;
-                    prevShape.Hyperlinks.Add(prevLink);
+                    // Set visual appearance
+                    nextShape.Fill.FillForegnd.Value = "#D3D3D3"; // light gray background
+                    nextShape.Line.LinePattern.Value = LinePatternValue.Solid;
+                    nextShape.Line.LineWeight.Value = 0.02;
+
+                    // Set the button text
+                    nextShape.Text.Value.Clear();
+                    nextShape.Text.Value.Add(new Txt("Next"));
+
+                    // Create hyperlink to the next page (internal link via SubAddress)
+                    Hyperlink nextLink = new Hyperlink();
+                    nextLink.SubAddress.Value = diagram.Pages[pageIndex + 1].Name; // target page name
+                    nextLink.Description.Value = "Go to next page";
+                    nextShape.Hyperlinks.Add(nextLink);
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram with navigation buttons
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

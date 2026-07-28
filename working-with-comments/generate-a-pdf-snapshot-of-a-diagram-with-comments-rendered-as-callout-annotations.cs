@@ -10,8 +10,14 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio diagram
+            string sourceFile = @"C:\Diagrams\sample.vsdx";
+
+            // Path where the PDF snapshot will be saved
+            string outputPdf = @"C:\Diagrams\sample_snapshot.pdf";
+
+            // Load the diagram from file
+            Diagram diagram = new Diagram(sourceFile);
 
             // Configure PDF save options to include comments as callout annotations
             PdfSaveOptions pdfOptions = new PdfSaveOptions
@@ -19,8 +25,11 @@ class Program
                 IsExportComments = true   // Enable exporting of comments
             };
 
-            // Save the diagram as a PDF file with comments rendered
-            diagram.Save("output.pdf", pdfOptions);
+            // Save the diagram as a PDF using the configured options
+            diagram.Save(outputPdf, pdfOptions);
+
+            // Clean up resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

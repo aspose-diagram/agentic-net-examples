@@ -3,21 +3,24 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the source Visio file
+                // Input Visio file path
                 string inputPath = "input.vsdx";
 
-                // Load the diagram from file
+                // Output Visio file path
+                string outputPath = "output.vsdx";
+
+                // Unique ID of the shape to modify
+                long targetShapeId = 5; // replace with the actual shape ID
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Unique ID of the shape to modify (replace with actual ID)
-                long targetShapeId = 12345;
-
-                // Assume the shape is on the first page; adjust if needed
+                // Access the first page (adjust if needed)
                 Page page = diagram.Pages[0];
 
                 // Retrieve the shape by its unique ID
@@ -27,22 +30,21 @@ class Program
                     throw new Exception($"Shape with ID {targetShapeId} not found.");
                 }
 
-                // Create a new custom field
+                // Create a new custom text field
                 Field customField = new Field();
 
-                // Set the field's value (plain text)
-                customField.Value.Val = "MyCustomValue";
+                // Set the field's displayed value
+                customField.Value.Val = "Custom Value";
 
-                // Optionally, clear any existing format (use empty strings)
+                // Optionally, clear any formatting (use empty strings)
                 customField.Format.Val = "";
                 customField.Format.Ufev.F = "";
                 customField.Format.Ufev.Unit = MeasureConst.Undefined;
 
-                // Add the new field to the shape's Fields collection
+                // Add the field to the shape's Fields collection
                 shape.Fields.Add(customField);
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

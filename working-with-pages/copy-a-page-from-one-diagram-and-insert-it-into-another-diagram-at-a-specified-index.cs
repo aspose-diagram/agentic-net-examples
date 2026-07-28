@@ -1,42 +1,45 @@
 using System;
 using System.IO;
-using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        string sourceFile = "source.vsdx";
-        if (!System.IO.File.Exists(sourceFile))
+        try
         {
-            Console.Error.WriteLine($"File not found: {sourceFile}");
-            return;
+
+            // Load source and destination diagrams
+            var sourceDiagram = new Aspose.Diagram.Diagram("SourceDiagram.vdx");
+            var targetDiagram = new Aspose.Diagram.Diagram("TargetDiagram.vdx");
+
+            // Index of the page to copy from the source diagram (0‑based)
+            int sourcePageIndex = 2;
+
+            // Desired insertion index in the target diagram (0‑based)
+            int insertIndex = 1;
+
+            // Get the page to be copied from the source diagram
+            var sourcePage = sourceDiagram.Pages[sourcePageIndex];
+
+            // Create a new empty page in the target diagram
+            var newPage = new Aspose.Diagram.Page();
+
+            // Add the new page to the target diagram's page collection
+            targetDiagram.Pages.Add(newPage);
+
+            // Copy the contents of the source page into the newly created page
+            newPage.Copy(sourcePage);
+
+            // Move the newly added page to the specified index within the target diagram
+            newPage.MoveTo(insertIndex);
+
+            // Save the modified target diagram
+            targetDiagram.Save("MergedDiagram.vdx", Aspose.Diagram.SaveFileFormat.Vdx);
+
         }
-        string targetFile = "target.vsdx";
-        string outputFile = "merged.vsdx";
-
-        // Load the source and target diagrams (lifecycle rule: load)
-        Diagram sourceDiagram = new Diagram(sourceFile);
-        Diagram targetDiagram = new Diagram(targetFile);
-
-        // Indices (adjust as needed)
-        int sourcePageIndex = 0;   // page to copy from source diagram
-        int insertIndex = 2;       // position where the page will be inserted in target diagram
-
-        // Get the page to copy
-        Page pageToCopy = sourceDiagram.Pages[sourcePageIndex];
-
-        // Create a new empty page and copy the contents of the source page (feature rule: Page.Copy)
-        Page newPage = new Page();
-        newPage.Copy(pageToCopy);
-
-        // Add the new page to the target diagram's Pages collection (lifecycle rule: create/add)
-        targetDiagram.Pages.Add(newPage);
-
-        // Move the newly added page to the desired index (feature rule: Page.MoveTo)
-        newPage.MoveTo(insertIndex);
-
-        // Save the modified target diagram (lifecycle rule: save)
-        targetDiagram.Save(outputFile, SaveFileFormat.Vsdx);
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

@@ -1,73 +1,55 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Validate input arguments
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramCommentTranslator <inputFilePath> <outputFilePath>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Load the Visio diagram from the specified file
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and their annotations (comments)
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Annotations are stored in the PageSheet.Annotations collection
+                // Iterate through each comment (annotation) on the page
                 foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    // Retrieve the current comment text
+                    // Retrieve the original comment text
                     string originalText = annotation.Comment.Value;
 
-                    // Translate the text using an external service (stubbed here)
+                    // Translate the text using an external service (placeholder implementation)
                     string translatedText = TranslateText(originalText);
 
-                    // Update the annotation with the translated text
+                    // Update the comment with the translated text
                     annotation.Comment.Value = translatedText;
                 }
             }
 
-            // Save the updated diagram back to a file (preserving original format)
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
-            }
-        }
+            // Save the updated diagram back to a file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        /// <summary>
-        /// Placeholder for an external translation service.
-        /// Replace this implementation with actual API calls as needed.
-        /// </summary>
-        /// <param name="text">The text to translate.</param>
-        /// <returns>The translated text.</returns>
-        private static string TranslateText(string text)
+        }
+        catch (System.IO.FileNotFoundException ex)
         {
-            // TODO: Integrate with a real translation API.
-            // For demonstration, return the original text unchanged.
-            return text;
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+
+    // Placeholder translation method – replace with actual external service call as needed
+    static string TranslateText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return text;
+
+        // Example: prepend a marker to indicate translation
+        return "[Translated] " + text;
+    }
+}

@@ -1,48 +1,56 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // Expect: input Visio file, shape ID, output PNG path
+            if (args.Length < 3)
+            {
+                Console.WriteLine("Usage: DiagramShapeExport <inputVisioPath> <shapeId> <outputPngPath>");
+                return;
+            }
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+            string inputPath = args[0];
+            string shapeIdStr = args[1];
+            string outputPath = args[2];
 
-            // ID of the shape to extract (replace with the actual ID)
-            long shapeId = 5;
-
-            // Path for the exported PNG image
-            string outputPath = "shape.png";
+            if (!long.TryParse(shapeIdStr, out long shapeId))
+            {
+                Console.WriteLine("Invalid shape ID.");
+                return;
+            }
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Assume the shape is on the first page; adjust if necessary
+            // Ensure the diagram has at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Access the first page (index 0)
             Page page = diagram.Pages[0];
 
             // Retrieve the shape by its ID
             Shape shape = page.Shapes.GetShape(shapeId);
             if (shape == null)
             {
-                throw new Exception($"Shape with ID {shapeId} was not found.");
+                Console.WriteLine($"Shape with ID {shapeId} not found on the first page.");
+                return;
             }
 
-            // Set up image save options with 300 DPI resolution
+            // Set PNG export options with 300 DPI resolution
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.Resolution = 300f;
+            saveOptions.Resolution = 300; // DPI
 
             // Export the shape to PNG
             shape.ToImage(outputPath, saveOptions);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Shape {shapeId} exported to PNG at '{outputPath}' with 300 DPI.");
         }
     }
-}

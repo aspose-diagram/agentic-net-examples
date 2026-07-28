@@ -1,51 +1,52 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Printing;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: diagram file path and expected orientation (Landscape or Portrait)
+        if (args.Length < 2)
         {
-            try
+            Console.WriteLine("Usage: Diagnostic.exe <diagramPath> <expectedOrientation>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string expectedStr = args[1];
+
+        // Parse the expected orientation string to the enum
+        if (!Enum.TryParse(expectedStr, ignoreCase: true, out PrintPageOrientationValue expectedOrientation))
+        {
+            Console.WriteLine($"Invalid expected orientation: {expectedStr}");
+            return;
+        }
+
+        // Load the diagram
+        Diagram diagram = new Diagram(diagramPath);
+
+        // Iterate through each page and validate the PrintPageOrientation
+        foreach (Page page in diagram.Pages)
+        {
+            PrintProps printProps = page.PageSheet.PrintProps;
+            PrintPageOrientationValue actualOrientation = printProps.PrintPageOrientation.Value;
+
+            if (actualOrientation != expectedOrientation)
             {
-
-                // Input file path (first argument) and expected orientation (second argument)
-                string filePath = args.Length > 0 ? args[0] : "input.vsdx";
-                string expectedStr = args.Length > 1 ? args[1] : "Landscape";
-
-                // Parse the expected orientation string to the enum value
-                if (!Enum.TryParse(expectedStr, out PrintPageOrientationValue expectedOrientation))
-                {
-                    Console.WriteLine($"Invalid expected orientation '{expectedStr}'. Use Landscape, Portrait, or SameAsPrinter.");
-                    return;
-                }
-
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(filePath))
-                {
-                    // Iterate through all pages in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Retrieve the actual orientation from the page's PrintProps
-                        PrintPageOrientationValue actualOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-
-                        // Compare with the expected value
-                        if (actualOrientation != expectedOrientation)
-                        {
-                            // Throw an exception on mismatch
-                            throw new Exception($"Page '{page.Name}' orientation mismatch. Expected: {expectedOrientation}, Actual: {actualOrientation}.");
-                        }
-                        else
-                        {
-                            // Log success for each page
-                            Console.WriteLine($"Page '{page.Name}' orientation matches expected value: {expectedOrientation}.");
-                        }
-                    }
-                }
-
+                string message = $"Page '{page.Name}' orientation mismatch. Expected: {expectedOrientation}, Actual: {actualOrientation}";
+                Console.WriteLine(message);
+                throw new Exception(message);
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            else
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.WriteLine($"Page '{page.Name}' orientation matches expected value: {expectedOrientation}");
             }
+        }
+
+        // Clean up
+        diagram.Dispose();
+        Console.WriteLine("Diagnostic completed successfully.");
     }
-    }
+}

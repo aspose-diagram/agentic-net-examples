@@ -1,24 +1,25 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
 
-            // Input and output file paths (adjust as needed)
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
 
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip shapes that are marked as deleted
@@ -28,7 +29,7 @@ public class Program
                     // Retrieve the plain text of the shape
                     string currentText = shape.Text.Value.ToString();
 
-                    // If the shape has no text, assign a new unique identifier
+                    // If the text is empty or whitespace, populate it with a unique identifier
                     if (string.IsNullOrWhiteSpace(currentText))
                     {
                         string uniqueId = Guid.NewGuid().ToString();
@@ -41,6 +42,7 @@ public class Program
             }
 
             // Save the modified diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

@@ -10,15 +10,15 @@ class Program
         try
         {
 
-            // Load the source Visio diagram (replace with your actual file path)
+            // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Configure image save options for PNG format
+            // Create image save options for PNG format
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
             // Omit hidden pages during export (default is true)
             saveOptions.ExportHiddenPage = false;
 
-            // Export the diagram to PNG using the configured options
+            // Save the diagram as a PNG image using the specified options
             diagram.Save("output.png", saveOptions);
 
         }

@@ -11,29 +11,26 @@ class Program
         try
         {
 
-            // List of required user‑defined cell names (adjust as needed)
-            var requiredUserCells = new List<string> { "MyCell1", "MyCell2" };
+            // Load the Visio diagram from a file.
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the Visio diagram (replace with your file path)
-            var diagram = new Diagram("input.vsdx");
+            // List of required user‑defined cell names (without the "User." prefix).
+            List<string> requiredCells = new List<string> { "MyCell1", "MyCell2" };
 
-            // Validate each shape on every page
+            // Validate every shape on every page.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    ValidateShapeUserCells(shape, requiredUserCells);
+                    ValidateUserCells(shape, requiredCells);
                 }
             }
 
-            // Set PDF export options
-            var pdfOptions = new PdfSaveOptions
+            // Export the diagram to PDF after successful validation.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
             {
-                // Example: do not export guide shapes
-                ExportGuideShapes = false
+                ExportGuideShapes = true   // keep default behavior; can be changed if needed
             };
-
-            // Export the diagram to PDF (replace with your output path)
             diagram.Save("output.pdf", pdfOptions);
 
         }
@@ -43,30 +40,25 @@ class Program
         }
     }
 
-    // Checks that all required user‑defined cells exist on the given shape
-    static void ValidateShapeUserCells(Shape shape, List<string> requiredCells)
+    // Checks that all required user‑defined cells exist on the given shape.
+    static void ValidateUserCells(Shape shape, List<string> requiredCells)
     {
-        // Users collection may be empty if the shape has no user‑defined cells
-        var users = shape.Users;
+        // Collect the names of all user‑defined cells present on the shape.
+        HashSet<string> existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (User userCell in shape.Users)
+        {
+            if (!string.IsNullOrEmpty(userCell.Name))
+                existingNames.Add(userCell.Name);
+        }
 
+        // Verify each required cell is present; throw if any are missing.
         foreach (string cellName in requiredCells)
         {
-            bool found = false;
-
-            foreach (User user in users)
+            if (!existingNames.Contains(cellName))
             {
-                if (string.Equals(user.Name, cellName, StringComparison.OrdinalIgnoreCase))
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                // Throw an exception or handle the missing cell as required
+                string pageName = shape.Page?.Name ?? "unknown";
                 throw new InvalidOperationException(
-                    $"Shape ID {shape.ID} ('{shape.Name}') is missing required user-defined cell '{cellName}'.");
+                    $"Shape ID {shape.ID} on page '{pageName}' is missing required user-defined cell '{cellName}'.");
             }
         }
     }

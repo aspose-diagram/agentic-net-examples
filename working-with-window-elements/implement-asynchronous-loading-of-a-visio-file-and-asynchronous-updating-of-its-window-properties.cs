@@ -3,76 +3,86 @@ using System.IO;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 
-class Program
+public class VisioHelper
+{
+    // Asynchronously loads a Visio file into a Diagram object.
+    public static async Task<Diagram> LoadDiagramAsync(string filePath)
     {
-        static async Task Main(string[] args)
-        {
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: AsyncVisioExample <inputPath> <outputPath>");
-                return;
-            }
+        // Open the file stream for asynchronous reading.
+        await using var fileStream = new FileStream(
+            filePath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            bufferSize: 81920,
+            useAsync: true);
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+        // Copy the file stream into a memory stream asynchronously.
+        var memoryStream = new MemoryStream();
+        await fileStream.CopyToAsync(memoryStream).ConfigureAwait(false);
+        memoryStream.Position = 0; // Reset position for reading.
 
-            Diagram diagram = await LoadDiagramAsync(inputPath);
-            UpdateWindowProperties(diagram);
-            await SaveDiagramAsync(diagram, outputPath);
-            Console.WriteLine("Diagram processed and saved.");
-        }
+        // Load the diagram from the memory stream.
+        // Using the constructor that accepts a Stream.
+        var diagram = new Diagram(memoryStream);
+        return diagram;
+    }
 
-        // Asynchronously loads a Visio file into a Diagram object.
-        private static async Task<Diagram> LoadDiagramAsync(string path)
-        {
-            // Read file bytes asynchronously.
-            byte[] fileBytes;
-            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
-            {
-                fileBytes = new byte[fs.Length];
-                int read = 0;
-                while (read < fileBytes.Length)
-                {
-                    int bytesRead = await fs.ReadAsync(fileBytes, read, fileBytes.Length - read);
-                    if (bytesRead == 0) break;
-                    read += bytesRead;
-                }
-            }
-
-            // Load diagram from memory stream.
-            using (MemoryStream ms = new MemoryStream(fileBytes))
-            {
-                // Diagram constructor that accepts a Stream.
-                return new Diagram(ms);
-            }
-        }
-
-        // Updates window properties (grid, guides, rulers, etc.) for all windows in the diagram.
-        private static void UpdateWindowProperties(Diagram diagram)
+    // Asynchronously updates window properties of a Diagram.
+    public static async Task UpdateWindowPropertiesAsync(Diagram diagram, double viewScale, double viewCenterX, double viewCenterY)
+    {
+        // The Windows collection may contain multiple windows.
+        // Updating each window is a quick operation, but we wrap it in Task.Run
+        // to keep the method asynchronous and non‑blocking.
+        await Task.Run(() =>
         {
             foreach (Window window in diagram.Windows)
             {
-                // Enable visual aids.
-                window.ShowGrid = BOOL.True;
-                window.ShowGuides = BOOL.True;
-                window.ShowRulers = BOOL.True;
-                window.ShowPageBreaks = BOOL.True;
-                window.DynamicGridEnabled = BOOL.True;
-                window.ShowConnectionPoints = BOOL.True;
+                // Example properties to update.
+                window.ViewScale = viewScale;
+                window.ViewCenterX = viewCenterX;
+                window.ViewCenterY = viewCenterY;
 
-                // Example: maximize the window.
-                window.WindowState = WindowStateValue.Maximized;
+                // Additional optional updates can be added here, e.g.:
+                // window.ShowGrid = true;
+                // window.WindowState = 1; // Normal state.
             }
-        }
-
-        // Asynchronously saves the diagram to a file.
-        private static async Task SaveDiagramAsync(Diagram diagram, string outputPath)
-        {
-            // Use a FileStream with async support.
-            using (FileStream fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
-            {
-                // Diagram.Save is synchronous; wrap it in Task.Run to avoid blocking.
-                await Task.Run(() => diagram.Save(fs, SaveFileFormat.Vsdx));
-            }
-        }
+        }).ConfigureAwait(false);
     }
+
+    // Asynchronously saves the modified Diagram to a file.
+    public static async Task SaveDiagramAsync(Diagram diagram, string outputPath)
+    {
+        // Save to a memory stream first to avoid blocking the file system.
+        await Task.Run(() =>
+        {
+            using var outStream = new FileStream(
+                outputPath,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 81920,
+                useAsync: true);
+
+            // Use the Save method that accepts a Stream.
+            diagram.Save(outStream, SaveFileFormat.Vsdx);
+        }).ConfigureAwait(false);
+    }
+
+    // Example usage combining the above methods.
+    public static async Task ProcessVisioFileAsync(string inputPath, string outputPath)
+    {
+        Diagram diagram = await LoadDiagramAsync(inputPath);
+        await UpdateWindowPropertiesAsync(diagram, viewScale: 1.5, viewCenterX: 5.0, viewCenterY: 5.0);
+        await SaveDiagramAsync(diagram, outputPath);
+        diagram.Dispose();
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        VisioHelper.UpdateWindowPropertiesAsync(null, 0, 0, 0);
+    }
+}

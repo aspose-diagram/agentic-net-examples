@@ -9,27 +9,34 @@ class ApplyThemeWithErrorHandling
         try
         {
 
-            // Load an existing diagram (the load rule will handle the actual loading)
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Retrieve a shape – here we take the first shape on the first page
-            Shape shape = diagram.Pages[0].Shapes[0];
+            // Assume we work with the first page and first shape
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes[0];
 
             try
             {
-                // Attempt to apply a preset theme style matrix to the shape.
-                // If the shape lacks the necessary style data, an exception will be thrown.
+                // Attempt to apply a preset theme style matrix to the shape
+                // This may throw if the shape lacks style data
                 shape.SetPresetThemeStyleMatrics(
-                    PresetStyleMatricsValue.Style1,
-                    PresetColorMatricsValue.Color1);
+                    PresetStyleMatricsValue.Style1,   // style row
+                    PresetColorMatricsValue.Color1   // color column
+                );
+
+                // Optionally, set quick style, theme, or variant directly
+                // shape.PresetThemeQuickStyle = PresetQuickStyleValue.QuickStyle1;
+                // shape.PresetTheme = PresetThemeValue.Theme1;
+                // shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
             }
             catch (Exception ex)
             {
-                // Handle the error gracefully – log or inform the user.
-                Console.WriteLine($"Error applying theme to shape: {ex.Message}");
+                // Handle the exception gracefully
+                Console.WriteLine($"Error applying theme to shape ID {shape.ID}: {ex.Message}");
             }
 
-            // Save the modified diagram (the save rule will handle the actual saving)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

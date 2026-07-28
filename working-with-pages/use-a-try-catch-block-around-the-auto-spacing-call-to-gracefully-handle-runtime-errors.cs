@@ -15,18 +15,17 @@ class Program
             // Access the first page (or any specific page)
             Page page = diagram.Pages[0];
 
-            // Create and configure autospace options
-            AutoSpaceOptions options = new AutoSpaceOptions();
-            options.DistanceInHorizontal = 0.5; // horizontal spacing in inches
-            options.DistanceInVertical = 0.5;   // vertical spacing in inches
+            // Configure autospace options
+            AutoSpaceOptions options = new AutoSpaceOptions
+            {
+                DistanceInHorizontal = 0.5, // inches
+                DistanceInVertical = 0.5    // inches
+            };
 
-            // Get the collection of shapes on the page
-            ShapeCollection shapes = page.Shapes;
-
-            // Attempt to auto‑space the shapes, handling any runtime errors gracefully
+            // Attempt to auto‑space the shapes and handle any runtime errors gracefully
             try
             {
-                page.AutoSpaceShapes(shapes, options);
+                page.AutoSpaceShapes(page.Shapes, options);
             }
             catch (Exception ex)
             {

@@ -1,65 +1,80 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths to the input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Define geometry indexes we want to process for each shape
-            int[] targetGeometryIndexes = { 0, 2, 5 };
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output_processed.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through pages, shapes, and geometry sections
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Iterate through each Geom collection of the shape
-                    for (int geomIdx = 0; geomIdx < shape.Geoms.Count; geomIdx++)
+                    Page page = diagram.Pages[pageIndex];
+
+                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                     {
-                        // Cast the item to Geom as required by the API
-                        Geom geom = (Geom)shape.Geoms[geomIdx];
+                        Shape shape = page.Shapes[shapeIndex];
+                        long shapeId = shape.ID;
 
-                        // Attempt to access each target index in the CoordinateCol collection
-                        foreach (int targetIdx in targetGeometryIndexes)
+                        // Iterate over each Geom collection in the shape
+                        for (int geomIndex = 0; geomIndex < shape.Geoms.Count; geomIndex++)
                         {
-                            try
-                            {
-                                // This will throw if the index is out of range
-                                var segment = geom.CoordinateCol[targetIdx];
+                            // The Geoms collection returns objects; cast to Geom
+                            Geom geom = (Geom)shape.Geoms[geomIndex];
 
-                                // Example operation on a valid segment: mark it as deleted
-                                segment.Del = BOOL.True;
-                            }
-                            catch (Exception ex) when (ex is IndexOutOfRangeException || ex is ArgumentOutOfRangeException)
+                            // Iterate over the coordinate collection safely
+                            for (int coordIndex = 0; coordIndex < geom.CoordinateCol.Count; coordIndex++)
                             {
-                                // Log detailed error information and continue with the next entry
-                                Console.WriteLine($"[Warning] Shape ID {shape.ID}, Geom #{geomIdx}, attempted coordinate index {targetIdx} is out of range.");
-                                Console.WriteLine($"          Exception: {ex.GetType().Name} - {ex.Message}");
-                                // Skip this invalid entry
+                                try
+                                {
+                                    // Access the geometry segment; the exact type (MoveTo, LineTo, etc.) is not required here
+                                    object segment = geom.CoordinateCol[coordIndex];
+                                    // Example operation: just output the segment type
+                                    Console.WriteLine($"Page {pageIndex}, Shape ID {shapeId}, Geom {geomIndex}, Coord {coordIndex}: {segment.GetType().Name}");
+                                }
+                                catch (IndexOutOfRangeException ex)
+                                {
+                                    // Log detailed error information and continue with the next entry
+                                    Console.WriteLine($"[ERROR] Out-of-range geometry index encountered:");
+                                    Console.WriteLine($"  Page Index   : {pageIndex}");
+                                    Console.WriteLine($"  Shape ID     : {shapeId}");
+                                    Console.WriteLine($"  Geom Index   : {geomIndex}");
+                                    Console.WriteLine($"  Coord Index  : {coordIndex}");
+                                    Console.WriteLine($"  Exception    : {ex.Message}");
+                                    // Skip this invalid entry and continue
+                                }
+                                catch (Exception ex)
+                                {
+                                    // Catch any other unexpected exceptions, log, and continue
+                                    Console.WriteLine($"[ERROR] Unexpected exception while processing geometry:");
+                                    Console.WriteLine($"  Page Index   : {pageIndex}");
+                                    Console.WriteLine($"  Shape ID     : {shapeId}");
+                                    Console.WriteLine($"  Geom Index   : {geomIndex}");
+                                    Console.WriteLine($"  Coord Index  : {coordIndex}");
+                                    Console.WriteLine($"  Exception    : {ex.GetType().Name} - {ex.Message}");
+                                }
                             }
                         }
                     }
                 }
+
+                // Save the processed diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram processing complete. Saved to '{outputPath}'.");
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

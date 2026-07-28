@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,14 +8,16 @@ class Program
             try
             {
 
-                // Input and output file paths (adjust as needed)
+                // Input Visio file path
                 string inputPath = "input.vsdx";
+
+                // Output Visio file path
                 string outputPath = "output.vsdx";
 
-                // Name of the master whose shapes' paragraphs should be justified
+                // Name of the master whose shapes will be processed
                 string targetMasterName = "MyMaster";
 
-                // Load the Visio diagram
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages
@@ -25,14 +26,14 @@ class Program
                     // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has a master and it matches the target master name
+                        // Check if the shape is based on the specified master
                         if (shape.Master != null && shape.Master.Name == targetMasterName)
                         {
                             // Iterate through all paragraphs of the shape
-                            for (int i = 0; i < shape.Paras.Count; i++)
+                            foreach (Para para in shape.Paras)
                             {
-                                // Set horizontal alignment to Justify
-                                shape.Paras[i].HorzAlign.Value = HorzAlignValue.Justify;
+                                // Set paragraph horizontal alignment to Justify
+                                para.HorzAlign.Value = HorzAlignValue.Justify;
                             }
                         }
                     }

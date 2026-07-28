@@ -1,7 +1,9 @@
-using System;
 using System.IO;
+using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class PrintOptionSaveVerification
 {
@@ -10,56 +12,64 @@ class PrintOptionSaveVerification
         try
         {
 
-            // Load the original diagram from a file
-            string inputPath = "input.vsdx";
-            Diagram originalDiagram = new Diagram(inputPath);
+            // Load the original diagram
+            var originalDiagram = new Diagram("input.vsdx");
 
-            // Record the number of shapes on each page of the original diagram
-            int[] originalShapeCounts = new int[originalDiagram.Pages.Count];
-            for (int i = 0; i < originalDiagram.Pages.Count; i++)
+            // Capture original page content: page count and shape count per page
+            var originalPageShapeCounts = new Dictionary<int, int>();
+            foreach (Page page in originalDiagram.Pages)
             {
-                originalShapeCounts[i] = originalDiagram.Pages[i].Shapes.Count;
+                originalPageShapeCounts[page.ID] = page.Shapes.Count;
             }
 
-            // Create PrintSaveOptions and modify a print-related setting
-            PrintSaveOptions printOptions = new PrintSaveOptions
+            // Change a print option (e.g., print only foreground pages)
+            var printOptions = new PrintSaveOptions
             {
-                // Example: print only foreground pages
-                SaveForegroundPagesOnly = true,
-                // Ensure all pages are considered (optional)
-                PageCount = int.MaxValue
+                SaveForegroundPagesOnly = true
             };
 
-            // Save the diagram using the modified print options
-            string outputPath = "output.vsdx";
-            originalDiagram.Save(outputPath, printOptions);
+            // Invoke printing with the modified options (printing to default printer)
+            // This step changes the internal print settings without altering the diagram itself
+            originalDiagram.Print(printOptions);
+
+            // Save the diagram after changing the print options
+            originalDiagram.Save("output.vsdx", SaveFileFormat.Vdx);
 
             // Reload the saved diagram
-            Diagram savedDiagram = new Diagram(outputPath);
+            var savedDiagram = new Diagram("output.vsdx");
 
-            // Verify that page content (shape counts) remains unchanged
+            // Verify that page content remains unchanged
             bool contentUnchanged = true;
-            if (savedDiagram.Pages.Count != originalDiagram.Pages.Count)
+
+            // Check page count
+            if (originalDiagram.Pages.Count != savedDiagram.Pages.Count)
             {
                 contentUnchanged = false;
+                Console.WriteLine("Page count mismatch.");
             }
-            else
+
+            // Check shape counts per page
+            foreach (Page page in savedDiagram.Pages)
             {
-                for (int i = 0; i < savedDiagram.Pages.Count; i++)
+                int originalCount;
+                if (!originalPageShapeCounts.TryGetValue(page.ID, out originalCount))
                 {
-                    int savedShapeCount = savedDiagram.Pages[i].Shapes.Count;
-                    if (savedShapeCount != originalShapeCounts[i])
-                    {
-                        contentUnchanged = false;
-                        break;
-                    }
+                    contentUnchanged = false;
+                    Console.WriteLine($"Page ID {page.ID} not found in original diagram.");
+                    continue;
+                }
+
+                if (originalCount != page.Shapes.Count)
+                {
+                    contentUnchanged = false;
+                    Console.WriteLine($"Shape count mismatch on page ID {page.ID}: original={originalCount}, saved={page.Shapes.Count}");
                 }
             }
 
             // Output verification result
             Console.WriteLine(contentUnchanged
-                ? "Page content unchanged after saving with print options."
-                : "Page content altered after saving with print options.");
+                ? "Verification passed: saving after print option changes did not alter page content."
+                : "Verification failed: page content was altered after saving.");
 
         }
         catch (System.IO.FileNotFoundException ex)

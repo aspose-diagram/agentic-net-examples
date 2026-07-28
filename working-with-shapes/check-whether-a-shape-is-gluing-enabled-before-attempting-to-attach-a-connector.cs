@@ -1,61 +1,68 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Get the first page (assumes at least one page exists)
+            Page page = diagram.Pages[0];
+
+            // Ensure there are at least two shapes to connect
+            if (page.Shapes.Count < 2)
             {
-
-                // Load an existing Visio diagram (replace with your actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Use the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Add two rectangle shapes to the page
-                long shapeId1 = page.AddShape(2.0, 5.0, "Rectangle");
-                long shapeId2 = page.AddShape(6.0, 5.0, "Rectangle");
-
-                // Retrieve the shape objects
-                Shape shape1 = page.Shapes.GetShape(shapeId1);
-                Shape shape2 = page.Shapes.GetShape(shapeId2);
-
-                // Verify that both shapes allow dynamic glue
-                bool shape1GlueEnabled = shape1.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
-                bool shape2GlueEnabled = shape2.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
-
-                if (!shape1GlueEnabled || !shape2GlueEnabled)
-                {
-                    throw new Exception("One or both shapes are not gluing-enabled. Connector cannot be attached.");
-                }
-
-                // Add a dynamic connector shape
-                long connectorId = page.AddShape(4.0, 5.0, "Dynamic connector");
-                Shape connector = page.Shapes.GetShape(connectorId);
-
-                // Optionally set connector routing style (right-angle)
-                connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-
-                // Connect the two shapes via the connector using bottom of shape1 and top of shape2
-                page.ConnectShapesViaConnector(
-                    shapeId1,
-                    ConnectionPointPlace.Bottom,
-                    shapeId2,
-                    ConnectionPointPlace.Top,
-                    connectorId);
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine("The page does not contain enough shapes to create a connector.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Retrieve the first two shapes on the page
+            Shape sourceShape = page.Shapes[0];
+            Shape targetShape = page.Shapes[1];
+
+            // Check whether each shape allows dynamic glue (gluing-enabled)
+            bool sourceGlueEnabled = sourceShape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
+            bool targetGlueEnabled = targetShape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
+
+            if (!sourceGlueEnabled || !targetGlueEnabled)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("One or both shapes are not gluing-enabled. Connector will not be attached.");
+                return;
             }
+
+            // Add a dynamic connector shape (position will be adjusted after connecting)
+            long connectorId = page.AddShape(0, 0, "Dynamic connector");
+            Shape connector = page.Shapes.GetShape(connectorId);
+
+            // Optional: set a routing style for the connector
+            connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+
+            // Connect the source shape's bottom to the target shape's top using the connector
+            page.ConnectShapesViaConnector(
+                sourceShape.ID,
+                ConnectionPointPlace.Bottom,
+                targetShape.ID,
+                ConnectionPointPlace.Top,
+                connectorId);
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Connector attached and diagram saved successfully.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

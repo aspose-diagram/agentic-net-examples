@@ -1,28 +1,31 @@
-using System;
 using System.IO;
+using System;
+using Aspose.Diagram;
 
-class Program
+class ThemeCloneExample
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load the diagram
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Identify source and target pages (by index or name)
-            int sourcePageIndex = 0;   // first page – adjust as needed
-            int targetPageIndex = 1;   // page to receive the theme – adjust as needed
+            // Identify source and target pages by their indexes (0‑based)
+            int sourcePageIndex = 0;   // page from which to copy the theme
+            int targetPageIndex = 1;   // page to which the theme will be applied
 
-            Aspose.Diagram.Page sourcePage = diagram.Pages[sourcePageIndex];
-            Aspose.Diagram.Page targetPage = diagram.Pages[targetPageIndex];
+            // Get the Page objects
+            Page sourcePage = diagram.Pages[sourcePageIndex];
+            Page targetPage = diagram.Pages[targetPageIndex];
 
-            // Copy the theme (pagesheet) from the source page to the target page
-            targetPage.PageSheet.Copy(sourcePage.PageSheet);
+            // Clone the theme settings from the source page to the target page
+            // The Page.Copy method copies the pagesheet, which includes theme information.
+            targetPage.Copy(sourcePage);
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

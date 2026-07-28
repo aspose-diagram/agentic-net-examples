@@ -4,10 +4,10 @@ display_name: Working With Layers
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.5.0
+version: 26.7.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-06-23
+generated: 2026-07-28
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.5.0 |
+| Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-06-23 |
+| Last Updated | 2026-07-28 |
 
 ## Persona
 
@@ -63,10 +63,10 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 30 | Core diagram API |
 | `System` | 30 | Console, Math, DateTime, Exception |
-| `Aspose.Diagram.Saving` | 16 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.IO` | 15 | File, Stream, Path, Directory operations |
-| `System.Collections.Generic` | 4 | List, Dictionary, HashSet |
-| `System.Linq` | 2 | LINQ queries on collections |
+| `System.IO` | 21 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 18 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 6 | List, Dictionary, HashSet |
+| `System.Linq` | 4 | LINQ queries on collections |
 | `System.Text.Json` | 1 | JSON serialization |
 
 ## Common Code Pattern
@@ -98,14 +98,14 @@ class Program
 
 | File | Key APIs | Task |
 |------|----------|------|
-| [add-a-custom-tag-to-the-legal-layer-and-retrieve-it-during-runtime-for-compliance-checks.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/add-a-custom-tag-to-the-legal-layer-and-retrieve-it-during-runtime-for-compliance-checks.cs) | `Diagram`, `Page`, `Pages` | Add a custom tag to the legal layer and retrieve it during runtime for compliance checks |
+| [add-a-custom-tag-to-the-legal-layer-and-retrieve-it-during-runtime-for-compliance-checks.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/add-a-custom-tag-to-the-legal-layer-and-retrieve-it-during-runtime-for-compliance-checks.cs) | `Diagram`, `Pages`, `Save` | Add a custom tag to the legal layer and retrieve it during runtime for compliance checks |
 | [add-a-new-layer-named-annotations-to-an-existing-diagram-and-set-its-color-to-blue.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/add-a-new-layer-named-annotations-to-an-existing-diagram-and-set-its-color-to-blue.cs) | `Diagram`, `Pages`, `Save` | Add a new layer named annotations to an existing diagram and set its color to blue |
 | [apply-a-custom-metadata-property-to-the-security-layer-for-downstream-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/apply-a-custom-metadata-property-to-the-security-layer-for-downstream-processing.cs) | `Diagram`, `Pages`, `Save` | Apply a custom metadata property to the security layer for downstream processing |
 | [apply-a-drop-shadow-effect-to-every-shape-within-the-ui-layer-using-layer-settings.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/apply-a-drop-shadow-effect-to-every-shape-within-the-ui-layer-using-layer-settings.cs) | `Diagram`, `Pages`, `Save` | Apply a drop shadow effect to every shape within the ui layer using layer settings |
 | [change-the-fill-color-of-all-shapes-in-the-marketing-layer-to-light-gray.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/change-the-fill-color-of-all-shapes-in-the-marketing-layer-to-light-gray.cs) | `Diagram`, `Pages`, `Save` | Change the fill color of all shapes in the marketing layer to light gray |
 | [clone-the-draft-layer-rename-the-clone-to-final-and-preserve-its-shape-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/clone-the-draft-layer-rename-the-clone-to-final-and-preserve-its-shape-properties.cs) | `Diagram`, `Pages`, `Save` | Clone the draft layer rename the clone to final and preserve its shape properties |
 | [copy-all-shapes-from-the-design-layer-into-a-newly-created-layer-called-prototype.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/copy-all-shapes-from-the-design-layer-into-a-newly-created-layer-called-prototype.cs) | `Diagram`, `Pages`, `Save` | Copy all shapes from the design layer into a newly created layer called prototype |
-| [create-a-new-diagram-that-contains-only-the-shapes-from-the-export-layer-of-an-existing-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/create-a-new-diagram-that-contains-only-the-shapes-from-the-export-layer-of-an-existing-file.cs) | `Diagram`, `Page`, `Shapes` | Create a new diagram that contains only the shapes from the export layer of an existing file |
+| [create-a-new-diagram-that-contains-only-the-shapes-from-the-export-layer-of-an-existing-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/create-a-new-diagram-that-contains-only-the-shapes-from-the-export-layer-of-an-existing-file.cs) | `Diagram`, `diagram` | Create a new diagram that contains only the shapes from the export layer of an existing file |
 | [create-a-snapshot-image-of-the-diagram-with-only-the-presentation-layer-visible.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/create-a-snapshot-image-of-the-diagram-with-only-the-presentation-layer-visible.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Create a snapshot image of the diagram with only the presentation layer visible |
 | [delete-the-layer-obsolete-and-permanently-remove-its-associated-shapes-from-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/delete-the-layer-obsolete-and-permanently-remove-its-associated-shapes-from-the-diagram.cs) | `Diagram`, `Pages`, `Save` | Delete the layer obsolete and permanently remove its associated shapes from the diagram |
 | [detect-and-remove-any-orphaned-shapes-that-are-not-assigned-to-any-layer.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/detect-and-remove-any-orphaned-shapes-that-are-not-assigned-to-any-layer.cs) | `Diagram`, `Pages`, `Save` | Detect and remove any orphaned shapes that are not assigned to any layer |
@@ -215,7 +215,6 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 - `Diagram`
 - `ImageSaveOptions`
-- `Page`
 - `Pages`
 - `PdfSaveOptions`
 - `SVGSaveOptions`
@@ -238,7 +237,7 @@ Frequently asked questions about **Working With Layers** in **Aspose.Diagram for
 
 **Q: How do I get started with Working With Layers in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.5.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -270,4 +269,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-06-23 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-07-28 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

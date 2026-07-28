@@ -1,56 +1,105 @@
-using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (placeholder for the provided load rule)
-            // {LoadDiagram}
-            // The loaded diagram should be assigned to the variable 'diagram'
-            Diagram diagram = /* loaded diagram */ null;
-
-            // Retrieve source and target shapes (example IDs: 1 and 2)
-            Shape sourceShape = diagram.Pages[0].Shapes.GetShape(1);
-            Shape targetShape = diagram.Pages[0].Shapes.GetShape(2);
-
-            // Copy custom data cells from source to target using the Shape.Copy method (rule‑based)
-            targetShape.Copy(sourceShape);
-
-            // Verify that the custom data cells have been copied correctly
-            bool dataCellsEqual = targetShape.Data1 == sourceShape.Data1 &&
-                                  targetShape.Data2 == sourceShape.Data2 &&
-                                  targetShape.Data3 == sourceShape.Data3;
-
-            // Verify that custom properties (Props) have been copied correctly
-            bool propsEqual = targetShape.Props.Count == sourceShape.Props.Count;
-            if (propsEqual)
+            try
             {
-                for (int i = 0; i < sourceShape.Props.Count; i++)
+
+                // Paths for input and output Visio files
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the source diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Work with the first page
+                Page page = diagram.Pages[0];
+
+                // Retrieve the source shape (assumes shape with ID 1 exists)
+                Shape sourceShape = page.Shapes.GetShape(1);
+
+                // Determine master name for the new shape
+                string masterName = sourceShape.Master != null ? sourceShape.Master.Name : "Rectangle";
+
+                // Add a new shape on the same page, offset vertically to avoid overlap
+                long newShapeId = page.AddShape(
+                    sourceShape.XForm.PinX.Value,
+                    sourceShape.XForm.PinY.Value + 2.0,
+                    masterName);
+
+                // Retrieve the newly added shape instance
+                Shape targetShape = page.Shapes.GetShape((int)newShapeId);
+
+                // ----- Copy simple custom data cells (Data1, Data2, Data3) -----
+                targetShape.Data1 = sourceShape.Data1;
+                targetShape.Data2 = sourceShape.Data2;
+                targetShape.Data3 = sourceShape.Data3;
+
+                // ----- Copy user‑defined cells (Users collection) -----
+                foreach (User srcUser in sourceShape.Users)
                 {
-                    if (targetShape.Props[i].Label != sourceShape.Props[i].Label ||
-                        targetShape.Props[i].Value != sourceShape.Props[i].Value)
+                    User newUser = new User
                     {
-                        propsEqual = false;
-                        break;
+                        Name = srcUser.Name,
+                        NameU = srcUser.NameU
+                    };
+                    newUser.Value.Val = srcUser.Value.Val;
+                    newUser.Prompt.Value = srcUser.Prompt.Value;
+
+                    targetShape.Users.Add(newUser);
+                }
+
+                // ----- Verify that the data was copied correctly -----
+                bool integrityOk = true;
+
+                // Verify Data1‑Data3
+                if (targetShape.Data1 != sourceShape.Data1) integrityOk = false;
+                if (targetShape.Data2 != sourceShape.Data2) integrityOk = false;
+                if (targetShape.Data3 != sourceShape.Data3) integrityOk = false;
+
+                // Verify Users collection
+                if (targetShape.Users.Count != sourceShape.Users.Count)
+                {
+                    integrityOk = false;
+                }
+                else
+                {
+                    for (int i = 0; i < sourceShape.Users.Count; i++)
+                    {
+                        User src = sourceShape.Users[i];
+                        User tgt = targetShape.Users[i];
+
+                        if (src.Name != tgt.Name ||
+                            src.NameU != tgt.NameU ||
+                            src.Value.Val != tgt.Value.Val ||
+                            src.Prompt.Value != tgt.Prompt.Value)
+                        {
+                            integrityOk = false;
+                            break;
+                        }
                     }
                 }
+
+                // Report result
+                if (!integrityOk)
+                {
+                    throw new Exception("Data integrity verification failed after copying custom cells.");
+                }
+                else
+                {
+                    Console.WriteLine("Custom data cells copied successfully and verified.");
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            Console.WriteLine($"Data cells copied correctly: {dataCellsEqual}");
-            Console.WriteLine($"Custom properties copied correctly: {propsEqual}");
-
-            // Save the modified diagram (placeholder for the provided save rule)
-            // {SaveDiagram}
-
-        }
-        catch (System.NullReferenceException ex)
-        {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

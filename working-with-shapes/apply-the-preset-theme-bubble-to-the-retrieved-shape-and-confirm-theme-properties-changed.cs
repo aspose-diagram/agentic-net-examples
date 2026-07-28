@@ -1,6 +1,7 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,22 +11,32 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first page
+            // Access the first page
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape from the page (index may be adjusted as needed)
-            Shape shape = page.Shapes[1];
+            // Retrieve a shape by its ID (example ID = 1)
+            long shapeId = 1;
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
+            {
+                Console.WriteLine($"Shape with ID {shapeId} not found.");
+                return;
+            }
 
-            // Apply the preset theme "Bubble" to the shape
+            // Apply the "Bubble" preset theme to the shape
             shape.PresetTheme = PresetThemeValue.Bubble;
+            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
 
-            // Confirm that the theme was set (property is write‑only, so we rely on successful assignment)
-            Console.WriteLine($"Preset theme 'Bubble' applied to shape with ID {shape.ID}.");
+            Console.WriteLine("Preset theme 'Bubble' applied to the shape.");
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram to verify that the theme change persists
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

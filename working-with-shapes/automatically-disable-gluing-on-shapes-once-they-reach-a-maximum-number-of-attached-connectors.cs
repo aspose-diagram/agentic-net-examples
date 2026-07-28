@@ -1,58 +1,58 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Manipulation;
 
 class Program
-{
-    // Maximum number of connectors allowed to be glued to a shape.
-    const int MaxConnectors = 3;
-
-    static void Main()
     {
-        try
+        // Maximum number of connectors allowed to be glued to a shape
+        const int MaxAllowedConnectors = 3;
+
+        static void Main(string[] args)
         {
+            // Expect input and output file paths as arguments
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramGlueControl <inputVisioFile> <outputVisioFile>");
+                return;
+            }
 
-            // Load an existing Visio diagram.
-            // Replace "input.vsdx" with the path to your diagram file.
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-            // Iterate through all pages in the diagram.
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page.
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip connector shapes themselves (1‑D shapes).
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Skip connector shapes themselves (1-D shapes)
                     if (shape.OneD)
                         continue;
 
-                    // Retrieve IDs of all 1‑D connectors glued to this shape.
+                    // Get IDs of connectors glued to this shape
                     long[] gluedConnectorIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
 
-                    // If the number of glued connectors exceeds the allowed maximum,
-                    // disable dynamic gluing for this shape.
-                    if (gluedConnectorIds != null && gluedConnectorIds.Length > MaxConnectors)
+                    int gluedCount = gluedConnectorIds?.Length ?? 0;
+
+                    // If the number of glued connectors exceeds the limit, disable dynamic glue
+                    if (gluedCount >= MaxAllowedConnectors)
                     {
-                        // Set GlueType to prevent further dynamic glue operations.
+                        // Set GlueType to NoAllowDynamicGlue to prevent further gluing
                         shape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
-                    }
-                    else
-                    {
-                        // Ensure gluing is allowed when under the limit.
-                        shape.Misc.GlueType.Value = GlueTypeValue.AllowDynamicGlue;
+                        Console.WriteLine($"Shape ID {shape.ID} glue disabled (attached connectors: {gluedCount}).");
                     }
                 }
             }
 
-            // Save the modified diagram.
-            // Replace "output.vsdx" with the desired output file path.
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
         }
     }
-}

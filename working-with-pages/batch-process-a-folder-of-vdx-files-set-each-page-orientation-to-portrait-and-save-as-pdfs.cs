@@ -4,51 +4,62 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        // Folder containing VDX files – modify as needed
-        string inputFolder = @"C:\VisioFiles";
-
-        if (!Directory.Exists(inputFolder))
+        static void Main(string[] args)
         {
-            Console.WriteLine($"Folder not found: {inputFolder}");
-            return;
-        }
+            // Determine the folder to process: use first argument if provided, otherwise current directory
+            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
 
-        // Get all VDX files in the folder
-        string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx");
-
-        foreach (string vdxPath in vdxFiles)
-        {
-            try
+            if (!Directory.Exists(folderPath))
             {
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(vdxPath))
-                {
-                    // Set each page's print orientation to Portrait
-                    foreach (Page page in diagram.Pages)
-                    {
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-                    }
-
-                    // Configure PDF save options
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.DefaultFont = "Arial";
-
-                    // Determine output PDF file name
-                    string pdfPath = Path.ChangeExtension(vdxPath, ".pdf");
-
-                    // Save the diagram as PDF
-                    diagram.Save(pdfPath, pdfOptions);
-
-                    Console.WriteLine($"Converted: {Path.GetFileName(vdxPath)} → {Path.GetFileName(pdfPath)}");
-                }
+                Console.WriteLine($"Folder does not exist: {folderPath}");
+                return;
             }
-            catch (Exception ex)
+
+            // Get all .vdx files in the folder (non‑recursive)
+            string[] vdxFiles = Directory.GetFiles(folderPath, "*.vdx", SearchOption.TopDirectoryOnly);
+
+            if (vdxFiles.Length == 0)
             {
-                Console.WriteLine($"Error processing '{vdxPath}': {ex.Message}");
+                Console.WriteLine("No VDX files found in the specified folder.");
+                return;
+            }
+
+            foreach (string vdxFile in vdxFiles)
+            {
+                try
+                {
+                    // Load the Visio diagram using the VDX format
+                    using (Diagram diagram = new Diagram(vdxFile, LoadFileFormat.Vdx))
+                    {
+                        // Set each page's print orientation to Portrait
+                        foreach (Page page in diagram.Pages)
+                        {
+                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                        }
+
+                        // Prepare PDF save options
+                        PdfSaveOptions pdfOptions = new PdfSaveOptions
+                        {
+                            // Ensure the format is explicitly set (required when Aspose.Pdf is also referenced)
+                            SaveFormat = SaveFileFormat.Pdf,
+                            // Optional: specify a default font to avoid missing‑font issues
+                            DefaultFont = "Arial"
+                        };
+
+                        // Determine output PDF file path (same name, .pdf extension)
+                        string pdfFile = Path.ChangeExtension(vdxFile, ".pdf");
+
+                        // Save the diagram as PDF using the options
+                        diagram.Save(pdfFile, pdfOptions);
+
+                        Console.WriteLine($"Converted '{Path.GetFileName(vdxFile)}' to PDF successfully.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{vdxFile}': {ex.Message}");
+                }
             }
         }
     }
-}

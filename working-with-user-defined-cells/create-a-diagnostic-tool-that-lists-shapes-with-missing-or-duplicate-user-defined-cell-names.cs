@@ -1,85 +1,86 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Expect the Visio file path as the first argument
-            if (args.Length == 0)
-            {
-                Console.WriteLine("Usage: UserDefinedCellDiagnostic <visio-file-path>");
-                return;
-            }
-
-            string filePath = args[0];
-
-            // Load the diagram (no LoadOptions needed)
-            Diagram diagram;
             try
             {
-                diagram = new Diagram(filePath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Path to the Visio file (VSDX, VSD, etc.). Pass as first argument or edit the default value.
+                string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(visioPath);
+
+                // Lists to hold diagnostic information.
+                var shapesWithNoUserCells = new List<string>();
+                var shapesWithDuplicateUserCells = new List<string>();
+
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip logically deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Dictionaries to track user-defined cell names within the current shape
-                    var nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                    var missingNames = new List<string>();
-
-                    foreach (User userCell in shape.Users)
+                    // Iterate through all shapes on the page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Determine the identifier for the user-defined cell
-                        string name = !string.IsNullOrWhiteSpace(userCell.NameU)
-                                      ? userCell.NameU
-                                      : userCell.Name;
+                        // Retrieve the collection of user-defined cells.
+                        var userCells = shape.Users;
 
-                        // If both Name and NameU are empty, consider it missing
-                        if (string.IsNullOrWhiteSpace(name))
+                        // If there are no user-defined cells, record the shape.
+                        if (userCells == null || userCells.Count == 0)
                         {
-                            missingNames.Add("(Unnamed)");
+                            shapesWithNoUserCells.Add($"{page.NameU} -> {shape.NameU} (ID:{shape.ID})");
                             continue;
                         }
 
-                        // Count occurrences to detect duplicates
-                        if (nameCounts.ContainsKey(name))
-                            nameCounts[name]++;
-                        else
-                            nameCounts[name] = 1;
-                    }
-
-                    // Report missing user-defined cell names
-                    if (missingNames.Count > 0)
-                    {
-                        Console.WriteLine($"Shape ID {shape.ID} (NameU: {shape.NameU}) has missing user-defined cell names:");
-                        foreach (var missing in missingNames)
+                        // Gather the names of the user cells.
+                        var userNames = new List<string>();
+                        foreach (User user in userCells)
                         {
-                            Console.WriteLine($"  - {missing}");
+                            // The universal name of the user cell.
+                            string nameU = user.NameU;
+                            if (!string.IsNullOrEmpty(nameU))
+                            {
+                                userNames.Add(nameU);
+                            }
                         }
-                    }
 
-                    // Report duplicate user-defined cell names
-                    foreach (var kvp in nameCounts)
-                    {
-                        if (kvp.Value > 1)
+                        // Detect duplicate names within the same shape.
+                        var duplicateNames = userNames
+                            .GroupBy(n => n)
+                            .Where(g => g.Count() > 1)
+                            .Select(g => g.Key)
+                            .ToList();
+
+                        if (duplicateNames.Count > 0)
                         {
-                            Console.WriteLine($"Shape ID {shape.ID} (NameU: {shape.NameU}) has duplicate user-defined cell name \"{kvp.Key}\" ({kvp.Value} occurrences).");
+                            string dupList = string.Join(", ", duplicateNames);
+                            shapesWithDuplicateUserCells.Add($"{page.NameU} -> {shape.NameU} (ID:{shape.ID}) : {dupList}");
                         }
                     }
                 }
+
+                // Output the diagnostic results.
+                Console.WriteLine("=== Shapes with NO user-defined cells ===");
+                if (shapesWithNoUserCells.Count == 0)
+                    Console.WriteLine("None");
+                else
+                    shapesWithNoUserCells.ForEach(Console.WriteLine);
+
+                Console.WriteLine();
+                Console.WriteLine("=== Shapes with DUPLICATE user-defined cell names ===");
+                if (shapesWithDuplicateUserCells.Count == 0)
+                    Console.WriteLine("None");
+                else
+                    shapesWithDuplicateUserCells.ForEach(Console.WriteLine);
+
             }
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
+    }
     }

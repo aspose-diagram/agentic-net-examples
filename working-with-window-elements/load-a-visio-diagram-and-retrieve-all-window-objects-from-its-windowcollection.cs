@@ -9,23 +9,22 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            string filePath = "sample.vsdx";
-            Diagram diagram = new Diagram(filePath);
+            // Path to the Visio file
+            string filePath = "input.vsdx";
 
-            // Retrieve the collection of Window objects
-            WindowCollection windows = diagram.Windows;
-
-            // Iterate through all windows in the collection
-            for (int i = 0; i < windows.Count; i++)
+            // Load the diagram using the provided constructor
+            using (Diagram diagram = new Diagram(filePath))
             {
-                Window win = windows[i];
-                // Example: display the window's ID and type
-                Console.WriteLine($"Window {i}: ID = {win.ID}, Type = {win.WindowType}");
-            }
+                // Retrieve the collection of Window objects
+                WindowCollection windows = diagram.Windows;
 
-            // Clean up resources
-            diagram.Dispose();
+                // Iterate through the collection and output basic information
+                for (int i = 0; i < windows.Count; i++)
+                {
+                    Window win = windows[i];
+                    Console.WriteLine($"Window {i}: ID = {win.ID}, Type = {win.WindowType}");
+                }
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,135 +1,96 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-namespace GeometryExport
+namespace ShapeGeometryExport
 {
-    // DTO for a single geometry segment
-    public class SegmentDto
-    {
-        public string Type { get; set; }
-        public double? X { get; set; }
-        public double? Y { get; set; }
-    }
-
-    // DTO for a geometry (collection of segments)
+    // DTO for a geometry section
     public class GeomDto
     {
         public List<SegmentDto> Segments { get; set; } = new();
     }
 
-    class Program
+    // DTO for a single segment (MoveTo, LineTo, etc.)
+    public class SegmentDto
     {
-        static void Main(string[] args)
+        public string Type { get; set; } = string.Empty;
+        public double X { get; set; }
+        public double Y { get; set; }
+    }
+
+    public class Program
+    {
+        public static void Main()
         {
-            // Expected arguments: <diagramPath> <shapeId> <outputJsonPath>
-            if (args.Length < 3)
-            {
-                Console.WriteLine("Usage: GeometryExport <diagramPath> <shapeId> <outputJsonPath>");
-                return;
-            }
-
-            string diagramPath = args[0];
-            if (!File.Exists(diagramPath))
-            {
-                Console.Error.WriteLine($"File not found: {diagramPath}");
-                return;
-            }
-
-            if (!long.TryParse(args[1], out long shapeId))
-            {
-                Console.WriteLine("Invalid shapeId.");
-                return;
-            }
-
-            string outputJsonPath = args[2];
-
-            Diagram diagram;
             try
             {
-                diagram = new Diagram(diagramPath);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-                return;
-            }
 
-            Shape targetShape = null;
-            foreach (Page page in diagram.Pages)
-            {
-                try
+                // Load the Visio diagram (replace with your file path)
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Get the first page
+                Page page = diagram.Pages[0];
+
+                // Retrieve the first shape on the page
+                Shape targetShape = null;
+                foreach (Shape s in page.Shapes)
                 {
-                    targetShape = page.Shapes.GetShape(shapeId);
-                    if (targetShape != null)
-                        break;
+                    targetShape = s;
+                    break;
                 }
-                catch
+
+                if (targetShape == null)
                 {
-                    // Ignore pages where the shape is not present
+                    Console.WriteLine("No shape found on the first page.");
+                    return;
                 }
-            }
 
-            if (targetShape == null)
-            {
-                Console.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
-                return;
-            }
+                // Extract geometry data
+                List<GeomDto> geometry = new();
 
-            List<GeomDto> geometry = new();
-
-            foreach (Geom geom in targetShape.Geoms)
-            {
-                GeomDto geomDto = new();
-
-                foreach (object segment in geom.CoordinateCol)
+                foreach (Geom geom in targetShape.Geoms)
                 {
-                    SegmentDto segDto = new()
-                    {
-                        Type = segment.GetType().Name
-                    };
+                    GeomDto geomDto = new GeomDto();
 
-                    PropertyInfo propX = segment.GetType().GetProperty("X");
-                    if (propX != null)
+                    foreach (object seg in geom.CoordinateCol)
                     {
-                        object xValueObj = propX.GetValue(segment);
-                        PropertyInfo innerVal = xValueObj?.GetType().GetProperty("Value");
-                        if (innerVal != null)
+                        if (seg is MoveTo move)
                         {
-                            segDto.X = (double?)innerVal.GetValue(xValueObj);
+                            geomDto.Segments.Add(new SegmentDto
+                            {
+                                Type = "MoveTo",
+                                X = move.X.Value,
+                                Y = move.Y.Value
+                            });
                         }
+                        else if (seg is LineTo line)
+                        {
+                            geomDto.Segments.Add(new SegmentDto
+                            {
+                                Type = "LineTo",
+                                X = line.X.Value,
+                                Y = line.Y.Value
+                            });
+                        }
+                        // Additional segment types (ArcTo, CubicBezierTo, etc.) can be handled here
                     }
 
-                    PropertyInfo propY = segment.GetType().GetProperty("Y");
-                    if (propY != null)
-                    {
-                        object yValueObj = propY.GetValue(segment);
-                        PropertyInfo innerVal = yValueObj?.GetType().GetProperty("Value");
-                        if (innerVal != null)
-                        {
-                            segDto.Y = (double?)innerVal.GetValue(yValueObj);
-                        }
-                    }
-
-                    geomDto.Segments.Add(segDto);
+                    geometry.Add(geomDto);
                 }
 
-                geometry.Add(geomDto);
-            }
-
-            try
-            {
+                // Serialize to JSON
                 string json = JsonSerializer.Serialize(geometry, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(outputJsonPath, json);
-                Console.WriteLine($"Geometry exported to {outputJsonPath}");
+
+                // Output JSON (could be written to a file instead)
+                Console.WriteLine(json);
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"Error writing JSON: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
+    }
     }
 }

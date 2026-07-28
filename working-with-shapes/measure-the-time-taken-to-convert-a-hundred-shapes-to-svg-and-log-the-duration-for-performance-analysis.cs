@@ -1,72 +1,47 @@
 using System;
 using System.Diagnostics;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ShapeToSvgPerformance
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main()
         {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Load the Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Get the first page (automatically created)
+            Page page = diagram.Pages[0];
 
-            // Prepare SVG save options (customize if needed)
-            SVGSaveOptions svgOptions = new SVGSaveOptions
+            // Add 100 rectangle shapes to the page
+            for (int i = 0; i < 100; i++)
             {
-                // Example: export hidden pages as well
-                ExportHiddenPage = true
-            };
+                // Position shapes in a grid to avoid overlap
+                double pinX = (i % 10) * 2.0 + 1.0; // X coordinate
+                double pinY = (i / 10) * 2.0 + 1.0; // Y coordinate
+                double width = 1.5;
+                double height = 1.0;
 
-            // Collect up to 100 shapes from the diagram (across all pages)
-            var shapesToConvert = new System.Collections.Generic.List<Shape>();
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    shapesToConvert.Add(shape);
-                    if (shapesToConvert.Count >= 100)
-                        break;
-                }
-                if (shapesToConvert.Count >= 100)
-                    break;
+                // DrawRectangle creates a shape on the page
+                page.DrawRectangle(pinX, pinY, width, height);
             }
 
-            // Ensure we have shapes to process
-            if (shapesToConvert.Count == 0)
+            // Prepare SVG save options (default settings)
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+            // Measure the time taken to export all shapes to individual SVG files
+            Stopwatch sw = Stopwatch.StartNew();
+
+            foreach (Shape shape in page.Shapes)
             {
-                Console.WriteLine("No shapes found in the diagram.");
-                return;
+                // Export each shape to a separate SVG file named by its ID
+                string outputPath = $"shape_{shape.ID}.svg";
+                shape.ToSvg(outputPath, svgOptions);
             }
 
-            // Measure the conversion time
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            for (int i = 0; i < shapesToConvert.Count; i++)
-            {
-                Shape shape = shapesToConvert[i];
-                // Generate a unique SVG file name for each shape
-                string svgFileName = Path.Combine("OutputSvgs", $"Shape_{i + 1}.svg");
-
-                // Ensure the output directory exists
-                Directory.CreateDirectory(Path.GetDirectoryName(svgFileName));
-
-                // Convert the shape to SVG using the provided ToSvg method
-                shape.ToSvg(svgFileName, svgOptions);
-            }
-
-            stopwatch.Stop();
+            sw.Stop();
 
             // Log the duration
-            Console.WriteLine($"Converted {shapesToConvert.Count} shapes to SVG in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Exported {page.Shapes.Count} shapes to SVG in {sw.Elapsed.TotalSeconds:F2} seconds.");
         }
     }
-}

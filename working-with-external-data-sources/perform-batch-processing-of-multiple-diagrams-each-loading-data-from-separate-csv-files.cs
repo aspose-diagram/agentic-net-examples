@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,94 +7,67 @@ class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Define input directories
+            string diagramsFolder = @"C:\Diagrams";
+            string csvFolder = @"C:\CsvData";
+            string outputFolder = @"C:\ProcessedDiagrams";
+
+            // Ensure output directory exists
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
+
+            // Get all Visio files (e.g., .vsdx) in the diagrams folder
+            string[] diagramFiles = Directory.GetFiles(diagramsFolder, "*.vsdx");
+
+            foreach (string diagramPath in diagramFiles)
             {
-
-                // Input folder containing diagram files (.vsdx) and CSV files.
-                string inputFolder = @"C:\Diagrams\Input";
-                // Output folder for processed diagrams.
-                string outputFolder = @"C:\Diagrams\Output";
-
-                // Ensure output folder exists.
-                if (!Directory.Exists(outputFolder))
-                    Directory.CreateDirectory(outputFolder);
-
-                // Get all diagram files in the input folder.
-                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-
-                foreach (string diagramPath in diagramFiles)
+                try
                 {
-                    try
+                    // Determine corresponding CSV file (same base name)
+                    string baseName = Path.GetFileNameWithoutExtension(diagramPath);
+                    string csvPath = Path.Combine(csvFolder, baseName + ".csv");
+
+                    if (!File.Exists(csvPath))
                     {
-                        // Load the diagram.
-                        Diagram diagram = new Diagram(diagramPath);
-
-                        // Determine corresponding CSV file (same file name, .csv extension).
-                        string csvPath = Path.ChangeExtension(diagramPath, ".csv");
-                        if (!File.Exists(csvPath))
-                        {
-                            Console.WriteLine($"CSV file not found for diagram: {Path.GetFileName(diagramPath)}. Skipping.");
-                            continue;
-                        }
-
-                        // Read CSV data.
-                        List<string[]> csvRows = new List<string[]>();
-                        using (var reader = new StreamReader(csvPath))
-                        {
-                            string line;
-                            while ((line = reader.ReadLine()) != null)
-                            {
-                                // Simple split on commas; does not handle quoted commas.
-                                string[] columns = line.Split(',');
-                                csvRows.Add(columns);
-                            }
-                        }
-
-                        // Example processing: update the first shape on the first page with the first CSV row (if any).
-                        if (csvRows.Count > 0 && diagram.Pages.Count > 0)
-                        {
-                            Page firstPage = diagram.Pages[0];
-                            // Retrieve the first shape (ID 1 is usually the background; find a visible shape).
-                            Shape targetShape = null;
-                            foreach (Shape shape in firstPage.Shapes)
-                            {
-                                if (shape.Del == BOOL.False && shape.OneD == false)
-                                {
-                                    targetShape = shape;
-                                    break;
-                                }
-                            }
-
-                            if (targetShape != null)
-                            {
-                                // Clear existing text.
-                                targetShape.Text.Value.Clear();
-
-                                // Concatenate CSV columns into a single line of text.
-                                string newText = string.Join(" ", csvRows[0]);
-                                targetShape.Text.Value.Add(new Txt(newText));
-                            }
-                        }
-
-                        // Save the processed diagram to the output folder with the same file name.
-                        string outputPath = Path.Combine(outputFolder, Path.GetFileName(diagramPath));
-                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                        Console.WriteLine($"Processed and saved diagram: {Path.GetFileName(outputPath)}");
+                        Console.WriteLine($"CSV file not found for diagram '{baseName}'. Skipping.");
+                        continue;
                     }
-                    catch (Exception ex)
+
+                    // Load the diagram
+                    Diagram diagram = new Diagram(diagramPath);
+
+                    // Read CSV content (use first line as example data)
+                    string[] csvLines = File.ReadAllLines(csvPath);
+                    string csvData = csvLines.Length > 0 ? csvLines[0] : string.Empty;
+
+                    // Update shape named "DataPlaceholder" on each page with CSV data
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Log any errors for the current diagram.
-                        Console.WriteLine($"Error processing diagram '{Path.GetFileName(diagramPath)}': {ex.Message}");
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            if (shape.NameU != null && shape.NameU.Equals("DataPlaceholder", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Clear existing text and add new text from CSV
+                                shape.Text.Value.Clear();
+                                shape.Text.Value.Add(new Txt(csvData));
+                            }
+                        }
                     }
+
+                    // Save the updated diagram as PDF
+                    string outputPath = Path.Combine(outputFolder, baseName + ".pdf");
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.DefaultFont = "Arial";
+                    diagram.Save(outputPath, pdfOptions);
+
+                    Console.WriteLine($"Processed and saved: {outputPath}");
                 }
-
-                Console.WriteLine("Batch processing completed.");
-
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing diagram '{diagramPath}': {ex.Message}");
+                }
             }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
-    }
+
+            Console.WriteLine("Batch processing completed.");
+        }
     }

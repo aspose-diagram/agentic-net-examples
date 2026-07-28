@@ -1,80 +1,59 @@
 using System;
 using System.IO;
-using System.Xml;
+using System.Xml.Linq;
 using Aspose.Diagram;
 
-class VisioShapeExtractor
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the Visio file to be processed
-            string visioPath = "input.vsdx";
-
-            // Path where the resulting XML will be saved
-            string xmlOutputPath = "shapes.xml";
-
-            // Load the Visio diagram using the Diagram constructor (load rule)
-            Diagram diagram = new Diagram(visioPath);
-
-            // Create an XmlWriter for efficient XML generation
-            XmlWriterSettings settings = new XmlWriterSettings
+            try
             {
-                Indent = true,
-                Encoding = System.Text.Encoding.UTF8
-            };
 
-            using (XmlWriter writer = XmlWriter.Create(xmlOutputPath, settings))
-            {
-                // Start the root element
-                writer.WriteStartDocument();
-                writer.WriteStartElement("Shapes");
+                // Input Visio file path
+                string visioPath = "input.vsdx";
+                // Output XML file path
+                string xmlOutputPath = "shapeData.xml";
 
-                // Iterate through each page in the diagram
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(visioPath);
+
+                // Create the root element for the XML document
+                XElement root = new XElement("DiagramData");
+
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the current page
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Write a Shape element with its ID attribute
-                        writer.WriteStartElement("Shape");
-                        writer.WriteAttributeString("ID", shape.ID.ToString());
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Write Data1, Data2, Data3 elements if they contain values
-                        if (!string.IsNullOrEmpty(shape.Data1))
-                        {
-                            writer.WriteElementString("Data1", shape.Data1);
-                        }
+                        // Create an XML element for the shape
+                        XElement shapeElement = new XElement("Shape",
+                            new XAttribute("ID", shape.ID),
+                            new XAttribute("Data1", shape.Data1 ?? string.Empty),
+                            new XAttribute("Data2", shape.Data2 ?? string.Empty),
+                            new XAttribute("Data3", shape.Data3 ?? string.Empty)
+                        );
 
-                        if (!string.IsNullOrEmpty(shape.Data2))
-                        {
-                            writer.WriteElementString("Data2", shape.Data2);
-                        }
-
-                        if (!string.IsNullOrEmpty(shape.Data3))
-                        {
-                            writer.WriteElementString("Data3", shape.Data3);
-                        }
-
-                        // Close the Shape element
-                        writer.WriteEndElement();
+                        // Add the shape element to the root
+                        root.Add(shapeElement);
                     }
                 }
 
-                // Close the root element
-                writer.WriteEndElement();
-                writer.WriteEndDocument();
+                // Build the XDocument and save to file
+                XDocument doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
+                doc.Save(xmlOutputPath);
+
+                Console.WriteLine($"Shape data exported to '{xmlOutputPath}'.");
+
             }
-
-            // Optional: inform the user that the process completed
-            Console.WriteLine($"Shape data extracted to '{xmlOutputPath}'.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

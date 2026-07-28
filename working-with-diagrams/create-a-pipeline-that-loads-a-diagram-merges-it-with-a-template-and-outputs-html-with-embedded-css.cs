@@ -3,39 +3,36 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramToHtmlPipeline
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the main diagram file
-            Diagram mainDiagram = new Diagram("MainDiagram.vsdx");
+            // Paths to the source diagram, the template diagram, and the output HTML file.
+            string diagramPath = "input.vsdx";
+            string templatePath = "template.vsdx";
+            string outputPath = "merged.html";
 
-            // Load the template diagram file
-            Diagram templateDiagram = new Diagram("TemplateDiagram.vst");
+            // Load the main diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Merge the template into the main diagram
-            // Combine adds all pages, masters, shapes from the template to the main diagram
-            mainDiagram.Combine(templateDiagram);
+            // Load the template diagram.
+            Diagram template = new Diagram(templatePath);
 
-            // Configure HTML save options to embed CSS and resources in a single file
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-            {
-                SaveAsSingleFile = true,          // Embed all resources (CSS, images) into one HTML file
-                SaveToolBar = false,              // Optional: hide the toolbar in the output
-                EnlargePage = true,               // Optional: enlarge page to fit content
-                PageCount = int.MaxValue,         // Render all pages
-                Resolution = 96                    // Set resolution (dpi) for generated images
-            };
+            // Merge the template into the main diagram.
+            diagram.Combine(template);
 
-            // Save the merged diagram as HTML with embedded CSS
-            mainDiagram.Save("MergedDiagram.html", htmlOptions);
+            // Set HTML export options.
+            // SaveAsSingleFile embeds CSS, images and other resources into the HTML file.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.SaveAsSingleFile = true;
+            // Provide a fallback font in case the diagram contains characters without a matching font.
+            htmlOptions.DefaultFont = "Arial";
 
-            // Clean up resources
-            mainDiagram.Dispose();
-            templateDiagram.Dispose();
+            // Export the merged diagram to HTML.
+            diagram.Save(outputPath, htmlOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -7,70 +7,82 @@ class Program
     {
         static void Main()
         {
+            // Paths – adjust as needed
+            string inputVisioPath = "input.vsdx";
+            string outputPngPath = "output.png";
+            string logoImagePath = "logo.png";
+
+            // Load the Visio diagram
+            Diagram diagram;
             try
             {
+                diagram = new Diagram(inputVisioPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
 
-                // Paths – adjust as needed
-                string inputVisioPath = "input.vsdx";
-                string outputPngPath = "output.png";
-                string logoImagePath = "logo.png";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputVisioPath);
-
-                // Iterate through all pages and shapes to find placeholders
-                foreach (Page page in diagram.Pages)
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Collect placeholder shape IDs first to avoid modifying collection during iteration
-                    var placeholderIds = new System.Collections.Generic.List<long>();
+                    // Identify placeholder shapes by checking their text content
+                    string shapeText = shape.Text.Value.Text;
+                    if (string.IsNullOrWhiteSpace(shapeText))
+                        continue;
 
-                    foreach (Shape shape in page.Shapes)
+                    if (shapeText.IndexOf("PLACEHOLDER", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        // Get plain text of the shape
-                        string shapeText = shape.Text.Value.Text;
-
-                        // Identify placeholder shapes (e.g., containing "[Logo]")
-                        if (!string.IsNullOrEmpty(shapeText) && shapeText.Contains("[Logo]"))
-                        {
-                            placeholderIds.Add(shape.ID);
-                        }
-                    }
-
-                    // Replace each placeholder with the actual logo image
-                    foreach (long placeholderId in placeholderIds)
-                    {
-                        // Retrieve the placeholder shape
-                        Shape placeholder = page.Shapes.GetShape(placeholderId);
-
-                        // Preserve position and size
-                        double pinX = placeholder.XForm.PinX.Value;
-                        double pinY = placeholder.XForm.PinY.Value;
-                        double width = placeholder.XForm.Width.Value;
-                        double height = placeholder.XForm.Height.Value;
+                        // Preserve position and size of the placeholder
+                        double pinX = shape.XForm.PinX.Value;
+                        double pinY = shape.XForm.PinY.Value;
+                        double width = shape.XForm.Width.Value;
+                        double height = shape.XForm.Height.Value;
 
                         // Hide the placeholder shape
-                        placeholder.Del = BOOL.True;
+                        shape.Del = BOOL.True;
 
-                        // Insert the logo image at the same location and size
-                        using (FileStream logoStream = new FileStream(logoImagePath, FileMode.Open, FileAccess.Read))
+                        // Insert the logo image at the same location
+                        try
                         {
-                            // AddShape overload that accepts an image stream
-                            page.AddShape(pinX, pinY, width, height, logoStream);
+                            using (FileStream imgStream = new FileStream(logoImagePath, FileMode.Open, FileAccess.Read))
+                            {
+                                // AddShape overload that accepts an image stream creates a foreign (image) shape
+                                long logoShapeId = page.AddShape(pinX, pinY, width, height, imgStream);
+                                // Optional: retrieve the newly added shape if further adjustments are needed
+                                // Shape logoShape = page.Shapes.GetShape(logoShapeId);
+                            }
+                        }
+                        catch (Exception imgEx)
+                        {
+                            Console.WriteLine($"Failed to insert logo for shape ID {shape.ID}: {imgEx.Message}");
                         }
                     }
                 }
-
-                // Configure high‑resolution PNG export (e.g., 300 DPI)
-                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                pngOptions.Resolution = 300f; // DPI
-
-                // Save the modified diagram as a PNG image
-                diagram.Save(outputPngPath, pngOptions);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Configure high‑resolution PNG export
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // 300 DPI is a common high‑resolution setting
+                Resolution = 300f,
+                // Export all pages; set to a specific page index if needed
+                // PageIndex = 0
+            };
+
+            // Save the modified diagram as PNG
+            try
+            {
+                diagram.Save(outputPngPath, pngOptions);
+                Console.WriteLine($"Diagram saved successfully to '{outputPngPath}'.");
             }
-    }
+            catch (Exception saveEx)
+            {
+                Console.WriteLine($"Failed to save diagram: {saveEx.Message}");
+            }
+        }
     }

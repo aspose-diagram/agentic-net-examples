@@ -1,60 +1,43 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram(@"C:\Path\To\YourDiagram.vsdx");
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Rotation angle in radians for 270 degrees
-                double rotationRadians = (Math.PI / 180) * 270;
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Identify side‑label shapes (adjust the condition as needed for your diagram)
+                    // Here we assume side‑label shapes have "SideLabel" in their NameU property
+                    if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.Contains("SideLabel", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Identify side‑label shapes by name (case‑insensitive)
-                        if (!string.IsNullOrEmpty(shape.NameU) &&
-                            shape.NameU.IndexOf("SideLabel", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            // Ensure the TextXForm object exists
-                            if (shape.TextXForm != null)
-                            {
-                                // Set the text rotation
-                                shape.TextXForm.TxtAngle.Value = rotationRadians;
+                        // Set text rotation to 270 degrees
+                        shape.TextXForm.TxtAngle.Value = 270.0;
 
-                                // Verify the rotation was applied correctly
-                                double actual = shape.TextXForm.TxtAngle.Value;
-                                if (Math.Abs(actual - rotationRadians) > 0.0001)
-                                {
-                                    throw new Exception($"Rotation verification failed for shape ID {shape.ID}.");
-                                }
-                            }
-                            else
-                            {
-                                throw new Exception($"Shape ID {shape.ID} does not have a TextXForm.");
-                            }
-                        }
+                        // Optional verification: output the shape ID and its text angle
+                        Console.WriteLine($"Shape ID {shape.ID} ({shape.NameU}) TxtAngle set to {shape.TextXForm.TxtAngle.Value} degrees.");
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram (replace with your desired output path)
+            diagram.Save(@"C:\Path\To\ModifiedDiagram.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.DirectoryNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

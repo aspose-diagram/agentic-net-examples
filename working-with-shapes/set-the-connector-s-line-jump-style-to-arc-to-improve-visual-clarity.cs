@@ -1,46 +1,40 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Manipulation;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path to the output Visio file
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Process only connector shapes (1‑D shapes)
-                    if (shape.OneD)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Set the line jump style to Arc for better visual clarity
-                        shape.SetConnectorJumpValue(ConLineJumpCodeValue.Always, ConLineJumpStyleValue.Arc);
+                        // Process only connector shapes (1‑D shapes)
+                        if (shape.OneD)
+                        {
+                            // Set the line jump style to Arc for better visual clarity
+                            shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
+                        }
                     }
                 }
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

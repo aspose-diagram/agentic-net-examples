@@ -2,7 +2,7 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class ApplyStyleWithErrorHandling
 {
     static void Main()
     {
@@ -12,29 +12,37 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Index of the page we want to style (0‑based)
-            int pageIndex = 5;
+            // Define the page index we want to style
+            int targetPageIndex = 5; // Example index that may not exist
 
-            // IDs of the styles to apply (use -1 for defaults you don't want to change)
-            int textStyleId = 1;
-            int lineStyleId = 2;
-            int fillStyleId = 3;
+            // Define style IDs (use -1 for defaults if not needed)
+            int textStyleId = -1;
+            int lineStyleId = -1;
+            int fillStyleId = -1;
 
             try
             {
-                // Attempt to retrieve the page. GetPage throws if the page does not exist.
-                Page page = diagram.Pages.GetPage(pageIndex);
+                // Attempt to retrieve the page by its index.
+                // GetPage throws an exception if the page does not exist.
+                Page page = diagram.Pages.GetPage(targetPageIndex);
 
-                // Apply the specified styles to the whole page.
+                // Apply the style to the retrieved page.
                 page.ApplyStyle(textStyleId, lineStyleId, fillStyleId);
+
+                Console.WriteLine($"Style applied successfully to page index {targetPageIndex}.");
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                // Specific handling for out‑of‑range page index
+                Console.WriteLine($"Error: Page index {targetPageIndex} is out of range. {ex.Message}");
             }
             catch (Exception ex)
             {
-                // Handle the case where the page index is invalid or any other error occurs.
-                Console.WriteLine($"Error applying style to page index {pageIndex}: {ex.Message}");
+                // General fallback for any other errors
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
             }
 
-            // Save the modified diagram
+            // Optionally save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

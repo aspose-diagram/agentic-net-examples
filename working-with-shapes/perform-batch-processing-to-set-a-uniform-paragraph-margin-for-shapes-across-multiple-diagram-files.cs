@@ -1,63 +1,72 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        // Uniform paragraph margin in inches
+        private const double ParagraphMarginInches = 0.1;
+
+        static void Main(string[] args)
         {
             try
             {
 
-                // Folder containing source Visio files
-                string inputFolder = @"C:\Visio\Input";
-                // Folder where modified files will be saved
-                string outputFolder = @"C:\Visio\Output";
+                // Input folder containing Visio files (VSDX). Adjust as needed.
+                string inputFolder = @"C:\VisioFiles\Input";
+                // Output folder where modified files will be saved.
+                string outputFolder = @"C:\VisioFiles\Output";
 
-                // Ensure output directory exists
+                // Ensure output directory exists.
                 if (!Directory.Exists(outputFolder))
+                {
                     Directory.CreateDirectory(outputFolder);
+                }
 
-                // Uniform margin value in inches (e.g., 0.1 inch)
-                double uniformMargin = 0.1;
+                // Get all VSDX files in the input folder.
+                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
 
-                // Process each .vsdx file in the input folder
-                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
                 foreach (string filePath in diagramFiles)
                 {
-                    // Load the diagram
-                    using (Diagram diagram = new Diagram(filePath))
+                    try
                     {
-                        // Iterate through all pages
+                        // Load the diagram.
+                        Diagram diagram = new Diagram(filePath);
+
+                        // Iterate through all pages.
                         foreach (Page page in diagram.Pages)
                         {
-                            // Iterate through all shapes on the page
+                            // Iterate through all shapes on the page.
                             foreach (Shape shape in page.Shapes)
                             {
-                                // Skip deleted shapes
+                                // Skip shapes that are marked as deleted.
                                 if (shape.Del == BOOL.True)
                                     continue;
 
-                                // Apply margin to each paragraph of the shape
+                                // Ensure the shape has at least one paragraph.
+                                if (shape.Paras == null || shape.Paras.Count == 0)
+                                    continue;
+
+                                // Apply uniform margins to each paragraph of the shape.
                                 foreach (Para para in shape.Paras)
                                 {
-                                    // Set left, right, and first line indent to the uniform margin
-                                    para.IndLeft.Value = uniformMargin;
-                                    para.IndRight.Value = uniformMargin;
-                                    para.IndFirst.Value = uniformMargin;
+                                    para.IndLeft.Value = ParagraphMarginInches;
+                                    para.IndRight.Value = ParagraphMarginInches;
+                                    para.IndFirst.Value = ParagraphMarginInches;
                                 }
                             }
                         }
 
-                        // Build output file path (preserve original file name)
+                        // Save the modified diagram to the output folder using the same file name.
                         string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-
-                        // Save the modified diagram using the correct overload
                         diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    }
 
-                    Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
+                        Console.WriteLine($"Processed and saved: {outputPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                    }
                 }
 
                 Console.WriteLine("Batch processing completed.");

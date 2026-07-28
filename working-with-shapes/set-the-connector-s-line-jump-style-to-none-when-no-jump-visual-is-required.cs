@@ -1,34 +1,39 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input and output file paths (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Iterate through all pages in the diagram
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
                     // Identify connector shapes (1‑D shapes)
                     if (shape.OneD)
                     {
-                        // Set the connector's line jump style to "none" (page default)
+                        // Set the line‑jump style to the default (no visual jumps)
                         shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.PageDefault;
                     }
                 }
             }
 
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,35 +1,35 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Path to the source Visio diagram file.
-                string inputPath = "input.vsdx";
+            // Input Visio file path
+            string inputPath = "input.vsdx";
 
-                // Path where the EMF file will be saved.
-                string outputPath = "output.emf";
+            // Output EMF file path
+            string outputPath = "output.emf";
 
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(inputPath);
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Configure EMF export options.
-                // PrintSaveOptions is used for EMF rendering.
-                PrintSaveOptions saveOptions = new PrintSaveOptions();
-                saveOptions.SaveFormat = SaveFileFormat.Emf;
+            // Configure EMF export options
+            PrintSaveOptions saveOptions = new PrintSaveOptions();
+            saveOptions.SaveFormat = SaveFileFormat.Emf;
 
-                // Export the diagram to EMF.
-                diagram.Save(outputPath, saveOptions);
+            // Save the diagram as EMF
+            diagram.Save(outputPath, saveOptions);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

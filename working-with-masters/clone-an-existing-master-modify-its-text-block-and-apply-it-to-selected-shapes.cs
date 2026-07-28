@@ -9,58 +9,79 @@ class Program
             try
             {
 
-                // Paths – adjust as needed
+                // Input and output file paths
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
-
-                // Name of the master to clone
-                string masterToCloneName = "Rectangle";
 
                 // Load the existing diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Retrieve the original master by name
-                Master? originalMaster = diagram.Masters.GetMasterByName(masterToCloneName);
+                // -----------------------------------------------------------------
+                // 1. Retrieve the master to be cloned (e.g., a rectangle master)
+                // -----------------------------------------------------------------
+                string masterToCloneName = "Rectangle";
+                Master originalMaster = diagram.Masters.GetMasterByName(masterToCloneName);
                 if (originalMaster == null)
                 {
                     throw new Exception($"Master '{masterToCloneName}' not found in the diagram.");
                 }
 
-                // Clone the master (deep copy)
+                // -----------------------------------------------------------------
+                // 2. Clone the master and give it a new unique name
+                // -----------------------------------------------------------------
                 Master clonedMaster = (Master)originalMaster.Clone();
-
-                // Give the cloned master a unique name
-                clonedMaster.Name = masterToCloneName + "_Cloned";
+                clonedMaster.Name = "Rectangle_Clone";
+                clonedMaster.NameU = "Rectangle_Clone";
 
                 // Add the cloned master to the diagram's master collection
                 diagram.Masters.Add(clonedMaster);
 
-                // Modify the TextBlock of each shape inside the cloned master
-                foreach (Shape masterShape in clonedMaster.Shapes)
+                // -----------------------------------------------------------------
+                // 3. Modify the text block of the cloned master
+                //    (Assuming the master contains at least one shape)
+                // -----------------------------------------------------------------
+                if (clonedMaster.Shapes.Count > 0)
                 {
-                    // Example modifications: set margins, text direction, vertical alignment
-                    masterShape.TextBlock.LeftMargin = new DoubleValue(4, MeasureConst.PT);
-                    masterShape.TextBlock.RightMargin = new DoubleValue(4, MeasureConst.PT);
-                    masterShape.TextBlock.TopMargin = new DoubleValue(2, MeasureConst.PT);
-                    masterShape.TextBlock.BottomMargin = new DoubleValue(2, MeasureConst.PT);
+                    Shape masterShape = clonedMaster.Shapes[0];
 
+                    // Clear any existing text
+                    masterShape.Text.Value.Clear();
+
+                    // Add new text to the master shape
+                    masterShape.Text.Value.Add(new Txt("Cloned Master Text"));
+
+                    // Example: set text direction to horizontal
                     masterShape.TextBlock.TextDirection.Value = TextDirectionValue.Horizontal;
-                    masterShape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
+
+                    // Example: set margins (4 points each)
+                    double marginPoints = 4.0;
+                    masterShape.TextBlock.LeftMargin.Value = marginPoints;
+                    masterShape.TextBlock.RightMargin.Value = marginPoints;
+                    masterShape.TextBlock.TopMargin.Value = marginPoints;
+                    masterShape.TextBlock.BottomMargin.Value = marginPoints;
+                }
+                else
+                {
+                    throw new Exception("Cloned master does not contain any shapes to modify.");
                 }
 
-                // Apply the cloned master to selected shapes.
-                // In this example, we replace all shapes that originally used the master we cloned.
-                Page firstPage = diagram.Pages[0];
-                foreach (Shape shape in firstPage.Shapes)
+                // -----------------------------------------------------------------
+                // 4. Apply the cloned master to selected shapes on the first page
+                //    (Here we select shapes whose universal name is "TargetShape")
+                // -----------------------------------------------------------------
+                Page page = diagram.Pages[0];
+                foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.Master != null && shape.Master.Name == masterToCloneName)
+                    if (shape.NameU == "TargetShape")
                     {
                         // Assign the cloned master to the shape
                         shape.Master = clonedMaster;
                     }
                 }
 
-                // Save the modified diagram
+                // -----------------------------------------------------------------
+                // 5. Save the modified diagram
+                // -----------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

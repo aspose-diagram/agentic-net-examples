@@ -3,55 +3,54 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the Visio file
-            string visioPath = @"C:\Input\diagram.vsdx";
-
-            // Path to the output log file
-            string logPath = @"C:\Output\UserCellsLog.txt";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            // Prepare the writer
-            using (StreamWriter writer = new StreamWriter(logPath, false))
+            try
             {
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+
+                // Input Visio file path (default if not provided)
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Output log file path (default if not provided)
+                string outputPath = args.Length > 1 ? args[1] : "UserCellsLog.txt";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Open a StreamWriter to write the log
+                using (StreamWriter writer = new StreamWriter(outputPath))
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Write shape identifier
-                        writer.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
-
-                        // Iterate through user-defined cells (Users collection)
-                        foreach (User userCell in shape.Users)
+                        // Iterate through all shapes on the page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // User cell name (universal name) and its current value
-                            string cellName = userCell.NameU;
-                            string cellValue = userCell.Value?.ToString() ?? string.Empty;
+                            // Skip shapes that are marked as deleted
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                            writer.WriteLine($"  User Cell: {cellName} = {cellValue}");
+                            // Iterate through user-defined cells (Users collection)
+                            foreach (User userCell in shape.Users)
+                            {
+                                // Prefer universal name if available
+                                string cellName = !string.IsNullOrEmpty(userCell.NameU) ? userCell.NameU : userCell.Name;
+                                // Get the current value (may be empty)
+                                string cellValue = userCell.Value?.Val ?? string.Empty;
+
+                                // Write a line to the log file
+                                writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, User Cell: {cellName}, Value: {cellValue}");
+                            }
                         }
-
-                        writer.WriteLine(); // Blank line for readability
                     }
                 }
+
+                Console.WriteLine($"User-defined cells have been logged to: {outputPath}");
+
             }
-
-            // Optional: inform that logging is complete
-            Console.WriteLine("User-defined cells have been logged to: " + logPath);
-
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

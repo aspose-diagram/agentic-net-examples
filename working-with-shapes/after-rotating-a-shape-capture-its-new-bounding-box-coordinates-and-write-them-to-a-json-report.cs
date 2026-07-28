@@ -10,46 +10,64 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram
+                // Load the Visio diagram
                 string inputPath = "input.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
-                // Access the first page
+                // Get the first non-deleted shape on the first page
                 Page page = diagram.Pages[0];
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Del == BOOL.False)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
 
-                // Retrieve the first shape on the page
-                Shape shape = page.Shapes[0];
+                if (targetShape == null)
+                {
+                    throw new Exception("No suitable shape found to rotate.");
+                }
 
-                // Rotate the shape by 45 degrees (as per rule, SetAngle uses degrees)
-                shape.SetAngle(45);
+                // Rotate the shape (angle in degrees)
+                double newAngleDegrees = 45.0;
+                targetShape.XForm.Angle.Value = newAngleDegrees;
 
-                // Capture the new bounding box coordinates and size
-                double pinX = shape.XForm.PinX.Value;
-                double pinY = shape.XForm.PinY.Value;
-                double width = shape.XForm.Width.Value;
-                double height = shape.XForm.Height.Value;
-                double angle = shape.XForm.Angle.Value; // angle in radians after rotation
+                // Refresh shape data to ensure geometry is updated
+                targetShape.RefreshData();
 
-                // Prepare a simple report object
+                // Calculate bounding box coordinates
+                double pinX = targetShape.XForm.PinX.Value;
+                double pinY = targetShape.XForm.PinY.Value;
+                double width = targetShape.XForm.Width.Value;
+                double height = targetShape.XForm.Height.Value;
+
+                double left = pinX - width / 2.0;
+                double right = pinX + width / 2.0;
+                double top = pinY + height / 2.0;
+                double bottom = pinY - height / 2.0;
+
+                // Prepare JSON report
                 var report = new
                 {
-                    ShapeId = shape.ID,
-                    PinX = pinX,
-                    PinY = pinY,
-                    Width = width,
-                    Height = height,
-                    AngleRadians = angle
+                    ShapeId = targetShape.ID,
+                    BoundingBox = new
+                    {
+                        Left = left,
+                        Right = right,
+                        Top = top,
+                        Bottom = bottom
+                    },
+                    RotationDegrees = newAngleDegrees
                 };
 
-                // Serialize the report to JSON with indentation
                 string json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText("bounding_box_report.json", json);
 
-                // Write the JSON report to a file
-                string outputReportPath = "shape_report.json";
-                File.WriteAllText(outputReportPath, json);
-
-                // Optionally, save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Optionally save the modified diagram
+                diagram.Save("rotated_output.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

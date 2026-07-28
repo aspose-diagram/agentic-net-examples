@@ -11,34 +11,43 @@ class Program
 
                 // Input Visio file path
                 string inputPath = "input.vsdx";
-
                 // Output PDF file path
                 string outputPath = "output.pdf";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                try
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Load the Visio diagram
+                    Diagram diagram = new Diagram(inputPath);
+
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Iterate through all shapes on the page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Skip deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                        // Set line pattern to dashed
-                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                            // Apply dashed line pattern to the shape's line
+                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                        }
                     }
+
+                    // Configure PDF save options (optional: set default font)
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.DefaultFont = "Arial";
+
+                    // Save the modified diagram as PDF
+                    diagram.Save(outputPath, pdfOptions);
+
+                    Console.WriteLine("Diagram processed and saved to PDF successfully.");
                 }
-
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set format tracker
-
-                // Save the modified diagram as PDF
-                diagram.Save(outputPath, pdfOptions);
+                catch (Exception ex)
+                {
+                    Console.WriteLine("An error occurred: " + ex.Message);
+                    throw;
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)

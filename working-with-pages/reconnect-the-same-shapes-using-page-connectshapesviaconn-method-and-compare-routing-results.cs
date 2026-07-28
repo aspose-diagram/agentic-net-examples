@@ -1,8 +1,8 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Manipulation;
 
 class Program
 {
@@ -11,96 +11,83 @@ class Program
         try
         {
 
-            // Path to a stencil file that contains the required masters.
-            // Adjust this path to point to a valid .vss/.vssx file on your system.
-            string stencilPath = @"C:\Stencils\Basic_U.vssx";
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // -----------------------------------------------------------------
-            // Create first diagram with straight connector routing.
-            // -----------------------------------------------------------------
-            Diagram diagramStraight = new Diagram();
-            // Load masters from the stencil.
-            diagramStraight.AddMaster(stencilPath, "Rectangle");
-            diagramStraight.AddMaster(stencilPath, "Dynamic connector");
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
 
-            // Use the first page (index 0).
-            Page pageStraight = diagramStraight.Pages[0];
+                // Find two non‑connector shapes on the page
+                Shape shape1 = null;
+                Shape shape2 = null;
+                foreach (Shape s in page.Shapes)
+                {
+                    if (!s.OneD) // non‑1D shapes are regular shapes
+                    {
+                        if (shape1 == null)
+                            shape1 = s;
+                        else if (shape2 == null)
+                        {
+                            shape2 = s;
+                            break;
+                        }
+                    }
+                }
 
-            // Add two rectangle shapes.
-            long rect1Id = diagramStraight.AddShape(2.0, 5.0, "Rectangle", 0);
-            long rect2Id = diagramStraight.AddShape(8.0, 5.0, "Rectangle", 0);
+                if (shape1 == null || shape2 == null)
+                {
+                    Console.WriteLine("Unable to find two regular shapes to connect.");
+                    return;
+                }
 
-            // Retrieve shape objects for further manipulation (optional).
-            Shape rect1Straight = pageStraight.Shapes.GetShape(rect1Id);
-            Shape rect2Straight = pageStraight.Shapes.GetShape(rect2Id);
+                long shape1Id = shape1.ID;
+                long shape2Id = shape2.ID;
 
-            // Add a dynamic connector shape.
-            long connectorStraightId = diagramStraight.AddShape(0, 0, "Dynamic connector", 0);
-            Shape connectorStraight = pageStraight.Shapes.GetShape(connectorStraightId);
+                // Add a dynamic connector shape (connector)
+                long connectorId = diagram.AddShape(0, 0, "Dynamic connector", 0);
+                Shape connector = page.Shapes.GetShape(connectorId);
 
-            // Set connector routing to straight lines.
-            connectorStraight.SetConnectorsType(ConnectorsTypeValue.StraightLines);
+                // Record the initial routing type of the connector
+                ConnectorsTypeValue initialRouting = connector.GetConnectorsType();
 
-            // Connect the two rectangles using the connector.
-            pageStraight.ConnectShapesViaConnector(
-                rect1Straight.ID,
-                ConnectionPointPlace.Right,
-                rect2Straight.ID,
-                ConnectionPointPlace.Left,
-                connectorStraight.ID);
+                Console.WriteLine($"Initial connector routing: {initialRouting}");
 
-            // Save the diagram to PNG for visual comparison.
-            ImageSaveOptions straightOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            diagramStraight.Save("StraightConnector.png", straightOptions);
+                // Connect the two shapes using the connector
+                page.ConnectShapesViaConnector(shape1Id, ConnectionPointPlace.Right,
+                                              shape2Id, ConnectionPointPlace.Bottom,
+                                              connectorId);
 
-            // -----------------------------------------------------------------
-            // Create second diagram with curved connector routing.
-            // -----------------------------------------------------------------
-            Diagram diagramCurved = new Diagram();
-            diagramCurved.AddMaster(stencilPath, "Rectangle");
-            diagramCurved.AddMaster(stencilPath, "Dynamic connector");
+                // Change the connector routing to curved lines
+                connector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
+                ConnectorsTypeValue afterRouting = connector.GetConnectorsType();
 
-            Page pageCurved = diagramCurved.Pages[0];
+                Console.WriteLine($"Connector routing after change: {afterRouting}");
 
-            // Add the same rectangle shapes at identical positions.
-            long rect1IdC = diagramCurved.AddShape(2.0, 5.0, "Rectangle", 0);
-            long rect2IdC = diagramCurved.AddShape(8.0, 5.0, "Rectangle", 0);
+                // Re‑connect the same shapes with the updated routing
+                // (First remove existing connection by deleting the connector)
+                page.Shapes.Remove(connector);
+                // Add a new connector for the second connection
+                long newConnectorId = diagram.AddShape(0, 0, "Dynamic connector", 0);
+                Shape newConnector = page.Shapes.GetShape(newConnectorId);
+                newConnector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
 
-            Shape rect1Curved = pageCurved.Shapes.GetShape(rect1IdC);
-            Shape rect2Curved = pageCurved.Shapes.GetShape(rect2IdC);
+                page.ConnectShapesViaConnector(shape1Id, ConnectionPointPlace.Right,
+                                              shape2Id, ConnectionPointPlace.Bottom,
+                                              newConnectorId);
 
-            // Add a dynamic connector shape.
-            long connectorCurvedId = diagramCurved.AddShape(0, 0, "Dynamic connector", 0);
-            Shape connectorCurved = pageCurved.Shapes.GetShape(connectorCurvedId);
-
-            // Set connector routing to curved lines.
-            connectorCurved.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
-
-            // Connect the two rectangles using the connector.
-            pageCurved.ConnectShapesViaConnector(
-                rect1Curved.ID,
-                ConnectionPointPlace.Right,
-                rect2Curved.ID,
-                ConnectionPointPlace.Left,
-                connectorCurved.ID);
-
-            // Save the diagram to PNG for visual comparison.
-            ImageSaveOptions curvedOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            diagramCurved.Save("CurvedConnector.png", curvedOptions);
-
-            // -----------------------------------------------------------------
-            // Output simple textual comparison.
-            // -----------------------------------------------------------------
-            Console.WriteLine("Connector routing comparison:");
-            Console.WriteLine($"Straight connector type set to: {connectorStraight.GetConnectorsType()}");
-            Console.WriteLine($"Curved connector type set to: {connectorCurved.GetConnectorsType()}");
-            Console.WriteLine("Saved diagrams: StraightConnector.png and CurvedConnector.png");
-            Console.WriteLine("Open the PNG files to visually compare the routing results.");
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            }
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

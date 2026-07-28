@@ -1,44 +1,32 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Load an existing Visio diagram (replace with your file path)
-                using (Diagram diagram = new Diagram("input.vsdx"))
-                {
-                    // Access the first page in the diagram
-                    Page page = diagram.Pages[0];
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-                    // Retrieve the first shape on the page (if any)
-                    Shape shape = null;
-                    foreach (Shape s in page.Shapes)
-                    {
-                        shape = s;
-                        break;
-                    }
+            // Select the shape you want to inspect.
+            // Here we take the first shape on the first page (skip the page shape at index 0).
+            Shape shape = diagram.Pages[0].Shapes[1];
 
-                    if (shape == null)
-                    {
-                        Console.WriteLine("No shapes found on the first page.");
-                        return;
-                    }
+            // Retrieve the gradient angle of the shape's fill.
+            // GradientAngle is a DoubleValue; its numeric value is accessed via the Value property.
+            double gradientAngle = shape.Fill.GradientFill.GradientAngle?.Value ?? 0.0;
 
-                    // Read the gradient angle (in degrees) from the shape's fill settings
-                    // GradientAngle is a cell; its numeric value is accessed via .Value
-                    double gradientAngle = shape.Fill.GradientFill.GradientAngle.Value;
+            // Output the angle.
+            Console.WriteLine($"Gradient Angle: {gradientAngle}");
 
-                    Console.WriteLine($"Gradient angle of shape ID {shape.ID} is {gradientAngle} degrees.");
-                }
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

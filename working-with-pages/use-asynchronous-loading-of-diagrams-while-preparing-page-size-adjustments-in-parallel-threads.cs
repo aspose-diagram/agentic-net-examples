@@ -1,17 +1,24 @@
 using System;
 using System.IO;
-using System.Linq;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Threading;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     // Asynchronously loads a Visio diagram from the specified file path.
-    private static Task<Diagram> LoadDiagramAsync(string filePath)
+    private static async Task<Diagram> LoadDiagramAsync(string filePath)
     {
-        return Task.Run(() => new Diagram(filePath));
+        // Diagram constructor is synchronous; wrap it in Task.Run to avoid blocking the caller.
+        return await Task.Run(() => new Diagram(filePath));
+    }
+
+    // Adjusts the page size to the given width and height (in inches).
+    private static void SetPageSize(Page page, double widthInches, double heightInches)
+    {
+        page.PageSheet.PageProps.PageWidth.Value = widthInches;
+        page.PageSheet.PageProps.PageHeight.Value = heightInches;
     }
 
     static async Task Main(string[] args)
@@ -19,27 +26,28 @@ class Program
         try
         {
 
-            // Input and output file paths (adjust as needed).
+            // Input and output file paths – adjust as needed.
             string inputPath = "input.vsdx";
             string outputPath = "output.vsdx";
 
             // Load the diagram asynchronously.
             Diagram diagram = await LoadDiagramAsync(inputPath);
 
-            // Prepare a list of pages to avoid modifying the collection while iterating in parallel.
-            List<Page> pages = diagram.Pages.Cast<Page>().ToList();
+            // Collect pages into a typed list for Parallel.ForEach (PageCollection is not generic).
+            List<Page> pages = new List<Page>();
+            foreach (Page p in diagram.Pages)
+            {
+                pages.Add(p);
+            }
 
-            // Adjust each page size to A4 (8.27 x 11.69 inches) in parallel.
+            // Adjust each page size in parallel (A4: 8.27 x 11.69 inches).
             Parallel.ForEach(pages, page =>
             {
-                page.PageSheet.PageProps.PageWidth.Value = 8.27;
-                page.PageSheet.PageProps.PageHeight.Value = 11.69;
+                SetPageSize(page, 8.27, 11.69);
             });
 
             // Save the modified diagram back to a Visio file.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Diagram processing completed and saved to: " + outputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,74 +1,47 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram (replace with your actual file path)
+            using (Diagram diagram = new Diagram("input.vsdx"))
             {
+                // Access the first page (index 0)
+                Page page = diagram.Pages[0];
 
-                // Path to the source Visio file (replace with an actual file path)
-                const string inputPath = "input.vsdx";
+                // Retrieve the page's original dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(inputPath))
+                // Helper method to set ScaleX, compute printed dimensions, and display them
+                void ShowPrintedDimensions(double scaleX)
                 {
-                    // Ensure there is at least one page
-                    if (diagram.Pages.Count == 0)
-                    {
-                        throw new Exception("The diagram contains no pages.");
-                    }
+                    // Apply uniform scaling for both X and Y axes
+                    page.PageSheet.PrintProps.ScaleX.Value = scaleX;
+                    page.PageSheet.PrintProps.ScaleY.Value = scaleX;
 
-                    // Work with the first page
-                    Page page = diagram.Pages[0];
+                    // Printed size is the original size multiplied by the scaling factor
+                    double printedWidth = pageWidth * page.PageSheet.PrintProps.ScaleX.Value;
+                    double printedHeight = pageHeight * page.PageSheet.PrintProps.ScaleY.Value;
 
-                    // Retrieve the original page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Access the PrintProps collection for scaling settings
-                    var printProps = page.PageSheet.PrintProps;
-
-                    // --- Scenario 1: ScaleX = 1.0 (100% size) ---
-                    printProps.ScaleX.Value = 1.0;
-                    printProps.ScaleY.Value = 1.0; // keep vertical scaling unchanged
-
-                    double printedWidthFull = pageWidth * printProps.ScaleX.Value;
-                    double printedHeightFull = pageHeight * printProps.ScaleY.Value;
-
-                    Console.WriteLine("ScaleX = 1.0");
-                    Console.WriteLine($"Original page size:  Width = {pageWidth:F2} in, Height = {pageHeight:F2} in");
-                    Console.WriteLine($"Printed size:        Width = {printedWidthFull:F2} in, Height = {printedHeightFull:F2} in");
-                    Console.WriteLine();
-
-                    // --- Scenario 2: ScaleX = 0.5 (50% size) ---
-                    printProps.ScaleX.Value = 0.5;
-                    // ScaleY remains at 1.0 for this comparison
-                    double printedWidthHalf = pageWidth * printProps.ScaleX.Value;
-                    double printedHeightHalf = pageHeight * printProps.ScaleY.Value;
-
-                    Console.WriteLine("ScaleX = 0.5");
-                    Console.WriteLine($"Original page size:  Width = {pageWidth:F2} in, Height = {pageHeight:F2} in");
-                    Console.WriteLine($"Printed size:        Width = {printedWidthHalf:F2} in, Height = {printedHeightHalf:F2} in");
-                    Console.WriteLine();
-
-                    // Simple verification (optional)
-                    if (Math.Abs(printedWidthHalf * 2 - printedWidthFull) > 0.001)
-                    {
-                        throw new Exception("Printed width does not scale as expected.");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Verification passed: Width at 0.5 scale is exactly half of width at 1.0 scale.");
-                    }
+                    Console.WriteLine($"ScaleX = {scaleX}, Printed Width = {printedWidth:F2} inches, Printed Height = {printedHeight:F2} inches");
                 }
 
+                // Compare dimensions for ScaleX = 1.0 and ScaleX = 0.5
+                ShowPrintedDimensions(1.0);
+                ShowPrintedDimensions(0.5);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

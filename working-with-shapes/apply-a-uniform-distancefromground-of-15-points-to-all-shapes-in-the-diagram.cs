@@ -1,44 +1,36 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram from a file
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through every page and every shape on each page
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file (replace with actual file path)
-                string inputPath = "input.vsdx";
-
-                // Path for the modified Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram from the file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Apply a uniform DistanceFromGround of 15 points
-                        shape.ThreeDFormat.DistanceFromGround.Value = 15;
-                    }
+                    // Set the DistanceFromGround (3‑D format) to 15 points for the shape
+                    shape.ThreeDFormat.DistanceFromGround.Value = 15;
                 }
-
-                // Save the updated diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

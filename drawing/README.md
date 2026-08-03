@@ -10,7 +10,7 @@
 | Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-07-28 |
+| Last Updated | 2026-08-03 |
 
 ## What This Category Covers
 
@@ -86,7 +86,7 @@ Aspose.Diagram uses its own `BOOL` enumeration type, not C# `bool`. Use `BOOL.Tr
 
 - [Working With Shapes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-shapes) — shape creation, modification, and styling
 - [Working With Geometry Section](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section) — custom shape geometry
-- [Working With Connectors](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-connectors) — connecting shapes with dynamic connectors
+- [Working With Diagrams](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams) — diagram-level operations and structure
 
 ## Resources
 
@@ -98,4 +98,4 @@ Aspose.Diagram uses its own `BOOL` enumeration type, not C# `bool`. Use `BOOL.Tr
 
 ---
 
-*125 compiler-validated C# examples | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.7.0 | Updated: 2026-07-28*
+*125 compiler-validated C# examples | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.7.0 | Updated: 2026-08-03*

@@ -7,7 +7,7 @@ package: Aspose.Diagram
 version: 26.7.0
 examples: 459
 pass_rate: 100.0
-generated: 2026-07-28
+generated: 2026-08-03
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -23,7 +23,7 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 | Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-07-28 |
+| Last Updated | 2026-08-03 |
 
 ## Persona
 
@@ -746,7 +746,7 @@ A: Use `shape.XForm.Width.Value` and `shape.XForm.Height.Value` — direct `shap
 ## Related Categories
 
 - [Working With Pages](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-pages) — page management and navigation
-- [Working With Connectors](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-connectors) — connecting shapes with dynamic connectors
+- [Working With Diagrams](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams) — diagram-level operations and structure
 - [Working With Text](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text) — text content and formatting
 - [Working With Themes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes) — preset themes and visual styles
 
@@ -762,4 +762,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-07-28 | Examples: 459 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-08-03 | Examples: 459 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

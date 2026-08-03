@@ -5,7 +5,7 @@ framework: net8.0
 version: 26.7.0
 total_examples: 1840
 categories: 31
-generated: 2026-07-28
+generated: 2026-08-03
 ---
 
 # Aspose.Diagram for .NET — Agentic Examples
@@ -23,7 +23,7 @@ generated: 2026-07-28
 | Framework | net8.0 |
 | Total Examples | 1840 |
 | Categories | 31 |
-| Last Updated | 2026-07-28 |
+| Last Updated | 2026-08-03 |
 
 ## Persona
 
@@ -178,7 +178,7 @@ Covers all 31 Aspose.Diagram for .NET task categories: basic operations, shapes,
 | Save as PDF | diagram-conversions | `diagram.Save("out.pdf", new PdfSaveOptions())` |
 | Save as PNG | diagram-conversions | `diagram.Save("out.png", new ImageSaveOptions(SaveFileFormat.Png))` |
 | Add shape | working-with-shapes | `long id = diagram.AddShape(x, y, w, h, master, page)` |
-| Connect shapes | working-with-connectors | `page.ConnectShapesViaConnector(id1, place, id2, place, connId)` |
+| Connect shapes | working-with-diagrams | `page.ConnectShapesViaConnector(id1, place, id2, place, connId)` |
 | Set shape text | working-with-text | `shape.Text.Value.Add(new Txt("text"))` |
 | Apply theme | working-with-themes | `page.PresetTheme = PresetThemeValue.Bubble` |
 | Add page | working-with-pages | `diagram.Pages.Add(new Page())` |
@@ -187,4 +187,4 @@ Covers all 31 Aspose.Diagram for .NET task categories: basic operations, shapes,
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) | Examples: 1840 | Categories: 31 | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) | Updated: 2026-07-28*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) | Examples: 1840 | Categories: 31 | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) | Updated: 2026-08-03*

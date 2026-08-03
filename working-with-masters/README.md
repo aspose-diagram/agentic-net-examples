@@ -10,7 +10,7 @@
 | Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-07-28 |
+| Last Updated | 2026-08-03 |
 
 ## What This Category Covers
 
@@ -98,4 +98,4 @@ Aspose.Diagram uses its own `BOOL` enumeration type, not C# `bool`. Use `BOOL.Tr
 
 ---
 
-*29 compiler-validated C# examples | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.7.0 | Updated: 2026-07-28*
+*29 compiler-validated C# examples | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.7.0 | Updated: 2026-08-03*

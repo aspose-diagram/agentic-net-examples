@@ -7,7 +7,7 @@ package: Aspose.Diagram
 version: 26.7.0
 examples: 125
 pass_rate: 100.0
-generated: 2026-07-28
+generated: 2026-08-03
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -23,7 +23,7 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 | Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-07-28 |
+| Last Updated | 2026-08-03 |
 
 ## Persona
 
@@ -357,7 +357,7 @@ A: Aspose.Diagram uses its own `BOOL` enumeration type, not C# `bool`. Use `BOOL
 
 - [Working With Shapes](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-shapes) — shape creation, modification, and styling
 - [Working With Geometry Section](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section) — custom shape geometry
-- [Working With Connectors](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-connectors) — connecting shapes with dynamic connectors
+- [Working With Diagrams](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-diagrams) — diagram-level operations and structure
 
 ## Category Statistics
 
@@ -371,4 +371,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-07-28 | Examples: 125 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-08-03 | Examples: 125 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

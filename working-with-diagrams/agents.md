@@ -7,7 +7,7 @@ package: Aspose.Diagram
 version: 26.7.0
 examples: 40
 pass_rate: 100.0
-generated: 2026-07-28
+generated: 2026-08-03
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -23,7 +23,7 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 | Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.7.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-07-28 |
+| Last Updated | 2026-08-03 |
 
 ## Persona
 
@@ -271,6 +271,10 @@ A: `SaveFileFormat` enum members use PascalCase in Aspose.Diagram for .NET. Use 
 
 A: Aspose.Diagram uses its own `BOOL` enumeration type, not C# `bool`. Use `BOOL.True` and `BOOL.False` instead of plain `true`/`false` for all Aspose.Diagram BOOL properties.
 
+**Q: How do I connect two shapes with a connector?**
+
+A: Add a connector shape: `Shape connector = new Shape(); long connId = diagram.AddShape(connector, "Dynamic connector", pageIndex);` then call `page.ConnectShapesViaConnector(shape1Id, ConnectionPointPlace.Right, shape2Id, ConnectionPointPlace.Bottom, connId);`
+
 ## Related Categories
 
 - [Basic Operations](https://github.com/aspose-diagram/agentic-net-examples/tree/main/basic-operations) — loading, saving, and basic diagram operations
@@ -289,4 +293,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-07-28 | Examples: 40 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-08-03 | Examples: 40 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

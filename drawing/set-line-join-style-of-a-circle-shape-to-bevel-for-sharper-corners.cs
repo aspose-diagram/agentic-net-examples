@@ -12,17 +12,19 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page of the diagram
+            // Access the first page (you can adjust the index as needed)
             Page page = diagram.Pages[0];
 
-            // Find shapes that use the "Ellipse" master (circle/ellipse shapes)
-            foreach (Shape shape in page.Shapes)
+            // Iterate through shapes to find a circle (ellipse master)
+            foreach (Aspose.Diagram.Shape shape in page.Shapes)
             {
+                // The master name for a circle/ellipse is typically "Ellipse"
                 if (shape.Master != null && shape.Master.Name == "Ellipse")
                 {
-                    // Set line rounding to 0 to achieve a bevel‑like sharp corner effect
+                    // Aspose.Diagram does not expose a LineJoin property.
+                    // To achieve sharper corners on the outline, set the rounding to zero.
                     shape.Line.Rounding.Value = 0;
-                    Console.WriteLine($"Shape ID {shape.ID} line rounding set to 0.");
+                    Console.WriteLine($"Shape ID {shape.ID}: line rounding set to 0 (sharp corners).");
                 }
             }
 

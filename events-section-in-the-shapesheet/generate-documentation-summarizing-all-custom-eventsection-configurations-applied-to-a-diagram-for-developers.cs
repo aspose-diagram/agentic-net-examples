@@ -1,54 +1,65 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the Visio file to analyze
-            string filePath = "input.vsdx";
-
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(filePath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Ensure the shape has an Event section
-                    if (shape.Event == null)
-                        continue;
 
-                    // Local helper to output event information when a formula is present
-                    void PrintEvent(string eventName, string formula)
+                // Path to the Visio diagram; can be passed as a command‑line argument.
+                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+                // Load the diagram.
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
+                {
+                    Console.WriteLine($"Page: {page.Name} (ID: {page.ID})");
+
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (!string.IsNullOrWhiteSpace(formula))
+                        var eventList = new List<(string EventName, string Formula)>();
+
+                        // Check each supported event cell for a non‑empty formula.
+                        if (!string.IsNullOrWhiteSpace(shape.Event.EventXFMod?.Ufe?.F))
+                            eventList.Add(("EventXFMod", shape.Event.EventXFMod.Ufe.F));
+
+                        if (!string.IsNullOrWhiteSpace(shape.Event.EventDblClick?.Ufe?.F))
+                            eventList.Add(("EventDblClick", shape.Event.EventDblClick.Ufe.F));
+
+                        if (!string.IsNullOrWhiteSpace(shape.Event.EventDrop?.Ufe?.F))
+                            eventList.Add(("EventDrop", shape.Event.EventDrop.Ufe.F));
+
+                        if (!string.IsNullOrWhiteSpace(shape.Event.EventMultiDrop?.Ufe?.F))
+                            eventList.Add(("EventMultiDrop", shape.Event.EventMultiDrop.Ufe.F));
+
+                        if (!string.IsNullOrWhiteSpace(shape.Event.TheText?.Ufe?.F))
+                            eventList.Add(("TheText", shape.Event.TheText.Ufe.F));
+
+                        if (!string.IsNullOrWhiteSpace(shape.Event.TheData?.Ufe?.F))
+                            eventList.Add(("TheData", shape.Event.TheData.Ufe.F));
+
+                        // If the shape has any custom event formulas, output them.
+                        if (eventList.Count > 0)
                         {
-                            Console.WriteLine(
-                                $"Page: {page.Name} | Shape ID: {shape.ID} | Shape Name: {shape.Name} | Event: {eventName} | Formula: {formula}");
+                            Console.WriteLine($"  Shape: {shape.Name} (ID: {shape.ID})");
+                            foreach (var ev in eventList)
+                            {
+                                Console.WriteLine($"    {ev.EventName}: \"{ev.Formula}\"");
+                            }
                         }
                     }
-
-                    // Check each supported event cell and output its formula if defined
-                    PrintEvent("EventXFMod", shape.Event.EventXFMod.Ufe.F);
-                    PrintEvent("EventDblClick", shape.Event.EventDblClick.Ufe.F);
-                    PrintEvent("EventDrop", shape.Event.EventDrop.Ufe.F);
-                    PrintEvent("EventMultiDrop", shape.Event.EventMultiDrop.Ufe.F);
-                    PrintEvent("TheText", shape.Event.TheText.Ufe.F);
-                    PrintEvent("TheData", shape.Event.TheData.Ufe.F);
                 }
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

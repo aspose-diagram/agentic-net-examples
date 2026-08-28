@@ -1,85 +1,90 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect: inputPath outputPath watermarkText opacity(0-1) rotationDegrees
+        if (args.Length < 5)
         {
-            // Expected arguments:
-            // args[0] - input Visio file path
-            // args[1] - output Visio file path
-            // args[2] - watermark text
-            // args[3] - opacity (0-100, where 0 = fully transparent, 100 = opaque)
-            // args[4] - rotation in degrees
+            Console.Error.WriteLine("Usage: <inputPath> <outputPath> <watermarkText> <opacity> <rotationDegrees>");
+            return;
+        }
 
-            if (args.Length < 5)
-            {
-                Console.WriteLine("Usage: DiagramWatermark <inputPath> <outputPath> <watermarkText> <opacity> <rotationDegrees>");
-                return;
-            }
+        string inputPath = args[0];
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-            string watermarkText = args[2];
-            if (!double.TryParse(args[3], out double opacity) || opacity < 0 || opacity > 100)
-            {
-                Console.WriteLine("Invalid opacity value. Must be a number between 0 and 100.");
-                return;
-            }
-            if (!double.TryParse(args[4], out double rotationDegrees))
-            {
-                Console.WriteLine("Invalid rotation value.");
-                return;
-            }
+        string outputPath = args[1];
+        string watermarkText = args[2];
+        // Parse opacity (0 = fully transparent, 1 = fully opaque)
+        if (!double.TryParse(args[3], out double opacity) || opacity < 0 || opacity > 1)
+        {
+            Console.Error.WriteLine("Opacity must be a number between 0 and 1.");
+            return;
+        }
+        // Parse rotation in degrees
+        if (!double.TryParse(args[4], out double rotationDeg))
+        {
+            Console.Error.WriteLine("Rotation must be a valid number.");
+            return;
+        }
 
-            // Load the diagram
+        try
+        {
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and add the watermark
+            // Iterate over each page to add the watermark
             foreach (Page page in diagram.Pages)
             {
                 // Retrieve page dimensions (in inches)
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Center position for the watermark
+                // Center position for the text shape
                 double pinX = pageWidth / 2.0;
                 double pinY = pageHeight / 2.0;
 
-                // Use the full page size for the text box so the text can be centered easily
-                double textBoxWidth = pageWidth;
-                double textBoxHeight = pageHeight;
+                // Font settings: Arial, light gray, size 0.5 inches (~36 points)
+                string fontName = "Arial";
+                string fontColor = "#A0A0A0";
+                double fontSizeInches = 0.5;
 
-                // Add the text shape with desired font properties
-                // Font size is specified in inches (points / 72)
-                double fontSizeInPoints = 72; // 1 inch = 72 points
-                double fontSizeInInches = fontSizeInPoints / 72.0;
+                // Add a full‑page text shape; this overload returns a Shape object directly
+                Shape shape = page.AddText(pinX, pinY, pageWidth, pageHeight,
+                                          watermarkText, fontName, fontColor, fontSizeInches);
 
-                Shape watermarkShape = page.AddText(
-                    pinX,
-                    pinY,
-                    textBoxWidth,
-                    textBoxHeight,
-                    watermarkText,
-                    "Calibri",          // Font name
-                    "#808080",          // Font color (gray)
-                    fontSizeInInches    // Font size in inches
-                );
+                // Set fill transparency to achieve the desired opacity (transparency = 1 - opacity)
+                shape.Fill.FillForegndTrans.Value = 1.0 - opacity;
 
-                // Set the rotation (TextXForm uses radians)
-                watermarkShape.TextXForm.TxtAngle.Value = (float)(Math.PI / 180.0 * rotationDegrees);
+                // Remove any line (border) from the shape
+                shape.Line.LinePattern.Value = LinePatternValue.None;
+                shape.Line.LineWeight.Value = 0.0;
 
-                // Apply opacity to the shape's fill (percentage)
-                // This makes the entire shape (including text) semi‑transparent
-                watermarkShape.Fill.FillForegndTrans.Value = opacity;
+                // Rotate the text around its center; TxtAngle expects radians
+                double rotationRad = (Math.PI / 180.0) * rotationDeg;
+                shape.TextXForm.TxtAngle.Value = rotationRad;
 
-                // Optionally, reduce the fill opacity to make the text stand out less
-                // and set the fill color to transparent (no background)
-                watermarkShape.Fill.FillForegnd.Value = "#FFFFFF"; // White fill (will be transparent due to opacity)
+                // Ensure the shape does not interfere with selection (optional)
+                shape.Protection.LockSelect.Value = BOOL.True;
             }
 
-            // Save the modified diagram
+            // Save the modified diagram as VSDX (preserves all features)
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Watermark applied and diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

@@ -13,13 +13,13 @@ class Program
             // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create save options for PNG rendering
-            RenderingSaveOptions pngOptions = (RenderingSaveOptions)SaveOptions.CreateSaveOptions(SaveFileFormat.Png);
-            // Specify a fallback font to use when the original font is missing
-            pngOptions.DefaultFont = "MS Gothic";
+            // Create save options appropriate for PNG format
+            SaveOptions options = SaveOptions.CreateSaveOptions(SaveFileFormat.Png);
+            // Specify a fallback font to use for characters that are missing in the original font
+            options.DefaultFont = "MS Gothic";
 
-            // Render and save the diagram as PNG using the configured options
-            diagram.Save("output.png", pngOptions);
+            // Render and save the diagram as a PNG image using the defined options
+            diagram.Save("output.png", options);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,87 +1,103 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class ThumbnailStreamProvider : IStreamProvider
+namespace DiagramThumbnailHtmlExport
 {
-    private readonly Diagram _diagram;
-
-    public ThumbnailStreamProvider(Diagram diagram)
+    // Custom stream provider that supplies image data for HTML resources
+    public class CustomStreamProvider : IStreamProvider
     {
-        _diagram = diagram ?? throw new ArgumentNullException(nameof(diagram));
-    }
+        private readonly Dictionary<string, byte[]> _resources;
 
-    // Called by Aspose when an external resource (e.g., an image) is requested during HTML export
-    public void InitStream(StreamProviderOptions options)
-    {
-        // Determine which page the image belongs to from the default path (e.g., "page1.png")
-        int pageIndex = 0; // zero‑based
-        if (!string.IsNullOrEmpty(options.DefaultPath))
+        public CustomStreamProvider(Dictionary<string, byte[]> resources)
         {
-            Match m = Regex.Match(options.DefaultPath, @"page(\d+)", RegexOptions.IgnoreCase);
-            if (m.Success && int.TryParse(m.Groups[1].Value, out int pageNumber))
+            _resources = resources ?? new Dictionary<string, byte[]>();
+        }
+
+        // Called by Aspose when a resource stream is required
+        public void InitStream(StreamProviderOptions options)
+        {
+            // options.DefaultPath contains the requested resource name (e.g., "page_0.png")
+            if (options == null) return;
+
+            if (_resources.TryGetValue(options.DefaultPath, out var data))
             {
-                pageIndex = Math.Max(0, pageNumber - 1);
+                // Provide a fresh memory stream containing the image bytes
+                options.Stream = new MemoryStream(data);
+            }
+            else
+            {
+                // If the resource is not found, return an empty stream to avoid errors
+                options.Stream = Stream.Null;
             }
         }
 
-        // Configure image export options for a thumbnail
-        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-        imgOptions.PageIndex = pageIndex;
-        imgOptions.PageCount = 1;
-        imgOptions.Scale = 0.2f; // 20 % of original size
-
-        // Render the page to a memory stream and assign it to the provider
-        MemoryStream ms = new MemoryStream();
-        _diagram.Save(ms, imgOptions);
-        ms.Position = 0;
-        options.Stream = ms;
-
-        // Set a custom base URL for the generated images (optional)
-        options.CustomPath = "thumbnails/";
-    }
-
-    // Called after the HTML renderer finishes reading the stream
-    public void CloseStream(StreamProviderOptions options)
-    {
-        options.Stream?.Dispose();
-        options.Stream = null;
-    }
-}
-
-public class Program
-{
-    public static void Main()
-    {
-        try
+        // Called after the resource has been written; no special cleanup needed here
+        public void CloseStream(StreamProviderOptions options)
         {
+            // Ensure the stream is disposed if it was created
+            options?.Stream?.Dispose();
+        }
+    }
 
-            // Path to the source Visio file
-            string sourcePath = "input.vsdx";
-
-            // Path for the generated HTML file
-            string htmlPath = "output.html";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(sourcePath))
+    public class Program
+    {
+        public static void Main()
+        {
+            try
             {
-                // Configure HTML export options
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new ThumbnailStreamProvider(diagram);
-                htmlOptions.ExportHiddenPage = false; // optional: skip hidden pages
 
-                // Export to HTML; thumbnails will be embedded via the custom stream provider
-                diagram.Save(htmlPath, htmlOptions);
+                // Path to the source Visio diagram
+                const string inputPath = "input.vsdx";
+                // Path for the generated HTML file
+                const string outputHtml = "output.html";
+
+                // Load the diagram
+                using (var diagram = new Diagram(inputPath))
+                {
+                    // Dictionary to hold thumbnail image data keyed by the expected HTML resource name
+                    var thumbnailResources = new Dictionary<string, byte[]>();
+
+                    // Generate a thumbnail for each page
+                    for (int i = 0; i < diagram.Pages.Count; i++)
+                    {
+                        // Configure image export options for a small PNG thumbnail
+                        var imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                        {
+                            PageIndex = i,
+                            PageCount = 1,
+                            Scale = 0.2f // 20% of original size
+                        };
+
+                        // Export the page to a memory stream
+                        using (var ms = new MemoryStream())
+                        {
+                            diagram.Save(ms, imgOptions);
+                            // The HTML exporter expects image files named like "page_0.png", "page_1.png", etc.
+                            string resourceName = $"page_{i}.png";
+                            thumbnailResources[resourceName] = ms.ToArray();
+                        }
+                    }
+
+                    // Set up HTML export options and assign the custom stream provider
+                    var htmlOptions = new HTMLSaveOptions
+                    {
+                        StreamProvider = new CustomStreamProvider(thumbnailResources)
+                    };
+
+                    // Export the diagram to HTML; the images will be supplied by the stream provider
+                    diagram.Save(outputHtml, htmlOptions);
+                }
+
+                Console.WriteLine("HTML export with embedded thumbnails completed successfully.");
+
             }
-
-            Console.WriteLine("HTML export with thumbnails completed.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

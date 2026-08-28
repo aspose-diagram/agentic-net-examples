@@ -8,58 +8,40 @@ class Program
             try
             {
 
-                // Paths for input and output diagrams
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Path to the Visio file
+                string diagramPath = "input.vsdx";
 
-                // Load the diagram from file
-                Diagram diagram = new Diagram(inputPath);
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Work with the first page and first shape (if they exist)
-                if (diagram.Pages.Count > 0 && diagram.Pages[0].Shapes.Count > 0)
+                // Ensure there is at least one page and one shape
+                if (diagram.Pages.Count == 0)
                 {
-                    Shape shape = diagram.Pages[0].Shapes[0];
-                    string fieldName = "CustomField";
-
-                    try
-                    {
-                        // Search for a custom property (Prop) with the specified name
-                        bool found = false;
-                        foreach (Prop prop in shape.Props)
-                        {
-                            if (prop.Name == fieldName)
-                            {
-                                found = true;
-                                Console.WriteLine($"Property '{fieldName}' found with value: {prop.Value.Val}");
-                                break;
-                            }
-                        }
-
-                        // If not found, throw an exception to be caught below
-                        if (!found)
-                        {
-                            throw new InvalidOperationException($"Property '{fieldName}' does not exist on shape ID {shape.ID}.");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // Detailed error logging
-                        Console.WriteLine("=== Error accessing field ===");
-                        Console.WriteLine($"Timestamp   : {DateTime.Now}");
-                        Console.WriteLine($"Shape ID    : {shape.ID}");
-                        Console.WriteLine($"Requested   : {fieldName}");
-                        Console.WriteLine($"Exception   : {ex.GetType().FullName}");
-                        Console.WriteLine($"Message     : {ex.Message}");
-                        Console.WriteLine($"Stack Trace : {ex.StackTrace}");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("The diagram does not contain any pages or shapes.");
+                    Console.WriteLine("The diagram contains no pages.");
+                    return;
                 }
 
-                // Save the diagram to the output file
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Shape shape = diagram.Pages[0].Shapes[0];
+
+                // Attempt to access a field that may not exist
+                try
+                {
+                    // This will throw if the Fields collection is empty
+                    Field targetField = shape.Fields[0];
+
+                    // If no exception, output some details about the field
+                    Console.WriteLine($"Field Index: {targetField.IX}");
+                    Console.WriteLine($"Field Type Value: {(int)targetField.Type.Value}");
+                    Console.WriteLine($"Field Display Value: {targetField.DisplayValue}");
+                }
+                catch (Exception ex)
+                {
+                    // Log detailed error information
+                    Console.WriteLine("Error: Specified field does not exist or could not be accessed.");
+                    Console.WriteLine($"Exception Type: {ex.GetType().FullName}");
+                    Console.WriteLine($"Message: {ex.Message}");
+                    Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)

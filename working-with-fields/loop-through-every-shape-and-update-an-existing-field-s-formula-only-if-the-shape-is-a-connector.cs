@@ -1,49 +1,48 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
+        // Input and output file paths
         string inputPath = "input.vsdx";
-
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
         try
         {
-            // Load the diagram from file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
+            // Iterate through each page and each shape
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify connector shapes (1‑D shapes)
+                    // Process only connector shapes (1‑D shapes)
                     if (shape.OneD)
                     {
                         // Ensure the shape contains at least one field
                         if (shape.Fields != null && shape.Fields.Count > 0)
                         {
-                            // Update the formula of the first existing field
+                            // Update the formula of the first field
                             Field field = shape.Fields[0];
-                            // Use the .Val property to set a new formula string (compatible with current API)
-                            field.Value.Val = "NEWFORMULA()";
+                            // Assign a dynamic formula to the field (using the Val property for compatibility)
+                            field.Value.Val = "Width*Height";
                         }
                     }
                 }
             }
 
-            // Save the modified diagram to a new file
-            string outputPath = "output.vsdx";
+            // Save the modified diagram using the correct overload
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)

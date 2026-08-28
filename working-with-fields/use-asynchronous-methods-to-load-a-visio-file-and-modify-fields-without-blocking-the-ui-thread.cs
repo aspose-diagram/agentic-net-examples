@@ -1,97 +1,65 @@
+using System.IO;
 using System;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 
 class Program
+{
+    // Entry point – async to avoid blocking the thread.
+    static async Task Main(string[] args)
     {
-        // Asynchronous entry point
-        static async Task Main(string[] args)
+        if (args.Length < 2)
         {
-            // Validate arguments
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: VisioAsyncExample <inputVisioPath> <outputVisioPath>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            try
-            {
-                // Load the diagram without blocking the UI thread
-                Diagram diagram = await LoadDiagramAsync(inputPath);
-
-                // Modify a field in the first shape that contains at least one field
-                ModifyFirstShapeField(diagram);
-
-                // Save the modified diagram asynchronously
-                await SaveDiagramAsync(diagram, outputPath);
-
-                Console.WriteLine("Diagram processed and saved successfully.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
+            Console.WriteLine("Usage: <inputVisioPath> <outputVisioPath>");
+            return;
         }
 
-        // Loads a Visio diagram on a background thread
-        private static Task<Diagram> LoadDiagramAsync(string path)
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Load the diagram asynchronously.
+        Diagram diagram = await LoadDiagramAsync(inputPath);
+
+        // Modify text fields in the diagram.
+        ModifyFields(diagram);
+
+        // Save the modified diagram asynchronously.
+        await SaveDiagramAsync(diagram, outputPath);
+
+        Console.WriteLine("Diagram processing completed.");
+    }
+
+    // Asynchronously creates a Diagram instance from a file.
+    private static Task<Diagram> LoadDiagramAsync(string path)
+    {
+        return Task.Run(() => new Diagram(path));
+    }
+
+    // Synchronous field modification – quick operation, no need for async.
+    private static void ModifyFields(Diagram diagram)
+    {
+        foreach (Page page in diagram.Pages)
         {
-            return Task.Run(() =>
-            {
-                // The Diagram constructor loads the file synchronously;
-                // wrapping it in Task.Run makes the call non‑blocking.
-                return new Diagram(path);
-            });
-        }
-
-        // Saves a Visio diagram on a background thread
-        private static Task SaveDiagramAsync(Diagram diagram, string path)
-        {
-            return Task.Run(() =>
-            {
-                // Save using the VSDX format (PascalCase enum member)
-                diagram.Save(path, SaveFileFormat.Vsdx);
-            });
-        }
-
-        // Finds the first shape with a field and updates that field's value
-        private static void ModifyFirstShapeField(Diagram diagram)
-        {
-            // Ensure there is at least one page
-            if (diagram.Pages.Count == 0)
-                throw new InvalidOperationException("The diagram contains no pages.");
-
-            Page page = diagram.Pages[0];
-
-            // Iterate shapes to find one that has at least one field
             foreach (Shape shape in page.Shapes)
             {
+                // Ensure the shape has at least one field to modify.
                 if (shape.Fields.Count > 0)
                 {
-                    // Access the first field
+                    // Update the first field's value.
                     Field field = shape.Fields[0];
+                    field.Value.Val = "Updated Value";
 
-                    // Update the displayed value
-                    field.Value.Val = "Updated";
-
-                    // Clear any formula or unit information
+                    // Clear any formula or unit information.
                     field.Value.Ufev.F = "";
                     field.Value.Ufev.Unit = MeasureConst.Undefined;
-
-                    // Optionally clear formatting
-                    field.Format.Val = "";
-                    field.Format.Ufev.F = "";
-                    field.Format.Ufev.Unit = MeasureConst.Undefined;
-
-                    Console.WriteLine($"Modified field in shape ID {shape.ID} on page '{page.Name}'.");
-                    return; // Modification done; exit method
                 }
             }
-
-            Console.WriteLine("No shape with fields was found in the diagram.");
         }
     }
+
+    // Asynchronously saves the diagram to a file using a specific format.
+    private static Task SaveDiagramAsync(Diagram diagram, string outputPath)
+    {
+        return Task.Run(() => diagram.Save(outputPath, SaveFileFormat.Vsdx));
+    }
+}

@@ -10,48 +10,64 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // IDs or names of the shapes involved
-            const string targetShapeNameU = "TargetShape"; // shape that contains the field to update
-            const int sourceShapeId = 5; // shape whose Data1 cell will be referenced
+            // Access the first page (adjust index if needed)
+            Page page = diagram.Pages[0];
 
-            Shape targetShape = null;
-
-            // Locate the target shape by its universal name
-            foreach (Page page in diagram.Pages)
+            // Locate the shape that provides the data (source shape)
+            Shape sourceShape = null;
+            foreach (Shape s in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
+                if (s.NameU == "SourceShape")
                 {
-                    if (shape.NameU == targetShapeNameU)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
+                    sourceShape = s;
+                    break;
                 }
-                if (targetShape != null) break;
+            }
+            if (sourceShape == null)
+            {
+                throw new Exception("Source shape not found.");
             }
 
+            // Locate the shape whose field will be updated (target shape)
+            Shape targetShape = null;
+            foreach (Shape s in page.Shapes)
+            {
+                if (s.NameU == "TargetShape")
+                {
+                    targetShape = s;
+                    break;
+                }
+            }
             if (targetShape == null)
             {
-                Console.WriteLine($"Target shape \"{targetShapeNameU}\" not found.");
-                return;
+                throw new Exception("Target shape not found.");
             }
 
-            // Ensure the shape has at least one field to modify
-            if (targetShape.Fields.Count == 0)
+            // Ensure the target shape has at least one field; create one if necessary
+            Field field;
+            if (targetShape.Fields.Count > 0)
             {
-                Console.WriteLine("Target shape does not contain any fields.");
-                return;
+                field = targetShape.Fields[0];
+            }
+            else
+            {
+                field = new Field();
+                targetShape.Fields.Add(field);
             }
 
-            // Update the first field's formula to reference the Data1 cell of the source shape
-            Field field = targetShape.Fields[0];
-            field.Value.Ufev.F = $"Sheet.{sourceShapeId}!Data1";
+            // Build a Visio formula that references the source shape's Data1 cell
+            // Formula format: Sheet.<ShapeID>!Data1
+            string formula = $"Sheet.{sourceShape.ID}!Data1";
+
+            // Assign the formula to the field's value (Ufev.F holds the formula string)
+            field.Value.Ufev.F = formula;
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved with updated field formula.");
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

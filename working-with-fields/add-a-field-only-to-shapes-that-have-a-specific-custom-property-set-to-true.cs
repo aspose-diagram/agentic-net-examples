@@ -1,21 +1,20 @@
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths (use defaults if not provided)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
                 // Load the Visio diagram
+                string inputPath = "input.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
-                // Name of the custom property that must be true
+                // Name of the custom property to check
                 const string targetPropName = "MyFlag";
 
                 // Iterate through all pages and shapes
@@ -23,42 +22,39 @@ class Program
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        bool hasTrueFlag = false;
+                        bool addField = false;
 
-                        // Check the shape's custom properties (Props collection)
-                        if (shape.Props != null)
+                        // Check if the shape has the custom property set to true
+                        foreach (Prop prop in shape.Props)
                         {
-                            foreach (Prop prop in shape.Props)
+                            if (prop.Name == targetPropName &&
+                                prop.Value.Val.Equals("true", StringComparison.OrdinalIgnoreCase))
                             {
-                                if (prop.Name == targetPropName &&
-                                    prop.Value != null &&
-                                    prop.Value.Val != null &&
-                                    prop.Value.Val.Equals("true", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    hasTrueFlag = true;
-                                    break;
-                                }
+                                addField = true;
+                                break;
                             }
                         }
 
-                        // If the custom property is set to true, add a new field to the shape
-                        if (hasTrueFlag)
+                        // If condition met, add a new field to the shape
+                        if (addField)
                         {
-                            Field newField = new Field();
-                            // Set the field's displayed value
-                            newField.Value.Val = "Added";
-                            shape.Fields.Add(newField);
+                            Field field = new Field();
+                            // Set the field's value (e.g., a simple text)
+                            field.Value.Val = "AddedField";
+                            // Add the field to the shape's Fields collection
+                            shape.Fields.Add(field);
                         }
                     }
                 }
 
                 // Save the modified diagram
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

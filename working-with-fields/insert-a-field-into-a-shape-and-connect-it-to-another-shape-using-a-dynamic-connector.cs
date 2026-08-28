@@ -1,56 +1,67 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+                // Create a new empty Visio diagram
+                Diagram diagram = new Diagram();
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+                // Use the first (default) page
+                Page page = diagram.Pages[0];
 
-            // Add two rectangle shapes
-            long rect1Id = page.AddShape(2.0, 2.0, "Rectangle");
-            Shape rect1 = page.Shapes.GetShape(rect1Id);
+                // -----------------------------------------------------------------
+                // Add first shape (Rectangle) at position (2,2)
+                // -----------------------------------------------------------------
+                long rectId = page.AddShape(2.0, 2.0, "Rectangle");
+                Shape rectShape = page.Shapes.GetShape(rectId);
 
-            long rect2Id = page.AddShape(5.0, 5.0, "Rectangle");
-            Shape rect2 = page.Shapes.GetShape(rect2Id);
+                // Insert a text field into the rectangle shape
+                Field field = new Field();
+                field.Value.Val = "Sample Field";
+                rectShape.Fields.Add(field);
 
-            // Insert a custom field into the first rectangle
-            Field customField = new Field();
-            // Set the field type (Undefined is a safe default)
-            customField.Type.Value = TypeFieldValue.Undefined;
-            // Set the field's displayed value
-            customField.Value.Val = "CustomValue";
-            // Add the field to the shape's Fields collection
-            rect1.Fields.Add(customField);
+                // -----------------------------------------------------------------
+                // Add second shape (Ellipse) at position (5,5)
+                // -----------------------------------------------------------------
+                long ellipseId = page.AddShape(5.0, 5.0, "Ellipse");
+                Shape ellipseShape = page.Shapes.GetShape(ellipseId);
 
-            // Add a dynamic connector shape
-            long connectorId = page.AddShape(3.5, 3.5, "Dynamic connector");
-            Shape connector = page.Shapes.GetShape(connectorId);
+                // -----------------------------------------------------------------
+                // Add a dynamic connector shape (will be used to link the two shapes)
+                // -----------------------------------------------------------------
+                long connectorId = page.AddShape(3.5, 3.5, "Dynamic connector");
+                Shape connectorShape = page.Shapes.GetShape(connectorId);
 
-            // Connect the first rectangle to the second rectangle using the connector
-            page.ConnectShapesViaConnector(
-                rect1Id,
-                ConnectionPointPlace.Bottom,
-                rect2Id,
-                ConnectionPointPlace.Top,
-                connectorId);
+                // Set connector routing style (optional, e.g., right‑angle routing)
+                connectorShape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
 
-            // Save the diagram to a VSDX file
-            diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
+                // -----------------------------------------------------------------
+                // Connect the rectangle to the ellipse using the dynamic connector
+                // Connect bottom of rectangle to top of ellipse
+                // -----------------------------------------------------------------
+                page.ConnectShapesViaConnector(
+                    rectId,
+                    ConnectionPointPlace.Bottom,
+                    ellipseId,
+                    ConnectionPointPlace.Top,
+                    connectorId);
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+                // -----------------------------------------------------------------
+                // Save the diagram to a VSDX file
+                // -----------------------------------------------------------------
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

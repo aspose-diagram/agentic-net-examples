@@ -1,49 +1,49 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page and each shape on the page
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Iterate through each shape on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Create a new field to hold the timestamp
-                    Field timestampField = new Field();
+                        // Create a new field to hold the timestamp
+                        Field timestampField = new Field();
 
-                    // Assign the current date and time as the field value
-                    timestampField.Value.Val = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        // Set the field's value to the current date and time
+                        timestampField.Value.Val = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-                    // Set the field type to a safe default (Undefined)
-                    timestampField.Type.Value = TypeFieldValue.Undefined;
-
-                    // Add the timestamp field to the shape's Fields collection
-                    shape.Fields.Add(timestampField);
+                        // Add the timestamp field to the shape
+                        shape.Fields.Add(timestampField);
+                    }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

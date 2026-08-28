@@ -1,104 +1,74 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Input folder containing Visio files
-            string inputFolder = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
-            // Output folder for updated files
-            string outputFolder = args.Length > 1 ? args[1] : inputFolder;
-
-            if (!Directory.Exists(inputFolder))
+            try
             {
-                Console.WriteLine($"Input folder does not exist: {inputFolder}");
-                return;
-            }
 
-            if (!Directory.Exists(outputFolder))
-            {
-                Directory.CreateDirectory(outputFolder);
-            }
+                // Folder containing source Visio files
+                string inputFolder = @"C:\Visio\Input";
+                // Folder where updated files will be saved
+                string outputFolder = @"C:\Visio\Output";
 
-            // Process all VSDX files in the input folder
-            string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-            foreach (string filePath in diagramFiles)
-            {
-                try
+                // Ensure output directory exists
+                if (!Directory.Exists(outputFolder))
                 {
-                    Console.WriteLine($"Processing file: {Path.GetFileName(filePath)}");
-                    Diagram diagram = new Diagram(filePath);
-
-                    UpdateFieldFormulas(diagram);
-
-                    string outputPath = Path.Combine(outputFolder,
-                        Path.GetFileNameWithoutExtension(filePath) + "_updated.vsdx");
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Saved updated diagram to: {outputPath}");
+                    Directory.CreateDirectory(outputFolder);
                 }
-                catch (Exception ex)
+
+                // Get all Visio files (VSDX) in the input folder
+                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+
+                foreach (string filePath in diagramFiles)
                 {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
-            }
-
-            Console.WriteLine("Bulk update completed.");
-        }
-
-        // Updates field formulas according to new calculation standards
-        private static void UpdateFieldFormulas(Diagram diagram)
-        {
-            // Define old-to-new formula mappings
-            Dictionary<string, string> formulaReplacements = new Dictionary<string, string>
-            {
-                { "Width*Height", "Area" },
-                { "OldFormula", "NewFormula" }
-                // Add more mappings as needed
-            };
-
-            // Iterate through each page
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
-            {
-                // Iterate through each shape on the page
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
-                {
-                    // Ensure the shape has fields to process
-                    if (shape.Fields == null || shape.Fields.Count == 0)
-                        continue;
-
-                    // Iterate through each field in the shape
-                    foreach (Aspose.Diagram.Field field in shape.Fields)
+                    try
                     {
-                        // Retrieve the current formula; skip if null or empty
-                        string currentFormula = field.Value?.Ufev?.F;
-                        if (string.IsNullOrWhiteSpace(currentFormula))
-                            continue;
+                        // Load the diagram
+                        Diagram diagram = new Diagram(filePath);
 
-                        string updatedFormula = currentFormula;
-
-                        // Apply all defined replacements
-                        foreach (KeyValuePair<string, string> kvp in formulaReplacements)
+                        // Iterate through each page
+                        foreach (Page page in diagram.Pages)
                         {
-                            if (updatedFormula.Contains(kvp.Key))
+                            // Iterate through each shape on the page
+                            foreach (Shape shape in page.Shapes)
                             {
-                                updatedFormula = updatedFormula.Replace(kvp.Key, kvp.Value);
+                                // Iterate through each field (text-insertion field) of the shape
+                                foreach (Field field in shape.Fields)
+                                {
+                                    // Update the formula to the new standard
+                                    // Example: set formula to calculate area (Width * Height)
+                                    field.Value.Ufev.F = "Width*Height";
+
+                                    // Optionally clear unit and format if not needed
+                                    field.Value.Ufev.Unit = MeasureConst.Undefined;
+                                    field.Format.Val = "";
+                                    field.Format.Ufev.F = "";
+                                }
                             }
                         }
 
-                        // If the formula changed, assign the new value
-                        if (!updatedFormula.Equals(currentFormula, StringComparison.Ordinal))
-                        {
-                            field.Value.Ufev.F = updatedFormula;
-                            // Reset unit to undefined to avoid unintended unit handling
-                            field.Value.Ufev.Unit = MeasureConst.Undefined;
-                            Console.WriteLine($"Updated field formula on shape ID {shape.ID} on page '{page.Name}'.");
-                        }
+                        // Save the updated diagram to the output folder
+                        string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log any errors for the current file
+                        Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
                     }
                 }
+
+                Console.WriteLine("Bulk field formula update completed.");
+
             }
-        }
+            catch (System.IO.DirectoryNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            }
+    }
     }

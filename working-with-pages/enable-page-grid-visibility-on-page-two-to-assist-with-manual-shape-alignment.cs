@@ -1,17 +1,14 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths.
+        // Path to the source Visio file
         string inputPath = "input.vsdx";
-        string outputPath = "output.vsdx";
-
-        // Guard: ensure the source Visio file exists.
+        // Verify the source file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
@@ -20,46 +17,46 @@ class Program
 
         try
         {
-            // Load the diagram from the source file.
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Verify that a second page (index 1) is present.
-            if (diagram.Pages.Count < 2)
-            {
-                Console.Error.WriteLine("The diagram does not contain a second page.");
-                return;
-            }
-
-            // Retrieve the second page (zero‑based index).
+            // Retrieve the second page (zero‑based index, so index 1 is page two)
             Page pageTwo = diagram.Pages[1];
 
-            // Locate the window associated with the second page.
-            Window pageWindow = null;
+            // Locate a window that is linked to page two
+            Window targetWindow = null;
             foreach (Window win in diagram.Windows)
             {
-                // Window.Page returns a Page object; compare its ID with pageTwo.ID.
+                // Window.Page returns a Page object; compare its ID with pageTwo.ID
                 if (win.Page != null && win.Page.ID == pageTwo.ID)
                 {
-                    pageWindow = win;
+                    targetWindow = win;
                     break;
                 }
             }
 
-            if (pageWindow == null)
+            if (targetWindow != null)
             {
-                Console.Error.WriteLine("No window found for page two.");
-                return;
+                // Enable grid visibility on the existing window
+                targetWindow.ShowGrid = BOOL.True;
+            }
+            else
+            {
+                // No window linked to page two – create a new one and enable the grid
+                Window newWindow = new Window
+                {
+                    Page = pageTwo,          // Associate the window with page two
+                    ShowGrid = BOOL.True     // Turn on grid visibility
+                };
+                diagram.Windows.Add(newWindow);
             }
 
-            // Enable grid visibility for the identified window.
-            pageWindow.ShowGrid = BOOL.True;
-
-            // Save the modified diagram to the output file.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram to a new file
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
+            // Output any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -1,44 +1,52 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Properties;
 
 class Program
 {
     static void Main()
     {
-        string filePath = "customPropsDiagram.vsdx";
+        // Path for the temporary diagram file
+        string filePath = "customPropsDemo.vsdx";
 
-        // Create a new diagram and add a custom property
-        using (Diagram diagram = new Diagram())
+        // 1. Create a new empty diagram
+        Diagram diagram = new Diagram();
+
+        // 2. Add a custom document property
+        CustomProp customProp = new CustomProp();
+        customProp.Name = "DemoProperty";
+        customProp.PropType = PropType.String;
+        customProp.CustomValue.ValueString = "HelloAspose";
+        diagram.DocumentProps.CustomProps.Add(customProp);
+
+        // 3. Save the diagram to a file (VSDX format)
+        diagram.Save(filePath, SaveFileFormat.Vsdx);
+
+        // 4. Load the diagram back from the file
+        Diagram loadedDiagram = new Diagram(filePath);
+
+        // 5. Retrieve the custom property by index (or you could search by name)
+        if (loadedDiagram.DocumentProps.CustomProps.Count == 0)
         {
-            CustomProp customProp = new CustomProp();
-            customProp.Name = "MyCustomProp";
-            customProp.PropType = PropType.String;
-            customProp.CustomValue = new CustomValue();
-            customProp.CustomValue.ValueString = "TestValue";
-
-            diagram.DocumentProps.CustomProps.Add(customProp);
-
-            // Save the diagram to a file
-            diagram.Save(filePath, SaveFileFormat.Vsdx);
+            throw new Exception("No custom properties were found after loading the diagram.");
         }
 
-        // Load the diagram back and verify the custom property
-        using (Diagram loadedDiagram = new Diagram(filePath))
+        CustomProp loadedProp = loadedDiagram.DocumentProps.CustomProps[0];
+
+        // 6. Verify that the property name and value persisted correctly
+        if (loadedProp.Name != "DemoProperty")
         {
-            if (loadedDiagram.DocumentProps.CustomProps.Count == 0)
-                throw new Exception("No custom properties found after loading.");
-
-            CustomProp loadedProp = loadedDiagram.DocumentProps.CustomProps[0];
-
-            if (loadedProp.Name != "MyCustomProp")
-                throw new Exception("Custom property name mismatch.");
-
-            if (loadedProp.CustomValue == null || loadedProp.CustomValue.ValueString != "TestValue")
-                throw new Exception("Custom property value mismatch.");
-
-            Console.WriteLine("Custom property persisted correctly: Name = " + loadedProp.Name + ", Value = " + loadedProp.CustomValue.ValueString);
+            throw new Exception($"Custom property name mismatch. Expected 'DemoProperty', got '{loadedProp.Name}'.");
         }
+
+        if (loadedProp.CustomValue.ValueString != "HelloAspose")
+        {
+            throw new Exception($"Custom property value mismatch. Expected 'HelloAspose', got '{loadedProp.CustomValue.ValueString}'.");
+        }
+
+        // 7. Output confirmation
+        Console.WriteLine("Custom property persisted successfully:");
+        Console.WriteLine($"Name: {loadedProp.Name}");
+        Console.WriteLine($"Value: {loadedProp.CustomValue.ValueString}");
     }
 }

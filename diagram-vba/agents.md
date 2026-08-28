@@ -4,10 +4,10 @@ display_name: Diagram Vba
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.7.0
+version: 26.8.0
 examples: 35
 pass_rate: 100.0
-generated: 2026-08-03
+generated: 2026-08-28
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 35 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.7.0 |
+| Aspose.Diagram Version | 26.8.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-08-03 |
+| Last Updated | 2026-08-28 |
 
 ## Persona
 
@@ -63,11 +63,13 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 35 | Core diagram API |
 | `System` | 35 | Console, Math, DateTime, Exception |
-| `System.IO` | 32 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Vba` | 27 | Supporting utilities |
-| `Aspose.Diagram.Saving` | 6 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 5 | List, Dictionary, HashSet |
-| `System.Text` | 1 | StringBuilder |
+| `System.IO` | 33 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Vba` | 26 | Supporting utilities |
+| `Aspose.Diagram.Saving` | 4 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 3 | List, Dictionary, HashSet |
+| `System.Text` | 2 | StringBuilder |
+| `System.IO.Compression` | 1 | Supporting utilities |
+| `System.Diagnostics` | 1 | Supporting utilities |
 | `System.Text.RegularExpressions` | 1 | Supporting utilities |
 | `System.Text.Json` | 1 | JSON serialization |
 | `System.Threading.Tasks` | 1 | Supporting utilities |
@@ -114,14 +116,14 @@ class Program
 | [convert-the-diagram-to-pdf-while-embedding-vba-macros-for-interactive-documents.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/convert-the-diagram-to-pdf-while-embedding-vba-macros-for-interactive-documents.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Convert the diagram to pdf while embedding vba macros for interactive documents |
 | [count-total-lines-of-code-in-each-vba-module-and-summarize-results-in-a-report.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/count-total-lines-of-code-in-each-vba-module-and-summarize-results-in-a-report.cs) | `Diagram` | Count total lines of code in each vba module and summarize results in a report |
 | [delete-a-vba-module-identified-by-name-from-the-diagram-s-vba-project.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/delete-a-vba-module-identified-by-name-from-the-diagram-s-vba-project.cs) | `Diagram`, `Save`, `diagram` | Delete a vba module identified by name from the diagram s vba project |
-| [enumerate-all-vba-modules-in-the-loaded-diagram-and-list-each-module-name.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/enumerate-all-vba-modules-in-the-loaded-diagram-and-list-each-module-name.cs) | `Diagram`, `Save`, `diagram` | Enumerate all vba modules in the loaded diagram and list each module name |
-| [execute-a-specific-macro-programmatically-and-capture-its-output-for-verification.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/execute-a-specific-macro-programmatically-and-capture-its-output-for-verification.cs) | `Diagram`, `Save`, `diagram` | Execute a specific macro programmatically and capture its output for verification |
+| [enumerate-all-vba-modules-in-the-loaded-diagram-and-list-each-module-name.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/enumerate-all-vba-modules-in-the-loaded-diagram-and-list-each-module-name.cs) | `Diagram` | Enumerate all vba modules in the loaded diagram and list each module name |
+| [execute-a-specific-macro-programmatically-and-capture-its-output-for-verification.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/execute-a-specific-macro-programmatically-and-capture-its-output-for-verification.cs) | `Diagram` | Execute a specific macro programmatically and capture its output for verification |
 | [export-the-entire-vba-project-to-an-external-vba-file-for-backup-purposes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/export-the-entire-vba-project-to-an-external-vba-file-for-backup-purposes.cs) | `Diagram` | Export the entire vba project to an external vba file for backup purposes |
 | [extract-the-source-code-of-a-specified-vba-module-and-save-it-to-a-bas-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/extract-the-source-code-of-a-specified-vba-module-and-save-it-to-a-bas-file.cs) | `Diagram` | Extract the source code of a specified vba module and save it to a bas file |
 | [generate-a-consolidated-csv-report-summarizing-vba-module-counts-across-all-processed-diagrams.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/generate-a-consolidated-csv-report-summarizing-vba-module-counts-across-all-processed-diagrams.cs) | `Diagram` | Generate a consolidated csv report summarizing vba module counts across all processed diagrams |
 | [import-a-previously-exported-vba-project-file-into-a-diagram-to-restore-macros.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/import-a-previously-exported-vba-project-file-into-a-diagram-to-restore-macros.cs) | `Diagram`, `Save`, `diagram` | Import a previously exported vba project file into a diagram to restore macros |
 | [list-all-macro-names-defined-in-the-vba-project-together-with-their-containing-modules.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/list-all-macro-names-defined-in-the-vba-project-together-with-their-containing-modules.cs) | `Diagram` | List all macro names defined in the vba project together with their containing modules |
-| [load-a-visio-diagram-from-a-memory-stream-and-access-its-vba-project-without-disk-i-o.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/load-a-visio-diagram-from-a-memory-stream-and-access-its-vba-project-without-disk-i-o.cs) | `Diagram` | Load a visio diagram from a memory stream and access its vba project without disk i o |
+| [load-a-visio-diagram-from-a-memory-stream-and-access-its-vba-project-without-disk-i-o.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/load-a-visio-diagram-from-a-memory-stream-and-access-its-vba-project-without-disk-i-o.cs) | `Diagram`, `Save`, `diagram` | Load a visio diagram from a memory stream and access its vba project without disk i o |
 | [load-a-visio-diagram-from-file-and-access-its-vba-project-for-manipulation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/load-a-visio-diagram-from-file-and-access-its-vba-project-for-manipulation.cs) | `Diagram`, `Save`, `diagram` | Load a visio diagram from file and access its vba project for manipulation |
 | [log-detailed-vba-project-metadata-to-a-json-file-for-auditing-purposes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/log-detailed-vba-project-metadata-to-a-json-file-for-auditing-purposes.cs) | `Diagram` | Log detailed vba project metadata to a json file for auditing purposes |
 | [perform-asynchronous-loading-of-a-diagram-and-retrieve-its-vba-project-once-loading-completes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/diagram-vba/perform-asynchronous-loading-of-a-diagram-and-retrieve-its-vba-project-once-loading-completes.cs) | `Diagram` | Perform asynchronous loading of a diagram and retrieve its vba project once loading completes |
@@ -242,7 +244,7 @@ Frequently asked questions about **Diagram Vba** in **Aspose.Diagram for .NET**:
 
 **Q: How do I get started with Diagram Vba in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.8.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -273,4 +275,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-08-03 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-08-28 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

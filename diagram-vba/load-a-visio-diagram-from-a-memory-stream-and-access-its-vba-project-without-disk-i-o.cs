@@ -7,61 +7,80 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Retrieve Visio file bytes (replace with actual source, e.g., embedded resource)
-        byte[] visioData = GetVisioFileBytes();
+        // Obtain Visio file bytes (replace with actual data in real scenario)
+        byte[] visioBytes = GetSampleVisioBytes();
 
-        // Guard against empty or null data to prevent stream read errors
-        if (visioData == null || visioData.Length == 0)
+        // Guard against empty or null byte array to avoid stream read errors
+        if (visioBytes == null || visioBytes.Length == 0)
         {
-            Console.Error.WriteLine("Visio data is empty or null.");
+            Console.Error.WriteLine("Visio byte array is empty or null.");
             return;
         }
 
-        // Load the diagram from a memory stream (no disk I/O for the diagram itself)
-        using (MemoryStream ms = new MemoryStream(visioData))
+        // Load the diagram from a memory stream (no disk I/O)
+        using (MemoryStream inputStream = new MemoryStream(visioBytes))
         {
+            Diagram diagram;
             try
             {
-                // Diagram constructor reads the stream; wrap in try/catch for safety
-                using (Diagram diagram = new Diagram(ms))
-                {
-                    // Access the read‑only VBA project attached to the diagram
-                    VbaProject vba = diagram.VbaProject;
-                    Console.WriteLine($"VBA Project Name: {vba.Name}");
-                    Console.WriteLine($"Is Signed: {vba.IsSigned}");
-
-                    // Enumerate existing VBA modules
-                    for (int i = 0; i < vba.Modules.Count; i++)
-                    {
-                        VbaModule module = vba.Modules[i];
-                        Console.WriteLine($"Module {i}: {module.Name}");
-                        Console.WriteLine("Code:");
-                        Console.WriteLine(module.Codes);
-                    }
-
-                    // Add a new procedural VBA module
-                    int newIndex = vba.Modules.Add(VbaModuleType.Procedural, "NewModule");
-                    VbaModule newModule = vba.Modules[newIndex];
-                    newModule.Codes =
-                        "Attribute VB_Name = \"NewModule\"\n" +
-                        "Sub HelloWorld()\n" +
-                        "    MsgBox \"Hello from Aspose.Diagram\"\n" +
-                        "End Sub";
-                    Console.WriteLine("Added new module 'NewModule' with sample code.");
-                }
+                // Attempt to construct Diagram from the stream
+                diagram = new Diagram(inputStream);
             }
             catch (Exception ex)
             {
-                // Log any Aspose or I/O errors
-                Console.Error.WriteLine($"Error loading diagram or processing VBA: {ex.Message}");
+                Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
+
+            // Access the VBA project (read‑only property)
+            VbaProject vbaProject = diagram.VbaProject;
+
+            // Output basic VBA project information
+            Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
+            Console.WriteLine($"Is Signed: {vbaProject.IsSigned}");
+            Console.WriteLine($"Number of Modules: {vbaProject.Modules.Count}");
+
+            // List existing modules
+            for (int i = 0; i < vbaProject.Modules.Count; i++)
+            {
+                VbaModule module = vbaProject.Modules[i];
+                Console.WriteLine($"Module {i}: Name = {module.Name}");
+                Console.WriteLine($"Code:\n{module.Codes}");
+            }
+
+            // Add a new procedural module
+            int newModuleIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, "MyNewModule");
+            VbaModule newModule = vbaProject.Modules[newModuleIndex];
+            newModule.Codes = @"
+Attribute VB_Name = ""MyNewModule""
+Public Sub HelloWorld()
+    MsgBox ""Hello from VBA!""
+End Sub
+";
+
+            Console.WriteLine($"Added new module: {newModule.Name}");
+
+            // (Optional) Save the modified diagram to a memory stream in macro‑enabled format
+            using (MemoryStream outputStream = new MemoryStream())
+            {
+                try
+                {
+                    diagram.Save(outputStream, SaveFileFormat.Vsdm);
+                    Console.WriteLine($"Diagram saved to memory stream. Size: {outputStream.Length} bytes");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+                }
             }
         }
     }
 
-    // Placeholder: replace with actual logic to retrieve Visio file bytes
-    static byte[] GetVisioFileBytes()
+    // Placeholder method to provide sample Visio file bytes.
+    // In practice, replace this with actual byte content.
+    static byte[] GetSampleVisioBytes()
     {
-        // Example returns an empty array; in practice, provide the .vsdx/.vsdm content.
+        // Return an empty array for demonstration; real implementation should supply valid Visio data.
         return new byte[0];
     }
 }

@@ -1,7 +1,6 @@
-using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System;
 
 class Program
 {
@@ -10,13 +9,16 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Remove the VBA project (macro) which also clears any digital signature
-            diagram.RemoveMacro();
+            // If the VBA project exists and is signed, remove the macro (which also clears the signature)
+            if (diagram.VbaProject != null && diagram.VbaProject.IsSigned)
+            {
+                diagram.RemoveMacro();
+            }
 
-            // Save the diagram without the VBA signature
+            // Save the diagram without the digital signature
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

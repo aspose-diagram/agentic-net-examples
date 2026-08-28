@@ -3,35 +3,31 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class Program
+class AddVbaModuleExample
 {
     static void Main()
     {
         try
         {
 
-            // Load the existing Visio diagram
+            // Load an existing Visio diagram (uses the provided load rule)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Optional: remove any existing VBA/macros
-            diagram.RemoveMacro();
-
-            // Add a new procedural VBA module named "CustomMacro"
-            int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "CustomMacro");
+            // Add a new procedural VBA module named "MyMacro" (uses VbaModuleCollection.Add)
+            int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "MyMacro");
 
             // Retrieve the newly added module
-            VbaModule module = diagram.VbaProject.Modules[moduleIndex];
+            VbaModule vbaModule = diagram.VbaProject.Modules[moduleIndex];
 
             // Set the VBA code for the module
-            module.Codes = @"Sub HelloWorld()
-            MsgBox ""Hello from Aspose.Diagram!""
-            End Sub";
+            vbaModule.Codes = @"
+            Sub HelloWorld()
+            MsgBox ""Hello, World!""
+            End Sub
+            ";
 
-            // Save the diagram with the new VBA module
+            // Save the diagram with the new VBA module (uses the provided save rule)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            // Clean up
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

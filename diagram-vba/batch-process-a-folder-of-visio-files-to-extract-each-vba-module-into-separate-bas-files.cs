@@ -5,60 +5,62 @@ using Aspose.Diagram.Vba;
 
 class VbaExtractor
 {
-    // Entry point: args[0] = input folder, args[1] = output folder
     static void Main(string[] args)
     {
-        if (args.Length < 2)
+        // Expect the folder path as the first argument
+        if (args.Length == 0)
         {
-            Console.WriteLine("Usage: VbaExtractor <inputFolder> <outputFolder>");
+            Console.WriteLine("Usage: VbaExtractor <folderPath>");
             return;
         }
 
-        string inputFolder = args[0];
-        string outputFolder = args[1];
-
-        if (!Directory.Exists(inputFolder))
+        string folderPath = args[0];
+        if (!Directory.Exists(folderPath))
         {
-            Console.WriteLine($"Input folder does not exist: {inputFolder}");
+            Console.WriteLine($"Folder does not exist: {folderPath}");
             return;
         }
 
-        // Ensure output folder exists
-        Directory.CreateDirectory(outputFolder);
+        // Root folder where extracted modules will be saved
+        string outputRoot = Path.Combine(folderPath, "VbaModules");
+        Directory.CreateDirectory(outputRoot);
 
-        // Process all Visio files in the input folder (common extensions)
-        string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in visioFiles)
+        // Visio file extensions to process
+        string[] extensions = new[] { ".vsd", ".vsdx", ".vsdm", ".vss", ".vssx", ".vssm", ".vst", ".vstx", ".vstm" };
+
+        foreach (string filePath in Directory.EnumerateFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly))
         {
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (ext != ".vsd" && ext != ".vsdx" && ext != ".vsdm")
-                continue; // skip non-Visio files
+            if (Array.IndexOf(extensions, Path.GetExtension(filePath).ToLower()) < 0)
+                continue; // Skip non‑Visio files
 
-            // Load diagram using the provided constructor (lifecycle rule)
+            // Load the Visio diagram (uses the Diagram(string) constructor)
             using (Diagram diagram = new Diagram(filePath))
             {
-                // Check if the diagram contains a VBA project
                 VbaProject vbaProject = diagram.VbaProject;
                 if (vbaProject == null)
                 {
-                    Console.WriteLine($"No VBA project found in: {Path.GetFileName(filePath)}");
+                    Console.WriteLine($"No VBA project found in {Path.GetFileName(filePath)}");
                     continue;
                 }
 
-                // Iterate through each VBA module
+                // Create a subfolder for this diagram's modules
+                string diagramFolder = Path.Combine(outputRoot, Path.GetFileNameWithoutExtension(filePath));
+                Directory.CreateDirectory(diagramFolder);
+
+                // Extract each VBA module
                 foreach (VbaModule module in vbaProject.Modules)
                 {
-                    // Build a unique file name for the module
-                    string baseFileName = $"{Path.GetFileNameWithoutExtension(filePath)}_{module.Name}.bas";
-                    string outputPath = Path.Combine(outputFolder, baseFileName);
+                    string moduleName = module.Name;
+                    string moduleCode = module.Codes ?? string.Empty;
 
-                    // Write the module's code to a .bas file
-                    File.WriteAllText(outputPath, module.Codes ?? string.Empty);
-                    Console.WriteLine($"Extracted module '{module.Name}' to: {outputPath}");
+                    // Ensure a valid file name
+                    string safeName = string.Concat(moduleName.Split(Path.GetInvalidFileNameChars()));
+                    string outFile = Path.Combine(diagramFolder, safeName + ".bas");
+
+                    File.WriteAllText(outFile, moduleCode);
+                    Console.WriteLine($"Extracted module '{moduleName}' to {outFile}");
                 }
             }
         }
-
-        Console.WriteLine("VBA extraction completed.");
     }
 }

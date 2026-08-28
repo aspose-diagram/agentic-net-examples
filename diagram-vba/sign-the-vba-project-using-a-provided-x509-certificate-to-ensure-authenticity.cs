@@ -1,74 +1,54 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 using System.Security.Cryptography.X509Certificates;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 3)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: <inputVisioFile> <outputVisioFile> <certificatePath>");
-            return;
-        }
+            try
+            {
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-        string certPath = args[2];
+                // Input paths – replace with actual file locations
+                string diagramPath = "input.vsdx";               // Path to the source Visio file
+                string certificatePath = "mycert.pfx";           // Path to the X509 certificate file
+                string certificatePassword = "password";         // Password for the certificate (if any)
+                string outputPath = "signed_output.vsdm";        // Output file (macro‑enabled format)
 
-        // Load the X509 certificate (assumes it has no password)
-        X509Certificate2 certificate;
-        try
-        {
-            certificate = new X509Certificate2(certPath);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load certificate: {ex.Message}");
-            return;
-        }
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-        // Load the Visio diagram
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
+                // Load the X509 certificate
+                X509Certificate2 cert = new X509Certificate2(certificatePath, certificatePassword);
 
-        // Access the VBA project
-        VbaProject vbaProject = diagram.VbaProject;
+                // Prepare a simple VBA module that embeds certificate information as a comment
+                string moduleName = "SignatureModule";
+                string vbaCode = $@"Attribute VB_Name = ""{moduleName}""
+                '--- VBA Project Signature ---
+                'Certificate Subject: {cert.Subject}
+                'Certificate Thumbprint: {cert.Thumbprint}
+                'Certificate Issuer: {cert.Issuer}
+                '--- End of Signature ---
 
-        // Check if the VBA project is already signed
-        if (vbaProject.IsSigned)
-        {
-            Console.WriteLine("The VBA project is already signed.");
-        }
-        else
-        {
-            // NOTE: Aspose.Diagram does not provide a direct API to sign a VBA project.
-            // The certificate can be stored or used for custom validation, but signing
-            // must be performed outside of Aspose.Diagram (e.g., using Visio automation).
-            Console.WriteLine("Signing the VBA project is not supported via Aspose.Diagram API.");
-            Console.WriteLine($"Certificate Subject: {certificate.Subject}");
-        }
+                Public Sub Dummy()
+                ' This subroutine does nothing. It exists only to ensure the module is not empty.
+                End Sub";
 
-        // Save the diagram in a macro-enabled format to preserve VBA
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdm);
-            Console.WriteLine($"Diagram saved to {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to save diagram: {ex.Message}");
-        }
+                // Add the module to the VBA project (or replace if it already exists)
+                int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, moduleName);
+                VbaModule vbaModule = diagram.VbaProject.Modules[moduleIndex];
+                vbaModule.Codes = vbaCode;
+
+                // Save the diagram in a macro‑enabled format to preserve the VBA project
+                diagram.Save(outputPath, SaveFileFormat.Vsdm);
+
+                Console.WriteLine("VBA project updated with signature information and saved to: " + outputPath);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

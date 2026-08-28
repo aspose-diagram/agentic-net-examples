@@ -10,28 +10,25 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
+            // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the VBA project associated with the diagram
-            VbaProject vbaProject = diagram.VbaProject;
-
             // Define the deprecated function name and its replacement
-            string deprecatedFunction = "OldFunction";   // <-- deprecated name
-            string updatedFunction = "NewFunction";     // <-- new name
+            const string deprecatedFunction = "OldFunction";
+            const string updatedFunction = "NewFunction";
 
-            // Iterate through each VBA module in the project
-            foreach (VbaModule module in vbaProject.Modules)
+            // Iterate through all VBA modules in the project
+            foreach (VbaModule vbaModule in diagram.VbaProject.Modules)
             {
                 // Ensure the module contains code before attempting replacement
-                if (!string.IsNullOrEmpty(module.Codes))
+                if (!string.IsNullOrEmpty(vbaModule.Codes))
                 {
                     // Replace all occurrences of the deprecated function name
-                    module.Codes = module.Codes.Replace(deprecatedFunction, updatedFunction);
+                    vbaModule.Codes = vbaModule.Codes.Replace(deprecatedFunction, updatedFunction);
                 }
             }
 
-            // Save the modified diagram (replace with desired output path)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

@@ -2,6 +2,7 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,34 +11,32 @@ class Program
         try
         {
 
+            // Load an existing Visio diagram
             string inputPath = "input.vsdx";
-            string outputPath = "output.vsdm";
-
-            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the VBA project
+            // Access the VBA project (read‑only property)
             var vbaProject = diagram.VbaProject;
 
-            // Add a new procedural module (or retrieve existing one)
-            int moduleIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, "ProtectionModule");
-            var module = vbaProject.Modules[moduleIndex];
+            // Add a new procedural VBA module
+            int moduleIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, "SecurityModule");
+            var vbaModule = vbaProject.Modules[moduleIndex];
 
-            // Set VBA code for the module
-            module.Codes = @"
-            Attribute VB_Name = ""ProtectionModule""
-            Sub Dummy()
-            MsgBox ""This is a protected macro.""
+            // Insert VBA code into the module
+            vbaModule.Codes = @"
+            Attribute VB_Name = ""SecurityModule""
+            Sub ProtectedMacro()
+            MsgBox ""This macro is protected.""
             End Sub
             ";
 
-            // Note: Aspose.Diagram does not expose an API to set a password on the VBA project.
-            // The VBA project will be saved in a macro-enabled file format.
+            // NOTE:
+            // Aspose.Diagram does not expose an API to set a password on the VBA project.
+            // Password protection must be applied manually in Visio after saving,
+            // or by using a different tool that can modify the VBA project password.
 
-            // Save the diagram as a macro-enabled Visio file
-            diagram.Save(outputPath, SaveFileFormat.Vsdm);
-
-            Console.WriteLine("Diagram saved with VBA module to " + outputPath);
+            // Save the diagram in a macro‑enabled format to preserve the VBA code
+            diagram.Save("output.vsdm", SaveFileFormat.Vsdm);
 
         }
         catch (System.IO.FileNotFoundException ex)

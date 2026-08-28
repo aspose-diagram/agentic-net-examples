@@ -1,58 +1,51 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Input Visio file path (must be a format that supports VBA, e.g., .vsdx)
-                string inputPath = "input.vsdx";
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-                // Output Visio file path (macro‑enabled format)
-                string outputPath = "output.vsdm";
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
 
-                try
-                {
-                    // Load the diagram from file
-                    Diagram diagram = new Diagram(inputPath);
+            // Access the VBA project (read‑only property)
+            var vbaProject = diagram.VbaProject;
 
-                    // Access the VBA project (read‑only property)
-                    VbaProject vbaProject = diagram.VbaProject;
+            // Display whether the VBA project is already signed
+            Console.WriteLine($"VBA project signed: {vbaProject.IsSigned}");
 
-                    // Add a new procedural module named "MyModule"
-                    int moduleIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, "MyModule");
+            // Add a new procedural VBA module named "MyModule"
+            int moduleIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, "MyModule");
 
-                    // Retrieve the newly added module
-                    VbaModule vbaModule = vbaProject.Modules[moduleIndex];
+            // Retrieve the newly added module
+            var module = vbaProject.Modules[moduleIndex];
 
-                    // Set VBA code for the module
-                    vbaModule.Codes = @"
-                Attribute VB_Name = ""MyModule""
-                Sub HelloWorld()
-                MsgBox ""Hello from VBA!""
-                End Sub
-                ";
+            // Set the VBA source code for the module
+            module.Codes = @"
+            Attribute VB_Name = ""MyModule""
+            Sub HelloWorld()
+            MsgBox ""Hello from Aspose.Diagram!""
+            End Sub
+            ";
 
-                    // Save the diagram in a macro‑enabled format to preserve the VBA project
-                    diagram.Save(outputPath, SaveFileFormat.Vsdm);
+            // Save the diagram in a macro‑enabled format to preserve the VBA project
+            string outputPath = "output.vsdm";
+            diagram.Save(outputPath, SaveFileFormat.Vsdm);
 
-                    Console.WriteLine("Diagram loaded, VBA module added, and saved successfully.");
-                }
-                catch (Exception ex)
-                {
-                    // Simple error handling
-                    Console.WriteLine($"Error: {ex.Message}");
-                    throw;
-                }
+            Console.WriteLine($"Diagram saved with VBA module to {outputPath}");
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

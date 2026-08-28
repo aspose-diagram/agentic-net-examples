@@ -10,7 +10,7 @@ class Program
         try
         {
 
-            // Load the diagram file (replace with your actual file path)
+            // Load the diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Access the VBA project associated with the diagram
@@ -21,9 +21,6 @@ class Program
             {
                 Console.WriteLine(vbaModule.Name);
             }
-
-            // Save the diagram if any modifications were made (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

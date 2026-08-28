@@ -1,52 +1,72 @@
-using System.IO;
 using System;
+using System.IO;
+using System.Diagnostics;
+using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class MacroExecutor
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the diagram (uses the provided load rule)
-            Diagram diagram = LoadDiagram("input.vsdx");
+            // Load the Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the VBA modules collection from the diagram
-            VbaModuleCollection modules = diagram.VbaProject.Modules;
+            // Access the VBA project embedded in the diagram
+            VbaProject vbaProject = diagram.VbaProject;
 
-            // Name of the macro we want to execute / verify
-            const string targetMacroName = "MyMacro";
-
-            // Locate the module that contains the macro
-            VbaModule targetModule = null;
-            for (int i = 0; i < modules.Count; i++)
+            // Locate the module that contains the macro named "MyMacro"
+            VbaModule macroModule = null;
+            foreach (VbaModule module in vbaProject.Modules)
             {
-                if (modules[i].Name.Equals(targetMacroName, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(module.Codes) && module.Codes.Contains("Sub MyMacro"))
                 {
-                    targetModule = modules[i];
+                    macroModule = module;
                     break;
                 }
             }
 
-            if (targetModule == null)
+            if (macroModule == null)
             {
-                Console.WriteLine($"Macro \"{targetMacroName}\" not found.");
+                Console.WriteLine("Macro 'MyMacro' not found in the diagram.");
                 return;
             }
 
-            // Capture the macro code – this is the “output” we verify
-            string macroCode = targetModule.Codes;
-            Console.WriteLine("=== Macro Code ===");
-            Console.WriteLine(macroCode);
-            Console.WriteLine("==================");
+            // Retrieve the VBA code of the macro
+            string vbaCode = macroModule.Codes;
 
-            // (Optional) Remove the macro after verification using the provided method
-            diagram.RemoveMacro();
+            // Convert the VBA code to VBScript (basic conversion for demonstration)
+            string vbScriptCode = ConvertVbaToVbs(vbaCode);
 
-            // Save the diagram (uses the provided save rule)
-            SaveDiagram(diagram, "output.vsdx");
+            // Write the VBScript to a temporary file
+            string tempVbsPath = Path.Combine(Path.GetTempPath(), "tempMacro.vbs");
+            File.WriteAllText(tempVbsPath, vbScriptCode, Encoding.UTF8);
+
+            // Execute the VBScript using Windows Script Host and capture its output
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                FileName = "cscript",
+                Arguments = $"//NoLogo \"{tempVbsPath}\"",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using (Process proc = Process.Start(psi))
+            {
+                string output = proc.StandardOutput.ReadToEnd();
+                proc.WaitForExit();
+
+                // Display the captured output for verification
+                Console.WriteLine("Macro Output:");
+                Console.WriteLine(output);
+            }
+
+            // Clean up the temporary script file
+            File.Delete(tempVbsPath);
 
         }
         catch (System.IO.FileNotFoundException ex)
@@ -55,18 +75,23 @@ class MacroExecutor
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Lifecycle helper methods – placeholders for the mandated create/load/save rules
-    // -------------------------------------------------------------------------
-    static Diagram LoadDiagram(string path)
+    // Very simple conversion: removes Sub/Function declarations and End statements
+    static string ConvertVbaToVbs(string vbaCode)
     {
-        // The actual implementation is supplied by the lifecycle rule.
-        return new Diagram(path);
-    }
-
-    static void SaveDiagram(Diagram diagram, string path)
-    {
-        // The actual implementation is supplied by the lifecycle rule.
-        diagram.Save(path, SaveFileFormat.Vdx);
+        var sb = new StringBuilder();
+        string[] lines = vbaCode.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+        foreach (string line in lines)
+        {
+            string trimmed = line.Trim();
+            if (trimmed.StartsWith("Sub ", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("Function ", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.Equals("End Sub", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.Equals("End Function", StringComparison.OrdinalIgnoreCase))
+            {
+                continue; // Skip declaration and termination lines
+            }
+            sb.AppendLine(line);
+        }
+        return sb.ToString();
     }
 }

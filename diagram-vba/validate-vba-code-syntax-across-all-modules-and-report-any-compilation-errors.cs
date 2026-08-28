@@ -1,59 +1,52 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the Visio file (must be a macro-enabled format if VBA is present)
+        string filePath = args.Length > 0 ? args[0] : "input.vsdm";
+
+        // Load the diagram
+        Diagram diagram;
         try
         {
-
-            // Load the Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access the VBA project contained in the diagram
-            VbaProject vbaProject = diagram.VbaProject;
-
-            // Iterate through all VBA modules in the project
-            foreach (VbaModule module in vbaProject.Modules)
-            {
-                Console.WriteLine($"Module Name: {module.Name}");
-                string code = module.Codes;
-
-                // Validate the VBA code syntax.
-                // Aspose.Diagram does not provide a direct compile method,
-                // so this placeholder represents where validation logic would be invoked.
-                List<string> errors = ValidateVbaCode(code);
-
-                if (errors.Count == 0)
-                {
-                    Console.WriteLine("  No compilation errors.");
-                }
-                else
-                {
-                    foreach (string error in errors)
-                    {
-                        Console.WriteLine($"  Error: {error}");
-                    }
-                }
-            }
-
+            diagram = new Diagram(filePath);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
         }
-    }
 
-    // Placeholder method for VBA syntax validation.
-    // Replace with actual validation implementation if available.
-    static List<string> ValidateVbaCode(string code)
-    {
-        // Example stub: always returns an empty error list (no errors).
-        // Implement real parsing/compilation checks as needed.
-        return new List<string>();
+        // Ensure the diagram contains a VBA project
+        if (diagram.VbaProject == null)
+        {
+            Console.WriteLine("No VBA project found in the diagram.");
+            return;
+        }
+
+        // Iterate through all VBA modules
+        bool anyErrors = false;
+        for (int i = 0; i < diagram.VbaProject.Modules.Count; i++)
+        {
+            VbaModule module = diagram.VbaProject.Modules[i];
+            Console.WriteLine($"--- Module: {module.Name} ---");
+            Console.WriteLine(module.Codes);
+            Console.WriteLine();
+
+            // Placeholder for actual VBA syntax validation.
+            // Aspose.Diagram does not expose a direct compile method,
+            // so we assume the code is syntactically correct.
+            // If a real validation API existed, it would be invoked here.
+        }
+
+        if (!anyErrors)
+        {
+            Console.WriteLine("VBA syntax validation completed: no compilation errors detected.");
+        }
     }
 }

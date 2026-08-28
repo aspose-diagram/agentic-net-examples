@@ -1,33 +1,41 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input and output file paths (adjust as needed)
+            // Path to the existing Visio diagram
             string inputPath = "input.vsdx";
+            // Path where the modified diagram will be saved
             string outputPath = "output.vsdx";
 
-            // Load the existing diagram
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (or iterate pages if needed)
-            Page page = diagram.Pages[0];
+            // Iterate through all pages and add the new layer
+            foreach (Page page in diagram.Pages)
+            {
+                // Create a new layer instance
+                Layer layer = new Layer();
 
-            // Create a new layer named 'Annotations'
-            Layer layer = new Layer();
-            layer.Name.Value = "Annotations";          // Set layer name
-            layer.Visible.Value = BOOL.True;          // Make the layer visible
-            layer.IsColorChecked = BOOL.True;         // Enable color for the layer
-            layer.Color.Value = "#0000FF";            // Set layer color to blue (hex)
+                // Set the layer name
+                layer.Name.Value = "Annotations";
 
-            // Add the new layer to the page's layer collection
-            page.PageSheet.Layers.Add(layer);
+                // Enable the color for the layer
+                layer.IsColorChecked = BOOL.True;
+
+                // Set the layer color to blue (hex format)
+                layer.Color.Value = "#0000FF";
+
+                // Add the layer to the page's layer collection
+                page.PageSheet.Layers.Add(layer);
+            }
 
             // Save the updated diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);

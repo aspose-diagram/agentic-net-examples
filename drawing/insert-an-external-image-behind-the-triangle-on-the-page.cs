@@ -1,26 +1,29 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
 {
-    static void Main()
+    public static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            using (Diagram diagram = new Diagram("input.vsdx"))
+            // Paths – adjust as needed
+            string diagramPath = "input.vsdx";
+            string imagePath = "background.png";
+            string outputPath = "output.vsdx";
+
+            // Load the existing Visio diagram
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Access the first page (adjust index if needed)
+                // Access the first page (modify if a different page is required)
                 Page page = diagram.Pages[0];
 
-                // Find the first triangle shape on the page
+                // Locate the triangle shape on the page
                 Shape triangle = null;
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has a master and compare its name
                     if (shape.Master != null && shape.Master.Name == "Triangle")
                     {
                         triangle = shape;
@@ -30,35 +33,26 @@ class Program
 
                 if (triangle == null)
                 {
-                    Console.WriteLine("Triangle shape not found on the page.");
-                    return;
+                    throw new Exception("Triangle shape not found on the page.");
                 }
 
-                // Path to the external image to be inserted
-                const string imagePath = "background.png";
+                // Retrieve the triangle's position and size
+                double pinX = triangle.XForm.PinX.Value;
+                double pinY = triangle.XForm.PinY.Value;
+                double width = triangle.XForm.Width.Value;
+                double height = triangle.XForm.Height.Value;
 
-                // Insert the image as a shape positioned behind the triangle
+                // Insert the external image as a shape behind the triangle
                 using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
                 {
-                    // Use the triangle's position and size for the image shape
-                    double pinX = triangle.XForm.PinX.Value;
-                    double pinY = triangle.XForm.PinY.Value;
-                    double width = triangle.XForm.Width.Value;
-                    double height = triangle.XForm.Height.Value;
-
-                    // Add the image shape; AddShape returns the shape ID (long)
-                    long imageShapeId = page.AddShape(pinX, pinY, width, height, imgStream);
-
-                    // Retrieve the shape object to modify its Z-order
-                    Shape imageShape = page.Shapes.GetShape(imageShapeId);
-                    imageShape.SendToBack(); // Ensure the image is behind other shapes
+                    long imgShapeId = page.AddShape(pinX, pinY, width, height, imgStream);
+                    Shape imgShape = page.Shapes.GetShape(imgShapeId);
+                    imgShape.SendToBack(); // Ensure the image is behind other shapes
                 }
 
                 // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            Console.WriteLine("Image inserted behind the triangle and diagram saved as output.vsdx.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,11 +1,11 @@
 {
   "category": "working-with-diagrams",
   "display_name": "Working With Diagrams",
-  "version": "26.7.0",
+  "version": "26.8.0",
   "framework": "net8.0",
   "total": 40,
   "pass_rate": 100.0,
-  "generated": "2026-07-28",
+  "generated": "2026-08-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -66,11 +66,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Page",
         "Pages",
-        "PdfSaveOptions"
+        "PdfSaveOptions",
+        "Save"
       ]
     },
     {
@@ -98,7 +98,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -167,6 +168,7 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.IO",
+        "System.Threading",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -234,15 +236,13 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "PdfSaveOptions",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -257,9 +257,7 @@
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions",
-        "Save",
-        "diagram"
+        "HTMLSaveOptions"
       ]
     },
     {
@@ -320,15 +318,18 @@
       "task": "Export connector routing information and generate a visual diagram of connections using a third party graph library",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
-        "Layout",
-        "Pages",
-        "Save"
+        "Page",
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -358,7 +359,7 @@
         "Aspose.Diagram",
         "Aspose.Drawing.Text",
         "System",
-        "System.IO",
+        "System.Collections.Generic",
         "System.Linq"
       ],
       "key_apis": [
@@ -373,14 +374,16 @@
       "task": "Flatten all groups into individual shapes after merging to simplify further processing",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
+        "Save",
         "Shapes",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -408,7 +411,8 @@
       "task": "Implement error handling that catches interruptmonitor exceptions and logs the aborted operation",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.Threading"
       ],
       "key_apis": [
         "Diagram",
@@ -422,7 +426,8 @@
       "task": "Load a vsd file with custom loadoptions enabling interruptmonitor for cancellation",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram"
@@ -450,7 +455,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO",
         "System.Linq",
         "System.Threading.Tasks"
       ],
@@ -470,7 +474,9 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -481,10 +487,13 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Shapes",
+        "page"
       ]
     },
     {
@@ -526,13 +535,14 @@
       "task": "Rename all pages sequentially after merging to avoid naming conflicts",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "page"
+        "Pages",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -541,7 +551,8 @@
       "task": "Retrieve and log the font size of each text shape for accessibility auditing",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -563,7 +574,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "diagram"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -589,12 +602,11 @@
       "task": "Set loadoptions interruptmonitor to abort loading after ten seconds for large diagrams",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.Diagnostics"
       ],
       "key_apis": [
-        "Diagram",
-        "Save",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -653,12 +665,12 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]

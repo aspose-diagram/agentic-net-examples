@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using Aspose.Diagram;
@@ -6,28 +7,49 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramHtmlExport
 {
-    // Implements IStreamProvider to compress each resource using GZIP before writing to disk.
+    // Implements IStreamProvider to compress exported resources using GZIP.
     public class GzipStreamProvider : IStreamProvider
     {
-        // Called by Aspose.Diagram when a new resource stream is required.
+        // Keep track of the underlying memory streams for each options instance.
+        private readonly Dictionary<StreamProviderOptions, MemoryStream> _memoryStreams = new();
+
+        // Called before a resource stream is created.
         public void InitStream(StreamProviderOptions options)
         {
-            // Ensure the target directory exists.
-            string directory = Path.GetDirectoryName(options.DefaultPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
+            // MemoryStream will hold the compressed data.
+            var memory = new MemoryStream();
 
-            // Create a file stream for the resource and wrap it with GZipStream for compression.
-            FileStream fileStream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write);
-            options.Stream = new GZipStream(fileStream, CompressionMode.Compress);
+            // GZipStream writes compressed bytes into the memory stream.
+            var gzip = new GZipStream(memory, CompressionMode.Compress, leaveOpen: true);
+
+            // Assign the GZipStream to the options so Aspose writes into it.
+            options.Stream = gzip;
+
+            // Store the memory stream for later finalization.
+            _memoryStreams[options] = memory;
         }
 
-        // Called after the resource has been written; dispose the stream.
+        // Called after the resource has been written.
         public void CloseStream(StreamProviderOptions options)
         {
+            if (!_memoryStreams.TryGetValue(options, out var memory))
+                return;
+
+            // Dispose the GZipStream to flush all data.
             options.Stream?.Dispose();
+
+            // Reset position to read from the beginning.
+            memory.Position = 0;
+
+            // Write the compressed content to the target file path.
+            using (var file = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write))
+            {
+                memory.CopyTo(file);
+            }
+
+            // Clean up.
+            memory.Dispose();
+            _memoryStreams.Remove(options);
         }
     }
 
@@ -39,18 +61,23 @@ namespace DiagramHtmlExport
             {
 
                 // Load an existing Visio diagram.
-                Diagram diagram = new Diagram("input.vsdx");
+                var diagramPath = "input.vsdx";
+                var diagram = new Diagram(diagramPath);
 
-                // Configure HTML export options and assign the custom GZIP stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                // Configure HTML export options and assign the custom stream provider.
+                var htmlOptions = new HTMLSaveOptions
                 {
+                    // Export all pages as separate files.
+                    SaveAsSingleFile = false,
+                    // Use the GZIP stream provider for resources (images, CSS, etc.).
                     StreamProvider = new GzipStreamProvider()
                 };
 
-                // Export the diagram to HTML; resources (images, CSS, etc.) will be compressed.
-                diagram.Save("output.html", htmlOptions);
+                // Export the diagram to HTML. Resources will be written as compressed files.
+                var outputHtml = "output.html";
+                diagram.Save(outputHtml, htmlOptions);
 
-                Console.WriteLine("Diagram exported to HTML with GZIP-compressed resources.");
+                Console.WriteLine("HTML export completed with GZIP-compressed resources.");
 
             }
             catch (System.IO.FileNotFoundException ex)

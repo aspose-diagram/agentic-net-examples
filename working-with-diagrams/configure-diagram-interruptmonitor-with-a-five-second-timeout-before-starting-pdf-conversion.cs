@@ -1,5 +1,6 @@
-using System;
 using System.IO;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
@@ -8,46 +9,35 @@ class Program
 {
     static void Main()
     {
-        // Paths to the source Visio file and the target PDF file
-        string inputPath = "input.vsdx";
-        // Guard against missing input file
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-        string outputPath = "output.pdf";
-
-        // Create an InterruptMonitor to allow early termination
-        InterruptMonitor monitor = new InterruptMonitor();
-
-        // Start a background task that will interrupt after 5 seconds
-        Task.Run(async () =>
-        {
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            monitor.Interrupt(); // Signal interruption if operation exceeds timeout
-        });
-
         try
         {
-            // Prepare load options and assign the monitor for load interruption
-            LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsdx);
-            loadOptions.InterruptMonitor = monitor;
 
-            // Load the diagram with the interrupt monitor attached
-            Diagram diagram = new Diagram(inputPath, loadOptions);
+            // Load the source diagram file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Assign the same monitor to the diagram for post‑load operations (e.g., PDF conversion)
+            // Create an interrupt monitor instance
+            InterruptMonitor monitor = new InterruptMonitor();
+
+            // Start a background task that will trigger an interruption after 5 seconds
+            Task.Run(() =>
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(5));
+                monitor.Interrupt(); // Request interruption
+            });
+
+            // Assign the monitor to the diagram before starting the conversion
             diagram.InterruptMonitor = monitor;
 
-            // Configure PDF save options (default font can be set as needed)
+            // Prepare PDF save options (default settings)
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
 
-            // Save the diagram as PDF using the configured options
-            diagram.Save(outputPath, pdfOptions);
+            // Save the diagram as PDF; the operation will be interrupted if it exceeds 5 seconds
+            diagram.Save("output.pdf", pdfOptions);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Handle any errors, including those caused by interruption
-            Console.Error.WriteLine("An error occurred: " + ex.Message);
-            throw;
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

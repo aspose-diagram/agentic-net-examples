@@ -1,75 +1,98 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect three arguments: input diagram, high‑resolution images folder, output diagram path
+        if (args.Length < 3)
         {
-            // Expect three arguments: input diagram path, folder with high‑resolution images, output diagram path
-            if (args.Length != 3)
+            Console.Error.WriteLine("Usage: ReplaceImages <inputDiagram> <highResFolder> <outputDiagram>");
+            return;
+        }
+
+        string inputDiagramPath = args[0];
+        if (!File.Exists(inputDiagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputDiagramPath}");
+            return;
+        }
+
+        string highResFolder = args[1];
+        if (!Directory.Exists(highResFolder))
+        {
+            Console.Error.WriteLine($"Folder not found: {highResFolder}");
+            return;
+        }
+
+        string outputDiagramPath = args[2];
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(outputDiagramPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputDiagramPath);
+
+            // Pre‑load all high‑resolution image file names for quick lookup
+            var highResFiles = Directory.GetFiles(highResFolder);
+            // Build a dictionary keyed by file name without extension (case‑insensitive)
+            var highResMap = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var file in highResFiles)
             {
-                Console.WriteLine("Usage: ImageReplacementExample <inputDiagram> <highResFolder> <outputDiagram>");
-                return;
+                string key = Path.GetFileNameWithoutExtension(file);
+                if (!highResMap.ContainsKey(key))
+                    highResMap[key] = file;
             }
 
-            string diagramPath = args[0];
-            string highResFolder = args[1];
-            string outputPath = args[2];
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Supported image extensions for replacement
-            string[] extensions = new[] { ".png", ".jpg", ".jpeg", ".bmp", ".gif" };
-
-            // Iterate through all pages and shapes
+            // Iterate through every page in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through every shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify image shapes (foreign objects)
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
+                    // Identify image shapes – they are of TypeValue.Foreign
+                    if (shape.Type == TypeValue.Foreign)
                     {
-                        // Use the shape's name (or universal name) as the base file name
-                        string baseName = !string.IsNullOrEmpty(shape.Name) ? shape.Name : shape.NameU;
+                        // Use the universal name (NameU) if available; otherwise fallback to Name
+                        string shapeName = !string.IsNullOrEmpty(shape.NameU) ? shape.NameU : shape.Name;
+                        if (string.IsNullOrEmpty(shapeName))
+                            continue; // Skip shapes without a recognizable name
 
-                        if (string.IsNullOrEmpty(baseName))
-                            continue; // Cannot determine a file name, skip
-
-                        string highResPath = null;
-
-                        // Search for a matching high‑resolution file in the folder
-                        foreach (string ext in extensions)
+                        // Attempt to locate a matching high‑resolution file (ignoring extension)
+                        if (highResMap.TryGetValue(shapeName, out string highResPath))
                         {
-                            string candidate = Path.Combine(highResFolder, baseName + ext);
-                            if (File.Exists(candidate))
-                            {
-                                highResPath = candidate;
-                                break;
-                            }
+                            // Read the high‑resolution image bytes
+                            byte[] imageBytes = File.ReadAllBytes(highResPath);
+                            // Replace the foreign data (raw image) with the new bytes
+                            shape.ForeignData.Value = imageBytes;
+                            Console.WriteLine($"Replaced image for shape '{shapeName}' with '{Path.GetFileName(highResPath)}'.");
                         }
-
-                        // If a matching file is found, replace the image data
-                        if (highResPath != null)
+                        else
                         {
-                            try
-                            {
-                                byte[] imageBytes = File.ReadAllBytes(highResPath);
-                                shape.ForeignData.Value = imageBytes;
-                                Console.WriteLine($"Replaced image for shape '{baseName}' with '{highResPath}'.");
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Failed to replace image for shape '{baseName}': {ex.Message}");
-                            }
+                            // No matching high‑resolution file found; leave the original image unchanged
+                            Console.WriteLine($"No high‑resolution image found for shape '{shapeName}'.");
                         }
                     }
                 }
             }
 
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            // Save the modified diagram to the desired output path (VSDX format)
+            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputDiagramPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

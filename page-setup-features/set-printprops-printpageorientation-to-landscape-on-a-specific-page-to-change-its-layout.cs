@@ -1,6 +1,7 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Printing;
 
 class Program
 {
@@ -9,20 +10,21 @@ class Program
         try
         {
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Retrieve the specific page (e.g., first page)
+                int pageIndex = 0;
+                Page page = diagram.Pages[pageIndex];
 
-            // Index of the page to modify (0‑based)
-            int pageIndex = 0; // adjust as needed
+                // Set the page orientation to Landscape
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-            // Access the PageSheet of the selected page
-            PageSheet pageSheet = diagram.Pages[pageIndex].PageSheet;
-
-            // Set the page orientation to Landscape
-            pageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

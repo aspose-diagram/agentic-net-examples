@@ -1,135 +1,167 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using Aspose.Diagram;
 
-class Program
+public class VisioActiveXComparer
+{
+    // Represents a difference found between two matching shapes
+    public class Difference
     {
-        static void Main(string[] args)
+        public string ShapeName { get; set; }
+        public string PropertyName { get; set; }
+        public string ValueInFirst { get; set; }
+        public string ValueInSecond { get; set; }
+
+        public override string ToString()
         {
-            try
-            {
-
-                // Paths to the two Visio files to compare
-                string filePath1 = @"C:\Diagrams\Diagram1.vsdx";
-                string filePath2 = @"C:\Diagrams\Diagram2.vsdx";
-
-                // Load the diagrams using the Aspose.Diagram constructors
-                Diagram diagram1 = new Diagram(filePath1);
-                Diagram diagram2 = new Diagram(filePath2);
-
-                // Build a lookup dictionary for shapes in the second diagram keyed by universal name (NameU)
-                var shapeLookup2 = new Dictionary<string, Shape>(StringComparer.OrdinalIgnoreCase);
-                foreach (Page page in diagram2.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (!string.IsNullOrEmpty(shape.NameU))
-                        {
-                            // If duplicate names exist, the last one wins – adjust as needed for your scenario
-                            shapeLookup2[shape.NameU] = shape;
-                        }
-                    }
-                }
-
-                // Iterate through shapes in the first diagram and compare ActiveX control properties
-                foreach (Page page1 in diagram1.Pages)
-                {
-                    foreach (Shape shape1 in page1.Shapes)
-                    {
-                        if (string.IsNullOrEmpty(shape1.NameU) || !shapeLookup2.TryGetValue(shape1.NameU, out Shape shape2))
-                        {
-                            // No matching shape in diagram2
-                            continue;
-                        }
-
-                        // Both shapes exist – check for ActiveX controls
-                        var ax1 = shape1.ActiveXControl;
-                        var ax2 = shape2.ActiveXControl;
-
-                        if (ax1 == null && ax2 == null)
-                        {
-                            // Neither shape contains an ActiveX control – nothing to compare
-                            continue;
-                        }
-
-                        if (ax1 == null || ax2 == null)
-                        {
-                            Console.WriteLine($"Shape '{shape1.NameU}' ActiveX presence differs between diagrams.");
-                            continue;
-                        }
-
-                        // Extract property dictionaries for both controls
-                        var props1 = GetActiveXProperties(ax1);
-                        var props2 = GetActiveXProperties(ax2);
-
-                        // Compare property sets
-                        foreach (var kvp in props1)
-                        {
-                            string propName = kvp.Key;
-                            string value1 = kvp.Value;
-                            props2.TryGetValue(propName, out string value2);
-
-                            if (!string.Equals(value1, value2, StringComparison.Ordinal))
-                            {
-                                Console.WriteLine($"Shape '{shape1.NameU}' – Property '{propName}' differs:");
-                                Console.WriteLine($"   Diagram1: {value1 ?? "<null>"}");
-                                Console.WriteLine($"   Diagram2: {value2 ?? "<null>"}");
-                            }
-                        }
-
-                        // Detect properties present only in diagram2
-                        foreach (var kvp in props2)
-                        {
-                            if (!props1.ContainsKey(kvp.Key))
-                            {
-                                Console.WriteLine($"Shape '{shape1.NameU}' – Property '{kvp.Key}' only present in Diagram2 with value: {kvp.Value}");
-                            }
-                        }
-                    }
-                }
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Retrieves all readable public properties of an ActiveXControl instance as a dictionary.
-        /// </summary>
-        private static Dictionary<string, string> GetActiveXProperties(object activeXControl)
-        {
-            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            if (activeXControl == null)
-                return dict;
-
-            // Use reflection to enumerate public instance properties
-            PropertyInfo[] props = activeXControl.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            foreach (PropertyInfo pi in props)
-            {
-                // Skip indexers
-                if (pi.GetIndexParameters().Length > 0)
-                    continue;
-
-                // Only consider properties that can be read
-                if (!pi.CanRead)
-                    continue;
-
-                try
-                {
-                    object val = pi.GetValue(activeXControl);
-                    dict[pi.Name] = val?.ToString();
-                }
-                catch
-                {
-                    // If a property throws, ignore it for comparison purposes
-                    dict[pi.Name] = "<unreadable>";
-                }
-            }
-
-            return dict;
+            return $"Shape: {ShapeName}, Property: {PropertyName}, First: {ValueInFirst}, Second: {ValueInSecond}";
         }
     }
+
+    // Compares two Visio files and returns a list of ActiveX control property differences
+    public static List<Difference> CompareActiveXControls(string firstVisioPath, string secondVisioPath)
+    {
+        var differences = new List<Difference>();
+
+        // Load the two diagrams using the provided constructors (lifecycle rule)
+        using (var diagram1 = new Diagram(firstVisioPath))
+        using (var diagram2 = new Diagram(secondVisioPath))
+        {
+            // Build a lookup of shapes from the second diagram by universal name (NameU)
+            var secondShapeLookup = new Dictionary<string, Shape>(StringComparer.OrdinalIgnoreCase);
+            foreach (Page page in diagram2.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (!string.IsNullOrEmpty(shape.NameU))
+                    {
+                        secondShapeLookup[shape.NameU] = shape;
+                    }
+                }
+            }
+
+            // Iterate through shapes in the first diagram
+            foreach (Page page in diagram1.Pages)
+            {
+                foreach (Shape shape1 in page.Shapes)
+                {
+                    // Find matching shape in the second diagram
+                    if (string.IsNullOrEmpty(shape1.NameU) || !secondShapeLookup.TryGetValue(shape1.NameU, out Shape shape2))
+                        continue; // No matching shape; skip
+
+                    // Both shapes must contain an ActiveX control
+                    var ax1 = shape1.ActiveXControl;
+                    var ax2 = shape2.ActiveXControl;
+                    if (ax1 == null && ax2 == null)
+                        continue; // Neither has ActiveX; nothing to compare
+                    if (ax1 == null || ax2 == null)
+                    {
+                        differences.Add(new Difference
+                        {
+                            ShapeName = shape1.NameU,
+                            PropertyName = "ActiveXControlPresence",
+                            ValueInFirst = ax1 != null ? "Present" : "Absent",
+                            ValueInSecond = ax2 != null ? "Present" : "Absent"
+                        });
+                        continue;
+                    }
+
+                    // Compare property values of the ActiveX controls.
+                    // The ActiveXControl object exposes a collection of Property elements.
+                    // Since the exact API is not detailed, we use reflection to enumerate public properties.
+                    var props1 = ax1.GetType().GetProperties();
+                    var props2 = ax2.GetType().GetProperties();
+
+                    // Build a lookup for second control's properties for quick access
+                    var secondPropLookup = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var p in props2)
+                    {
+                        try { secondPropLookup[p.Name] = p.GetValue(ax2); }
+                        catch { /* ignore inaccessible properties */ }
+                    }
+
+                    foreach (var p1 in props1)
+                    {
+                        object val1 = null;
+                        try { val1 = p1.GetValue(ax1); } catch { /* ignore */ }
+
+                        if (!secondPropLookup.TryGetValue(p1.Name, out object val2))
+                        {
+                            // Property exists only in first diagram
+                            differences.Add(new Difference
+                            {
+                                ShapeName = shape1.NameU,
+                                PropertyName = p1.Name,
+                                ValueInFirst = val1?.ToString() ?? "null",
+                                ValueInSecond = "Property missing"
+                            });
+                            continue;
+                        }
+
+                        // Compare values (using string representation for simplicity)
+                        string str1 = val1?.ToString() ?? "null";
+                        string str2 = val2?.ToString() ?? "null";
+
+                        if (!string.Equals(str1, str2, StringComparison.Ordinal))
+                        {
+                            differences.Add(new Difference
+                            {
+                                ShapeName = shape1.NameU,
+                                PropertyName = p1.Name,
+                                ValueInFirst = str1,
+                                ValueInSecond = str2
+                            });
+                        }
+                    }
+
+                    // Detect properties present only in the second control
+                    foreach (var p2 in props2)
+                    {
+                        if (!secondPropLookup.ContainsKey(p2.Name))
+                            continue; // already processed
+                        if (!Array.Exists(props1, p => p.Name.Equals(p2.Name, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            object val2 = null;
+                            try { val2 = p2.GetValue(ax2); } catch { /* ignore */ }
+
+                            differences.Add(new Difference
+                            {
+                                ShapeName = shape1.NameU,
+                                PropertyName = p2.Name,
+                                ValueInFirst = "Property missing",
+                                ValueInSecond = val2?.ToString() ?? "null"
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        return differences;
+    }
+
+    // Example usage
+    public static void Main()
+    {
+        try
+        {
+
+            string file1 = @"C:\Diagrams\DiagramA.vsdx";
+            string file2 = @"C:\Diagrams\DiagramB.vsdx";
+
+            List<Difference> diffs = CompareActiveXControls(file1, file2);
+
+            Console.WriteLine($"Found {diffs.Count} differences in ActiveX control properties:");
+            foreach (var diff in diffs)
+            {
+                Console.WriteLine(diff);
+            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
+    }
+}

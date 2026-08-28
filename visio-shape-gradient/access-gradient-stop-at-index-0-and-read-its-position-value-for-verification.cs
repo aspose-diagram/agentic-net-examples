@@ -12,28 +12,31 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page and the first shape (adjust indices as needed)
+            // Access the first shape on the first page (adjust indices as needed)
             Shape shape = diagram.Pages[0].Shapes[0];
 
-            // Retrieve the gradient fill of the shape
+            // Get the gradient fill of the shape
             GradientFill gradientFill = shape.Fill.GradientFill;
 
-            // Access the gradient stop at index 0
-            GradientStop firstStop = gradientFill.GradientStops[0];
-
-            // Read the position value of the gradient stop
-            double position = firstStop.Position.Value;
-
-            // Example verification against an expected value
-            double expected = 0.0; // replace with the expected position
-            if (Math.Abs(position - expected) < 0.0001)
+            // Verify that gradient stops exist
+            if (gradientFill != null && gradientFill.GradientStops.Count > 0)
             {
-                Console.WriteLine("Gradient stop position matches the expected value.");
+                // Access the gradient stop at index 0
+                GradientStop firstStop = gradientFill.GradientStops[0];
+
+                // Read its position value (DoubleValue.Value returns a double)
+                double position = firstStop.Position.Value;
+
+                // Output the position for verification
+                Console.WriteLine($"Gradient stop at index 0 has position: {position}");
             }
             else
             {
-                Console.WriteLine($"Gradient stop position {position} does not match expected {expected}.");
+                Console.WriteLine("No gradient stops found in the shape's gradient fill.");
             }
+
+            // Save the diagram if any modifications were made
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

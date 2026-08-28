@@ -4,39 +4,44 @@ using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class HtmlGenerator
 {
+    public static string GenerateHtml(string diagramPath)
+    {
+        // Load the Visio diagram from a file (source can be any stream or path as needed)
+        Diagram diagram = new Diagram(diagramPath);
+
+        // Prepare HTML save options (customize as required)
+        HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+        {
+            // Example: generate a single HTML file containing all resources
+            SaveAsSingleFile = true,
+            // Optional: set a title for the generated HTML
+            Title = "Generated Diagram"
+        };
+
+        // Use a memory stream to capture the HTML output without touching the file system
+        using (MemoryStream htmlStream = new MemoryStream())
+        {
+            // Save the diagram as HTML into the memory stream
+            diagram.Save(htmlStream, htmlOptions);
+
+            // Convert the stream contents to a UTF‑8 string
+            return Encoding.UTF8.GetString(htmlStream.ToArray());
+        }
+    }
+
+    // Example usage
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with your source as needed)
-            Diagram diagram = new Diagram("sample.vsdx");
+            string diagramFile = "sample.vsdx"; // path to the source Visio file
+            string htmlContent = GenerateHtml(diagramFile);
 
-            // Configure HTML save options (customize as required)
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-            {
-                // Example: generate a single HTML file with embedded resources
-                SaveAsSingleFile = true,
-                // Example: include the toolbar in the output
-                SaveToolBar = true
-            };
-
-            // Save the diagram to a memory stream in HTML format
-            using (MemoryStream htmlStream = new MemoryStream())
-            {
-                diagram.Save(htmlStream, htmlOptions);
-
-                // Reset the stream position before reading
-                htmlStream.Position = 0;
-
-                // Convert the HTML bytes to a string
-                string htmlContent = new StreamReader(htmlStream, Encoding.UTF8).ReadToEnd();
-
-                // htmlContent now contains the generated HTML without any file system access
-                Console.WriteLine(htmlContent);
-            }
+            // htmlContent now holds the HTML representation of the diagram
+            Console.WriteLine(htmlContent);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,40 +1,34 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.Printing;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram from a file
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Set print orientation to Portrait for every page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the modified output file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Iterate through all pages and set orientation to Portrait
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Access the PrintProps cell collection and set the orientation
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-                    }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-
-                Console.WriteLine("Print orientation set to Portrait for all pages and saved to " + outputPath);
-
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

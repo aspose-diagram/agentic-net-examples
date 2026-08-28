@@ -1,57 +1,75 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Define input file path and verify existence
+        string inputPath = "input.vsdx";
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Retrieve shape with ID 1 from the active page
+            Shape shape = diagram.ActivePage.Shapes.GetShape(1);
 
-            // Get the first shape on the first page (adjust the shape ID as needed)
-            Shape shape = diagram.Pages[0].Shapes.GetShape(1);
-
-            // Ensure the shape uses a gradient fill
-            shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
+            // Enable gradient fill on the shape
+            shape.Fill.FillPattern.Value = 25;               // Gradient fill pattern
             shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+            shape.Fill.GradientFill.GradientDir.Value = 0;   // Optional direction
 
-            // Capture existing gradient stop positions and colors
-            List<double> positions = new List<double>();
-            List<string> colors = new List<string>();
-            foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
+            // Access the gradient fill object for convenience
+            var gradientFill = shape.Fill.GradientFill;
+
+            // Prepare a list to hold updated stop data (position and color)
+            var updatedStops = new List<(double Position, string ColorHex)>();
+            int currentIndex = 0;
+
+            // Iterate through existing gradient stops
+            foreach (GradientStop stop in gradientFill.GradientStops)
             {
-                positions.Add(stop.Position.Value);
-                colors.Add(stop.Color.Value);
+                double position = stop.Position.Value;   // Preserve original position
+                string colorHex = stop.Color.Value;      // Preserve original color
+
+                // If this is the stop at index 1, change its color to pure green
+                if (currentIndex == 1)
+                {
+                    colorHex = "#00FF00";
+                }
+
+                // Store the (possibly) modified stop data
+                updatedStops.Add((position, colorHex));
+                currentIndex++;
             }
 
-            // Change the color of the gradient stop at index 1 to pure green (#00FF00)
-            if (colors.Count > 1)
+            // Remove all existing stops
+            gradientFill.GradientStops.Clear();
+
+            // Re‑add stops using the correct Add method (no direct GradientStop construction)
+            foreach (var (Position, ColorHex) in updatedStops)
             {
-                colors[1] = "#00FF00";
+                gradientFill.GradientStops.Add(
+                    new DoubleValue(Position, MeasureConst.NUM),
+                    new ColorValue(ColorHex, MeasureConst.Undefined));
             }
 
-            // Rebuild the gradient stops collection with the updated colors
-            shape.Fill.GradientFill.GradientStops.Clear();
-            for (int i = 0; i < positions.Count; i++)
-            {
-                shape.Fill.GradientFill.GradientStops.Add(
-                    new DoubleValue(positions[i], MeasureConst.NUM),
-                    new ColorValue(colors[i], MeasureConst.Undefined));
-            }
-
-            // Save the modified diagram
+            // Save the modified diagram to a new file
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

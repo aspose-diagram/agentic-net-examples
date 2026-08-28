@@ -13,11 +13,17 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Specify the name of the VBA module to delete
-            string moduleName = "MyMacroModule";
+            // Name of the VBA module to delete
+            string moduleName = "MyModule";
 
-            // Remove the module from the VBA project if it exists
-            diagram.VbaProject.Modules.Remove(moduleName);
+            // Access the collection of VBA modules
+            VbaModuleCollection modules = diagram.VbaProject.Modules;
+
+            // Remove the module if it exists
+            if (modules[moduleName] != null)
+            {
+                modules.Remove(moduleName);
+            }
 
             // Save the updated diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);

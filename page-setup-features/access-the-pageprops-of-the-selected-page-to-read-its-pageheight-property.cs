@@ -9,19 +9,19 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Choose the page you want to inspect (e.g., the first page)
+            // Select the first page (or use diagram.Pages[index] for a specific page)
             Page page = diagram.Pages[0];
 
             // Access the PageProps of the selected page
-            DoubleValue pageHeightValue = page.PageSheet.PageProps.PageHeight;
+            PageProps pageProps = page.PageSheet.PageProps;
 
-            // Retrieve the numeric height from the DoubleValue object
-            double pageHeight = pageHeightValue.Value;
+            // Read the PageHeight property (value is stored in a DoubleValue)
+            double pageHeight = pageProps.PageHeight.Value;
 
-            // Display the page height
+            // Output the page height
             Console.WriteLine($"Page Height: {pageHeight}");
 
         }

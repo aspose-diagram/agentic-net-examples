@@ -5,54 +5,55 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramConversion
 {
-    // Custom callback to throttle page saving during PDF export.
-    // Introduces a short delay after each page is saved to reduce CPU usage.
+    // Custom callback to throttle page saving and limit CPU usage.
     public class ThrottlingPageSavingCallback : IPageSavingCallback
     {
+        // Milliseconds to pause after each page is saved.
+        private readonly int _delayMilliseconds;
+
+        public ThrottlingPageSavingCallback(int delayMilliseconds = 200)
+        {
+            _delayMilliseconds = delayMilliseconds;
+        }
+
         // Called before a page starts saving.
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
-            // No throttling here; we could add logic if needed.
+            // Ensure the page will be output (default is true).
+            args.IsToOutput = true;
+            // Optionally, you could add logic here to skip pages on very low‑end devices.
         }
 
         // Called after a page has been saved.
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-            // Introduce a small pause to limit CPU usage on low‑end devices.
-            // Adjust the delay (in milliseconds) as appropriate.
-            Thread.Sleep(100);
+            // Introduce a pause to throttle CPU usage.
+            Thread.Sleep(_delayMilliseconds);
+
+            // Indicate whether more pages remain to be processed.
+            // The default is true; we keep it unchanged.
+            args.HasMorePages = true;
         }
     }
 
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static void Main()
         {
             try
             {
 
-                // Input and output file paths.
-                string inputPath = "input.vsdx";
-                string outputPath = "output.pdf";
+                // Load the source diagram.
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Load the Visio diagram.
-                using (Diagram diagram = new Diagram(inputPath))
+                // Configure PDF save options with the throttling callback.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
                 {
-                    // Configure PDF save options.
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions
-                    {
-                        // Set a default font to avoid missing‑font issues.
-                        DefaultFont = "Arial",
-                        // Assign the custom throttling callback.
-                        PageSavingCallback = new ThrottlingPageSavingCallback()
-                    };
+                    PageSavingCallback = new ThrottlingPageSavingCallback(delayMilliseconds: 250)
+                };
 
-                    // Save the diagram as PDF with the throttling callback.
-                    diagram.Save(outputPath, pdfOptions);
-                    Console.WriteLine("Diagram saved to PDF successfully.");
-                }
+                // Save the diagram to PDF using the configured options.
+                diagram.Save("output.pdf", pdfOptions);
 
             }
             catch (System.IO.FileNotFoundException ex)

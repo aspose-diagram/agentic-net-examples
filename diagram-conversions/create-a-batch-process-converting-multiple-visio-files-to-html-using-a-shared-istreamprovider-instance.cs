@@ -1,67 +1,108 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class CustomStreamProvider : IStreamProvider
+namespace VisioBatchHtmlExport
 {
-    // Called before a resource stream is created.
-    public void InitStream(StreamProviderOptions options)
+    // Custom IStreamProvider that writes resources to a shared output directory
+    public class SharedStreamProvider : IStreamProvider
     {
-        // Provide a temporary memory stream for the resource.
-        options.Stream = new MemoryStream();
-    }
+        private readonly string _baseOutputPath;
 
-    // Called after the resource stream is no longer needed.
-    public void CloseStream(StreamProviderOptions options)
-    {
-        options.Stream?.Dispose();
-    }
-}
-
-class Program
-{
-    static void Main(string[] args)
-    {
-        // Input folder containing Visio files (default "InputVisio").
-        string inputFolder = args.Length > 0 ? args[0] : "InputVisio";
-
-        // Output folder for generated HTML files (default "OutputHtml").
-        string outputFolder = args.Length > 1 ? args[1] : "OutputHtml";
-
-        // Ensure the output directory exists.
-        Directory.CreateDirectory(outputFolder);
-
-        // Shared IStreamProvider instance for all conversions.
-        IStreamProvider streamProvider = new CustomStreamProvider();
-
-        // Process each Visio file in the input folder.
-        foreach (string visioPath in Directory.GetFiles(inputFolder, "*.vsdx"))
+        public SharedStreamProvider(string baseOutputPath)
         {
-            try
-            {
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(visioPath);
+            _baseOutputPath = baseOutputPath;
+        }
 
-                // Prepare HTML save options and assign the shared stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+        // Called when a resource stream is needed
+        public void InitStream(StreamProviderOptions options)
+        {
+            // Combine base path with the default relative path provided by Aspose
+            string fullPath = Path.Combine(_baseOutputPath, options.DefaultPath);
+
+            // Ensure the directory exists
+            string directory = Path.GetDirectoryName(fullPath);
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // Assign a writable file stream to the options
+            options.Stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
+        }
+
+        // Called after the resource has been written
+        public void CloseStream(StreamProviderOptions options)
+        {
+            if (options.Stream != null)
+            {
+                options.Stream.Dispose();
+                options.Stream = null;
+            }
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // Input folder containing Visio files
+            string inputFolder = @"C:\VisioFiles";
+
+            // Output folder where HTML files and resources will be placed
+            string outputFolder = @"C:\VisioHtmlOutput";
+
+            // Ensure output folder exists
+            if (!Directory.Exists(outputFolder))
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+
+            // Create a single shared IStreamProvider instance
+            SharedStreamProvider streamProvider = new SharedStreamProvider(outputFolder);
+
+            // Get all Visio files (any supported extension) in the input folder
+            string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+            List<string> supportedExtensions = new List<string> { ".vsdx", ".vsd", ".vsdx", ".vssx", ".vstx", ".vdx", ".vsx", ".vtx" };
+
+            foreach (string filePath in visioFiles)
+            {
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                if (!supportedExtensions.Contains(extension))
                 {
-                    StreamProvider = streamProvider
-                };
+                    continue; // Skip non-Visio files
+                }
 
-                // Determine output HTML file path.
-                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(visioPath);
-                string htmlPath = Path.Combine(outputFolder, fileNameWithoutExt + ".html");
+                try
+                {
+                    // Load the Visio diagram
+                    Diagram diagram = new Diagram(filePath);
 
-                // Save the diagram as HTML.
-                diagram.Save(htmlPath, htmlOptions);
+                    // Prepare HTML save options
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                    {
+                        StreamProvider = streamProvider,
+                        SaveAsSingleFile = false,
+                        Title = Path.GetFileNameWithoutExtension(filePath)
+                    };
 
-                Console.WriteLine($"Converted: {visioPath} -> {htmlPath}");
+                    // Determine output HTML file path
+                    string outputHtmlPath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(filePath) + ".html");
+
+                    // Save diagram as HTML
+                    diagram.Save(outputHtmlPath, htmlOptions);
+
+                    Console.WriteLine($"Successfully exported '{filePath}' to HTML.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing '{filePath}': {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing '{visioPath}': {ex.Message}");
-            }
+
+            Console.WriteLine("Batch conversion completed.");
         }
     }
 }

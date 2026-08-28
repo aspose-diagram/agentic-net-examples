@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 
 class Program
 {
@@ -9,9 +10,8 @@ class Program
         try
         {
 
-            // Path to the source Visio file
+            // Paths to the input and output Visio files
             string inputPath = "input.vsdx";
-            // Path for the updated Visio file
             string outputPath = "output.vsdx";
 
             // Load the diagram from file
@@ -20,20 +20,16 @@ class Program
             // Access the collection of custom properties
             var customProps = diagram.DocumentProps.CustomProps;
 
-            // Flag to indicate whether the property was found and updated
             bool updated = false;
 
-            // Iterate through custom properties to find "Priority"
-            for (int i = 0; i < customProps.Count; i++)
+            // Locate the custom property named "Priority"
+            foreach (CustomProp prop in customProps)
             {
-                var prop = customProps[i];
                 if (prop.Name == "Priority")
                 {
-                    // Check current value
-                    string currentValue = prop.CustomValue.ValueString;
-                    if (currentValue == "Low")
+                    // If its current value is "Low", change it to "High"
+                    if (prop.CustomValue.ValueString == "Low")
                     {
-                        // Update to "High"
                         prop.CustomValue.ValueString = "High";
                         updated = true;
                     }
@@ -41,30 +37,18 @@ class Program
                 }
             }
 
-            // If the property was not found, optionally add it (not required by task)
-            // Uncomment the following block if you want to ensure the property exists:
-            /*
-            if (!updated)
-            {
-                var newProp = new CustomProp
-                {
-                    Name = "Priority",
-                    PropType = PropType.String,
-                    CustomValue = { ValueString = "High" }
-                };
-                customProps.Add(newProp);
-                updated = true;
-            }
-            */
-
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Simple feedback
+            // Output the result
             if (updated)
+            {
                 Console.WriteLine("Custom property 'Priority' was updated to 'High'.");
+            }
             else
-                Console.WriteLine("Custom property 'Priority' was not found or did not require updating.");
+            {
+                Console.WriteLine("Custom property 'Priority' was not updated (not found or not 'Low').");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

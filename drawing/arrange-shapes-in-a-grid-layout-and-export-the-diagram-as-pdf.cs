@@ -3,52 +3,50 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class GridDiagramExample
+class Program
 {
     static void Main()
     {
-        try
+        // Create a new empty diagram
+        using (Diagram diagram = new Diagram())
         {
+            // Access the first page of the diagram
+            Page page = diagram.Pages[0];
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Define grid parameters
-            int rows = 5;
-            int columns = 4;
-            double shapeWidth = 1.0;   // inches
-            double shapeHeight = 0.5;  // inches
-            double horizontalSpacing = 0.5; // inches between shapes
-            double verticalSpacing = 0.5;   // inches between shapes
+            // Define grid layout parameters
+            int rows = 3;                     // Number of rows
+            int cols = 4;                     // Number of columns
+            double shapeWidth = 1.0;          // Width of each rectangle (in inches)
+            double shapeHeight = 0.5;         // Height of each rectangle (in inches)
+            double hSpacing = 0.5;            // Horizontal spacing between shapes (in inches)
+            double vSpacing = 0.5;            // Vertical spacing between shapes (in inches)
 
             // Starting position (center of first shape)
-            double startX = shapeWidth / 2;
-            double startY = shapeHeight / 2;
+            double startX = shapeWidth / 2 + hSpacing;
+            double startY = shapeHeight / 2 + vSpacing;
 
-            // Ensure the master shape exists; using built‑in "Rectangle" master
-            string masterName = "Rectangle";
-
-            // Add shapes in a grid layout
-            for (int row = 0; row < rows; row++)
+            // Create shapes arranged in a grid
+            for (int r = 0; r < rows; r++)
             {
-                for (int col = 0; col < columns; col++)
+                for (int c = 0; c < cols; c++)
                 {
-                    double pinX = startX + col * (shapeWidth + horizontalSpacing);
-                    double pinY = startY + row * (shapeHeight + verticalSpacing);
+                    double pinX = startX + c * (shapeWidth + hSpacing);
+                    double pinY = startY + r * (shapeHeight + vSpacing);
 
-                    // Add shape with specified position and size
-                    diagram.AddShape(pinX, pinY, shapeWidth, shapeHeight, masterName, 0);
+                    // Draw a rectangle at the calculated position
+                    long shapeId = page.DrawRectangle(pinX, pinY, shapeWidth, shapeHeight);
+
+                    // Retrieve the shape to set its text
+                    Shape shape = page.Shapes.GetShape(shapeId);
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt($"R{r + 1}C{c + 1}"));
                 }
             }
 
-            // Save the diagram as PDF using PdfSaveOptions
+            // Export the diagram to PDF
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
             diagram.Save("GridDiagram.pdf", pdfOptions);
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

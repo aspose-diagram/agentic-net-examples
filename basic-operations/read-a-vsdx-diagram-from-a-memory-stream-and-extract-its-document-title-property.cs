@@ -2,20 +2,18 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-public class VisioHelper
+public static class DiagramHelper
 {
     // Reads a VSDX diagram from a memory stream and returns its document title.
-    public static string GetDiagramTitle(MemoryStream visioStream)
+    public static string GetDiagramTitle(MemoryStream memoryStream)
     {
-        // Ensure the stream position is at the beginning.
-        if (visioStream.Position != 0)
-            visioStream.Position = 0;
+        // Ensure the stream is positioned at the beginning before loading.
+        memoryStream.Position = 0;
 
-        // Load the diagram from the provided stream.
-        using (Diagram diagram = new Diagram(visioStream))
+        // Load the diagram from the provided stream using the Diagram(Stream) constructor.
+        using (Diagram diagram = new Diagram(memoryStream))
         {
             // Access the Title property from the document's properties.
-            // It may be null or empty if not set.
             return diagram.DocumentProps.Title;
         }
     }

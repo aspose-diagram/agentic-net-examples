@@ -9,17 +9,15 @@ class Program
         try
         {
 
-            // Paths for the source diagram and the VSDX output
-            string inputPath = "input.vsd";          // existing diagram file
-            string outputPath = "output.vsdx";       // target VSDX file
-
-            // Maximum allowed file size in bytes (example: 5 MB)
-            long maxSizeBytes = 5 * 1024 * 1024;
-
-            // Load the diagram from the input file using the built‑in constructor
+            // Load an existing diagram (replace with your actual file)
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Save the diagram to VSDX format using the provided Save method
+            // Define output file and size limit (e.g., 5 MB)
+            string outputPath = "output.vsdx";
+            long maxSizeBytes = 5 * 1024 * 1024; // 5 MB
+
+            // Save the diagram in VSDX format using the provided Save method
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             // Verify that the saved file does not exceed the size limit
@@ -33,7 +31,7 @@ class Program
                 Console.WriteLine($"Success: File saved as '{outputPath}' with size {fileInfo.Length} bytes.");
             }
 
-            // Clean up resources
+            // Clean up
             diagram.Dispose();
 
         }

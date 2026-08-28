@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
@@ -12,24 +12,21 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page and the first shape on that page
+            // Access the first page and the first shape (adjust indices as needed)
             Page page = diagram.Pages[0];
             Shape shape = page.Shapes[0];
 
-            // Ensure the shape has at least one hyperlink; create one if none exist
-            if (shape.Hyperlinks.Count == 0)
-            {
-                Hyperlink newLink = new Hyperlink();
-                // Example address; adjust as needed
-                newLink.Address.Value = "https://example.com";
-                shape.Hyperlinks.Add(newLink);
-            }
+            // Create a new hyperlink instance
+            Hyperlink hyperlink = new Hyperlink();
 
-            // Retrieve the first hyperlink associated with the shape
-            Hyperlink hyperlink = shape.Hyperlinks[0];
+            // Set the target address of the hyperlink
+            hyperlink.Address.Value = "https://example.com";
 
-            // Set the description (tooltip) for the hyperlink
-            hyperlink.Description.Value = "Open example website";
+            // Set the description which appears as a tooltip on mouse hover
+            hyperlink.Description.Value = "Click to open the example website";
+
+            // Add the hyperlink to the shape's hyperlink collection
+            shape.Hyperlinks.Add(hyperlink);
 
             // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);

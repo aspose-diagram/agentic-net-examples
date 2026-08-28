@@ -11,34 +11,33 @@ class ExportDiagramToPdf
         {
 
             // Path to the source Visio file
-            string sourceFile = "input.vsdx";
+            string sourceFile = @"C:\Diagrams\sample.vsdx";
 
-            // Path where the PDF will be saved
-            string pdfFile = "output.pdf";
+            // Desired PDF output path
+            string pdfFile = @"C:\Diagrams\sample.pdf";
 
-            // Load the diagram (uses the Diagram(string) constructor)
-            using (Diagram diagram = new Diagram(sourceFile))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(sourceFile);
+
+            // Configure PDF save options to preserve original appearance
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
             {
-                // Configure PDF save options to keep original appearance
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    // Ensure the format is PDF
-                    SaveFormat = SaveFileFormat.Pdf,
+                // Ensure the format is set explicitly (PDF)
+                SaveFormat = SaveFileFormat.Pdf,
 
-                    // Do not exclude hidden pages or guide shapes
-                    ExportHiddenPage = false,
-                    ExportGuideShapes = false,
+                // Do not export hidden pages or guide shapes – only visible content
+                ExportHiddenPage = false,
+                ExportGuideShapes = false,
 
-                    // Export comments if any (set to true to keep them, false to ignore)
-                    IsExportComments = false,
+                // Preserve comments if present (set to true to keep them, false to ignore)
+                IsExportComments = false,
 
-                    // Render all foreground pages (including background shapes)
-                    SaveForegroundPagesOnly = false
-                };
+                // Enlarge page if needed to fit all drawing content
+                EnlargePage = true
+            };
 
-                // Save the diagram as PDF using the save options (Diagram.Save(string, SaveOptions))
-                diagram.Save(pdfFile, pdfOptions);
-            }
+            // Save the diagram as PDF using the configured options
+            diagram.Save(pdfFile, pdfOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

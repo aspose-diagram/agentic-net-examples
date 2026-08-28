@@ -1,42 +1,45 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        // Create a new diagram (empty Visio document)
-        Diagram diagram = new Diagram();
+        static void Main()
+        {
+            // Optional: configure the folder that contains the custom TrueType font.
+            // The second argument indicates whether to search sub‑folders.
+            // Adjust the path to the location of your .ttf files.
+            FontConfigs.SetFontFolder(@"C:\CustomFonts", true);
+            // Set the default fallback font (used if the specified font is missing).
+            FontConfigs.DefaultFontName = "MyCustomFont";
 
-        // Get the first page (a new diagram contains one default page)
-        Page page = diagram.Pages[0];
+            // Create a new empty diagram.
+            Diagram diagram = new Diagram();
 
-        // Define rectangle position and size
-        double rectPinX = 5.0;   // X coordinate of rectangle center
-        double rectPinY = 5.0;   // Y coordinate of rectangle center
-        double rectWidth = 4.0;  // Width of rectangle
-        double rectHeight = 2.0; // Height of rectangle
+            // Add a new page to the diagram.
+            diagram.Pages.Add(new Page());
+            Page page = diagram.Pages[0];
 
-        // Draw the rectangle on the page
-        page.DrawRectangle(rectPinX, rectPinY, rectWidth, rectHeight);
+            // Draw a rectangle shape.
+            // Parameters: pinX, pinY (center of the shape), width, height (all in inches).
+            long rectangleId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
 
-        // Multiline text to be placed inside the rectangle
-        string multilineText = "First line\nSecond line\nThird line";
+            // Retrieve the rectangle shape object.
+            Shape rectangle = page.Shapes.GetShape(rectangleId);
 
-        // Add a text shape using the custom TrueType font at 14‑point size
-        // Font color "0" represents black (you can change it to any valid color string)
-        Shape textShape = page.AddText(
-            rectPinX,          // pinX – same as rectangle centre
-            rectPinY,          // pinY – same as rectangle centre
-            rectWidth,         // width of the text block
-            rectHeight,        // height of the text block
-            multilineText,     // the actual text (uses \n for new lines)
-            "MyCustomFont",    // custom TrueType font name installed on the system
-            "0",               // font color (black)
-            14);               // font size in points
+            // Clear any existing text (if any) and add multiline text.
+            rectangle.Text.Value.Clear();
+            rectangle.Text.Value.Add(new Txt("First line\nSecond line\nThird line"));
 
-        // Save the diagram to a VSDX file
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Apply character formatting: custom TrueType font at 14 point size.
+            // Font size in Aspose.Diagram is expressed in inches (points / 72).
+            rectangle.Chars.Clear();
+            Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
+            charFormat.IX = 0; // start index of the character run
+            charFormat.FontName.Value = "MyCustomFont"; // name of the custom TrueType font
+            charFormat.Size.Value = 14.0 / 72.0; // 14 points converted to inches
+            rectangle.Chars.Add(charFormat);
+
+            // Save the diagram to a VSDX file.
+            diagram.Save("RectangleWithMultilineText.vsdx", SaveFileFormat.Vsdx);
+        }
     }
-}

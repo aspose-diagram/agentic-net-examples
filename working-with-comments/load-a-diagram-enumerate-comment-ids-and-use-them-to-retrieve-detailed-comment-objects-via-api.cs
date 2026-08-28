@@ -9,7 +9,7 @@ class Program
         try
         {
 
-            // Path to the Visio file
+            // Path to the Visio file to be loaded
             string inputPath = "input.vsdx";
 
             // Load the diagram
@@ -18,18 +18,27 @@ class Program
             // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Access the annotations (comments) collection on the page sheet
-                foreach (Annotation comment in page.PageSheet.Annotations)
+                Console.WriteLine($"Page: {page.Name}");
+
+                // Iterate through all annotations (comments) on the page
+                foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
                     // Retrieve the unique comment identifier
-                    long commentId = comment.MarkerIndex.Value;
+                    long commentId = annotation.MarkerIndex.Value;
+                    Console.WriteLine($"Comment ID: {commentId}");
 
-                    // Retrieve detailed comment information
-                    string commentText = comment.Comment.Value;
-                    int reviewerId = comment.ReviewerID.Value;
+                    // Retrieve detailed information about the comment
+                    string commentText = annotation.Comment.Value;
+                    int reviewerId = annotation.ReviewerID.Value;
+                    int shapeId = annotation.ShapeID;
+                    double posX = annotation.X.Value;
+                    double posY = annotation.Y.Value;
 
-                    // Output comment details
-                    Console.WriteLine($"Page: {page.Name} | Comment ID: {commentId} | Reviewer ID: {reviewerId} | Text: {commentText}");
+                    Console.WriteLine($"Text       : {commentText}");
+                    Console.WriteLine($"Reviewer ID: {reviewerId}");
+                    Console.WriteLine($"Shape ID   : {shapeId}");
+                    Console.WriteLine($"Position   : ({posX}, {posY})");
+                    Console.WriteLine(new string('-', 40));
                 }
             }
 

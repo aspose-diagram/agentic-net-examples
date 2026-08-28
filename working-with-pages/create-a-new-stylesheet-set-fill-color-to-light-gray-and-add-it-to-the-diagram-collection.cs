@@ -1,34 +1,30 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        // Create a new empty diagram
-        using (Diagram diagram = new Diagram())
+        static void Main()
         {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
             // Create a new stylesheet
             StyleSheet style = new StyleSheet();
 
-            // Assign a unique ID (next available)
+            // Assign a unique ID (Visio expects IDs to start from 1)
             style.ID = diagram.StyleSheets.Count + 1;
 
-            // Give the stylesheet a name (optional but helpful)
+            // Optional: give the stylesheet a name for easier identification
             style.Name = "LightGrayFill";
 
-            // Set the fill foreground color to light gray (hex code #D3D3D3)
-            style.Fill.FillForegnd.Value = "#D3D3D3";
+            // Set the fill pattern to solid (1) and the foreground color to light gray
+            style.Fill.FillPattern.Value = 1;               // Solid fill
+            style.Fill.FillForegnd.Value = "#D3D3D3";        // Light gray color in HEX
 
-            // Ensure the fill pattern is solid (value 1)
-            style.Fill.FillPattern.Value = 1;
-
-            // Add the stylesheet to the diagram's stylesheet collection
+            // Add the stylesheet to the diagram's collection
             diagram.StyleSheets.Add(style);
 
-            // Confirmation output
-            Console.WriteLine($"Added stylesheet '{style.Name}' with ID {style.ID} and fill color {style.Fill.FillForegnd.Value}");
+            // Save the diagram to verify the stylesheet was added (optional)
+            diagram.Save("StyledDiagram.vsdx", SaveFileFormat.Vsdx);
         }
     }
-}

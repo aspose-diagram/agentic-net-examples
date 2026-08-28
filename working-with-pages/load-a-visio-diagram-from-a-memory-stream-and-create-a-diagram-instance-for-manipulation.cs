@@ -9,23 +9,21 @@ class Program
         try
         {
 
-            // Example: load Visio file bytes into a memory stream.
-            // Replace the path with your actual file or obtain the byte array from another source.
+            // Load the Visio file bytes into a memory stream (replace with your source of bytes)
             byte[] visioBytes = File.ReadAllBytes("input.vsdx");
-
             using (MemoryStream inputStream = new MemoryStream(visioBytes))
             {
-                // Load the diagram from the memory stream using the Diagram(Stream) constructor.
+                // Create a Diagram instance from the memory stream
                 Diagram diagram = new Diagram(inputStream);
 
-                // Example manipulation: output the number of pages in the diagram.
+                // Example manipulation: output the number of pages in the diagram
                 Console.WriteLine($"Number of pages: {diagram.Pages.Count}");
 
-                // (Optional) Save the diagram back to another memory stream in the same format.
+                // (Optional) Save the diagram back to another memory stream in the same format
                 using (MemoryStream outputStream = new MemoryStream())
                 {
                     diagram.Save(outputStream, SaveFileFormat.Vsdx);
-                    // The outputStream now contains the saved Visio diagram.
+                    // outputStream now contains the saved Visio diagram
                 }
             }
 

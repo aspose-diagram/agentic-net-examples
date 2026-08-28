@@ -1,53 +1,53 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
             // Input Visio file path
             string inputPath = "input.vsdx";
-
-            // Output file path – Aspose.Diagram does not support DOCX export,
-            // so we save the diagram in its native VSDX format.
+            // Desired output path (DOCX is not a supported format for Aspose.Diagram.
+            // The diagram is saved as VSDX instead. Adjust as needed for supported formats.)
             string outputPath = "output.vsdx";
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Font to apply to all text characters
-            string targetFont = "Calibri";
+            // Font to apply to all characters
+            const string targetFont = "Arial";
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape contains text
-                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.ToString()))
+                    // Set line spacing for each paragraph in the shape
+                    for (int p = 0; p < shape.Paras.Count; p++)
                     {
-                        // Set the font for every character in the shape
-                        foreach (Aspose.Diagram.Char ch in shape.Chars)
-                        {
-                            ch.FontName.Value = targetFont;
-                        }
+                        // Example: set line spacing factor to 1.0 (single spacing)
+                        shape.Paras[p].SpLine.Value = 1.0;
+                        // Optional: set space before and after paragraphs
+                        shape.Paras[p].SpBefore.Value = 0.0;
+                        shape.Paras[p].SpAfter.Value = 0.0;
+                    }
 
-                        // Set line spacing for every paragraph in the shape
-                        foreach (Para para in shape.Paras)
-                        {
-                            // Example: set line spacing to 0.2 inches (adjust as needed)
-                            para.SpLine.Value = 0.2;
-                        }
+                    // Apply the target font to all character runs in the shape
+                    for (int c = 0; c < shape.Chars.Count; c++)
+                    {
+                        shape.Chars[c].FontName.Value = targetFont;
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram.
+            // Aspose.Diagram does not support saving directly to DOCX.
+            // Use a supported format such as VSDX.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

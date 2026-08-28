@@ -5,39 +5,70 @@ using Aspose.Diagram.Saving;
 
 class VdxToPdfBatchConverter
 {
-    static void Main()
+    // Converts all VDX files in the specified input folder to PDF files in the output folder.
+    // Each PDF will embed fonts by specifying a default fallback font.
+    public static void ConvertFolder(string inputFolder, string outputFolder)
     {
-        // Folder containing the VDX files
-        string inputFolder = @"C:\VisioFiles";
+        // Ensure output directory exists
+        Directory.CreateDirectory(outputFolder);
 
-        // Get all VDX files in the folder
-        string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx", SearchOption.TopDirectoryOnly);
+        // Get all VDX files in the input folder (non‑recursive)
+        string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx");
 
         foreach (string vdxPath in vdxFiles)
         {
             // Load the Visio diagram from the VDX file
-            using (Diagram diagram = new Diagram(vdxPath))
+            Diagram diagram = new Diagram(vdxPath);
+
+            // Prepare PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
             {
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    // Specify a default font to ensure characters are rendered correctly
-                    // when the original font is not available on the system.
-                    DefaultFont = "Arial",
+                // Set a default font to be used when the original font is missing.
+                // This also forces embedding of the specified font if it is installed.
+                DefaultFont = "Arial",
 
-                    // Optional: embed all fonts (Aspose.Diagram embeds fonts by default;
-                    // setting this flag ensures the behavior is explicit if supported).
-                    // EnlargePage = true // uncomment if page size adjustment is needed
-                };
+                // Use PDF 1.5 compliance (fonts are embedded by default).
+                Compliance = PdfCompliance.Pdf15,
 
-                // Determine the output PDF file path
-                string pdfPath = Path.ChangeExtension(vdxPath, ".pdf");
+                // Render all pages
+                PageCount = int.MaxValue,
 
-                // Save the diagram as PDF using the configured options
-                diagram.Save(pdfPath, pdfOptions);
-            }
+                // Ensure hidden pages are also exported if needed
+                ExportHiddenPage = true
+            };
+
+            // Build output PDF file path (same name, .pdf extension)
+            string pdfFileName = Path.GetFileNameWithoutExtension(vdxPath) + ".pdf";
+            string pdfPath = Path.Combine(outputFolder, pdfFileName);
+
+            // Save the diagram as PDF using the specified options
+            diagram.Save(pdfPath, pdfOptions);
+
+            // Release resources held by the diagram
+            diagram.Dispose();
         }
+    }
 
-        Console.WriteLine("Batch conversion completed.");
+    // Example usage
+    static void Main(string[] args)
+    {
+        try
+        {
+
+            // Input folder containing VDX files
+            string inputFolder = @"C:\Visio\VDXFiles";
+
+            // Output folder for generated PDFs
+            string outputFolder = @"C:\Visio\PDFOutputs";
+
+            ConvertFolder(inputFolder, outputFolder);
+
+            Console.WriteLine("Batch conversion completed.");
+
+        }
+        catch (System.IO.DirectoryNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+        }
     }
 }

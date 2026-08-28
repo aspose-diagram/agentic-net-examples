@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,26 +7,26 @@ class Program
 {
     static void Main()
     {
-        // Create a new diagram (lifecycle create rule)
+        // Create a new diagram instance
         Diagram diagram = new Diagram();
 
-        // Set the default font for the diagram – new text shapes will inherit this font
+        // Set the default font name that will be applied to text shapes
         FontConfigs.DefaultFontName = "Arial";
 
-        // Add a page to the diagram (if the diagram has no pages)
-        Page page = new Page();
-        diagram.Pages.Add(page);
+        // Get the first page (a new diagram contains at least one page)
+        Page page = diagram.Pages[0];
 
-        // Add a text shape without specifying a font name; it uses the default font set above
-        page.AddText(pinX: 5.0, pinY: 5.0, width: 2.0, height: 0.5, text: "Sample annotation");
+        // Add a text shape without specifying a font name.
+        // The shape will inherit the default font set above.
+        // Parameters: pinX, pinY, width, height, text
+        page.AddText(5.0, 5.0, 2.0, 0.5, "Sample annotation");
 
-        // Configure save options and also set DefaultFont for formats that require it (e.g., PDF)
-        PdfSaveOptions saveOptions = new PdfSaveOptions
-        {
-            DefaultFont = "Arial"
-        };
+        // Create save options for the desired output format (PDF in this example)
+        PdfSaveOptions saveOptions = (PdfSaveOptions)SaveOptions.CreateSaveOptions(SaveFileFormat.Pdf);
+        // Ensure the same default font is used during export
+        saveOptions.DefaultFont = "Arial";
 
-        // Save the diagram (lifecycle save rule)
-        diagram.Save("output.pdf", saveOptions);
+        // Save the diagram with the configured options
+        diagram.Save("AnnotatedDiagram.pdf", saveOptions);
     }
 }

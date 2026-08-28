@@ -13,48 +13,39 @@ class Program
                 string inputPath = "input.vsdx";
                 // Output PDF file path
                 string outputPath = "output.pdf";
-                // Desired font color in hex (RGB)
-                string titleFontColor = "#FF0000"; // Red
+                // Desired title font color in HEX (RGB)
+                string titleFontColor = "#FF5733";
 
-                try
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Load the diagram
-                    using (Diagram diagram = new Diagram(inputPath))
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through all pages
-                        foreach (Page page in diagram.Pages)
+                        // Iterate through all shapes on the page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Iterate through all shapes on the page
-                            foreach (Shape shape in page.Shapes)
+                            // Identify title shapes by name (contains "Title")
+                            if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.Contains("Title"))
                             {
-                                // Identify title shapes (example: shape name contains "Title")
-                                if (!string.IsNullOrEmpty(shape.NameU) &&
-                                    shape.NameU.IndexOf("Title", StringComparison.OrdinalIgnoreCase) >= 0)
+                                // Apply the font color to each character in the shape
+                                foreach (Aspose.Diagram.Char ch in shape.Chars)
                                 {
-                                    // Apply the font color to each character in the shape
-                                    foreach (Aspose.Diagram.Char ch in shape.Chars)
-                                    {
-                                        ch.Color.Value = titleFontColor;
-                                    }
+                                    ch.Color.Value = titleFontColor;
                                 }
                             }
                         }
-
-                        // Configure PDF save options (optional: set a default font)
-                        PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                        pdfOptions.DefaultFont = "Arial";
-
-                        // Save the modified diagram as PDF
-                        diagram.Save(outputPath, pdfOptions);
                     }
 
-                    Console.WriteLine("Diagram processed and saved as PDF successfully.");
+                    // Configure PDF save options
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+                    // Save the modified diagram as PDF
+                    diagram.Save(outputPath, pdfOptions);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error: {ex.Message}");
-                    throw;
-                }
+
+                Console.WriteLine("Diagram titles font color updated and saved as PDF.");
 
             }
             catch (System.IO.FileNotFoundException ex)

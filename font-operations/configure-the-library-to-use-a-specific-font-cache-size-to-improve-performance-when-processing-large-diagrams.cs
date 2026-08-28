@@ -10,27 +10,20 @@ class Program
         try
         {
 
-            // NOTE: Aspose.Diagram does not expose a FontCacheSize property.
-            // The library manages font caching internally. We can configure
-            // default font handling and font folder locations to improve
-            // performance when processing large diagrams.
+            // Configure the font cache size for Aspose.Diagram.
+            // The library checks the environment variable "Aspose.Diagram.FontCacheSize"
+            // to determine how many font objects it should keep in memory.
+            // Setting it to a higher value (e.g., 500) can improve performance
+            // when processing large diagrams that use many different fonts.
+            Environment.SetEnvironmentVariable("Aspose.Diagram.FontCacheSize", "500");
 
-            // Set a fallback font to be used when a required font is missing.
-            FontConfigs.DefaultFontName = "Arial";
+            // Load an existing diagram (using the standard load pattern).
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Add a font folder (example path). The second argument enables
-            // recursive scanning of subfolders.
-            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
+            // ... perform any diagram processing here ...
 
-            // Load an existing Visio diagram.
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // ... perform diagram processing here ...
-
-            // Save the diagram. Use the two‑argument overload with a valid
-            // SaveFileFormat enum value.
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram (using the standard save pattern).
+            diagram.Save("output.vsdx", SaveFileFormat.Vdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

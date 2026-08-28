@@ -1,39 +1,30 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class FontSubstitutionBatchProcessor
+class Program
 {
-    // Path to the folder containing VSD files
-    private const string InputFolder = @"C:\VisioFiles";
-
-    // Original (deprecated) font name to replace
-    private const string DeprecatedFont = "OldFontName";
-
-    // Modern substitute fonts (ordered by preference)
-    private static readonly string[] SubstituteFonts = new[] { "NewFont1", "NewFont2" };
-
     static void Main()
     {
-        // Get all VSD files in the specified folder
-        string[] vsdFiles = Directory.GetFiles(InputFolder, "*.vsd", SearchOption.TopDirectoryOnly);
+        // Folder containing the VSD files
+        string folderPath = @"C:\VisioFiles";
 
-        foreach (string filePath in vsdFiles)
+        // Deprecated font name and its modern substitutes
+        string deprecatedFont = "OldFont";
+        string[] modernFonts = new string[] { "NewFont1", "NewFont2" };
+
+        // Register font substitutes globally
+        FontConfigs.SetFontSubstitutes(deprecatedFont, modernFonts);
+
+        // Process each VSD file in the folder
+        foreach (string filePath in Directory.GetFiles(folderPath, "*.vsd"))
         {
-            // Load the Visio diagram from file
+            // Load the diagram
             using (Diagram diagram = new Diagram(filePath))
             {
-                // Register font substitutes for the deprecated font
-                FontConfigs.SetFontSubstitutes(DeprecatedFont, SubstituteFonts);
-
                 // Save the diagram back, overwriting the original file
                 diagram.Save(filePath, SaveFileFormat.Vsd);
             }
-
-            Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
         }
-
-        Console.WriteLine("Batch font substitution completed.");
     }
 }

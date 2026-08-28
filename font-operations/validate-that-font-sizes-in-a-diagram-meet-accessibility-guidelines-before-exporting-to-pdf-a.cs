@@ -1,6 +1,5 @@
-using System.IO;
 using System;
-using System.Linq;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
@@ -9,78 +8,78 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.pdf";
+
         try
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-
-            // Output PDF/A file path
-            string outputPath = "output.pdf";
-
-            // Configure font folder (system fonts) and default fallback font
-            string fontsFolder = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
-            FontConfigs.SetFontFolder(fontsFolder, true);
-            FontConfigs.DefaultFontName = "Arial";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Validate that all font sizes meet accessibility minimum (12 pt)
-            ValidateFontSizes(diagram);
+            // Configure font folder(s) – required before rendering/saving
+            // Adjust the path to a valid font directory on the target machine
+            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
+            // Set a fallback default font
+            FontConfigs.DefaultFontName = "Arial";
 
-            // Prepare PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            // Minimum accessible font size: 12 points (converted to inches)
+            const double minSizeInInches = 12.0 / 72.0;
+            bool hasInvalidFontSize = false;
+
+            // Iterate through all pages, shapes, and character runs
+            foreach (Page page in diagram.Pages)
             {
-                DefaultFont = "Arial",
-                SaveFormat = SaveFileFormat.Pdf
-            };
-
-            // Save the diagram as PDF/A
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine("Diagram exported successfully to PDF/A.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    static void ValidateFontSizes(Diagram diagram)
-    {
-        const double minPoints = 12.0;
-        const double minInches = minPoints / 72.0; // Convert points to inches
-
-        // Check each character's font size
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                foreach (Aspose.Diagram.Char ch in shape.Chars)
+                foreach (Shape shape in page.Shapes)
                 {
-                    double sizeInches = ch.Size.Value;
-                    if (sizeInches < minInches)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Examine each character's font size
+                    foreach (Aspose.Diagram.Char ch in shape.Chars)
                     {
-                        double sizePoints = sizeInches * 72.0;
-                        throw new Exception($"Font size {sizePoints:F1} pt is below the minimum {minPoints} pt in shape ID {shape.ID}.");
+                        double sizeInInches = ch.Size.Value; // size is stored in inches
+                        if (sizeInInches < minSizeInInches)
+                        {
+                            double sizeInPoints = sizeInInches * 72.0;
+                            Console.WriteLine($"[Warning] Shape ID {shape.ID} contains font size {sizeInPoints:F1} pt, which is below the 12 pt minimum.");
+                            hasInvalidFontSize = true;
+                        }
                     }
                 }
             }
-        }
 
-        // Optional: warn about fonts not installed on the system
-        InstalledFontCollection installedFonts = new InstalledFontCollection();
-        foreach (Aspose.Diagram.Font font in diagram.Fonts)
-        {
-            bool isInstalled = installedFonts.Families
-                .Any(f => f.Name.Equals(font.Name, StringComparison.OrdinalIgnoreCase));
+            // Halt export if any font size violations are found
+            if (hasInvalidFontSize)
+                throw new Exception("One or more shapes contain font sizes smaller than the accessibility minimum of 12 points.");
 
-            if (!isInstalled)
+            // Prepare PDF/A export options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
             {
-                Console.WriteLine($"Warning: Font '{font.Name}' used in the diagram is not installed on the system.");
-            }
+                // Ensure a default font is used for any missing glyphs
+                DefaultFont = "Arial",
+                // Do not export hidden pages
+                ExportHiddenPage = false
+                // AutoFitPageToDrawingContent property does not exist; omitted
+                // ComplianceLevel can be set if the enum exists, e.g.:
+                // ComplianceLevel = Aspose.Diagram.Saving.PdfComplianceLevel.PdfA1b
+            };
+
+            // Export the diagram to PDF/A
+            diagram.Save(outputPath, pdfOptions);
+            Console.WriteLine("Diagram exported successfully to PDF/A.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -8,42 +8,32 @@ class Program
             try
             {
 
-                // Paths to the source and destination diagram files
+                // Input and output file paths
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
-                // Load the diagram from file
+                // Load the diagram
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Work with the first page (adjust index as needed)
-                    Page page = diagram.Pages[0];
-
-                    try
+                    // Iterate through each page and attempt to set Landscape orientation
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Attempt to set the page orientation to Landscape
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                    }
-                    catch (Exception ex)
-                    {
-                        // If setting Landscape fails (e.g., due to file corruption), log the error
-                        Console.WriteLine($"Failed to set Landscape orientation: {ex.Message}");
-
-                        // Fallback: try to set the orientation to Portrait
                         try
                         {
-                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-                            Console.WriteLine("Fallback to Portrait orientation applied.");
+                            // Attempt to set Landscape orientation
+                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                         }
-                        catch (Exception innerEx)
+                        catch (Exception ex)
                         {
-                            // If Portrait also fails, report and rethrow
-                            Console.WriteLine($"Failed to set Portrait orientation as well: {innerEx.Message}");
-                            throw;
+                            // If any exception occurs (e.g., due to file corruption), fallback to Portrait
+                            Console.WriteLine($"Failed to set Landscape on page '{page.Name}'. Falling back to Portrait. Error: {ex.Message}");
+                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
                         }
                     }
 
                     // Save the modified diagram
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
                 }
 
             }

@@ -1,46 +1,43 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the Visio file (replace with your actual file path)
-            string filePath = "input.vsdx";
-
-            // Load the diagram within a using block to ensure proper disposal
-            using (Diagram diagram = new Diagram(filePath))
+            try
             {
+
+                // Load the Visio diagram (replace with your actual file path)
+                string diagramPath = "example.vsdx";
+                Diagram diagram = new Diagram(diagramPath);
+
                 // Dictionary to map page names to their dimensions (width, height) in inches
                 var pageDimensions = new Dictionary<string, (double Width, double Height)>();
 
-                // Iterate over all pages in the diagram
+                // Iterate through each page and store its dimensions
                 foreach (Page page in diagram.Pages)
                 {
-                    string pageName = page.Name;
+                    string name = page.Name;
                     double width = page.PageSheet.PageProps.PageWidth.Value;
                     double height = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Store the dimensions in the dictionary
-                    pageDimensions[pageName] = (width, height);
+                    pageDimensions[name] = (width, height);
                 }
 
-                // Output the collected dimensions
-                foreach (var entry in pageDimensions)
+                // Output the collected dimensions for verification
+                foreach (KeyValuePair<string, (double Width, double Height)> kvp in pageDimensions)
                 {
-                    Console.WriteLine($"Page \"{entry.Key}\": Width = {entry.Value.Width} in, Height = {entry.Value.Height} in");
+                    Console.WriteLine($"Page \"{kvp.Key}\": Width = {kvp.Value.Width} in, Height = {kvp.Value.Height} in");
                 }
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Clean up resources
+                diagram.Dispose();
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

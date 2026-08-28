@@ -9,35 +9,28 @@ class ImportVbaProject
         try
         {
 
-            // Path to the Visio diagram file (VSDX, VSD, etc.)
-            string diagramPath = @"C:\Docs\MyDiagram.vsdx";
-
-            // Path to the exported VBA project file (.vba)
-            string vbaProjectPath = @"C:\Docs\MyMacroProject.vba";
+            // Paths to the diagram, the exported VBA project file, and the output diagram
+            string diagramPath = "inputDiagram.vsdx";
+            string vbaProjectPath = "exportedMacro.vba";
+            string outputDiagramPath = "outputDiagram.vsdx";
 
             // Load the existing Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
+            using (Diagram diagram = new Diagram(diagramPath))
+            {
+                // Read the VBA project file (binary data)
+                byte[] vbaData = File.ReadAllBytes(vbaProjectPath);
 
-            // Read the VBA project data (MIME encoded) from the .vba file
-            byte[] vbaData = File.ReadAllBytes(vbaProjectPath);
+                // Assign the VBA data to the diagram to restore macros
+                diagram.VbProjectData = vbaData;
 
-            // Assign the VBA project data to the diagram
-            diagram.VbProjectData = vbaData;
-
-            // Optionally set the VBA project name (if desired)
-            // diagram.VbaProject.Name = "MyMacroProject";
-
-            // Save the diagram with the imported macros
-            string outputPath = @"C:\Docs\MyDiagram_WithMacros.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Clean up
-            diagram.Dispose();
+                // Save the diagram with the imported VBA project
+                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+            }
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

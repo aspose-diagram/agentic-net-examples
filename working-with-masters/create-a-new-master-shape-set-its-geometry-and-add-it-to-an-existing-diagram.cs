@@ -1,90 +1,92 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Determine input and output file paths (use defaults if not provided)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Guard: ensure the source diagram file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // -----------------------------------------------------------------
+            // Create a new master shape (a simple rectangle) and configure it
+            // -----------------------------------------------------------------
+            Master master = new Master
             {
+                // Assign a unique numeric ID based on current masters count
+                ID = diagram.Masters.Count + 1,
+                // Human‑readable name used when adding shapes from this master
+                Name = "CustomRectangle",
+                // Unique identifiers required by the API
+                UniqueID = Guid.NewGuid(),
+                BaseID = Guid.NewGuid(),
+                // Visibility and matching settings
+                Hidden = BOOL.False,
+                MatchByName = BOOL.True,
+                IconUpdate = BOOL.True
+            };
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Create a new master
-                Master customMaster = new Master();
-                customMaster.ID = diagram.Masters.Count + 1;               // Unique numeric ID
-                customMaster.Name = "CustomMaster";                        // Master name
-                customMaster.UniqueID = Guid.NewGuid();                    // GUID for the master
-                customMaster.BaseID = Guid.NewGuid();                      // Base GUID
-
-                // Create a shape that will be the visual content of the master
-                Shape masterShape = new Shape();
-                masterShape.ID = 1;                                        // Shape ID within the master
-                masterShape.Name = "MasterShape";
-                masterShape.Type = TypeValue.Shape;                        // Set shape type
-
-                // Define size of the shape (2 inches width, 1 inch height)
-                masterShape.XForm.Width.Value = 2.0;
-                masterShape.XForm.Height.Value = 1.0;
-
-                // Build geometry for a simple rectangle
-                // Geometry consists of a MoveTo (starting point) followed by LineTo segments
-                Geom geom = new Geom();
-                // Starting point at (0,0)
-                MoveTo moveTo = new MoveTo();
-                moveTo.X.Value = 0.0;
-                moveTo.Y.Value = 0.0;
-                geom.CoordinateCol.Add(moveTo);
-                // Line to (width,0)
-                LineTo line1 = new LineTo();
-                line1.X.Value = masterShape.XForm.Width.Value;
-                line1.Y.Value = 0.0;
-                geom.CoordinateCol.Add(line1);
-                // Line to (width,height)
-                LineTo line2 = new LineTo();
-                line2.X.Value = masterShape.XForm.Width.Value;
-                line2.Y.Value = masterShape.XForm.Height.Value;
-                geom.CoordinateCol.Add(line2);
-                // Line to (0,height)
-                LineTo line3 = new LineTo();
-                line3.X.Value = 0.0;
-                line3.Y.Value = masterShape.XForm.Height.Value;
-                geom.CoordinateCol.Add(line3);
-                // Close the rectangle by returning to the start point
-                LineTo line4 = new LineTo();
-                line4.X.Value = 0.0;
-                line4.Y.Value = 0.0;
-                geom.CoordinateCol.Add(line4);
-
-                // Add the geometry to the shape
-                masterShape.Geoms.Add(geom);
-
-                // Add the shape to the master
-                customMaster.Shapes.Add(masterShape);
-
-                // Add the master to the diagram's master collection
-                diagram.Masters.Add(customMaster);
-
-                // Place an instance of the new master on the first page
-                Page page = diagram.Pages[0];
-                // PinX and PinY define the position of the shape on the page
-                double pinX = 2.0;
-                double pinY = 2.0;
-                long shapeId = page.AddShape(pinX, pinY, customMaster.Name);
-                // Retrieve the created shape if further modifications are needed
-                Shape instanceShape = page.Shapes.GetShape(shapeId);
-
-                // Save the updated diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
+            // Create the rectangle shape that will belong to the master
+            Shape masterShape = new Shape
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+                // Define the shape as a regular 2‑D shape
+                Type = TypeValue.Shape
+            };
+
+            // Set geometry: position (PinX, PinY) and size (Width, Height)
+            masterShape.XForm.PinX.Value = 1.0;   // X centre of the shape
+            masterShape.XForm.PinY.Value = 1.0;   // Y centre of the shape
+            masterShape.XForm.Width.Value = 2.0; // Width in inches
+            masterShape.XForm.Height.Value = 1.0; // Height in inches
+
+            // Optional: give the rectangle a fill colour
+            masterShape.Fill.FillForegnd.Value = "#FFCC00"; // orange fill
+
+            // Add the rectangle shape to the master’s shape collection
+            master.Shapes.Add(masterShape);
+
+            // Register the new master with the diagram
+            diagram.Masters.Add(master);
+
+            // ---------------------------------------------------------------
+            // Add an instance of the newly created master to the first page
+            // ---------------------------------------------------------------
+            Page page = diagram.Pages[0]; // Use the first page of the diagram
+
+            // AddShape returns the shape ID (long). The fourth argument is a bool.
+            long newShapeId = page.AddShape(3.0, 3.0, master.Name, false);
+
+            // Retrieve the concrete Shape object using the returned ID
+            Shape instanceShape = page.Shapes.GetShape(newShapeId);
+
+            // Set some visible text on the new shape
+            instanceShape.Text.Value.Clear();                     // Remove any default text
+            instanceShape.Text.Value.Add(new Txt("Hello World")); // Add custom text
+
+            // ---------------------------------------------------------------
+            // Save the modified diagram to the specified output file
+            // ---------------------------------------------------------------
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Log any Aspose.Diagram or I/O errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

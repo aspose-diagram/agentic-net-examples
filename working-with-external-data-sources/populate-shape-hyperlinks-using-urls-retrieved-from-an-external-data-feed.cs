@@ -1,68 +1,92 @@
-using System.IO;
 using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Text.Json;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        // Entry point of the console application
+        static async Task Main(string[] args)
         {
-
-            // Input and output Visio file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Retrieve external URL mapping (replace with real data feed as needed)
-            Dictionary<string, string> urlMap = GetUrlMapping();
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the source Visio diagram
+                const string inputPath = "input.vsdx";
+                // Path where the updated diagram will be saved
+                const string outputPath = "output.vsdx";
+                // URL of the external data feed that provides shape name to URL mappings (JSON format)
+                const string dataFeedUrl = "https://example.com/api/shape-links";
+
+                // Load the diagram using the Aspose.Diagram constructor
+                Diagram diagram = new Diagram(inputPath);
+
+                // Retrieve the mapping of shape names to hyperlink URLs
+                Dictionary<string, string> shapeUrlMap = await GetShapeUrlMappingAsync(dataFeedUrl);
+
+                // Iterate through all pages and shapes in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Use the universal shape name as the key to find a URL
-                    if (urlMap.TryGetValue(shape.NameU, out string url) && !string.IsNullOrWhiteSpace(url))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the Hyperlinks collection exists
-                        if (shape.Hyperlinks == null)
-                            continue; // Defensive check
+                        // Use the universal name (NameU) as the key for lookup
+                        string shapeKey = shape.NameU;
 
-                        // Create a new hyperlink and set its properties
-                        Hyperlink link = new Hyperlink();
-                        link.Name = "ExternalLink";
-                        link.Address.Value = url;
-                        link.Description.Value = $"Link to {url}";
+                        if (shapeUrlMap != null && shapeUrlMap.ContainsKey(shapeKey))
+                        {
+                            // Ensure the Hyperlinks collection is not null before adding
+                            if (shape.Hyperlinks != null)
+                            {
+                                // Create a new hyperlink instance
+                                Hyperlink link = new Hyperlink();
+                                link.Name = "ExternalLink";
+                                link.Address.Value = shapeUrlMap[shapeKey];
 
-                        // Add the hyperlink to the shape
-                        shape.Hyperlinks.Add(link);
+                                // Add the hyperlink to the shape's collection
+                                shape.Hyperlinks.Add(link);
+                            }
+                        }
                     }
                 }
+
+                // Save the modified diagram to the specified output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
 
-    // Mock method simulating an external data feed that provides shape‑to‑URL mappings
-    static Dictionary<string, string> GetUrlMapping()
-    {
-        // Replace this with actual data retrieval logic (e.g., HTTP request, database query, etc.)
-        return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        // Retrieves a dictionary mapping shape names to URLs from a JSON endpoint
+        private static async Task<Dictionary<string, string>> GetShapeUrlMappingAsync(string requestUrl)
         {
-            { "Rectangle", "https://example.com/rectangle" },
-            { "Process",   "https://example.com/process" },
-            { "Decision",  "https://example.com/decision" }
-        };
+            using HttpClient client = new HttpClient();
+
+            try
+            {
+                // Perform the HTTP GET request
+                HttpResponseMessage response = await client.GetAsync(requestUrl);
+                response.EnsureSuccessStatusCode();
+
+                // Read the response content as a string
+                string json = await response.Content.ReadAsStringAsync();
+
+                // Deserialize the JSON into a dictionary (expects {"ShapeName":"https://..."} format)
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                return JsonSerializer.Deserialize<Dictionary<string, string>>(json, options);
+            }
+            catch (Exception ex)
+            {
+                // In case of any errors, write to console and return an empty dictionary
+                Console.WriteLine($"Error retrieving shape URL mapping: {ex.Message}");
+                return new Dictionary<string, string>();
+            }
+        }
     }
-}

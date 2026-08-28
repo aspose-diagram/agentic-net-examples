@@ -1,28 +1,35 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-class HyperlinkSummary
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Create or overwrite a text file to store the summary report
+            using (StreamWriter writer = new StreamWriter("HyperlinkReport.txt"))
             {
-                // Retrieve the number of hyperlinks on the current page
-                int hyperlinkCount = page.PageSheet.Hyperlinks.Count;
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Count hyperlinks on the current page via its PageSheet
+                    int hyperlinkCount = page.PageSheet.Hyperlinks.Count;
 
-                // Output the page name and its hyperlink count
-                Console.WriteLine($"Page: {page.Name}, Hyperlinks: {hyperlinkCount}");
+                    // Write the result to console
+                    Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) has {hyperlinkCount} hyperlink(s).");
+
+                    // Write the same information to the report file
+                    writer.WriteLine($"Page \"{page.Name}\": {hyperlinkCount} hyperlink(s)");
+                }
             }
 
-            // Clean up resources
+            // Release resources
             diagram.Dispose();
 
         }

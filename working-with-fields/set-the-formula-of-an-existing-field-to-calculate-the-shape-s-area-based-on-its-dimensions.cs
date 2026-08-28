@@ -1,55 +1,49 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths (adjust as needed)
+                // Input Visio file path
                 string inputPath = "input.vsdx";
+                // Output Visio file path
                 string outputPath = "output.vsdx";
 
-                // Load the existing Visio diagram
+                // Load the existing diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Get the first page of the diagram
+                // Get the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Find the first non‑deleted shape on the page
-                Shape targetShape = null;
-                foreach (Shape shp in page.Shapes)
+                // Retrieve a shape – for demonstration we use the first shape on the page
+                // Ensure the page contains at least one shape
+                if (page.Shapes.Count == 0)
                 {
-                    if (shp.Del == BOOL.False) // ensure the shape is not marked as deleted
-                    {
-                        targetShape = shp;
-                        break;
-                    }
+                    throw new Exception("No shapes found on the first page.");
                 }
 
-                if (targetShape == null)
+                // Get the shape by its ID
+                Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
+
+                // Verify the shape has at least one field (e.g., a date, page number, or custom formula field)
+                if (shape.Fields.Count == 0)
                 {
-                    throw new Exception("No suitable shape found on the page.");
+                    throw new Exception("The selected shape does not contain any fields to modify.");
                 }
 
-                // Ensure the shape has at least one field to modify
-                if (targetShape.Fields.Count == 0)
-                {
-                    throw new Exception("The selected shape does not contain any fields.");
-                }
-
-                // Access the first field (you can select a different index as required)
-                Field field = targetShape.Fields[0];
+                // Access the first field in the collection
+                Field field = shape.Fields[0];
 
                 // Set the formula to calculate the area (Width * Height)
+                // The formula is stored in the Ufev.F property of the field's Value object
                 field.Value.Ufev.F = "Width*Height";
 
-                // Use an undefined unit for the formula result
-                field.Value.Ufev.Unit = MeasureConst.Undefined;
-
-                // Optional: clear any existing format strings
+                // Optionally, clear any existing format strings to avoid conflicts
                 field.Format.Val = "";
                 field.Format.Ufev.F = "";
                 field.Format.Ufev.Unit = MeasureConst.Undefined;

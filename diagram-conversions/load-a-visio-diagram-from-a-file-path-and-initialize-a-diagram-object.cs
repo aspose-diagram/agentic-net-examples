@@ -1,29 +1,26 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Specify the path to the Visio file to be loaded
-            string filePath = @"C:\Path\To\Your\Diagram.vsdx";
+                // Specify the path to the Visio file you want to load.
+                string visioFilePath = @"C:\Diagrams\sample.vsdx";
 
-            // Load the Visio diagram from the file and initialize the Diagram object
-            Diagram diagram = new Diagram(filePath);
+                // Load the Visio diagram using the Diagram constructor that accepts a file name.
+                Diagram diagram = new Diagram(visioFilePath);
 
-            // The diagram is now ready for further processing
-            // Example: access the active page
-            Page activePage = diagram.ActivePage;
-            Console.WriteLine($"Active page name: {activePage.Name}");
+                // At this point the Diagram object is initialized and ready for further processing.
+                Console.WriteLine("Diagram loaded successfully. Pages count: " + diagram.Pages.Count);
 
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

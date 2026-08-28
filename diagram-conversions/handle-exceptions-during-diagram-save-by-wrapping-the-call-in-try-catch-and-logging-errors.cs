@@ -1,38 +1,38 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class DiagramSaveExample
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing diagram (replace with your actual file path)
+            // Load an existing Visio diagram
+            // (Assumes the file exists at the specified path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Define save options if needed (optional)
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
-            // Example: enable auto fit page
-            saveOptions.AutoFitPageToDrawingContent = true;
+            // Define save options (optional, can be omitted if not needed)
+            SaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
 
+            // Attempt to save the diagram and handle any exceptions
             try
             {
-                // Attempt to save the diagram to a file using the specified format
-                diagram.Save("output.vdx", saveOptions);
+                // Save the diagram to a new file using the specified format and options
+                diagram.Save("output.vsdx", saveOptions);
                 Console.WriteLine("Diagram saved successfully.");
             }
             catch (DiagramException dex)
             {
-                // Handle Aspose.Diagram specific exceptions
+                // Log Aspose.Diagram specific errors
                 Console.Error.WriteLine($"DiagramException occurred while saving: {dex.Message}");
             }
             catch (Exception ex)
             {
-                // Handle any other unexpected exceptions
-                Console.Error.WriteLine($"Unexpected error while saving diagram: {ex.Message}");
+                // Log any other unexpected errors
+                Console.Error.WriteLine($"Unexpected error occurred while saving: {ex.Message}");
             }
             finally
             {

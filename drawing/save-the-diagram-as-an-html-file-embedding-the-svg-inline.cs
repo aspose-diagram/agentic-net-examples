@@ -11,12 +11,13 @@ class Program
         {
 
             // Load an existing Visio diagram
+            // (Assumes the file "input.vsdx" exists in the working directory)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Configure HTML save options to embed all resources (including SVG) in a single file
+            // Configure HTML save options to embed all resources (including SVG) into a single file
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                SaveAsSingleFile = true   // Embed SVG inline
+                SaveAsSingleFile = true   // Embed images/SVG inline rather than creating separate files
             };
 
             // Save the diagram as an HTML file with inline SVG

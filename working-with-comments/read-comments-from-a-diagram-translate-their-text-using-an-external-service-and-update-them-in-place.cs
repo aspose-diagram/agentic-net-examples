@@ -1,55 +1,59 @@
 using System.IO;
 using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    // Entry point
+    static async Task Main(string[] args)
     {
-        try
+        if (args.Length < 2)
         {
+            Console.WriteLine("Usage: DiagramTranslate <inputFilePath> <outputFilePath>");
+            return;
+        }
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram
+        // Load the Visio diagram
+        using (var diagram = new Diagram(inputPath))
+        {
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through each comment (annotation) on the page
+                // Iterate through all comments (annotations) on the page
                 foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    // Retrieve the original comment text
+                    // Original comment text
                     string originalText = annotation.Comment.Value;
 
-                    // Translate the text using an external service (placeholder implementation)
-                    string translatedText = TranslateText(originalText);
+                    // Translate the text using an external service
+                    string translatedText = await TranslateTextAsync(originalText);
 
                     // Update the comment with the translated text
                     annotation.Comment.Value = translatedText;
                 }
             }
 
-            // Save the updated diagram back to a file
+            // Save the updated diagram (preserving original format)
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        Console.WriteLine("Diagram comments translated and saved successfully.");
     }
 
-    // Placeholder translation method – replace with actual external service call as needed
-    static string TranslateText(string text)
+    // Placeholder for an external translation service.
+    // Replace the implementation with a real API call as needed.
+    private static async Task<string> TranslateTextAsync(string text)
     {
-        if (string.IsNullOrWhiteSpace(text))
-            return text;
-
-        // Example: prepend a marker to indicate translation
-        return "[Translated] " + text;
+        // Example using a mock translation service.
+        // In a real scenario, you would call an external API (e.g., Google Translate, Azure Translator).
+        // Here we simply append a suffix to indicate translation.
+        await Task.Delay(10); // Simulate async latency
+        return $"{text} (translated)";
     }
 }

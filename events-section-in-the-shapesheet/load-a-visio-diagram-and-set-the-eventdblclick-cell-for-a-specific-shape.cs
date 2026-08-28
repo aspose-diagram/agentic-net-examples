@@ -9,40 +9,45 @@ class Program
         try
         {
 
-            // Path to the existing Visio file
+            // Paths to the input and output Visio files
             string inputPath = "input.vsdx";
-            // Load the diagram
+            string outputPath = "output.vsdx";
+
+            // Load the diagram from the file
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (index 0)
-            Page page = diagram.Pages[0];
+            // NameU of the shape whose double‑click event we want to set
+            string targetShapeNameU = "MyShape";
 
-            // Identify the target shape by its universal name (NameU)
-            // Replace "TargetShapeName" with the actual shape NameU you want to modify
-            string targetShapeNameU = "TargetShapeName";
-            Aspose.Diagram.Shape targetShape = null;
+            Shape targetShape = null;
 
-            foreach (Aspose.Diagram.Shape shape in page.Shapes)
+            // Search for the shape by its universal name across all pages
+            foreach (Page page in diagram.Pages)
             {
-                if (shape.NameU == targetShapeNameU)
+                foreach (Shape shape in page.Shapes)
                 {
-                    targetShape = shape;
-                    break;
+                    if (shape.NameU == targetShapeNameU)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
                 }
+                if (targetShape != null)
+                    break;
             }
 
             if (targetShape == null)
             {
-                throw new Exception($"Shape with NameU '{targetShapeNameU}' not found on the first page.");
+                Console.WriteLine($"Shape with NameU '{targetShapeNameU}' not found.");
+                return;
             }
 
-            // Set the double‑click event formula.
-            // Example formula calls a macro named "MyMacro" in the Visio document.
-            targetShape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"MyMacro\")";
+            // Set the double‑click event formula
+            targetShape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"ShowAlert\")";
 
-            // Save the modified diagram to a new file
-            string outputPath = "output.vsdx";
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved with updated double‑click event.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,40 +1,75 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportDiagramToPng
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file and output directory.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: ExportPng16Bit <inputVisioPath> <outputDirectory>");
+            return;
+        }
+
+        // Guard for input file existence.
+        string inputPath = args[0];
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Guard for output directory existence; create if missing.
+        string outputDir = args[1];
+        if (!Directory.Exists(outputDir))
+        {
+            try
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+                return;
+            }
+        }
+
         try
         {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Configure image save options for lossless 16‑bit PNG
-            ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png)
+            // Iterate over each page in the diagram.
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Ensure full‑color output (no grayscale conversion)
-                ImageColorMode = ImageColorMode.None,
-                // Set a high resolution to preserve detail (e.g., 300 DPI)
-                Resolution = 300,
-                // Render all pages; each page will be saved as a separate PNG file
-                PageIndex = 0,
-                PageCount = diagram.Pages.Count,
-                // Optional: keep original page size
-                EnlargePage = false
-            };
+                // Prepare PNG save options; Aspose.Diagram does not expose a 16‑bit mode, so default lossless PNG is used.
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    // Export only the current page.
+                    PageIndex = i,
+                    PageCount = 1,
+                    // Preserve original resolution.
+                    Resolution = 300f
+                };
 
-            // Save the diagram pages as PNG images.
-            // For multi‑page diagrams, Aspose.Diagram appends the page index to the file name.
-            diagram.Save("output.png", options);
+                // Build the output file name using the page name (sanitized) and index.
+                string pageName = diagram.Pages[i].NameU;
+                foreach (char c in Path.GetInvalidFileNameChars())
+                    pageName = pageName.Replace(c, '_');
+                string outputPath = Path.Combine(outputDir, $"Page_{i + 1}_{pageName}.png");
 
+                // Save the current page as a PNG with the configured options.
+                diagram.Save(outputPath, pngOptions);
+                Console.WriteLine($"Exported page {i + 1} to {outputPath}");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

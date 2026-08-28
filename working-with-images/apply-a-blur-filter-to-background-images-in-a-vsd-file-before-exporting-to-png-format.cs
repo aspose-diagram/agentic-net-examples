@@ -10,18 +10,18 @@ class Program
         try
         {
 
-            // Load the VSD diagram
+            // Load the VSD file
             Diagram diagram = new Diagram("input.vsd");
 
-            // Apply blur to every shape that contains an image (typically background images)
+            // Apply blur to all shapes that contain an image (background pictures)
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
                     if (shape.Image != null)
                     {
-                        // Blur value must be between 0 and 1; here we set it to 0.5 (50% blur)
-                        shape.Image.Blur.Value = 0.5;
+                        // Blur value is between 0 (no blur) and 1 (maximum blur)
+                        shape.Image.Blur.Value = 0.5; // 50% blur
                     }
                 }
             }
@@ -29,7 +29,7 @@ class Program
             // Prepare PNG save options
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
-            // Export the diagram (first page) to PNG format
+            // Export the diagram to PNG format
             diagram.Save("output.png", saveOptions);
 
         }

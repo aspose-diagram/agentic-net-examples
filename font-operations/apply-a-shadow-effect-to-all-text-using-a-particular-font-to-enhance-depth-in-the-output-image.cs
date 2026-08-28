@@ -11,26 +11,26 @@ class Program
 
                 // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                // Path for the output image
-                string outputPath = "output.png";
+                // Path for the output Visio file
+                string outputPath = "output.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Font to target for shadow effect
+                // Define the target font name (case-sensitive as stored in the diagram)
                 string targetFont = "Calibri";
 
                 // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
                     // Iterate through all shapes on the page
-                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Ensure the shape has text
+                        // Ensure the shape contains text
                         if (shape.Text == null || string.IsNullOrWhiteSpace(shape.Text.Value.Text))
                             continue;
 
@@ -39,7 +39,7 @@ class Program
                         // Check each character run for the target font
                         foreach (Aspose.Diagram.Char ch in shape.Chars)
                         {
-                            if (ch.FontName != null && ch.FontName.Value.Equals(targetFont, StringComparison.OrdinalIgnoreCase))
+                            if (ch.FontName != null && ch.FontName.Value == targetFont)
                             {
                                 fontMatchFound = true;
                                 break;
@@ -55,18 +55,15 @@ class Program
                             shape.Fill.ShdwForegnd.Value = "#000000";
                             // Shadow transparency (30% transparent)
                             shape.Fill.ShdwForegndTrans.Value = 0.3;
-                            // Shadow offset (in inches)
-                            shape.Fill.ShapeShdwOffsetX.Value = 0.1;
-                            shape.Fill.ShapeShdwOffsetY.Value = 0.1;
+                            // Shadow offset (adjust as needed)
+                            shape.Fill.ShapeShdwOffsetX.Value = 0.05;
+                            shape.Fill.ShapeShdwOffsetY.Value = 0.05;
                         }
                     }
                 }
 
-                // Save the modified diagram as a PNG image
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                diagram.Save(outputPath, saveOptions);
-
-                Console.WriteLine("Shadow effect applied and diagram saved to " + outputPath);
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

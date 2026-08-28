@@ -1,63 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Printing;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the Visio diagram file
+        string diagramPath = "input.vsdx";
+
+        // Guard: ensure the diagram file exists before proceeding
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Name of the printer to use (replace with an actual printer name)
+        string printerName = "Microsoft Print to PDF";
+
         try
         {
-
-            // Path to the Visio file
-            string diagramPath = "input.vsdx";
-
-            // Load the diagram
+            // Load the diagram inside a using block to ensure proper disposal
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Assume we work with the first page
+                // Access the first page (adjust index if needed)
                 Page page = diagram.Pages[0];
 
                 // Retrieve page dimensions (in inches)
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Example: set margins to 10% of page dimensions
-                double marginLeft = pageWidth * 0.10;
-                double marginRight = pageWidth * 0.10;
-                double marginTop = pageHeight * 0.10;
-                double marginBottom = pageHeight * 0.10;
+                // Calculate dynamic margins (e.g., 5% of page size)
+                double leftMargin = pageWidth * 0.05;
+                double rightMargin = pageWidth * 0.05;
+                double topMargin = pageHeight * 0.05;
+                double bottomMargin = pageHeight * 0.05;
 
-                // Apply margins to the page's print properties
-                page.PageSheet.PrintProps.PageLeftMargin.Value = marginLeft;
-                page.PageSheet.PrintProps.PageRightMargin.Value = marginRight;
-                page.PageSheet.PrintProps.PageTopMargin.Value = marginTop;
-                page.PageSheet.PrintProps.PageBottomMargin.Value = marginBottom;
+                // Set the margins in the page's PrintProps (values are in inches)
+                page.PageSheet.PrintProps.PageLeftMargin.Value = leftMargin;
+                page.PageSheet.PrintProps.PageRightMargin.Value = rightMargin;
+                page.PageSheet.PrintProps.PageTopMargin.Value = topMargin;
+                page.PageSheet.PrintProps.PageBottomMargin.Value = bottomMargin;
 
-                // Configure print options (optional)
-                PrintSaveOptions printOptions = new PrintSaveOptions();
-                // Example: set default font for missing fonts
-                printOptions.DefaultFont = "Arial";
-
-                try
+                // Create print options (optional configuration)
+                PrintSaveOptions printOptions = new PrintSaveOptions
                 {
-                    // Print to the default printer
-                    diagram.Print(printOptions);
-                    Console.WriteLine("Printing completed successfully.");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Printing failed: {ex.Message}");
-                    throw;
-                }
+                    // Print only foreground pages (property expects a bool)
+                    SaveForegroundPagesOnly = true
+                };
+
+                // Execute the print job with the specified printer and options
+                diagram.Print(printerName, printOptions);
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during loading or printing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

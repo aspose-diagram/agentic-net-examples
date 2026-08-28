@@ -16,35 +16,35 @@ class Program
             // Load the diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                int pageIndex = 0;
-
                 // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    // Retrieve the current page
+                    Page page = diagram.Pages[i];
 
-                    // Configure image save options:
-                    // - Export as PNG
-                    // - Export only the current page
-                    // - Set canvas size to match page dimensions
-                    // - Apply a scaling factor to create a thumbnail
-                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-                    options.PageIndex = pageIndex;      // zero‑based page index
-                    options.PageCount = 1;              // export a single page
-                    options.PageSize = new PageSize((float)pageWidth, (float)pageHeight);
-                    options.Scale = 0.2f;               // 20 % of original size for thumbnail
+                    // Get page dimensions (in inches)
+                    double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeightInches = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Define output file name for the thumbnail
-                    string outputPath = $"Page_{pageIndex}_thumb.png";
+                    // Configure image save options for PNG thumbnail
+                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    {
+                        // Export only the current page
+                        PageIndex = i,
+                        PageCount = 1,
+                        // Define the canvas size using the page dimensions
+                        PageSize = new PageSize((float)pageWidthInches, (float)pageHeightInches)
+                    };
+
+                    // Build output file name for the thumbnail
+                    string outputPath = $"Page_{i + 1}_thumb.png";
 
                     // Save the thumbnail image
-                    diagram.Save(outputPath, options);
-
-                    pageIndex++;
+                    diagram.Save(outputPath, saveOptions);
                 }
             }
+
+            Console.WriteLine("Thumbnails generated successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

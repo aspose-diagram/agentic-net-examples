@@ -1,81 +1,102 @@
 using System;
-using System.Linq;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Drawing.Text;
+using Aspose.Drawing.Text; // Required for system font enumeration
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Expected style guidelines
-        private const string ExpectedFillColor = "#FF0000"; // Red fill foreground
-        private const string ExpectedFontName = "Calibri";
-
-        static void Main()
+        // Expect at least one argument: the path to the Visio file to validate
+        string diagramPath = args.Length > 0 ? args[0] : string.Empty;
+        if (!File.Exists(diagramPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Define company style guidelines (example: required fill color and font)
+        const string requiredFillColor = "#FF0000"; // Red in hex
+        const string requiredFontName = "Calibri";
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Verify that the diagram's font collection contains the required font
+            bool fontAvailable = false;
+            foreach (Font font in diagram.Fonts)
             {
-
-                // Path to the Visio file to validate
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Verify that the expected font is installed on the system
-                ValidateFontInstalled(ExpectedFontName);
-
-                // Iterate through all masters in the diagram
-                foreach (Master master in diagram.Masters)
+                if (string.Equals(font.Name, requiredFontName, StringComparison.OrdinalIgnoreCase))
                 {
-                    // Iterate through each shape within the master
-                    foreach (Shape shape in master.Shapes)
+                    fontAvailable = true;
+                    break;
+                }
+            }
+
+            // If the required font is not installed, report and continue (fallback may occur)
+            if (!fontAvailable)
+            {
+                Console.WriteLine($"Warning: Required font \"{requiredFontName}\" is not installed on this system.");
+            }
+
+            // Iterate through all masters in the diagram
+            foreach (Master master in diagram.Masters)
+            {
+                // Flag to indicate whether the current master complies with the style
+                bool masterCompliant = true;
+
+                // Iterate through each shape that belongs to the master
+                foreach (Shape shape in master.Shapes)
+                {
+                    // ----- Check fill color -----
+                    // Ensure the shape has a FillForegnd cell and compare its value
+                    if (shape.Fill != null && shape.Fill.FillForegnd != null && shape.Fill.FillForegnd.Value != null)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Validate fill foreground color
-                        string fillColor = shape.Fill.FillForegnd.Value;
-                        if (!string.Equals(fillColor, ExpectedFillColor, StringComparison.OrdinalIgnoreCase))
+                        string shapeColor = shape.Fill.FillForegnd.Value.Trim();
+                        if (!string.Equals(shapeColor, requiredFillColor, StringComparison.OrdinalIgnoreCase))
                         {
-                            Console.WriteLine($"Master '{master.Name}' Shape ID {shape.ID} has invalid fill color '{fillColor}'. Expected: '{ExpectedFillColor}'.");
-                            // Optionally throw to stop processing
-                            // throw new Exception("Fill color validation failed.");
+                            Console.WriteLine($"Master \"{master.Name}\" - Shape ID {shape.ID} has fill color \"{shapeColor}\" (expected \"{requiredFillColor}\").");
+                            masterCompliant = false;
                         }
+                    }
 
-                        // Validate font name for each character run
+                    // ----- Check font name -----
+                    // Examine character formatting runs; if none exist, skip font check
+                    if (shape.Chars != null && shape.Chars.Count > 0)
+                    {
                         foreach (Aspose.Diagram.Char ch in shape.Chars)
                         {
-                            string fontName = ch.FontName.Value;
-                            if (!string.Equals(fontName, ExpectedFontName, StringComparison.OrdinalIgnoreCase))
+                            // Ensure the FontName cell is present
+                            if (ch.FontName != null && ch.FontName.Value != null)
                             {
-                                Console.WriteLine($"Master '{master.Name}' Shape ID {shape.ID} has invalid font '{fontName}'. Expected: '{ExpectedFontName}'.");
-                                // Optionally throw to stop processing
-                                // throw new Exception("Font validation failed.");
+                                string shapeFont = ch.FontName.Value.Trim();
+                                if (!string.Equals(shapeFont, requiredFontName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    Console.WriteLine($"Master \"{master.Name}\" - Shape ID {shape.ID} uses font \"{shapeFont}\" (expected \"{requiredFontName}\").");
+                                    masterCompliant = false;
+                                }
                             }
                         }
                     }
                 }
 
-                Console.WriteLine("Master shape validation completed.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Ensures the required font is available on the system using Aspose.Drawing.Text
-        private static void ValidateFontInstalled(string fontName)
-        {
-            InstalledFontCollection fontCollection = new InstalledFontCollection();
-            bool found = fontCollection.Families.Any(f => string.Equals(f.Name, fontName, StringComparison.OrdinalIgnoreCase));
-
-            if (!found)
-            {
-                Console.WriteLine($"Required font '{fontName}' is not installed on the system.");
-                // Optionally throw to halt execution
-                // throw new Exception($"Missing required font: {fontName}");
+                // Report overall compliance for the master
+                if (masterCompliant)
+                {
+                    Console.WriteLine($"Master \"{master.Name}\" complies with the style guidelines.");
+                }
+                else
+                {
+                    Console.WriteLine($"Master \"{master.Name}\" does NOT comply with the style guidelines.");
+                }
             }
         }
+        catch (Exception ex)
+        {
+            // Capture any Aspose or I/O errors and write to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
+}

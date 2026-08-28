@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,57 +7,67 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Determine the VST file path from the first argument or use a default name.
+        string vstPath = args.Length > 0 ? args[0] : "stencil.vst";
+        // Verify that the VST file exists before proceeding.
+        if (!File.Exists(vstPath))
+        {
+            Console.Error.WriteLine($"File not found: {vstPath}");
+            return;
+        }
+
         try
         {
+            // Load the stencil (VST) file into a Diagram object.
+            Diagram diagram = new Diagram(vstPath);
 
-            // Path to the VST (stencil) file
-            string vstPath = "input.vst";
+            // Define the maximum pixel dimension for thumbnails.
+            const int maxPixelSize = 100;
 
-            // Load the stencil diagram
-            Diagram diagram = new Diagram(vstPath, LoadFileFormat.Vst);
-
-            // Iterate through each page in the stencil
+            // Iterate over each page in the stencil.
             for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Access the current page
+                // Retrieve the current page.
                 Page page = diagram.Pages[i];
 
-                // Retrieve page dimensions (in inches)
+                // Obtain page width and height in inches.
                 double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeightInches = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Assume default DPI of 96 for pixel calculation
-                const double dpi = 96.0;
-                double widthPixels = pageWidthInches * dpi;
-                double heightPixels = pageHeightInches * dpi;
+                // Choose a resolution (DPI) for rendering; 96 DPI is a common default.
+                const float resolutionDpi = 96f;
 
-                // Determine scaling factor to keep the larger side at most 100 pixels
-                double maxDimension = Math.Max(widthPixels, heightPixels);
-                float scale = 1.0f;
-                if (maxDimension > 100.0)
+                // Compute the scale factor so that the larger side becomes maxPixelSize pixels.
+                double maxInches = Math.Max(pageWidthInches, pageHeightInches);
+                float scale = (float)(maxPixelSize / (maxInches * resolutionDpi));
+
+                // Configure image save options for PNG output.
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
                 {
-                    scale = (float)(100.0 / maxDimension);
-                }
+                    // Set the page index to render the current page.
+                    PageIndex = i,
+                    // Apply the calculated scale to fit within the pixel limit.
+                    Scale = scale,
+                    // Use the chosen resolution.
+                    Resolution = resolutionDpi,
+                    // Export only the current page.
+                    ExportHiddenPage = false
+                };
 
-                // Configure image save options for PNG thumbnail
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                saveOptions.PageIndex = i;          // Export only the current page
-                saveOptions.Scale = scale;          // Apply scaling to meet max 100‑pixel constraint
+                // Build the output file name for the thumbnail.
+                string outputFile = $"thumbnail_page_{i + 1}.png";
 
-                // Define output file name for the thumbnail
-                string outputPath = $"thumbnail_page_{i + 1}.png";
+                // Save the rendered page as a PNG thumbnail.
+                diagram.Save(outputFile, saveOptions);
 
-                // Save the thumbnail image
-                diagram.Save(outputPath, saveOptions);
+                // Inform the user about the generated thumbnail.
+                Console.WriteLine($"Generated thumbnail: {outputFile}");
             }
-
-            // Clean up resources
-            diagram.Dispose();
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any exceptions to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

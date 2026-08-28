@@ -1,60 +1,70 @@
 using System;
-using System.Text.Json;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect a single argument: the path to the Visio diagram file.
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <diagramFilePath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        // Guard: ensure the diagram file exists before proceeding.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Initialize counters for locked dimensions and rotation.
+            int lockedWidthCount = 0;
+            int lockedHeightCount = 0;
+            int lockedRotationCount = 0;
+
+            // Iterate over each page in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path (provide via command line or default)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                int lockedWidthCount = 0;
-                int lockedHeightCount = 0;
-                int lockedRotateCount = 0;
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Iterate over each shape on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Ensure the shape has a Protection section before accessing lock cells.
+                    if (shape.Protection != null)
                     {
-                        // Ensure the Protection cell collection exists
-                        if (shape.Protection != null)
-                        {
-                            if (shape.Protection.LockWidth != null && shape.Protection.LockWidth.Value == BOOL.True)
-                                lockedWidthCount++;
+                        // Increment counter if the width lock is set to TRUE.
+                        if (shape.Protection.LockWidth.Value == BOOL.True)
+                            lockedWidthCount++;
 
-                            if (shape.Protection.LockHeight != null && shape.Protection.LockHeight.Value == BOOL.True)
-                                lockedHeightCount++;
+                        // Increment counter if the height lock is set to TRUE.
+                        if (shape.Protection.LockHeight.Value == BOOL.True)
+                            lockedHeightCount++;
 
-                            if (shape.Protection.LockRotate != null && shape.Protection.LockRotate.Value == BOOL.True)
-                                lockedRotateCount++;
-                        }
+                        // Increment counter if the rotation lock is set to TRUE.
+                        if (shape.Protection.LockRotate.Value == BOOL.True)
+                            lockedRotationCount++;
                     }
                 }
-
-                // Prepare summary object
-                var summary = new
-                {
-                    LockedWidth = lockedWidthCount,
-                    LockedHeight = lockedHeightCount,
-                    LockedRotate = lockedRotateCount
-                };
-
-                // Serialize to JSON and output
-                string json = JsonSerializer.Serialize(summary);
-                Console.WriteLine(json);
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+            // Build a simple JSON summary of the lock counts.
+            string json = $"{{\"LockedWidth\":{lockedWidthCount},\"LockedHeight\":{lockedHeightCount},\"LockedRotation\":{lockedRotationCount}}}";
+
+            // Output the JSON to the console.
+            Console.WriteLine(json);
+        }
+        catch (Exception ex)
+        {
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

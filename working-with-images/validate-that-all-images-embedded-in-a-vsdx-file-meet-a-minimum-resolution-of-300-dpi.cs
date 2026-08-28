@@ -11,53 +11,55 @@ class Program
             {
 
                 // Path to the VSDX file to validate
-                string inputPath = "input.vsdx";
+                string filePath = "input.vsdx";
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vsdx);
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath, LoadFileFormat.Vsdx);
 
                 bool allImagesValid = true;
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Identify embedded images (foreign objects)
-                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
+                        // Identify embedded images (foreign shapes)
+                        if (shape.Type == TypeValue.Foreign)
                         {
+                            // Retrieve the raw image bytes
                             byte[] imageData = shape.ForeignData.Value;
 
+                            if (imageData == null || imageData.Length == 0)
+                            {
+                                Console.WriteLine($"Shape ID {shape.ID} has no image data.");
+                                allImagesValid = false;
+                                continue;
+                            }
+
+                            // Load the image using Aspose.Drawing
                             using (MemoryStream ms = new MemoryStream(imageData))
                             using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
                             {
-                                // Retrieve image resolution (DPI)
-                                float horizDpi = img.HorizontalResolution;
-                                float vertDpi = img.VerticalResolution;
+                                float hDpi = img.HorizontalResolution;
+                                float vDpi = img.VerticalResolution;
 
-                                // Check against the minimum required DPI (300)
-                                if (horizDpi < 300f || vertDpi < 300f)
+                                if (hDpi < 300f || vDpi < 300f)
                                 {
+                                    Console.WriteLine($"Shape ID {shape.ID} fails DPI check: {hDpi}x{vDpi} DPI.");
                                     allImagesValid = false;
-                                    Console.WriteLine($"[FAIL] Page '{page.Name}' Shape ID {shape.ID} has low resolution: {horizDpi}x{vertDpi} DPI.");
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"[PASS] Page '{page.Name}' Shape ID {shape.ID} resolution: {horizDpi}x{vertDpi} DPI.");
                                 }
                             }
                         }
                     }
                 }
 
-                if (!allImagesValid)
+                if (allImagesValid)
                 {
-                    throw new Exception("One or more embedded images do not meet the minimum 300 DPI resolution requirement.");
+                    Console.WriteLine("All embedded images meet the minimum 300 DPI requirement.");
                 }
                 else
                 {
-                    Console.WriteLine("All embedded images meet the minimum 300 DPI resolution requirement.");
+                    throw new Exception("One or more embedded images do not meet the minimum 300 DPI requirement.");
                 }
 
             }

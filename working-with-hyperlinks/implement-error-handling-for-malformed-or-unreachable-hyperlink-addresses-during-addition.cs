@@ -2,115 +2,100 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
+        // Entry point of the console application
         static async Task Main(string[] args)
         {
             try
             {
 
-                // Load an existing diagram (replace with actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
+                // Path to the output Visio file
+                const string outputPath = "ValidatedDiagram.vsdx";
 
-                // Get the first page and first shape for demonstration
-                Page page = diagram.Pages[0];
-                if (page.Shapes.Count == 0)
+                // Create a new empty diagram
+                using Diagram diagram = new Diagram();
+
+                // Ensure there is at least one page to work with
+                if (diagram.Pages.Count == 0)
                 {
-                    Console.WriteLine("No shapes found on the first page.");
+                    Console.WriteLine("The diagram does not contain any pages.");
                     return;
                 }
 
-                Shape shape = page.Shapes[0];
+                // Reference to the first page
+                Page page = diagram.Pages[0];
 
-                // Example hyperlink data
-                string url = "https://example.com";
-                string description = "Example website";
+                // Add a rectangle shape to the page (master name "Rectangle" is built‑in)
+                // Parameters: PinX, PinY, master name, page index
+                long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Attempt to add a validated hyperlink
-                await AddValidatedHyperlinkAsync(shape, url, description);
+                // Define the hyperlink address to be added
+                const string hyperlinkAddress = "https://example.com";
+
+                // Validate the hyperlink before adding it
+                if (!IsValidUri(hyperlinkAddress))
+                {
+                    Console.WriteLine($"The address '{hyperlinkAddress}' is not a well‑formed absolute URI.");
+                    return;
+                }
+
+                bool reachable = await IsReachableAsync(hyperlinkAddress);
+                if (!reachable)
+                {
+                    Console.WriteLine($"The address '{hyperlinkAddress}' could not be reached.");
+                    return;
+                }
+
+                // Create and configure the hyperlink
+                Hyperlink link = new Hyperlink
+                {
+                    Name = "WebLink",
+                    Description = { Value = "Example website" }
+                };
+                link.Address.Value = hyperlinkAddress;
+
+                // Add the hyperlink to the shape's collection
+                shape.Hyperlinks.Add(link);
+
+                // Save the diagram to a VSDX file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
 
-        /// <summary>
-        /// Validates the URL format and reachability before adding it as a hyperlink to the shape.
-        /// </summary>
-        /// <param name="shape">The target shape.</param>
-        /// <param name="url">The hyperlink address.</param>
-        /// <param name="description">Optional description for the hyperlink.</param>
-        private static async Task AddValidatedHyperlinkAsync(Shape shape, string url, string description)
+        // Checks whether a string is a well‑formed absolute URI with http/https scheme
+        private static bool IsValidUri(string uriString)
         {
-            if (shape == null)
+            if (Uri.TryCreate(uriString, UriKind.Absolute, out Uri uriResult))
             {
-                Console.WriteLine("Shape is null.");
-                return;
+                return uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps;
             }
-
-            // Ensure the Hyperlinks collection exists
-            if (shape.Hyperlinks == null)
-            {
-                Console.WriteLine("Hyperlinks collection is null.");
-                return;
-            }
-
-            // Validate URL format
-            if (!IsValidUrl(url))
-            {
-                Console.WriteLine($"Malformed URL: '{url}'. Hyperlink not added.");
-                return;
-            }
-
-            // Check if the URL is reachable
-            if (!await IsUrlReachableAsync(url))
-            {
-                Console.WriteLine($"Unreachable URL: '{url}'. Hyperlink not added.");
-                return;
-            }
-
-            // Create and configure the hyperlink
-            Hyperlink link = new Hyperlink
-            {
-                Name = "Link_" + Guid.NewGuid().ToString("N")
-            };
-            link.Address.Value = url;
-            link.Description.Value = description;
-
-            // Add the hyperlink to the shape
-            shape.Hyperlinks.Add(link);
-            Console.WriteLine($"Hyperlink added to shape ID {shape.ID}: {url}");
+            return false;
         }
 
-        /// <summary>
-        /// Checks whether the provided string is a well‑formed absolute HTTP/HTTPS URL.
-        /// </summary>
-        private static bool IsValidUrl(string url)
-        {
-            return Uri.TryCreate(url, UriKind.Absolute, out Uri uriResult) &&
-                   (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
-        }
-
-        /// <summary>
-        /// Attempts a simple GET request to determine if the URL is reachable.
-        /// </summary>
-        private static async Task<bool> IsUrlReachableAsync(string url)
+        // Attempts a HEAD request to determine if the URI is reachable
+        private static async Task<bool> IsReachableAsync(string uri)
         {
             try
             {
-                using HttpClient client = new HttpClient
-                {
-                    Timeout = TimeSpan.FromSeconds(5)
-                };
-                using HttpResponseMessage response = await client.GetAsync(url);
+                using HttpClient client = new HttpClient();
+                // Set a short timeout to avoid long waits on unreachable hosts
+                client.Timeout = TimeSpan.FromSeconds(5);
+                using HttpResponseMessage response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, uri));
                 return response.IsSuccessStatusCode;
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error checking URL reachability: {ex.Message}");
+                // Any exception (e.g., timeout, DNS failure) is treated as unreachable
                 return false;
             }
         }

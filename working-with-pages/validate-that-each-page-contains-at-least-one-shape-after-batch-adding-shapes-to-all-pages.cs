@@ -13,15 +13,14 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Name of the master shape to be added (e.g., a rectangle)
+            // Name of the master shape to be added (e.g., a built‑in rectangle)
             string masterName = "Rectangle";
 
-            // Add a shape to every page in the diagram
+            // Add a shape to every page in the document
             for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // AddShape(pinX, pinY, masterName, pageNumber)
-                // Position (1,1) is arbitrary; size defaults are taken from the master
-                diagram.AddShape(1.0, 1.0, masterName, pageIndex);
+                // Add the shape at a fixed position (PinX, PinY). Width/Height are default.
+                diagram.Pages[pageIndex].AddShape(1.0, 1.0, masterName);
             }
 
             // Validate that each page now contains at least one shape
@@ -30,12 +29,12 @@ class Program
                 Page page = diagram.Pages[pageIndex];
                 if (page.Shapes.Count == 0)
                 {
-                    // Throw an exception if any page is empty
-                    throw new InvalidOperationException($"Page {pageIndex} contains no shapes after batch addition.");
+                    // Throw an exception if a page is found without shapes
+                    throw new InvalidOperationException($"Page \"{page.Name}\" does not contain any shapes.");
                 }
             }
 
-            // Save the modified diagram
+            // Save the updated diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

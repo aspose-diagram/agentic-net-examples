@@ -1,11 +1,11 @@
 {
   "category": "working-with-protection",
   "display_name": "Working With Protection",
-  "version": "26.7.0",
+  "version": "26.8.0",
   "framework": "net8.0",
   "total": 35,
   "pass_rate": 100.0,
-  "generated": "2026-07-28",
+  "generated": "2026-08-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,14 +14,15 @@
       "task": "After clearing protection validate that no shape attributes remain locked",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -63,7 +64,9 @@
       "task": "Apply diagram level protection to prevent adding new pages",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -77,7 +80,6 @@
       "task": "Apply shape protection only to shapes of type connector",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -110,8 +112,8 @@
       "task": "Apply shape protection to all shapes on a specific layer",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -127,7 +129,9 @@
       "task": "Apply shape protection to shapes that belong to the readonly layer",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -143,7 +147,6 @@
       "task": "Apply shape protection to shapes whose area exceeds a predefined threshold",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -160,8 +163,7 @@
       "task": "Apply shape protection to shapes whose name contains banner",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -194,6 +196,7 @@
       "task": "Clear all protection settings from the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -229,10 +232,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -241,8 +249,7 @@
       "task": "Enable shape protection for all shapes locking width height x position y position and rotation",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -280,7 +287,10 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Save",
+        "StyleSheets",
+        "diagram"
       ]
     },
     {
@@ -290,7 +300,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Text.Json"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -356,8 +366,8 @@
       "task": "Lock the rotation attribute of a specific shape identified by its id",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -373,8 +383,7 @@
       "task": "Lock the width attribute of a specific shape identified by its id",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -390,6 +399,7 @@
       "task": "Lock the x position attribute of a specific shape identified by its id",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -407,8 +417,7 @@
       "task": "Lock the y position attribute of a specific shape identified by its id",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -424,13 +433,14 @@
       "task": "Log every protection change with timestamp and affected element identifier",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -458,14 +468,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -474,7 +485,6 @@
       "task": "Save the protected diagram to a new file preserving original metadata",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -490,6 +500,7 @@
       "task": "Set background protection to prevent editing or deletion of background pages",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -505,7 +516,8 @@
       "task": "Set master stencil protection to disallow adding new shapes from those masters",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -519,7 +531,8 @@
       "task": "Set style protection to lock diagram styles from modification",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -554,7 +567,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -564,12 +576,14 @@
       "task": "Unlock the rotation attribute of a specific shape identified by its id",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     }

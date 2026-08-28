@@ -2,72 +2,63 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-namespace HyperlinkDefaultConfigExample
+namespace HyperlinkConfigurationExample
 {
     // Represents the default hyperlink settings loaded from a configuration file.
-    public class HyperlinkConfig
+    public class HyperlinkDefaults
     {
-        public string Address { get; set; } = "";
-        public string Description { get; set; } = "";
+        public string Address { get; set; } = "https://example.com";
+        public string Description { get; set; } = "Default hyperlink description";
         public string SubAddress { get; set; } = "";
     }
 
-    class Program
+    public class Program
     {
-        static void Main()
+        // Path to the JSON configuration file.
+        private const string ConfigFilePath = "hyperlinkConfig.json";
+
+        // Path where the generated Visio diagram will be saved.
+        private const string OutputDiagramPath = "ConfiguredHyperlinks.vsdx";
+
+        public static void Main()
         {
             try
             {
 
-                // Path to the JSON configuration file that defines default hyperlink properties.
-                const string configPath = "hyperlinkConfig.json";
+                // Ensure a configuration file exists; create one with default values if missing.
+                HyperlinkDefaults defaults = EnsureConfiguration();
 
-                // Load the configuration. If the file does not exist, create a default one.
-                HyperlinkConfig config;
-                if (File.Exists(configPath))
-                {
-                    string json = File.ReadAllText(configPath);
-                    config = JsonSerializer.Deserialize<HyperlinkConfig>(json) ?? new HyperlinkConfig();
-                }
-                else
-                {
-                    // Create a default configuration and persist it for future runs.
-                    config = new HyperlinkConfig
-                    {
-                        Address = "https://example.com",
-                        Description = "Default hyperlink description",
-                        SubAddress = "" // No sub-address by default.
-                    };
-                    string defaultJson = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
-                    File.WriteAllText(configPath, defaultJson);
-                }
-
-                // Create a new diagram.
+                // Create a new empty diagram.
                 Diagram diagram = new Diagram();
 
-                // Add a rectangle shape to the active page.
-                // Parameters: pinX, pinY, masterName, pageIndex.
-                long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+                // Retrieve the active page (created by default when a Diagram is instantiated).
+                Page page = diagram.ActivePage;
 
-                // Retrieve the shape instance.
-                Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
+                // Add a simple rectangle shape to the page.
+                // Parameters: pinX, pinY, width, height, master name, page index.
+                // Using the built‑in "Rectangle" master; page index 0 refers to the active page.
+                long shapeId = diagram.AddShape(2.0, 2.0, 2.0, 1.0, "Rectangle", 0);
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Create a new hyperlink and apply the default properties from the config.
-                Hyperlink link = new Hyperlink();
-                link.Address.Value = config.Address;
-                link.Description.Value = config.Description;
-                link.SubAddress.Value = config.SubAddress;
-                // Optional: give the hyperlink a name for identification.
-                link.Name = "DefaultLink";
+                // Create a new hyperlink instance and apply the default properties.
+                Hyperlink link = new Hyperlink
+                {
+                    // Name is optional; set for clarity.
+                    Name = "DefaultLink"
+                };
+                link.Address.Value = defaults.Address;
+                link.Description.Value = defaults.Description;
+                link.SubAddress.Value = defaults.SubAddress;
 
-                // Add the hyperlink to the shape's collection.
+                // Add the hyperlink to the shape's Hyperlinks collection.
                 shape.Hyperlinks.Add(link);
 
-                // Save the diagram to a VSDX file.
-                diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
+                // Save the diagram to a VSDX file using the appropriate SaveFileFormat enum.
+                diagram.Save(OutputDiagramPath, SaveFileFormat.Vsdx);
 
-                Console.WriteLine("Diagram created and saved with default hyperlink applied.");
+                Console.WriteLine($"Diagram saved to '{OutputDiagramPath}'.");
 
             }
             catch (Aspose.Diagram.DiagramException ex)
@@ -75,5 +66,33 @@ namespace HyperlinkDefaultConfigExample
                 Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
+
+        // Loads the configuration file if it exists; otherwise creates a default file.
+        private static HyperlinkDefaults EnsureConfiguration()
+        {
+            if (File.Exists(ConfigFilePath))
+            {
+                try
+                {
+                    string json = File.ReadAllText(ConfigFilePath);
+                    HyperlinkDefaults? loaded = JsonSerializer.Deserialize<HyperlinkDefaults>(json);
+                    if (loaded != null)
+                    {
+                        return loaded;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to read configuration: {ex.Message}");
+                }
+            }
+
+            // If we reach here, create a default configuration file.
+            HyperlinkDefaults defaults = new HyperlinkDefaults();
+            string defaultJson = JsonSerializer.Serialize(defaults, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(ConfigFilePath, defaultJson);
+            Console.WriteLine($"Default configuration file created at '{ConfigFilePath}'.");
+            return defaults;
+        }
     }
 }

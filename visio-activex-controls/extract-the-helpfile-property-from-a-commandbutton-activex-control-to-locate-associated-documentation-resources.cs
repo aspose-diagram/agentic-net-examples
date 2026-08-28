@@ -1,51 +1,58 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main()
         {
-
-            // Path to the Visio file
-            string filePath = "input.vsdx";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(filePath))
+            try
             {
-                // Iterate through all pages
+
+                // Path to the Visio file (replace with actual file path)
+                string diagramPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Check if the shape contains an ActiveX control
+                        // Ensure the shape contains an ActiveX control
                         if (shape.ActiveXControl != null && shape.ActiveXControl.Type == ControlType.CommandButton)
                         {
                             // Cast to the specific CommandButton control
-                            CommandButtonActiveXControl cmdButton = (CommandButtonActiveXControl)shape.ActiveXControl;
+                            CommandButtonActiveXControl commandButton = (CommandButtonActiveXControl)shape.ActiveXControl;
 
-                            // Retrieve the Help topic (HelpFile) from the shape's Help element
-                            // HelpTopic is a Str2Value; use .Value to get the string
-                            string helpFile = shape.Help?.HelpTopic?.Value ?? string.Empty;
+                            // Retrieve the HelpTopic value (HelpFile equivalent)
+                            string helpTopic = null;
+                            if (shape.Help != null && shape.Help.HelpTopic != null)
+                            {
+                                helpTopic = shape.Help.HelpTopic.Value;
+                            }
 
-                            // Output the information
+                            // Output the extracted information
                             Console.WriteLine($"Shape ID: {shape.ID}");
-                            Console.WriteLine($"CommandButton Caption: {cmdButton.Caption}");
-                            Console.WriteLine($"Help File: {helpFile}");
+                            Console.WriteLine($"Caption: {commandButton.Caption}");
+                            if (!string.IsNullOrEmpty(helpTopic))
+                            {
+                                Console.WriteLine($"HelpTopic (HelpFile): {helpTopic}");
+                            }
+                            else
+                            {
+                                Console.WriteLine("HelpTopic (HelpFile) not set.");
+                            }
                             Console.WriteLine(new string('-', 40));
                         }
                     }
                 }
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

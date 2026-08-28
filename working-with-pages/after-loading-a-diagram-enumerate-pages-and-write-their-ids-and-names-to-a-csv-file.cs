@@ -9,16 +9,16 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file (uses the provided load rule)
+            // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create a CSV file to store page information
+            // Create (or overwrite) a CSV file to store page information
             using (StreamWriter writer = new StreamWriter("pages.csv"))
             {
                 // Write CSV header
                 writer.WriteLine("PageId,PageName");
 
-                // Enumerate all pages in the diagram
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
                     // Write each page's ID and Name to the CSV
@@ -26,7 +26,7 @@ class Program
                 }
             }
 
-            // Clean up resources
+            // Release resources held by the diagram
             diagram.Dispose();
 
         }

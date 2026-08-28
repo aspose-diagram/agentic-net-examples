@@ -5,22 +5,18 @@ using Aspose.Diagram.Saving;
 
 class CustomStreamProvider : IStreamProvider
 {
+    // Called when the HTML export process needs to initialize a stream for a resource.
     public void InitStream(StreamProviderOptions options)
     {
-        // Set the custom base URL for all linked resources in the HTML output
-        options.CustomPath = "https://mycdn.example.com/visio/";
-
-        // Provide a dummy stream (required by the interface)
-        options.Stream = new MemoryStream();
+        // Set a custom base URL that will be prefixed to all linked resources (images, CSS, etc.).
+        options.CustomPath = "https://cdn.example.com/visio-resources/";
+        // No actual stream is created here because we only want to modify the URL.
     }
 
+    // Called after the resource stream is no longer needed.
     public void CloseStream(StreamProviderOptions options)
     {
-        // Clean up the stream created in InitStream
-        if (options.Stream != null)
-        {
-            options.Stream.Dispose();
-        }
+        // No cleanup required for this simple implementation.
     }
 }
 
@@ -31,19 +27,17 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram.
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Configure HTML save options and assign the custom stream provider
+            // Configure HTML export options and assign the custom stream provider.
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
             htmlOptions.StreamProvider = new CustomStreamProvider();
 
-            // Save the diagram as HTML with the custom base URL applied
-            string outputPath = "output.html";
-            diagram.Save(outputPath, htmlOptions);
+            // Save the diagram as HTML; all linked resources will use the custom base URL.
+            diagram.Save("output.html", htmlOptions);
 
-            Console.WriteLine("Diagram saved to HTML with custom base URL.");
+            Console.WriteLine("Diagram exported to HTML with custom base URL.");
 
         }
         catch (System.IO.FileNotFoundException ex)

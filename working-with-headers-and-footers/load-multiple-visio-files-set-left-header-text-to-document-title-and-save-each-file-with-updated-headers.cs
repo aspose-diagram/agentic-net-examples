@@ -3,66 +3,59 @@ using System.IO;
 using System.Linq;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main(string[] args)
+class Program
     {
-        // Determine the folder containing Visio files.
-        // If a path is provided as a command‑line argument it is used,
-        // otherwise the current working directory is processed.
-        string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
-
-        // Supported Visio extensions.
-        string[] extensions = new[]
+        static void Main(string[] args)
         {
-            ".vsdx", ".vdx", ".vsd", ".vsx", ".vtx",
-            ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm"
-        };
+            // Determine the folder containing Visio files.
+            // If a folder path is provided as a command‑line argument, use it; otherwise use the current directory.
+            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
 
-        // Collect all files with the supported extensions.
-        var files = Directory.GetFiles(folderPath)
-                             .Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
-                             .ToArray();
-
-        foreach (var filePath in files)
-        {
-            // Load the diagram from the file.
-            Diagram diagram = new Diagram(filePath);
-
-            // Use the document title for the left header.
-            // If the title is empty, fall back to the file name (without extension).
-            string title = diagram.DocumentProps.Title;
-            if (string.IsNullOrWhiteSpace(title))
+            if (!Directory.Exists(folderPath))
             {
-                title = Path.GetFileNameWithoutExtension(filePath);
+                Console.WriteLine($"Folder not found: {folderPath}");
+                return;
             }
 
-            diagram.HeaderFooter.HeaderLeft = title;
+            // Supported Visio extensions.
+            string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm" };
 
-            // Choose the appropriate SaveFileFormat based on the file extension.
-            SaveFileFormat format = GetSaveFormat(Path.GetExtension(filePath));
+            // Get all Visio files in the folder.
+            var visioFiles = Directory.GetFiles(folderPath)
+                                      .Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
+                                      .ToList();
 
-            // Overwrite the original file with the updated header.
-            diagram.Save(filePath, format);
+            if (!visioFiles.Any())
+            {
+                Console.WriteLine("No Visio files found in the specified folder.");
+                return;
+            }
+
+            foreach (var filePath in visioFiles)
+            {
+                try
+                {
+                    // Load the diagram.
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Retrieve the document title (built‑in property).
+                    string title = diagram.DocumentProps.Title ?? string.Empty;
+
+                    // Set the left header text to the document title.
+                    diagram.HeaderFooter.HeaderLeft = title;
+
+                    // Save the diagram back to the same file in VSDX format.
+                    // This overwrites the original file; change the path if you need a separate output folder.
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
+
+                    Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                }
+            }
+
+            Console.WriteLine("Header update completed.");
         }
     }
-
-    // Maps a file extension to the corresponding SaveFileFormat enum value.
-    private static SaveFileFormat GetSaveFormat(string extension)
-    {
-        switch (extension.ToLower())
-        {
-            case ".vsdx": return SaveFileFormat.Vsdx;
-            case ".vdx":  return SaveFileFormat.Vdx;
-            case ".vsd":  return SaveFileFormat.Vsd;
-            case ".vsx":  return SaveFileFormat.Vsx;
-            case ".vtx":  return SaveFileFormat.Vtx;
-            case ".vssx": return SaveFileFormat.Vssx;
-            case ".vstx": return SaveFileFormat.Vstx;
-            case ".vsdm": return SaveFileFormat.Vsdm;
-            case ".vssm": return SaveFileFormat.Vssm;
-            case ".vstm": return SaveFileFormat.Vstm;
-            default:      return SaveFileFormat.Vsdx; // Default fallback.
-        }
-    }
-}

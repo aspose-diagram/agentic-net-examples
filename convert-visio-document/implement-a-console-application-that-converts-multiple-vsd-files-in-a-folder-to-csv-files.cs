@@ -8,88 +8,54 @@ using Aspose.Diagram;
         static void Main(string[] args)
         {
             // Determine the folder to process.
-            string folderPath;
+            string inputFolder;
             if (args.Length > 0)
             {
-                folderPath = args[0];
+                inputFolder = args[0];
             }
             else
             {
-                Console.Write("Enter the full path of the folder containing VSD files: ");
-                folderPath = Console.ReadLine();
+                Console.Write("Enter the path to the folder containing VSD files: ");
+                inputFolder = Console.ReadLine();
             }
 
-            if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+            if (string.IsNullOrWhiteSpace(inputFolder) || !Directory.Exists(inputFolder))
             {
-                Console.WriteLine("The specified folder does not exist.");
+                Console.WriteLine("Invalid folder path.");
                 return;
             }
 
             // Get all *.vsd files in the folder (non‑recursive).
-            string[] vsdFiles = Directory.GetFiles(folderPath, "*.vsd", SearchOption.TopDirectoryOnly);
+            string[] vsdFiles = Directory.GetFiles(inputFolder, "*.vsd", SearchOption.TopDirectoryOnly);
+
             if (vsdFiles.Length == 0)
             {
                 Console.WriteLine("No VSD files found in the specified folder.");
                 return;
             }
 
-            foreach (string vsdFile in vsdFiles)
+            foreach (string vsdPath in vsdFiles)
             {
                 try
                 {
-                    string csvFile = Path.ChangeExtension(vsdFile, ".csv");
-                    ExportDiagramToCsv(vsdFile, csvFile);
-                    Console.WriteLine($"Converted: {Path.GetFileName(vsdFile)} -> {Path.GetFileName(csvFile)}");
+                    // Load the Visio diagram. Explicitly specify the format for clarity.
+                    Diagram diagram = new Diagram(vsdPath, LoadFileFormat.Vsd);
+
+                    // Build the output CSV file path (same folder, same name, .csv extension).
+                    string csvPath = Path.ChangeExtension(vsdPath, ".csv");
+
+                    // Save the diagram as CSV.
+                    diagram.Save(csvPath, SaveFileFormat.Csv);
+
+                    Console.WriteLine($"Converted: \"{Path.GetFileName(vsdPath)}\" -> \"{Path.GetFileName(csvPath)}\"");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to convert '{Path.GetFileName(vsdFile)}': {ex.Message}");
+                    // Report any errors but continue processing remaining files.
+                    Console.WriteLine($"Error processing \"{Path.GetFileName(vsdPath)}\": {ex.Message}");
                 }
             }
 
-            Console.WriteLine("Processing completed.");
-        }
-
-        // Loads a VSD diagram and writes its shape data to a CSV file.
-        private static void ExportDiagramToCsv(string vsdPath, string csvPath)
-        {
-            // Load the Visio diagram. VSD is a binary Visio format.
-            Diagram diagram = new Diagram(vsdPath, LoadFileFormat.Vsd);
-
-            using (StreamWriter writer = new StreamWriter(csvPath, false, System.Text.Encoding.UTF8))
-            {
-                // Write CSV header.
-                writer.WriteLine("PageIndex,ShapeId,ShapeName,ShapeText");
-
-                // Iterate through each page.
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
-                {
-                    Page page = diagram.Pages[pageIndex];
-
-                    // Iterate through each shape on the page.
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Retrieve shape identifier.
-                        long shapeId = shape.ID;
-
-                        // Shape name (NameU is the universal name).
-                        string shapeName = shape.NameU ?? string.Empty;
-
-                        // Retrieve plain text from the shape.
-                        string shapeText = string.Empty;
-                        if (shape.Text != null && shape.Text.Value != null)
-                        {
-                            shapeText = shape.Text.Value.Text ?? string.Empty;
-                        }
-
-                        // Escape double quotes by doubling them.
-                        shapeName = shapeName.Replace("\"", "\"\"");
-                        shapeText = shapeText.Replace("\"", "\"\"");
-
-                        // Write a CSV line. Enclose fields that may contain commas in double quotes.
-                        writer.WriteLine($"{pageIndex},\"{shapeId}\",\"{shapeName}\",\"{shapeText}\"");
-                    }
-                }
-            }
+            Console.WriteLine("Conversion completed.");
         }
     }

@@ -8,93 +8,60 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect three arguments: input diagram path, header/footer XML config path, output diagram path
-            if (args.Length != 3)
+            try
             {
-                Console.WriteLine("Usage: HeaderFooterUpdater <inputDiagram> <configXml> <outputDiagram>");
-                return;
+
+                // Input diagram file path
+                string diagramPath = "input.vsdx";
+                // XML configuration file path
+                string configPath = "HeaderFooterConfig.xml";
+                // Output diagram file path
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Load and parse the XML configuration
+                if (!File.Exists(configPath))
+                    throw new FileNotFoundException($"Configuration file not found: {configPath}");
+
+                XDocument configDoc = XDocument.Load(configPath);
+                XElement root = configDoc.Element("HeaderFooterConfig");
+                if (root == null)
+                    throw new Exception("Invalid configuration file: missing HeaderFooterConfig root element.");
+
+                // Apply header text
+                diagram.HeaderFooter.HeaderLeft = (string)root.Element("HeaderLeft") ?? "";
+                diagram.HeaderFooter.HeaderCenter = (string)root.Element("HeaderCenter") ?? "";
+                diagram.HeaderFooter.HeaderRight = (string)root.Element("HeaderRight") ?? "";
+
+                // Apply footer text
+                diagram.HeaderFooter.FooterLeft = (string)root.Element("FooterLeft") ?? "";
+                diagram.HeaderFooter.FooterCenter = (string)root.Element("FooterCenter") ?? "";
+                diagram.HeaderFooter.FooterRight = (string)root.Element("FooterRight") ?? "";
+
+                // Apply margins (in inches)
+                if (double.TryParse((string)root.Element("HeaderMargin"), out double headerMargin))
+                    diagram.HeaderFooter.HeaderMargin.Value = headerMargin;
+                if (double.TryParse((string)root.Element("FooterMargin"), out double footerMargin))
+                    diagram.HeaderFooter.FooterMargin.Value = footerMargin;
+
+                // Configure global header/footer font
+                var font = diagram.HeaderFooter.HeaderFooterFont;
+                if (root.Element("FontFace") != null)
+                    font.FaceName = (string)root.Element("FontFace");
+                if (int.TryParse((string)root.Element("FontWeight"), out int weight))
+                    font.Weight = weight; // 700 = bold, 400 = regular
+                if (int.TryParse((string)root.Element("FontHeight"), out int height))
+                    font.Height = height; // negative value per specification (e.g., -16 for 12pt)
+
+                // Save the updated diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            string diagramPath = args[0];
-            string configPath = args[1];
-            string outputPath = args[2];
-
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Load the XML configuration
-            XDocument configDoc = XDocument.Load(configPath);
-            XElement root = configDoc.Root;
-            if (root == null)
+            catch (System.IO.FileNotFoundException ex)
             {
-                throw new Exception("Invalid XML configuration file.");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Apply header text
-            XElement headerLeft = root.Element("HeaderLeft");
-            if (headerLeft != null) diagram.HeaderFooter.HeaderLeft = headerLeft.Value;
-
-            XElement headerCenter = root.Element("HeaderCenter");
-            if (headerCenter != null) diagram.HeaderFooter.HeaderCenter = headerCenter.Value;
-
-            XElement headerRight = root.Element("HeaderRight");
-            if (headerRight != null) diagram.HeaderFooter.HeaderRight = headerRight.Value;
-
-            // Apply footer text
-            XElement footerLeft = root.Element("FooterLeft");
-            if (footerLeft != null) diagram.HeaderFooter.FooterLeft = footerLeft.Value;
-
-            XElement footerCenter = root.Element("FooterCenter");
-            if (footerCenter != null) diagram.HeaderFooter.FooterCenter = footerCenter.Value;
-
-            XElement footerRight = root.Element("FooterRight");
-            if (footerRight != null) diagram.HeaderFooter.FooterRight = footerRight.Value;
-
-            // Apply margins (values are in inches)
-            XElement headerMargin = root.Element("HeaderMargin");
-            if (headerMargin != null && double.TryParse(headerMargin.Value, out double hMargin))
-            {
-                diagram.HeaderFooter.HeaderMargin.Value = hMargin;
-            }
-
-            XElement footerMargin = root.Element("FooterMargin");
-            if (footerMargin != null && double.TryParse(footerMargin.Value, out double fMargin))
-            {
-                diagram.HeaderFooter.FooterMargin.Value = fMargin;
-            }
-
-            // Apply global font settings for header/footer
-            HeaderFooterFont font = diagram.HeaderFooter.HeaderFooterFont;
-
-            XElement fontFace = root.Element("FontFaceName");
-            if (fontFace != null) font.FaceName = fontFace.Value;
-
-            XElement fontWeight = root.Element("FontWeight");
-            if (fontWeight != null && int.TryParse(fontWeight.Value, out int weight))
-            {
-                font.Weight = weight; // 700 = bold, 400 = regular
-            }
-
-            XElement fontHeight = root.Element("FontHeight");
-            if (fontHeight != null && int.TryParse(fontHeight.Value, out int height))
-            {
-                // Height uses negative calculation mapping; assign directly as per API
-                font.Height = height;
-            }
-
-            XElement fontItalic = root.Element("FontItalic");
-            if (fontItalic != null && bool.TryParse(fontItalic.Value, out bool italic))
-            {
-                font.Italic = italic ? BOOL.True : BOOL.False;
-            }
-
-            XElement fontUnderline = root.Element("FontUnderline");
-            if (fontUnderline != null && bool.TryParse(fontUnderline.Value, out bool underline))
-            {
-                font.Underline = underline ? BOOL.True : BOOL.False;
-            }
-
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
+    }
     }

@@ -5,46 +5,55 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Input Visio file and the name of the layer to export
-            string visioPath = "input.vsdx";
+            // Input Visio file, target layer name, and output PNG path.
+            string inputPath = "input.vsdx";
             string targetLayerName = "OverlayLayer";
-            string outputPng = "layer_overlay.png";
+            string outputPath = "layer_overlay.png";
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Assume we work with the first page
+            // Assume we work with the first page.
             Page page = diagram.Pages[0];
 
-            // Set visibility: only the target layer is visible, others are hidden
+            // Hide all layers first.
             foreach (Layer layer in page.PageSheet.Layers)
             {
-                if (layer.Name.Value.Equals(targetLayerName, StringComparison.OrdinalIgnoreCase))
-                    layer.Visible.Value = BOOL.True;   // Show target layer
-                else
-                    layer.Visible.Value = BOOL.False;  // Hide all other layers
+                layer.Visible.Value = BOOL.False;
             }
 
-            // Configure PNG export options
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+            // Find the target layer and make it visible.
+            bool layerFound = false;
+            foreach (Layer layer in page.PageSheet.Layers)
             {
-                PageIndex = 0,                     // Export the first page
-                ExportHiddenPage = false           // Do not include hidden pages
-            };
+                if (layer.Name.Value == targetLayerName)
+                {
+                    layer.Visible.Value = BOOL.True;
+                    layerFound = true;
+                    break;
+                }
+            }
 
-            // Enable transparent background if the option exists
-            // (If the property is not available in the referenced version, this line can be omitted)
-            // pngOptions.TransparentBackground = true;
+            if (!layerFound)
+            {
+                throw new Exception($"Layer '{targetLayerName}' not found in the diagram.");
+            }
 
-            // Save the selected layer as a transparent PNG
-            diagram.Save(outputPng, pngOptions);
+            // Configure PNG export options.
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Export only the first page (index 0).
+            saveOptions.PageIndex = 0;
+            // Ensure background is transparent (default for PNG in Aspose.Diagram).
+            // Additional options can be set here if needed, e.g., resolution.
+            saveOptions.Resolution = 300; // DPI
 
-            Console.WriteLine($"Layer '{targetLayerName}' exported to '{outputPng}'.");
+            // Save the diagram as a PNG with only the target layer visible.
+            diagram.Save(outputPath, saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

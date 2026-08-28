@@ -1,72 +1,84 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Reflection;
 using Aspose.Diagram;
 
-class Program
+class EventDependencyGraphGenerator
+{
+    // Entry point
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments
+        if (args.Length < 2)
         {
-            try
+            Console.WriteLine("Usage: EventDependencyGraphGenerator <inputVisioFile> <outputDotFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Load the Visio diagram (using the provided load rule)
+        Diagram diagram = new Diagram(inputPath);
+
+        // Build a directed graph in DOT format
+        StringBuilder dotBuilder = new StringBuilder();
+        dotBuilder.AppendLine("digraph EventDependencies {");
+        dotBuilder.AppendLine("    rankdir=LR;"); // left‑to‑right layout
+
+        // Regular expression to capture shape IDs referenced in formulas (e.g., Sheet.5!Prop.Row)
+        Regex sheetIdRegex = new Regex(@"Sheet\.([0-9]+)", RegexOptions.Compiled);
+
+        // Iterate through all pages and shapes
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
             {
+                long sourceId = shape.ID;
 
-                // Expect the input Visio file path as the first argument.
-                if (args.Length == 0)
+                // Access the Event object of the shape
+                Event shapeEvent = shape.Event;
+                if (shapeEvent == null) continue;
+
+                // Use reflection to enumerate all event‑related properties (EventDblClick, EventDrop, etc.)
+                PropertyInfo[] eventProps = typeof(Event).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                foreach (PropertyInfo propInfo in eventProps)
                 {
-                    Console.WriteLine("Usage: EventCellGraph <input-visio-file>");
-                    return;
-                }
+                    // Skip properties that are not event cells (e.g., Del)
+                    if (propInfo.Name == "Del") continue;
 
-                string inputPath = args[0];
+                    object eventCell = propInfo.GetValue(shapeEvent);
+                    if (eventCell == null) continue;
 
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(inputPath);
+                    // Many event cells are of type RuleValue which contains a Formula property
+                    PropertyInfo formulaProp = eventCell.GetType().GetProperty("Formula", BindingFlags.Public | BindingFlags.Instance);
+                    if (formulaProp == null) continue; // Not a formula‑holding cell
 
-                Console.WriteLine("Extracting EventCell formulas and building dependency graph...");
+                    string formula = formulaProp.GetValue(eventCell) as string;
+                    if (string.IsNullOrWhiteSpace(formula)) continue;
 
-                // Iterate through all pages and shapes.
-                foreach (Page page in diagram.Pages)
-                {
-                    // Skip any empty pages.
-                    if (page.Shapes == null) continue;
-
-                    foreach (Shape shape in page.Shapes)
+                    // Find all referenced shape IDs within the formula
+                    MatchCollection matches = sheetIdRegex.Matches(formula);
+                    foreach (Match match in matches)
                     {
-                        // Collect event formulas for the current shape.
-                        bool hasAnyEvent = false;
-
-                        // Helper local function to process a single event cell.
-                        void ProcessEvent(string eventName, string formula)
+                        if (long.TryParse(match.Groups[1].Value, out long targetId))
                         {
-                            if (!string.IsNullOrWhiteSpace(formula))
-                            {
-                                if (!hasAnyEvent)
-                                {
-                                    Console.WriteLine($"Shape ID {shape.ID} (NameU: {shape.NameU}) events:");
-                                    hasAnyEvent = true;
-                                }
-                                Console.WriteLine($"  {eventName} -> \"{formula}\"");
-                            }
+                            // Add an edge from the source shape to the target shape
+                            dotBuilder.AppendLine($"    \"{sourceId}\" -> \"{targetId}\" [label=\"{propInfo.Name}\"];");
                         }
-
-                        // Event cells are accessed via the Event property.
-                        // Each event cell contains a Ufe (Universal Formula Expression) object with the formula string in its F property.
-                        ProcessEvent("EventXFMod", shape.Event.EventXFMod?.Ufe?.F);
-                        ProcessEvent("EventDblClick", shape.Event.EventDblClick?.Ufe?.F);
-                        ProcessEvent("EventDrop", shape.Event.EventDrop?.Ufe?.F);
-                        ProcessEvent("EventMultiDrop", shape.Event.EventMultiDrop?.Ufe?.F);
-                        ProcessEvent("TheText", shape.Event.TheText?.Ufe?.F);
-                        ProcessEvent("TheData", shape.Event.TheData?.Ufe?.F);
                     }
                 }
-
-                // Optionally, save the diagram (unchanged) to demonstrate proper lifecycle handling.
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to {outputPath}");
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+
+        dotBuilder.AppendLine("}"); // close digraph
+
+        // Write the DOT representation to the specified output file
+        File.WriteAllText(outputPath, dotBuilder.ToString());
+
+        Console.WriteLine($"Event dependency graph generated at: {outputPath}");
     }
-    }
+}

@@ -1,60 +1,76 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page of the diagram
+            Page page = diagram.Pages[0];
+
+            // Locate the shape we want to work with (by universal name)
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-
-                // Load an existing Visio diagram (replace with your file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page and the first shape on that page
-                Page page = diagram.Pages[0];
-                Shape shape = page.Shapes.GetShape(1); // assumes shape with ID 1 exists
-
-                // The value we want to ensure is not duplicated
-                string fieldValue = "SampleFieldValue";
-
-                // Check if a field with the same value already exists
-                if (FieldExists(shape, fieldValue))
+                if (shape.NameU != null && shape.NameU.Equals("MyShape", StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine($"A field with value \"{fieldValue}\" already exists on the shape (ID: {shape.ID}).");
+                    targetShape = shape;
+                    break;
                 }
-                else
-                {
-                    // Create a new field and add it to the shape
-                    Field newField = new Field();
-                    newField.Value.Val = fieldValue;
-                    shape.Fields.Add(newField);
-                    Console.WriteLine($"Added new field with value \"{fieldValue}\" to the shape (ID: {shape.ID}).");
-                }
-
-                // Optionally, save the diagram to verify changes
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to \"{outputPath}\".");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("Target shape not found.");
+                return;
             }
-    }
 
-        // Returns true if a field with the specified value already exists on the shape
-        static bool FieldExists(Shape shape, string value)
+            // Define the field index (IX) we intend to add
+            int desiredIx = 0;
+
+            // Check if a field with the same IX already exists
+            bool fieldExists = false;
+            foreach (Field fld in targetShape.Fields)
+            {
+                if (fld.IX == desiredIx)
+                {
+                    fieldExists = true;
+                    break;
+                }
+            }
+
+            if (fieldExists)
+            {
+                Console.WriteLine($"Field with IX={desiredIx} already exists on shape '{targetShape.NameU}'.");
+            }
+            else
+            {
+                // Create a new field and add it to the shape
+                Field newField = new Field();
+                newField.IX = desiredIx;
+                newField.Type.Value = TypeFieldValue.Undefined; // Adjust type as needed
+                newField.Value.Val = "NewValue";
+                targetShape.Fields.Add(newField);
+                Console.WriteLine($"Added new field with IX={desiredIx} to shape '{targetShape.NameU}'.");
+            }
+
+            // Save the modified diagram to a new file
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
         {
-            foreach (Field field in shape.Fields)
-            {
-                if (field.Value.Val == value)
-                {
-                    return true;
-                }
-            }
-            return false;
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

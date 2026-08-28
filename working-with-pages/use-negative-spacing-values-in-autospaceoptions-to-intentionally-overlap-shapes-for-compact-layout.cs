@@ -12,8 +12,11 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the first page (or any specific page you want to modify)
+            // Get the first page (or any specific page you want to work with)
             Page page = diagram.Pages[0];
+
+            // Get all shapes on the page
+            ShapeCollection shapes = page.Shapes;
 
             // Create AutoSpaceOptions with negative spacing to force overlap
             AutoSpaceOptions options = new AutoSpaceOptions
@@ -24,8 +27,8 @@ class Program
                 DistanceInVertical = -0.2
             };
 
-            // Apply auto-spacing to all shapes on the page using the negative values
-            page.AutoSpaceShapes(page.Shapes, options);
+            // Apply auto spacing with the custom options
+            page.AutoSpaceShapes(shapes, options);
 
             // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);

@@ -10,54 +10,25 @@ class Program
         {
 
             // Load an existing Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first page (adjust index or name as needed)
+            // Retrieve the target page (first page in this example)
             var page = diagram.Pages[0];
 
-            // Find the first existing comment (annotation) on the page
-            Annotation existingComment = null;
-            foreach (Annotation ann in page.PageSheet.Annotations)
-            {
-                existingComment = ann;
-                break; // take the first comment as the thread starter
-            }
+            // Retrieve a shape to which the reply will be attached.
+            // Here we use the first shape on the page; adjust as needed.
+            var shape = page.Shapes[0];
 
-            if (existingComment == null)
-            {
-                Console.WriteLine("No existing comments found on the page.");
-                return;
-            }
-
-            // Preserve hierarchy metadata: use the same shape and reviewer as the original comment
-            int shapeId = existingComment.ShapeID;          // shape to which the original comment is attached
-            int reviewerId = existingComment.ReviewerID.Value; // reviewer identifier
-
-            // Retrieve the shape instance by its ID
-            Shape targetShape = page.Shapes[shapeId];
-
-            // Add a reply comment to the same shape
-            // The AddComment overload attaches the comment to the shape and creates a new annotation
-            page.AddComment(targetShape, "This is a reply to the original comment.");
-
-            // Optionally, update the reviewer of the new comment to match the original
-            // The newly added annotation will be the last one in the collection
-            Annotation replyComment = null;
-            foreach (Annotation ann in page.PageSheet.Annotations)
-            {
-                replyComment = ann; // iterate to the last annotation
-            }
-
-            if (replyComment != null)
-            {
-                // Set the reviewer ID to match the original comment's reviewer
-                replyComment.ReviewerID.Value = reviewerId;
-            }
+            // Add a reply comment to the selected shape.
+            // This creates a new annotation linked to the same shape,
+            // preserving the comment hierarchy (reply to the existing comment).
+            string replyText = "This is a reply to the existing comment.";
+            page.AddComment(shape, replyText);
 
             // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Reply added and diagram saved as output.vsdx");
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

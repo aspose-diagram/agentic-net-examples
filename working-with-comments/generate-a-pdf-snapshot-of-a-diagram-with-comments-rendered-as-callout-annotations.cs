@@ -10,23 +10,15 @@ class Program
         try
         {
 
-            // Path to the source Visio diagram
-            string sourceFile = @"C:\Diagrams\sample.vsdx";
+            // Load the Visio diagram from a file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Path where the PDF snapshot will be saved
-            string outputPdf = @"C:\Diagrams\sample_snapshot.pdf";
+            // Configure PDF save options to export comments as callout annotations
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.IsExportComments = true;
 
-            // Load the diagram from file
-            Diagram diagram = new Diagram(sourceFile);
-
-            // Configure PDF save options to include comments as callout annotations
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                IsExportComments = true   // Enable exporting of comments
-            };
-
-            // Save the diagram as a PDF using the configured options
-            diagram.Save(outputPdf, pdfOptions);
+            // Save the diagram as a PDF file with comments rendered
+            diagram.Save("output.pdf", pdfOptions);
 
             // Clean up resources
             diagram.Dispose();

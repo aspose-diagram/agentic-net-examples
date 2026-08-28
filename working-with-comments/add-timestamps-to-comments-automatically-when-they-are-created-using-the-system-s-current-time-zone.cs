@@ -9,26 +9,38 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your actual file path)
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+            // Path to the output Visio file
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first page of the diagram
+            // Get the first page (or you can retrieve by name)
             Page page = diagram.Pages[0];
 
-            // Build the comment text and append the current timestamp
-            string commentText = "Review needed. Created at " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            // Add a timestamped comment at position (1,1)
+            AddTimestampedComment(page, 1.0, 1.0, "Review this diagram.");
 
-            // Add the comment at a specific location on the page (PinX = 1.0, PinY = 1.0)
-            page.AddComment(1.0, 1.0, commentText);
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    // Adds a comment with the current system timestamp.
+    static void AddTimestampedComment(Page page, double pinX, double pinY, string commentText)
+    {
+        // Current time in the system's time zone, formatted with offset
+        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss zzz");
+        string fullComment = $"[{timestamp}] {commentText}";
+
+        // Add the comment to the page at the specified coordinates
+        page.AddComment(pinX, pinY, fullComment);
     }
 }

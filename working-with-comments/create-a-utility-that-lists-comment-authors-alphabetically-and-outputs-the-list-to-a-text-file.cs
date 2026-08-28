@@ -7,58 +7,67 @@ class Program
     {
         static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output text file path
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: CommentAuthorLister <inputVisioFile> <outputTextFile>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputPath = args[1];
+
+            // Load the Visio diagram
+            Diagram diagram;
             try
             {
+                diagram = new Diagram(inputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
 
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
+            // Collect author names (reviewer names) from annotations
+            HashSet<string> authorSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Use a HashSet to collect unique author names
-                HashSet<string> authorSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
+            {
+                // Annotations are stored in the PageSheet
+                foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    // Iterate through all annotations (comments) on the page
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    // ReviewerID links to a reviewer in the document's Reviewer collection
+                    int reviewerId = annotation.ReviewerID.Value;
+
+                    // Ensure the reviewer index is within bounds
+                    if (reviewerId >= 0 && reviewerId < diagram.DocumentSheet.Reviewers.Count)
                     {
-                        // Get the reviewer index for this comment
-                        int reviewerIndex = annotation.ReviewerID.Value;
-
-                        // Retrieve the reviewer object from the document's reviewer collection
-                        Reviewer reviewer = diagram.DocumentSheet.Reviewers[reviewerIndex];
-
-                        // Extract the reviewer name (Str2Value) and add to the set
-                        if (reviewer != null && reviewer.Name != null)
+                        var reviewer = diagram.DocumentSheet.Reviewers[reviewerId];
+                        // Reviewer.Name is a Str2Value; retrieve the actual string via .Value
+                        string authorName = reviewer.Name.Value ?? string.Empty;
+                        if (!string.IsNullOrWhiteSpace(authorName))
                         {
-                            string authorName = reviewer.Name.Value;
-                            if (!string.IsNullOrWhiteSpace(authorName))
-                            {
-                                authorSet.Add(authorName.Trim());
-                            }
+                            authorSet.Add(authorName.Trim());
                         }
                     }
                 }
-
-                // Transfer the set to a list for sorting
-                List<string> authorList = new List<string>(authorSet);
-                authorList.Sort(StringComparer.OrdinalIgnoreCase);
-
-                // Output file path
-                string outputPath = "CommentAuthors.txt";
-
-                // Write the sorted author names to the text file
-                File.WriteAllLines(outputPath, authorList);
-
-                Console.WriteLine($"Author list written to '{outputPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Sort the distinct author names alphabetically
+            List<string> sortedAuthors = new List<string>(authorSet);
+            sortedAuthors.Sort(StringComparer.OrdinalIgnoreCase);
+
+            // Write the sorted list to the output text file
+            try
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                File.WriteAllLines(outputPath, sortedAuthors);
+                Console.WriteLine($"Author list written to: {outputPath}");
             }
-    }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to write output file: {ex.Message}");
+            }
+        }
     }

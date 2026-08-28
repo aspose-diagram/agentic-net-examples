@@ -1,22 +1,21 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Cells;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the Visio diagram file (replace with actual path)
-            string diagramPath = "input.vsdx";
-
-            // Load the diagram inside a using block to ensure proper disposal
-            using (Diagram diagram = new Diagram(diagramPath))
+            try
             {
-                // Prepare a new Excel workbook
+
+                // Path to the Visio diagram file
+                string diagramPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Create a new Excel workbook
                 Workbook workbook = new Workbook();
                 Worksheet sheet = workbook.Worksheets[0];
 
@@ -24,31 +23,31 @@ class Program
                 sheet.Cells[0, 0].PutValue("Page Name");
                 sheet.Cells[0, 1].PutValue("Comment Count");
 
-                int rowIndex = 1; // Start writing data from the second row
+                int currentRow = 1;
 
-                // Iterate through each page in the diagram
+                // Iterate through each page and count its comments (annotations)
                 foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve the number of comments (annotations) on the current page
-                    int commentCount = page.PageSheet.Annotations != null ? page.PageSheet.Annotations.Count : 0;
+                    int commentCount = page.PageSheet.Annotations.Count;
+                    string pageName = page.Name;
 
-                    // Write page name and comment count to the worksheet
-                    sheet.Cells[rowIndex, 0].PutValue(page.Name);
-                    sheet.Cells[rowIndex, 1].PutValue(commentCount);
+                    // Write the page name and comment count to the worksheet
+                    sheet.Cells[currentRow, 0].PutValue(pageName);
+                    sheet.Cells[currentRow, 1].PutValue(commentCount);
 
-                    rowIndex++;
+                    currentRow++;
                 }
 
-                // Save the Excel file
-                string excelPath = "CommentSummary.xlsx";
-                workbook.Save(excelPath, SaveFormat.Xlsx);
-                Console.WriteLine($"Comment summary saved to '{excelPath}'.");
-            }
+                // Save the summary as an Excel file
+                workbook.Save("CommentSummary.xlsx", SaveFormat.Xlsx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Clean up resources
+                diagram.Dispose();
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

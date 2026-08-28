@@ -9,65 +9,73 @@ class Program
             try
             {
 
-                // Path to the Visio file
-                string diagramPath = "input.vsdx";
+                // Path to the Visio file to be processed
+                string visioFilePath = @"C:\Path\To\YourDiagram.vsdx";
 
-                // Connection string to the relational database
-                string connectionString = "Data Source=SERVER;Initial Catalog=DatabaseName;Integrated Security=True";
+                // Connection string to the relational database (replace with actual values)
+                string connectionString = @"Server=YOUR_SERVER;Database=YOUR_DATABASE;Trusted_Connection=True;";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(visioFilePath);
 
                 // Open a SQL connection
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                using (SqlConnection sqlConnection = new SqlConnection(connectionString))
                 {
-                    connection.Open();
+                    sqlConnection.Open();
 
-                    // Prepare the INSERT command with parameters
-                    string insertSql = "INSERT INTO Comments (ShapeId, CommentText) VALUES (@ShapeId, @CommentText)";
-                    using (SqlCommand command = new SqlCommand(insertSql, connection))
+                    // Prepare an INSERT command with parameters
+                    string insertCommandText = @"
+                        INSERT INTO DiagramComments (ShapeId, CommentText, MarkerIndex)
+                        VALUES (@ShapeId, @CommentText, @MarkerIndex)";
+
+                    using (SqlCommand insertCommand = new SqlCommand(insertCommandText, sqlConnection))
                     {
                         // Define parameters
-                        SqlParameter shapeIdParam = new SqlParameter("@ShapeId", System.Data.SqlDbType.Int);
-                        SqlParameter commentTextParam = new SqlParameter("@CommentText", System.Data.SqlDbType.NVarChar, -1);
-                        command.Parameters.Add(shapeIdParam);
-                        command.Parameters.Add(commentTextParam);
+                        insertCommand.Parameters.Add("@ShapeId", System.Data.SqlDbType.Int);
+                        insertCommand.Parameters.Add("@CommentText", System.Data.SqlDbType.NVarChar, -1);
+                        insertCommand.Parameters.Add("@MarkerIndex", System.Data.SqlDbType.Int);
 
                         // Iterate through all pages in the diagram
                         foreach (Page page in diagram.Pages)
                         {
-                            // Ensure the page has annotations
-                            if (page.PageSheet.Annotations != null)
+                            // Access the collection of annotations (comments) on the page
+                            foreach (Annotation annotation in page.PageSheet.Annotations)
                             {
-                                // Iterate through each comment (annotation) on the page
-                                foreach (Annotation annotation in page.PageSheet.Annotations)
+                                // Retrieve comment text and associated shape ID
+                                string commentText = annotation.Comment.Value;
+                                int shapeId = annotation.ShapeID; // Primitive int, no .Value needed
+                                int markerIndex = annotation.MarkerIndex.Value; // Unique identifier for the comment
+
+                                // Assign values to parameters
+                                insertCommand.Parameters["@ShapeId"].Value = shapeId;
+                                insertCommand.Parameters["@CommentText"].Value = commentText;
+                                insertCommand.Parameters["@MarkerIndex"].Value = markerIndex;
+
+                                // Execute the INSERT command
+                                int rowsAffected = insertCommand.ExecuteNonQuery();
+
+                                if (rowsAffected != 1)
                                 {
-                                    // Retrieve the shape ID associated with the comment
-                                    int shapeId = annotation.ShapeID;
-
-                                    // Retrieve the comment text
-                                    string commentText = annotation.Comment.Value;
-
-                                    // Assign parameter values
-                                    shapeIdParam.Value = shapeId;
-                                    commentTextParam.Value = commentText ?? string.Empty;
-
-                                    // Execute the INSERT command
-                                    command.ExecuteNonQuery();
+                                    Console.WriteLine($"Warning: Expected to insert 1 row, but inserted {rowsAffected} rows for ShapeID {shapeId}.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Inserted comment for ShapeID {shapeId}: \"{commentText}\"");
                                 }
                             }
                         }
                     }
 
-                    connection.Close();
+                    sqlConnection.Close();
                 }
 
-                Console.WriteLine("Comment export completed successfully.");
+                // Optionally, save the diagram if any modifications were made (not required for export)
+                // diagram.Save("ExportedDiagram.vsdx", SaveFileFormat.Vsdx);
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (System.IO.DirectoryNotFoundException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
             }
     }
     }

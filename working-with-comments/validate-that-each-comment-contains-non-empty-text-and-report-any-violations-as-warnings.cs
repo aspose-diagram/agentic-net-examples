@@ -9,19 +9,16 @@ class Program
             {
 
                 // Path to the Visio file to be validated
-                string inputPath = "input.vsdx";
+                string diagramPath = "input.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram(diagramPath);
 
                 // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the annotations (comments) collection on the page sheet
-                    var annotations = page.PageSheet.Annotations;
-
-                    // Iterate through each annotation
-                    foreach (Annotation annotation in annotations)
+                    // Access the collection of annotations (comments) on the page
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
                         // Retrieve the comment text
                         string commentText = annotation.Comment.Value;
@@ -31,12 +28,12 @@ class Program
                         {
                             // Report a warning with page name and comment identifier
                             Console.WriteLine(
-                                $"Warning: Empty comment detected on page \"{page.Name}\" (MarkerIndex: {annotation.MarkerIndex.Value}).");
+                                $"Warning: Empty comment found on page \"{page.Name}\" (Comment ID: {annotation.MarkerIndex.Value}).");
                         }
                     }
                 }
 
-                // Optional: indicate completion
+                // Optional: indicate validation completed
                 Console.WriteLine("Comment validation completed.");
 
             }

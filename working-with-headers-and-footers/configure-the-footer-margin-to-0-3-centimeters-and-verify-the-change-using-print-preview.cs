@@ -1,29 +1,46 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Printing;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            try
+            {
 
-            // Convert 0.3 centimeters to inches (1 cm = 0.393701 inches)
-            double centimeters = 0.3;
-            double inches = centimeters * 0.393701; // ≈ 0.1181103 inches
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path to the output Visio file after modification
+                string outputPath = "output.vsdx";
 
-            // Set the global footer margin (in inches)
-            diagram.HeaderFooter.FooterMargin.Value = inches;
+                // Load the diagram from file
+                Diagram diagram = new Diagram(inputPath);
 
-            // Verify the change by outputting the current footer margin value
-            Console.WriteLine($"Footer margin set to {diagram.HeaderFooter.FooterMargin.Value:F6} inches "
-                + $"({centimeters} cm).");
+                // Convert 0.3 centimeters to inches (1 cm = 0.393701 inches)
+                double centimeters = 0.3;
+                double inches = centimeters * 0.393701; // ≈0.1181 inches
 
-            // Optional: Save the diagram to a file to inspect the result manually
-            string outputPath = "FooterMarginDemo.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-        }
+                // Set the global footer margin (in inches)
+                diagram.HeaderFooter.FooterMargin.Value = inches;
+
+                // Verify the change by reading back the value and outputting it
+                double verifiedMarginInches = diagram.HeaderFooter.FooterMargin.Value;
+                Console.WriteLine($"Footer margin set to {verifiedMarginInches:F4} inches (expected ≈{inches:F4}).");
+
+                // Simple validation: ensure the set value matches the expected value within a small tolerance
+                double tolerance = 0.0001;
+                if (Math.Abs(verifiedMarginInches - inches) > tolerance)
+                {
+                    throw new Exception("Footer margin verification failed.");
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }

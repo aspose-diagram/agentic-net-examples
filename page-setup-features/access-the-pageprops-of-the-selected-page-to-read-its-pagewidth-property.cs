@@ -9,14 +9,17 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            var diagram = new Diagram("input.vsdx");
 
-            // Select the first page (or any page by index)
-            Page page = diagram.Pages[0];
+            // Choose the page you want to inspect (e.g., the first page)
+            var page = diagram.Pages[0];
 
-            // Access the PageProps of the selected page and read the PageWidth value
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            // Access the PageProps of the selected page
+            var pageProps = page.PageSheet.PageProps;
+
+            // Read the PageWidth property (DoubleValue) and get its numeric value
+            double pageWidth = pageProps.PageWidth.Value;
 
             // Output the page width
             Console.WriteLine($"Page width: {pageWidth}");

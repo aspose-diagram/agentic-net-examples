@@ -1,68 +1,47 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Saving; // Required for save options (if needed)
 
 class Program
 {
-    // Path to the input Visio file
-    private const string InputPath = "input.vsdx";
-    // Path to the output Visio file
-    private const string OutputPath = "output.vsdx";
-    // Path to the external audit log file
-    private const string AuditLogPath = "audit_log.txt";
-
-    static void Main()
+    static void Main(string[] args)
     {
-        // Verify that the input file exists before attempting to load it
-        if (!File.Exists(InputPath))
+        // Input and output Visio file paths
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {InputPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+
+        string outputPath = "output.vsdx";
 
         try
         {
             // Load the diagram from the specified file
-            Diagram diagram = new Diagram(InputPath);
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes in the diagram
+            // Iterate over each page and each shape on the page
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // The EventShapeDeleted cell does not exist in the API.
-                    // As an alternative, use the EventDrop cell to trigger a macro when the shape is dropped.
-                    // Adjust the macro name as needed; it must be defined in the Visio document.
+                    // The EventShapeDeleted cell does not exist in Aspose.Diagram.
+                    // Use a supported event cell (e.g., EventDrop) as a placeholder
+                    // to demonstrate setting an event formula that calls a macro.
                     shape.Event.EventDrop.Ufe.F = "CALLTHIS(\"LogDeletion\")";
                 }
             }
 
             // Save the modified diagram to the output path using the Vsdx format
-            diagram.Save(OutputPath, SaveFileFormat.Vsdx);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
+            // Write any Aspose or I/O errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
-    }
-
-    // Example method that could be invoked by the Visio macro (CALLTHIS)
-    // This method writes a timestamp to the external audit log file.
-    // Note: The actual invocation from Visio requires a VBA macro named "LogDeletion".
-    public static void LogDeletion()
-    {
-        string timestamp = DateTime.UtcNow.ToString("o");
-        try
-        {
-            // Append a line with the deletion timestamp to the audit log file
-            File.AppendAllText(AuditLogPath, $"Shape deleted at {timestamp}{Environment.NewLine}");
-        }
-        catch (Exception ex)
-        {
-            // In a real scenario, handle exceptions appropriately.
-            Console.WriteLine($"Failed to write audit log: {ex.Message}");
         }
     }
 }

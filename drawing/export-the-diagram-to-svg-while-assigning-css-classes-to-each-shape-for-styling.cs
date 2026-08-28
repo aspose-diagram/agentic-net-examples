@@ -1,6 +1,5 @@
-using System;
 using System.IO;
-using System.Text;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -11,47 +10,27 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsd");
 
-            // Assign a CSS class name to each shape.
-            // Here we use the NameU property to store the class name.
-            foreach (Page page in diagram.Pages)
+            // Assign a CSS class (via the shape name) to each shape on the first page
+            int shapeIndex = 0;
+            foreach (Shape shape in diagram.Pages[0].Shapes)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    shape.NameU = $"cls_{shape.ID}";
-                }
+                // Example class name: "shape-0", "shape-1", ...
+                shape.Name = $"shape-{shapeIndex}";
+                shapeIndex++;
             }
 
-            // Prepare SVG save options.
+            // Configure SVG save options
             SVGSaveOptions svgOptions = new SVGSaveOptions
             {
-                // Ensure the whole page is rendered.
-                PageIndex = 0,
-                // Optional: fit the SVG to the viewport.
+                // Make the generated SVG fit the viewport
                 SVGFitToViewPort = true
             };
 
-            // Save the diagram as an SVG file using the provided Save method.
+            // Export the entire diagram to a single SVG file
             diagram.Save("output.svg", svgOptions);
-
-            // Post‑process the generated SVG to replace the default id attribute
-            // with a class attribute that contains the CSS class we assigned.
-            string svgContent = File.ReadAllText("output.svg", Encoding.UTF8);
-
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    string idAttribute = $"id=\"{shape.ID}\"";
-                    string classAttribute = $"class=\"{shape.NameU}\"";
-                    svgContent = svgContent.Replace(idAttribute, classAttribute);
-                }
-            }
-
-            // Write the modified SVG back to disk.
-            File.WriteAllText("output.svg", svgContent, Encoding.UTF8);
 
         }
         catch (System.IO.FileNotFoundException ex)

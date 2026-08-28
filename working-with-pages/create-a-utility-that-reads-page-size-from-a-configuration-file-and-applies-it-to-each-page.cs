@@ -1,38 +1,16 @@
 using System;
 using System.IO;
-using System.Text.Json;
 using Aspose.Diagram;
 
-namespace DiagramPageSizeUtility
-{
-    // Configuration model matching the JSON structure
-    public class PageSizeConfig
+class Program
     {
-        public double Width { get; set; }   // Width in inches
-        public double Height { get; set; }  // Height in inches
-    }
-
-    public class Program
-    {
-        // Entry point: args[0] = input diagram path, args[1] = config json path, args[2] = output diagram path
-        public static void Main(string[] args)
+        static void Main(string[] args)
         {
-            if (args.Length < 3)
-            {
-                Console.WriteLine("Usage: DiagramPageSizeUtility <inputDiagram> <configJson> <outputDiagram>");
-                return;
-            }
-
-            string inputDiagramPath = args[0];
-            string configPath = args[1];
-            string outputDiagramPath = args[2];
-
-            // Validate input files
-            if (!File.Exists(inputDiagramPath))
-            {
-                Console.WriteLine($"Input diagram file not found: {inputDiagramPath}");
-                return;
-            }
+            // Path to the configuration file that contains page width and height (in inches)
+            // Expected format:
+            // line 1: width (e.g., 8.27)
+            // line 2: height (e.g., 11.69)
+            string configPath = "pagesize.config";
 
             if (!File.Exists(configPath))
             {
@@ -40,17 +18,20 @@ namespace DiagramPageSizeUtility
                 return;
             }
 
-            // Read and deserialize configuration
-            PageSizeConfig config;
+            double pageWidth;
+            double pageHeight;
+
             try
             {
-                string json = File.ReadAllText(configPath);
-                config = JsonSerializer.Deserialize<PageSizeConfig>(json);
-                if (config == null)
+                string[] lines = File.ReadAllLines(configPath);
+                if (lines.Length < 2)
                 {
-                    Console.WriteLine("Failed to parse configuration file.");
+                    Console.WriteLine("Configuration file must contain at least two lines: width and height.");
                     return;
                 }
+
+                pageWidth = double.Parse(lines[0]);
+                pageHeight = double.Parse(lines[1]);
             }
             catch (Exception ex)
             {
@@ -58,28 +39,50 @@ namespace DiagramPageSizeUtility
                 return;
             }
 
-            // Load diagram, apply page size to each page, and save
+            // Path to the input Visio diagram
+            string inputDiagramPath = "input.vsdx";
+
+            if (!File.Exists(inputDiagramPath))
+            {
+                Console.WriteLine($"Input diagram file not found: {inputDiagramPath}");
+                return;
+            }
+
+            // Load the diagram
+            Diagram diagram = null;
             try
             {
-                using (Diagram diagram = new Diagram(inputDiagramPath))
-                {
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Set page dimensions (values are in inches)
-                        page.PageSheet.PageProps.PageWidth.Value = config.Width;
-                        page.PageSheet.PageProps.PageHeight.Value = config.Height;
-                    }
-
-                    // Save the modified diagram in VSDX format
-                    diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-                }
-
-                Console.WriteLine($"Diagram saved successfully to {outputDiagramPath}");
+                diagram = new Diagram(inputDiagramPath);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error processing diagram: {ex.Message}");
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
+
+            // Apply the page size to every page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Page dimensions are stored in inches
+                page.PageSheet.PageProps.PageWidth.Value = pageWidth;
+                page.PageSheet.PageProps.PageHeight.Value = pageHeight;
+            }
+
+            // Save the modified diagram
+            string outputDiagramPath = "output.vsdx";
+            try
+            {
+                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved with updated page size to: {outputDiagramPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+            }
+            finally
+            {
+                // Ensure resources are released
+                diagram?.Dispose();
             }
         }
     }
-}

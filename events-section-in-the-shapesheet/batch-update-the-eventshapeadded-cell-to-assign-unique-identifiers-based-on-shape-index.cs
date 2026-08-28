@@ -6,42 +6,46 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (adjust as needed)
+        // Define input file path
         string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists before proceeding
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-        string outputPath = "output.vsdx";
 
         try
         {
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape is not marked as deleted
-                    if (shape.Del == BOOL.False)
-                    {
-                        // Assign a unique identifier to a valid event cell (EventXFMod) using the shape's ID
-                        shape.Event.EventXFMod.Ufe.F = $"\"{shape.ID}\"";
-                    }
+                    // Retrieve the shape's unique ID (long)
+                    long shapeId = shape.ID;
+
+                    // Assign a unique identifier to an existing event cell.
+                    // Using EventXFMod as a placeholder for the non‑existent EventShapeAdded cell.
+                    // The formula is a quoted string containing the shape ID, e.g., "12345".
+                    shape.Event.EventXFMod.Ufe.F = $"\"{shapeId}\"";
                 }
             }
 
-            // Save the modified diagram using the correct overload with a SaveFileFormat argument
+            // Define output file path
+            string outputPath = "output.vsdx";
+
+            // Save the modified diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

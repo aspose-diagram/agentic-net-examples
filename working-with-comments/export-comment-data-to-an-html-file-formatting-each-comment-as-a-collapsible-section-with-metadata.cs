@@ -5,91 +5,77 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the source Visio file (replace with actual file path)
-                string diagramPath = "input.vsdx";
+                // Input Visio file path (first argument or default)
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-                // Path where the generated HTML will be saved
-                string htmlOutputPath = "comments.html";
+                // Output HTML file path (second argument or default)
+                string outputPath = args.Length > 1 ? args[1] : "comments.html";
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Build the HTML content
-                StringBuilder htmlBuilder = new StringBuilder();
-
-                // Basic HTML header
-                htmlBuilder.AppendLine("<!DOCTYPE html>");
-                htmlBuilder.AppendLine("<html lang=\"en\">");
-                htmlBuilder.AppendLine("<head>");
-                htmlBuilder.AppendLine("    <meta charset=\"UTF-8\">");
-                htmlBuilder.AppendLine("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
-                htmlBuilder.AppendLine("    <title>Diagram Comments</title>");
-                // Simple style for better readability
-                htmlBuilder.AppendLine("    <style>");
-                htmlBuilder.AppendLine("        body { font-family: Arial, sans-serif; margin: 20px; }");
-                htmlBuilder.AppendLine("        details { margin-bottom: 10px; }");
-                htmlBuilder.AppendLine("        summary { font-weight: bold; cursor: pointer; }");
-                htmlBuilder.AppendLine("        .metadata { margin-left: 20px; color: #555; }");
-                htmlBuilder.AppendLine("        .comment-text { margin-left: 20px; white-space: pre-wrap; }");
-                htmlBuilder.AppendLine("    </style>");
-                htmlBuilder.AppendLine("</head>");
-                htmlBuilder.AppendLine("<body>");
-                htmlBuilder.AppendLine("    <h1>Diagram Comments</h1>");
-
-                // Iterate through each page and its annotations (comments)
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    Page page = diagram.Pages[pageIndex];
-                    // Ensure the page actually contains annotations
-                    if (page.PageSheet.Annotations == null || page.PageSheet.Annotations.Count == 0)
+                    var sb = new StringBuilder();
+
+                    // Basic HTML structure with simple styling
+                    sb.AppendLine("<!DOCTYPE html>");
+                    sb.AppendLine("<html lang=\"en\">");
+                    sb.AppendLine("<head>");
+                    sb.AppendLine("    <meta charset=\"UTF-8\">");
+                    sb.AppendLine("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
+                    sb.AppendLine("    <title>Visio Comments Export</title>");
+                    sb.AppendLine("    <style>");
+                    sb.AppendLine("        body { font-family: Arial, sans-serif; margin: 20px; }");
+                    sb.AppendLine("        details { margin-bottom: 10px; border: 1px solid #ccc; padding: 5px; }");
+                    sb.AppendLine("        summary { font-weight: bold; cursor: pointer; }");
+                    sb.AppendLine("        .metadata { margin-left: 20px; font-size: 0.9em; color: #555; }");
+                    sb.AppendLine("    </style>");
+                    sb.AppendLine("</head>");
+                    sb.AppendLine("<body>");
+                    sb.AppendLine("    <h1>Visio Comments</h1>");
+
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        continue;
+                        // Iterate through all annotations (comments) on the page
+                        foreach (Annotation comment in page.PageSheet.Annotations)
+                        {
+                            // Retrieve comment data using .Value where required
+                            long markerId = comment.MarkerIndex.Value;
+                            string text = comment.Comment.Value ?? string.Empty;
+                            int reviewerId = comment.ReviewerID.Value;
+                            int shapeId = comment.ShapeID; // primitive int, no .Value needed
+
+                            // Build a collapsible section for each comment
+                            sb.AppendLine("    <details>");
+                            sb.AppendLine($"        <summary>Comment #{markerId}</summary>");
+                            sb.AppendLine("        <div class=\"metadata\">");
+                            sb.AppendLine($"            <p><strong>Page:</strong> {page.Name}</p>");
+                            sb.AppendLine($"            <p><strong>Shape ID:</strong> {shapeId}</p>");
+                            sb.AppendLine($"            <p><strong>Reviewer ID:</strong> {reviewerId}</p>");
+                            sb.AppendLine("        </div>");
+                            sb.AppendLine($"        <p>{System.Net.WebUtility.HtmlEncode(text)}</p>");
+                            sb.AppendLine("    </details>");
+                        }
                     }
 
-                    htmlBuilder.AppendLine($"    <h2>Page {pageIndex + 1}: {page.Name}</h2>");
+                    sb.AppendLine("</body>");
+                    sb.AppendLine("</html>");
 
-                    foreach (Annotation comment in page.PageSheet.Annotations)
-                    {
-                        // Retrieve comment data using the .Value property as required by the API
-                        long markerId = comment.MarkerIndex.Value;
-                        int reviewerId = comment.ReviewerID.Value;
-                        int shapeId = comment.ShapeID; // ShapeID is a primitive int
-                        string commentText = comment.Comment.Value ?? string.Empty;
+                    // Write the generated HTML to the output file
+                    File.WriteAllText(outputPath, sb.ToString());
 
-                        // Create a collapsible section for each comment
-                        htmlBuilder.AppendLine("    <details>");
-                        htmlBuilder.AppendLine($"        <summary>Comment {markerId} (Reviewer {reviewerId})</summary>");
-                        htmlBuilder.AppendLine("        <div class=\"metadata\">");
-                        htmlBuilder.AppendLine($"            <p><strong>Marker ID:</strong> {markerId}</p>");
-                        htmlBuilder.AppendLine($"            <p><strong>Reviewer ID:</strong> {reviewerId}</p>");
-                        htmlBuilder.AppendLine($"            <p><strong>Shape ID:</strong> {shapeId}</p>");
-                        htmlBuilder.AppendLine($"            <p><strong>Page Index:</strong> {pageIndex}</p>");
-                        htmlBuilder.AppendLine("        </div>");
-                        htmlBuilder.AppendLine("        <div class=\"comment-text\">");
-                        htmlBuilder.AppendLine($"            {System.Net.WebUtility.HtmlEncode(commentText).Replace("\n", "<br/>")}");
-                        htmlBuilder.AppendLine("        </div>");
-                        htmlBuilder.AppendLine("    </details>");
-                    }
+                    Console.WriteLine($"Comments exported successfully to '{outputPath}'.");
                 }
 
-                // Close HTML tags
-                htmlBuilder.AppendLine("</body>");
-                htmlBuilder.AppendLine("</html>");
-
-                // Write the HTML content to the output file
-                File.WriteAllText(htmlOutputPath, htmlBuilder.ToString(), Encoding.UTF8);
-
-                Console.WriteLine($"Comments have been exported to '{htmlOutputPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

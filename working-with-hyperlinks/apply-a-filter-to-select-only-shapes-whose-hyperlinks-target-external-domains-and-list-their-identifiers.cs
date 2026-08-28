@@ -1,51 +1,58 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the Visio file to be processed
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Ensure the shape has hyperlinks collection
-                        if (shape.Hyperlinks != null)
-                        {
-                            foreach (Hyperlink link in shape.Hyperlinks)
-                            {
-                                // Retrieve the hyperlink address (cell-based, use .Value)
-                                string address = link.Address.Value;
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                                // Check if the address points to an external HTTP/HTTPS URL
-                                if (!string.IsNullOrEmpty(address) &&
-                                    (address.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                                     address.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
-                                {
-                                    // Output the shape identifier and the external hyperlink
-                                    Console.WriteLine($"Shape ID: {shape.ID} -> External Link: {address}");
-                                    // One external link per shape is enough for listing
-                                    break;
-                                }
+                    // Ensure the shape has a Hyperlinks collection
+                    if (shape.Hyperlinks != null)
+                    {
+                        // Check each hyperlink attached to the shape
+                        foreach (Hyperlink link in shape.Hyperlinks)
+                        {
+                            // Retrieve the address value; it may be null
+                            string address = link.Address?.Value;
+
+                            // Consider the hyperlink external if it starts with http:// or https://
+                            if (!string.IsNullOrEmpty(address) &&
+                                (address.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                                 address.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+                            {
+                                // Output the identifier of the shape
+                                Console.WriteLine($"Shape ID: {shape.ID}");
+                                // One shape may have multiple hyperlinks; break after first external link found
+                                break;
                             }
                         }
                     }
                 }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

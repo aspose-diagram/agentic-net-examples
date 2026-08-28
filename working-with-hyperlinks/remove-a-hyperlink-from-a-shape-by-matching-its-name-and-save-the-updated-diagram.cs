@@ -12,20 +12,21 @@ class RemoveHyperlinkExample
             // Load the Visio diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Define the shape name and hyperlink name to be removed
+            // Name of the shape that contains the hyperlink to be removed
             string targetShapeName = "MyShape";
+
+            // Name of the hyperlink to remove
             string targetHyperlinkName = "MyHyperlink";
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages (adjust if you know the specific page)
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Search for the shape with the specified name
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape name matches the target shape
                     if (shape.Name == targetShapeName)
                     {
-                        // Find the hyperlink with the specified name
+                        // Find the hyperlink with the matching name
                         Hyperlink hyperlinkToRemove = null;
                         foreach (Hyperlink hl in shape.Hyperlinks)
                         {
@@ -36,13 +37,14 @@ class RemoveHyperlinkExample
                             }
                         }
 
-                        // If the hyperlink was found, remove it from the collection
+                        // Remove the hyperlink if it was found
                         if (hyperlinkToRemove != null)
                         {
                             shape.Hyperlinks.Remove(hyperlinkToRemove);
-                            // Optionally, you can set the Del flag instead of removing:
-                            // hyperlinkToRemove.Del = 1;
                         }
+
+                        // Shape found, no need to continue searching
+                        break;
                     }
                 }
             }

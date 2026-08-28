@@ -1,95 +1,96 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect two file paths as command‑line arguments.
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: DiagramCompare <DiagramPath1> <DiagramPath2>");
-            return;
-        }
-
-        string path1 = args[0];
-        string path2 = args[1];
-
-        // Load the two diagrams.
-        Diagram diagram1 = new Diagram(path1);
-        Diagram diagram2 = new Diagram(path2);
-
-        int pageCount = Math.Min(diagram1.Pages.Count, diagram2.Pages.Count);
-
-        for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
-        {
-            Page page1 = diagram1.Pages[pageIndex];
-            Page page2 = diagram2.Pages[pageIndex];
-
-            // Iterate all shapes on the first diagram's page.
-            foreach (Shape shape1 in page1.Shapes)
+            // Expect two file paths: first diagram, second diagram
+            if (args == null || args.Length < 2)
             {
-                // Find a shape with the same universal name on the second diagram's page.
-                Shape shape2 = FindShapeByNameU(page2, shape1.NameU);
-                if (shape2 == null)
+                Console.WriteLine("Usage: DiagramHyperlinkComparer <DiagramPath1> <DiagramPath2>");
+                return;
+            }
+
+            string diagramPath1 = args[0];
+            string diagramPath2 = args[1];
+
+            // Load both diagrams
+            using (Diagram diagram1 = new Diagram(diagramPath1))
+            using (Diagram diagram2 = new Diagram(diagramPath2))
+            {
+                // Ensure both diagrams have the same number of pages
+                int pageCount1 = diagram1.Pages.Count;
+                int pageCount2 = diagram2.Pages.Count;
+
+                if (pageCount1 != pageCount2)
                 {
-                    // No matching shape – skip comparison.
-                    continue;
+                    Console.WriteLine($"Page count mismatch: Diagram1 has {pageCount1} pages, Diagram2 has {pageCount2} pages.");
+                    // Continue with the minimum page count
                 }
 
-                if (HyperlinksDiffer(shape1, shape2))
+                int pagesToCompare = Math.Min(pageCount1, pageCount2);
+
+                for (int pageIndex = 0; pageIndex < pagesToCompare; pageIndex++)
                 {
-                    Console.WriteLine($"Page {pageIndex + 1} - Shape ID {shape1.ID} (NameU: {shape1.NameU}) has differing hyperlink targets.");
+                    Page page1 = diagram1.Pages[pageIndex];
+                    Page page2 = diagram2.Pages[pageIndex];
+
+                    // Compare shapes by their IDs within the same page
+                    foreach (Shape shape1 in page1.Shapes)
+                    {
+                        // Retrieve the corresponding shape from the second diagram
+                        Shape shape2 = page2.Shapes.GetShape(shape1.ID);
+
+                        if (shape2 == null)
+                        {
+                            // Shape does not exist in the second diagram
+                            Console.WriteLine($"Page \"{page1.NameU}\": Shape ID {shape1.ID} not found in second diagram.");
+                            continue;
+                        }
+
+                        // Get hyperlink collections (may be null)
+                        var links1 = shape1.Hyperlinks;
+                        var links2 = shape2.Hyperlinks;
+
+                        // If both have no hyperlinks, they are equal – skip
+                        bool hasLinks1 = links1 != null && links1.Count > 0;
+                        bool hasLinks2 = links2 != null && links2.Count > 0;
+
+                        if (!hasLinks1 && !hasLinks2)
+                        {
+                            continue;
+                        }
+
+                        // If the count differs, report difference
+                        if (hasLinks1 != hasLinks2 || (hasLinks1 && hasLinks2 && links1.Count != links2.Count))
+                        {
+                            Console.WriteLine($"Page \"{page1.NameU}\": Shape ID {shape1.ID} hyperlink count differs.");
+                            continue;
+                        }
+
+                        // Compare each hyperlink's address (and sub-address) in order
+                        for (int i = 0; i < links1.Count; i++)
+                        {
+                            Hyperlink link1 = links1[i];
+                            Hyperlink link2 = links2[i];
+
+                            string address1 = link1.Address?.Value ?? string.Empty;
+                            string address2 = link2.Address?.Value ?? string.Empty;
+
+                            string subAddress1 = link1.SubAddress?.Value ?? string.Empty;
+                            string subAddress2 = link2.SubAddress?.Value ?? string.Empty;
+
+                            if (!address1.Equals(address2, StringComparison.OrdinalIgnoreCase) ||
+                                !subAddress1.Equals(subAddress2, StringComparison.OrdinalIgnoreCase))
+                            {
+                                Console.WriteLine($"Page \"{page1.NameU}\": Shape ID {shape1.ID} hyperlink #{i + 1} differs.");
+                                Console.WriteLine($"    Diagram1 -> Address: \"{address1}\", SubAddress: \"{subAddress1}\"");
+                                Console.WriteLine($"    Diagram2 -> Address: \"{address2}\", SubAddress: \"{subAddress2}\"");
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-
-    // Locate a shape on a page by its universal name (NameU).
-    private static Shape FindShapeByNameU(Page page, string nameU)
-    {
-        foreach (Shape shape in page.Shapes)
-        {
-            if (shape.NameU == nameU)
-                return shape;
-        }
-        return null;
-    }
-
-    // Determine whether the hyperlink collections of two shapes differ.
-    private static bool HyperlinksDiffer(Shape s1, Shape s2)
-    {
-        // Null checks – treat null or empty collections as equal.
-        bool s1HasLinks = s1.Hyperlinks != null && s1.Hyperlinks.Count > 0;
-        bool s2HasLinks = s2.Hyperlinks != null && s2.Hyperlinks.Count > 0;
-
-        if (!s1HasLinks && !s2HasLinks)
-            return false; // Both have no hyperlinks.
-
-        if (s1HasLinks != s2HasLinks)
-            return true; // One has hyperlinks while the other does not.
-
-        int count1 = s1.Hyperlinks.Count;
-        int count2 = s2.Hyperlinks.Count;
-
-        if (count1 != count2)
-            return true; // Different number of hyperlinks.
-
-        for (int i = 0; i < count1; i++)
-        {
-            Hyperlink link1 = s1.Hyperlinks[i];
-            Hyperlink link2 = s2.Hyperlinks[i];
-
-            // Compare address, sub‑address and description cells.
-            if (link1.Address.Value != link2.Address.Value ||
-                link1.SubAddress.Value != link2.SubAddress.Value ||
-                link1.Description.Value != link2.Description.Value)
-            {
-                return true;
-            }
-        }
-
-        return false; // All hyperlink properties match.
-    }
-}

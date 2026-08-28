@@ -1,49 +1,43 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
 
-            // Get the first (default) page
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram(@"Input.vsdx");
+
+            // Assume we work with the first page and first shape
             Page page = diagram.Pages[0];
+            Shape shape = page.Shapes[0];
 
-            // Add a rectangle shape to the page (PinX, PinY, master name, page index)
-            long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+            // Create a new Hyperlink instance
+            Hyperlink hyperlink = new Hyperlink();
 
-            // Retrieve the shape instance from the page using the returned ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Set the hyperlink name
+            hyperlink.Name = "MyHyperlink";
 
-            // Create a hyperlink and set Name, Address, and SubAddress in one step
-            Hyperlink hyperlink = new Hyperlink();               // instantiate hyperlink object
-            hyperlink.Name = "MyLink";                           // internal identifier
-            hyperlink.Address.Value = "https://example.com";     // external URL
-            hyperlink.SubAddress.Value = "Page1";                // internal target page name
+            // Set the address (URL or file path)
+            hyperlink.Address.Value = "https://www.example.com";
 
-            // Add the prepared hyperlink to the shape's collection
+            // Set the subaddress (location within the target document)
+            hyperlink.SubAddress.Value = "Sheet1!A1";
+
+            // Add the hyperlink to the shape's Hyperlink collection
             shape.Hyperlinks.Add(hyperlink);
 
-            // Optionally, set a description (tooltip) for the hyperlink
-            if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
-            {
-                // The last added hyperlink is the one we just created
-                Hyperlink link = shape.Hyperlinks[shape.Hyperlinks.Count - 1];
-                link.Description.Value = "Open Example.com";
-            }
+            // Save the modified diagram
+            diagram.Save(@"Output.vsdx", SaveFileFormat.Vsdx);
 
-            // Save the diagram to a VSDX file
-            diagram.Save("HyperlinkDemo.vsdx", SaveFileFormat.Vsdx);
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,59 +1,78 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.Manipulation;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
                 // Input Visio file containing shapes with hyperlinks
-                string inputPath = "input.vsdx"; // TODO: replace with actual file path
-                // Output image file path
+                string inputPath = "input.vsdx";
+                // Output image file that will contain the visual map
                 string outputPath = "hyperlink_map.png";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Assume we work with the first page
-                Page page = diagram.Pages[0];
-
-                // Build a lookup of shape universal names to their IDs
-                Dictionary<string, long> shapeNameToId = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
-                foreach (Shape shape in page.Shapes)
+                // Iterate through each page in the diagram
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    if (!string.IsNullOrWhiteSpace(shape.NameU))
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Collect all shapes on the page for quick lookup by NameU
+                    var shapeLookup = new System.Collections.Generic.Dictionary<string, Shape>();
+                    foreach (Shape shp in page.Shapes)
                     {
-                        shapeNameToId[shape.NameU] = shape.ID;
+                        if (!string.IsNullOrEmpty(shp.NameU))
+                        {
+                            shapeLookup[shp.NameU] = shp;
+                        }
                     }
-                }
 
-                // Iterate shapes and create connectors based on hyperlinks
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Hyperlinks == null) continue;
-
-                    foreach (Hyperlink link in shape.Hyperlinks)
+                    // Iterate again to process hyperlinks
+                    foreach (Shape sourceShape in page.Shapes)
                     {
-                        // Use SubAddress to reference another shape by its universal name
-                        string targetName = link.SubAddress?.Value;
-                        if (string.IsNullOrWhiteSpace(targetName)) continue;
+                        if (sourceShape.Hyperlinks == null)
+                            continue;
 
-                        if (!shapeNameToId.TryGetValue(targetName, out long targetId)) continue;
+                        foreach (Hyperlink link in sourceShape.Hyperlinks)
+                        {
+                            // Consider only internal hyperlinks (SubAddress)
+                            string subAddr = link.SubAddress?.Value;
+                            if (string.IsNullOrEmpty(subAddr))
+                                continue;
 
-                        // Add a dynamic connector shape (position will be adjusted automatically)
-                        long connectorId = page.AddShape(0, 0, "Dynamic connector");
-                        // Connect the source shape to the target shape via the connector
-                        page.ConnectShapesViaConnector(
-                            shape.ID,
-                            ConnectionPointPlace.Bottom,
-                            targetId,
-                            ConnectionPointPlace.Top,
-                            connectorId);
+                            // SubAddress may be in the form "PageName!ShapeName" or just "ShapeName"
+                            string targetShapeName = subAddr;
+                            if (subAddr.Contains("!"))
+                            {
+                                // Split and ignore page part for this simple example
+                                var parts = subAddr.Split('!');
+                                if (parts.Length == 2)
+                                    targetShapeName = parts[1];
+                            }
+
+                            // Find the target shape on the same page
+                            if (!shapeLookup.TryGetValue(targetShapeName, out Shape targetShape))
+                            {
+                                Console.WriteLine($"Target shape '{targetShapeName}' not found on page '{page.Name}'.");
+                                continue;
+                            }
+
+                            // Add a connector shape (Dynamic connector) to the page
+                            long connectorId = diagram.AddShape(0, 0, "Dynamic connector", pageIndex);
+                            // Connect source shape to target shape using the connector
+                            page.ConnectShapesViaConnector(
+                                sourceShape.ID,
+                                ConnectionPointPlace.Bottom,
+                                targetShape.ID,
+                                ConnectionPointPlace.Top,
+                                connectorId);
+                        }
                     }
                 }
 
@@ -61,7 +80,7 @@ class Program
                 ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
                 diagram.Save(outputPath, saveOptions);
 
-                Console.WriteLine($"Hyperlink map exported to: {outputPath}");
+                Console.WriteLine($"Hyperlink connection map saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

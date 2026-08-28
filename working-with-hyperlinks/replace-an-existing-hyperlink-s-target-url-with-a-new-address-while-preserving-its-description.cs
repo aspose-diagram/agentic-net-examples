@@ -1,36 +1,43 @@
-using System.IO;
-using Aspose.Diagram;
 using System;
+using System.IO;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram
+            var diagram = new Aspose.Diagram.Diagram("input.vsdx");
 
-            // New hyperlink target URL
-            string newUrl = "https://www.example.com";
+            // Define the new URL you want to set for the hyperlink
+            string newUrl = "https://www.example.com/newpage";
 
-            // Traverse all pages and shapes to locate hyperlinks
-            foreach (Page page in diagram.Pages)
+            // Iterate through all pages, shapes, and their hyperlinks
+            foreach (var page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                foreach (var shape in page.Shapes)
                 {
-                    // Each shape may contain one or more hyperlinks
-                    foreach (Hyperlink hyperlink in shape.Hyperlinks)
+                    // Hyperlinks collection may be null; check before iterating
+                    if (shape.Hyperlinks != null)
                     {
-                        // Update the address while preserving the description
-                        hyperlink.Address.Value = newUrl;
+                        foreach (var hyperlink in shape.Hyperlinks)
+                        {
+                            // Preserve the existing description (no change needed)
+                            // Replace only the address (URL) of the hyperlink
+                            if (hyperlink.Address != null)
+                            {
+                                // Str2Value holds the actual string in its Value property
+                                hyperlink.Address.Value = newUrl;
+                            }
+                        }
                     }
                 }
             }
 
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

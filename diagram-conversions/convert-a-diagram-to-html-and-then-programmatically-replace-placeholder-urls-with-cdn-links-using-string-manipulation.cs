@@ -1,40 +1,61 @@
 using System;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class DiagramToHtmlConverter
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file (lifecycle rule: use Diagram constructor)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram from a file using the provided constructor.
+            var diagram = new Diagram("input.vsdx");
 
-            // Configure HTML save options (optional settings can be adjusted as needed)
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            // Prepare HTML save options (default settings are sufficient for this example).
+            var htmlOptions = new HTMLSaveOptions();
+
+            // StringBuilder will hold the combined HTML of all shapes.
+            var htmlBuilder = new StringBuilder();
+
+            // Iterate through each page and each shape, converting them to HTML.
+            foreach (var page in diagram.Pages)
             {
-                SaveAsSingleFile = true,   // Save all pages into a single HTML file
-                SaveToolBar = false        // Example: omit the toolbar in the output
-            };
+                foreach (var shape in page.Shapes)
+                {
+                    // Convert the current shape to HTML and write it into a memory stream.
+                    using (var ms = new MemoryStream())
+                    {
+                        shape.ToHTML(ms, htmlOptions);
+                        ms.Position = 0;
 
-            // Save the diagram as HTML (lifecycle rule: use Diagram.Save with SaveOptions)
+                        // Read the generated HTML from the stream.
+                        using (var reader = new StreamReader(ms))
+                        {
+                            string shapeHtml = reader.ReadToEnd();
+                            htmlBuilder.AppendLine(shapeHtml);
+                        }
+                    }
+                }
+            }
+
+            // Save the combined HTML to a file.
             string htmlFilePath = "output.html";
-            diagram.Save(htmlFilePath, htmlOptions);
+            File.WriteAllText(htmlFilePath, htmlBuilder.ToString());
 
-            // Read the generated HTML content
+            // Load the saved HTML for placeholder replacement.
             string htmlContent = File.ReadAllText(htmlFilePath);
 
-            // Replace placeholder URLs with CDN links using string manipulation
-            // Example placeholder URL pattern
-            string placeholderUrl = "http://placeholder.com/";
-            string cdnUrl = "https://cdn.example.com/";
-            htmlContent = htmlContent.Replace(placeholderUrl, cdnUrl);
+            // Replace placeholder URLs with actual CDN links.
+            // Example placeholder: {{PLACEHOLDER_URL}}
+            string updatedHtml = htmlContent.Replace("{{PLACEHOLDER_URL}}", "https://cdn.example.com/resource.js");
 
-            // Write the updated HTML back to the file
-            File.WriteAllText(htmlFilePath, htmlContent);
+            // Write the updated HTML back to the file.
+            File.WriteAllText(htmlFilePath, updatedHtml);
+
+            Console.WriteLine("Diagram converted to HTML and placeholders replaced successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

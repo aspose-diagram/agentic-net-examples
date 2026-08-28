@@ -11,23 +11,28 @@ class Program
                 // Create a new empty diagram
                 Diagram diagram = new Diagram();
 
-                // Access the first (default) page
+                // Add a new page to the diagram (required before adding shapes)
+                diagram.Pages.Add(new Page());
+
+                // Reference the first (and only) page
                 Page page = diagram.Pages[0];
 
-                // Insert a rectangle shape at coordinates (2,2)
+                // Insert a rectangle shape at position (2, 2) inches
+                // The AddShape method returns the shape's unique ID (long)
                 long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
 
-                // Retrieve the shape instance using its ID
+                // Retrieve the shape instance using the returned ID
                 Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Set the fill pattern to solid (value 1)
-                shape.Fill.FillPattern.Value = 1;
+                // Apply a solid fill pattern
+                shape.Fill.FillPattern.Value = 1; // 1 = solid
 
-                // Apply a teal fill color using its RGB hex code
+                // Set the foreground fill color to teal using a hex RGB value
+                // Teal RGB = (0, 128, 128) => hex "#008080"
                 shape.Fill.FillForegnd.Value = "#008080";
 
                 // Save the diagram to a VSDX file
-                diagram.Save("TealShape.vsdx", SaveFileFormat.Vsdx);
+                diagram.Save("TealShapeDiagram.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (Aspose.Diagram.DiagramException ex)

@@ -3,56 +3,59 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VdxToPdfBatchConverter
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Folder containing VDX files
-            string inputFolder = @"C:\Visio\VDXFiles";
-            // Folder where PDF files will be saved
-            string outputFolder = @"C:\Visio\PDFOutput";
-
-            // Ensure output directory exists
-            Directory.CreateDirectory(outputFolder);
-
-            // Get all VDX files in the input folder
-            string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx", SearchOption.TopDirectoryOnly);
-
-            foreach (string vdxPath in vdxFiles)
+            try
             {
-                // Load the VDX diagram using the provided constructor
-                using (Diagram diagram = new Diagram(vdxPath))
+
+                // Define input and output directories
+                string inputFolder = @"C:\Visio\Input";
+                string outputFolder = @"C:\Visio\Output";
+
+                // Ensure the output directory exists
+                if (!Directory.Exists(outputFolder))
                 {
-                    // Configure PDF save options (customize as needed)
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions
-                    {
-                        // Example customizations
-                        EnlargePage = true,                     // Enlarge page to fit drawing content
-                        ExportHiddenPage = false,               // Do not export hidden pages
-                        ExportGuideShapes = false,              // Do not export guide shapes
-                        IsExportComments = true,                // Export comments if present
-                        PageCount = int.MaxValue,               // Export all pages
-                        DefaultFont = "Arial"                   // Fallback font for Unicode characters
-                    };
-
-                    // Build output PDF file path
-                    string pdfFileName = Path.GetFileNameWithoutExtension(vdxPath) + ".pdf";
-                    string pdfPath = Path.Combine(outputFolder, pdfFileName);
-
-                    // Save the diagram as PDF using the provided Save method and PdfSaveOptions
-                    diagram.Save(pdfPath, pdfOptions);
+                    Directory.CreateDirectory(outputFolder);
                 }
+
+                // Get all VDX files in the input folder
+                string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx", SearchOption.TopDirectoryOnly);
+
+                foreach (string vdxPath in vdxFiles)
+                {
+                    // Load the Visio diagram
+                    using (Diagram diagram = new Diagram(vdxPath, LoadFileFormat.Vdx))
+                    {
+                        // Configure PDF save options
+                        PdfSaveOptions pdfOptions = new PdfSaveOptions
+                        {
+                            // Set a default font to avoid missing font issues
+                            DefaultFont = "Arial",
+                            // Example custom options
+                            EnlargePage = true,
+                            ExportHiddenPage = false,
+                            ExportGuideShapes = false
+                        };
+
+                        // Build the output PDF file path
+                        string pdfFileName = Path.GetFileNameWithoutExtension(vdxPath) + ".pdf";
+                        string pdfPath = Path.Combine(outputFolder, pdfFileName);
+
+                        // Save the diagram as PDF using the custom options
+                        diagram.Save(pdfPath, pdfOptions);
+                    }
+
+                    Console.WriteLine($"Converted: {Path.GetFileName(vdxPath)} -> PDF");
+                }
+
+                Console.WriteLine("Batch conversion completed.");
+
             }
-
-            Console.WriteLine("Batch conversion completed.");
-
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.DirectoryNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,11 +1,11 @@
 {
   "category": "basic-operations",
   "display_name": "Basic Operations",
-  "version": "26.7.0",
+  "version": "26.8.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-07-27",
+  "generated": "2026-08-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,7 +14,6 @@
       "task": "Add a second page to the diagram and set its size to a4 dimensions",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -32,15 +31,16 @@
       "task": "Add a text block to the shape and set its font to arial size twelve",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -71,9 +71,9 @@
       "key_apis": [
         "AddShape",
         "Diagram",
+        "Page",
         "Pages",
-        "Save",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -118,7 +118,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Diagnostics"
+        "System.Diagnostics",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -133,8 +134,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "AddShape",
@@ -168,8 +168,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -192,7 +191,6 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -204,9 +202,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "AddShape",
@@ -270,7 +266,6 @@
       "task": "Insert a rectangle shape onto the first page at coordinates 2 2 with width 3 centimeters",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -278,6 +273,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -288,6 +284,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -302,13 +299,11 @@
       "task": "Load a single stencil from a vss file and add a master shape to the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "AddMaster",
-        "AddShape",
         "Diagram",
         "Save",
         "diagram"
@@ -360,8 +355,8 @@
         "AddShape",
         "ConnectShapesViaConnector",
         "Diagram",
-        "Page",
-        "Pages"
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -438,7 +433,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "diagram"
@@ -508,9 +502,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     }
   ]

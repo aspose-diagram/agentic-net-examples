@@ -10,16 +10,16 @@ class Program
         try
         {
 
-            // Load the Visio diagram
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
             // Create PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Set PDF/A-1b conformance (requires embedding all fonts)
+            // Set PDF/A-1b compliance (requires embedding all fonts)
             pdfOptions.Compliance = PdfCompliance.PdfA1b;
 
-            // Save the diagram as PDF with the configured options
+            // Save the diagram as a PDF with the specified options
             diagram.Save("output.pdf", pdfOptions);
 
         }

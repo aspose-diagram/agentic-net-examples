@@ -1,32 +1,32 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Create a new empty diagram
-        using (Diagram diagram = new Diagram())
+        // Create a new empty Visio diagram
+        Diagram diagram = new Diagram();
+
+        // Add a second page to the diagram
+        Page newPage = new Page();
+        // Assign a unique ID (max existing ID + 1) and a name
+        int maxId = 0;
+        foreach (Page p in diagram.Pages)
         {
-            // Add a first page (optional, ensures the diagram has at least one page)
-            Page firstPage = new Page();
-            diagram.Pages.Add(firstPage);
-
-            // Add the second page
-            Page secondPage = new Page();
-            diagram.Pages.Add(secondPage);
-
-            // Set the second page size to A4 dimensions (in inches)
-            secondPage.PageSheet.PageProps.PageWidth.Value = 8.27;   // A4 width
-            secondPage.PageSheet.PageProps.PageHeight.Value = 11.69; // A4 height
-
-            // Optionally give the page a name
-            secondPage.Name = "A4Page";
-
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            if (p.ID > maxId) maxId = p.ID;
         }
+        newPage.ID = maxId + 1;
+        newPage.Name = "Page-2";
+
+        diagram.Pages.Add(newPage);
+
+        // Set the page size to A4 dimensions (width = 8.27 inches, height = 11.69 inches)
+        newPage.PageSheet.PageProps.PageWidth.Value = 8.27;
+        newPage.PageSheet.PageProps.PageHeight.Value = 11.69;
+
+        // Save the diagram to a VSDX file
+        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
     }
 }

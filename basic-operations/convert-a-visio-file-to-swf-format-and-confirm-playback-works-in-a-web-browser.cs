@@ -1,54 +1,60 @@
+using System.IO;
 using System;
 using System.Diagnostics;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class VisioToSwfConverter
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Input Visio file path (change as needed)
-                string inputPath = "input.vsdx";
+            // Input Visio file path
+            string inputPath = "sample.vsd";
+            // Output SWF file path
+            string outputSwf = "sample.swf";
+            // HTML file that will embed the SWF for browser playback
+            string htmlPath = "sample.html";
 
-                // Output SWF file path
-                string outputPath = "output.swf";
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                try
-                {
-                    // Load the Visio diagram
-                    Diagram diagram = new Diagram(inputPath);
+            // Configure SWF save options (include integrated viewer)
+            SWFSaveOptions options = new SWFSaveOptions();
+            options.ViewerIncluded = true; // default is true, set explicitly
 
-                    // Configure SWF save options (optional: set default font)
-                    SWFSaveOptions swfOptions = new SWFSaveOptions();
-                    swfOptions.DefaultFont = "Arial";
+            // Save the diagram as SWF using the configured options
+            diagram.Save(outputSwf, options);
 
-                    // Save the diagram as SWF
-                    diagram.Save(outputPath, swfOptions);
-                    Console.WriteLine($"SWF file saved to: {outputPath}");
+            // Generate a simple HTML page that embeds the SWF file
+            string htmlContent = $@"<!DOCTYPE html>
+            <html>
+            <head>
+            <title>Visio SWF Playback</title>
+            </head>
+            <body>
+            <object width='100%' height='800' data='{outputSwf}' type='application/x-shockwave-flash'>
+            <param name='movie' value='{outputSwf}' />
+            <param name='play' value='true' />
+            <param name='loop' value='false' />
+            <param name='quality' value='high' />
+            Your browser does not support SWF playback.
+            </object>
+            </body>
+            </html>";
 
-                    // Attempt to open the SWF file in the default web browser
-                    ProcessStartInfo startInfo = new ProcessStartInfo(outputPath)
-                    {
-                        UseShellExecute = true
-                    };
-                    Process.Start(startInfo);
-                    Console.WriteLine("Opened SWF file in the default browser for playback verification.");
-                }
-                catch (Exception ex)
-                {
-                    // Report any errors
-                    Console.WriteLine("An error occurred during conversion:");
-                    Console.WriteLine(ex.Message);
-                    throw;
-                }
+            // Write the HTML file to disk
+            System.IO.File.WriteAllText(htmlPath, htmlContent);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Open the HTML file in the default web browser to verify playback
+            Process.Start(new ProcessStartInfo(htmlPath) { UseShellExecute = true });
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

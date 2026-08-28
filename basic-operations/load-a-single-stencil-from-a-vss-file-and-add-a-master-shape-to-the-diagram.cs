@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,30 +9,33 @@ class Program
         try
         {
 
-            // Path to the stencil file (VSS) and the master name to import
-            string stencilPath = @"C:\Stencils\Basic_U.vss";
-            string masterName = "Rectangle";
-
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Import the master shape from the stencil into the diagram
-            // Returns the unique ID of the master within the diagram's Masters collection
+            // Path to the VSS stencil file
+            string stencilPath = "stencil.vss";
+
+            // Name (or universal name) of the master shape inside the stencil
+            string masterName = "MyMaster";
+
+            // Add the master from the stencil to the diagram
+            // Returns the unique ID of the added master (not used further here)
             int masterId = diagram.AddMaster(stencilPath, masterName);
 
-            // Optionally, add an instance of the imported master to the first page
-            // (page index 0, coordinates in inches)
-            double pinX = 4.0;
-            double pinY = 3.0;
-            long shapeId = diagram.AddShape(pinX, pinY, masterName, 0);
+            // Define the position where the shape instance will be placed (in inches)
+            double pinX = 5.0;
+            double pinY = 5.0;
 
-            // Save the resulting diagram to a VDX file
-            diagram.Save(@"C:\Output\Result.vdx", SaveFileFormat.Vdx);
+            // Add an instance of the master shape to the active page
+            diagram.ActivePage.AddShape(pinX, pinY, masterName);
+
+            // Save the diagram to a VDX file
+            diagram.Save("output.vdx", SaveFileFormat.Vdx);
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -9,12 +9,14 @@ class Program
         try
         {
 
-            // Load the VSX stencil file using the appropriate load format
-            var stencilDiagram = new Diagram("StencilFile.vsx", LoadFileFormat.Vsx);
+            // Load the VSX stencil file using the appropriate load format.
+            // The Diagram constructor with (string, LoadFileFormat) follows the provided lifecycle rule.
+            var stencil = new Diagram("StencilFile.vsx", LoadFileFormat.Vsx);
 
-            // Iterate through all masters (shapes) in the stencil and output their names
-            foreach (Master master in stencilDiagram.Masters)
+            // Iterate through all masters (shapes) defined in the stencil and list their names.
+            foreach (Master master in stencil.Masters)
             {
+                // Output the master name and its universal name.
                 Console.WriteLine($"Master Name: {master.Name}, Universal Name: {master.NameU}");
             }
 

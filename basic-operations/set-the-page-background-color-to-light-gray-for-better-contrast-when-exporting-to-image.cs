@@ -3,60 +3,60 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+public class Program
 {
-    static void Main()
+    public static void Main()
     {
         try
         {
 
-            // Create a new diagram instance
+            // Create a new empty diagram
             using (Diagram diagram = new Diagram())
             {
-                // Add a foreground page (the page that will contain the actual drawing)
-                Page foregroundPage = new Page();
-                diagram.Pages.Add(foregroundPage);
+                // Ensure there is at least one page (default page is created)
+                Page foregroundPage = diagram.Pages[0];
 
-                // Retrieve page dimensions (in inches)
+                // Retrieve the dimensions of the foreground page (in inches)
                 double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
 
-                // Add a background page and mark it as a background
+                // Create a new background page
                 Page backgroundPage = new Page();
-                backgroundPage.Background = BOOL.True;
+                backgroundPage.Background = BOOL.True; // Mark as background page
+
+                // Set the background page size to match the foreground page
+                backgroundPage.PageSheet.PageProps.PageWidth.Value = pageWidth;
+                backgroundPage.PageSheet.PageProps.PageHeight.Value = pageHeight;
+
+                // Draw a rectangle that covers the entire page area
+                double centerX = pageWidth / 2.0;
+                double centerY = pageHeight / 2.0;
+                long rectShapeId = backgroundPage.DrawRectangle(centerX, centerY, pageWidth, pageHeight);
+                Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
+
+                // Apply a solid light gray fill to the rectangle
+                rectShape.Fill.FillPattern.Value = 1;          // Solid fill pattern
+                rectShape.Fill.FillForegnd.Value = "#D3D3D3"; // Light gray color
+
+                // Remove the rectangle border
+                rectShape.Line.LinePattern.Value = 0; // No line pattern
+
+                // Add the background page to the diagram
                 diagram.Pages.Add(backgroundPage);
 
-                // Create a rectangle shape that spans the entire page
-                double pinX = pageWidth / 2.0;   // Center X
-                double pinY = pageHeight / 2.0;  // Center Y
-                long bgShapeId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle");
-
-                // Retrieve the shape to set its fill and line properties
-                Shape bgShape = backgroundPage.Shapes.GetShape(bgShapeId);
-                // Solid fill pattern
-                bgShape.Fill.FillPattern.Value = 1;
-                // Light gray color (hex code)
-                bgShape.Fill.FillForegnd.Value = "#D3D3D3";
-                // No outline
-                bgShape.Line.LinePattern.Value = 0;
-                // Ensure the background shape is behind other content
-                bgShape.SendToBack();
-
-                // Link the foreground page to the background page
+                // Link the foreground page to the newly created background page
                 foregroundPage.BackPage = backgroundPage;
 
                 // Export the diagram to an image (PNG) with the background applied
                 ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                saveOptions.PageIndex = 0; // Export the first (and only) page
+                saveOptions.PageIndex = 0; // Export the first page
                 diagram.Save("output.png", saveOptions);
             }
 
-            Console.WriteLine("Diagram exported with light gray background.");
-
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.NullReferenceException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
 }

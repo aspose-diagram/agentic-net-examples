@@ -1,30 +1,35 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Create a new diagram
+        // Create a new empty diagram (contains a default first page)
         Diagram diagram = new Diagram();
 
-        // Get the first page (index 0)
+        // Access the first page (index 0)
         Page page = diagram.Pages[0];
 
-        // Define rectangle parameters
-        double pinX = 2.0; // X coordinate (inches)
-        double pinY = 2.0; // Y coordinate (inches)
+        // Position of the rectangle's pin (center) in inches
+        double pinX = 2.0;
+        double pinY = 2.0;
 
-        // Convert 3 centimeters to inches (1 cm = 0.393701 inches)
-        double widthInInches = 3.0 * 0.393701;
-        double heightInInches = widthInInches; // using same value for height
+        // Width of 3 centimeters converted to inches (1 cm = 0.393701 inches)
+        double widthCm = 3.0;
+        double widthInches = widthCm * 0.393701;
 
-        // Draw the rectangle on the page
-        long shapeId = page.DrawRectangle(pinX, pinY, widthInInches, heightInInches);
+        // Use the same value for height to create a square; adjust as needed
+        double heightInches = widthInches;
 
-        // Save the diagram to a file
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+        // Draw the rectangle on the page; returns the shape ID
+        long shapeId = page.DrawRectangle(pinX, pinY, widthInches, heightInches);
+
+        // Retrieve the shape object if further modifications are required
+        Shape rectangleShape = page.Shapes.GetShape(shapeId);
+
+        // Save the diagram to a VSDX file
+        diagram.Save("RectangleDiagram.vsdx", SaveFileFormat.Vsdx);
     }
 }

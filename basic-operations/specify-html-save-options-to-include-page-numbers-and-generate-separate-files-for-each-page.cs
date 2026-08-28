@@ -3,26 +3,25 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file
-            string inputPath = "sample.vsdx";
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Insert page number field code into the footer (right side)
+            // Add page number field to the footer (Visio uses '&p' for current page number)
             diagram.HeaderFooter.FooterRight = "Page: &p";
 
             // Configure HTML save options
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            // Generate a separate HTML file for each page
-            htmlOptions.SaveAsSingleFile = false;
-            // Do not export hidden pages (optional)
-            htmlOptions.ExportHiddenPage = false;
+            htmlOptions.SaveAsSingleFile = false;      // Generate a separate HTML file for each page
+            htmlOptions.ExportHiddenPage = false;      // Do not export hidden pages
+            htmlOptions.IsExportComments = false;      // Optional: exclude comments
 
             // Save the diagram as HTML
             string outputPath = "output.html";

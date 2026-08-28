@@ -14,8 +14,7 @@ class Program
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Apply document-level protection to prevent theme changes.
-            // Setting ProtectStyles disables editing of styles, which includes theme modifications.
+            // Apply global protection to prevent editing of styles (themes are part of styles)
             diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
             // Save the protected diagram

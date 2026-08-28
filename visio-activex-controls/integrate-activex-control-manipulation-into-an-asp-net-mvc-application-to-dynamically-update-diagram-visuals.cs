@@ -1,101 +1,63 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.ActiveXControls;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input Visio file (template or existing diagram)
+            string inputPath = "template.vsdx";
+            // Output Visio file after modifications
+            string outputPath = "updated.vsdx";
+
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is at least one page to work with
+            Page page;
+            if (diagram.Pages.Count > 0)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                // Work with the first page
-                Page page = diagram.Pages[0];
-
-                // -------------------------------------------------
-                // 1. Add a new CommandButton ActiveX control
-                // -------------------------------------------------
-                // Parameters: ControlType, PinX, PinY, Width, Height (in inches)
-                long commandButtonId = page.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
-                Shape commandButtonShape = page.Shapes.GetShape(commandButtonId);
-
-                // Cast the ActiveXControl to the specific type
-                CommandButtonActiveXControl commandButton = (CommandButtonActiveXControl)commandButtonShape.ActiveXControl;
-
-                // Set visual properties
-                commandButton.Caption = "Click Me";
-                commandButton.Width = 1.5;   // width in inches
-                commandButton.Height = 0.5;  // height in inches
-
-                Console.WriteLine($"Added CommandButton ActiveX control with ID {commandButtonId}.");
-
-                // -------------------------------------------------
-                // 2. Retrieve and update existing ActiveX controls
-                // -------------------------------------------------
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.ActiveXControl != null)
-                    {
-                        // Identify the control type
-                        if (shape.ActiveXControl.Type == ControlType.CommandButton)
-                        {
-                            var btn = (CommandButtonActiveXControl)shape.ActiveXControl;
-                            Console.WriteLine($"Found CommandButton (ID {shape.ID}) with caption: {btn.Caption}");
-                            // Example update: prepend text
-                            btn.Caption = "Updated: " + btn.Caption;
-                        }
-                        else if (shape.ActiveXControl.Type == ControlType.CheckBox)
-                        {
-                            var chk = (CheckBoxActiveXControl)shape.ActiveXControl;
-                            Console.WriteLine($"Found CheckBox (ID {shape.ID}) with value: {chk.Value}");
-                            // Toggle the check state
-                            chk.Value = chk.Value == CheckValueType.Checked ? (CheckValueType)0 : CheckValueType.Checked;
-                        }
-                        else if (shape.ActiveXControl.Type == ControlType.Image)
-                        {
-                            var img = (ImageActiveXControl)shape.ActiveXControl;
-                            Console.WriteLine($"Found Image control (ID {shape.ID}).");
-                            // Assign a new picture (example assumes image file exists)
-                            string imagePath = "sample.png";
-                            if (System.IO.File.Exists(imagePath))
-                            {
-                                img.Picture = System.IO.File.ReadAllBytes(imagePath);
-                            }
-                        }
-                    }
-                }
-
-                // -------------------------------------------------
-                // 3. Save the updated diagram
-                // -------------------------------------------------
-                DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx)
-                {
-                    AutoFitPageToDrawingContent = true,
-                    DefaultFont = "Arial"
-                };
-
-                diagram.Save(outputPath, saveOptions);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
+                page = diagram.Pages[0];
             }
-            catch (System.IO.FileNotFoundException ex)
+            else
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                page = new Page(1);
+                diagram.Pages.Add(page);
             }
+
+            // Add a CommandButton ActiveX control at (2, 2) inches, size 1.5 x 0.5 inches
+            long btnShapeId = page.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
+            Shape btnShape = page.Shapes.GetShape(btnShapeId);
+
+            // Cast to the specific control type and set its caption
+            CommandButtonActiveXControl cmdBtn = (CommandButtonActiveXControl)btnShape.ActiveXControl;
+            cmdBtn.Caption = "Click Me";
+
+            // Example: locate all TextBox ActiveX controls on the page and update their text
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.ActiveXControl != null && shape.ActiveXControl.Type == ControlType.TextBox)
+                {
+                    TextBoxActiveXControl txtBox = (TextBoxActiveXControl)shape.ActiveXControl;
+                    txtBox.Text = "Updated Text";
+                }
+            }
+
+            // Save the diagram with auto‑fit to drawing content enabled
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
+            saveOptions.AutoFitPageToDrawingContent = true;
+            diagram.Save(outputPath, saveOptions);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

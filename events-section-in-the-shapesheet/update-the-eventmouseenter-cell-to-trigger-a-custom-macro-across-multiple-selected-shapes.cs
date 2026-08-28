@@ -1,21 +1,16 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.Vba;
+using Aspose.Diagram.Saving; // Required for SaveFileFormat
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect two arguments: input Visio file path and output Visio file path
-        if (args.Length < 2)
-        {
-            Console.WriteLine("Usage: DiagramEventMacroUpdater <inputFile> <outputFile>");
-            return;
-        }
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
 
-        string inputPath = args[0];
         // Guard to ensure the input file exists
         if (!File.Exists(inputPath))
         {
@@ -23,51 +18,47 @@ class Program
             return;
         }
 
-        string outputPath = args[1];
-
         try
         {
-            // Load the diagram from the provided file
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure a VBA project exists; abort if missing (cannot create a new one)
-            if (diagram.VbaProject == null)
-            {
-                Console.Error.WriteLine("Failed to access VbaProject.");
-                return;
-            }
+            // -------------------------------------------------
+            // Add a VBA module with the custom macro (MyMacro)
+            // -------------------------------------------------
+            // Create (or reuse) a procedural module named "CustomMacros"
+            int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "CustomMacros");
+            VbaModule module = diagram.VbaProject.Modules[moduleIndex];
 
-            // Add a new VBA module containing the custom macro
-            int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "CustomMacroModule");
-            VbaModule macroModule = diagram.VbaProject.Modules[moduleIndex];
-            macroModule.Codes = @"
-Public Sub MyCustomMacro()
-    MsgBox ""Custom macro executed!""
+            // Define the macro code that will be called on mouse‑enter
+            module.Codes = @"
+Public Sub MyMacro()
+    MsgBox ""Mouse entered shape!""
 End Sub
 ";
 
-            // Iterate through all pages and shapes, applying a macro-triggering event
-            foreach (Page page in diagram.Pages)
+            // -------------------------------------------------
+            // Update EventDblClick for the selected shapes (as EventMouseEnter is not a valid cell)
+            // -------------------------------------------------
+            // For demonstration, select all shapes whose universal name starts with "Rect"
+            Page page = diagram.Pages[0];
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
+                if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.StartsWith("Rect"))
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // NOTE: The original EventMouseEnter cell does not exist in Aspose.Diagram.
-                    // Using EventDblClick as a representative event cell that is supported.
-                    shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"MyCustomMacro\")";
+                    // Set the EventDblClick cell to call the custom macro
+                    shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"MyMacro\")";
                 }
             }
 
-            // Save the modified diagram in a macro-enabled format
-            diagram.Save(outputPath, SaveFileFormat.Vsdm);
-            Console.WriteLine($"Diagram saved with updated event cells to '{outputPath}'.");
+            // -------------------------------------------------
+            // Save the diagram as a macro‑enabled Visio file
+            // -------------------------------------------------
+            diagram.Save("output.vsdm", SaveFileFormat.Vsdm);
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

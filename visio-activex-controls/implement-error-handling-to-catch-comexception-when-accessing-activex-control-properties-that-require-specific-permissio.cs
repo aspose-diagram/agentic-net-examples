@@ -10,57 +10,49 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+                // Create a new diagram
+                Diagram diagram = new Diagram();
 
-                // Add a CommandButton ActiveX control to the first page
-                Page page = diagram.Pages[0];
+                // Get the active page where the control will be placed
+                Page page = diagram.ActivePage;
+
+                // Add a CommandButton ActiveX control to the page
+                // Parameters: control type, PinX, PinY, width, height (in inches)
                 long shapeId = page.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
-                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Retrieve the shape that represents the ActiveX control
+                Shape controlShape = page.Shapes.GetShape(shapeId);
 
                 // Cast the generic ActiveXControl to the specific CommandButton type
-                CommandButtonActiveXControl button = (CommandButtonActiveXControl)shape.ActiveXControl;
+                CommandButtonActiveXControl commandButton = (CommandButtonActiveXControl)controlShape.ActiveXControl;
 
-                // Set some basic properties
-                button.Caption = "Click Me";
-
-                // Attempt to access a property that may require special permissions
+                // Attempt to set a property that may require elevated permissions
                 try
                 {
-                    // Accessing Height may throw COMException if permissions are insufficient
-                    double height = button.Height;
-                    Console.WriteLine($"Button Height: {height}");
+                    // Setting the Caption property; this can throw COMException if permissions are insufficient
+                    commandButton.Caption = "Click Me";
+                    Console.WriteLine("Caption set successfully.");
                 }
                 catch (COMException comEx)
                 {
                     // Handle the COMException gracefully
-                    Console.WriteLine("COMException caught while accessing Height property:");
-                    Console.WriteLine(comEx.Message);
+                    Console.WriteLine($"COMException caught while setting Caption: {comEx.Message}");
+                    // Additional handling logic can be placed here (e.g., logging, fallback values)
+                }
+                catch (Exception ex)
+                {
+                    // Catch any other unexpected exceptions
+                    Console.WriteLine($"Unexpected error: {ex.Message}");
                 }
 
-                // Attempt to modify a property that could also be restricted
-                try
-                {
-                    // Setting IsEnabled might require elevated permissions
-                    button.IsEnabled = false;
-                    Console.WriteLine("Button IsEnabled set to false successfully.");
-                }
-                catch (COMException comEx)
-                {
-                    Console.WriteLine("COMException caught while setting IsEnabled property:");
-                    Console.WriteLine(comEx.Message);
-                }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to {outputPath}");
+                // Save the diagram to a VSDX file
+                diagram.Save("ActiveXControlDiagram.vsdx", SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram saved as ActiveXControlDiagram.vsdx");
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (System.NullReferenceException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
             }
     }
     }

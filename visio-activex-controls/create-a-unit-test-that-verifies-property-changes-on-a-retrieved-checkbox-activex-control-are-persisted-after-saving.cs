@@ -10,46 +10,58 @@ class Program
         try
         {
 
-            // Create a new empty diagram
+            // Define temporary file path
+            string filePath = Path.Combine(Path.GetTempPath(), "CheckBoxTest.vsdx");
+
+            // Create a new diagram
             Diagram diagram = new Diagram();
 
-            // Add a CheckBox ActiveX control to the active page
-            // Parameters: ControlType, pinX, pinY, width, height (in inches)
-            long shapeId = diagram.ActivePage.AddActiveXControl(ControlType.CheckBox, 2.0, 2.0, 1.0, 0.5);
+            // Get the active page
+            Page page = diagram.ActivePage;
+
+            // Add a CheckBox ActiveX control to the page
+            // Parameters: ControlType, PinX, PinY, Width (in inches), Height (in inches)
+            long shapeId = page.AddActiveXControl(ControlType.CheckBox, 2.0, 2.0, 1.0, 0.5);
 
             // Retrieve the shape and cast its ActiveXControl to CheckBoxActiveXControl
-            Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
+            Shape shape = page.Shapes.GetShape(shapeId);
             CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
 
-            // Set properties on the CheckBox
+            // Modify properties
             checkBox.IsChecked = true;
             checkBox.Caption = "UnitTestCheckBox";
-            checkBox.IsEnabled = true;
+            // Also set the Value property explicitly (Checked)
+            checkBox.Value = CheckValueType.Checked;
 
-            // Define a temporary file path for saving the diagram
-            string tempFile = Path.Combine(Path.GetTempPath(), "CheckBoxTest.vsdx");
+            // Save the diagram to a file
+            diagram.Save(filePath, SaveFileFormat.Vsdx);
 
-            // Save the diagram using a valid overload (file path + SaveFileFormat)
-            diagram.Save(tempFile, SaveFileFormat.Vsdx);
+            // Dispose the original diagram
+            diagram.Dispose();
 
-            // Load the diagram back from the saved file
-            Diagram loadedDiagram = new Diagram(tempFile);
-
-            // Retrieve the same shape from the loaded diagram
-            Shape loadedShape = loadedDiagram.ActivePage.Shapes.GetShape(shapeId);
+            // Load the diagram from the saved file
+            Diagram loadedDiagram = new Diagram(filePath);
+            Page loadedPage = loadedDiagram.ActivePage;
+            Shape loadedShape = loadedPage.Shapes.GetShape(shapeId);
             CheckBoxActiveXControl loadedCheckBox = (CheckBoxActiveXControl)loadedShape.ActiveXControl;
 
-            // Verify that the properties persisted after saving
+            // Verify that the properties persisted
             if (loadedCheckBox.IsChecked != true)
                 throw new Exception("IsChecked property was not persisted.");
 
             if (loadedCheckBox.Caption != "UnitTestCheckBox")
                 throw new Exception("Caption property was not persisted.");
 
-            if (loadedCheckBox.IsEnabled != true)
-                throw new Exception("IsEnabled property was not persisted.");
+            if (loadedCheckBox.Value != CheckValueType.Checked)
+                throw new Exception("Value property was not persisted.");
 
-            Console.WriteLine("All CheckBox ActiveX control properties persisted successfully.");
+            // If all checks pass, output success message
+            Console.WriteLine("CheckBox ActiveX control properties persisted successfully.");
+
+            // Clean up
+            loadedDiagram.Dispose();
+            // Optionally delete the temporary file
+            // File.Delete(filePath);
 
         }
         catch (System.NullReferenceException ex)

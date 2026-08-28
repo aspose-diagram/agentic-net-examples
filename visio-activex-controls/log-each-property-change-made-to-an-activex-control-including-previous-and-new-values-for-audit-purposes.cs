@@ -1,61 +1,76 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (uses the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages and shapes to locate ActiveX controls
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes to find ActiveX controls
+                foreach (Page page in diagram.Pages)
                 {
-                    // Each shape may contain an ActiveX control; null if none
-                    ActiveXControl control = shape.ActiveXControl;
-                    if (control == null) continue;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Only process shapes that contain an ActiveX control
+                        if (shape.ActiveXControl != null)
+                        {
+                            // Determine the specific control type
+                            ControlType ctrlType = shape.ActiveXControl.Type;
 
-                    // Use the shape name as a simple identifier for logging
-                    string controlId = shape.Name;
+                            // Example handling for a CommandButton control
+                            if (ctrlType == ControlType.CommandButton)
+                            {
+                                // Cast to the concrete control class
+                                CommandButtonActiveXControl button = (CommandButtonActiveXControl)shape.ActiveXControl;
 
-                    // Example: change BackOleColor and log the change
-                    LogPropertyChange(controlId, "BackOleColor", control.BackOleColor, 0x00FF00);
-                    control.BackOleColor = 0x00FF00;
+                                // Log and change the Caption property
+                                LogChange("Caption", button.Caption, "Submit");
+                                button.Caption = "Submit";
 
-                    // Example: change IsEnabled and log the change
-                    LogPropertyChange(controlId, "IsEnabled", control.IsEnabled, false);
-                    control.IsEnabled = false;
+                                // Log and change the Width property (value in points)
+                                LogChange("Width", button.Width.ToString(), "120");
+                                button.Width = 120;
 
-                    // Example: change Width and log the change
-                    LogPropertyChange(controlId, "Width", control.Width, 2.5);
-                    control.Width = 2.5;
+                                // Log and change the Height property (value in points)
+                                LogChange("Height", button.Height.ToString(), "30");
+                                button.Height = 30;
+                            }
+                            // Example handling for a TextBox control
+                            else if (ctrlType == ControlType.TextBox)
+                            {
+                                // Cast to the concrete control class
+                                TextBoxActiveXControl textBox = (TextBoxActiveXControl)shape.ActiveXControl;
+
+                                // Log and change the Text property
+                                LogChange("Text", textBox.Text, "Hello World");
+                                textBox.Text = "Hello World";
+                            }
+                            // Add handling for other control types as needed
+                        }
+                    }
                 }
+
+                // Save the modified diagram to a new file
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram (uses the provided save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
 
-    // Logs a property change with previous and new values
-    static void LogPropertyChange(string controlId, string propertyName, object oldValue, object newValue)
-    {
-        // Only log when the value actually changes
-        if (!Equals(oldValue, newValue))
+        // Helper method to log property changes
+        static void LogChange(string propertyName, string oldValue, string newValue)
         {
-            Console.WriteLine($"Control '{controlId}': Property '{propertyName}' changed from '{oldValue}' to '{newValue}'.");
+            Console.WriteLine($"Property '{propertyName}' changed from '{oldValue}' to '{newValue}'.");
         }
     }
-}

@@ -10,36 +10,31 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes to find ActiveX controls
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Only shapes that contain an ActiveX control have this property set
+                    // Only shapes that contain an ActiveX control have a non‑null ActiveXControl property
                     if (shape.ActiveXControl != null)
                     {
-                        // Attempt to cast the generic ActiveXControl to a specific type,
-                        // e.g., ComboBoxActiveXControl. This may throw InvalidCastException
-                        // if the underlying control is of a different type.
+                        ActiveXControl control = shape.ActiveXControl;
+
+                        // Attempt to cast the generic ActiveXControl to a specific type (ComboBoxActiveXControl)
                         try
                         {
-                            ComboBoxActiveXControl comboBox = (ComboBoxActiveXControl)shape.ActiveXControl;
+                            ComboBoxActiveXControl comboBox = (ComboBoxActiveXControl)control;
 
-                            // Safe to use the specific control now
-                            Console.WriteLine($"ComboBox control found on shape ID {shape.ID}");
-                            // Example: read a property specific to ComboBoxActiveXControl
-                            // Console.WriteLine($"ComboBox items count: {comboBox.Items.Count}");
+                            // If the cast succeeds, you can work with ComboBox‑specific members
+                            Console.WriteLine($"ComboBox control found on shape ID {shape.ID} (Page {page.ID}).");
                         }
                         catch (InvalidCastException)
                         {
-                            // Handle the case where the control is not a ComboBox.
-                            // You can log, ignore, or attempt a different cast here.
-                            Console.WriteLine(
-                                $"Shape ID {shape.ID} does not contain a ComboBox control. " +
-                                $"Actual control type: {shape.ActiveXControl.GetType().Name}");
+                            // The control is not a ComboBox; handle the incompatibility gracefully
+                            Console.WriteLine($"Shape ID {shape.ID} contains an ActiveX control of type {control.Type}, which cannot be cast to ComboBoxActiveXControl.");
                         }
                     }
                 }

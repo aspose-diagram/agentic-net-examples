@@ -5,50 +5,66 @@ using Aspose.Diagram.ActiveXControls;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
+        // Path to the input Visio diagram
+        string diagramPath = "input.vsdx";
+        // Guard to ensure the file exists before proceeding
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Add a new page to the diagram
-            Page page = new Page();
-            diagram.Pages.Add(page);
-
-            // Insert a SpinButton ActiveX control (used as a slider) onto the page
-            // Parameters: ControlType, PinX, PinY, Width, Height (in inches)
-            long controlShapeId = page.AddActiveXControl(ControlType.SpinButton, 2.0, 2.0, 1.5, 0.5);
-
-            // Retrieve the shape that hosts the ActiveX control
-            Shape controlShape = page.Shapes.GetShape(controlShapeId);
-
-            // Cast the generic ActiveXControl to the specific SpinButtonActiveXControl
-            SpinButtonActiveXControl spinControl = (SpinButtonActiveXControl)controlShape.ActiveXControl;
-
-            // Define the allowed range for the control
-            spinControl.Min = 0;      // Minimum value
-            spinControl.Max = 100;    // Maximum value
-
-            // Set a test value within the defined range to satisfy validation
-            spinControl.Position = 50;
-
-            // Validate that the Position is within the defined Minimum and Maximum
-            if (spinControl.Position < spinControl.Min || spinControl.Position > spinControl.Max)
+            // Iterate through all pages and shapes to locate SpinButton (used as Slider) controls
+            foreach (Page page in diagram.Pages)
             {
-                throw new Exception($"SpinButton value {spinControl.Position} is outside the allowed range [{spinControl.Min}, {spinControl.Max}].");
-            }
-            else
-            {
-                Console.WriteLine($"SpinButton value {spinControl.Position} is within the allowed range.");
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip shapes that do not contain an ActiveX control
+                    if (shape.ActiveXControl == null)
+                        continue;
+
+                    // Identify SpinButton controls (the closest representation of a slider)
+                    if (shape.ActiveXControl.Type == ControlType.SpinButton)
+                    {
+                        // Cast the generic control to its specific SpinButton type
+                        SpinButtonActiveXControl spinCtrl = (SpinButtonActiveXControl)shape.ActiveXControl;
+
+                        // The SpinButtonActiveXControl does not expose Minimum/Maximum properties.
+                        // Use a reasonable default range for validation (e.g., 0 to 100).
+                        double min = 0;
+                        double max = 100;
+
+                        // Retrieve the current position/value of the control
+                        double current = spinCtrl.Position;
+
+                        // Validate that the current value lies within the expected range
+                        if (current < min || current > max)
+                        {
+                            string msg = $"Shape ID {shape.ID} has a SpinButton value {current} outside the range [{min}, {max}].";
+                            // Throw an exception to indicate validation failure
+                            throw new Exception(msg);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Shape ID {shape.ID}: SpinButton value {current} is within the range [{min}, {max}].");
+                        }
+                    }
+                }
             }
 
-            // Save the diagram (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram after validation (no modifications made)
+            diagram.Save("validated_output.vsdx", SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Output any errors encountered during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

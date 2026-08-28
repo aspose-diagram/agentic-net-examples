@@ -16,9 +16,9 @@ class Program
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages and shapes to find CommandButton ActiveX controls
-                foreach (Aspose.Diagram.Page page in diagram.Pages)
+                foreach (Page page in diagram.Pages)
                 {
-                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    foreach (Shape shape in page.Shapes)
                     {
                         // Ensure the shape contains an ActiveX control
                         if (shape.ActiveXControl != null && shape.ActiveXControl.Type == ControlType.CommandButton)
@@ -30,7 +30,7 @@ class Program
                             string caption = button.Caption;
 
                             // Output the result
-                            Console.WriteLine($"Shape ID {shape.ID} - Button Caption: {caption}");
+                            Console.WriteLine($"Shape ID {shape.ID} - Button Caption: \"{caption}\"");
                         }
                     }
                 }

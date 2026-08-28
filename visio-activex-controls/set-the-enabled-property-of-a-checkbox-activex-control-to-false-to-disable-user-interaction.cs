@@ -11,28 +11,35 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all shapes on all pages
+            // Iterate through all pages and shapes to find a CheckBox ActiveX control
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape contains an ActiveX control
-                    if (shape.ActiveXControl != null)
+                    // Ensure the shape contains an ActiveX control
+                    if (shape.ActiveXControl != null && shape.ActiveXControl.Type == ControlType.CheckBox)
                     {
-                        // Identify CheckBox ActiveX controls
-                        if (shape.ActiveXControl is CheckBoxActiveXControl checkBox)
-                        {
-                            // Disable user interaction
-                            checkBox.IsEnabled = false;
-                        }
+                        // Cast to the specific CheckBox control type
+                        CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
+
+                        // Disable user interaction by setting the control to not enabled
+                        checkBox.IsEnabled = false;
+
+                        // Optionally, also uncheck the box (if desired)
+                        // checkBox.Value = (CheckValueType)0; // Unchecked state
+
+                        // Since we found and modified the control, we can exit the loops
+                        break;
                     }
                 }
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

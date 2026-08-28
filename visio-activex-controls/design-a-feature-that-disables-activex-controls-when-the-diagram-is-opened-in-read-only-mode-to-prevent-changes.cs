@@ -1,51 +1,47 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Path to the output Visio file (read‑only version)
+                string outputPath = "output_readonly.vsdx";
 
-                // Open the diagram in read‑only mode using a FileStream with FileAccess.Read
-                using (FileStream fs = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Load the diagram from the read‑only stream
-                    Diagram diagram = new Diagram(fs);
-
-                    // Iterate through all pages and shapes
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (Shape shape in page.Shapes)
+                        // Check if the shape contains an ActiveX control
+                        if (shape.ActiveXControl != null)
                         {
-                            // Check if the shape contains an ActiveX control
-                            if (shape.ActiveXControl != null)
-                            {
-                                // Disable interaction by clearing common event formulas
-                                // EventDblClick – double‑click action
-                                shape.Event.EventDblClick.Ufe.F = "FALSE";
+                            // Disable user interaction by hiding control handles
+                            // (NoCtlHandles is a BoolValue; set its Value to TRUE)
+                            shape.Misc.NoCtlHandles.Value = BOOL.True;
 
-                                // EventDrop – drag‑and‑drop action
-                                shape.Event.EventDrop.Ufe.F = "FALSE";
+                            // Prevent the control from being printed (optional)
+                            shape.Misc.NonPrinting.Value = BOOL.True;
 
-                                // Additional events can be cleared similarly if needed
-                            }
+                            // Clear double‑click event to avoid any scripted actions
+                            shape.Event.EventDblClick.Ufe.F = "";
                         }
                     }
-
-                    // Save the modified diagram (still in VSDX format)
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("ActiveX controls have been disabled and diagram saved to: " + outputPath);
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

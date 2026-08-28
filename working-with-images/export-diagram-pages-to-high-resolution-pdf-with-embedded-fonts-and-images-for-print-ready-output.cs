@@ -16,15 +16,23 @@ class Program
             // Configure PDF save options for high‑resolution, print‑ready output
             PdfSaveOptions pdfOptions = new PdfSaveOptions
             {
-                // Set a high DPI for both horizontal and vertical resolution
+                // Set DPI to 300 for both horizontal and vertical resolution
                 HorizontalResolution = 300,
                 VerticalResolution = 300,
 
-                // Ensure that missing fonts are substituted with a reliable fallback
-                DefaultFont = "Arial Unicode MS"
+                // Fallback font to ensure Unicode characters are rendered correctly
+                DefaultFont = "Arial",
+
+                // Export all pages
+                PageIndex = 0,
+                PageCount = int.MaxValue,
+
+                // Include all visible content (fonts, images, etc.)
+                ExportHiddenPage = false,
+                SaveForegroundPagesOnly = false
             };
 
-            // Save the diagram pages to a PDF file using the configured options
+            // Save the diagram as a high‑resolution PDF
             diagram.Save("output.pdf", pdfOptions);
 
         }

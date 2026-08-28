@@ -1,11 +1,11 @@
 {
   "category": "font-operations",
   "display_name": "Font Operations",
-  "version": "26.7.0",
+  "version": "26.8.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-07-28",
+  "generated": "2026-08-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,7 +14,6 @@
       "task": "Apply a bold style to all text shapes that use a particular font within the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -36,10 +35,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -48,8 +47,8 @@
       "task": "Apply kerning adjustments to all text elements using a particular font to improve spacing consistency",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -82,7 +81,6 @@
       "task": "Batch process multiple vsd files substituting a deprecated font with a modern equivalent in each",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -147,12 +145,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.Collections.Generic",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
+        "Fonts",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -163,18 +164,18 @@
       "task": "Detect and report any text shapes that use fonts not supported by the target output format",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
         "System.Collections.Generic",
-        "System.IO",
         "System.Linq"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -249,8 +250,11 @@
       "task": "Extract font metadata such as family name style and version from each text shape in a visio file",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Drawing.Text",
         "System",
-        "System.Reflection"
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -267,13 +271,16 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
+        "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -316,6 +323,7 @@
       "task": "Load a diagram iterate through its pages and replace the font of header shapes with a localized version",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -323,7 +331,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -333,7 +340,6 @@
       "task": "Load a diagram set the line spacing for all paragraphs using a specific font and save as docx",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -418,7 +424,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -456,10 +463,9 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
-        "PdfSaveOptions",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -474,7 +480,7 @@
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
+        "SVGSaveOptions",
         "Save",
         "diagram"
       ]
@@ -485,17 +491,14 @@
       "task": "Validate that all fonts used in a loaded diagram are available on the system before rendering",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
         "System.Collections.Generic",
-        "System.IO",
         "System.Linq"
       ],
       "key_apis": [
         "Diagram",
         "Fonts",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -509,15 +512,14 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Fonts",
         "Pages",
         "PdfSaveOptions",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     }
   ]

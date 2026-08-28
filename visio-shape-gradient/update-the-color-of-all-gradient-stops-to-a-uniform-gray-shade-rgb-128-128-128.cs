@@ -1,56 +1,59 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Verify the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Define the uniform gray color in hex
-            const string grayHex = "#808080";
+            // Uniform gray color in hex format
+            string grayHex = "#808080";
 
-            // Iterate through all pages and shapes
+            // Iterate over all pages and shapes to locate gradient fills
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape has a gradient fill (FillPattern = 25)
-                    if (shape.Fill.FillPattern.Value == 25)
+                    // Ensure the shape uses a gradient fill and that the gradient is enabled
+                    if (shape.Fill != null && shape.Fill.FillPattern != null &&
+                        shape.Fill.FillPattern.Value == 25 && // 25 = gradient fill pattern
+                        shape.Fill.GradientFill != null &&
+                        shape.Fill.GradientFill.GradientEnabled != null &&
+                        shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
                     {
-                        // Enable gradient fill if not already enabled
-                        shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-
-                        // Clear existing gradient stops
-                        shape.Fill.GradientFill.GradientStops.Clear();
-
-                        // Add a start stop at position 0 with gray color
-                        shape.Fill.GradientFill.GradientStops.Add(
-                            new DoubleValue(0, MeasureConst.NUM),
-                            new ColorValue(grayHex, MeasureConst.Undefined));
-
-                        // Add an end stop at position 1 with gray color
-                        shape.Fill.GradientFill.GradientStops.Add(
-                            new DoubleValue(1, MeasureConst.NUM),
-                            new ColorValue(grayHex, MeasureConst.Undefined));
+                        // Update each gradient stop to the uniform gray color while keeping its position
+                        foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
+                        {
+                            // Assign the hex string directly to the Color cell's Value
+                            stop.Color.Value = grayHex;
+                        }
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Path for the modified Visio file
             string outputPath = "output.vsdx";
+            // Save the updated diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors encountered during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

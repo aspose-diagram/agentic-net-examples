@@ -1,44 +1,57 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        // Create a new empty diagram
-        using (Diagram diagram = new Diagram())
+        static void Main()
         {
-            // Access the first (default) page
-            Page page = diagram.Pages[0];
-
-            // Define triangle points (base width 2 inches, height ~1.732 inches)
-            // Points are defined in a flat double array: x1, y1, x2, y2, x3, y3, x1, y1 (close polygon)
-            double[] trianglePoints = new double[]
+            // Create a new empty diagram
+            using (Diagram diagram = new Diagram())
             {
-                0.0, 0.0,      // Point A
-                2.0, 0.0,      // Point B
-                1.0, 1.732,    // Point C (apex)
-                0.0, 0.0       // Close back to Point A
-            };
+                // Access the first (default) page
+                Page page = diagram.Pages[0];
 
-            // Draw the triangle; returns the shape ID (long)
-            long triangleId = page.DrawPolyline(trianglePoints);
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Retrieve the shape object using the ID (GetShape expects an int)
-            Shape triangle = page.Shapes.GetShape((int)triangleId);
+                // Define triangle size
+                double triangleWidth = 2.0; // inches
+                double triangleHeight = Math.Sqrt(3) / 2 * triangleWidth; // equilateral triangle height
 
-            // Get page dimensions (in inches)
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Calculate center of the page
+                double centerX = pageWidth / 2.0;
+                double centerY = pageHeight / 2.0;
 
-            // Center the triangle by setting its PinX and PinY to the page center
-            triangle.XForm.PinX.Value = pageWidth / 2.0;
-            triangle.XForm.PinY.Value = pageHeight / 2.0;
+                // Calculate triangle vertices so that the shape is centered
+                double p1X = centerX - triangleWidth / 2.0;
+                double p1Y = centerY - triangleHeight / 3.0; // lower left
+                double p2X = centerX + triangleWidth / 2.0;
+                double p2Y = centerY - triangleHeight / 3.0; // lower right
+                double p3X = centerX;
+                double p3Y = centerY + (2.0 * triangleHeight) / 3.0; // top
 
-            // Save the diagram to a VSDX file
-            diagram.Save("CenteredTriangle.vsdx", SaveFileFormat.Vsdx);
+                // Draw the triangle using a closed polyline (repeat first point at the end)
+                long shapeId = page.DrawPolyline(new double[]
+                {
+                    p1X, p1Y,
+                    p2X, p2Y,
+                    p3X, p3Y,
+                    p1X, p1Y // close the shape
+                });
+
+                // Retrieve the shape to optionally modify its appearance
+                Shape triangle = page.Shapes.GetShape(shapeId);
+                // Example: set line color to black and fill color to light gray
+                triangle.Line.LineColor.Value = "#000000";
+                triangle.Fill.FillForegnd.Value = "#D3D3D3";
+
+                // Save the diagram to a VSDX file
+                string outputPath = "CenteredTriangle.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            }
         }
     }
-}

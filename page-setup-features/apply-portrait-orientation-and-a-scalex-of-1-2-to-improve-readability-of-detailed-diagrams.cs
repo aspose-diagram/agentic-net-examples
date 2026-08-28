@@ -1,44 +1,41 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
-{
-    public static void Main(string[] args)
+class Program
     {
-        // Expect input and output file paths as command‑line arguments.
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        try
-        {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and apply the required print settings.
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Set page orientation to Portrait.
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
 
-                // Set horizontal scaling factor to 1.2 (120%).
-                page.PageSheet.PrintProps.ScaleX.Value = 1.2;
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Apply portrait orientation and ScaleX = 1.2 to every page
+                foreach (Page page in diagram.Pages)
+                {
+                    // Access the print properties of the page
+                    var printProps = page.PageSheet.PrintProps;
+
+                    // Set orientation to Portrait
+                    printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+
+                    // Set horizontal scaling factor to 1.2 (120%)
+                    printProps.ScaleX.Value = 1.2;
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Report any errors that occur during processing.
-            Console.WriteLine($"Error: {ex.Message}");
-            throw;
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

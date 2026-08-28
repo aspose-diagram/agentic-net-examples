@@ -1,70 +1,71 @@
+using System.IO;
 using System;
-using System.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.WriteLine("Usage: <exe> <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Load the Visio diagram.
+        Diagram diagram = new Diagram(inputPath);
+
+        // Iterate through all pages in the document.
+        foreach (Page page in diagram.Pages)
+        {
+            // Find the index of the layer named "Marketing".
+            int marketingLayerIndex = -1;
+            foreach (Layer layer in page.PageSheet.Layers)
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                if (layer.Name.Value == "Marketing")
                 {
-                    // Find the index of the layer named "Marketing"
-                    int marketingLayerIndex = -1;
-                    foreach (Layer layer in page.PageSheet.Layers)
+                    marketingLayerIndex = layer.IX;
+                    break;
+                }
+            }
+
+            // If the layer does not exist on this page, skip to the next page.
+            if (marketingLayerIndex == -1)
+                continue;
+
+            string marketingIndexString = marketingLayerIndex.ToString();
+
+            // Update fill color for each shape that belongs to the Marketing layer.
+            foreach (Shape shape in page.Shapes)
+            {
+                // Skip deleted shapes.
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                // The LayerMember property holds a semicolon‑separated list of layer indexes.
+                string layerMember = shape.LayerMem.LayerMember.Value ?? string.Empty;
+                string[] memberIndexes = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+
+                // If the shape is assigned to the Marketing layer, change its fill.
+                foreach (string idx in memberIndexes)
+                {
+                    if (idx == marketingIndexString)
                     {
-                        if (layer.Name.Value == "Marketing")
-                        {
-                            marketingLayerIndex = layer.IX;
-                            break;
-                        }
-                    }
-
-                    // If the Marketing layer does not exist on this page, skip to next page
-                    if (marketingLayerIndex == -1)
-                        continue;
-
-                    // Iterate through each shape on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Get the layer membership string (e.g., "0;2;5")
-                        string layerMember = shape.LayerMem.LayerMember.Value;
-
-                        // If the shape belongs to the Marketing layer, apply light gray fill
-                        if (!string.IsNullOrEmpty(layerMember) &&
-                            layerMember.Split(';').Contains(marketingLayerIndex.ToString()))
-                        {
-                            // Set solid fill pattern
-                            shape.Fill.FillPattern.Value = 1; // 1 = solid
-
-                            // Set foreground fill color to light gray (#D3D3D3)
-                            shape.Fill.FillForegnd.Value = "#D3D3D3";
-                        }
+                        // Ensure solid fill pattern.
+                        shape.Fill.FillPattern.Value = 1;               // Solid fill.
+                        shape.Fill.FillForegnd.Value = "#D3D3D3";       // Light gray.
+                        break;
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+
+        // Save the modified diagram as VSDX.
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        Console.WriteLine($"Diagram saved to '{outputPath}'.");
     }
-    }
+}

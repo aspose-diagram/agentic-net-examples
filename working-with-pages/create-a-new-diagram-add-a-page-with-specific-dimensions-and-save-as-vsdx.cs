@@ -1,27 +1,39 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Create a new empty diagram
+        // Create a new empty diagram. This automatically contains one default page.
         Diagram diagram = new Diagram();
 
-        // Add a new page to the diagram
-        Page newPage = new Page();
+        // Determine the next page ID (max existing ID + 1) to avoid ID conflicts.
+        int maxPageId = 0;
+        foreach (Page existingPage in diagram.Pages)
+        {
+            if (existingPage.ID > maxPageId)
+                maxPageId = existingPage.ID;
+        }
+
+        // Create a new page with a unique ID.
+        Page newPage = new Page(maxPageId + 1);
+        newPage.Name = "CustomPage";
+        // Set specific dimensions (width = 11 inches, height = 8.5 inches for example).
+        newPage.PageSheet.PageProps.PageWidth.Value = 11.0;
+        newPage.PageSheet.PageProps.PageHeight.Value = 8.5;
+
+        // Add the new page to the diagram.
         diagram.Pages.Add(newPage);
 
-        // Define the desired page dimensions (in inches)
-        double pageWidth = 11.0;   // Width of the page
-        double pageHeight = 8.5;   // Height of the page
+        // Optionally, modify the default page dimensions as well.
+        Page defaultPage = diagram.Pages[0];
+        defaultPage.PageSheet.PageProps.PageWidth.Value = 11.0;
+        defaultPage.PageSheet.PageProps.PageHeight.Value = 8.5;
 
-        // Apply the dimensions to the newly added page
-        newPage.PageSheet.PageProps.PageWidth.Value = pageWidth;
-        newPage.PageSheet.PageProps.PageHeight.Value = pageHeight;
-
-        // Save the diagram as a VSDX file
+        // Save the diagram as VSDX using the correct SaveFileFormat enum.
         string outputPath = "output.vsdx";
         diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }

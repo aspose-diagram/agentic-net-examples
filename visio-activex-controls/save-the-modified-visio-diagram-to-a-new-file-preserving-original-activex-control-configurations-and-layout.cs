@@ -16,28 +16,25 @@ class Program
             // Path for the new file that will contain the saved diagram
             string destinationFile = "output.vsdx";
 
-            // Load the existing diagram. This preserves all existing objects,
-            // including ActiveX controls and their configurations.
+            // Load the existing diagram preserving all its content, including ActiveX controls
             Diagram diagram = new Diagram(sourceFile);
 
-            // -----------------------------------------------------------------
-            // Perform any required modifications to the diagram here.
-            // For this task we only need to preserve the original layout,
-            // so no changes are made.
-            // -----------------------------------------------------------------
+            // -------------------------------------------------
+            // Perform any required modifications here.
+            // For this task we only need to save the diagram,
+            // so no changes are made to the diagram object.
+            // -------------------------------------------------
 
-            // Create save options that keep the page size unchanged.
-            // Setting AutoFitPageToDrawingContent to false ensures the layout
-            // (positions of shapes, connectors, and ActiveX controls) is not altered.
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx)
-            {
-                AutoFitPageToDrawingContent = false
-            };
+            // Configure save options to keep the original layout.
+            // Setting AutoFitPageToDrawingContent to false ensures the page size
+            // is not altered during the save operation, thus preserving layout.
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
+            saveOptions.AutoFitPageToDrawingContent = false;
 
             // Save the diagram to a new file using the specified options.
             diagram.Save(destinationFile, saveOptions);
 
-            // Release resources.
+            // Release resources held by the Diagram object.
             diagram.Dispose();
 
         }

@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
 using Aspose.Diagram.Saving;
@@ -11,30 +11,31 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load the existing Visio diagram (uses the provided load rule)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages in the diagram
+            // Adjust each page so its size tightly encloses all shapes
             foreach (Page page in diagram.Pages)
             {
-                // Create layout options and enable page enlargement to fit drawing content
-                LayoutOptions layoutOpts = new LayoutOptions
+                // LayoutOptions with EnlargePage = true tells Aspose to resize the page
+                // to the bounding box of its drawing content.
+                LayoutOptions layoutOptions = new LayoutOptions
                 {
-                    EnlargePage = true   // enlarge page to enclose all shapes
+                    EnlargePage = true
                 };
 
-                // Apply layout with the specified options; this adjusts the page size
-                page.Layout(layoutOpts);
+                // Apply the layout; this updates the page width/height as needed.
+                page.Layout(layoutOptions);
             }
 
-            // Prepare save options to ensure the page size matches the drawing content
-            DiagramSaveOptions saveOpts = new DiagramSaveOptions
+            // Configure save options to ensure the page size matches the drawing content.
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions
             {
                 AutoFitPageToDrawingContent = true
             };
 
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", saveOpts);
+            // Save the modified diagram (uses the provided save rule)
+            diagram.Save("output.vsdx", saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

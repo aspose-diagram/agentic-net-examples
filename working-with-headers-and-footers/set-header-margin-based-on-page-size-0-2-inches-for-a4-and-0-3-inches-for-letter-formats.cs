@@ -9,39 +9,50 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your actual file path)
+            // Input and output file paths
             string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Default header margin (in inches)
-            double headerMargin = 0.0;
-
-            // Determine page size based on the first page (Visio pages are uniform in size)
-            if (diagram.Pages.Count > 0)
+            // Ensure the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
             {
-                Page firstPage = diagram.Pages[0];
-                double pageWidth = firstPage.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = firstPage.PageSheet.PageProps.PageHeight.Value;
-
-                // A4 size approx. 8.27 x 11.69 inches
-                bool isA4 = Math.Abs(pageWidth - 8.27) < 0.01 && Math.Abs(pageHeight - 11.69) < 0.01;
-                // Letter size approx. 8.5 x 11 inches
-                bool isLetter = Math.Abs(pageWidth - 8.5) < 0.01 && Math.Abs(pageHeight - 11.0) < 0.01;
-
-                if (isA4)
-                    headerMargin = 0.2;   // 0.2 inches for A4
-                else if (isLetter)
-                    headerMargin = 0.3;   // 0.3 inches for Letter
-                else
-                    headerMargin = 0.2;   // Fallback value
+                Console.WriteLine("The diagram contains no pages.");
+                return;
             }
 
-            // Apply the calculated header margin globally
-            diagram.HeaderFooter.HeaderMargin.Value = headerMargin;
+            // Examine the first page to decide which margin to apply
+            Page firstPage = diagram.Pages[0];
+            double pageWidth = firstPage.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = firstPage.PageSheet.PageProps.PageHeight.Value;
+
+            const double tolerance = 0.05; // inches tolerance for size comparison
+
+            // A4 dimensions: 8.27" x 11.69"
+            bool isA4 = Math.Abs(pageWidth - 8.27) < tolerance && Math.Abs(pageHeight - 11.69) < tolerance;
+            // Letter dimensions: 8.5" x 11"
+            bool isLetter = Math.Abs(pageWidth - 8.5) < tolerance && Math.Abs(pageHeight - 11.0) < tolerance;
+
+            if (isA4)
+            {
+                diagram.HeaderFooter.HeaderMargin.Value = 0.2;
+                Console.WriteLine("Header margin set to 0.2 inches for A4 page size.");
+            }
+            else if (isLetter)
+            {
+                diagram.HeaderFooter.HeaderMargin.Value = 0.3;
+                Console.WriteLine("Header margin set to 0.3 inches for Letter page size.");
+            }
+            else
+            {
+                Console.WriteLine("Page size does not match A4 or Letter. No margin change applied.");
+            }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,66 +1,93 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load the source Visio diagram
-            Diagram diagram = new Diagram("TemplateDiagram.vsdx");
-
-            // Identify the page that contains the template shape
-            Page page = diagram.Pages[0]; // adjust index if needed
-
-            // Get the template shape by its ID (replace with actual ID)
-            long templateShapeId = 1; // <-- set the ID of the shape that holds the Event formulas
-            Shape templateShape = page.Shapes.GetShape(templateShapeId);
-
-            // Define master name to be used for new shapes (must exist in the document)
-            string masterName = "Rectangle"; // <-- replace with your master name
-
-            // Example: create 10 new shapes in a grid and copy Event formulas from the template
-            int rows = 2;
-            int cols = 5;
-            double startX = 1.0;   // inches
-            double startY = 1.0;   // inches
-            double deltaX = 2.0;   // horizontal spacing
-            double deltaY = 2.0;   // vertical spacing
-
-            for (int r = 0; r < rows; r++)
+            try
             {
-                for (int c = 0; c < cols; c++)
-                {
-                    double pinX = startX + c * deltaX;
-                    double pinY = startY + r * deltaY;
 
-                    // Add a new shape based on the specified master
+                // Load the template diagram that contains the shape with the desired event formulas.
+                Diagram diagram = new Diagram("template.vsdx");
+
+                // Assume the template shape is on the first page and has a known universal name.
+                Page page = diagram.Pages[0];
+                Shape templateShape = null;
+                foreach (Shape shp in page.Shapes)
+                {
+                    if (shp.NameU == "TemplateShape")
+                    {
+                        templateShape = shp;
+                        break;
+                    }
+                }
+
+                if (templateShape == null)
+                {
+                    throw new Exception("Template shape 'TemplateShape' not found.");
+                }
+
+                // Prepare a list of positions where new shapes will be placed.
+                double startX = 2.0;
+                double startY = 2.0;
+                double offsetX = 2.0;
+                int shapeCount = 5;
+
+                // Use the same master as the template shape for new shapes.
+                string masterName = templateShape.Master?.Name ?? throw new Exception("Template shape has no master.");
+
+                for (int i = 0; i < shapeCount; i++)
+                {
+                    double pinX = startX + i * offsetX;
+                    double pinY = startY;
+
+                    // Add a new shape based on the master.
                     long newShapeId = page.AddShape(pinX, pinY, masterName);
                     Shape newShape = page.Shapes.GetShape(newShapeId);
 
-                    // Copy all Event formulas from the template shape to the new shape
-                    // (Event properties are strings representing the formulas)
-                    newShape.Event.EventDblClick = templateShape.Event.EventDblClick;
-                    newShape.Event.EventDrop = templateShape.Event.EventDrop;
-                    newShape.Event.EventMultiDrop = templateShape.Event.EventMultiDrop;
-                    newShape.Event.EventXFMod = templateShape.Event.EventXFMod;
-                    newShape.Event.TheText = templateShape.Event.TheText;
-
-                    // Refresh shape data to ensure the new shape reflects any changes
-                    newShape.RefreshData();
+                    // Copy event formulas from the template shape to the newly created shape.
+                    CopyEventFormulas(templateShape, newShape);
                 }
+
+                // Save the modified diagram.
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
             }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
 
-            // Save the modified diagram
-            diagram.Save("ResultDiagram.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
+        /// <summary>
+        /// Copies supported event formulas from a source shape to a target shape.
+        /// Only non‑empty formulas are transferred.
+        /// </summary>
+        static void CopyEventFormulas(Shape source, Shape target)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // EventDblClick
+            if (!string.IsNullOrEmpty(source.Event.EventDblClick.Ufe.F))
+                target.Event.EventDblClick.Ufe.F = source.Event.EventDblClick.Ufe.F;
+
+            // EventDrop
+            if (!string.IsNullOrEmpty(source.Event.EventDrop.Ufe.F))
+                target.Event.EventDrop.Ufe.F = source.Event.EventDrop.Ufe.F;
+
+            // EventXFMod
+            if (!string.IsNullOrEmpty(source.Event.EventXFMod.Ufe.F))
+                target.Event.EventXFMod.Ufe.F = source.Event.EventXFMod.Ufe.F;
+
+            // EventMultiDrop
+            if (!string.IsNullOrEmpty(source.Event.EventMultiDrop.Ufe.F))
+                target.Event.EventMultiDrop.Ufe.F = source.Event.EventMultiDrop.Ufe.F;
+
+            // TheText
+            if (!string.IsNullOrEmpty(source.Event.TheText.Ufe.F))
+                target.Event.TheText.Ufe.F = source.Event.TheText.Ufe.F;
+
+            // TheData
+            if (!string.IsNullOrEmpty(source.Event.TheData.Ufe.F))
+                target.Event.TheData.Ufe.F = source.Event.TheData.Ufe.F;
         }
     }
-}

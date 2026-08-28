@@ -1,60 +1,66 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Get the Visio file path from command‑line arguments or prompt the user
+        string filePath;
+        if (args.Length > 0)
+        {
+            filePath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter Visio file path: ");
+            filePath = Console.ReadLine();
+        }
+
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            Console.WriteLine("File path is required.");
+            return;
+        }
+
+        // Load the diagram
+        Diagram diagram;
         try
         {
+            diagram = new Diagram(filePath);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
 
-            // Load the Visio diagram file (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+        // Verify that a VBA project with modules exists
+        if (diagram.VbaProject == null || diagram.VbaProject.Modules == null)
+        {
+            Console.WriteLine("No VBA project or modules found in the diagram.");
+            return;
+        }
 
-            // Access the VBA project contained in the diagram
-            VbaProject vbaProject = diagram.VbaProject;
+        int totalLines = 0;
+        Console.WriteLine("VBA Module Line Count Report:");
+        foreach (VbaModule module in diagram.VbaProject.Modules)
+        {
+            string code = module.Codes ?? string.Empty;
+            int lineCount = 0;
 
-            // Prepare a report string
-            StringWriter report = new StringWriter();
-            report.WriteLine("VBA Module Line Count Report");
-            report.WriteLine("============================");
-            report.WriteLine();
-
-            // Iterate through each VBA module
-            for (int i = 0; i < vbaProject.Modules.Count; i++)
+            if (!string.IsNullOrEmpty(code))
             {
-                VbaModule module = vbaProject.Modules[i];
-                string code = module.Codes ?? string.Empty;
-
-                // Count lines by splitting on newline characters
-                int lineCount = 0;
-                using (StringReader reader = new StringReader(code))
-                {
-                    while (reader.ReadLine() != null)
-                    {
-                        lineCount++;
-                    }
-                }
-
-                // Append module information to the report
-                report.WriteLine($"Module Name : {module.Name}");
-                report.WriteLine($"Module Type : {module.Type}");
-                report.WriteLine($"Line Count  : {lineCount}");
-                report.WriteLine();
+                // Split on both Windows (\r\n) and Unix (\n) line endings
+                lineCount = code.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None).Length;
             }
 
-            // Write the report to a text file (replace with desired output path)
-            File.WriteAllText("VbaModuleLineCountReport.txt", report.ToString());
-
-            // Optionally, also output to console
-            Console.WriteLine(report.ToString());
-
+            Console.WriteLine($"- {module.Name}: {lineCount} lines");
+            totalLines += lineCount;
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+
+        Console.WriteLine($"Total lines across all modules: {totalLines}");
     }
 }

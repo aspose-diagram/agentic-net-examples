@@ -1,38 +1,36 @@
-using System;
+using System.IO;
 using Aspose.Diagram;
+using System;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
-        {
-            // Create a new empty Visio diagram
-            using (Diagram diagram = new Diagram())
-            {
-                // Access the first (default) page
-                Page page = diagram.Pages[0];
+        // Create a new diagram (lifecycle rule)
+        Diagram diagram = new Diagram();
 
-                // Desired position and size in centimeters
-                double cmPinX = 5.0;      // X coordinate of the circle center
-                double cmPinY = 3.0;      // Y coordinate of the circle center
-                double cmDiameter = 2.0; // Diameter of the circle
+        // Add a new page to the diagram
+        Page page = new Page();
+        diagram.Pages.Add(page);
 
-                // Convert centimeters to inches (Aspose.Diagram uses inches)
-                const double cmToInch = 0.393700787;
-                double pinXInches = cmPinX * cmToInch;
-                double pinYInches = cmPinY * cmToInch;
-                double diameterInches = cmDiameter * cmToInch;
+        // Conversion factor from centimeters to inches (Aspose.Diagram uses inches)
+        const double cmToInch = 0.393700787;
 
-                // Draw an ellipse (circle) on the page
-                // DrawEllipse returns the shape ID (long)
-                long shapeId = page.DrawEllipse(pinXInches, pinYInches, diameterInches, diameterInches);
+        // Desired circle parameters in centimeters
+        double centerXcm = 5.0;   // X‑coordinate of the circle centre
+        double centerYcm = 10.0;  // Y‑coordinate of the circle centre
+        double radiusCm = 2.0;    // Radius of the circle
 
-                // Retrieve the shape to optionally modify its appearance
-                Shape circleShape = page.Shapes.GetShape((int)shapeId);
-                // Example: set the fill color to red
-                circleShape.Fill.FillForegnd.Value = "#FF0000";
+        // Convert coordinates and size to inches
+        double centerXinch = centerXcm * cmToInch;
+        double centerYinch = centerYcm * cmToInch;
+        double diameterInch = radiusCm * 2 * cmToInch;
 
-                // Save the diagram to a VSDX file
-                diagram.Save("CircleDiagram.vsdx", SaveFileFormat.Vsdx);
-            }
-        }
+        // Draw a circle (ellipse with equal width and height) at the specified position
+        // DrawEllipse returns the shape ID; it is not needed for further processing here
+        page.DrawEllipse(centerXinch, centerYinch, diameterInch, diameterInch);
+
+        // Save the diagram (lifecycle rule)
+        diagram.Save("CircleDiagram.vsdx", SaveFileFormat.Vsdx);
     }
+}

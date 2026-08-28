@@ -1,48 +1,59 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (uses the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the Visio file (adjust as needed)
+                string filePath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Iterate through all pages
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // OLE objects are represented by shapes that contain ForeignData with ObjectData
-                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null)
+                    // Iterate through all shapes on the page
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Retrieve position (PinX, PinY) and size (Width, Height) from the shape's XForm
-                        double pinX = shape.XForm.PinX.Value;
-                        double pinY = shape.XForm.PinY.Value;
-                        double width = shape.XForm.Width.Value;
-                        double height = shape.XForm.Height.Value;
+                        // Identify OLE objects:
+                        // - Shape type must be Foreign
+                        // - ForeignData must exist and contain ObjectData
+                        // - ObjectType must indicate an embedded OLE object
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ObjectData != null &&
+                            shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
+                        {
+                            // Retrieve bounding box data (PinX/PinY are the shape's center)
+                            double pinX = shape.XForm.PinX.Value;
+                            double pinY = shape.XForm.PinY.Value;
+                            double width = shape.XForm.Width.Value;
+                            double height = shape.XForm.Height.Value;
 
-                        // Calculate bounding box coordinates
-                        double left   = pinX - width / 2;
-                        double right  = pinX + width / 2;
-                        double top    = pinY + height / 2;
-                        double bottom = pinY - height / 2;
+                            // Calculate corner coordinates
+                            double left = pinX - width / 2;
+                            double right = pinX + width / 2;
+                            double top = pinY + height / 2;
+                            double bottom = pinY - height / 2;
 
-                        // Log the bounding box for layout analysis
-                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, OLE Bounding Box => Left: {left}, Right: {right}, Top: {top}, Bottom: {bottom}");
+                            // Log the information
+                            Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}");
+                            Console.WriteLine($"  Center: ({pinX}, {pinY})");
+                            Console.WriteLine($"  Size: Width={width}, Height={height}");
+                            Console.WriteLine($"  Bounding Box: Left={left}, Right={right}, Top={top}, Bottom={bottom}");
+                        }
                     }
                 }
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,59 +1,50 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file (adjust as needed)
+            string inputPath = "input.vsdx";
+
+            // Path for the output CSV file
+            string outputCsv = "fonts.csv";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Collect unique font names
+            HashSet<string> uniqueFonts = new HashSet<string>();
+            foreach (Font font in diagram.Fonts)
             {
-
-                // Input Visio file path
-                string visioFilePath = @"C:\Path\To\Your\Diagram.vsdx";
-
-                // Output CSV file path
-                string csvOutputPath = @"C:\Path\To\Output\fonts.csv";
-
-                // Load the Visio diagram using Aspose.Diagram
-                Diagram diagram = new Diagram(visioFilePath);
-
-                // Collect unique font names
-                HashSet<string> uniqueFonts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                // The Fonts collection contains Font objects; each Font has a Name property
-                foreach (Font font in diagram.Fonts)
+                if (!string.IsNullOrEmpty(font.Name))
                 {
-                    if (!string.IsNullOrEmpty(font.Name))
-                    {
-                        uniqueFonts.Add(font.Name);
-                    }
+                    uniqueFonts.Add(font.Name);
                 }
-
-                // Write the unique font names to a CSV file
-                using (StreamWriter writer = new StreamWriter(csvOutputPath, false))
-                {
-                    // Optional header
-                    writer.WriteLine("FontName");
-
-                    foreach (string fontName in uniqueFonts)
-                    {
-                        // Escape double quotes if present
-                        string escaped = fontName.Replace("\"", "\"\"");
-                        writer.WriteLine($"\"{escaped}\"");
-                    }
-                }
-
-                // Clean up
-                diagram.Dispose();
-
-                Console.WriteLine($"Extracted {uniqueFonts.Count} unique font(s) to '{csvOutputPath}'.");
-
             }
-            catch (System.IO.DirectoryNotFoundException ex)
+
+            // Export the unique font names to a CSV file
+            using (StreamWriter writer = new StreamWriter(outputCsv))
             {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                foreach (string fontName in uniqueFonts)
+                {
+                    // Enclose each font name in quotes to handle commas in names
+                    writer.WriteLine($"\"{fontName}\"");
+                }
             }
+
+            Console.WriteLine($"Extracted {uniqueFonts.Count} unique fonts to '{outputCsv}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

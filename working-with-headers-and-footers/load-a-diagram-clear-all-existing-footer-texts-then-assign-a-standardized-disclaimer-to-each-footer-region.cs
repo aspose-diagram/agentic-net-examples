@@ -3,36 +3,31 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class FooterUpdater
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio file
+            // Input Visio file path
             string inputPath = "input.vsdx";
 
-            // Path where the modified Visio file will be saved
+            // Output Visio file path
             string outputPath = "output.vsdx";
 
-            // Load the diagram from the file (using the Diagram constructor that accepts a file path)
+            // Load the diagram from the file (uses the Diagram(string) constructor)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Clear any existing footer text
-                diagram.HeaderFooter.FooterLeft = string.Empty;
-                diagram.HeaderFooter.FooterCenter = string.Empty;
-                diagram.HeaderFooter.FooterRight = string.Empty;
+                // Standard disclaimer to be placed in all footer sections
+                string disclaimer = "Confidential: This document is for internal use only.";
 
-                // Standardized disclaimer to apply to all footer regions
-                string disclaimer = "Confidential – For internal use only.";
-
-                // Assign the disclaimer to each footer region
+                // Clear any existing footer text and assign the disclaimer
                 diagram.HeaderFooter.FooterLeft = disclaimer;
                 diagram.HeaderFooter.FooterCenter = disclaimer;
                 diagram.HeaderFooter.FooterRight = disclaimer;
 
-                // Save the modified diagram back to a file (using the Save method with VDX format)
+                // Save the modified diagram (uses the Diagram.Save method)
                 diagram.Save(outputPath, SaveFileFormat.Vdx);
             }
 

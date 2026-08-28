@@ -1,7 +1,8 @@
-using System;
 using System.IO;
-using System.Xml.Linq;
+using System;
 using Aspose.Diagram;
+
+using Aspose.Diagram.Saving; // for SaveFileFormat if needed
 
 class ImportMastersExample
 {
@@ -10,44 +11,32 @@ class ImportMastersExample
         try
         {
 
-            // Paths to the target Visio file and the XML file that defines masters
-            string visioFilePath = @"C:\Docs\TargetDiagram.vsdx";
-            string mastersXmlPath = @"C:\Docs\MastersDefinition.xml";
-            string outputFilePath = @"C:\Docs\TargetDiagram_WithMasters.vsdx";
+            // Paths to the target Visio document and the XML file containing master definitions
+            string targetVisioPath = "target.vsdx";
+            string mastersXmlPath = "masters.xml";
 
-            // Load the existing Visio document
-            Diagram diagram = new Diagram(visioFilePath);
+            // Load the target Visio diagram
+            Diagram targetDiagram = new Diagram(targetVisioPath);
 
-            // Load the XML that contains master definitions
-            // Expected XML format:
-            // <Masters>
-            //   <Master Name="MyShape" TemplatePath="C:\Stencils\MyStencil.vssx" />
-            //   <Master Name="AnotherShape" TemplatePath="C:\Stencils\AnotherStencil.vssx" />
-            // </Masters>
-            XDocument xmlDoc = XDocument.Load(mastersXmlPath);
-            foreach (XElement masterElem in xmlDoc.Root.Elements("Master"))
+            // Load the XML file that holds master definitions.
+            // Assuming the XML follows the VDX (Visio XML) format.
+            Diagram masterSourceDiagram = new Diagram(mastersXmlPath, LoadFileFormat.Vdx);
+
+            // Iterate through each master in the source diagram and add it to the target diagram
+            foreach (Master srcMaster in masterSourceDiagram.Masters)
             {
-                string masterName = masterElem.Attribute("Name")?.Value;
-                string templatePath = masterElem.Attribute("TemplatePath")?.Value;
-
-                if (string.IsNullOrEmpty(masterName) || string.IsNullOrEmpty(templatePath))
-                    continue; // Skip invalid entries
-
-                // Import the master from the specified template file into the diagram
-                // Using AddMaster(string templateFilePath, string masterName)
-                diagram.AddMaster(templatePath, masterName);
+                // AddMaster copies the master by its Name (or NameU) from the source diagram
+                // The method returns the unique ID of the added master in the target diagram.
+                targetDiagram.AddMaster(masterSourceDiagram, srcMaster.Name);
             }
 
-            // Save the updated diagram
-            diagram.Save(outputFilePath, SaveFileFormat.Vsdx);
-
-            // Clean up
-            diagram.Dispose();
+            // Save the updated diagram to a new file
+            targetDiagram.Save("updated_output.vsdx", SaveFileFormat.Vsdx);
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

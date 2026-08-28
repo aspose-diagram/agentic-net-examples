@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -13,25 +12,24 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the active page
+            // Get the active page where the shape will be added
             Page page = diagram.ActivePage;
 
-            // Draw a rectangle at position (2,2) with width 4 and height 2 inches
-            // DrawRectangle returns the shape ID (long)
-            long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
+            // Draw a rectangle (pinX, pinY, width, height)
+            // Example position and size; adjust as needed
+            long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 3.0);
 
-            // Retrieve the shape object using the ID
-            Shape rectShape = page.Shapes.GetShape(rectId);
+            // Retrieve the shape object using the returned ID
+            Shape rect = page.Shapes.GetShape((int)rectId);
 
             // Set line dash pattern to dash‑dot
-            // The enum value for dash‑dot is DashDot (if available)
-            rectShape.Line.LinePattern.Value = LinePatternValue.DashDot;
+            rect.Line.LinePattern.Value = LinePatternValue.DashDot;
 
-            // Increase line thickness to two points (2/72 inches)
-            rectShape.Line.LineWeight.Value = 2.0 / 72.0;
+            // Increase line thickness to two points (2/72 inches ≈ 0.0277778)
+            rect.Line.LineWeight.Value = 0.0277778;
 
             // Save the diagram to a VSDX file
-            diagram.Save("RectangleModified.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save("RectangleDemo.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.NullReferenceException ex)

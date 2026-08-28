@@ -2,78 +2,73 @@ using System;
 using System.IO;
 using System.Text;
 using System.Net.Mail;
+using System.Net.Mime;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramToEmail
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Prepare a StringBuilder to collect HTML of all shapes
-            StringBuilder htmlBuilder = new StringBuilder();
-
-            // HTML save options (single file to simplify concatenation)
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            // Load the Visio diagram from a file (uses the provided Diagram constructor)
+            using (var diagram = new Diagram("input.vsdx"))
             {
-                SaveAsSingleFile = true
-            };
+                // StringBuilder to accumulate HTML generated for each shape
+                var htmlBuilder = new StringBuilder();
 
-            // Iterate through all pages and their shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // HTML save options (uses the provided HTMLSaveOptions class)
+                var htmlOptions = new HTMLSaveOptions
                 {
-                    // Render each shape to HTML using a memory stream
-                    using (MemoryStream ms = new MemoryStream())
+                    // Example option: generate a single HTML file per shape (optional)
+                    SaveAsSingleFile = true
+                };
+
+                // Iterate through all shapes on the active page (uses diagram.ActivePage.Shapes)
+                foreach (var shape in diagram.ActivePage.Shapes)
+                {
+                    // Generate HTML for the current shape into a memory stream
+                    using (var ms = new MemoryStream())
                     {
-                        shape.ToHTML(ms, htmlOptions);
+                        shape.ToHTML(ms, htmlOptions); // uses the provided Shape.ToHTML method
                         ms.Position = 0;
-                        using (StreamReader reader = new StreamReader(ms, Encoding.UTF8))
+                        using (var reader = new StreamReader(ms))
                         {
-                            string shapeHtml = reader.ReadToEnd();
-                            htmlBuilder.AppendLine(shapeHtml);
+                            htmlBuilder.AppendLine(reader.ReadToEnd());
                         }
                     }
                 }
+
+                // Combined HTML for the whole diagram
+                string combinedHtml = htmlBuilder.ToString();
+
+                // Create a MailMessage with a multipart/alternative body (HTML + plain text)
+                var mail = new MailMessage
+                {
+                    From = new MailAddress("sender@example.com"),
+                    Subject = "Diagram rendered as HTML"
+                };
+                mail.To.Add("recipient@example.com");
+
+                // Plain‑text alternative (required for multipart/alternative)
+                var plainView = AlternateView.CreateAlternateViewFromString(
+                    "Please view this email in an HTML‑capable client.", 
+                    Encoding.UTF8, 
+                    MediaTypeNames.Text.Plain);
+                mail.AlternateViews.Add(plainView);
+
+                // HTML alternative containing the diagram HTML
+                var htmlView = AlternateView.CreateAlternateViewFromString(
+                    combinedHtml, 
+                    Encoding.UTF8, 
+                    MediaTypeNames.Text.Html);
+                mail.AlternateViews.Add(htmlView);
+
+                // At this point the MailMessage contains a MIME multipart/alternative body
+                // with the diagram HTML embedded. Sending can be done via SmtpClient if needed.
             }
-
-            // The complete HTML representation of the diagram
-            string diagramHtml = htmlBuilder.ToString();
-
-            // Create a mail message with multipart/alternative (plain text + HTML)
-            MailMessage mail = new MailMessage();
-            mail.From = new MailAddress("sender@example.com");
-            mail.To.Add("recipient@example.com");
-            mail.Subject = "Diagram as HTML";
-
-            // Plain‑text alternative
-            AlternateView plainView = AlternateView.CreateAlternateViewFromString(
-                "Please view this email in an HTML‑compatible client to see the diagram.",
-                Encoding.UTF8,
-                "text/plain");
-
-            // HTML alternative containing the diagram HTML
-            AlternateView htmlView = AlternateView.CreateAlternateViewFromString(
-                diagramHtml,
-                Encoding.UTF8,
-                "text/html");
-
-            mail.AlternateViews.Add(plainView);
-            mail.AlternateViews.Add(htmlView);
-
-            // At this point the MailMessage object contains the MIME multipart body.
-            // It can be sent using SmtpClient or saved to a file as needed.
-            // Example (commented out):
-            // using (SmtpClient client = new SmtpClient("smtp.example.com"))
-            // {
-            //     client.Send(mail);
-            // }
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -11,32 +11,37 @@ class Program
                 // Create a new empty diagram
                 Diagram diagram = new Diagram();
 
-                // Add a rectangle shape to the active page at position (2,2) inches
-                long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle");
+                // Use the first page (a default page is created automatically)
+                Page page = diagram.Pages[0];
 
-                // Retrieve the concrete Shape object using the returned ID
-                Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
+                // Add a rectangle shape at position (2,2) inches
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
 
-                // Create a new field that will display the current system date/time
+                // Retrieve the concrete Shape object
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Create a new field that will display the current system timestamp
                 Field dateTimeField = new Field();
 
-                // Assign a Visio formula that returns the current date and time.
-                // The formula is evaluated at render time, so the shape always shows the latest timestamp.
-                dateTimeField.Value.Ufev.F = "NOW()";
+                // Set the formula to the Visio NOW() function
+                dateTimeField.Value.Ufev.F = "Now()";
 
-                // Optionally clear any static value; the formula will provide the content.
-                dateTimeField.Value.Val = "";
+                // Use undefined unit (required by the API)
+                dateTimeField.Value.Ufev.Unit = MeasureConst.Undefined;
+
+                // Optionally clear any format string
+                dateTimeField.Format.Val = "";
 
                 // Add the field to the shape's Fields collection
                 shape.Fields.Add(dateTimeField);
 
                 // Save the diagram to a VSDX file
-                diagram.Save("DateTimeShape.vsdx", SaveFileFormat.Vsdx);
+                diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
 
             }
-            catch (System.NullReferenceException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

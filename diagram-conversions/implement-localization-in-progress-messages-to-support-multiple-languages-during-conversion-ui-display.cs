@@ -1,99 +1,100 @@
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-namespace DiagramConversion
+namespace DiagramConversionWithLocalization
 {
-    // Simple localization helper
-    public static class Localizer
+    // Simple localization provider for progress messages
+    internal static class LocalizationProvider
     {
-        // Language code -> (key -> message)
+        // Language -> (MessageKey -> Message)
         private static readonly Dictionary<string, Dictionary<string, string>> _messages = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
         {
-            { "en", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "en", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
+                    { "SelectLanguage", "Select language (en/es): " },
+                    { "EnterInputPath", "Enter the path of the source diagram file: " },
+                    { "EnterOutputPath", "Enter the desired output file path: " },
                     { "Loading", "Loading diagram..." },
+                    { "Converting", "Converting diagram..." },
                     { "Saving", "Saving diagram..." },
                     { "Completed", "Conversion completed successfully." },
-                    { "Error", "An error occurred: {0}" }
+                    { "Error", "An error occurred: " }
                 }
             },
-            { "es", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "es", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    { "Loading", "Cargando el diagrama..." },
-                    { "Saving", "Guardando el diagrama..." },
+                    { "SelectLanguage", "Seleccione el idioma (en/es): " },
+                    { "EnterInputPath", "Ingrese la ruta del archivo de diagrama origen: " },
+                    { "EnterOutputPath", "Ingrese la ruta de salida deseada: " },
+                    { "Loading", "Cargando diagrama..." },
+                    { "Converting", "Convirtiendo diagrama..." },
+                    { "Saving", "Guardando diagrama..." },
                     { "Completed", "Conversión completada con éxito." },
-                    { "Error", "Ocurrió un error: {0}" }
-                }
-            },
-            { "fr", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    { "Loading", "Chargement du diagramme..." },
-                    { "Saving", "Enregistrement du diagramme..." },
-                    { "Completed", "Conversion terminée avec succès." },
-                    { "Error", "Une erreur s'est produite : {0}" }
+                    { "Error", "Ocurrió un error: " }
                 }
             }
         };
 
-        // Selected language (default to English)
-        public static string Language { get; set; } = "en";
-
-        // Retrieve a localized message; fallback to English if missing
-        public static string Get(string key, params object[] args)
+        // Retrieves a localized message; falls back to English if missing
+        public static string GetMessage(string language, string key)
         {
-            if (!_messages.TryGetValue(Language, out var langDict) || !langDict.TryGetValue(key, out var template))
-            {
-                // Fallback to English
-                _messages["en"].TryGetValue(key, out template);
-                template ??= key; // if still missing, use key itself
-            }
+            if (string.IsNullOrWhiteSpace(language))
+                language = "en";
 
-            return args != null && args.Length > 0 ? string.Format(template, args) : template;
+            if (_messages.TryGetValue(language, out var langDict) && langDict.TryGetValue(key, out var message))
+                return message;
+
+            // Fallback to English
+            if (_messages["en"].TryGetValue(key, out var fallback))
+                return fallback;
+
+            // If still not found, return the key itself
+            return key;
         }
     }
 
-    class Program
+    internal class Program
     {
         static void Main()
         {
-            // Prompt user for language selection
-            Console.WriteLine("Select language (en/es/fr):");
-            string inputLang = Console.ReadLine()?.Trim();
-            if (!string.IsNullOrEmpty(inputLang) && Localizer.Language != null)
-            {
-                Localizer.Language = inputLang;
-            }
+            // Choose language
+            Console.Write(LocalizationProvider.GetMessage("en", "SelectLanguage"));
+            string language = Console.ReadLine()?.Trim();
+            if (string.IsNullOrEmpty(language))
+                language = "en";
 
-            // Paths (adjust as needed)
-            string inputPath = "input.vsdx";
-            string outputPath = "output.png";
+            // Input diagram path
+            Console.Write(LocalizationProvider.GetMessage(language, "EnterInputPath"));
+            string inputPath = Console.ReadLine()?.Trim();
+
+            // Output diagram path
+            Console.Write(LocalizationProvider.GetMessage(language, "EnterOutputPath"));
+            string outputPath = Console.ReadLine()?.Trim();
 
             try
             {
-                // Show localized loading message
-                Console.WriteLine(Localizer.Get("Loading"));
-
-                // Load diagram using Aspose.Diagram
+                // Loading phase
+                Console.WriteLine(LocalizationProvider.GetMessage(language, "Loading"));
                 Diagram diagram = new Diagram(inputPath);
 
-                // Show localized saving message
-                Console.WriteLine(Localizer.Get("Saving"));
+                // Converting phase (placeholder for any processing)
+                Console.WriteLine(LocalizationProvider.GetMessage(language, "Converting"));
+                // Example: no additional processing; could add layout, etc.
 
-                // Prepare PNG save options
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                // Saving phase
+                Console.WriteLine(LocalizationProvider.GetMessage(language, "Saving"));
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                // Save diagram to PNG
-                diagram.Save(outputPath, saveOptions);
-
-                // Show localized completion message
-                Console.WriteLine(Localizer.Get("Completed"));
+                // Completion message
+                Console.WriteLine(LocalizationProvider.GetMessage(language, "Completed"));
             }
             catch (Exception ex)
             {
-                // Show localized error message
-                Console.WriteLine(Localizer.Get("Error", ex.Message));
+                // Localized error output
+                Console.WriteLine($"{LocalizationProvider.GetMessage(language, "Error")}{ex.Message}");
             }
         }
     }

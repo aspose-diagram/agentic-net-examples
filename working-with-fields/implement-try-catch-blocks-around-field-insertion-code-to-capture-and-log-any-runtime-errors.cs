@@ -1,50 +1,50 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access the first page and the first shape as an example
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
-
             try
             {
-                // Create a new Field object
-                Field field = new Field();
 
-                // (Optional) Set additional properties on the field here
-                // e.g., field.Value = "Some text"; // Value is read‑only, use appropriate properties as needed
+                // Create a new diagram instance
+                Diagram diagram = new Diagram();
 
-                // Insert the field into the shape's field collection
-                shape.Fields.Add(field);
+                // Ensure there is at least one page (the default constructor creates one)
+                var page = diagram.Pages[0];
+
+                // Add a rectangle shape to the diagram; AddShape returns the shape ID (long)
+                long shapeId = diagram.AddShape(1.0, 1.0, "Rectangle", 0);
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Attempt to insert a text field into the shape
+                try
+                {
+                    // Create a new field object
+                    Field field = new Field();
+
+                    // Set the field's displayed value
+                    field.Value.Val = "Sample Text";
+
+                    // Add the field to the shape's field collection
+                    shape.Fields.Add(field);
+
+                    Console.WriteLine("Field inserted successfully.");
+                }
+                catch (Exception ex)
+                {
+                    // Log any runtime errors that occur during field insertion
+                    Console.WriteLine($"Error inserting field: {ex.Message}");
+                }
+
+                // Optional: save the diagram to verify changes (commented out as not required)
+                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
             }
-            catch (DiagramException dex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                // Capture Aspose.Diagram specific errors
-                Console.WriteLine($"DiagramException caught: {dex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
-            catch (Exception ex)
-            {
-                // Capture any other runtime errors
-                Console.WriteLine($"Unexpected error caught: {ex.Message}");
-            }
-
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

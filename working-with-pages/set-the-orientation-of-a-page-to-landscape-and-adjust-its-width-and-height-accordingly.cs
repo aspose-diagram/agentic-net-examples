@@ -1,37 +1,55 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Determine input file path (first argument or default).
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Verify that the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Determine output file path (second argument or default).
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
         try
         {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram (replace with your actual file path)
-            using (Diagram diagram = new Diagram("input.vsdx"))
+            // Iterate over all pages in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                // Assume we want to modify the first page; adjust as needed
-                Page page = diagram.Pages[0];
-
-                // Set page orientation to Landscape
+                // Set the page orientation to Landscape.
                 page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                // Adjust page dimensions for landscape orientation.
-                // Example: set width to 11 inches and height to 8.5 inches (standard Letter landscape)
-                page.PageSheet.PageProps.PageWidth.Value = 11.0;
-                page.PageSheet.PageProps.PageHeight.Value = 8.5;
+                // Retrieve current page width and height (in inches).
+                double currentWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double currentHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // If the page is currently taller than it is wide, swap dimensions.
+                if (currentWidth < currentHeight)
+                {
+                    // Assign swapped values to achieve landscape dimensions.
+                    page.PageSheet.PageProps.PageWidth.Value = currentHeight;
+                    page.PageSheet.PageProps.PageHeight.Value = currentWidth;
+                }
+                // If width is already greater, keep existing dimensions (already landscape).
             }
 
+            // Save the modified diagram to the output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any exception details to the error console.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

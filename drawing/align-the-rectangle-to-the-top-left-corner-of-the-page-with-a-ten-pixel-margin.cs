@@ -1,39 +1,40 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class AlignRectangleExample
+class Program
 {
     static void Main()
     {
-        // Create a new blank diagram
-        Diagram diagram = new Diagram();
+        // Create a new empty diagram (contains a default page)
+        using (Diagram diagram = new Diagram())
+        {
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-        // Access the first (default) page
-        Page page = diagram.Pages[0];
+            // Convert 10 pixels to inches (assuming 96 DPI)
+            double marginInches = 10.0 / 96.0;
 
-        // Define rectangle dimensions
-        double rectWidth = 100.0;   // width in points (or pixels depending on DPI)
-        double rectHeight = 50.0;   // height in points
+            // Define rectangle size (in inches)
+            double rectWidth = 2.0;   // example width
+            double rectHeight = 1.0;  // example height
 
-        // Define margin from the top‑left corner
-        double margin = 10.0;
+            // Calculate the PinX and PinY so that the rectangle's left/top edges
+            // are positioned at the page's top‑left corner with the margin
+            double pinX = marginInches + rectWidth / 2.0;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+            double pinY = pageHeight - marginInches - rectHeight / 2.0;
 
-        // Calculate the pin (center) coordinates so that the rectangle's
-        // top‑left corner aligns with the page's top‑left corner plus margin.
-        // PinX = left margin + half of width
-        // PinY = top margin + half of height
-        double pinX = margin + rectWidth / 2.0;
-        double pinY = margin + rectHeight / 2.0;
+            // Draw the rectangle on the page
+            long rectShapeId = page.DrawRectangle(pinX, pinY, rectWidth, rectHeight);
 
-        // Draw the rectangle on the page
-        long shapeId = page.DrawRectangle(pinX, pinY, rectWidth, rectHeight);
+            // (Optional) Retrieve the shape to modify its appearance
+            Shape rectShape = page.Shapes.GetShape((int)rectShapeId);
+            rectShape.Line.LineColor.Value = "#FF0000";   // red border
+            rectShape.Fill.FillForegnd.Value = "#00FF00"; // green fill
 
-        // (Optional) Retrieve the shape to modify further if needed
-        // Shape rectShape = page.Shapes.GetShape(shapeId);
-
-        // Save the diagram to a VSDX file
-        diagram.Save("AlignedRectangle.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram to a VSDX file
+            diagram.Save("AlignedRectangle.vsdx", SaveFileFormat.Vsdx);
+        }
     }
 }

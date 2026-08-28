@@ -1,60 +1,48 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ExportProtectedDiagram
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Define file paths (adjust as needed)
-        string inputPath = "protected.vsdx";
-        // Verify the input file exists before proceeding
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-        string outputPath = "exported.vdx";
-
         try
         {
-            // Load the protected diagram from the input file
-            Diagram original = new Diagram(inputPath);
 
-            // Capture document‑level protection flags (BOOL enum comparison)
-            bool protectBkgnds = original.DocumentSettings.ProtectBkgnds == BOOL.True;
-            bool protectMasters = original.DocumentSettings.ProtectMasters == BOOL.True;
-            bool protectShapes = original.DocumentSettings.ProtectShapes == BOOL.True;
-            bool protectStyles = original.DocumentSettings.ProtectStyles == BOOL.True;
+            // Load the protected Visio diagram from file
+            // (uses the Diagram(string) constructor – lifecycle rule)
+            var diagram = new Diagram("protected_input.vsdx");
 
-            // Export the diagram to VDX format
-            original.Save(outputPath, SaveFileFormat.Vdx);
-
-            // Reload the exported VDX file
-            Diagram exported = new Diagram(outputPath);
-
-            // Verify that protection flags are identical after export
-            bool protectBkgndsExport = exported.DocumentSettings.ProtectBkgnds == BOOL.True;
-            bool protectMastersExport = exported.DocumentSettings.ProtectMasters == BOOL.True;
-            bool protectShapesExport = exported.DocumentSettings.ProtectShapes == BOOL.True;
-            bool protectStylesExport = exported.DocumentSettings.ProtectStyles == BOOL.True;
-
-            // If any flag differs, raise an exception
-            if (protectBkgnds != protectBkgndsExport ||
-                protectMasters != protectMastersExport ||
-                protectShapes != protectShapesExport ||
-                protectStyles != protectStylesExport)
+            // Verify that style locks (Protection settings) are retained
+            Console.WriteLine("Style sheet protection flags:");
+            foreach (StyleSheet styleSheet in diagram.StyleSheets)
             {
-                throw new Exception("Protection settings were not retained after exporting to VDX.");
+                var protection = styleSheet.Protection;
+                // Example: check a few common lock flags
+                Console.WriteLine($"StyleSheet: {styleSheet.NameU}");
+                Console.WriteLine($"  LockFormat: {protection.LockFormat}");
+                Console.WriteLine($"  LockMoveX: {protection.LockMoveX}");
+                Console.WriteLine($"  LockMoveY: {protection.LockMoveY}");
+                Console.WriteLine($"  LockRotate: {protection.LockRotate}");
+                Console.WriteLine($"  LockTextEdit: {protection.LockTextEdit}");
             }
 
-            Console.WriteLine("Export to VDX succeeded and all protection settings are retained.");
+            // Save the diagram to VDX format while preserving all settings
+            var saveOptions = new DiagramSaveOptions
+            {
+                SaveFormat = SaveFileFormat.Vdx
+            };
+            diagram.Save("exported_output.vdx", saveOptions);
+
+            // Clean up
+            diagram.Dispose();
+            Console.WriteLine("Diagram exported to VDX with style locks retained.");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

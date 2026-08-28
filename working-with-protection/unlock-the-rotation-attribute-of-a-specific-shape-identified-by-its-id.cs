@@ -1,42 +1,78 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect three arguments: input diagram path, shape ID, output diagram path.
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <shapeId> <outputVisioPath>");
+            return;
+        }
+
+        // Assign input parameters to variables.
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string shapeIdArg = args[1];
+        // Guard: parse shape ID to long.
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
+        string outputPath = args[2];
+
+        try
+        {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Locate the shape with the given ID across all pages.
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-
-                // Path for the modified Visio file
-                string outputPath = "output.vsdx";
-
-                // ID of the shape whose rotation lock should be removed
-                long targetShapeId = 12345; // replace with the actual shape ID
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Retrieve the shape by ID from the first page
-                Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
-                if (shape == null)
+                // Iterate each shape on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    throw new Exception($"Shape with ID {targetShapeId} not found.");
+                    // Compare the shape's ID with the requested ID.
+                    if (shape.ID == shapeId)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
                 }
-
-                // Unlock the rotation attribute
-                shape.Protection.LockRotate.Value = BOOL.False;
-
-                // Save the updated diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                if (targetShape != null) break;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Guard: ensure the shape was found.
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found.");
+                return;
             }
+
+            // Unlock the rotation lock on the shape.
+            // The rotation lock is accessed via the Protection collection.
+            targetShape.Protection.LockRotate.Value = BOOL.False;
+
+            // Save the modified diagram to the output path using VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Rotation attribute unlocked and diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,13 +8,18 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram (replace with your actual file path)
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path to the output Visio file
+                string outputPath = "output_protected.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Apply protection only to connector shapes (1‑D shapes)
@@ -33,7 +37,6 @@ class Program
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

@@ -4,26 +4,31 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
-            try
+            // Expect input and output file paths as command‑line arguments.
+            if (args.Length < 2)
             {
+                Console.WriteLine("Usage: ShapeProtectionExample <input.vsdx> <output.vsdx>");
+                return;
+            }
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages.
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Check if the shape has a custom property named "FixedAngle".
+                    bool hasFixedAngleTrue = false;
+                    if (shape.Props != null)
                     {
-                        // Ensure the shape has custom properties collection
-                        if (shape.Props == null)
-                            continue;
-
-                        // Look for a custom property named "FixedAngle"
                         foreach (Prop prop in shape.Props)
                         {
                             if (prop.Name == "FixedAngle" &&
@@ -31,28 +36,29 @@ class Program
                                 prop.Value.Val != null &&
                                 prop.Value.Val.Equals("true", StringComparison.OrdinalIgnoreCase))
                             {
-                                // Apply protection: lock rotation of the shape
-                                shape.Protection.LockRotate.Value = BOOL.True;
-
-                                // Optionally, you can lock other aspects if needed, e.g.:
-                                // shape.Protection.LockMoveX.Value = BOOL.True;
-                                // shape.Protection.LockMoveY.Value = BOOL.True;
-
-                                // No need to continue checking other properties for this shape
+                                hasFixedAngleTrue = true;
                                 break;
                             }
                         }
                     }
+
+                    // If the custom property is set to true, apply protection.
+                    if (hasFixedAngleTrue)
+                    {
+                        // Lock rotation to prevent the shape from being rotated.
+                        shape.Protection.LockRotate.Value = BOOL.True;
+
+                        // Optionally lock other aspects (example: lock moving on X/Y).
+                        shape.Protection.LockMoveX.Value = BOOL.True;
+                        shape.Protection.LockMoveY.Value = BOOL.True;
+
+                        Console.WriteLine($"Applied protection to shape ID {shape.ID} on page '{page.Name}'.");
+                    }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Save the modified diagram using VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+        }
     }

@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,9 +8,10 @@ class Program
             try
             {
 
-                // Path to the input Visio file
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                // Path to the output Visio file
+
+                // Path for the protected output file
                 string outputPath = "output_protected.vsdx";
 
                 // Define the area threshold (in square inches)
@@ -20,10 +20,9 @@ class Program
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
@@ -46,7 +45,6 @@ class Program
                             shape.Protection.LockHeight.Value = BOOL.True;
                             shape.Protection.LockRotate.Value = BOOL.True;
                             shape.Protection.LockVtxEdit.Value = BOOL.True;
-                            shape.Protection.LockAspect.Value = BOOL.True;
                         }
                     }
                 }

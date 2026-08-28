@@ -5,78 +5,99 @@ using System.Text.Json;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class VbaProjectAuditor
+namespace VbaMetadataAuditor
 {
-    static void Main(string[] args)
+    // DTO classes for JSON serialization
+    public class VbaMetadata
     {
-        try
+        public string ProjectName { get; set; }
+        public bool IsSigned { get; set; }
+        public List<ModuleInfo> Modules { get; set; } = new();
+        public List<ReferenceInfo> References { get; set; } = new();
+    }
+
+    public class ModuleInfo
+    {
+        public string Name { get; set; }
+        public string Type { get; set; }
+        public string Code { get; set; }
+    }
+
+    public class ReferenceInfo
+    {
+        public string Name { get; set; }
+        public string Type { get; set; }
+        public string Libid { get; set; }
+        public string ExtendedLibid { get; set; }
+        public string RelativeLibid { get; set; }
+        public string TwiddledLibid { get; set; }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
         {
+            // Validate arguments: input diagram path and output JSON path
+            if (args.Length != 2)
+            {
+                Console.WriteLine("Usage: VbaMetadataAuditor <input-diagram> <output-json>");
+                return;
+            }
 
-            // Paths for input Visio file and output JSON audit file
-            string visioPath = "input.vsdx";
-            string jsonPath = "vba_audit.json";
+            string diagramPath = args[0];
+            string jsonPath = args[1];
 
-            // Load the Visio diagram (uses Aspose.Diagram's load rule)
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram using Aspose.Diagram (lifecycle rule)
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Access the VBA project within the diagram
+            // Access the VBA project; may be null if no VBA project exists
             VbaProject vbaProject = diagram.VbaProject;
+            if (vbaProject == null)
+            {
+                Console.WriteLine("No VBA project found in the diagram.");
+                return;
+            }
 
-            // Build an anonymous object containing all required metadata
-            var auditData = new
+            // Build metadata object
+            VbaMetadata metadata = new VbaMetadata
             {
                 ProjectName = vbaProject.Name,
-                IsSigned = vbaProject.IsSigned,
-                Modules = ExtractModules(vbaProject),
-                References = ExtractReferences(vbaProject)
+                IsSigned = vbaProject.IsSigned
             };
 
-            // Serialize the metadata to formatted JSON
-            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(auditData, jsonOptions);
+            // Extract modules
+            foreach (VbaModule module in vbaProject.Modules)
+            {
+                metadata.Modules.Add(new ModuleInfo
+                {
+                    Name = module.Name,
+                    Type = module.Type.ToString(),
+                    Code = module.Codes // full VBA source code
+                });
+            }
 
-            // Write the JSON to the specified file (uses standard .NET file I/O)
+            // Extract references
+            foreach (VbaProjectReference reference in vbaProject.References)
+            {
+                metadata.References.Add(new ReferenceInfo
+                {
+                    Name = reference.Name,
+                    Type = reference.Type.ToString(),
+                    Libid = reference.Libid,
+                    ExtendedLibid = reference.ExtendedLibid,
+                    RelativeLibid = reference.RelativeLibid,
+                    TwiddledLibid = reference.Twiddledlibid
+                });
+            }
+
+            // Serialize to JSON with indentation for readability
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            string json = JsonSerializer.Serialize(metadata, jsonOptions);
+
+            // Write JSON to the specified file
             File.WriteAllText(jsonPath, json);
 
+            Console.WriteLine($"VBA metadata successfully written to '{jsonPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    // Helper to collect module information
-    static List<object> ExtractModules(VbaProject project)
-    {
-        var modules = new List<object>();
-        foreach (VbaModule module in project.Modules)
-        {
-            modules.Add(new
-            {
-                Name = module.Name,
-                Type = module.Type.ToString(),
-                Code = module.Codes
-            });
-        }
-        return modules;
-    }
-
-    // Helper to collect reference information
-    static List<object> ExtractReferences(VbaProject project)
-    {
-        var references = new List<object>();
-        foreach (VbaProjectReference reference in project.References)
-        {
-            references.Add(new
-            {
-                Name = reference.Name,
-                Type = reference.Type.ToString(),
-                Libid = reference.Libid,
-                ExtendedLibid = reference.ExtendedLibid,
-                RelativeLibid = reference.RelativeLibid,
-                TwiddledLibid = reference.Twiddledlibid
-            });
-        }
-        return references;
     }
 }

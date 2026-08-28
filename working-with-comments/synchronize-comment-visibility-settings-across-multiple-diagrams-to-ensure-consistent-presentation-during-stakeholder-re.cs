@@ -1,99 +1,103 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        // Entry point
-        static void Main(string[] args)
+        try
         {
-            // Folder containing the Visio files (adjust as needed)
-            string diagramsFolder = @"C:\VisioDiagrams";
 
-            // Get all VSDX files in the folder
-            string[] diagramFiles = Directory.GetFiles(diagramsFolder, "*.vsdx");
-
-            if (diagramFiles.Length == 0)
+            // Define the file paths: first diagram is the source, the rest are targets.
+            string[] diagramPaths = new string[]
             {
-                Console.WriteLine("No Visio files found in the specified folder.");
-                return;
-            }
+                "SourceDiagram.vsdx",
+                "TargetDiagram1.vsdx",
+                "TargetDiagram2.vsdx"
+            };
 
-            // Load the first diagram as the reference for comment settings
-            Diagram referenceDiagram = new Diagram(diagramFiles[0]);
+            // Load the source diagram.
+            Diagram sourceDiagram = new Diagram(diagramPaths[0]);
 
-            // Build a lookup of comment settings from the reference diagram
-            var referenceComments = BuildCommentLookup(referenceDiagram);
+            // Collect all comments (annotations) from the source diagram.
+            var sourceComments = new List<CommentInfo>();
 
-            // Process remaining diagrams
-            for (int i = 1; i < diagramFiles.Length; i++)
+            foreach (Page srcPage in sourceDiagram.Pages)
             {
-                string filePath = diagramFiles[i];
-                Diagram targetDiagram = new Diagram(filePath);
-
-                SynchronizeComments(targetDiagram, referenceComments);
-
-                // Save the updated diagram (overwrite original)
-                targetDiagram.Save(filePath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Synchronized comments for: {Path.GetFileName(filePath)}");
-            }
-
-            Console.WriteLine("Comment synchronization completed.");
-        }
-
-        // Builds a dictionary: PageName -> (MarkerIndex -> (CommentText, ReviewerID))
-        private static Dictionary<string, Dictionary<int, (string Comment, int ReviewerId)>> BuildCommentLookup(Diagram diagram)
-        {
-            var lookup = new Dictionary<string, Dictionary<int, (string, int)>>();
-
-            foreach (Page page in diagram.Pages)
-            {
-                string pageName = page.Name ?? page.NameU ?? $"Page_{page.ID}";
-                var pageDict = new Dictionary<int, (string, int)>();
-
-                foreach (Annotation ann in page.PageSheet.Annotations)
+                foreach (Annotation ann in srcPage.PageSheet.Annotations)
                 {
-                    int marker = ann.MarkerIndex.Value;
-                    string comment = ann.Comment.Value;
-                    int reviewerId = ann.ReviewerID.Value;
-
-                    pageDict[marker] = (comment, reviewerId);
-                }
-
-                if (pageDict.Count > 0)
-                {
-                    lookup[pageName] = pageDict;
-                }
-            }
-
-            return lookup;
-        }
-
-        // Updates comments in the target diagram to match the reference lookup
-        private static void SynchronizeComments(Diagram diagram, Dictionary<string, Dictionary<int, (string Comment, int ReviewerId)>> reference)
-        {
-            foreach (Page page in diagram.Pages)
-            {
-                string pageName = page.Name ?? page.NameU ?? $"Page_{page.ID}";
-
-                if (!reference.ContainsKey(pageName))
-                    continue; // No reference comments for this page
-
-                var refPageComments = reference[pageName];
-
-                foreach (Annotation ann in page.PageSheet.Annotations)
-                {
-                    int marker = ann.MarkerIndex.Value;
-
-                    if (refPageComments.TryGetValue(marker, out var refData))
+                    sourceComments.Add(new CommentInfo
                     {
-                        // Update comment text and reviewer ID to match reference
-                        ann.Comment.Value = refData.Comment;
-                        ann.ReviewerID.Value = refData.ReviewerId;
+                        PageName = srcPage.Name,
+                        ShapeId = ann.ShapeID,
+                        Text = ann.Comment.Value,
+                        ReviewerId = ann.ReviewerID.Value
+                    });
+                }
+            }
+
+            // Iterate over each target diagram and synchronize its comments.
+            for (int i = 1; i < diagramPaths.Length; i++)
+            {
+                string targetPath = diagramPaths[i];
+                Diagram targetDiagram = new Diagram(targetPath);
+
+                foreach (Page tgtPage in targetDiagram.Pages)
+                {
+                    // Process comments that belong to the current page.
+                    foreach (var srcComment in sourceComments)
+                    {
+                        if (srcComment.PageName != tgtPage.Name)
+                            continue;
+
+                        // Look for an existing annotation with the same ShapeID.
+                        Annotation existing = null;
+                        foreach (Annotation ann in tgtPage.PageSheet.Annotations)
+                        {
+                            if (ann.ShapeID == srcComment.ShapeId)
+                            {
+                                existing = ann;
+                                break;
+                            }
+                        }
+
+                        if (existing != null)
+                        {
+                            // Update the comment text and reviewer identifier.
+                            existing.Comment.Value = srcComment.Text;
+                            existing.ReviewerID.Value = srcComment.ReviewerId;
+                        }
+                        else
+                        {
+                            // No matching comment; add a new page‑level comment.
+                            // Position (0,0) is a placeholder; adjust as needed.
+                            tgtPage.AddComment(0, 0, srcComment.Text);
+                        }
                     }
                 }
+
+                // Save the synchronized diagram with a new filename.
+                string outputPath = Path.GetFileNameWithoutExtension(targetPath) + "_Synced.vsdx";
+                targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Synchronized comments saved to: {outputPath}");
             }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+
+    // Simple DTO to hold comment information from the source diagram.
+    private class CommentInfo
+    {
+        public string PageName { get; set; }
+        public int ShapeId { get; set; }
+        public string Text { get; set; }
+        public int ReviewerId { get; set; }
+    }
+}

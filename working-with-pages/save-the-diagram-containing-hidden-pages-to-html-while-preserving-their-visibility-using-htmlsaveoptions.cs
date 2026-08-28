@@ -1,40 +1,35 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the diagram that contains hidden pages
+            Diagram diagram = new Diagram(@"C:\Input\sample.vsdx");
+
+            // Configure HTML save options
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
+                // Preserve hidden pages in the output (default is true, set explicitly for clarity)
+                ExportHiddenPage = true,
 
-                // Path to the source Visio file (replace with actual file path)
-                string inputPath = "input.vsdx";
+                // Render all pages (including hidden ones)
+                PageCount = int.MaxValue
+            };
 
-                // Path for the exported HTML file
-                string outputPath = "output.html";
+            // Save the diagram to HTML while keeping hidden pages visible
+            diagram.Save(@"C:\Output\sample.html", htmlOptions);
 
-                // Load the diagram from the file
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Configure HTML export options
-                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                    {
-                        // Preserve hidden pages in the exported HTML
-                        ExportHiddenPage = true
-                    };
-
-                    // Save the diagram as HTML with the specified options
-                    diagram.Save(outputPath, htmlOptions);
-                }
-
-                Console.WriteLine("Diagram exported to HTML successfully.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.DirectoryNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

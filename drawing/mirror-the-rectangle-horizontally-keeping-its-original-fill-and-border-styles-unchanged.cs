@@ -9,21 +9,26 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+
+            // Load the diagram from file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to find rectangle shapes
-            foreach (Page page in diagram.Pages)
+            // Access the first page (or adjust index as needed)
+            Page page = diagram.Pages[0];
+
+            // Iterate through all shapes on the page
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
+                // Identify rectangle shapes by their master name
+                if (shape.Master != null && shape.Master.Name == "Rectangle")
                 {
-                    // Identify a rectangle by its master name
-                    if (shape.Master != null && shape.Master.Name == "Rectangle")
-                    {
-                        // Mirror horizontally by flipping the shape on the X axis
-                        shape.XForm.FlipX.Value = BOOL.True;
-                    }
+                    // Mirror the shape horizontally.
+                    // FlipX is a BoolValue; set its .Value to BOOL.True.
+                    shape.XForm.FlipX.Value = BOOL.True;
+
+                    // Fill and line styles are unchanged automatically.
                 }
             }
 

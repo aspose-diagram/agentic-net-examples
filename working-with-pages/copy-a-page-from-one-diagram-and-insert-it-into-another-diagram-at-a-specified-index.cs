@@ -1,45 +1,104 @@
 using System;
-using System.IO;
+using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
+            // Expected arguments:
+            // args[0] - source diagram file path
+            // args[1] - target diagram file path
+            // args[2] - index of the page to copy from source (zero‑based)
+            // args[3] - index at which to insert the copied page into target (zero‑based)
+            // args[4] - output diagram file path (where the modified target will be saved)
 
-            // Load source and destination diagrams
-            var sourceDiagram = new Aspose.Diagram.Diagram("SourceDiagram.vdx");
-            var targetDiagram = new Aspose.Diagram.Diagram("TargetDiagram.vdx");
+            if (args.Length < 5)
+            {
+                Console.WriteLine("Usage: DiagramPageCopyExample <sourcePath> <targetPath> <sourcePageIndex> <insertIndex> <outputPath>");
+                return;
+            }
 
-            // Index of the page to copy from the source diagram (0‑based)
-            int sourcePageIndex = 2;
+            string sourcePath = args[0];
+            string targetPath = args[1];
+            int sourcePageIndex = int.Parse(args[2]);
+            int insertIndex = int.Parse(args[3]);
+            string outputPath = args[4];
 
-            // Desired insertion index in the target diagram (0‑based)
-            int insertIndex = 1;
+            try
+            {
+                // Load source and target diagrams
+                Diagram sourceDiagram = new Diagram(sourcePath);
+                Diagram targetDiagram = new Diagram(targetPath);
 
-            // Get the page to be copied from the source diagram
-            var sourcePage = sourceDiagram.Pages[sourcePageIndex];
+                // -------------------------------------------------
+                // 1. Ensure all masters used by the source page exist in the target diagram
+                // -------------------------------------------------
+                foreach (Master srcMaster in sourceDiagram.Masters)
+                {
+                    bool masterExists = false;
+                    foreach (Master tgtMaster in targetDiagram.Masters)
+                    {
+                        if (tgtMaster.Name == srcMaster.Name)
+                        {
+                            masterExists = true;
+                            break;
+                        }
+                    }
 
-            // Create a new empty page in the target diagram
-            var newPage = new Aspose.Diagram.Page();
+                    if (!masterExists)
+                    {
+                        // Add the master from the source diagram to the target diagram
+                        targetDiagram.AddMaster(sourceDiagram, srcMaster.Name);
+                    }
+                }
 
-            // Add the new page to the target diagram's page collection
-            targetDiagram.Pages.Add(newPage);
+                // -------------------------------------------------
+                // 2. Retrieve the page to copy from the source diagram
+                // -------------------------------------------------
+                if (sourcePageIndex < 0 || sourcePageIndex >= sourceDiagram.Pages.Count)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(sourcePageIndex), "Source page index is out of range.");
+                }
 
-            // Copy the contents of the source page into the newly created page
-            newPage.Copy(sourcePage);
+                Page srcPage = sourceDiagram.Pages[sourcePageIndex];
 
-            // Move the newly added page to the specified index within the target diagram
-            newPage.MoveTo(insertIndex);
+                // -------------------------------------------------
+                // 3. Determine a new unique page ID for the copied page
+                // -------------------------------------------------
+                int maxPageId = 0;
+                foreach (Page p in targetDiagram.Pages)
+                {
+                    if (p.ID > maxPageId)
+                        maxPageId = p.ID;
+                }
+                int newPageId = maxPageId + 1;
 
-            // Save the modified target diagram
-            targetDiagram.Save("MergedDiagram.vdx", Aspose.Diagram.SaveFileFormat.Vdx);
+                // -------------------------------------------------
+                // 4. Create a new page instance and copy the content
+                // -------------------------------------------------
+                Page newPage = new Page(newPageId);
+                srcPage.Copy(newPage); // Copies shapes, page sheet, etc.
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // -------------------------------------------------
+                // 5. Add the new page to the target diagram and position it
+                // -------------------------------------------------
+                targetDiagram.Pages.Add(newPage); // Adds at the end
+                // Move the page to the desired index (if different from the end)
+                if (insertIndex >= 0 && insertIndex < targetDiagram.Pages.Count)
+                {
+                    newPage.MoveTo(insertIndex);
+                }
+
+                // -------------------------------------------------
+                // 6. Save the modified target diagram
+                // -------------------------------------------------
+                targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Page copied successfully. Output saved to: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                throw;
+            }
         }
     }
-}

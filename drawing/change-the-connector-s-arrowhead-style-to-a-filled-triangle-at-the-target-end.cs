@@ -2,8 +2,6 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-using Aspose.Diagram.Manipulation; // Required for ConnectionPointPlace if needed
-
 class Program
 {
     static void Main()
@@ -12,28 +10,26 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to find connector shapes (1‑D shapes)
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Connectors are 1‑D shapes (OneD == true)
+                    // Identify connector shapes (1‑D shapes)
                     if (shape.OneD)
                     {
-                        // Set the target (end) arrowhead to a filled triangle.
-                        // Arrow style value 4 corresponds to a filled triangle in Visio.
+                        // Change the target end arrowhead to a filled triangle (value 4)
                         shape.Line.EndArrow.Value = 4;
-
-                        // Optionally set the arrow size (e.g., Large). Adjust as needed.
-                        shape.Line.EndArrowSize.Value = ArrowSizeValue.Large;
                     }
                 }
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,79 +1,58 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
 
-class MasterUsageReport
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with your file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Dictionary to hold master ID -> usage count
-            Dictionary<int, int> masterUsage = new Dictionary<int, int>();
-
-            // Initialize counts for all masters present in the document
-            foreach (Master master in diagram.Masters)
+            try
             {
-                masterUsage[master.ID] = 0;
-            }
 
-            // Iterate through all pages and their shapes to count master usage
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Path to the Visio diagram file
+                string diagramPath = "input.vsdx";
+
+                // Load the diagram
+                using (Diagram diagram = new Diagram(diagramPath))
                 {
-                    // Shape may be a master instance; check if it references a master
-                    if (shape.Master != null)
+                    // Dictionary to hold master name and its usage count
+                    Dictionary<string, int> masterUsage = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+                    // Iterate through all pages and shapes to count master usage
+                    foreach (Page page in diagram.Pages)
                     {
-                        int masterId = shape.Master.ID;
-                        if (masterUsage.ContainsKey(masterId))
+                        foreach (Shape shape in page.Shapes)
                         {
-                            masterUsage[masterId]++;
+                            if (shape.Master != null)
+                            {
+                                string masterName = shape.Master.Name;
+                                if (masterUsage.ContainsKey(masterName))
+                                    masterUsage[masterName]++;
+                                else
+                                    masterUsage[masterName] = 1;
+                            }
                         }
                     }
+
+                    // Ensure all masters are represented, even if not used
+                    foreach (Master master in diagram.Masters)
+                    {
+                        if (!masterUsage.ContainsKey(master.Name))
+                            masterUsage[master.Name] = 0;
+                    }
+
+                    // Output the report
+                    Console.WriteLine("Master Usage Frequency Report:");
+                    foreach (var entry in masterUsage)
+                    {
+                        Console.WriteLine($"{entry.Key}: {entry.Value}");
+                    }
                 }
+
             }
-
-            // Build the report text
-            var reportLines = new List<string>();
-            reportLines.Add("Master Usage Frequency Report");
-            reportLines.Add($"Generated on: {DateTime.Now}");
-            reportLines.Add(string.Empty);
-            reportLines.Add("Master Name\tMaster ID\tUsage Count");
-            reportLines.Add("-----------\t---------\t-----------");
-
-            foreach (Master master in diagram.Masters)
+            catch (System.IO.FileNotFoundException ex)
             {
-                int count = masterUsage[master.ID];
-                string line = $"{master.Name}\t{master.ID}\t{count}";
-                reportLines.Add(line);
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            string reportContent = string.Join(Environment.NewLine, reportLines);
-
-            // Write the report to a text file
-            string reportPath = "MasterUsageReport.txt";
-            File.WriteAllText(reportPath, reportContent);
-
-            // Optionally, save the diagram (demonstrating the save rule)
-            string outputDiagramPath = "output.vsdx";
-            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-
-            // Clean up
-            diagram.Dispose();
-
-            Console.WriteLine("Report generated: " + reportPath);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

@@ -8,59 +8,73 @@ class Program
             try
             {
 
-                // Paths to the source and destination Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram from the file system
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx"; // TODO: replace with actual file path
                 Diagram diagram = new Diagram(inputPath);
 
-                // Locate the 'Infrastructure' layer and obtain its index (IX)
-                int infraLayerIndex = -1;
-                // Layers are stored in the first page's PageSheet collection
-                foreach (Layer layer in diagram.Pages[0].PageSheet.Layers)
-                {
-                    if (layer.Name.Value == "Infrastructure")
-                    {
-                        infraLayerIndex = layer.IX;
-                        break;
-                    }
-                }
+                // Desired layer name
+                const string targetLayerName = "Infrastructure";
 
-                if (infraLayerIndex == -1)
-                {
-                    throw new Exception("Layer named 'Infrastructure' was not found in the diagram.");
-                }
-
-                // Convert 2 points to inches (Visio stores line weight in inches)
+                // Desired line weight in points (2 points = 2/72 inches)
                 double lineWeightInInches = 2.0 / 72.0;
 
-                // Iterate through all pages and shapes, applying the line weight to shapes on the target layer
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
+                    // Find the index of the target layer on this page
+                    int? targetLayerIndex = null;
+                    foreach (Layer layer in page.PageSheet.Layers)
+                    {
+                        if (layer.Name.Value == targetLayerName)
+                        {
+                            targetLayerIndex = layer.IX;
+                            break;
+                        }
+                    }
+
+                    // If the layer does not exist on this page, skip it
+                    if (!targetLayerIndex.HasValue)
+                        continue;
+
+                    string targetIndexString = targetLayerIndex.Value.ToString();
+
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the layer membership string (e.g., "0;2;5")
-                        string layerMember = shape.LayerMem.LayerMember.Value;
+                        // Ensure the shape has layer membership information
+                        if (shape.LayerMem == null || shape.LayerMem.LayerMember == null)
+                            continue;
 
-                        if (string.IsNullOrEmpty(layerMember))
-                            continue; // Shape is not assigned to any layer
+                        // The LayerMember.Value holds a semicolon‑separated list of layer indexes
+                        string memberValue = shape.LayerMem.LayerMember.Value;
+                        if (string.IsNullOrEmpty(memberValue))
+                            continue;
 
-                        // Split the semicolon‑separated list and check for the target layer index
-                        string[] members = layerMember.Split(';');
-                        foreach (string member in members)
+                        // Check if the shape belongs to the target layer
+                        string[] indexes = memberValue.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        bool belongsToTarget = false;
+                        foreach (string idx in indexes)
                         {
-                            if (int.TryParse(member, out int idx) && idx == infraLayerIndex)
+                            if (idx == targetIndexString)
                             {
-                                // Set the line weight for the shape (in inches)
-                                shape.Line.LineWeight.Value = lineWeightInInches;
-                                break; // No need to check other members for this shape
+                                belongsToTarget = true;
+                                break;
                             }
+                        }
+
+                        if (!belongsToTarget)
+                            continue;
+
+                        // Set the line weight for the shape
+                        if (shape.Line != null && shape.Line.LineWeight != null)
+                        {
+                            shape.Line.LineWeight.Value = lineWeightInInches;
                         }
                     }
                 }
 
                 // Save the modified diagram
+                string outputPath = "output.vsdx"; // TODO: replace with desired output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

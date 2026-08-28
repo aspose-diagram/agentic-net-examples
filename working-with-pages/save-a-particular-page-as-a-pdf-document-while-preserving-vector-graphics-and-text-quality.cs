@@ -1,46 +1,72 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments count.
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <inputVisioPath> <pageIndexZeroBased> <outputPdfPath>");
+            return;
+        }
+
+        // Input Visio file path.
+        string inputPath = args[0];
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Parse page index (zero‑based).
+        if (!int.TryParse(args[1], out int pageIndex) || pageIndex < 0)
+        {
+            Console.Error.WriteLine("Invalid page index. It must be a non‑negative integer.");
+            return;
+        }
+
+        // Output PDF file path.
+        string outputPath = args[2];
+
         try
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-
-            // Output PDF file path (will contain the selected page)
-            string outputPath = "selected_page.pdf";
-
-            // Load the Visio diagram
+            // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Fallback font to ensure text renders correctly
-            pdfOptions.DefaultFont = "Arial";
-            // Export only the first page (zero‑based index)
-            pdfOptions.PageIndex = 0;
-            pdfOptions.PageCount = 1;
-            // Explicitly set the save format
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            // Verify the requested page exists.
+            if (pageIndex >= diagram.Pages.Count)
+            {
+                Console.Error.WriteLine($"Page index {pageIndex} is out of range. Diagram contains {diagram.Pages.Count} pages.");
+                return;
+            }
 
-            // Save the selected page as a PDF preserving vector graphics and text quality
+            // Configure PDF save options to export only the selected page.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                // Explicitly set the format tracker (required to avoid ambiguity).
+                SaveFormat = SaveFileFormat.Pdf,
+                // Export a single page starting at the requested index.
+                PageIndex = pageIndex,
+                PageCount = 1,
+                // Optional: set a default font to ensure text rendering if the original font is missing.
+                DefaultFont = "Arial",
+                // Optional: do not include hidden pages in the output.
+                ExportHiddenPage = false
+            };
+
+            // Save the selected page as a PDF file.
             diagram.Save(outputPath, pdfOptions);
 
-            // Clean up resources
-            diagram.Dispose();
-
-            Console.WriteLine("Page saved to PDF successfully.");
-
+            Console.WriteLine($"Page {pageIndex} successfully saved to PDF: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error during PDF export: {ex.Message}");
         }
     }
 }

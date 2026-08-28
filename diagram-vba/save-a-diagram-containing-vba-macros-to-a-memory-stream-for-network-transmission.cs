@@ -1,48 +1,36 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class DiagramMacroNetworkSender
+class Program
 {
-    // Loads a Visio diagram (with macros) from a file and saves it to a memory stream.
-    // The stream can then be sent over the network.
-    public static MemoryStream GetDiagramStream(string filePath)
-    {
-        // Load the diagram that contains VBA macros.
-        // The constructor Diagram(string) loads the file using the appropriate format.
-        Diagram diagram = new Diagram(filePath);
-
-        // Prepare a memory stream to hold the saved diagram.
-        MemoryStream stream = new MemoryStream();
-
-        // Save the diagram to the stream in VSDM format (macro‑enabled Visio file).
-        // This uses the provided Save(Stream, SaveFileFormat) method.
-        diagram.Save(stream, SaveFileFormat.Vsdm);
-
-        // Reset the stream position to the beginning so it can be read from the start.
-        stream.Position = 0;
-
-        // Dispose the diagram object; the stream remains open for the caller.
-        diagram.Dispose();
-
-        return stream;
-    }
-
-    // Example usage: send the stream over a network socket or HTTP response.
     static void Main()
     {
         try
         {
 
-            string visioFilePath = "sample_with_macro.vsdm";
+            // Load the Visio diagram that contains VBA macros.
+            // VSDM is the macro‑enabled Visio format.
+            Diagram diagram = new Diagram("input.vsdm");
 
-            using (MemoryStream diagramStream = GetDiagramStream(visioFilePath))
+            // Create a memory stream that will hold the diagram data for transmission.
+            using (MemoryStream memoryStream = new MemoryStream())
             {
-                // At this point, diagramStream contains the VSDM bytes ready for transmission.
-                // Example: write to console the size of the stream.
-                Console.WriteLine($"Diagram stream length: {diagramStream.Length} bytes");
+                // Save the diagram (including its macros) into the memory stream.
+                // The Save method with a Stream and SaveFileFormat preserves all macro data.
+                diagram.Save(memoryStream, SaveFileFormat.Vsdm);
+
+                // Reset the stream position to the beginning if the data will be read afterwards.
+                memoryStream.Position = 0;
+
+                // Example: obtain the byte array to send over a network.
+                byte[] diagramBytes = memoryStream.ToArray();
+
+                // Network transmission logic would go here, using diagramBytes.
             }
+
+            // Clean up resources.
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

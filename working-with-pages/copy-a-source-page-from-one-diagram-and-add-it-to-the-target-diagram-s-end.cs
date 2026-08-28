@@ -2,32 +2,36 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class DiagramPageCopier
 {
     static void Main()
     {
         try
         {
 
-            // Load the source diagram containing the page to copy
-            Diagram sourceDiagram = new Diagram("source.vsdx");
+            // Paths to the source and target Visio files
+            string sourcePath = @"C:\Diagrams\SourceDiagram.vdx";
+            string targetPath = @"C:\Diagrams\TargetDiagram.vdx";
+            string outputPath = @"C:\Diagrams\TargetDiagram_WithCopiedPage.vdx";
 
-            // Load the target diagram where the page will be added
-            Diagram targetDiagram = new Diagram("target.vsdx");
+            // Load the source diagram
+            Diagram sourceDiagram = new Diagram(sourcePath);
 
-            // Select the page to copy from the source diagram (e.g., first page)
-            int sourcePageIndex = 0;
-            Page sourcePage = sourceDiagram.Pages[sourcePageIndex];
+            // Load the target diagram
+            Diagram targetDiagram = new Diagram(targetPath);
 
-            // Create a new empty page and add it to the target diagram's Pages collection
+            // Select the page to copy from the source diagram (e.g., the first page)
+            Page sourcePage = sourceDiagram.Pages[0];
+
+            // Create a new page in the target diagram
             Page newPage = new Page();
             targetDiagram.Pages.Add(newPage);
 
-            // Copy the contents of the source page into the newly added page
+            // Copy the contents of the source page into the newly created page
             newPage.Copy(sourcePage);
 
-            // Save the updated target diagram
-            targetDiagram.Save("target_modified.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified target diagram
+            targetDiagram.Save(outputPath, SaveFileFormat.Vdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

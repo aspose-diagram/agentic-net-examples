@@ -16,26 +16,34 @@ class Program
                 // Mapping of old author names to new author names
                 var authorMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    { "Alice", "Alice Johnson" },
-                    { "Bob", "Robert Smith" },
-                    { "Charlie", "Charles Brown" }
+                    { "Alice", "Alicia" },
+                    { "Bob", "Robert" },
+                    { "Charlie", "Charles" }
+                    // Add more mappings as needed
                 };
 
                 // Load the existing diagram
                 var diagram = new Diagram(inputPath);
 
-                // Iterate through the reviewers collection and update names based on the mapping
-                foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
+                // Access the reviewers collection (authors of comments)
+                var reviewers = diagram.DocumentSheet.Reviewers;
+
+                // Update reviewer names based on the provided mapping
+                for (int i = 0; i < reviewers.Count; i++)
                 {
+                    var reviewer = reviewers[i];
                     string currentName = reviewer.Name.Value;
+
                     if (authorMapping.TryGetValue(currentName, out string newName))
                     {
                         reviewer.Name.Value = newName;
+                        Console.WriteLine($"Reviewer name updated: '{currentName}' -> '{newName}'");
                     }
                 }
 
-                // Save the updated diagram
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

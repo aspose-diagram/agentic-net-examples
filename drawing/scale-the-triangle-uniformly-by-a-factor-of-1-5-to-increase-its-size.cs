@@ -1,47 +1,43 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        try
+        // Create a new empty diagram
+        using (Diagram diagram = new Diagram())
         {
+            // Access the first (and only) page
+            Page page = diagram.Pages[0];
 
-            // Path to the source Visio file containing the triangle
-            string inputPath = "input.vsdx";
+            // Define triangle vertices (in inches)
+            double x1 = 2.0, y1 = 2.0;
+            double x2 = 5.0, y2 = 2.0;
+            double x3 = 3.5, y3 = 5.0;
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Draw the triangle as a closed polyline (repeat first point at the end)
+            long shapeId = page.DrawPolyline(new double[]
             {
-                double scaleFactor = 1.5; // Uniform scaling factor
+                x1, y1,
+                x2, y2,
+                x3, y3,
+                x1, y1
+            });
 
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Identify triangle shapes by their master name
-                        if (shape.Master != null && shape.Master.Name == "Triangle")
-                        {
-                            // Scale width and height uniformly; PinX/PinY remain unchanged to keep the center position
-                            shape.XForm.Width.Value *= scaleFactor;
-                            shape.XForm.Height.Value *= scaleFactor;
-                        }
-                    }
-                }
+            // Retrieve the shape object (cast long ID to int as required)
+            Shape triangle = page.Shapes.GetShape((int)shapeId);
 
-                // Save the updated diagram
-                string outputPath = "output_scaled.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
+            // Uniform scaling factor
+            double scaleFactor = 1.5;
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Scale width and height while keeping the center (PinX/PinY) unchanged
+            triangle.XForm.Width.Value *= scaleFactor;
+            triangle.XForm.Height.Value *= scaleFactor;
+
+            // Save the diagram to a VSDX file
+            diagram.Save("ScaledTriangle.vsdx", SaveFileFormat.Vsdx);
         }
     }
 }

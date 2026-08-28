@@ -10,26 +10,30 @@ class Program
         try
         {
 
-            // Load the source Visio diagram
-            var diagram = new Diagram(@"C:\Input\sample.vsdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create HTML save options
-            var htmlOptions = new HTMLSaveOptions();
+            // Configure HTML export options
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // Limit the generated image size by setting the page size (width, height in points)
-            // Example: maximum width = 800 points, maximum height = 600 points
-            htmlOptions.PageSize = new PageSize(800, 600);
+            // Limit the size of generated images (width, height in inches)
+            // Adjust these values as needed for your scenario
+            htmlOptions.PageSize = new PageSize(8f, 10f); // 8 inches wide, 10 inches high
 
-            // Optionally adjust resolution (dots per inch) if needed
-            // htmlOptions.Resolution = 96;
+            // Optional: set the DPI for the generated images
+            htmlOptions.Resolution = 96; // 96 dots per inch
 
-            // Save the diagram as HTML with the configured options
-            diagram.Save(@"C:\Output\sample.html", htmlOptions);
+            // Save the diagram as HTML using the configured options
+            string outputPath = "output.html";
+            diagram.Save(outputPath, htmlOptions);
+
+            Console.WriteLine("Diagram exported to HTML with limited image dimensions.");
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

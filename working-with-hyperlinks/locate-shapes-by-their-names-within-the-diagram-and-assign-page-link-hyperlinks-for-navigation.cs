@@ -2,6 +2,7 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,51 +11,45 @@ class Program
         try
         {
 
-            // Paths to the source and destination Visio files
+            // Input Visio file path
             string inputPath = "input.vsdx";
+            // Output Visio file path
             string outputPath = "output.vsdx";
 
-            // Define which shape (by its universal name) should link to which page
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Mapping of shape universal names to target page names for navigation
             var navigationMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                { "HomeShape", "HomePage" },
-                { "DetailsShape", "DetailsPage" },
-                { "SummaryShape", "SummaryPage" }
+                { "HomeButton", "HomePage" },
+                { "DetailsButton", "DetailsPage" }
             };
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // If the shape's universal name is in the navigation map, add a hyperlink
-                        if (navigationMap.TryGetValue(shape.NameU, out string targetPage))
-                        {
-                            // Create a new hyperlink that points to the target page
-                            Hyperlink link = new Hyperlink();
-                            // Internal navigation uses SubAddress
-                            link.SubAddress.Value = targetPage;
-                            // Optional tooltip/description
-                            link.Description.Value = $"Navigate to {targetPage}";
+                    if (shape == null) continue;
 
-                            // Ensure the Hyperlinks collection exists before adding
-                            if (shape.Hyperlinks != null)
-                            {
-                                shape.Hyperlinks.Add(link);
-                            }
-                        }
+                    // Check if the shape name exists in the navigation map
+                    if (navigationMap.TryGetValue(shape.NameU, out string targetPage))
+                    {
+                        // Create a new hyperlink
+                        Hyperlink link = new Hyperlink();
+                        // Set the internal page link (SubAddress) to the target page name
+                        link.SubAddress.Value = targetPage;
+                        // Optional: set a description for the hyperlink
+                        link.Description.Value = $"Navigate to {targetPage}";
+                        // Add the hyperlink to the shape's collection
+                        shape.Hyperlinks.Add(link);
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Hyperlinks have been assigned and the diagram saved.");
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

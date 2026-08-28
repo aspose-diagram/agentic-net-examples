@@ -1,98 +1,108 @@
 using System;
-using System.IO;
-using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+            try
+            {
 
-        Diagram diagram;
-        try
-        {
-            // Load the diagram (may throw if file is corrupted)
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
+                // Path to the Visio file
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-        // Ensure the diagram contains at least one page
-        if (diagram.Pages.Count == 0)
-        {
-            Console.Error.WriteLine("The diagram contains no pages.");
-            return;
-        }
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-        // Get the first page
-        Page page = diagram.Pages[0];
+                // Ensure there is at least one page and one shape
+                if (diagram.Pages.Count == 0)
+                    throw new Exception("The diagram contains no pages.");
 
-        // Ensure the page has at least one shape
-        if (page.Shapes.Count == 0)
-        {
-            Console.Error.WriteLine("The page contains no shapes.");
-            return;
-        }
+                Page page = diagram.Pages[0];
 
-        // Retrieve the first shape on the page
-        Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
+                if (page.Shapes.Count == 0)
+                    throw new Exception("The first page contains no shapes.");
 
-        // Ensure the shape has at least one text insertion field
-        if (shape.Fields.Count == 0)
-        {
-            Console.Error.WriteLine("The shape does not contain any fields.");
-            return;
-        }
+                // Retrieve the first shape
+                Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
 
-        // Select the first field to modify
-        Field field = shape.Fields[0];
+                // Ensure the shape has at least one field (text insertion field)
+                if (shape.Fields.Count == 0)
+                    throw new Exception("The selected shape does not contain any fields.");
 
-        // New formula to assign to the field
-        string newFormula = "Width*Height";
+                // Example: we will work with the first field
+                Field field = shape.Fields[0];
 
-        // Validate the formula syntax using a simple regex (basic validation)
-        bool isValid = IsFormulaValid(newFormula);
-        if (!isValid)
-        {
-            Console.Error.WriteLine($"The formula \"{newFormula}\" is not valid.");
-            return;
-        }
+                // New formula to assign
+                string newFormula = "Width*Height";
 
-        // Apply the validated formula to the field
-        field.Value.Ufev.F = newFormula;
-        // Reset unit to undefined (no specific unit)
-        field.Value.Ufev.Unit = MeasureConst.Undefined;
+                // Validate the formula before applying
+                if (ValidateFormula(diagram, shape, newFormula))
+                {
+                    // Apply the validated formula
+                    field.Value.Ufev.F = newFormula;
+                    // Optionally refresh shape data after modification
+                    shape.RefreshData();
+                    Console.WriteLine("Formula applied successfully.");
+                }
+                else
+                {
+                    Console.WriteLine($"Invalid formula: \"{newFormula}\". Operation aborted.");
+                    return;
+                }
 
-        // Output file path
-        string outputPath = "output.vsdx";
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        try
-        {
-            // Save the modified diagram using the correct overload
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
 
-    // Simple formula validator: allows letters, numbers, spaces and basic operators
-    static bool IsFormulaValid(string formula)
-    {
-        // Regex matches expressions like "Width*Height", "Length + 2", etc.
-        return Regex.IsMatch(formula, @"^[A-Za-z0-9\*\+\/\-\(\)\s]+$");
+        /// <summary>
+        /// Validates a Visio formula by temporarily assigning it to a new field,
+        /// refreshing the shape, and catching any exceptions that indicate syntax errors.
+        /// </summary>
+        /// <param name="diagram">The diagram containing the shape.</param>
+        /// <param name="shape">The shape to which the formula will be applied.</param>
+        /// <param name="formula">The formula string to validate.</param>
+        /// <returns>True if the formula is syntactically correct; otherwise false.</returns>
+        static bool ValidateFormula(Diagram diagram, Shape shape, string formula)
+        {
+            // Create a temporary field for validation
+            Field tempField = new Field();
+
+            try
+            {
+                // Assign the formula to the temporary field
+                tempField.Value.Ufev.F = formula;
+
+                // Add the temporary field to the shape
+                shape.Fields.Add(tempField);
+
+                // Refresh data to force evaluation of the formula
+                shape.RefreshData();
+
+                // Remove the temporary field after successful validation
+                shape.Fields.Remove(tempField);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Cleanup in case of failure
+                try
+                {
+                    shape.Fields.Remove(tempField);
+                }
+                catch { /* ignore cleanup errors */ }
+
+                Console.WriteLine($"Formula validation error: {ex.Message}");
+                return false;
+            }
+        }
     }
-}

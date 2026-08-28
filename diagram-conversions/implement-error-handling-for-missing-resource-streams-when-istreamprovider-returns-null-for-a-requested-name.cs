@@ -5,44 +5,36 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramHtmlExport
 {
-    // Custom stream provider that supplies resource streams for HTML export.
-    // Throws an exception when the requested resource cannot be found.
+    // Custom stream provider that throws an exception when a requested resource cannot be found.
     public class CustomStreamProvider : IStreamProvider
     {
-        private readonly string _resourceBasePath;
-
-        public CustomStreamProvider(string resourceBasePath)
-        {
-            _resourceBasePath = resourceBasePath;
-        }
-
-        // Called by Aspose.Diagram when a resource stream is required.
+        // Called by Aspose.Diagram before a resource stream is needed.
         public void InitStream(StreamProviderOptions options)
         {
-            // The name of the resource to be provided (e.g., image file name).
-            string resourceName = options.DefaultPath;
+            // The requested resource path is provided via DefaultPath.
+            string resourcePath = options.DefaultPath;
 
-            // Build the full path to the resource file.
-            string fullPath = Path.Combine(_resourceBasePath, resourceName);
+            // Validate the path.
+            if (string.IsNullOrEmpty(resourcePath) || !File.Exists(resourcePath))
+            {
+                // Throw an exception to indicate the missing resource.
+                throw new Exception($"Resource not found: '{resourcePath}'.");
+            }
 
-            if (File.Exists(fullPath))
-            {
-                // Assign the opened stream to the options so Aspose can read it.
-                options.Stream = File.OpenRead(fullPath);
-            }
-            else
-            {
-                // Resource is missing – handle the error as required.
-                // Here we throw an exception to stop the export and inform the caller.
-                throw new FileNotFoundException($"Required resource not found: {fullPath}");
-            }
+            // Open the file stream and assign it to the options.
+            options.Stream = new FileStream(resourcePath, FileMode.Open, FileAccess.Read);
         }
 
-        // Called after Aspose.Diagram finishes using the stream.
+        // Called after the resource has been processed.
         public void CloseStream(StreamProviderOptions options)
         {
-            // Dispose the stream if it was created.
-            options.Stream?.Dispose();
+            // Ensure the stream is properly closed and disposed.
+            if (options.Stream != null)
+            {
+                options.Stream.Close();
+                options.Stream.Dispose();
+                options.Stream = null;
+            }
         }
     }
 
@@ -54,17 +46,24 @@ namespace DiagramHtmlExport
             {
 
                 // Load an existing Visio diagram.
-                Diagram diagram = new Diagram("input.vsdx");
+                string diagramPath = "input.vsdx";
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Configure HTML export options and assign the custom stream provider.
+                // Configure HTML save options and assign the custom stream provider.
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    // Folder where external resources (images, CSS, etc.) are stored.
-                    StreamProvider = new CustomStreamProvider("Resources")
+                    StreamProvider = new CustomStreamProvider(),
+                    // Example: export only the first page.
+                    PageIndex = 0,
+                    PageCount = 1,
+                    SaveAsSingleFile = true
                 };
 
-                // Export the diagram to HTML. Missing resources will cause an exception.
-                diagram.Save("output.html", htmlOptions);
+                // Save the diagram as HTML. The custom provider will handle resource streams.
+                string outputHtml = "output.html";
+                diagram.Save(outputHtml, htmlOptions);
+
+                Console.WriteLine("HTML export completed successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

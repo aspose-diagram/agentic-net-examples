@@ -17,9 +17,8 @@ class Program
             // Apply custom print layout to each page
             foreach (Page page in diagram.Pages)
             {
-                // Set orientation to Landscape
+                // Set page orientation to Landscape
                 page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-
                 // Set horizontal scaling to 90%
                 page.PageSheet.PrintProps.ScaleX.Value = 0.9;
             }
@@ -31,7 +30,7 @@ class Program
             // Clean up resources
             diagram.Dispose();
 
-            Console.WriteLine("Custom print layout applied and diagram saved successfully.");
+            Console.WriteLine("Custom print layout applied and diagram saved.");
 
         }
         catch (System.IO.FileNotFoundException ex)

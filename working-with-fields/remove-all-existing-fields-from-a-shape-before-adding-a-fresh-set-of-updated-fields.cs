@@ -10,42 +10,48 @@ class Program
             {
 
                 // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
+                var diagram = new Diagram("input.vsdx");
 
                 // Access the first page (adjust index as needed)
                 Page page = diagram.Pages[0];
 
-                // Retrieve a shape by its ID (replace 1 with the actual shape ID)
+                // Retrieve the target shape (example: shape with ID = 1)
+                // Ensure the shape exists before proceeding
                 Shape shape = page.Shapes.GetShape(1);
-
-                // Ensure the shape has a Fields collection
-                if (shape.Fields != null)
+                if (shape == null)
                 {
-                    // Collect existing fields to remove (cannot modify collection while iterating)
-                    List<Field> fieldsToRemove = new List<Field>();
-                    foreach (Field existingField in shape.Fields)
-                    {
-                        fieldsToRemove.Add(existingField);
-                    }
-
-                    // Remove each field from the shape
-                    foreach (Field fieldToRemove in fieldsToRemove)
-                    {
-                        shape.Fields.Remove(fieldToRemove);
-                    }
+                    throw new Exception("Shape with ID 1 not found.");
                 }
 
-                // Add new fields to the shape
-                // Example: add a custom date field
+                // ------------------------------------------------------------
+                // Remove all existing fields from the shape
+                // ------------------------------------------------------------
+                // Collect fields to remove to avoid modifying the collection while iterating
+                List<Field> fieldsToRemove = new List<Field>();
+                foreach (Field fld in shape.Fields)
+                {
+                    fieldsToRemove.Add(fld);
+                }
+
+                // Remove each collected field
+                foreach (Field fld in fieldsToRemove)
+                {
+                    shape.Fields.Remove(fld);
+                }
+
+                // ------------------------------------------------------------
+                // Add a fresh set of updated fields
+                // ------------------------------------------------------------
+                // Example: add a single custom field with a new value
                 Field newField = new Field();
-                // Set the field's value (e.g., a date string)
-                newField.Value.Val = "2026-07-22";
-                // Optionally set the field type (Undefined is safe)
-                newField.Type.Value = TypeFieldValue.Undefined;
-                // Add the field to the shape's collection
+                // Set the displayed value of the field
+                newField.Value.Val = "Updated Value";
+                // Optional: clear any formatting string
+                newField.Format.Val = "";
+                // Add the field to the shape's field collection
                 shape.Fields.Add(newField);
 
-                // Save the updated diagram
+                // Save the modified diagram to a new file
                 diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }

@@ -5,92 +5,83 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramHtmlExport
 {
-    // Implements IStreamProvider to store HTML resources (e.g., images) in Azure Blob Storage.
-    // This version uses a local temporary file as a placeholder to avoid Azure SDK version conflicts.
+    // Implements IStreamProvider to write external resources (e.g., images) to a local folder.
+    // This avoids Azure SDK version conflicts while satisfying the IStreamProvider contract.
     public class AzureBlobStreamProvider : IStreamProvider
     {
-        private readonly string _tempFolder;
+        private readonly string _outputFolder;
 
-        // Initialize the provider with a temporary folder for resource files.
-        public AzureBlobStreamProvider()
+        // Constructor receives a folder path where resources will be stored.
+        public AzureBlobStreamProvider(string outputFolder)
         {
-            // Create a unique temporary folder for this run.
-            _tempFolder = Path.Combine(Path.GetTempPath(), "AsposeDiagramResources", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_tempFolder);
+            // Ensure the target folder exists.
+            _outputFolder = outputFolder;
+            if (!Directory.Exists(_outputFolder))
+            {
+                Directory.CreateDirectory(_outputFolder);
+            }
         }
 
-        // Called by Aspose.Diagram for each resource that needs a stream.
+        // Called by Aspose.Diagram when a resource stream is required.
         public void InitStream(StreamProviderOptions options)
         {
-            // Use the default path (relative file name) as the temporary file name.
-            string tempFilePath = Path.Combine(_tempFolder, options.DefaultPath);
-
-            // Ensure the directory for the file exists.
-            Directory.CreateDirectory(Path.GetDirectoryName(tempFilePath)!);
-
-            // Open a writable file stream and assign it to the options.
-            options.Stream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write);
+            // Extract the file name from the default path (e.g., "image1.png").
+            string fileName = Path.GetFileName(options.DefaultPath);
+            // Combine with the output folder to get the full local path.
+            string fullPath = Path.Combine(_outputFolder, fileName);
+            // Open a writable file stream (overwrite if it already exists).
+            Stream fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
+            // Assign the stream so Aspose writes directly to the file.
+            options.Stream = fileStream;
         }
 
         // Called after the resource has been written.
         public void CloseStream(StreamProviderOptions options)
         {
-            // Dispose the stream to flush data to the temporary file.
+            // Dispose the stream to finalize the write operation.
             options.Stream?.Dispose();
-
-            // NOTE: In a production scenario, you would upload the temporary file to Azure Blob Storage here
-            // using Azure REST API or a compatible SDK that matches the project’s referenced versions.
         }
     }
 
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Path to the source Visio file.
-            string sourceVisioPath = "input.vsdx";
+            // Local folder to simulate Azure Blob container for resource files.
+            const string resourceFolder = "blobResources";
 
-            // Guard: ensure the source file exists.
-            if (!File.Exists(sourceVisioPath))
+            // Path to the source Visio diagram.
+            const string diagramPath = "input.vsdx";
+
+            // Guard: ensure the diagram file exists before proceeding.
+            if (!File.Exists(diagramPath))
             {
-                Console.Error.WriteLine($"File not found: {sourceVisioPath}");
+                Console.Error.WriteLine($"File not found: {diagramPath}");
                 return;
             }
 
             try
             {
-                // Load the diagram.
-                Diagram diagram = new Diagram(sourceVisioPath);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-                return;
-            }
+                // Load the diagram from the specified file.
+                Diagram diagram = new Diagram(diagramPath);
 
-            // Configure HTML export options.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-            {
-                // Use the custom stream provider to handle resource streams.
-                StreamProvider = new AzureBlobStreamProvider(),
+                // Configure HTML export options and assign the custom stream provider.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    // The provider will write external resources to the local folder.
+                    StreamProvider = new AzureBlobStreamProvider(resourceFolder)
+                };
 
-                // Example: generate separate files (not a single bundled HTML file).
-                SaveAsSingleFile = false
-            };
-
-            // Export the diagram to HTML. The main HTML file is saved locally.
-            string outputHtmlPath = "output.html";
-
-            try
-            {
-                // Save using the HTML options (requires a valid second argument).
-                Diagram diagram = new Diagram(sourceVisioPath);
+                // Export the diagram to HTML. Resources (images, etc.) will be stored in the folder.
+                const string outputHtmlPath = "output.html";
                 diagram.Save(outputHtmlPath, htmlOptions);
-                Console.WriteLine("HTML export completed. Resources are stored in temporary files.");
+
+                Console.WriteLine("Diagram exported to HTML. Resources are stored in the local folder.");
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error during HTML export: {ex.Message}");
+                // Write any Aspose or I/O errors to the error console.
+                Console.Error.WriteLine($"Error during export: {ex.Message}");
             }
         }
     }

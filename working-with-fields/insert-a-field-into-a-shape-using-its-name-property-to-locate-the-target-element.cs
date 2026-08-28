@@ -1,62 +1,62 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Name of the shape to modify (universal name)
-            string targetShapeName = "MyShape";
-
-            Shape targetShape = null;
-
-            // Locate the shape by iterating through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path for the modified Visio file
+                string outputPath = "output.vsdx";
+                // Name of the shape to locate (use the Name property)
+                string targetShapeName = "TargetShape";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Flag to indicate whether the shape was found
+                bool shapeFound = false;
+
+                // Iterate through all pages and shapes to locate the target shape by its Name property
+                foreach (Page page in diagram.Pages)
                 {
-                    if (shape.NameU == targetShapeName)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        targetShape = shape;
-                        break;
+                        if (shape.Name == targetShapeName)
+                        {
+                            // Create a new field
+                            Field field = new Field();
+
+                            // Set the field's value (text to be inserted)
+                            field.Value.Val = "Inserted Value";
+
+                            // Add the field to the shape's Fields collection
+                            shape.Fields.Add(field);
+
+                            shapeFound = true;
+                            break; // Exit inner loop once the shape is processed
+                        }
                     }
+
+                    if (shapeFound)
+                        break; // Exit outer loop if the shape has been found
                 }
-                if (targetShape != null)
-                    break;
-            }
 
-            // If the shape was not found, abort with an error
-            if (targetShape == null)
+                // If the shape was not found, raise an exception
+                if (!shapeFound)
+                    throw new Exception($"Shape with Name \"{targetShapeName}\" was not found in the diagram.");
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                throw new Exception($"Shape with NameU '{targetShapeName}' not found.");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Create a new text field
-            Field field = new Field();
-
-            // Set the field type (using Undefined as a generic type)
-            field.Type.Value = TypeFieldValue.Undefined;
-
-            // Assign a value to the field
-            field.Value.Val = "Inserted Field Value";
-
-            // Add the field to the shape's Fields collection
-            targetShape.Fields.Add(field);
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -16,7 +16,7 @@ class Program
             // Create PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Set the default font to ensure fonts are embedded in the PDF
+            // Set the default font; this ensures that the font is embedded in the PDF
             pdfOptions.DefaultFont = "Arial";
 
             // Save the diagram as PDF using the configured options

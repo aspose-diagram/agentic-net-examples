@@ -1,11 +1,11 @@
 {
   "category": "convert-visio-document",
   "display_name": "Convert Visio Document",
-  "version": "26.7.0",
+  "version": "26.8.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-07-27",
+  "generated": "2026-08-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,16 +14,15 @@
       "task": "Add custom shape properties as additional columns when exporting vsd diagram to csv",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "Prop",
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -33,8 +32,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -69,7 +67,6 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Save",
         "diagram"
@@ -98,6 +95,7 @@
       "task": "Convert a vsd file to html format using diagram save with saveformat html",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -188,6 +186,7 @@
       "task": "Export a vsd diagram to svg by using saveformat svg in the save method",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -203,7 +202,6 @@
       "task": "Export each page of a multi page vsd diagram to separate csv files using page selection",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -218,7 +216,6 @@
       "task": "Generate output filenames by appending a timestamp to the original vsd name before saving csv",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -239,10 +236,8 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -254,7 +249,9 @@
         "System",
         "System.IO"
       ],
-      "key_apis": []
+      "key_apis": [
+        "Diagram"
+      ]
     },
     {
       "slug": "load-a-vsd-file-from-a-network-share-and-save-it-as-csv-using-diagram-save",
@@ -262,7 +259,8 @@
       "task": "Load a vsd file from a network share and save it as csv using diagram save",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -278,6 +276,7 @@
         "Aspose.Diagram",
         "System",
         "System.Diagnostics",
+        "System.Globalization",
         "System.IO"
       ],
       "key_apis": [
@@ -292,7 +291,6 @@
       "task": "Parse command line arguments to accept input folder and output folder paths for conversion",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -313,7 +311,7 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
+        "Save",
         "diagram"
       ]
     },
@@ -356,8 +354,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -386,8 +383,11 @@
       "task": "Use parallel foreach to convert a collection of vsd files to csv concurrently",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO",
+        "System.Linq",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -419,9 +419,9 @@
       "task": "Verify that the generated csv includes the required header row defined by the library specification",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -435,9 +435,14 @@
       "task": "Verify the library version at runtime and abort conversion if it is older than the required build",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
-      "key_apis": []
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
     },
     {
       "slug": "wrap-the-conversion-call-in-a-try-catch-block-and-ensure-the-filestream-is-closed-in-finally",
@@ -456,7 +461,6 @@
       "task": "Write a unit test that asserts the csv file contains a row for each shape in the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

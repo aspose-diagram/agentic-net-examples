@@ -10,20 +10,18 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
+            // Load the existing Visio diagram (uses the provided load rule)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Prefix each page's name with "Section_"
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Update the visible name
-                page.Name = "Section_" + page.Name;
-
-                // Update the universal name as well (keeps consistency)
+                // Prefix the universal name (NameU) and the display name (Name) with "Section_"
                 page.NameU = "Section_" + page.NameU;
+                page.Name = "Section_" + page.Name;
             }
 
-            // Save the modified diagram
+            // Save the modified diagram (uses the provided save rule)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

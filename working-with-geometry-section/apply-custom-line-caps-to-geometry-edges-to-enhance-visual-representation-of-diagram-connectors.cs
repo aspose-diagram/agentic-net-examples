@@ -1,58 +1,73 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 using Aspose.Diagram.Manipulation;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main()
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            try
+            {
 
-            // Add a blank page to the diagram
-            diagram.Pages.Add(new Page());
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
 
-            // Access the first (and only) page
-            Page page = diagram.Pages[0];
+                // Access the first (and only) page
+                Page page = diagram.Pages[0];
 
-            // Draw two rectangle shapes on the page (pinX, pinY, width, height in inches)
-            long rect1Id = page.DrawRectangle(2.0, 5.0, 1.5, 1.0);
-            long rect2Id = page.DrawRectangle(6.0, 5.0, 1.5, 1.0);
+                // -------------------------------------------------
+                // 1. Add two rectangle shapes that will be connected
+                // -------------------------------------------------
+                // DrawRectangle(pinX, pinY, width, height) returns the shape ID (long)
+                long rect1Id = page.DrawRectangle(1.0, 1.0, 2.0, 1.0);
+                long rect2Id = page.DrawRectangle(5.0, 1.0, 2.0, 1.0);
 
-            // Retrieve the shape objects for optional further manipulation
-            Shape rect1 = page.Shapes.GetShape(rect1Id);
-            Shape rect2 = page.Shapes.GetShape(rect2Id);
+                // Retrieve the shape objects (optional, for further styling)
+                Shape rect1 = page.Shapes.GetShape(rect1Id);
+                Shape rect2 = page.Shapes.GetShape(rect2Id);
 
-            // Add a dynamic connector shape (1‑D connector)
-            // The last argument 'isCalculate' must be a bool, not an int
-            long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector", false);
-            Shape connector = page.Shapes.GetShape(connectorId);
+                // -------------------------------------------------
+                // 2. Add a dynamic connector shape
+                // -------------------------------------------------
+                // AddShape(pinX, pinY, masterName) creates a shape from a master.
+                // "Dynamic connector" is a built‑in master in the default stencil.
+                long connectorId = page.AddShape(3.0, 1.0, "Dynamic connector");
+                Shape connector = page.Shapes.GetShape(connectorId);
 
-            // Apply a rounded line cap to the connector (BOOL.True = rounded, BOOL.False = square)
-            connector.Line.LineCap.Value = BOOL.True;
+                // -------------------------------------------------
+                // 3. Connect the rectangles using the connector
+                // -------------------------------------------------
+                // Use ConnectionPointPlace from Aspose.Diagram.Manipulation
+                page.ConnectShapesViaConnector(
+                    rect1Id,
+                    ConnectionPointPlace.Right,
+                    rect2Id,
+                    ConnectionPointPlace.Left,
+                    connectorId);
 
-            // Set additional line properties for better visibility
-            connector.Line.LineColor.Value = "#FF0000"; // red line
-            connector.Line.LineWeight.Value = 0.02;    // thickness in inches
+                // -------------------------------------------------
+                // 4. Apply custom line caps to the connector
+                // -------------------------------------------------
+                // BOOL.True creates rounded caps; BOOL.False creates square caps.
+                connector.Line.LineCap.Value = BOOL.True; // Rounded line ends
 
-            // Connect the two rectangles using the connector
-            page.ConnectShapesViaConnector(
-                rect1Id,
-                ConnectionPointPlace.Bottom,
-                rect2Id,
-                ConnectionPointPlace.Top,
-                connectorId);
+                // Optionally, adjust other line properties for visibility
+                connector.Line.LineColor.Value = "#FF0000"; // Red line color
+                connector.Line.LineWeight.Value = 0.03;    // Thickness in inches
 
-            // Save the diagram to a VSDX file
-            diagram.Save("ConnectorLineCap.vsdx", SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+                // -------------------------------------------------
+                // 5. Save the diagram to a VSDX file
+                // -------------------------------------------------
+                string outputPath = "ConnectorWithLineCaps.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

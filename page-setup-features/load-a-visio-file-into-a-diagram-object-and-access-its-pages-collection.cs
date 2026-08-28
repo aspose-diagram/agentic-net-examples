@@ -9,22 +9,19 @@ class Program
         try
         {
 
-            // Path to the Visio file to be loaded
-            string filePath = "sample.vsdx";
-
-            // Load the Visio diagram from the file using the Diagram constructor
-            Diagram diagram = new Diagram(filePath);
+            // Load the Visio file into a Diagram object using the built‑in constructor
+            var diagram = new Diagram("sample.vsdx");
 
             // Access the Pages collection of the loaded diagram
             var pages = diagram.Pages;
 
-            // Example usage: iterate through pages and output their IDs and names
-            foreach (Page page in pages)
+            // Example: iterate through the pages and output basic information
+            foreach (var page in pages)
             {
                 Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
             }
 
-            // Clean up resources
+            // Dispose the diagram when done (optional, as Diagram implements IDisposable)
             diagram.Dispose();
 
         }

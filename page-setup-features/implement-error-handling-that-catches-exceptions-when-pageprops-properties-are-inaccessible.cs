@@ -1,57 +1,62 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        string inputPath = "input.vsdx";
-        string outputPath = "output.vsdx";
-
-        // Load the diagram with error handling
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
-
-        // Iterate through each page and safely access PageProps
-        foreach (Page page in diagram.Pages)
+        static void Main(string[] args)
         {
             try
             {
-                double width = page.PageSheet.PageProps.PageWidth.Value;
-                double height = page.PageSheet.PageProps.PageHeight.Value;
-                Console.WriteLine($"Page '{page.Name}' size: {width} x {height} inches");
 
-                // Example modification: increase dimensions by 1 inch
-                page.PageSheet.PageProps.PageWidth.Value = width + 1;
-                page.PageSheet.PageProps.PageHeight.Value = height + 1;
+                // Path to the Visio file (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Iterate through each page in the diagram
+                    foreach (Page page in diagram.Pages)
+                    {
+                        try
+                        {
+                            // Attempt to read page width and height from PageProps
+                            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                            Console.WriteLine($"Page ID {page.ID}: Width = {pageWidth} inches, Height = {pageHeight} inches");
+                        }
+                        catch (Exception ex)
+                        {
+                            // Handle cases where PageProps or its properties are inaccessible
+                            Console.WriteLine($"Error accessing PageProps for page ID {page.ID}: {ex.Message}");
+                        }
+                    }
+
+                    // Example modification: set a default size if properties were inaccessible
+                    // (Here we simply set a standard size for all pages)
+                    foreach (Page page in diagram.Pages)
+                    {
+                        try
+                        {
+                            page.PageSheet.PageProps.PageWidth.Value = 8.5;   // Width in inches
+                            page.PageSheet.PageProps.PageHeight.Value = 11;   // Height in inches
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error setting PageProps for page ID {page.ID}: {ex.Message}");
+                        }
+                    }
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine("Diagram saved successfully.");
+                }
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Unable to access PageProps for page '{page.Name}': {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
-
-        // Save the modified diagram with error handling
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to save diagram: {ex.Message}");
-        }
-        finally
-        {
-            diagram.Dispose();
-        }
     }
-}
+    }

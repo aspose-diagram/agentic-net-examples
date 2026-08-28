@@ -7,33 +7,40 @@ public static class DiagramPrintUtility
     /// <summary>
     /// Sets the print orientation and scaling factors for all pages in the diagram.
     /// </summary>
-    /// <param name="diagram">The Aspose.Diagram.Diagram instance to modify.</param>
-    /// <param name="orientation">Desired orientation (Landscape or Portrait).</param>
-    /// <param name="scaleX">Horizontal scaling factor (e.g., 0.75 for 75%). Must be greater than 0.</param>
-    /// <param name="scaleY">Vertical scaling factor. Must be greater than 0.</param>
+    /// <param name="diagram">The Aspose.Diagram Diagram instance.</param>
+    /// <param name="orientation">Desired page orientation (Landscape or Portrait).</param>
+    /// <param name="scaleX">Horizontal scaling factor (e.g., 0.75 for 75%).</param>
+    /// <param name="scaleY">Vertical scaling factor (e.g., 0.75 for 75%).</param>
     public static void SetOrientationAndScaling(Diagram diagram, PrintPageOrientationValue orientation, double scaleX, double scaleY)
     {
-        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
-        if (scaleX <= 0) throw new ArgumentException("scaleX must be greater than zero.", nameof(scaleX));
-        if (scaleY <= 0) throw new ArgumentException("scaleY must be greater than zero.", nameof(scaleY));
+        if (diagram == null)
+            throw new ArgumentNullException(nameof(diagram));
 
-        try
+        // Validate scaling values
+        if (scaleX <= 0 || scaleY <= 0)
+            throw new ArgumentException("Scale factors must be greater than zero.");
+
+        // Iterate through each page explicitly typed as Page
+        foreach (Page page in diagram.Pages)
         {
-            // Iterate through each page and apply orientation and scaling.
-            foreach (Page page in diagram.Pages)
+            // Ensure the page has a valid PageSheet and PrintProps
+            if (page?.PageSheet?.PrintProps == null)
+                continue;
+
+            try
             {
-                var printProps = page.PageSheet.PrintProps;
-                // Assign the requested orientation.
-                printProps.PrintPageOrientation.Value = orientation;
-                // Assign scaling factors.
-                printProps.ScaleX.Value = scaleX;
-                printProps.ScaleY.Value = scaleY;
+                // Set orientation
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
+
+                // Set scaling factors
+                page.PageSheet.PrintProps.ScaleX.Value = scaleX;
+                page.PageSheet.PrintProps.ScaleY.Value = scaleY;
             }
-        }
-        catch (Exception ex)
-        {
-            // Log any Aspose-related errors.
-            Console.Error.WriteLine($"Error setting orientation/scaling: {ex.Message}");
+            catch (Exception ex)
+            {
+                // Log any Aspose-related errors but continue processing other pages
+                Console.Error.WriteLine($"Error updating page ID {page.ID}: {ex.Message}");
+            }
         }
     }
 }
@@ -42,49 +49,48 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define the input diagram path (replace with an actual file path).
-        string diagramPath = "input.vsdx";
+        // Expect arguments: <diagramPath> <orientation> <scaleX> <scaleY>
+        if (args.Length < 4)
+        {
+            Console.Error.WriteLine("Usage: <diagramPath> <Landscape|Portrait> <scaleX> <scaleY>");
+            return;
+        }
 
-        // Guard: ensure the file exists before proceeding.
+        string diagramPath = args[0];
+        // Guard: ensure the diagram file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
-        Diagram diagram = null;
-        try
+        // Parse orientation string to enum
+        PrintPageOrientationValue orientation = args[1].Equals("Landscape", StringComparison.OrdinalIgnoreCase)
+            ? PrintPageOrientationValue.Landscape
+            : PrintPageOrientationValue.Portrait;
+
+        // Parse scaling factors
+        if (!double.TryParse(args[2], out double scaleX) || !double.TryParse(args[3], out double scaleY))
         {
-            // Load the diagram from the specified file.
-            diagram = new Diagram(diagramPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            Console.Error.WriteLine("Invalid scaling factors. Provide numeric values for scaleX and scaleY.");
             return;
         }
 
         try
         {
-            // Apply landscape orientation with 75% scaling on both axes.
-            DiagramPrintUtility.SetOrientationAndScaling(diagram, PrintPageOrientationValue.Landscape, 0.75, 0.75);
+            // Load the diagram from file
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Apply orientation and scaling to all pages
+            DiagramPrintUtility.SetOrientationAndScaling(diagram, orientation, scaleX, scaleY);
+
+            // Optionally save the modified diagram (overwrites original)
+            diagram.Save(diagramPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to set orientation and scaling: {ex.Message}");
+            // Capture any errors during loading, processing, or saving
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-
-        // Optionally save the modified diagram (uncomment and adjust the path as needed).
-        // try
-        // {
-        //     diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-        // }
-        // catch (Exception ex)
-        // {
-        //     Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
-        // }
-
-        // Dispose the diagram to release resources.
-        diagram?.Dispose();
     }
 }

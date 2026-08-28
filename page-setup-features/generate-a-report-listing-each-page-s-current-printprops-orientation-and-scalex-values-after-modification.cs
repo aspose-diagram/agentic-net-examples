@@ -2,40 +2,43 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.Printing;
 
-class Program
+public class Program
 {
-    static void Main()
+    public static void Main(string[] args)
     {
         try
         {
 
-            // Path to the source Visio file
+            // Load an existing Visio diagram
             string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram inside a using block to ensure proper disposal
-            using (Diagram diagram = new Diagram(inputPath))
+            // Modify PrintProps for each page
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate over each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Access the PrintProps of the current page
-                    PrintProps printProps = page.PageSheet.PrintProps;
+                // Set orientation to Landscape
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                    // Modify orientation to Landscape
-                    printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-
-                    // Set horizontal scaling factor (ScaleX) to 75%
-                    printProps.ScaleX.Value = 0.75;
-
-                    // Output the current settings after modification
-                    Console.WriteLine($"Page ID {page.ID}: Orientation = {printProps.PrintPageOrientation.Value}, ScaleX = {printProps.ScaleX.Value}");
-                }
-
-                // Save the modified diagram to a new file
-                diagram.Save("output_modified.vsdx", SaveFileFormat.Vsdx);
+                // Set horizontal scaling factor to 75%
+                page.PageSheet.PrintProps.ScaleX.Value = 0.75;
             }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            // Generate a report of orientation and ScaleX for each page
+            foreach (Page page in diagram.Pages)
+            {
+                PrintPageOrientationValue orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
+                double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
+
+                Console.WriteLine($"Page '{page.Name}' - Orientation: {orientation}, ScaleX: {scaleX}");
+            }
+
+            // Dispose the diagram to release resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

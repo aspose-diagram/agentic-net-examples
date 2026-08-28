@@ -1,61 +1,62 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using System.Data.SqlClient;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the Visio diagram file
+            string diagramPath = "input.vsdx";
+
+            // Connection string to the relational database (adjust as needed)
+            string connectionString = "Data Source=.;Initial Catalog=DiagramHistory;Integrated Security=True";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Retrieve page dimensions (values are in inches)
+                double width = page.PageSheet.PageProps.PageWidth.Value;
+                double height = page.PageSheet.PageProps.PageHeight.Value;
+                int pageId = page.ID;
+                string pageName = page.Name;
 
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
-
-                // Connection string to the relational database (replace with actual values)
-                string connectionString = "Data Source=SERVER_NAME;Initial Catalog=DatabaseName;Integrated Security=True";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through each page and store its dimensions
-                foreach (Page page in diagram.Pages)
+                // Store the dimensions in the database
+                using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    // Retrieve page width and height (values are in inches)
-                    double width = page.PageSheet.PageProps.PageWidth.Value;
-                    double height = page.PageSheet.PageProps.PageHeight.Value;
+                    conn.Open();
+                    string sql = @"
+                        INSERT INTO PageDimensions
+                        (DiagramPath, PageId, PageName, WidthInches, HeightInches, RevisionDate)
+                        VALUES
+                        (@DiagramPath, @PageId, @PageName, @Width, @Height, @RevisionDate)";
 
-                    // Insert the dimensions into the database
-                    using (SqlConnection connection = new SqlConnection(connectionString))
+                    using (SqlCommand cmd = new SqlCommand(sql, conn))
                     {
-                        connection.Open();
-
-                        string insertCommand = @"
-                            INSERT INTO PageDimensions (DiagramName, PageID, Width, Height, RevisionDate)
-                            VALUES (@DiagramName, @PageID, @Width, @Height, @RevisionDate)";
-
-                        using (SqlCommand command = new SqlCommand(insertCommand, connection))
-                        {
-                            command.Parameters.AddWithValue("@DiagramName", diagramPath);
-                            command.Parameters.AddWithValue("@PageID", page.ID);
-                            command.Parameters.AddWithValue("@Width", width);
-                            command.Parameters.AddWithValue("@Height", height);
-                            command.Parameters.AddWithValue("@RevisionDate", DateTime.UtcNow);
-
-                            command.ExecuteNonQuery();
-                        }
+                        cmd.Parameters.AddWithValue("@DiagramPath", diagramPath);
+                        cmd.Parameters.AddWithValue("@PageId", pageId);
+                        cmd.Parameters.AddWithValue("@PageName", (object)pageName ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Width", width);
+                        cmd.Parameters.AddWithValue("@Height", height);
+                        cmd.Parameters.AddWithValue("@RevisionDate", DateTime.UtcNow);
+                        cmd.ExecuteNonQuery();
                     }
-
-                    Console.WriteLine($"Stored dimensions for Page ID {page.ID}: Width={width} in, Height={height} in");
                 }
 
-                // Optional: Save the diagram if any modifications were made
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                Console.WriteLine($"Stored dimensions for page {pageId} ({pageName}): {width} x {height} inches.");
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

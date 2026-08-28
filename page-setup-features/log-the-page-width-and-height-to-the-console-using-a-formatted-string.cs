@@ -1,32 +1,31 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            using (Diagram diagram = new Diagram("input.vsdx"))
+            try
             {
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
 
-                // Retrieve page dimensions (values are in inches)
-                double width = page.PageSheet.PageProps.PageWidth.Value;
-                double height = page.PageSheet.PageProps.PageHeight.Value;
+                // Load the Visio diagram (replace with your actual file path)
+                using (Diagram diagram = new Diagram("input.vsdx"))
+                {
+                    // Access the first page (index 0)
+                    Page page = diagram.Pages[0];
 
-                // Log the dimensions using a formatted string
-                Console.WriteLine($"Page size: Width = {width} inches, Height = {height} inches");
+                    // Retrieve page dimensions (values are in inches)
+                    double width = page.PageSheet.PageProps.PageWidth.Value;
+                    double height = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Log the dimensions using a formatted string
+                    Console.WriteLine($"Page size: Width = {width} inches, Height = {height} inches");
+                }
+
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

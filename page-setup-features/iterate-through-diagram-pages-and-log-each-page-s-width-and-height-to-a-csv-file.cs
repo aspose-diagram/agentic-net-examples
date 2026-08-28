@@ -9,34 +9,33 @@ class Program
             try
             {
 
-                // Input Visio file path (adjust as needed)
+                // Path to the Visio diagram file (adjust as needed)
                 string diagramPath = "input.vsdx";
 
-                // Output CSV file path
-                string csvPath = "pages_dimensions.csv";
+                // Path to the output CSV file
+                string csvPath = "PageDimensions.csv";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Write page dimensions to CSV
-                using (StreamWriter writer = new StreamWriter(csvPath))
+                // Prepare the CSV file with a header
+                using (StreamWriter writer = new StreamWriter(csvPath, false))
                 {
-                    // CSV header
                     writer.WriteLine("PageName,Width,Height");
 
-                    // Iterate through each page
+                    // Iterate through each page in the diagram
                     foreach (Page page in diagram.Pages)
                     {
+                        // Retrieve page width and height (values are in inches)
                         double width = page.PageSheet.PageProps.PageWidth.Value;
                         double height = page.PageSheet.PageProps.PageHeight.Value;
-                        string pageName = page.Name ?? string.Empty;
 
-                        // Write a line for the current page
-                        writer.WriteLine($"{pageName},{width},{height}");
+                        // Write the page information to the CSV
+                        writer.WriteLine($"{page.Name},{width},{height}");
                     }
                 }
 
-                Console.WriteLine($"Page dimensions have been exported to '{csvPath}'.");
+                Console.WriteLine($"Page dimensions have been written to '{csvPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

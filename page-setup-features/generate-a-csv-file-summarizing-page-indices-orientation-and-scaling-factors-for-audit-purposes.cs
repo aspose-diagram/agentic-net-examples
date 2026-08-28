@@ -4,45 +4,46 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
                 // Path to the Visio file to be audited
-                const string diagramPath = "input.vsdx";
-                // Output CSV file path
-                const string csvPath = "audit_pages.csv";
+                string visioPath = "input.vsdx";
 
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(diagramPath))
+                // Path to the CSV report to generate
+                string csvPath = "PageAuditReport.csv";
+
+                // Ensure the diagram is properly disposed after use
+                using (Diagram diagram = new Diagram(visioPath))
                 {
-                    // Prepare the CSV file
+                    // Open a StreamWriter for the CSV file
                     using (StreamWriter writer = new StreamWriter(csvPath, false))
                     {
                         // Write CSV header
                         writer.WriteLine("PageIndex,Orientation,ScaleX,ScaleY");
 
-                        // Iterate over each page in the diagram
+                        // Iterate through each page in the diagram
                         foreach (Page page in diagram.Pages)
                         {
-                            // Page index (ID)
+                            // Page index (using the page's ID)
                             int pageIndex = page.ID;
 
-                            // Orientation (Landscape, Portrait, SameAsPrinter)
+                            // Orientation: Landscape, Portrait, or SameAsPrinter
                             string orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value.ToString();
 
-                            // Scaling factors (default 1.0 if not set)
+                            // Scaling factors (default to 1.0 if not set)
                             double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
                             double scaleY = page.PageSheet.PrintProps.ScaleY.Value;
 
-                            // Write a CSV line for the current page
+                            // Write the data row
                             writer.WriteLine($"{pageIndex},{orientation},{scaleX},{scaleY}");
                         }
                     }
                 }
 
-                Console.WriteLine($"Audit CSV generated at: {Path.GetFullPath(csvPath)}");
+                Console.WriteLine("CSV audit report generated successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

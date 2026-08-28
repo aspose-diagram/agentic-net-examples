@@ -9,26 +9,27 @@ class Program
         try
         {
 
-            // Path to the Visio file to be loaded
+            // Path to the Visio file (replace with actual file path)
             string filePath = "input.vsdx";
 
-            // Load the diagram inside a using block to ensure proper disposal
+            // Load the diagram
             using (Diagram diagram = new Diagram(filePath))
             {
-                // Iterate through all pages by index
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                // Enumerate pages with explicit index
+                int pageIndex = 0;
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Retrieve the page object
-                    Aspose.Diagram.Page page = diagram.Pages[i];
+                    // Retrieve orientation from PrintProps
+                    PrintPageOrientationValue orientationValue = page.PageSheet.PrintProps.PrintPageOrientation.Value;
+                    string orientation = orientationValue.ToString();
 
-                    // Get the page orientation (Landscape, Portrait, etc.)
-                    PrintPageOrientationValue orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-
-                    // Get the horizontal scaling factor (ScaleX)
+                    // Retrieve ScaleX from PrintProps
                     double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
 
-                    // Output the information to the console
-                    Console.WriteLine($"Page Index: {i}, Orientation: {orientation}, ScaleX: {scaleX}");
+                    // Output page information
+                    Console.WriteLine($"Page Index: {pageIndex}, Orientation: {orientation}, ScaleX: {scaleX}");
+
+                    pageIndex++;
                 }
             }
 

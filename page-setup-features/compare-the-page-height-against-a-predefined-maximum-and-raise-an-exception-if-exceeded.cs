@@ -1,43 +1,38 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Maximum allowed page height in inches
+            double maxHeight = 11.0; // adjust as needed
+
+            // Load the Visio diagram (replace with your actual file path)
+            string diagramPath = "input.vsdx";
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Check each page's height
+            foreach (Page page in diagram.Pages)
             {
-
-                // Define the maximum allowed page height in inches.
-                double maxPageHeight = 11.0; // Example: 11 inches
-
-                // Path to the Visio diagram file.
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram.
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                if (pageHeight > maxHeight)
                 {
-                    // Retrieve the page height (in inches).
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Compare against the predefined maximum.
-                    if (pageHeight > maxPageHeight)
-                    {
-                        // Raise an exception if the page height exceeds the limit.
-                        throw new Exception($"Page \"{page.Name}\" height ({pageHeight} inches) exceeds the maximum allowed height of {maxPageHeight} inches.");
-                    }
+                    // Raise an exception if the height exceeds the limit
+                    throw new Exception($"Page \"{page.Name}\" height {pageHeight} exceeds the maximum allowed {maxHeight} inches.");
                 }
-
-                // Optional: Inform the user that all pages are within the allowed height.
-                Console.WriteLine("All pages are within the allowed height limit.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("All page heights are within the allowed limit.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

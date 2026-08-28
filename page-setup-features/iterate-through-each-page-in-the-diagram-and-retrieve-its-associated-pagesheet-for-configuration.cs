@@ -18,17 +18,18 @@ class Program
                 // Retrieve the PageSheet associated with the current page
                 PageSheet pageSheet = page.PageSheet;
 
-                // Example: access page layout or page properties from the PageSheet
-                // (Here we just demonstrate accessing the PageProps object)
+                // Example: access page layout and page properties for configuration
+                PageLayout layout = pageSheet.PageLayout;
                 PageProps props = pageSheet.PageProps;
 
-                // Output some basic information about the page
+                // Output basic information (you can replace this with actual configuration logic)
                 Console.WriteLine($"Page Name: {page.Name}");
-                // If needed, you can further inspect properties such as width/height from props
-                // Console.WriteLine($"Page Width: {props.Width}, Height: {props.Height}");
+                // The PageProps class contains properties such as Width and Height.
+                // Uncomment the following lines if you need to read those values.
+                // Console.WriteLine($"Width: {props.Width}, Height: {props.Height}");
             }
 
-            // Save the diagram (if any modifications were made to the PageSheets)
+            // Save the diagram after any modifications (if any)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

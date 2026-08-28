@@ -1,40 +1,46 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Input and output file paths (adjust as needed)
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram inside a using block to ensure proper disposal
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                // Access the first page (or any specific page by index/name)
-                Page page = diagram.Pages[0];
 
-                // Retrieve and log the current (previous) orientation
-                PrintPageOrientationValue previousOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-                Console.WriteLine($"Previous orientation: {previousOrientation}");
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Change the orientation (example: set to Landscape)
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                Console.WriteLine($"New orientation applied: {page.PageSheet.PrintProps.PrintPageOrientation.Value}");
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Iterate through all pages and change orientation to Landscape,
+                    // while logging the previous orientation for audit purposes.
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Retrieve the current orientation
+                        PrintPageOrientationValue previousOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                        // Log the previous orientation
+                        Console.WriteLine($"Page ID {page.ID} ('{page.NameU}') previous orientation: {previousOrientation}");
+
+                        // Change orientation to Landscape (example target orientation)
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+
+                        // Log the new orientation
+                        Console.WriteLine($"Page ID {page.ID} ('{page.NameU}') new orientation set to: {PrintPageOrientationValue.Landscape}");
+                    }
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
+                }
+
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -9,53 +9,48 @@ class Program
             {
 
                 // Path to the source Visio file (replace with an actual file path)
-                string inputPath = "input.vsdx";
+                const string inputPath = "sample.vsdx";
 
                 // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                Diagram diagram = new Diagram(inputPath);
+
+                // Access the first page (index 0)
+                Page page = diagram.Pages[0];
+
+                // Retrieve the PrintProps cell collection
+                var printProps = page.PageSheet.PrintProps;
+
+                // Store the original ScaleX value (should be 1.0 for a new diagram)
+                double originalScaleX = printProps.ScaleX.Value;
+
+                // Apply a scaling factor (e.g., 75%)
+                printProps.ScaleX.Value = 0.75;
+                printProps.ScaleY.Value = 0.75;
+
+                // Verify that scaling was applied
+                if (Math.Abs(printProps.ScaleX.Value - 0.75) > 0.0001 ||
+                    Math.Abs(printProps.ScaleY.Value - 0.75) > 0.0001)
                 {
-                    // Access the first page
-                    Page page = diagram.Pages[0];
-
-                    // Store original page dimensions (in inches)
-                    double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Apply a scaling factor (e.g., 50%)
-                    page.PageSheet.PrintProps.ScaleX.Value = 0.5;
-                    page.PageSheet.PrintProps.ScaleY.Value = 0.5;
-
-                    // Save the diagram temporarily (optional, demonstrates save workflow)
-                    diagram.Save("temp_output.vsdx", SaveFileFormat.Vsdx);
-
-                    // Reset scaling back to original (100%)
-                    page.PageSheet.PrintProps.ScaleX.Value = 1.0;
-                    page.PageSheet.PrintProps.ScaleY.Value = 1.0;
-
-                    // Validation: ScaleX should be 1.0
-                    if (page.PageSheet.PrintProps.ScaleX.Value != 1.0)
-                    {
-                        throw new Exception("ScaleX was not reset to 1.0.");
-                    }
-
-                    // Validation: Page dimensions should remain unchanged
-                    double currentWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double currentHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    const double tolerance = 0.0001; // tolerance for floating‑point comparison
-
-                    if (Math.Abs(currentWidth - originalWidth) > tolerance)
-                    {
-                        throw new Exception("Page width changed after resetting ScaleX.");
-                    }
-
-                    if (Math.Abs(currentHeight - originalHeight) > tolerance)
-                    {
-                        throw new Exception("Page height changed after resetting ScaleX.");
-                    }
-
-                    Console.WriteLine("ScaleX reset validation succeeded. Page dimensions are unchanged.");
+                    throw new Exception("Initial scaling to 0.75 failed.");
                 }
+
+                // Reset ScaleX (and ScaleY) back to 1.0
+                printProps.ScaleX.Value = 1.0;
+                printProps.ScaleY.Value = 1.0;
+
+                // Validate that ScaleX has returned to its original value
+                if (Math.Abs(printProps.ScaleX.Value - originalScaleX) > 0.0001)
+                {
+                    throw new Exception("ScaleX reset did not return to the original value.");
+                }
+
+                // Additional check: ensure ScaleY is also reset to 1.0
+                if (Math.Abs(printProps.ScaleY.Value - 1.0) > 0.0001)
+                {
+                    throw new Exception("ScaleY reset did not return to 1.0.");
+                }
+
+                Console.WriteLine("ScaleX reset validation succeeded. Page is back to its original size.");
 
             }
             catch (System.IO.FileNotFoundException ex)

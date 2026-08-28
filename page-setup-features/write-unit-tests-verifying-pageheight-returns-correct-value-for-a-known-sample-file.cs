@@ -8,32 +8,35 @@ class Program
             try
             {
 
-                // Path to the sample Visio file (ensure the file exists at this location)
-                const string sampleFilePath = "sample.vsdx";
+                // Path to the sample Visio file (ensure this file exists in the execution directory)
+                string samplePath = "sample.vsdx";
 
                 // Expected page height in inches for the known sample file
-                const double expectedPageHeight = 11.0;
+                double expectedHeight = 11.0; // adjust this value to match the actual sample
 
                 // Load the diagram using the Aspose.Diagram constructor
-                using (Diagram diagram = new Diagram(sampleFilePath))
+                using (Diagram diagram = new Diagram(samplePath))
                 {
                     // Retrieve the first page (index 0)
                     Page page = diagram.Pages[0];
 
                     // Access the page height value (in inches)
-                    double actualPageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    double actualHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Output the retrieved value for diagnostic purposes
-                    Console.WriteLine($"Actual Page Height: {actualPageHeight} inches");
+                    // Output the retrieved height for diagnostic purposes
+                    Console.WriteLine($"Actual page height: {actualHeight} inches");
 
-                    // Verify the height matches the expected value
-                    if (Math.Abs(actualPageHeight - expectedPageHeight) > 0.0001)
+                    // Verify that the actual height matches the expected height
+                    // Use a tolerance to account for floating‑point precision
+                    double tolerance = 0.0001;
+                    if (Math.Abs(actualHeight - expectedHeight) > tolerance)
                     {
-                        throw new Exception($"Page height mismatch. Expected: {expectedPageHeight}, Actual: {actualPageHeight}");
+                        throw new Exception($"Page height verification failed. Expected: {expectedHeight}, Actual: {actualHeight}");
                     }
-
-                    // If the check passes, indicate success
-                    Console.WriteLine("Page height verification passed.");
+                    else
+                    {
+                        Console.WriteLine("Page height verification passed.");
+                    }
                 }
 
             }

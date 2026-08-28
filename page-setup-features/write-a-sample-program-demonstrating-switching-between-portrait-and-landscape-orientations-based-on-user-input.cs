@@ -1,64 +1,46 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        // Get the source Visio file path from the user
-        Console.WriteLine("Enter the full path to the Visio file (e.g., diagram.vsdx):");
-        string inputPath = Console.ReadLine();
-
-        if (string.IsNullOrWhiteSpace(inputPath))
+        static void Main(string[] args)
         {
-            Console.WriteLine("Invalid file path.");
-            return;
-        }
+            // Prompt user for desired orientation
+            Console.WriteLine("Select page orientation:");
+            Console.WriteLine("P - Portrait");
+            Console.WriteLine("L - Landscape");
+            Console.Write("Enter choice (P/L): ");
+            string input = Console.ReadLine()?.Trim().ToUpperInvariant();
 
-        // Load the diagram
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // Ask the user for the desired orientation
-        Console.WriteLine("Select orientation: (P)ortrait or (L)andscape?");
-        string choice = Console.ReadLine()?.Trim().ToUpperInvariant();
-
-        // Apply the chosen orientation to all pages
-        foreach (Page page in diagram.Pages)
-        {
-            if (choice == "L")
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+            // Determine the orientation value
+            PrintPageOrientationValue orientation;
+            if (input == "L")
+            {
+                orientation = PrintPageOrientationValue.Landscape;
+            }
+            else if (input == "P")
+            {
+                orientation = PrintPageOrientationValue.Portrait;
+            }
             else
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-        }
+            {
+                Console.WriteLine("Invalid input. Defaulting to Portrait.");
+                orientation = PrintPageOrientationValue.Portrait;
+            }
 
-        // Prepare output file name
-        string directory = System.IO.Path.GetDirectoryName(inputPath) ?? "";
-        string fileNameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(inputPath);
-        string outputPath = System.IO.Path.Combine(directory, $"{fileNameWithoutExt}_oriented.vsdx");
+            // Create a new diagram (contains a default page)
+            using (Diagram diagram = new Diagram())
+            {
+                // Apply the chosen orientation to each page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
+                }
 
-        // Save the modified diagram
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving diagram: {ex.Message}");
-        }
-        finally
-        {
-            diagram.Dispose();
+                // Save the diagram to a VSDX file
+                string outputPath = "OrientationDemo.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}' with {orientation} orientation.");
+            }
         }
     }
-}

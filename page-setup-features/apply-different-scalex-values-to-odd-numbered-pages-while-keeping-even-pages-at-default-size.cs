@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,31 +8,40 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram (replace with actual file path)
-                using (Diagram diagram = new Diagram("input.vsdx"))
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path for the modified Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate through all pages and set ScaleX for odd-numbered pages
-                    int pageIndex = 0; // zero‑based index
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through all pages by index
+                    for (int i = 0; i < diagram.Pages.Count; i++)
                     {
-                        // Visio page numbers are 1‑based; odd pages have (index + 1) % 2 == 1
-                        if ((pageIndex + 1) % 2 == 1)
+                        // Retrieve the page (0‑based index)
+                        Page page = diagram.Pages[i];
+
+                        // Determine if the page number (1‑based) is odd
+                        bool isOdd = ((i + 1) % 2) == 1;
+
+                        if (isOdd)
                         {
                             // Apply a custom horizontal scale (e.g., 50% of original size)
                             page.PageSheet.PrintProps.ScaleX.Value = 0.5;
                         }
                         else
                         {
-                            // Keep even pages at default scale (100%)
+                            // Ensure even pages retain the default scale (100%)
                             page.PageSheet.PrintProps.ScaleX.Value = 1.0;
                         }
-
-                        pageIndex++;
                     }
 
-                    // Save the modified diagram to a new file
-                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                    // Save the modified diagram in VSDX format
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
+
+                Console.WriteLine("Diagram processing completed successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

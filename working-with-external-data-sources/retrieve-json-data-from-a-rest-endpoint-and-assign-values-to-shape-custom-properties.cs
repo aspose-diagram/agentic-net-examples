@@ -1,89 +1,118 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Entry point of the console application
-        static async Task Main(string[] args)
+        // REST endpoint returning JSON in the form {"ShapeNameU":"PropertyValue", ...}
+        string endpoint = "https://example.com/api/data";
+
+        // Retrieve JSON data with error handling
+        string json;
+        try
         {
-            try
+            using var httpClient = new HttpClient();
+            // Synchronously wait for the async call to avoid async Main (classic style)
+            json = httpClient.GetStringAsync(endpoint).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            // Log HTTP errors and abort execution
+            Console.Error.WriteLine($"Error retrieving JSON from endpoint: {ex.Message}");
+            return;
+        }
+
+        // Deserialize to a dictionary for easy lookup
+        var data = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+        if (data == null)
+        {
+            Console.Error.WriteLine("Failed to deserialize JSON data.");
+            return;
+        }
+
+        // Path to the input Visio diagram
+        string inputPath = "input.vsdx";
+        // Guard to ensure the file exists before loading
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Load the diagram inside a try/catch to capture Aspose errors
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Iterate through all pages and shapes, updating/adding custom properties
+        try
+        {
+            foreach (Page page in diagram.Pages)
             {
-
-                // Paths for the source Visio diagram and the output file
-                string diagramPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // REST endpoint that returns JSON data
-                string jsonEndpoint = "https://example.com/api/shapes";
-
-                // Load the diagram from file
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Retrieve JSON data from the REST endpoint
-                using HttpClient httpClient = new HttpClient();
-                HttpResponseMessage response = await httpClient.GetAsync(jsonEndpoint);
-                response.EnsureSuccessStatusCode();
-                string jsonContent = await response.Content.ReadAsStringAsync();
-
-                // Expected JSON format:
-                // [
-                //   { "ShapeId": 5, "PropertyName": "Status", "PropertyValue": "Approved" },
-                //   { "ShapeId": 12, "PropertyName": "Owner", "PropertyValue": "John Doe" }
-                // ]
-                JsonDocument jsonDoc = JsonDocument.Parse(jsonContent);
-                foreach (JsonElement element in jsonDoc.RootElement.EnumerateArray())
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Extract values from JSON
-                    long shapeId = element.GetProperty("ShapeId").GetInt64();
-                    string propName = element.GetProperty("PropertyName").GetString();
-                    string propValue = element.GetProperty("PropertyValue").GetString();
-
-                    // Locate the shape by ID across all pages
-                    Shape targetShape = null;
-                    foreach (Page page in diagram.Pages)
+                    // Use the universal shape name (NameU) as the key to find matching data
+                    if (data.TryGetValue(shape.NameU, out string propValue))
                     {
-                        // Shape IDs are long; GetShape expects an int, so cast safely
-                        if (page.Shapes.GetShape((int)shapeId) != null)
+                        // Search for an existing custom property named "CustomData"
+                        Prop existingProp = null;
+                        foreach (Prop p in shape.Props)
                         {
-                            targetShape = page.Shapes.GetShape((int)shapeId);
-                            break;
+                            if (p.Name == "CustomData")
+                            {
+                                existingProp = p;
+                                break;
+                            }
+                        }
+
+                        if (existingProp == null)
+                        {
+                            // Create a new custom property and add it to the shape
+                            var newProp = new Prop();
+                            newProp.Name = "CustomData";
+                            newProp.Label.Value = "Custom Data";
+                            newProp.Value.Val = propValue;
+                            shape.Props.Add(newProp);
+                            Console.WriteLine($"Added CustomData to shape '{shape.NameU}' with value '{propValue}'.");
+                        }
+                        else
+                        {
+                            // Update the existing property's value
+                            existingProp.Value.Val = propValue;
+                            Console.WriteLine($"Updated CustomData on shape '{shape.NameU}' to '{propValue}'.");
                         }
                     }
-
-                    if (targetShape == null)
-                    {
-                        Console.WriteLine($"Shape with ID {shapeId} not found.");
-                        continue;
-                    }
-
-                    // Create a new custom property (Prop) and assign values
-                    Prop customProp = new Prop
-                    {
-                        Name = propName,
-                        // Optional: set a label; using the same name if not required
-                        Label = { Value = propName },
-                        // Assign the actual value
-                        Value = { Val = propValue },
-                        // Define the property type as string
-                        Type = { Value = TypePropValue.String }
-                    };
-
-                    // Add the custom property to the shape
-                    targetShape.Props.Add(customProp);
-                    Console.WriteLine($"Added property '{propName}' with value '{propValue}' to shape ID {shapeId}.");
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram shapes: {ex.Message}");
+            return;
+        }
+
+        // Save the modified diagram with error handling
+        try
+        {
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved as output.vsdx");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+        }
     }
-    }
+}

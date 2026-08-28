@@ -1,43 +1,45 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the updated Visio file
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the diagram from the file
             Diagram diagram = new Diagram(inputPath);
 
-            // Update the header text (centered)
-            diagram.HeaderFooter.HeaderCenter = "Updated Header Text";
+            // Update header fields – these changes will be reflected in any print or image output
+            diagram.HeaderFooter.HeaderLeft = "Updated Header - Left";
+            diagram.HeaderFooter.HeaderCenter = "Updated Header - Center";
+            diagram.HeaderFooter.HeaderRight = "Updated Header - Right";
 
-            // Optionally adjust header font properties
-            var headerFont = diagram.HeaderFooter.HeaderFooterFont;
-            headerFont.FaceName = "Arial";
-            headerFont.Height = 12; // point size
-            headerFont.Weight = 700; // bold
+            // Save the modified diagram (optional, verifies changes are persisted)
+            diagram.Save("modified.vsdx", SaveFileFormat.Vsdx);
 
-            // Save the diagram to persist header changes
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Export a PNG image to act as a print preview – the header text appears in the image
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            diagram.Save("preview.png", pngOptions);
 
-            // Print the diagram; the print preview will reflect the updated header
-            diagram.Print();
-
-            Console.WriteLine("Header updated, diagram saved, and sent to printer.");
-
+            Console.WriteLine("Header updated and preview image generated successfully.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during loading, modification, or saving
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

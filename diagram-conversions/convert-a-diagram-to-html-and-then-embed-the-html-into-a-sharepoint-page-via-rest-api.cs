@@ -3,127 +3,97 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    // Entry point
-    static async Task Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths and SharePoint parameters (replace with actual values)
-            string diagramPath = @"C:\Diagrams\sample.vsdx";
-            string sharepointSiteUrl = "https://yourtenant.sharepoint.com/sites/YourSite";
-            string pageServerRelativeUrl = "/sites/YourSite/SitePages/YourPage.aspx";
-            string accessToken = "YOUR_ACCESS_TOKEN"; // OAuth token with appropriate permissions
-
-            // Load the Visio diagram using Aspose.Diagram constructor (lifecycle rule)
-            using (Diagram diagram = new Diagram(diagramPath))
+            try
             {
-                // Configure HTML save options (single file for easier embedding)
+
+                // Path to the source Visio diagram
+                string diagramPath = @"C:\Diagrams\sample.vsdx";
+
+                // SharePoint site and target folder (e.g., Site Pages library)
+                string sharepointSiteUrl = "https://contoso.sharepoint.com/sites/YourSite";
+                string targetFolderRelativeUrl = "/sites/YourSite/SitePages";
+                string targetFileName = "sampleDiagram.html";
+
+                // Access token for SharePoint REST API (obtain via Azure AD or other auth flow)
+                string accessToken = "<YOUR_ACCESS_TOKEN>";
+
+                // Convert diagram to HTML and upload
+                ConvertDiagramToHtmlAndUpload(diagramPath, sharepointSiteUrl, targetFolderRelativeUrl, targetFileName, accessToken);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
+
+        static void ConvertDiagramToHtmlAndUpload(string diagramFilePath, string siteUrl, string folderRelativeUrl, string fileName, string accessToken)
+        {
+            // Load the Visio diagram using Aspose.Diagram constructor (lifecycle rule)
+            using (Diagram diagram = new Diagram(diagramFilePath))
+            {
+                // Prepare HTML save options (rule-provided class)
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
+                    // Example: save as a single HTML file
                     SaveAsSingleFile = true,
-                    // Optional: set title, resolution, etc.
-                    Title = "Embedded Diagram"
+                    // Optional: set title
+                    Title = Path.GetFileNameWithoutExtension(diagramFilePath)
                 };
 
-                // Save diagram as HTML into a memory stream (using Save method with SaveOptions)
+                // Save the diagram to a memory stream as HTML (using provided Save method)
                 using (MemoryStream htmlStream = new MemoryStream())
                 {
                     diagram.Save(htmlStream, htmlOptions);
-                    // Convert stream to UTF‑8 string
-                    string htmlContent = Encoding.UTF8.GetString(htmlStream.ToArray());
+                    htmlStream.Position = 0; // Reset stream position for reading
 
-                    // Prepare HTTP client for SharePoint REST call
-                    using (HttpClient httpClient = new HttpClient())
-                    {
-                        // Authorization header
-                        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                        // Accept JSON response
-                        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json;odata=verbose"));
+                    // Read the HTML content as a byte array
+                    byte[] htmlBytes = htmlStream.ToArray();
 
-                        // Build request URI for updating page properties
-                        string requestUri = $"{sharepointSiteUrl}/_api/web/GetFileByServerRelativeUrl('{pageServerRelativeUrl}')/ListItemAllFields";
-
-                        // JSON payload to update the CanvasContent1 field with the HTML
-                        string jsonPayload = $"{{\"__metadata\":{{\"type\":\"SP.Data.SitePagesItem\"}},\"CanvasContent1\":\"{EscapeForJson(htmlContent)}\"}}";
-
-                        // Create HTTP request with MERGE method (used for updates)
-                        HttpRequestMessage request = new HttpRequestMessage(new HttpMethod("MERGE"), requestUri)
-                        {
-                            Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json;odata=verbose")
-                        };
-                        // Required headers for SharePoint update
-                        request.Headers.Add("IF-MATCH", "*");
-                        request.Headers.Add("X-HTTP-Method", "MERGE");
-
-                        // Send request
-                        HttpResponseMessage response = await httpClient.SendAsync(request);
-                        response.EnsureSuccessStatusCode();
-
-                        Console.WriteLine("Diagram HTML successfully embedded into SharePoint page.");
-                    }
+                    // Upload the HTML to SharePoint via REST API
+                    UploadFileToSharePoint(siteUrl, folderRelativeUrl, fileName, htmlBytes, accessToken);
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
 
-    // Helper to escape double quotes and backslashes for JSON string values
-    private static string EscapeForJson(string value)
-    {
-        if (string.IsNullOrEmpty(value))
-            return string.Empty;
-
-        StringBuilder sb = new StringBuilder();
-        foreach (char c in value)
+        static void UploadFileToSharePoint(string siteUrl, string folderRelativeUrl, string fileName, byte[] fileContent, string accessToken)
         {
-            switch (c)
+            // Construct the REST endpoint for adding a file to a folder
+            string requestUri = $"{siteUrl}/_api/web/GetFolderByServerRelativeUrl('{folderRelativeUrl}')/Files/add(url='{fileName}',overwrite=true)";
+
+            using (HttpClient httpClient = new HttpClient())
             {
-                case '\"':
-                    sb.Append("\\\"");
-                    break;
-                case '\\':
-                    sb.Append("\\\\");
-                    break;
-                case '\b':
-                    sb.Append("\\b");
-                    break;
-                case '\f':
-                    sb.Append("\\f");
-                    break;
-                case '\n':
-                    sb.Append("\\n");
-                    break;
-                case '\r':
-                    sb.Append("\\r");
-                    break;
-                case '\t':
-                    sb.Append("\\t");
-                    break;
-                default:
-                    // Encode control characters
-                    if (char.IsControl(c))
+                // Set authentication header (Bearer token)
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                // Accept JSON response
+                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json;odata=verbose"));
+
+                // Prepare the content of the request (HTML file)
+                using (ByteArrayContent content = new ByteArrayContent(fileContent))
+                {
+                    content.Headers.ContentType = new MediaTypeHeaderValue("text/html");
+
+                    // POST the file content
+                    HttpResponseMessage response = httpClient.PostAsync(requestUri, content).Result;
+
+                    if (response.IsSuccessStatusCode)
                     {
-                        sb.Append("\\u");
-                        sb.Append(((int)c).ToString("x4"));
+                        Console.WriteLine("HTML file uploaded successfully to SharePoint.");
                     }
                     else
                     {
-                        sb.Append(c);
+                        string responseBody = response.Content.ReadAsStringAsync().Result;
+                        Console.WriteLine($"Failed to upload file. Status: {response.StatusCode}. Details: {responseBody}");
                     }
-                    break;
+                }
             }
         }
-        return sb.ToString();
     }
-}

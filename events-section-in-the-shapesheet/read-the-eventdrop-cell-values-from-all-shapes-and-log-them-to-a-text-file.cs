@@ -3,41 +3,64 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Open a text file to log EventDrop values
-            using (StreamWriter writer = new StreamWriter("EventDropValues.txt"))
+            try
             {
-                // Iterate through every page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Iterate through every shape on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Check if the shape has an Event object and an EventDrop cell
-                        if (shape.Event != null && shape.Event.EventDrop != null)
-                        {
-                            // Retrieve the numeric value of the EventDrop cell
-                            double eventDropValue = shape.Event.EventDrop.Value;
 
-                            // Log the page name, shape ID, and EventDrop value
-                            writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, EventDrop: {eventDropValue}");
+                // Path to the Visio diagram file
+                string diagramPath = "input.vsdx";
+                // Path to the output log file
+                string logPath = "EventDropValues.txt";
+
+                // Load the diagram using Aspose.Diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                using (StreamWriter writer = new StreamWriter(logPath, false))
+                {
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Iterate through all shapes on the page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Ensure the shape has an Event object
+                            if (shape.Event != null && shape.Event.EventDrop != null)
+                            {
+                                // Retrieve the EventDrop value (DoubleValue)
+                                double? eventDropValue = null;
+
+                                // DoubleValue may contain a numeric value or a formula.
+                                // Attempt to get the numeric value; if not available, skip.
+                                try
+                                {
+                                    // The Value property holds the numeric representation.
+                                    // It may be null if the cell contains a formula.
+                                    eventDropValue = shape.Event.EventDrop.Value;
+                                }
+                                catch
+                                {
+                                    // Ignore shapes where the value cannot be parsed.
+                                }
+
+                                if (eventDropValue.HasValue)
+                                {
+                                    // Log shape ID, name, and EventDrop value
+                                    writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Shape Name: {shape.Name}, EventDrop: {eventDropValue.Value}");
+                                }
+                            }
                         }
                     }
                 }
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Optionally, save the diagram if any modifications were made (not required here)
+                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -3,13 +3,16 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load an existing Visio diagram
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
+                string outputPath = "output_merged.vsdx";
+
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages
@@ -18,36 +21,32 @@ class Program
                     // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that have no geometry sections
-                        if (shape.Geoms == null || shape.Geoms.Count <= 1)
-                            continue;
-
-                        // Keep the first geometry as the target
-                        Geom targetGeom = shape.Geoms[0];
-
-                        // Merge geometry from subsequent Geom objects into the target
-                        for (int i = 1; i < shape.Geoms.Count; i++)
+                        // Ensure the shape has a Geoms collection with more than one geometry
+                        if (shape.Geoms != null && shape.Geoms.Count > 1)
                         {
-                            Geom sourceGeom = shape.Geoms[i];
+                            // Take the first geometry as the target for merging
+                            Geom targetGeom = shape.Geoms[0];
 
-                            // Append each coordinate segment from the source geometry to the target geometry
-                            foreach (var segment in sourceGeom.CoordinateCol)
+                            // Merge all subsequent geometries into the target geometry
+                            for (int i = 1; i < shape.Geoms.Count; i++)
                             {
-                                // Add the segment to the target geometry's coordinate collection
-                                targetGeom.CoordinateCol.Add(segment);
-                            }
+                                Geom sourceGeom = shape.Geoms[i];
 
-                            // Mark the source geometry as deleted
-                            sourceGeom.Del = BOOL.True;
+                                // Append each segment from the source geometry to the target geometry
+                                foreach (var segment in sourceGeom.CoordinateCol)
+                                {
+                                    targetGeom.CoordinateCol.Add(segment);
+                                }
+
+                                // Mark the source geometry as deleted to hide it
+                                sourceGeom.Del = BOOL.True;
+                            }
                         }
                     }
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Geometry merge completed. Saved to: " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

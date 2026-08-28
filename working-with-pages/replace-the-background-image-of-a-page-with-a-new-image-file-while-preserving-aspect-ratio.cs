@@ -1,78 +1,92 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Drawing;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect three arguments: diagram file, new background image, output diagram file
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: <program> <diagramPath> <imagePath> <outputPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        // Guard: ensure diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        string imagePath = args[1];
+        // Guard: ensure image file exists
+        if (!File.Exists(imagePath))
+        {
+            Console.Error.WriteLine($"File not found: {imagePath}");
+            return;
+        }
+
+        string outputPath = args[2];
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Use the first page (index 0) as the target page
+            Page page = diagram.Pages[0];
+
+            // Retrieve page dimensions (in inches)
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+            // Load the image to obtain its pixel size and DPI using Aspose.Drawing.Image
+            using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromFile(imagePath))
             {
+                // Convert pixel dimensions to inches using DPI
+                double imgWidthInches = img.Width / img.HorizontalResolution;
+                double imgHeightInches = img.Height / img.VerticalResolution;
 
-                // Input Visio file, new background image, and output file paths
-                string diagramPath = "input.vsdx";
-                string imagePath = "background.png";
-                string outputPath = "output.vsdx";
+                // Compute scaling factor to fit the image within the page while preserving aspect ratio
+                double scale = Math.Min(pageWidth / imgWidthInches, pageHeight / imgHeightInches);
 
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(diagramPath))
+                // Calculate the final width and height for the shape (still in inches)
+                double targetWidth = imgWidthInches * scale;
+                double targetHeight = imgHeightInches * scale;
+
+                // Center the shape on the page (PinX/PinY represent the shape's center)
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
+
+                // Insert the image as a shape on the page
+                using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
                 {
-                    // Get the first page (adjust index if needed)
-                    Page page = diagram.Pages[0];
+                    // AddShape returns the shape ID (long)
+                    long shapeId = page.AddShape(pinX, pinY, targetWidth, targetHeight, imgStream);
 
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Load the image to obtain its size and resolution
-                    double imgInchesWidth, imgInchesHeight;
-                    using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
-                    using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(imgStream))
-                    {
-                        // Convert pixel dimensions to inches using DPI
-                        imgInchesWidth = img.Width / img.HorizontalResolution;
-                        imgInchesHeight = img.Height / img.VerticalResolution;
-                    }
-
-                    // Calculate scaling factor to fit the image within the page while preserving aspect ratio
-                    double widthScale = pageWidth / imgInchesWidth;
-                    double heightScale = pageHeight / imgInchesHeight;
-                    double scale = Math.Min(widthScale, heightScale);
-
-                    double finalImgWidth = imgInchesWidth * scale;
-                    double finalImgHeight = imgInchesHeight * scale;
-
-                    // Center the image on the page (PinX, PinY represent the shape's center)
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
-
-                    // Insert the image as a shape on the page
-                    long shapeId;
-                    using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
-                    {
-                        shapeId = page.AddShape(pinX, pinY, finalImgWidth, finalImgHeight, imgStream);
-                    }
-
-                    // Retrieve the shape to apply additional properties
+                    // Retrieve the shape object to adjust its properties
                     Shape bgShape = page.Shapes.GetShape(shapeId);
 
-                    // Send the image shape to the back so it appears as a background
-                    page.SendToBack(shapeId);
+                    // Send the image shape to the back so it appears behind other content
+                    bgShape.SendToBack();
 
-                    // Make the background non‑selectable
+                    // Make the background non‑selectable to avoid accidental edits
                     bgShape.Protection.LockSelect.Value = BOOL.True;
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-
-                Console.WriteLine("Background image replaced and diagram saved to: " + outputPath);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram (preserve original format if possible)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Background image replaced successfully. Saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any Aspose or I/O errors
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

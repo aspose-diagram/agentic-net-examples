@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -10,10 +9,10 @@ class Program
             {
 
                 // Path to the Visio file (adjust as needed)
-                string inputPath = "input.vsdx";
+                string diagramPath = "input.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram(diagramPath);
 
                 double totalLength = 0.0;
 
@@ -23,50 +22,53 @@ class Program
                     // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through each geometry section of the shape
+                        // Iterate through all geometry sections of the shape
                         foreach (Geom geom in shape.Geoms)
                         {
-                            double prevX = 0.0;
-                            double prevY = 0.0;
-                            bool hasPrev = false;
+                            double? prevX = null;
+                            double? prevY = null;
 
-                            // CoordinateCol contains drawing commands such as MoveTo, LineTo, etc.
-                            foreach (object cmd in geom.CoordinateCol)
+                            // Iterate through all coordinate commands in the geometry
+                            foreach (object segment in geom.CoordinateCol)
                             {
-                                if (cmd is MoveTo move)
+                                if (segment is MoveTo move)
                                 {
-                                    // MoveTo sets the starting point for subsequent line segments
+                                    // Starting point of a new sub-path
                                     prevX = move.X.Value;
                                     prevY = move.Y.Value;
-                                    hasPrev = true;
                                 }
-                                else if (cmd is LineTo line)
+                                else if (segment is LineTo line)
                                 {
-                                    // LineTo draws a line from the previous point to the current point
-                                    if (hasPrev)
+                                    // Straight line segment: calculate distance from previous point
+                                    if (prevX.HasValue && prevY.HasValue)
                                     {
-                                        double dx = line.X.Value - prevX;
-                                        double dy = line.Y.Value - prevY;
+                                        double dx = line.X.Value - prevX.Value;
+                                        double dy = line.Y.Value - prevY.Value;
                                         totalLength += Math.Sqrt(dx * dx + dy * dy);
                                     }
-
-                                    // Update previous point for the next segment
                                     prevX = line.X.Value;
                                     prevY = line.Y.Value;
-                                    hasPrev = true;
                                 }
-                                // Other command types (ArcTo, EllipticalArcTo, etc.) are ignored for simplicity
+                                else if (segment is ArcTo arc)
+                                {
+                                    // Approximate arc length using chord length (simple fallback)
+                                    if (prevX.HasValue && prevY.HasValue)
+                                    {
+                                        double dx = arc.X.Value - prevX.Value;
+                                        double dy = arc.Y.Value - prevY.Value;
+                                        double chord = Math.Sqrt(dx * dx + dy * dy);
+                                        totalLength += chord;
+                                    }
+                                    prevX = arc.X.Value;
+                                    prevY = arc.Y.Value;
+                                }
+                                // Other segment types (e.g., EllipticalArcTo, SplineStart, etc.) are ignored for this metric
                             }
                         }
                     }
                 }
 
-                // Output the total length of all line segments (in inches)
-                Console.WriteLine($"Total length of line segments: {totalLength} inches");
-
-                // Optionally save the diagram unchanged (demonstrates save usage)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Total length of all line segments (including simple arc approximations): {totalLength} inches");
 
             }
             catch (System.IO.FileNotFoundException ex)

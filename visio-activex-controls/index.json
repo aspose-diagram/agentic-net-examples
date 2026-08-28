@@ -1,11 +1,11 @@
 {
   "category": "visio-activex-controls",
   "display_name": "Visio Activex Controls",
-  "version": "26.7.0",
+  "version": "26.8.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-07-28",
+  "generated": "2026-08-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -15,7 +15,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -56,10 +57,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -88,8 +89,7 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Reflection"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -104,11 +104,10 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System"
+        "System",
+        "System.IO"
       ],
-      "key_apis": [
-        "Diagram"
-      ]
+      "key_apis": []
     },
     {
       "slug": "create-a-script-that-disables-all-activex-controls-on-a-diagram-before-exporting-it-to-pdf-for-security",
@@ -141,7 +140,9 @@
       "key_apis": [
         "Diagram",
         "Save",
-        "diagram"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -151,6 +152,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -172,8 +174,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -190,8 +191,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -208,8 +208,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -267,10 +266,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -281,14 +280,15 @@
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -314,6 +314,7 @@
       "task": "Load a visio diagram containing activex controls and enumerate all shapes that embed such controls",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
         "System",
         "System.IO"
       ],
@@ -350,8 +351,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -385,9 +385,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -405,12 +403,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Save",
-        "diagram"
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -474,7 +475,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -492,14 +494,10 @@
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
         "System",
-        "System.IO",
-        "System.Linq",
         "System.Reflection"
       ],
       "key_apis": [
-        "Diagram",
-        "Pages",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -514,10 +512,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -526,6 +524,7 @@
       "task": "Write a method that retrieves all activex controls on a given page and returns their count",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
         "System",
         "System.IO"
       ],

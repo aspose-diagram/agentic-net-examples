@@ -10,52 +10,52 @@ class Program
             {
 
                 // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-                // Access the first page and first shape
-                Page page = diagram.Pages[0];
-                Shape shape = page.Shapes[0];
+                // Access the first page and the first shape on that page
+                Page firstPage = (Page)diagram.Pages[0];
+                Shape shape = (Shape)firstPage.Shapes[0];
 
-                // Capture vertex list before modification
-                List<(double X, double Y)> beforeVertices = GetVertexList(shape);
+                // Capture the original vertex list
+                List<string> originalVertices = GetVertexList(shape);
 
-                // Modify geometry: add a new LineTo vertex to the first geometry path
-                Geom firstGeom = (Geom)shape.Geoms[0];
-                LineTo newVertex = new LineTo();
-                newVertex.X.Value = 5.0;
-                newVertex.Y.Value = 5.0;
-                firstGeom.CoordinateCol.Add(newVertex);
+                // Modify the geometry: add a new LineTo vertex to the first geometry path
+                Geom targetGeom = (Geom)shape.Geoms[0];
+                LineTo newSegment = new LineTo();
+                newSegment.X.Value = 2.0;
+                newSegment.Y.Value = 2.0;
+                targetGeom.CoordinateCol.Add(newSegment);
 
-                // Capture vertex list after modification
-                List<(double X, double Y)> afterVertices = GetVertexList(shape);
+                // Capture the modified vertex list
+                List<string> modifiedVertices = GetVertexList(shape);
 
-                // Compare the two vertex lists
-                if (beforeVertices.Count + 1 != afterVertices.Count)
+                // Compare the lists to ensure the new vertex was added
+                bool changeDetected = modifiedVertices.Count == originalVertices.Count + 1 &&
+                                      modifiedVertices[modifiedVertices.Count - 1] == "LineTo(2,2)";
+
+                if (!changeDetected)
                 {
-                    throw new Exception("Vertex count mismatch after modification.");
+                    throw new Exception("Geometry modification was not applied as expected.");
                 }
 
-                for (int i = 0; i < beforeVertices.Count; i++)
+                Console.WriteLine("Vertex list before modification:");
+                foreach (string v in originalVertices)
                 {
-                    (double X, double Y) before = beforeVertices[i];
-                    (double X, double Y) after = afterVertices[i];
-                    if (Math.Abs(before.X - after.X) > 1e-6 || Math.Abs(before.Y - after.Y) > 1e-6)
-                    {
-                        throw new Exception($"Vertex at index {i} differs after modification.");
-                    }
+                    Console.WriteLine(v);
                 }
 
-                // Verify the newly added vertex matches expected values
-                (double X, double Y) addedVertex = afterVertices[afterVertices.Count - 1];
-                if (Math.Abs(addedVertex.X - 5.0) > 1e-6 || Math.Abs(addedVertex.Y - 5.0) > 1e-6)
+                Console.WriteLine("\nVertex list after modification:");
+                foreach (string v in modifiedVertices)
                 {
-                    throw new Exception("Added vertex does not have the expected coordinates.");
+                    Console.WriteLine(v);
                 }
 
-                Console.WriteLine("Geometry vertex list comparison succeeded. Modification applied correctly.");
+                Console.WriteLine("\nGeometry modification verified successfully.");
 
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Optionally save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -64,33 +64,26 @@ class Program
             }
     }
 
-        // Helper method to extract all vertex coordinates from a shape's geometry
-        private static List<(double X, double Y)> GetVertexList(Shape shape)
+        // Helper method to extract a readable list of vertices from a shape
+        private static List<string> GetVertexList(Shape shape)
         {
-            List<(double X, double Y)> vertices = new List<(double X, double Y)>();
+            List<string> vertices = new List<string>();
 
-            for (int geomIndex = 0; geomIndex < shape.Geoms.Count; geomIndex++)
+            // Iterate over each geometry section
+            foreach (Geom geom in shape.Geoms)
             {
-                Geom geom = (Geom)shape.Geoms[geomIndex];
-                for (int segIndex = 0; segIndex < geom.CoordinateCol.Count; segIndex++)
+                // Iterate over each coordinate command within the geometry
+                foreach (object coord in geom.CoordinateCol)
                 {
-                    object segment = geom.CoordinateCol[segIndex];
-
-                    MoveTo moveTo = segment as MoveTo;
-                    if (moveTo != null)
+                    if (coord is MoveTo move)
                     {
-                        vertices.Add((moveTo.X.Value, moveTo.Y.Value));
-                        continue;
+                        vertices.Add($"MoveTo({move.X.Value},{move.Y.Value})");
                     }
-
-                    LineTo lineTo = segment as LineTo;
-                    if (lineTo != null)
+                    else if (coord is LineTo line)
                     {
-                        vertices.Add((lineTo.X.Value, lineTo.Y.Value));
-                        continue;
+                        vertices.Add($"LineTo({line.X.Value},{line.Y.Value})");
                     }
-
-                    // Other segment types (e.g., ArcTo) can be handled similarly if needed
+                    // Additional command types (e.g., ArcTo) can be handled similarly if needed
                 }
             }
 

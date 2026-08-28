@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
@@ -9,27 +9,22 @@ class Program
         try
         {
 
-            // Create a new diagram (lifecycle rule: create)
+            // Create a new diagram
             Diagram diagram = new Diagram();
 
-            // Get the first page (or create one if none exists)
+            // Access the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Define the position (PinX, PinY) for the diamond shape.
-            // Here we place it at (5, 5) inches from the page origin.
-            double pinX = 5.0;
-            double pinY = 5.0;
+            // Define the position (PinX, PinY) where the diamond will be placed
+            double pinX = 4.0; // inches from the left edge of the page
+            double pinY = 5.0; // inches from the top edge of the page
 
-            // Define the size of the diamond: 2 inches width and 2 inches height.
-            double width = 2.0;
-            double height = 2.0;
+            // Add a diamond shape with a width and height of 2 inches each
+            // Master name "Diamond" corresponds to the built‑in Visio diamond shape
+            page.AddShape(pinX, pinY, 2.0, 2.0, "Diamond");
 
-            // Add a diamond shape using the built‑in master named "Diamond".
-            // This uses the AddShape overload that accepts PinX, PinY, Width, Height and master name.
-            page.AddShape(pinX, pinY, width, height, "Diamond");
-
-            // Save the diagram to a file (lifecycle rule: save)
-            diagram.Save("DiamondShape.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram to a file
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (Aspose.Diagram.DiagramException ex)

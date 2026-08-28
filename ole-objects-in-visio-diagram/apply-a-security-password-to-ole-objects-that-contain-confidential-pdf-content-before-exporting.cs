@@ -1,100 +1,77 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Passwords to apply to embedded PDF files
+            const string userPassword = "user123";
+            const string ownerPassword = "owner123";
+
+            // Iterate through all pages and shapes
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output Visio file path after OLE PDF encryption
-                string outputPath = "output.vsdx";
-
-                // Passwords to apply to embedded PDF files
-                const string userPassword = "UserPass123";
-                const string ownerPassword = "OwnerPass123";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Verify the shape is an OLE foreign object
+                    if (shape.Type == TypeValue.Foreign &&
+                        shape.ForeignData != null &&
+                        shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
                     {
-                        // Ensure the shape is a foreign (OLE) object
-                        if (shape.Type != TypeValue.Foreign)
-                            continue;
-
-                        // Ensure ForeignData is present
-                        if (shape.ForeignData == null)
-                            continue;
-
-                        // Ensure the foreign object is an embedded OLE object
-                        if (shape.ForeignData.ObjectType != ObjectType.EmbeddedObject)
-                            continue;
-
-                        // Get the raw OLE binary data
-                        byte[] oleData = shape.ForeignData.ObjectData;
-                        if (oleData == null || oleData.Length == 0)
-                            continue;
-
-                        // Simple PDF detection by checking the header bytes for "%PDF"
-                        bool isPdf = false;
-                        using (MemoryStream headerStream = new MemoryStream(oleData))
-                        using (StreamReader reader = new StreamReader(headerStream))
+                        // Check if the OLE object is a PDF (by file name extension)
+                        string sourceName = shape.ForeignData.ObjectSourceFullName;
+                        if (!string.IsNullOrEmpty(sourceName) &&
+                            sourceName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                         {
-                            char[] buffer = new char[4];
-                            int read = reader.ReadBlock(buffer, 0, 4);
-                            if (read == 4)
+                            byte[] oleData = shape.ForeignData.ObjectData;
+                            if (oleData != null && oleData.Length > 0)
                             {
-                                string header = new string(buffer);
-                                if (header == "%PDF")
-                                    isPdf = true;
-                            }
-                        }
+                                // Load the PDF from the OLE byte array
+                                using (MemoryStream inputPdf = new MemoryStream(oleData))
+                                {
+                                    // Fully qualified Aspose.Pdf types (no using Aspose.Pdf)
+                                    var pdfDoc = new Aspose.Pdf.Document(inputPdf);
 
-                        if (!isPdf)
-                            continue; // Skip non‑PDF OLE objects
+                                    // Apply password protection to the PDF
+                                    pdfDoc.Encrypt(
+                                        userPassword,
+                                        ownerPassword,
+                                        Aspose.Pdf.Facades.DocumentPrivilege.AllowAll,
+                                        Aspose.Pdf.CryptoAlgorithm.RC4x128,
+                                        false);
 
-                        // Load the PDF from the OLE data using Aspose.Pdf (fully qualified)
-                        using (MemoryStream pdfInput = new MemoryStream(oleData))
-                        {
-                            // Aspose.Pdf.Document constructor accepts a Stream
-                            Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document(pdfInput);
-
-                            // Apply password protection
-                            pdfDoc.Encrypt(
-                                userPassword,
-                                ownerPassword,
-                                Aspose.Pdf.Facades.DocumentPrivilege.AllowAll,
-                                Aspose.Pdf.CryptoAlgorithm.RC4x128,
-                                false); // usePdf20 = false
-
-                            // Save the encrypted PDF back to a memory stream
-                            using (MemoryStream pdfOutput = new MemoryStream())
-                            {
-                                pdfDoc.Save(pdfOutput);
-                                // Replace the OLE object's binary data with the encrypted version
-                                shape.ForeignData.ObjectData = pdfOutput.ToArray();
+                                    // Save the protected PDF back to a byte array
+                                    using (MemoryStream outputPdf = new MemoryStream())
+                                    {
+                                        pdfDoc.Save(outputPdf);
+                                        shape.ForeignData.ObjectData = outputPdf.ToArray();
+                                    }
+                                }
                             }
                         }
                     }
                 }
-
-                // Save the modified diagram (using VSDX format as an example)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -3,49 +3,48 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input Visio file path
+                // Paths to the source and destination Visio files
                 string inputPath = "input.vsdx";
-
-                // Output Visio file path
                 string outputPath = "output.vsdx";
 
-                // Unique ID of the shape to modify
-                long targetShapeId = 5; // replace with the actual shape ID
+                // Unique ID of the shape to which the custom field will be added
+                long targetShapeId = 12345; // replace with the actual shape ID
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Access the first page (adjust if needed)
+                // Retrieve the first page (adjust index if needed)
                 Page page = diagram.Pages[0];
 
-                // Retrieve the shape by its unique ID
+                // Get the shape by its unique ID
                 Shape shape = page.Shapes.GetShape(targetShapeId);
                 if (shape == null)
                 {
                     throw new Exception($"Shape with ID {targetShapeId} not found.");
                 }
 
-                // Create a new custom text field
+                // Create a new custom field
                 Field customField = new Field();
 
-                // Set the field's displayed value
-                customField.Value.Val = "Custom Value";
+                // Set the field's value (text to be displayed)
+                customField.Value.Val = "MyCustomValue";
 
-                // Optionally, clear any formatting (use empty strings)
-                customField.Format.Val = "";
-                customField.Format.Ufev.F = "";
-                customField.Format.Ufev.Unit = MeasureConst.Undefined;
+                // Optionally, you can set other properties such as format or type if required
+                // customField.Format.Val = ""; // clear format
+                // customField.Type.Value = (int)TypeFieldValue.Undefined; // default type
 
                 // Add the field to the shape's Fields collection
                 shape.Fields.Add(customField);
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Custom field added and diagram saved successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -1,55 +1,69 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Validate input arguments
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramConversion <inputVisioFile> <outputFolder>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputFolder = args[1];
+            // Input Visio file path
+            string inputPath = "input.vsdx";
 
-            // Load the Visio diagram
+            // Output directory for per‑page PDFs
+            string outputDir = "output";
+            Directory.CreateDirectory(outputDir);
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the output folder exists
-            if (!System.IO.Directory.Exists(outputFolder))
-            {
-                System.IO.Directory.CreateDirectory(outputFolder);
-            }
-
             // Total number of pages to process
-            int totalPages = diagram.Pages.Count;
-            Console.WriteLine($"Total pages to convert: {totalPages}");
+            int pageCount = diagram.Pages.Count;
+            Console.WriteLine($"Total pages to convert: {pageCount}");
 
-            // Loop through each page and export it as an image
-            for (int i = 0; i < totalPages; i++)
+            // Iterate through each page and save it as a separate PDF
+            for (int i = 0; i < pageCount; i++)
             {
-                // Retrieve the current page
-                Page page = diagram.Pages[i];
+                // Build output file name for the current page (1‑based index for readability)
+                string outPath = Path.Combine(outputDir, $"page_{i + 1}.pdf");
 
-                // Prepare the output file name (e.g., Page_1.png)
-                string outputPath = System.IO.Path.Combine(outputFolder, $"Page_{i + 1}.png");
+                // Configure PDF save options to export only the current page
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                {
+                    PageIndex = i,   // Zero‑based page index
+                    PageCount = 1    // Export a single page
+                };
 
-                // Configure image save options for the current page
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                saveOptions.PageIndex = i; // Export only the current page
+                // Save the current page as PDF
+                diagram.Save(outPath, pdfOptions);
 
-                // Save the page as an image
-                diagram.Save(outputPath, saveOptions);
-
-                // Update progress in the console
-                int percentComplete = (int)(((i + 1) / (double)totalPages) * 100);
-                Console.WriteLine($"Page {i + 1}/{totalPages} exported. Progress: {percentComplete}%");
+                // Update console progress bar
+                ShowProgress(i + 1, pageCount);
             }
 
-            Console.WriteLine("Conversion completed successfully.");
+            // Move to next line after progress bar is complete
+            Console.WriteLine("\nConversion completed.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+
+    // Simple console progress bar
+    static void ShowProgress(int completed, int total)
+    {
+        const int barWidth = 50;
+        double ratio = (double)completed / total;
+        int filled = (int)(ratio * barWidth);
+
+        Console.Write("\r[");
+        Console.Write(new string('#', filled));
+        Console.Write(new string('-', barWidth - filled));
+        Console.Write($"] {completed}/{total} ({ratio:P0})");
+    }
+}

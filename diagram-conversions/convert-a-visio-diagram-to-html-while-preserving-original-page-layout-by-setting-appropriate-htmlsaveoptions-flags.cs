@@ -1,63 +1,44 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram from a file
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Configure HTML save options to keep the original page layout
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
+                // Preserve original page size (do not enlarge to fit content)
+                EnlargePage = false,
+                // Export all pages, not only the foreground ones
+                SaveForegroundPagesOnly = false,
+                // Do not include hidden pages in the output
+                ExportHiddenPage = false,
+                // Generate separate HTML files per page (not a single combined file)
+                SaveAsSingleFile = false,
+                // Keep the toolbar in the generated HTML (optional)
+                SaveToolBar = true,
+                // Render starting from the first page
+                PageIndex = 0,
+                // Render all pages
+                PageCount = int.MaxValue
+            };
 
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
+            // Save the diagram as HTML using the configured options
+            diagram.Save("output.html", htmlOptions);
 
-                // Output HTML file path (adjust as needed)
-                string outputPath = "output.html";
-
-                try
-                {
-                    // Load the Visio diagram
-                    Diagram diagram = new Diagram(inputPath);
-
-                    // Configure HTML export options to preserve original page layout
-                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                    {
-                        // Do not enlarge the page to fit content; keep original dimensions
-                        EnlargePage = false,
-
-                        // Do not export hidden pages
-                        ExportHiddenPage = false,
-
-                        // Export each page as a separate HTML file (default behavior)
-                        SaveAsSingleFile = false,
-
-                        // Do not export guide shapes
-                        ExportGuideShapes = false,
-
-                        // Do not include comments in the HTML output
-                        IsExportComments = false,
-
-                        // Optional: set a default font for characters that may be missing locally
-                        DefaultFont = "Arial"
-                    };
-
-                    // Save the diagram as HTML using the configured options
-                    diagram.Save(outputPath, htmlOptions);
-
-                    Console.WriteLine("Diagram successfully exported to HTML.");
-                }
-                catch (Exception ex)
-                {
-                    // Report any errors that occur during processing
-                    Console.WriteLine($"Error: {ex.Message}");
-                    throw;
-                }
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

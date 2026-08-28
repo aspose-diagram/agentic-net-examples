@@ -1,27 +1,30 @@
 using System;
 using System.IO;
-using System.Net;
+using System.Text;
+using System.Net.Http;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class HttpResponseStreamProvider : IStreamProvider
 {
-    private readonly HttpListenerResponse _response;
+    private readonly Func<Stream> _streamFactory;
 
-    public HttpResponseStreamProvider(HttpListenerResponse response)
+    public HttpResponseStreamProvider(Func<Stream> streamFactory)
     {
-        _response = response;
+        _streamFactory = streamFactory;
     }
 
-    // Assign the HTTP response output stream to the options
+    // Called by Aspose.Diagram before writing data
     public void InitStream(StreamProviderOptions options)
     {
-        options.Stream = _response.OutputStream;
+        // Provide the HTTP response stream to the save operation
+        options.Stream = _streamFactory();
     }
 
-    // Flush the stream after writing; do not close the response here
+    // Called by Aspose.Diagram after writing data
     public void CloseStream(StreamProviderOptions options)
     {
+        // Ensure all data is flushed; do not close the response stream here
         options.Stream?.Flush();
     }
 }
@@ -30,47 +33,42 @@ class Program
 {
     static void Main()
     {
-        // Simple HTTP listener that serves the HTML export of a Visio diagram
-        HttpListener listener = new HttpListener();
-        listener.Prefixes.Add("http://localhost:8080/");
-        listener.Start();
-        Console.WriteLine("Listening on http://localhost:8080/ ...");
-
-        while (true)
+        try
         {
-            HttpListenerContext context = listener.GetContext(); // wait for request
-            try
-            {
-                // Load the diagram (adjust the path as needed)
-                string diagramPath = "sample.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
 
-                // Configure HTML save options and assign the custom stream provider
+            // Load a diagram (replace with your actual file path)
+            string diagramPath = "sample.vsdx";
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Simulate an HTTP response body using a memory stream
+            using (MemoryStream responseStream = new MemoryStream())
+            {
+                // Create the custom stream provider that returns the response stream
+                IStreamProvider provider = new HttpResponseStreamProvider(() => responseStream);
+
+                // Configure HTML save options and assign the stream provider
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new HttpResponseStreamProvider(context.Response);
-                htmlOptions.Title = "Exported Diagram";
+                htmlOptions.StreamProvider = provider;
 
-                // Set response headers for HTML content
-                context.Response.ContentType = "text/html";
+                // Export the diagram to HTML; the filename is ignored when using StreamProvider
+                diagram.Save("ignored.html", htmlOptions);
 
-                // Save the diagram directly to the HTTP response stream
-                diagram.Save(context.Response.OutputStream, htmlOptions);
+                // Retrieve the generated HTML from the memory stream
+                responseStream.Position = 0;
+                string htmlContent = new StreamReader(responseStream, Encoding.UTF8).ReadToEnd();
 
-                // Close the response stream
-                context.Response.OutputStream.Close();
+                // Simulate sending the HTML via an HTTP response
+                HttpResponseMessage response = new HttpResponseMessage();
+                response.Content = new StringContent(htmlContent, Encoding.UTF8, "text/html");
+
+                // Output the result length to the console
+                Console.WriteLine($"HTML content length: {htmlContent.Length}");
             }
-            catch (Exception ex)
-            {
-                // Return error information
-                context.Response.StatusCode = 500;
-                using (StreamWriter writer = new StreamWriter(context.Response.OutputStream))
-                {
-                    writer.Write($"Error: {ex.Message}");
-                }
-                context.Response.OutputStream.Close();
-            }
+
         }
-
-        // listener.Stop(); // Unreachable in this example
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

@@ -10,23 +10,29 @@ class Program
         try
         {
 
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram("sample.vsdx");
+            // Path to the source Visio file
+            string sourcePath = "input.vsdx";
 
-            // Create HTML save options instance
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(sourcePath);
 
-            // Enable inclusion of comments in the generated HTML
-            htmlOptions.IsExportComments = true; // Set to false to exclude comments
+            // -------------------------------------------------
+            // Export HTML with comments included
+            // -------------------------------------------------
+            HTMLSaveOptions includeCommentsOptions = new HTMLSaveOptions();
+            includeCommentsOptions.IsExportComments = true; // Enable comment export
+            string outputWithComments = "output_with_comments.html";
+            diagram.Save(outputWithComments, includeCommentsOptions);
+            Console.WriteLine($"HTML saved with comments: {outputWithComments}");
 
-            // Save the diagram to HTML with comments included
-            diagram.Save("output_with_comments.html", htmlOptions);
-
-            // Disable inclusion of comments
-            htmlOptions.IsExportComments = false;
-
-            // Save the diagram to HTML without comments
-            diagram.Save("output_without_comments.html", htmlOptions);
+            // -------------------------------------------------
+            // Export HTML without comments
+            // -------------------------------------------------
+            HTMLSaveOptions excludeCommentsOptions = new HTMLSaveOptions();
+            excludeCommentsOptions.IsExportComments = false; // Disable comment export
+            string outputWithoutComments = "output_without_comments.html";
+            diagram.Save(outputWithoutComments, excludeCommentsOptions);
+            Console.WriteLine($"HTML saved without comments: {outputWithoutComments}");
 
         }
         catch (System.IO.FileNotFoundException ex)

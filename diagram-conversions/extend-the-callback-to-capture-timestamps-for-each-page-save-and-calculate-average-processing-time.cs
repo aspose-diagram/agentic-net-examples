@@ -1,64 +1,84 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-// Custom callback to capture timestamps for each page and compute average processing time
-class PageTimingCallback : IPageSavingCallback
+namespace DiagramPageTimingExample
 {
-    // Stores the start time of the current page
-    private DateTime _pageStartTime;
-
-    // List of processing times (in milliseconds) for all pages
-    private readonly List<double> _pageDurations = new List<double>();
-
-    // Called when a page starts saving
-    public void PageStartSaving(PageStartSavingArgs args)
+    // Custom callback to capture timestamps for each page during PDF saving
+    public class TimingPageSavingCallback : IPageSavingCallback
     {
-        // Record the start timestamp for this page
-        _pageStartTime = DateTime.UtcNow;
-    }
+        // Stores the start time for each page index
+        private readonly Dictionary<int, Stopwatch> _stopwatches = new Dictionary<int, Stopwatch>();
 
-    // Called when a page finishes saving
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        // Calculate the elapsed time for the page
-        var elapsedMs = (DateTime.UtcNow - _pageStartTime).TotalMilliseconds;
-        _pageDurations.Add(elapsedMs);
+        // Stores the elapsed time for each page after it is saved
+        public readonly List<TimeSpan> PageDurations = new List<TimeSpan>();
 
-        // If this was the last page, compute and display the average processing time
-        if (!args.HasMorePages)
+        // Called when a page starts saving
+        public void PageStartSaving(PageStartSavingArgs args)
         {
-            double average = _pageDurations.Count > 0 ? _pageDurations.Average() : 0;
-            Console.WriteLine($"Average page processing time: {average:F2} ms");
+            // Ensure we have a stopwatch for the current page
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            _stopwatches[args.PageIndex] = stopwatch;
         }
-    }
-}
 
-class Program
-{
-    static void Main()
-    {
-        try
+        // Called when a page finishes saving
+        public void PageEndSaving(PageEndSavingArgs args)
         {
-
-            // Load the diagram (using the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Configure PDF save options and attach the custom callback
-            PdfSaveOptions saveOptions = new PdfSaveOptions
+            // Retrieve and stop the stopwatch for the current page
+            if (_stopwatches.TryGetValue(args.PageIndex, out var stopwatch))
             {
-                PageSavingCallback = new PageTimingCallback()
-            };
-
-            // Save the diagram to PDF (using the provided save rule)
-            diagram.Save("output.pdf", saveOptions);
-
+                stopwatch.Stop();
+                PageDurations.Add(stopwatch.Elapsed);
+                _stopwatches.Remove(args.PageIndex);
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+    }
+
+    class Program
+    {
+        static void Main()
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            try
+            {
+
+                // Load an existing Visio diagram
+                var diagram = new Diagram(@"InputDiagram.vsdx");
+
+                // Create PDF save options and attach the custom page saving callback
+                var pdfOptions = new PdfSaveOptions
+                {
+                    PageSavingCallback = new TimingPageSavingCallback()
+                };
+
+                // Save the diagram as PDF; the callback will be invoked for each page
+                diagram.Save(@"OutputDiagram.pdf", pdfOptions);
+
+                // After saving, retrieve the callback to calculate average processing time
+                var timingCallback = (TimingPageSavingCallback)pdfOptions.PageSavingCallback;
+
+                // Calculate average duration per page
+                if (timingCallback.PageDurations.Count > 0)
+                {
+                    var averageTicks = timingCallback.PageDurations.Average(ts => ts.Ticks);
+                    var averageTime = new TimeSpan(Convert.ToInt64(averageTicks));
+
+                    Console.WriteLine($"Processed {timingCallback.PageDurations.Count} pages.");
+                    Console.WriteLine($"Average page processing time: {averageTime.TotalMilliseconds} ms");
+                }
+                else
+                {
+                    Console.WriteLine("No page timing data was captured.");
+                }
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

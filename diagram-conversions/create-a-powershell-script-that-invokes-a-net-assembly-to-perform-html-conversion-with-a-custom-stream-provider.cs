@@ -3,64 +3,77 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace HtmlConversionWithCustomStreamProvider
+class CustomStreamProvider : IStreamProvider
 {
-    // Custom stream provider for HTML export resources
-    public class CustomStreamProvider : IStreamProvider
+    // Called before a resource stream is created
+    public void InitStream(StreamProviderOptions options)
     {
-        // Called when a resource stream is needed during HTML export
-        public void InitStream(StreamProviderOptions options)
-        {
-            // Set a custom base URL for resources (e.g., images, scripts)
-            options.CustomPath = "http://example.com/resources/";
+        // Set a custom base URL for resources (e.g., images) referenced in the HTML
+        options.CustomPath = "resources/";
 
-            // Provide a stream where the resource will be written.
-            // Here we use a MemoryStream as a placeholder.
-            options.Stream = new MemoryStream();
-        }
-
-        // Called after the resource has been written
-        public void CloseStream(StreamProviderOptions options)
-        {
-            // Dispose the stream if it was created
-            if (options.Stream != null)
-            {
-                options.Stream.Dispose();
-                options.Stream = null;
-            }
-        }
+        // Provide a stream for the resource; using a memory stream as a placeholder
+        options.Stream = new MemoryStream();
     }
 
-    class Program
+    // Called after the resource stream is no longer needed
+    public void CloseStream(StreamProviderOptions options)
     {
-        static void Main(string[] args)
+        if (options.Stream != null)
         {
-            try
-            {
-
-                // Path to the source Visio diagram
-                string inputPath = "sample.vsdx";
-
-                // Path for the generated HTML file
-                string outputPath = "output.html";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Configure HTML save options with the custom stream provider
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new CustomStreamProvider();
-
-                // Export the diagram to HTML using the configured options
-                diagram.Save(outputPath, htmlOptions);
-
-                Console.WriteLine($"Diagram exported to HTML successfully: {outputPath}");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            options.Stream.Dispose();
+        }
     }
+}
+
+class Program
+{
+    static void Main()
+    {
+        try
+        {
+
+            // Input Visio file (adjust the path as needed)
+            string inputPath = "sample.vsdx";
+
+            // Output HTML file
+            string outputHtml = "output.html";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is at least one page and one shape
+            if (diagram.Pages.Count == 0)
+            {
+                Console.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            var page = diagram.Pages[0];
+            if (page.Shapes.Count == 0)
+            {
+                Console.WriteLine("The first page contains no shapes.");
+                return;
+            }
+
+            // Retrieve the first shape on the page
+            long shapeId = page.Shapes[0].ID;
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Configure HTML save options with the custom stream provider
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            {
+                StreamProvider = new CustomStreamProvider()
+            };
+
+            // Export the shape to HTML
+            shape.ToHTML(outputHtml, htmlOptions);
+
+            Console.WriteLine($"Shape exported successfully to: {outputHtml}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

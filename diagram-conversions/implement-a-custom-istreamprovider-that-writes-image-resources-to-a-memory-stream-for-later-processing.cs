@@ -4,85 +4,90 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramHtmlExport
+public class MemoryStreamProvider : IStreamProvider
 {
-    // Custom IStreamProvider that stores each image resource in a MemoryStream.
-    public class MemoryStreamProvider : IStreamProvider
+    // Stores the generated streams keyed by the default path of the resource.
+    private readonly Dictionary<string, MemoryStream> _streams = new Dictionary<string, MemoryStream>();
+
+    // Called by Aspose.Diagram when a resource stream is needed.
+    public void InitStream(StreamProviderOptions options)
     {
-        // Stores streams keyed by the resource path (DefaultPath).
-        private readonly Dictionary<string, MemoryStream> _streams = new Dictionary<string, MemoryStream>();
-
-        // Called by Aspose.Diagram when a new resource stream is needed.
-        public void InitStream(StreamProviderOptions options)
+        // Create a new memory stream for the resource.
+        var ms = new MemoryStream();
+        // Assign the stream to the options so Aspose can write into it.
+        options.Stream = ms;
+        // Store the stream using the default path as the key for later retrieval.
+        if (!string.IsNullOrEmpty(options.DefaultPath))
         {
-            // Create a fresh memory stream for the resource.
-            var memoryStream = new MemoryStream();
-
-            // Assign the stream to the options so Aspose writes into it.
-            options.Stream = memoryStream;
-
-            // Keep a reference for later processing.
-            _streams[options.DefaultPath] = memoryStream;
-        }
-
-        // Called when Aspose finishes writing to the stream.
-        public void CloseStream(StreamProviderOptions options)
-        {
-            // No special cleanup required; the stream remains in the dictionary.
-            // If you need to reset the position for reading later, uncomment:
-            // options.Stream.Position = 0;
-        }
-
-        // Retrieve the stored MemoryStream for a given resource path.
-        public MemoryStream GetStream(string resourcePath)
-        {
-            return _streams.TryGetValue(resourcePath, out var stream) ? stream : null;
-        }
-
-        // Retrieve all stored streams.
-        public IEnumerable<KeyValuePair<string, MemoryStream>> GetAllStreams()
-        {
-            return _streams;
+            _streams[options.DefaultPath] = ms;
         }
     }
 
-    class Program
+    // Called after the resource has been written.
+    public void CloseStream(StreamProviderOptions options)
     {
-        static void Main()
+        // The stream is already stored; optionally flush or reset position.
+        if (options.Stream != null)
         {
-            // Load or create a diagram (example uses an empty diagram).
-            var diagram = new Diagram();
+            options.Stream.Flush();
+            options.Stream.Position = 0;
+        }
+    }
+
+    // Helper to retrieve a generated stream by its resource path.
+    public MemoryStream GetStream(string resourcePath)
+    {
+        return _streams.TryGetValue(resourcePath, out var ms) ? ms : null;
+    }
+
+    // Helper to enumerate all stored streams.
+    public IEnumerable<KeyValuePair<string, MemoryStream>> GetAllStreams()
+    {
+        return _streams;
+    }
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        try
+        {
+
+            // Load an existing Visio diagram (replace with your file path).
+            string diagramPath = "sample.vsdx";
+            Diagram diagram = new Diagram(diagramPath);
 
             // Configure HTML export options and assign the custom stream provider.
-            var htmlOptions = new HTMLSaveOptions
-            {
-                StreamProvider = new MemoryStreamProvider()
-            };
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            var streamProvider = new MemoryStreamProvider();
+            htmlOptions.StreamProvider = streamProvider;
 
-            // Export the diagram to HTML. Images referenced in the HTML will be written
-            // to the MemoryStreamProvider instead of files on disk.
+            // Export the diagram to HTML. The output path is required but the actual files
+            // will be written to the memory streams provided by the stream provider.
             string outputHtmlPath = "output.html";
             diagram.Save(outputHtmlPath, htmlOptions);
 
-            // After saving, you can access the in‑memory image data.
-            var provider = (MemoryStreamProvider)htmlOptions.StreamProvider;
-            foreach (var kvp in provider.GetAllStreams())
+            // After saving, process the in‑memory resources.
+            foreach (var entry in streamProvider.GetAllStreams())
             {
-                string resourcePath = kvp.Key;          // e.g., "image1.png"
-                MemoryStream imageStream = kvp.Value;   // Image data in memory
+                string resourcePath = entry.Key;          // e.g., "images/img1.png"
+                MemoryStream ms = entry.Value;
 
-                // Example: write the image to a file for verification.
-                string fileName = Path.GetFileName(resourcePath);
-                using (var fileStream = new FileStream(fileName, FileMode.Create, FileAccess.Write))
-                {
-                    imageStream.Position = 0; // Ensure we read from the beginning.
-                    imageStream.CopyTo(fileStream);
-                }
-
-                Console.WriteLine($"Image resource '{resourcePath}' saved to file '{fileName}'.");
+                // Example processing: write the resource to the console as a base64 string.
+                byte[] data = ms.ToArray();
+                string base64 = Convert.ToBase64String(data);
+                Console.WriteLine($"Resource: {resourcePath}, Size: {data.Length} bytes");
+                Console.WriteLine($"Base64: {base64}");
             }
 
-            Console.WriteLine("HTML export completed.");
+            // Clean up.
+            diagram.Dispose();
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

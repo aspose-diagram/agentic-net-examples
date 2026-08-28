@@ -3,30 +3,25 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class HtmlExportExample
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio diagram
-            string sourceDiagramPath = "input.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Path to the target HTML file (must exist beforehand)
-            string targetHtmlPath = "output.html";
-
-            // Load the diagram from the source file
-            Diagram diagram = new Diagram(sourceDiagramPath);
-
-            // Create HTML save options (customize as needed)
+            // Configure HTML save options (customize as needed)
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            // Example: htmlOptions.SaveAsSingleFile = true;
 
-            // Open a FileStream for the pre‑created HTML file
-            using (FileStream htmlStream = new FileStream(targetHtmlPath, FileMode.Create, FileAccess.Write))
+            // Open a FileStream for the pre‑created output HTML file
+            using (FileStream fileStream = new FileStream("output.html", FileMode.Create, FileAccess.Write))
             {
-                // Save the diagram as HTML directly into the stream
-                diagram.Save(htmlStream, htmlOptions);
+                // Save the diagram as HTML directly to the stream
+                diagram.Save(fileStream, htmlOptions);
             }
 
         }

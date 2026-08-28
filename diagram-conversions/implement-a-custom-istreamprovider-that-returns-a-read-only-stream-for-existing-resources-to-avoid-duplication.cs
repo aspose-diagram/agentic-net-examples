@@ -5,35 +5,37 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramHtmlExport
 {
-    // Custom stream provider that supplies a read‑only FileStream for each requested resource.
-    // This avoids duplicating resources when exporting to HTML.
-    public class ReadOnlyResourceStreamProvider : IStreamProvider
+    // Custom stream provider that supplies read‑only streams for existing files.
+    // This avoids creating duplicate streams when the HTML exporter requests resources.
+    public class ReadOnlyStreamProvider : IStreamProvider
     {
-        // Called by Aspose.Diagram before a resource stream is needed.
+        // Called by Aspose.Diagram when a resource stream is needed.
         public void InitStream(StreamProviderOptions options)
         {
-            // options.DefaultPath contains the file path of the resource to be exported.
-            // Open the file in read‑only mode and assign it to the options.
+            // The exporter provides the expected file path in options.DefaultPath.
+            // Open the file in read‑only mode if it exists; otherwise supply an empty stream.
             if (!string.IsNullOrEmpty(options.DefaultPath) && File.Exists(options.DefaultPath))
             {
-                // FileShare.Read allows other processes to read the file simultaneously.
-                options.Stream = new FileStream(options.DefaultPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                options.Stream = new FileStream(
+                    options.DefaultPath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.Read);
             }
             else
             {
-                // If the resource does not exist, throw an exception to indicate the failure.
-                throw new FileNotFoundException($"Resource not found: {options.DefaultPath}");
+                // Fallback to a null stream to prevent null reference exceptions.
+                options.Stream = Stream.Null;
             }
         }
 
-        // Called by Aspose.Diagram after the resource has been processed.
+        // Called after the exporter finishes using the stream.
         public void CloseStream(StreamProviderOptions options)
         {
             // Dispose the stream if it was created.
             if (options.Stream != null)
             {
                 options.Stream.Dispose();
-                options.Stream = null;
             }
         }
     }
@@ -48,27 +50,20 @@ namespace DiagramHtmlExport
                 // Path to the source Visio diagram.
                 string inputPath = "input.vsdx";
 
-                // Load the diagram from file.
+                // Load the diagram.
                 Diagram diagram = new Diagram(inputPath);
 
-                // Configure HTML export options.
+                // Configure HTML export options and assign the custom stream provider.
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    // Use the custom stream provider to serve existing resources.
-                    StreamProvider = new ReadOnlyResourceStreamProvider(),
-
-                    // Example: export all pages and embed resources as separate files.
-                    SaveAsSingleFile = false,
-                    PageCount = int.MaxValue
+                    StreamProvider = new ReadOnlyStreamProvider()
                 };
 
-                // Output HTML file path.
+                // Export the diagram to HTML.
                 string outputPath = "output.html";
-
-                // Export the diagram to HTML using the configured options.
                 diagram.Save(outputPath, htmlOptions);
 
-                Console.WriteLine("HTML export completed successfully.");
+                Console.WriteLine("Diagram exported to HTML successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

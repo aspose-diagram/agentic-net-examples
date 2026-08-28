@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,30 +9,27 @@ class Program
             try
             {
 
-                // Input Visio diagram file path
+                // Paths for input Visio diagram, intermediate HTML, and final PDF.
                 string diagramPath = "input.vsdx";
+                string htmlPath = "output.html";
+                string pdfPath = "output.pdf";
 
-                // Verify the diagram file exists
-                if (!File.Exists(diagramPath))
-                    throw new FileNotFoundException($"Diagram file not found: {diagramPath}");
-
-                // Load the Visio diagram
+                // Load the Visio diagram.
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Export the diagram to HTML
-                string htmlPath = "output.html";
+                // Export the diagram to HTML.
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
                 diagram.Save(htmlPath, htmlOptions);
 
-                // Convert the generated HTML to PDF using Aspose.Pdf (fully qualified to avoid namespace conflict)
-                string pdfPath = "output.pdf";
-                var htmlLoadOptions = new Aspose.Pdf.HtmlLoadOptions();
-                Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(htmlPath, htmlLoadOptions);
+                // Convert the generated HTML to PDF using Aspose.Pdf.
+                // Types from Aspose.Pdf are fully qualified to avoid namespace conflicts.
+                var pdfDocument = new Aspose.Pdf.Document(htmlPath, new Aspose.Pdf.HtmlLoadOptions());
                 pdfDocument.Save(pdfPath);
 
-                Console.WriteLine("Conversion completed successfully.");
-                Console.WriteLine($"HTML file: {Path.GetFullPath(htmlPath)}");
-                Console.WriteLine($"PDF file: {Path.GetFullPath(pdfPath)}");
+                // Clean up resources.
+                diagram.Dispose();
+
+                Console.WriteLine("Diagram successfully converted to HTML and PDF.");
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -4,64 +4,69 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             // Create a new empty diagram
             using (Diagram diagram = new Diagram())
             {
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
+                // Define how many pages (e.g., documents) we want to visualize
+                int pageCount = 3;
+
+                // Add the required pages to the diagram
+                for (int i = 0; i < pageCount; i++)
                 {
-                    diagram.Pages.Add(new Page());
+                    Page page = new Page();
+                    page.Name = $"Page{i + 1}";
+                    diagram.Pages.Add(page);
                 }
 
-                // Iterate through each page and add a progress circle (ellipse)
+                // Number of animation steps for each progress circle
+                int totalSteps = 10;
+
+                // Iterate over each page and create an animated progress circle
                 for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
                     Page page = diagram.Pages[pageIndex];
 
-                    // Define circle geometry (center at (2,2), radius 1 inch)
-                    double pinX = 2.0;   // Center X
-                    double pinY = 2.0;   // Center Y
-                    double width = 2.0;  // Diameter X
-                    double height = 2.0; // Diameter Y
+                    // Define circle geometry (center at (5,5), radius 2 inches)
+                    double centerX = 5.0;
+                    double centerY = 5.0;
+                    double radius = 2.0;
+                    double left = centerX - radius;
+                    double top = centerY - radius;
+                    double diameter = radius * 2.0;
 
-                    // Draw the ellipse; returns the shape ID (long)
-                    long circleShapeId = page.DrawEllipse(pinX, pinY, width, height);
-
-                    // Retrieve the shape object for further modifications
+                    // Draw the circle once; keep the shape ID for later updates
+                    long circleShapeId = page.DrawEllipse(left, top, diameter, diameter);
                     Shape circleShape = page.Shapes.GetShape(circleShapeId);
 
-                    // Initial fill color (red) representing 0% progress
-                    circleShape.Fill.FillForegnd.Value = "#FF0000";
-
-                    // Simulate progress from 0% to 100% in steps of 20%
-                    for (int progress = 0; progress <= 100; progress += 20)
+                    // Animate the circle by changing its fill color from red to green
+                    for (int step = 1; step <= totalSteps; step++)
                     {
-                        // Update fill color based on progress (green at 100%)
-                        // Simple linear interpolation between red (#FF0000) and green (#00FF00)
-                        int red = (int)(255 * (100 - progress) / 100.0);
-                        int green = (int)(255 * progress / 100.0);
-                        string hexColor = $"#{red:X2}{green:X2}00";
+                        // Compute a simple red‑to‑green gradient based on progress
+                        double ratio = (double)step / totalSteps; // 0.0 .. 1.0
+                        int red = (int)((1.0 - ratio) * 255);
+                        int green = (int)(ratio * 255);
+                        string hexColor = $"#{red:X2}{green:X2}00"; // e.g., #FF0000 -> #00FF00
+
+                        // Apply the computed color to the circle's fill
                         circleShape.Fill.FillForegnd.Value = hexColor;
 
-                        // Prepare image save options for PNG export of the current page
-                        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                        saveOptions.PageIndex = pageIndex; // Export only the current page
+                        // Prepare image export options for the current page
+                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                        {
+                            PageIndex = pageIndex,   // export only this page
+                            PageCount = 1,
+                            ExportHiddenPage = false
+                        };
 
-                        // Build output file name
-                        string outputPath = $"Page{pageIndex + 1}_Progress{progress}.png";
-
-                        // Save the diagram (only the specified page) as PNG
-                        diagram.Save(outputPath, saveOptions);
-
-                        Console.WriteLine($"Saved {outputPath} with progress {progress}%.");
+                        // Save the current animation frame as a PNG file
+                        string outputFile = $"Page_{pageIndex + 1}_Step_{step}.png";
+                        diagram.Save(outputFile, imgOptions);
                     }
                 }
-
-                // Optionally, save the final diagram with all circles at 100% progress
-                diagram.Save("FinalDiagram.vsdx", SaveFileFormat.Vsdx);
-                Console.WriteLine("Final diagram saved as FinalDiagram.vsdx.");
             }
+
+            Console.WriteLine("Progress circle animation frames have been generated.");
         }
     }

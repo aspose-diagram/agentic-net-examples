@@ -10,34 +10,27 @@ class Program
         try
         {
 
-            // Path to the encrypted Visio file
-            string inputPath = "encrypted_input.vsdx";
-            // Path for the converted output (e.g., PDF)
-            string outputPath = "converted_output.pdf";
+            // Path to the encrypted Visio file.
+            string inputPath = "encrypted.vsdx";
 
-            // Initialize load options (no password property is available)
+            // Path for the converted output (PDF in this example).
+            string outputPath = "converted.pdf";
+
+            // LoadOptions does not support a password property in this version.
+            // Create a LoadOptions instance and use it when loading the diagram.
             LoadOptions loadOptions = new LoadOptions();
 
-            // Load the diagram using the constructor that accepts LoadOptions.
-            // Password handling for encrypted files is not supported via LoadOptions.
+            // Load the diagram using the LoadOptions constructor overload.
             Diagram diagram = new Diagram(inputPath, loadOptions);
 
-            // Simple progress tracking: report each page processed.
-            int totalPages = diagram.Pages.Count;
-            Console.WriteLine($"Total pages to process: {totalPages}");
+            // Simple progress tracking.
+            Console.WriteLine("Conversion started...");
 
-            for (int i = 0; i < totalPages; i++)
-            {
-                // Here you could perform per‑page operations.
-                // For demonstration we just output progress.
-                Console.WriteLine($"Processing page {i + 1} of {totalPages}...");
-            }
-
-            // Save the diagram to PDF (or any other supported format).
+            // Perform a conversion operation (e.g., save as PDF).
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
             diagram.Save(outputPath, pdfOptions);
 
-            Console.WriteLine("Conversion completed successfully.");
+            Console.WriteLine("Conversion completed.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,38 +1,39 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Path for the generated HTML file
+            string outputPath = "output.html";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure HTML save options to embed CSS (and other resources) into a single HTML file
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
+                // When true, all CSS styles and images are embedded directly in the HTML,
+                // producing a self‑contained file without external resources.
+                SaveAsSingleFile = true
+            };
 
-                // Load an existing Visio diagram (replace with your file path)
-                string inputPath = "sample.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+            // Save the diagram as HTML with the configured options
+            diagram.Save(outputPath, htmlOptions);
 
-                // Configure HTML save options to embed CSS and other resources into a single HTML file
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                {
-                    // When true, all CSS, images, and scripts are embedded, producing a self‑contained HTML file
-                    SaveAsSingleFile = true,
-
-                    // Optional: set a title for the generated HTML
-                    Title = "Embedded CSS HTML Export"
-                };
-
-                // Save the diagram as HTML with the configured options
-                string outputPath = "output.html";
-                diagram.Save(outputPath, htmlOptions);
-
-                Console.WriteLine($"Diagram successfully exported to {outputPath} with embedded CSS.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,60 +1,57 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the saved Visio file
+            string outputPath = "output.vsdx";
+
+            // Resource dictionary for localization (original text -> localized text)
+            var localizationMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
+                { "Page1", "Seite1" },
+                { "Page2", "Seite2" },
+                // Add more mappings as needed
+            };
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-
-                // Output Visio file path (localized version)
-                string outputPath = "output_localized.vsdx";
-
-                // Load the diagram from file
-                using (Diagram diagram = new Diagram(inputPath))
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate through all pages and translate metadata
+                foreach (Page page in diagram.Pages)
                 {
-                    // Resource dictionary that maps original page names to localized strings
-                    var resourceDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    // Translate page name if a mapping exists
+                    if (localizationMap.TryGetValue(page.Name, out string localizedName))
                     {
-                        { "Page1", "Página1" },
-                        { "Page2", "Página2" },
-                        // Add additional mappings as required
-                    };
-
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Localize the page's Name if a translation exists
-                        if (resourceDictionary.TryGetValue(page.Name, out string localizedName))
-                        {
-                            page.Name = localizedName;
-                        }
-
-                        // Localize the page's universal NameU if a translation exists
-                        if (resourceDictionary.TryGetValue(page.NameU, out string localizedNameU))
-                        {
-                            page.NameU = localizedNameU;
-                        }
-
-                        // If there were custom page-level metadata stored elsewhere,
-                        // you would translate it here using the same dictionary.
+                        page.Name = localizedName;
                     }
 
-                    // Save the modified diagram using VSDX format
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Translate universal page name if needed
+                    if (localizationMap.TryGetValue(page.NameU, out string localizedNameU))
+                    {
+                        page.NameU = localizedNameU;
+                    }
                 }
 
-                Console.WriteLine("Diagram localization completed successfully.");
+                // Save the updated diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine("Diagram saved with localized page metadata.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

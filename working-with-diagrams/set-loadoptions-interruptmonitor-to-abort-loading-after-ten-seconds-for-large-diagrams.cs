@@ -1,22 +1,21 @@
 using System;
+using System.Diagnostics;
 using Aspose.Diagram;
 
-// Custom interrupt monitor that aborts after a specified time interval
-class TimeBasedInterruptMonitor : AbstractInterruptMonitor
+// Custom interrupt monitor that requests interruption after 10 seconds
+class MyInterruptMonitor : AbstractInterruptMonitor
 {
-    private readonly DateTime _startTime;
-    private readonly TimeSpan _maxDuration;
+    private readonly Stopwatch _watch;
 
-    public TimeBasedInterruptMonitor(TimeSpan maxDuration)
+    public MyInterruptMonitor()
     {
-        _maxDuration = maxDuration;
-        _startTime = DateTime.UtcNow;
+        _watch = Stopwatch.StartNew();
     }
 
-    // Returns true when the elapsed time exceeds the allowed duration
+    // Returns true when more than 10 seconds have elapsed
     public override bool IsInterruptionRequested
     {
-        get { return (DateTime.UtcNow - _startTime) > _maxDuration; }
+        get { return _watch.Elapsed.TotalSeconds > 10; }
     }
 }
 
@@ -24,23 +23,20 @@ class Program
 {
     static void Main()
     {
+        // Create load options and assign the custom interrupt monitor
+        LoadOptions loadOptions = new LoadOptions();
+        loadOptions.InterruptMonitor = new MyInterruptMonitor();
+
         try
         {
-
-            // Create LoadOptions and assign the custom interrupt monitor (10 seconds)
-            LoadOptions loadOptions = new LoadOptions();
-            loadOptions.InterruptMonitor = new TimeBasedInterruptMonitor(TimeSpan.FromSeconds(10));
-
-            // Load the diagram using the LoadOptions with the interrupt monitor
-            Diagram diagram = new Diagram("input.vsd", loadOptions);
-
-            // Example: save the diagram after successful load (optional)
-            diagram.Save("output.vsd", SaveFileFormat.Vsd);
-
+            // Load the diagram using the options; loading will abort after 10 seconds
+            Diagram diagram = new Diagram("largeDiagram.vsd", loadOptions);
+            // Diagram is now loaded (if it completed within the time limit)
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Handle the interruption or any other loading errors
+            Console.WriteLine($"Loading aborted: {ex.Message}");
         }
     }
 }

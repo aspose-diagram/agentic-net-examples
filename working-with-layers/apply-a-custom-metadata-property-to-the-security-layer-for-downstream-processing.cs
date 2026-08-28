@@ -9,45 +9,32 @@ class Program
         try
         {
 
-            // Paths for input and output diagrams
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+            // Path to the output Visio file
             string outputPath = "output.vsdx";
 
-            // Load the diagram from file
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Flag to indicate if the target layer was found
-            bool layerFound = false;
+            // Define the metadata to attach
+            string metadataKey = "CustomMeta";
+            string metadataValue = "DownstreamProcessing";
 
-            // Iterate through all pages and their layers to locate the 'Security' layer
+            // Iterate through all pages to find the 'Security' layer
             foreach (Page page in diagram.Pages)
             {
+                // Access the layer collection via the page's sheet
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
+                    // Compare the layer name (Str2Value) with the target name
                     if (layer.Name.Value == "Security")
                     {
-                        // Example modification: ensure the layer is visible
-                        layer.Visible.Value = BOOL.True;
-
-                        // Create a custom document property to hold metadata for the Security layer
-                        var customProp = new CustomProp();
-                        customProp.Name = "SecurityLayerMeta";
-                        customProp.PropType = PropType.String;
-                        customProp.CustomValue.ValueString = "Processed";
-
-                        // Add the custom property to the diagram's custom properties collection
-                        diagram.DocumentProps.CustomProps.Add(customProp);
-
-                        layerFound = true;
-                        break;
+                        // Append metadata to the layer name using a delimiter
+                        // Example format: Security|CustomMeta=DownstreamProcessing
+                        layer.Name.Value = $"Security|{metadataKey}={metadataValue}";
                     }
                 }
-                if (layerFound) break;
-            }
-
-            if (!layerFound)
-            {
-                Console.WriteLine("Security layer not found in the diagram.");
             }
 
             // Save the modified diagram

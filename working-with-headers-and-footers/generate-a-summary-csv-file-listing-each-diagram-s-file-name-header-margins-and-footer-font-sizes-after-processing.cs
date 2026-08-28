@@ -1,59 +1,72 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
-            // Folder containing diagram files (adjust as needed)
-            string diagramsFolder = @"C:\Diagrams";
-
-            // Output CSV file path
-            string csvOutputPath = Path.Combine(diagramsFolder, "summary.csv");
-
-            // Prepare CSV writer
-            using (var writer = new StreamWriter(csvOutputPath, false))
+            try
             {
-                // Write CSV header
-                writer.WriteLine("FileName,HeaderMargin,FooterMargin,FooterFontSize");
 
-                // Get all files in the folder
-                string[] allFiles = Directory.GetFiles(diagramsFolder);
+                // Define the folder containing Visio diagram files.
+                // Adjust the path as needed or pass it via command line arguments.
+                string inputFolder = args.Length > 0 ? args[0] : @"C:\Diagrams";
 
-                foreach (string filePath in allFiles)
+                // Define the output CSV file path.
+                string outputCsv = Path.Combine(inputFolder, "DiagramHeaderFooterSummary.csv");
+
+                // Prepare a list to hold CSV lines.
+                List<string> csvLines = new List<string>();
+
+                // Add CSV header.
+                csvLines.Add("FileName,HeaderMargin,FooterMargin,FooterFontSize");
+
+                // Get all files with Visio extensions in the folder.
+                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+                foreach (string filePath in diagramFiles)
                 {
-                    // Process only supported Visio file extensions
-                    string ext = Path.GetExtension(filePath).ToLowerInvariant();
-                    if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx" && ext != ".vsdm" && ext != ".vssx")
+                    // Filter supported Visio file formats based on extension.
+                    string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                    if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
                     {
                         continue;
                     }
 
-                    try
+                    // Load the diagram using a using block to ensure proper disposal.
+                    using (Diagram diagram = new Diagram(filePath))
                     {
-                        // Load the diagram
-                        Diagram diagram = new Diagram(filePath);
-
-                        // Retrieve header and footer margins (in inches)
+                        // Retrieve header and footer margins (in inches).
                         double headerMargin = diagram.HeaderFooter.HeaderMargin.Value;
                         double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
 
-                        // Retrieve footer font size (point size stored as integer)
+                        // Retrieve the footer font size (point size). HeaderFooterFont.Height stores the size as an integer.
                         int footerFontSize = diagram.HeaderFooter.HeaderFooterFont.Height;
 
-                        // Write a line to the CSV
-                        string line = $"{Path.GetFileName(filePath)},{headerMargin},{footerMargin},{footerFontSize}";
-                        writer.WriteLine(line);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log any errors to console and continue processing other files
-                        Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                        // Build a CSV line with the required information.
+                        string fileName = Path.GetFileName(filePath);
+                        string line = $"{fileName},{headerMargin},{footerMargin},{footerFontSize}";
+                        csvLines.Add(line);
                     }
                 }
-            }
 
-            Console.WriteLine($"Summary CSV generated at: {csvOutputPath}");
-        }
+                // Write all lines to the CSV file.
+                try
+                {
+                    File.WriteAllLines(outputCsv, csvLines);
+                    Console.WriteLine($"Summary CSV generated at: {outputCsv}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error writing CSV file: {ex.Message}");
+                    throw;
+                }
+
+            }
+            catch (System.IO.DirectoryNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            }
+    }
     }

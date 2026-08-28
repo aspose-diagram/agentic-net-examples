@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -9,80 +10,70 @@ class Program
             try
             {
 
-                // Input and output file paths
+                // Paths for input and output Visio files
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
                 // Load the existing diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // -----------------------------------------------------------------
-                // 1. Retrieve the master to be cloned (e.g., a rectangle master)
-                // -----------------------------------------------------------------
-                string masterToCloneName = "Rectangle";
-                Master originalMaster = diagram.Masters.GetMasterByName(masterToCloneName);
+                // Name of the master to clone (must exist in the source diagram)
+                string masterNameToClone = "Rectangle";
+
+                // Retrieve the original master by name
+                Master? originalMaster = diagram.Masters.GetMasterByName(masterNameToClone);
                 if (originalMaster == null)
                 {
-                    throw new Exception($"Master '{masterToCloneName}' not found in the diagram.");
+                    throw new Exception($"Master '{masterNameToClone}' not found in the diagram.");
                 }
 
-                // -----------------------------------------------------------------
-                // 2. Clone the master and give it a new unique name
-                // -----------------------------------------------------------------
+                // Clone the master and give it a new unique name
                 Master clonedMaster = (Master)originalMaster.Clone();
-                clonedMaster.Name = "Rectangle_Clone";
-                clonedMaster.NameU = "Rectangle_Clone";
+                clonedMaster.Name = originalMaster.Name + "_Clone";
 
                 // Add the cloned master to the diagram's master collection
                 diagram.Masters.Add(clonedMaster);
 
-                // -----------------------------------------------------------------
-                // 3. Modify the text block of the cloned master
-                //    (Assuming the master contains at least one shape)
-                // -----------------------------------------------------------------
+                // Modify the text block of the first shape inside the cloned master (if any)
                 if (clonedMaster.Shapes.Count > 0)
                 {
                     Shape masterShape = clonedMaster.Shapes[0];
 
-                    // Clear any existing text
-                    masterShape.Text.Value.Clear();
+                    // Example modifications to the text block
+                    // Set left and right margins (0.1 inches)
+                    masterShape.TextBlock.LeftMargin = new DoubleValue(0.1, MeasureConst.IN);
+                    masterShape.TextBlock.RightMargin = new DoubleValue(0.1, MeasureConst.IN);
 
-                    // Add new text to the master shape
-                    masterShape.Text.Value.Add(new Txt("Cloned Master Text"));
+                    // Set vertical alignment to middle
+                    masterShape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
 
-                    // Example: set text direction to horizontal
-                    masterShape.TextBlock.TextDirection.Value = TextDirectionValue.Horizontal;
-
-                    // Example: set margins (4 points each)
-                    double marginPoints = 4.0;
-                    masterShape.TextBlock.LeftMargin.Value = marginPoints;
-                    masterShape.TextBlock.RightMargin.Value = marginPoints;
-                    masterShape.TextBlock.TopMargin.Value = marginPoints;
-                    masterShape.TextBlock.BottomMargin.Value = marginPoints;
-                }
-                else
-                {
-                    throw new Exception("Cloned master does not contain any shapes to modify.");
+                    // Set a background color for the text block (yellow)
+                    masterShape.TextBlock.TextBkgnd.Ufe.F = "RGB(255,255,0)";
                 }
 
-                // -----------------------------------------------------------------
-                // 4. Apply the cloned master to selected shapes on the first page
-                //    (Here we select shapes whose universal name is "TargetShape")
-                // -----------------------------------------------------------------
-                Page page = diagram.Pages[0];
-                foreach (Shape shape in page.Shapes)
+                // Define the IDs of shapes that should use the cloned master
+                // In a real scenario these could be determined dynamically
+                List<long> targetShapeIds = new List<long> { 5, 8, 12 };
+
+                // Apply the cloned master to each selected shape
+                Page page = diagram.Pages[0]; // Assuming shapes are on the first page
+                foreach (long shapeId in targetShapeIds)
                 {
-                    if (shape.NameU == "TargetShape")
+                    Shape shape = page.Shapes.GetShape(shapeId);
+                    if (shape != null)
                     {
-                        // Assign the cloned master to the shape
                         shape.Master = clonedMaster;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Shape with ID {shapeId} not found on page '{page.Name}'.");
                     }
                 }
 
-                // -----------------------------------------------------------------
-                // 5. Save the modified diagram
-                // -----------------------------------------------------------------
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Diagram processing completed successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

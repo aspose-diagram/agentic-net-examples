@@ -1,112 +1,83 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class MyStreamProvider : IStreamProvider
+namespace BatchHtmlExport
 {
-    // Keep track of created streams to ensure they are disposed.
-    private readonly Dictionary<string, Stream> _streams = new();
-
-    // Called by Aspose.Diagram before writing a resource (e.g., an image) to a stream.
-    public void InitStream(StreamProviderOptions options)
+    // Custom stream provider that creates a MemoryStream for each resource
+    // and disposes it when the export process signals that the stream is no longer needed.
+    public class MyStreamProvider : IStreamProvider
     {
-        // Create a new memory stream for the resource.
-        var stream = new MemoryStream();
-        // Assign the stream to the options so Aspose can write into it.
-        options.Stream = stream;
-        // Store the stream using the default path as a key for later disposal.
-        if (!string.IsNullOrEmpty(options.DefaultPath))
+        // Called by Aspose.Diagram before writing a resource.
+        public void InitStream(StreamProviderOptions options)
         {
-            _streams[options.DefaultPath] = stream;
-        }
-    }
-
-    // Called by Aspose.Diagram after the resource has been written.
-    public void CloseStream(StreamProviderOptions options)
-    {
-        // Retrieve the stream that was used.
-        var stream = options.Stream;
-        if (stream != null)
-        {
-            // Ensure the stream is flushed and disposed.
-            stream.Flush();
-            stream.Dispose();
+            // Create a new memory stream for the resource.
+            // The stream will be assigned to options.Stream and later disposed.
+            options.Stream = new MemoryStream();
         }
 
-        // Remove the entry from the tracking dictionary.
-        if (!string.IsNullOrEmpty(options.DefaultPath))
+        // Called by Aspose.Diagram after the resource has been written.
+        public void CloseStream(StreamProviderOptions options)
         {
-            _streams.Remove(options.DefaultPath);
-        }
-    }
-
-    // Optional helper to clean up any streams that might not have been closed.
-    public void Cleanup()
-    {
-        foreach (var kvp in _streams)
-        {
-            kvp.Value?.Dispose();
-        }
-        _streams.Clear();
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        try
-        {
-
-            // Input folder containing Visio files.
-            string inputFolder = @"C:\Visio\Input";
-            // Output folder for generated HTML files.
-            string outputFolder = @"C:\Visio\Output";
-
-            // Ensure the output directory exists.
-            Directory.CreateDirectory(outputFolder);
-
-            // Get all Visio files (VSDX) in the input folder.
-            string[] files = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
-
-            foreach (string filePath in files)
+            // Dispose the stream to release unmanaged resources and avoid memory leaks.
+            if (options.Stream != null)
             {
-                // Load the diagram from file.
-                Diagram diagram = new Diagram(filePath);
+                options.Stream.Dispose();
+                options.Stream = null;
+            }
+        }
+    }
 
-                // Prepare HTML save options with a custom stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            try
+            {
+
+                // Input folder containing Visio files (e.g., .vsdx)
+                string inputFolder = @"C:\Visio\Input";
+                // Output folder for generated HTML files
+                string outputFolder = @"C:\Visio\Output";
+
+                // Ensure output directory exists
+                Directory.CreateDirectory(outputFolder);
+
+                // Get all Visio files in the input folder
+                string[] visioFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+
+                foreach (string visioPath in visioFiles)
                 {
-                    // Assign the custom provider to handle resource streams.
-                    StreamProvider = new MyStreamProvider()
-                };
+                    // Determine output HTML file path
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(visioPath);
+                    string htmlPath = Path.Combine(outputFolder, fileNameWithoutExt + ".html");
 
-                // Determine output HTML file path.
-                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
-                string outputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".html");
+                    // Load the diagram inside a using block to ensure proper disposal
+                    using (Diagram diagram = new Diagram(visioPath))
+                    {
+                        // Configure HTML save options with the custom stream provider
+                        HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                        {
+                            StreamProvider = new MyStreamProvider()
+                        };
 
-                // Save the diagram as HTML.
-                diagram.Save(outputPath, htmlOptions);
+                        // Save the diagram as HTML
+                        diagram.Save(htmlPath, htmlOptions);
+                    }
 
-                // Dispose the diagram to free unmanaged resources.
-                diagram.Dispose();
-
-                // If the provider implements cleanup (in case any streams were not closed),
-                // invoke it to guarantee no leaks.
-                if (htmlOptions.StreamProvider is MyStreamProvider provider)
-                {
-                    provider.Cleanup();
+                    // At this point, the diagram and all streams created by MyStreamProvider
+                    // have been disposed, preventing memory leaks.
+                    Console.WriteLine($"Exported '{visioPath}' to '{htmlPath}'.");
                 }
 
-                Console.WriteLine($"Converted '{filePath}' to HTML successfully.");
-            }
+                Console.WriteLine("Batch HTML export completed.");
 
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.DirectoryNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

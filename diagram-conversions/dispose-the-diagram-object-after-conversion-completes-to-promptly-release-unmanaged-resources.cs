@@ -3,41 +3,26 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramConversion
-{
-    public static void Convert(string inputFile, string outputFile)
-    {
-        // Load the Visio diagram from the specified file
-        Diagram diagram = new Diagram(inputFile);
-        try
-        {
-            // Example conversion step: remove any macros from the diagram
-            diagram.RemoveMacro();
-
-            // Save the diagram in VDX format to the output file
-            diagram.Save(outputFile, SaveFileFormat.Vdx);
-        }
-        finally
-        {
-            // Dispose the Diagram object to release unmanaged resources promptly
-            diagram.Dispose();
-        }
-    }
-}
-
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            DiagramConversion.Convert("", "");
+            // Load the source Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Convert and save the diagram to the desired format (e.g., PDF)
+            diagram.Save("output.pdf", SaveFileFormat.Pdf);
+
+            // Release unmanaged resources promptly
+            diagram.Dispose();
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

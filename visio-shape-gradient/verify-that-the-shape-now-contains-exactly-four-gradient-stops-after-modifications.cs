@@ -9,37 +9,28 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("sample.vsdx");
 
-            // Access the first page of the diagram
+            // Access the first page (adjust index if needed)
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape to inspect.
-            // Here we assume the shape with ID 1 exists; adjust as needed.
+            // Retrieve the target shape by its ID (replace 1 with the actual shape ID)
             Shape shape = page.Shapes.GetShape(1);
             if (shape == null)
                 throw new Exception("Target shape not found.");
 
-            // Access the gradient stops collection of the shape's fill.
+            // Get the collection of gradient stops for the shape
             var gradientStops = shape.Fill.GradientFill.GradientStops;
 
-            // Count the number of gradient stops.
-            int stopCount = 0;
-            foreach (GradientStop stop in gradientStops)
-            {
-                stopCount++;
-            }
+            // Count the gradient stops
+            int stopCount = gradientStops.Count;
 
-            // Verify that there are exactly four gradient stops.
-            if (stopCount == 4)
-            {
-                Console.WriteLine("Shape contains exactly four gradient stops.");
-            }
+            // Verify that there are exactly four gradient stops
+            if (stopCount != 4)
+                throw new Exception($"Expected 4 gradient stops, but found {stopCount}.");
             else
-            {
-                throw new Exception($"Gradient stop count mismatch: expected 4, found {stopCount}.");
-            }
+                Console.WriteLine("Shape contains exactly four gradient stops.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -5,48 +5,52 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         // Input Visio file path
         string inputPath = "input.vsdx";
-        // Verify the input file exists before proceeding
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
+        // Output PDF file path
+        string outputPath = "output.pdf";
+
         try
         {
-            // Load the diagram from the specified file
+            // Load the diagram from the input file
             Diagram diagram = new Diagram(inputPath);
 
             // Define the corporate line color (hex format)
-            const string corporateLineColor = "#1A73E8"; // Example corporate blue
+            const string corporateLineColor = "#00ADEF";
 
-            // Apply the line color to all connector shapes (OneD shapes) on each page
+            // Iterate through all pages and shapes to update connector line colors
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Connectors are 1‑D shapes; set their line color
+                    // Identify connector shapes (1‑D shapes)
                     if (shape.OneD)
                     {
+                        // Apply the corporate line color to the connector's line
                         shape.Line.LineColor.Value = corporateLineColor;
                     }
                 }
             }
 
-            // Prepare PDF save options (no unsupported properties are set)
+            // Configure PDF save options (no AutoFitPageToDrawingContent property)
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Export the diagram to PDF using the configured options
-            string outputPath = "output.pdf";
+            // Save the diagram as PDF with the updated connector colors
             diagram.Save(outputPath, pdfOptions);
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

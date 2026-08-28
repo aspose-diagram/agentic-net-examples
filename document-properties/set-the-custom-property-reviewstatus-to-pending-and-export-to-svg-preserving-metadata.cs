@@ -10,9 +10,10 @@ class Program
             try
             {
 
-                // Path to the source Visio file
+                // Input Visio file (replace with actual path)
                 string inputPath = "input.vsdx";
-                // Path for the exported SVG file
+
+                // Output SVG file
                 string outputPath = "output.svg";
 
                 // Load the diagram
@@ -30,10 +31,8 @@ class Program
                 // Prepare SVG save options (default options preserve metadata)
                 SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-                // Export the diagram to SVG
+                // Save the diagram as SVG with the custom property included
                 diagram.Save(outputPath, svgOptions);
-
-                Console.WriteLine("Diagram exported to SVG with ReviewStatus set to Pending.");
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,26 +9,27 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Assume we work with the first page
+            Page page = diagram.Pages[0];
+
+            // Iterate through the layers collection and move the layer named "Background"
+            // to the bottom of the stack by setting its index (IX) to 0.
+            foreach (Layer layer in page.PageSheet.Layers)
             {
-                // Search for the shape named "Background"
-                foreach (Shape shape in page.Shapes)
+                if (layer.Name.Value == "Background")
                 {
-                    if (!string.IsNullOrEmpty(shape.Name) &&
-                        shape.Name.Equals("Background", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Move the background shape to the back of the Z‑order
-                        shape.SendToBack();
-                    }
+                    // Bring the background layer to the bottom
+                    layer.IX = 0;
                 }
             }
 
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

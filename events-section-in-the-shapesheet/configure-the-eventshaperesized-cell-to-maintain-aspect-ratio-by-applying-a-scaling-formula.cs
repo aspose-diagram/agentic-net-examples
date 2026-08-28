@@ -1,45 +1,42 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         // Path to the source Visio file
         string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        // Verify the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the diagram inside a using block to ensure proper disposal
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Access the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Retrieve a shape by its ID (example ID = 1)
-                // Adjust the ID as needed for your specific diagram
-                long shapeId = 1;
-                Shape shape = page.Shapes.GetShape(shapeId);
+                // Retrieve a shape to modify; using shape ID 1 as an example
+                Shape shape = page.Shapes.GetShape(1);
 
-                // Apply a scaling formula to maintain aspect ratio when the shape is resized.
-                // The EventXFMod cell is used here as a placeholder for a resize-related event.
-                // The formula sets the Height to be 75% of the Width (adjust the factor as required).
-                shape.Event.EventXFMod.Ufe.F = "GUARD(Width * 0.75)";
+                // Configure the EventXFMod cell (triggered on shape resize) to maintain aspect ratio.
+                // The formula sets Width = Height * 1.5, preserving a 1.5 aspect ratio.
+                shape.Event.EventXFMod.Ufe.F = "SETF(Width, Height * 1.5)";
 
-                // Save the modified diagram to the output path
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram with a valid SaveFileFormat enum value
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
-
-            Console.WriteLine("Event cell configured successfully.");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Output any errors encountered during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

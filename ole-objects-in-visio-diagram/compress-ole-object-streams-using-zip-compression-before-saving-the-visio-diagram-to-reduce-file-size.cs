@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,61 +10,45 @@ class Program
         try
         {
 
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Load the Visio diagram from a file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the Visio diagram (lifecycle rule)
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to locate OLE objects
+            // Iterate through every page and every shape on each page
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // ForeignData holds embedded OLE or image data
-                    ForeignData foreign = shape.ForeignData;
-                    if (foreign == null)
-                        continue;
-
-                    // Compress embedded OLE object data, if present
-                    if (foreign.ObjectData != null && foreign.ObjectData.Length > 0)
+                    // If the shape contains embedded OLE object data, compress it
+                    if (shape.ForeignData != null &&
+                        shape.ForeignData.ObjectData != null &&
+                        shape.ForeignData.ObjectData.Length > 0)
                     {
-                        foreign.ObjectData = CompressBytes(foreign.ObjectData);
-                    }
+                        byte[] originalData = shape.ForeignData.ObjectData;
+                        byte[] compressedData;
 
-                    // Compress image data of the foreign object, if present
-                    if (foreign.ImageData != null && foreign.ImageData.Length > 0)
-                    {
-                        foreign.ImageData = CompressBytes(foreign.ImageData);
+                        // Compress using ZIP (Deflate) compression
+                        using (MemoryStream compressedStream = new MemoryStream())
+                        {
+                            using (DeflateStream zipStream = new DeflateStream(compressedStream, CompressionLevel.Optimal, leaveOpen: true))
+                            {
+                                zipStream.Write(originalData, 0, originalData.Length);
+                            }
+                            compressedData = compressedStream.ToArray();
+                        }
+
+                        // Replace the original OLE data with the compressed version
+                        shape.ForeignData.ObjectData = compressedData;
                     }
                 }
             }
 
-            // Save the modified diagram (lifecycle rule)
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Clean up
-            diagram.Dispose();
+            // Save the diagram with the compressed OLE streams
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    // Helper method that applies ZIP (GZip) compression to a byte array
-    private static byte[] CompressBytes(byte[] data)
-    {
-        using (var output = new MemoryStream())
-        {
-            // Use GZipStream with optimal compression level (ZIP compression)
-            using (var gzip = new GZipStream(output, CompressionLevel.Optimal, leaveOpen: true))
-            {
-                gzip.Write(data, 0, data.Length);
-            }
-            return output.ToArray();
         }
     }
 }

@@ -9,18 +9,14 @@ class Program
         try
         {
 
-            // Path to the source VSD file
-            string inputFile = "input.vsd";
+            // Load the Visio diagram from a VSD file
+            Diagram diagram = new Diagram("input.vsd");
 
-            // Path where the PNG image will be saved
-            string outputFile = "output.png";
+            // Save the diagram as a PNG image
+            diagram.Save("output.png", SaveFileFormat.Png);
 
-            // Load the Visio diagram from the file
-            using (Diagram diagram = new Diagram(inputFile))
-            {
-                // Save the diagram as a PNG image
-                diagram.Save(outputFile, SaveFileFormat.Png);
-            }
+            // Release resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

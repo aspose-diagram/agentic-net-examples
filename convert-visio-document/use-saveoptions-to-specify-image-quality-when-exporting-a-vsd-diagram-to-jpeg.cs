@@ -10,15 +10,15 @@ class Program
         try
         {
 
-            // Load the VSD diagram from file
+            // Load the VSD diagram (constructor that accepts a file path is used here)
             Diagram diagram = new Diagram("input.vsd");
 
             // Create ImageSaveOptions for JPEG format
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-            // Set the desired JPEG quality (0-100)
+            // Set the desired JPEG quality (0‑100). Lower value = higher compression.
             saveOptions.JpegQuality = 75;
 
-            // Export the diagram to a JPEG image using the specified quality
+            // Export the diagram to a JPEG file using the specified quality setting
             diagram.Save("output.jpg", saveOptions);
 
         }

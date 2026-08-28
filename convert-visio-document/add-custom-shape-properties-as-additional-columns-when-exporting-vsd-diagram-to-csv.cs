@@ -1,116 +1,65 @@
 using System;
-using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output CSV file path
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramCsvExport <inputVisioPath> <outputCsvPath>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputPath = args[1];
+
             try
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output CSV file path
-                string outputCsv = "output.csv";
-
-                // Load the diagram
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Collect all distinct custom property names from all shapes
-                HashSet<string> customPropNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                // Iterate through all pages and shapes to add a custom property
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        if (shape.Props != null)
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Create a new custom property (Prop) if it does not already exist
+                        bool propExists = false;
+                        foreach (Prop existingProp in shape.Props)
                         {
-                            foreach (Prop prop in shape.Props)
+                            if (existingProp.Name == "MyCustomProperty")
                             {
-                                if (!string.IsNullOrEmpty(prop.Name))
-                                    customPropNames.Add(prop.Name);
+                                propExists = true;
+                                break;
                             }
+                        }
+
+                        if (!propExists)
+                        {
+                            Prop customProp = new Prop();
+                            customProp.Name = "MyCustomProperty";
+                            customProp.Label.Value = "My Custom Property";
+                            customProp.Value.Val = "DefaultValue";
+                            customProp.Type.Value = TypePropValue.String;
+                            shape.Props.Add(customProp);
                         }
                     }
                 }
 
-                // Prepare header columns: ShapeID, Name, NameU + custom properties
-                List<string> headers = new List<string> { "ShapeID", "Name", "NameU" };
-                headers.AddRange(customPropNames);
-
-                // Write CSV
-                using (StreamWriter writer = new StreamWriter(outputCsv))
-                {
-                    // Write header line
-                    writer.WriteLine(string.Join(",", EscapeCsvList(headers)));
-
-                    // Write data rows
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            List<string> row = new List<string>
-                            {
-                                shape.ID.ToString(),
-                                shape.Name ?? string.Empty,
-                                shape.NameU ?? string.Empty
-                            };
-
-                            // Build a dictionary for quick lookup of this shape's custom properties
-                            Dictionary<string, string> shapeProps = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                            if (shape.Props != null)
-                            {
-                                foreach (Prop prop in shape.Props)
-                                {
-                                    if (!string.IsNullOrEmpty(prop.Name))
-                                        shapeProps[prop.Name] = prop.Value?.Val ?? string.Empty;
-                                }
-                            }
-
-                            // Add values for each custom property column
-                            foreach (string propName in customPropNames)
-                            {
-                                shapeProps.TryGetValue(propName, out string value);
-                                row.Add(value ?? string.Empty);
-                            }
-
-                            writer.WriteLine(string.Join(",", EscapeCsvList(row)));
-                        }
-                    }
-                }
-
-                Console.WriteLine($"CSV export completed: {outputCsv}");
-
+                // Export the diagram to CSV; custom properties become additional columns
+                diagram.Save(outputPath, SaveFileFormat.Csv);
+                Console.WriteLine($"Diagram exported successfully to CSV at: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Escapes a list of strings for CSV output
-        private static IEnumerable<string> EscapeCsvList(IEnumerable<string> values)
-        {
-            foreach (var v in values)
-                yield return EscapeCsv(v);
-        }
-
-        // Escapes a single CSV field according to RFC 4180
-        private static string EscapeCsv(string field)
-        {
-            if (field == null)
-                return string.Empty;
-
-            bool mustQuote = field.Contains(",") || field.Contains("\"") || field.Contains("\r") || field.Contains("\n");
-            if (mustQuote)
-            {
-                string escaped = field.Replace("\"", "\"\"");
-                return $"\"{escaped}\"";
-            }
-            else
-            {
-                return field;
+                Console.WriteLine($"Error: {ex.Message}");
             }
         }
     }

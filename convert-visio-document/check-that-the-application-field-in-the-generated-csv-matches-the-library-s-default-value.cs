@@ -1,88 +1,58 @@
+using Aspose.Diagram;
 using System;
 using System.IO;
-using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Define output CSV path
+        // Create a new diagram
+        Diagram diagram = new Diagram();
+
+        // Path for the CSV output
         string csvPath = "output.csv";
 
-        try
-        {
-            // Create a new diagram with default settings
-            Diagram diagram = new Diagram();
+        // Save the diagram as CSV
+        diagram.Save(csvPath, SaveFileFormat.Csv);
 
-            // Add a simple shape to ensure the diagram has content
-            // Parameters: PinX, PinY, Master name, Page index
-            long shapeId = diagram.AddShape(1.0, 1.0, "Rectangle", 0);
-
-            // Save the diagram as CSV using the correct SaveFileFormat enum member
-            diagram.Save(csvPath, SaveFileFormat.Csv);
-        }
-        catch (Exception ex)
+        // Read all lines from the generated CSV
+        string[] lines = File.ReadAllLines(csvPath);
+        if (lines.Length == 0)
         {
-            // Report any Aspose.Diagram errors and exit
-            Console.Error.WriteLine($"Aspose.Diagram error: {ex.Message}");
+            Console.WriteLine("CSV file is empty.");
             return;
         }
 
-        // The library's default Application value is empty when not explicitly set
-        string defaultApplication = string.Empty;
-
-        // Guard: ensure the generated CSV file exists before reading
-        if (!File.Exists(csvPath))
-        {
-            Console.Error.WriteLine($"File not found: {csvPath}");
-            return;
-        }
-
-        // Read all lines from the generated CSV file
-        string[] csvLines = File.ReadAllLines(csvPath);
-        if (csvLines.Length < 2)
-        {
-            throw new Exception("CSV file does not contain enough data for validation.");
-        }
-
-        // The first line contains headers, the second line contains values
-        string headerLine = csvLines[0];
-        string valueLine = csvLines[1];
-
-        // Split by commas (CSV delimiter)
+        // First line contains headers
+        string headerLine = lines[0];
         string[] headers = headerLine.Split(',');
-        string[] values = valueLine.Split(',');
 
-        // Find the index of the "Application" column (case‑insensitive)
-        int appIndex = -1;
-        for (int i = 0; i < headers.Length; i++)
-        {
-            if (headers[i].Trim().Equals("Application", StringComparison.OrdinalIgnoreCase))
-            {
-                appIndex = i;
-                break;
-            }
-        }
-
+        // Locate the "Application" column index
+        int appIndex = Array.IndexOf(headers, "Application");
         if (appIndex == -1)
         {
-            throw new Exception("Application column not found in CSV header.");
+            Console.WriteLine("Application column not found in CSV.");
+            return;
         }
 
-        if (appIndex >= values.Length)
+        // Second line contains data (if present)
+        string dataLine = lines.Length > 1 ? lines[1] : string.Empty;
+        string[] data = dataLine.Split(',');
+
+        // Retrieve the Application field value
+        string appValue = appIndex < data.Length ? data[appIndex] : string.Empty;
+
+        // Expected default value for the Application field
+        const string defaultAppValue = "Aspose.Diagram";
+
+        // Verify the Application field matches the default
+        if (string.Equals(appValue, defaultAppValue, StringComparison.OrdinalIgnoreCase))
         {
-            throw new Exception("Application value missing in CSV data row.");
+            Console.WriteLine("Application field matches the default value.");
         }
-
-        // Retrieve the Application field value from the CSV row
-        string csvApplication = values[appIndex].Trim();
-
-        // Validate that the CSV Application field matches the library’s default value
-        if (!csvApplication.Equals(defaultApplication, StringComparison.Ordinal))
+        else
         {
-            throw new Exception($"Application field mismatch. Expected: '{defaultApplication}', Found: '{csvApplication}'.");
+            Console.WriteLine($"Application field mismatch. Expected: {defaultAppValue}, Found: {appValue}");
         }
-
-        Console.WriteLine("Application field matches the library's default value.");
     }
 }

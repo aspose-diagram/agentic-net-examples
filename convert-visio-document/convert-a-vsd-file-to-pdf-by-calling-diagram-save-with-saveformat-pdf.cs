@@ -1,29 +1,21 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VsdToPdfConverter
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source VSD file
-            string inputFile = "input.vsd";
-
-            // Path where the PDF will be saved
-            string outputFile = "output.pdf";
-
-            // Load the Visio diagram from the file
-            Diagram diagram = new Diagram(inputFile);
-
-            // Save the diagram as PDF using the SaveFileFormat enum
-            diagram.Save(outputFile, SaveFileFormat.Pdf);
-
-            // Release resources
-            diagram.Dispose();
+            // Load the source VSD file
+            using (var diagram = new Diagram("input.vsd"))
+            {
+                // Save the diagram as PDF using the Save method with SaveFileFormat.Pdf
+                diagram.Save("output.pdf", SaveFileFormat.Pdf);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

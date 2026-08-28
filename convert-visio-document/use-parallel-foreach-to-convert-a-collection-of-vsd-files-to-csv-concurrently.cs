@@ -1,44 +1,81 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: input folder and output folder.
+        if (args.Length < 2)
         {
-            // Input folder containing VSD files; use first argument or current directory
-            string inputFolder = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+            Console.Error.WriteLine("Usage: <program> <inputFolder> <outputFolder>");
+            return;
+        }
 
-            // Get all .vsd files in the folder
-            string[] vsdFiles = Directory.GetFiles(inputFolder, "*.vsd", SearchOption.TopDirectoryOnly);
+        // Assign input folder path and verify it exists.
+        string inputFolder = args[0];
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder not found: {inputFolder}");
+            return;
+        }
 
-            if (vsdFiles.Length == 0)
+        // Assign output folder path and create it if missing.
+        string outputFolder = args[1];
+        if (!Directory.Exists(outputFolder))
+        {
+            try
             {
-                Console.WriteLine("No VSD files found in the specified folder.");
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                return;
+            }
+        }
+
+        // Collect all VSD files from the input folder.
+        List<string> vsdFiles = Directory.GetFiles(inputFolder, "*.vsd", SearchOption.TopDirectoryOnly).ToList();
+
+        // If no files found, inform the user and exit.
+        if (vsdFiles.Count == 0)
+        {
+            Console.Error.WriteLine($"No VSD files found in folder: {inputFolder}");
+            return;
+        }
+
+        // Process each VSD file in parallel.
+        Parallel.ForEach(vsdFiles, filePath =>
+        {
+            // Guard: ensure the file still exists before processing.
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found during processing: {filePath}");
                 return;
             }
 
-            // Convert each VSD file to CSV concurrently
-            Parallel.ForEach(vsdFiles, vsdPath =>
+            try
             {
-                try
-                {
-                    // Load the Visio diagram
-                    Diagram diagram = new Diagram(vsdPath);
+                // Load the Visio diagram from the VSD file.
+                Diagram diagram = new Diagram(filePath);
 
-                    // Determine output CSV path (same name with .csv extension)
-                    string csvPath = Path.ChangeExtension(vsdPath, ".csv");
+                // Determine the CSV output path (same name, .csv extension).
+                string outputCsvPath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(filePath) + ".csv");
 
-                    // Save the diagram as CSV
-                    diagram.Save(csvPath, SaveFileFormat.Csv);
-
-                    Console.WriteLine($"Successfully converted: {Path.GetFileName(vsdPath)} -> {Path.GetFileName(csvPath)}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{vsdPath}': {ex.Message}");
-                }
-            });
-        }
+                // Save the diagram as CSV using the appropriate SaveFileFormat.
+                diagram.Save(outputCsvPath, SaveFileFormat.Csv);
+            }
+            catch (Exception ex)
+            {
+                // Report any errors that occur during load or save.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
+        });
     }
+}

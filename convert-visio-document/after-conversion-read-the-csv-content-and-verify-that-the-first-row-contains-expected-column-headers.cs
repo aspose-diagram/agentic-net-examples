@@ -1,55 +1,58 @@
 using System;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio diagram
+            string inputPath = "input.vsdx";
+
+            // Path where the CSV will be saved
+            string csvPath = "output.csv";
+
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Export the diagram to CSV format
+            diagram.Save(csvPath, SaveFileFormat.Csv);
+
+            // Define the expected column headers
+            string[] expectedHeaders = new[] { "Column1", "Column2", "Column3" };
+
+            // Read the first line (header row) from the generated CSV file
+            using (var reader = new StreamReader(csvPath))
             {
+                string headerLine = reader.ReadLine();
 
-                // Paths to the source Visio diagram and the CSV output
-                string diagramPath = "input.vsdx";
-                string csvPath = "output.csv";
+                if (headerLine == null)
+                    throw new Exception("CSV file is empty.");
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
+                // Split the header line by commas
+                string[] actualHeaders = headerLine.Split(',');
 
-                // Export the diagram to CSV format
-                diagram.Save(csvPath, SaveFileFormat.Csv);
+                // Verify the number of columns matches
+                if (actualHeaders.Length != expectedHeaders.Length)
+                    throw new Exception($"Header count mismatch. Expected {expectedHeaders.Length}, got {actualHeaders.Length}.");
 
-                // Read all lines from the generated CSV file
-                string[] lines = File.ReadAllLines(csvPath);
-                if (lines.Length == 0)
+                // Verify each header value
+                for (int i = 0; i < expectedHeaders.Length; i++)
                 {
-                    throw new Exception("The CSV file is empty.");
+                    if (!string.Equals(actualHeaders[i].Trim(), expectedHeaders[i], StringComparison.OrdinalIgnoreCase))
+                        throw new Exception($"Header mismatch at position {i}. Expected '{expectedHeaders[i]}', got '{actualHeaders[i]}'");
                 }
 
-                // Split the first line to obtain the actual column headers
-                string[] actualHeaders = lines[0].Split(',');
-
-                // Define the expected column headers
-                string[] expectedHeaders = new[] { "Header1", "Header2", "Header3" };
-
-                // Verify that the actual headers match the expected ones
-                bool headersMatch = actualHeaders.Length == expectedHeaders.Length &&
-                                    actualHeaders.SequenceEqual(expectedHeaders);
-
-                if (!headersMatch)
-                {
-                    string expected = string.Join(",", expectedHeaders);
-                    string actual = string.Join(",", actualHeaders);
-                    throw new Exception($"CSV header verification failed. Expected: {expected}. Actual: {actual}.");
-                }
-
-                Console.WriteLine("CSV header verification succeeded.");
-
+                Console.WriteLine("CSV header verification passed.");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

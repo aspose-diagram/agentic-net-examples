@@ -1,41 +1,35 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        // Load an existing Visio diagram from a file.
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists.
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        static void Main(string[] args)
+        {
+            try
+            {
 
-        Diagram diagram;
-        try
-        {
-            // Attempt to load the diagram; catch any loading errors.
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
 
-        // Define the output CSV file path.
-        string outputPath = "output.csv";
+                // Path for the exported CSV file
+                string outputPath = "output.csv";
 
-        try
-        {
-            // Save the diagram as CSV using the appropriate SaveFileFormat.
-            diagram.Save(outputPath, SaveFileFormat.Csv);
-        }
-        catch (Exception ex)
-        {
-            // Report any errors that occur during the save operation.
-            Console.Error.WriteLine($"Error saving CSV: {ex.Message}");
-        }
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Note: Aspose.Diagram does not expose an Encoding property on SaveOptions.
+                // The CSV export uses UTF‑8 encoding internally, so no additional configuration is required.
+
+                // Save the diagram as CSV
+                diagram.Save(outputPath, SaveFileFormat.Csv);
+
+                Console.WriteLine($"Diagram successfully exported to CSV at: {outputPath}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

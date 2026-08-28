@@ -1,41 +1,42 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // Use the active page to add a rectangle shape
-            Page page = diagram.ActivePage;
-            // DrawRectangle(pinX, pinY, width, height) – all values are in inches
-            long shapeId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
+                // Access the first page of the diagram
+                Page page = diagram.Pages[0];
 
-            // Retrieve the Shape object from the returned ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+                // Add a rectangle shape to the page (position at (2,2) inches)
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Create a new Field object
-            Field field = new Field();
+                // Create a new field and assign a static string value
+                Field field = new Field();
+                field.Value.Val = "Custom Text";
 
-            // Assign a static string value to the field (this will appear as custom text on the shape)
-            field.Value.Val = "Custom Text";
+                // Add the field to the shape's Fields collection
+                shape.Fields.Add(field);
 
-            // Add the field to the shape's Fields collection
-            shape.Fields.Add(field);
+                // Save the modified diagram to a new file
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                Console.WriteLine("Field added and diagram saved successfully.");
 
-        }
-        catch (System.NullReferenceException ex)
-        {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

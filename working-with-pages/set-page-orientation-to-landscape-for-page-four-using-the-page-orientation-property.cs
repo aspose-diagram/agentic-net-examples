@@ -10,28 +10,28 @@ class Program
         try
         {
 
-            // Path to the source Visio diagram
+            // Load an existing Visio diagram (replace with your file path)
             string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Ensure there are at least four pages
+            if (diagram.Pages.Count < 4)
             {
-                // Ensure the diagram has at least four pages (index 0‑based)
-                if (diagram.Pages.Count < 4)
-                    throw new Exception("The diagram does not contain a fourth page.");
-
-                // Retrieve the fourth page (index 3)
-                Page page = diagram.Pages[3];
-
-                // Set the page orientation to Landscape
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("The diagram does not contain a fourth page.");
+                return;
             }
 
-            Console.WriteLine("Page orientation set to Landscape for page four and diagram saved.");
+            // Access the fourth page (zero‑based index)
+            Page page = diagram.Pages[3];
+
+            // Set the page orientation to landscape
+            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Page orientation set to landscape and diagram saved successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

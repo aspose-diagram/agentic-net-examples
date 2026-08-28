@@ -1,66 +1,57 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram (no LoadOptions needed)
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page in the document
-            Page page = diagram.Pages[0];
-
-            // Locate the first shape that is not marked as deleted
-            Shape targetShape = null;
-            foreach (Shape shp in page.Shapes)
+            try
             {
-                if (shp.Del == BOOL.False)
+
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Access the first page
+                Page page = diagram.Pages[0];
+
+                // Retrieve the first shape on the page (if any)
+                if (page.Shapes.Count == 0)
                 {
-                    targetShape = shp;
-                    break;
+                    Console.WriteLine("No shapes found on the first page.");
+                    return;
                 }
-            }
 
-            if (targetShape == null)
+                // Get the shape by its ID
+                long shapeId = page.Shapes[0].ID;
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Record original position for comment
+                double originalPinX = shape.XForm.PinX.Value;
+                double originalPinY = shape.XForm.PinY.Value;
+
+                // Modify geometry: move the shape by a specific offset
+                double offsetX = 1.0; // inches
+                double offsetY = 0.5; // inches
+                shape.XForm.PinX.Value += offsetX;
+                shape.XForm.PinY.Value += offsetY;
+
+                // Add a comment annotation describing the change
+                string commentText = $"Geometry updated: moved from ({originalPinX:F2}, {originalPinY:F2}) " +
+                                     $"to ({shape.XForm.PinX.Value:F2}, {shape.XForm.PinY.Value:F2}) " +
+                                     $"by offsets X={offsetX}in, Y={offsetY}in.";
+                page.AddComment(shape, commentText);
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Diagram saved to '{outputPath}'. Comment added to shape ID {shapeId}.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("No editable shape found on the page.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Store original geometry values for the comment
-            double originalWidth = targetShape.XForm.Width.Value;
-            double originalHeight = targetShape.XForm.Height.Value;
-
-            // Modify geometry: increase width by 1 inch and height by 0.5 inch
-            targetShape.XForm.Width.Value = originalWidth + 1.0;
-            targetShape.XForm.Height.Value = originalHeight + 0.5;
-
-            // Create a comment that explains the modification rationale
-            string commentText = $"Width changed from {originalWidth} to {targetShape.XForm.Width.Value} inches; " +
-                                 $"Height changed from {originalHeight} to {targetShape.XForm.Height.Value} inches " +
-                                 $"to accommodate additional content.";
-
-            // Attach the comment to the shape's ShapeSheet
-            page.AddComment(targetShape, commentText);
-
-            // Save the updated diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

@@ -10,47 +10,52 @@ class Program
             try
             {
 
-                // Paths – replace with actual file locations as needed
+                // Path to the source Visio file
                 const string inputPath = "input.vsdx";
-                const string outputIndividual = "output_individual.vsdx";
-                const string outputUniform = "output_uniform.vsdx";
 
-                // -------------------------------------------------
-                // 1. Load diagram and resize each page individually
-                // -------------------------------------------------
+                // Target page size (in inches)
+                const double targetWidth = 11.0;   // Width
+                const double targetHeight = 8.5;   // Height
+
+                // Load the diagram
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    Stopwatch sw = Stopwatch.StartNew();
+                    // -------------------------------------------------
+                    // 1. Resize each page individually (loop over pages)
+                    // -------------------------------------------------
+                    Stopwatch swIndividual = Stopwatch.StartNew();
 
-                    // Resize each page to the same dimensions (8.5 x 11 inches)
                     foreach (Page page in diagram.Pages)
                     {
-                        page.PageSheet.PageProps.PageWidth.Value = 8.5;
-                        page.PageSheet.PageProps.PageHeight.Value = 11;
+                        // Set width and height for the current page
+                        page.PageSheet.PageProps.PageWidth.Value = targetWidth;
+                        page.PageSheet.PageProps.PageHeight.Value = targetHeight;
                     }
 
-                    sw.Stop();
-                    Console.WriteLine($"Individual resizing time: {sw.ElapsedMilliseconds} ms");
+                    swIndividual.Stop();
+                    Console.WriteLine($"Individual resizing time: {swIndividual.ElapsedMilliseconds} ms");
 
-                    // Save the result
-                    diagram.Save(outputIndividual, SaveFileFormat.Vsdx);
-                }
+                    // Save the result of the first approach
+                    diagram.Save("output_individual.vsdx", SaveFileFormat.Vsdx);
 
-                // -------------------------------------------------
-                // 2. Reload diagram and apply a uniform size using a helper method
-                // -------------------------------------------------
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    Stopwatch sw = Stopwatch.StartNew();
+                    // -------------------------------------------------
+                    // 2. Apply the same size to all pages (bulk assignment)
+                    // -------------------------------------------------
+                    // Note: Aspose.Diagram does not provide a single method to set all pages at once,
+                    // so we still iterate, but this block represents the "uniform" approach.
+                    Stopwatch swUniform = Stopwatch.StartNew();
 
-                    // Apply uniform size to all pages via a dedicated method
-                    ApplyUniformPageSize(diagram, 8.5, 11);
+                    foreach (Page page in diagram.Pages)
+                    {
+                        page.PageSheet.PageProps.PageWidth.Value = targetWidth;
+                        page.PageSheet.PageProps.PageHeight.Value = targetHeight;
+                    }
 
-                    sw.Stop();
-                    Console.WriteLine($"Uniform resizing time (via helper): {sw.ElapsedMilliseconds} ms");
+                    swUniform.Stop();
+                    Console.WriteLine($"Uniform resizing time: {swUniform.ElapsedMilliseconds} ms");
 
-                    // Save the result
-                    diagram.Save(outputUniform, SaveFileFormat.Vsdx);
+                    // Save the result of the second approach
+                    diagram.Save("output_uniform.vsdx", SaveFileFormat.Vsdx);
                 }
 
             }
@@ -59,19 +64,4 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
-
-        /// <summary>
-        /// Sets the same width and height for every page in the diagram.
-        /// </summary>
-        /// <param name="diagram">The diagram whose pages will be resized.</param>
-        /// <param name="widthInches">Desired page width in inches.</param>
-        /// <param name="heightInches">Desired page height in inches.</param>
-        private static void ApplyUniformPageSize(Diagram diagram, double widthInches, double heightInches)
-        {
-            foreach (Page page in diagram.Pages)
-            {
-                page.PageSheet.PageProps.PageWidth.Value = widthInches;
-                page.PageSheet.PageProps.PageHeight.Value = heightInches;
-            }
-        }
     }

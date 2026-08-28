@@ -1,69 +1,58 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Aspose.Diagram;
 
 public static class MasterSynchronizer
     {
         /// <summary>
-        /// Synchronizes specified master shapes from a template Visio file into multiple target Visio files.
-        /// If a master does not exist in a target file, it is added from the template.
+        /// Synchronizes master definitions from a template Visio file to a collection of target Visio files.
+        /// Masters that already exist in a target file (matched by universal name) are skipped.
         /// </summary>
-        /// <param name="templatePath">Path to the Visio file that contains the authoritative masters.</param>
-        /// <param name="targetFilePaths">Collection of Visio file paths that need to be synchronized.</param>
-        /// <param name="masterNames">Names (or universal names) of the masters to synchronize.</param>
-        public static void SyncMasters(string templatePath, IEnumerable<string> targetFilePaths, IEnumerable<string> masterNames)
+        /// <param name="masterTemplatePath">Full path to the Visio file that contains the authoritative masters.</param>
+        /// <param name="targetFilePaths">List of full paths to Visio files that need to be updated.</param>
+        public static void SyncMasters(string masterTemplatePath, IEnumerable<string> targetFilePaths)
         {
-            // Load the template diagram once – it holds the source masters.
-            using (var templateDiagram = new Diagram(templatePath))
+            // Load the source diagram that holds the master definitions (using the constructor that loads from file)
+            using (var sourceDiagram = new Diagram(masterTemplatePath))
             {
-                // Iterate over each target file.
+                // Iterate over each target file
                 foreach (var targetPath in targetFilePaths)
                 {
-                    // Load the target diagram.
+                    // Load the target diagram
                     using (var targetDiagram = new Diagram(targetPath))
                     {
-                        // For each master name that should be present.
-                        foreach (var masterName in masterNames)
+                        // For each master in the source diagram, ensure it exists in the target diagram
+                        foreach (var sourceMaster in sourceDiagram.Masters)
                         {
-                            // Check if the master already exists in the target diagram.
-                            bool exists = false;
-                            foreach (Master existingMaster in targetDiagram.Masters)
-                            {
-                                if (string.Equals(existingMaster.Name, masterName, StringComparison.OrdinalIgnoreCase) ||
-                                    string.Equals(existingMaster.NameU, masterName, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    exists = true;
-                                    break;
-                                }
-                            }
+                            // Check if a master with the same universal name already exists in the target
+                            bool exists = targetDiagram.Masters.Any(m => string.Equals(m.NameU, sourceMaster.NameU, StringComparison.OrdinalIgnoreCase));
 
-                            // If the master is missing, add it from the template.
                             if (!exists)
                             {
-                                // AddMaster returns the new master's ID; we ignore it here.
-                                targetDiagram.AddMaster(templateDiagram, masterName);
+                                // Add the missing master to the target diagram using the AddMaster overload that takes a source diagram and master name
+                                targetDiagram.AddMaster(sourceDiagram, sourceMaster.NameU);
                             }
                         }
 
-                        // Save the modified target diagram back to its original location.
-                        // Using default save options (VDX format) – adjust if needed.
+                        // Save the updated target diagram back to its original file (using the Save method that takes a file path)
                         targetDiagram.Save(targetPath, SaveFileFormat.Vdx);
                     }
                 }
             }
         }
 
-        // Example usage.
+        // Example usage
         public static void Main()
         {
             try
             {
 
-                // Path to the master template Visio file.
-                string templateFile = @"C:\Visio\BrandTemplate.vstx";
+                // Path to the master template containing the branding masters
+                string masterTemplate = @"C:\Visio\BrandingTemplate.vssx";
 
-                // List of Visio files that need to be updated.
+                // List of Visio files that need to be synchronized
                 var targets = new List<string>
                 {
                     @"C:\Visio\DeptA\Diagram1.vsdx",
@@ -71,11 +60,8 @@ public static class MasterSynchronizer
                     @"C:\Visio\DeptC\Diagram3.vsdx"
                 };
 
-                // Masters that represent the branding elements (e.g., logo, header, footer).
-                var mastersToSync = new List<string> { "CompanyLogo", "HeaderBox", "FooterBox" };
-
-                // Perform synchronization.
-                SyncMasters(templateFile, targets, mastersToSync);
+                // Perform synchronization
+                SyncMasters(masterTemplate, targets);
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -1,75 +1,57 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // The tag value that identifies shapes to rotate
+            string targetTag = "Rotate";
+
+            // Rotation angle in radians (45 degrees)
+            double rotationRadians = Math.PI / 4;
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all masters in the diagram
+            foreach (Master master in diagram.Masters)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output_rotated.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the tag name and value to look for
-                const string tagPropName = "Tag";
-                const string tagPropValue = "Rotate";
-
-                // Desired rotation angle in degrees
-                double rotationDegrees = 45.0;
-                // Convert degrees to radians (Angle cell expects radians)
-                double rotationRadians = rotationDegrees * Math.PI / 180.0;
-
-                // Iterate through all masters in the diagram
-                foreach (Master master in diagram.Masters)
+                // Iterate through each shape contained in the master
+                foreach (Shape shape in master.Shapes)
                 {
-                    bool masterHasTag = false;
-
-                    // Check each shape within the master for the specific tag property
-                    foreach (Shape masterShape in master.Shapes)
+                    // Ensure the shape has custom properties (Props)
+                    if (shape.Props != null)
                     {
-                        if (masterShape.Props != null)
+                        // Look for a custom property named "Tag" with the desired value
+                        foreach (Prop prop in shape.Props)
                         {
-                            foreach (Prop prop in masterShape.Props)
+                            if (prop.Name == "Tag" && prop.Value != null && prop.Value.Val == targetTag)
                             {
-                                if (prop.Name == tagPropName && prop.Value.Val == tagPropValue)
-                                {
-                                    masterHasTag = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (masterHasTag)
-                            break;
-                    }
-
-                    // If the master contains the tag, apply rotation to all its shapes
-                    if (masterHasTag)
-                    {
-                        foreach (Shape masterShape in master.Shapes)
-                        {
-                            // Ensure the shape has an XForm cell collection
-                            if (masterShape.XForm != null && masterShape.XForm.Angle != null)
-                            {
-                                // Set the rotation angle (in radians)
-                                masterShape.XForm.Angle.Value = rotationRadians;
+                                // Apply the rotation to the shape
+                                shape.XForm.Angle.Value = rotationRadians;
+                                break; // Tag found, no need to check other props for this shape
                             }
                         }
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

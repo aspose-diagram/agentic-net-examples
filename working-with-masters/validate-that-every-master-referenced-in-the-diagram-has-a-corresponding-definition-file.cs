@@ -1,70 +1,32 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 
-class Program
+class MasterValidator
 {
     static void Main()
     {
         try
         {
 
-            // Load the diagram (uses the provided load rule)
+            // Load the diagram (lifecycle rule)
             Diagram diagram = new Diagram("input.vdx");
 
-            // Build sets of defined master IDs and names for quick lookup
-            var definedMasterIds = new HashSet<int>();
-            var definedMasterNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // Folder containing master definition files (e.g., .vss or .vst)
+            string mastersFolder = @"C:\Masters";
+
+            // Iterate through each master referenced in the diagram
             foreach (Master master in diagram.Masters)
             {
-                definedMasterIds.Add(master.ID);
-                if (!string.IsNullOrEmpty(master.NameU))
-                    definedMasterNames.Add(master.NameU);
-                else if (!string.IsNullOrEmpty(master.Name))
-                    definedMasterNames.Add(master.Name);
-            }
+                // Assume definition file name matches the master name with .vss extension
+                string definitionPath = Path.Combine(mastersFolder, master.Name + ".vss");
 
-            // List to collect any missing master references
-            var missingMasters = new List<string>();
-
-            // Iterate through all pages and shapes to verify master references
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Validate existence of the definition file
+                if (!File.Exists(definitionPath))
                 {
-                    // Each shape may have a Master reference
-                    if (shape.Master != null)
-                    {
-                        int masterId = shape.Master.ID;
-                        string masterName = shape.Master.NameU ?? shape.Master.Name;
-
-                        bool exists = definedMasterIds.Contains(masterId) ||
-                                      (!string.IsNullOrEmpty(masterName) && definedMasterNames.Contains(masterName));
-
-                        if (!exists)
-                        {
-                            missingMasters.Add(
-                                $"Page '{page.Name}' Shape ID {shape.ID} references missing master '{masterName ?? masterId.ToString()}'");
-                        }
-                    }
+                    Console.WriteLine($"Missing master definition file for master: {master.Name}");
                 }
             }
-
-            // Report validation results
-            if (missingMasters.Count == 0)
-            {
-                Console.WriteLine("All masters referenced in the diagram have corresponding definitions.");
-            }
-            else
-            {
-                Console.WriteLine("Missing master definitions found:");
-                foreach (string msg in missingMasters)
-                    Console.WriteLine(msg);
-            }
-
-            // Save the diagram (uses the provided save rule)
-            diagram.Save("output.vdx", SaveFileFormat.Vdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,65 +1,116 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input stencil path and optional output path.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: <program> <stencilPath> [outputPath]");
+            return;
+        }
+
+        string stencilPath = args[0];
+        // Verify the stencil file exists.
+        if (!File.Exists(stencilPath))
+        {
+            Console.Error.WriteLine($"File not found: {stencilPath}");
+            return;
+        }
+
+        // Determine output path – use provided or create a new file name.
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(stencilPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(stencilPath) + "_cleaned" + Path.GetExtension(stencilPath));
+
+        // Load the diagram (stencil) inside a try/catch to capture Aspose errors.
+        Diagram diagram;
         try
         {
+            diagram = new Diagram(stencilPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load stencil: {ex.Message}");
+            return;
+        }
 
-            // Load the diagram (replace with the appropriate load rule if needed)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Gather the names of masters that are actually used by shapes on any page
-            HashSet<string> usedMasterNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (Page page in diagram.Pages)
+        // Collect IDs of masters that are actually used by shapes on any page.
+        var usedMasterIds = new HashSet<int>();
+        try
+        {
+            foreach (Page page in diagram.Pages) // iterate all pages
             {
-                foreach (Shape shape in page.Shapes)
+                foreach (Shape shape in page.Shapes) // iterate all shapes on the page
                 {
-                    // Shapes that are instances of a master have the Master property set
+                    // If the shape has an associated master, record its ID.
                     if (shape.Master != null)
                     {
-                        // Prefer the universal name; fall back to the local name
-                        string masterName = !string.IsNullOrEmpty(shape.Master.NameU)
-                                            ? shape.Master.NameU
-                                            : shape.Master.Name;
-
-                        if (!string.IsNullOrEmpty(masterName))
-                            usedMasterNames.Add(masterName);
+                        usedMasterIds.Add(shape.Master.ID);
                     }
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error while scanning pages: {ex.Message}");
+            diagram.Dispose();
+            return;
+        }
 
-            // Determine which masters are not referenced
-            List<Master> mastersToRemove = new List<Master>();
-            foreach (Master master in diagram.Masters)
+        // Identify masters that are not referenced anywhere.
+        var mastersToRemove = new List<Master>();
+        try
+        {
+            foreach (Master master in diagram.Masters) // iterate master collection
             {
-                string masterName = !string.IsNullOrEmpty(master.NameU)
-                                    ? master.NameU
-                                    : master.Name;
-
-                if (!usedMasterNames.Contains(masterName))
-                    mastersToRemove.Add(master);
+                if (!usedMasterIds.Contains(master.ID))
+                {
+                    mastersToRemove.Add(master); // mark for removal
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error while enumerating masters: {ex.Message}");
+            diagram.Dispose();
+            return;
+        }
 
-            // Remove the unreferenced masters from the collection
+        // Remove the unused masters from the diagram.
+        try
+        {
             foreach (Master master in mastersToRemove)
             {
                 diagram.Masters.Remove(master);
-                master.Dispose(); // release unmanaged resources
             }
-
-            // Save the cleaned diagram (replace with the appropriate save rule if needed)
-            diagram.Save("output.vsdx", SaveFileFormat.Vdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error while removing masters: {ex.Message}");
+            diagram.Dispose();
+            return;
+        }
+
+        // Save the cleaned stencil using the appropriate format.
+        try
+        {
+            diagram.Save(outputPath, SaveFileFormat.Vssx);
+            Console.WriteLine($"Cleaned stencil saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save cleaned stencil: {ex.Message}");
+        }
+        finally
+        {
+            // Ensure resources are released.
+            diagram.Dispose();
         }
     }
 }

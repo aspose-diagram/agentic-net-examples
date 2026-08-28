@@ -1,45 +1,47 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Paths for the source diagram and the output files
-        string sourcePath = "input.vsdx";
-        string updatedPath = "updated.vsdx";
+        // Paths for the original diagram, the modified output, and the backup copy
+        string inputPath = "input.vsdx";
+        // Guard to ensure the source file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        string outputPath = "output_modified.vsdx";
         string backupPath = "backup.vsdx";
-
-        // Verify the source file exists before proceeding
-        if (!File.Exists(sourcePath))
-        {
-            Console.Error.WriteLine($"File not found: {sourcePath}");
-            return;
-        }
 
         try
         {
             // Load the original diagram
-            Diagram diagram = new Diagram(sourcePath);
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a backup copy by saving the loaded diagram to a separate file
-            diagram.Save(backupPath, SaveFileFormat.Vsdx);
+            // Create a backup by loading the same file again (Clone not available)
+            Diagram backupDiagram = new Diagram(inputPath);
 
-            // Apply bulk orientation updates: set all pages to Landscape orientation
+            // Apply bulk orientation updates: set every page to Landscape orientation
             foreach (Page page in diagram.Pages)
             {
-                // Set the page's print orientation to Landscape
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                // Ensure the page sheet and print properties are available
+                if (page.PageSheet != null && page.PageSheet.PrintProps != null)
+                {
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                }
             }
 
-            // Save the updated diagram with the new orientation settings
-            diagram.Save(updatedPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            // Save the backup diagram
+            backupDiagram.Save(backupPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram processing completed. Modified diagram saved to '{outputPath}', backup saved to '{backupPath}'.");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
+            // Log any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

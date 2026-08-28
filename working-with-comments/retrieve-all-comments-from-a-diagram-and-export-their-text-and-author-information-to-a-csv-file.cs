@@ -1,71 +1,69 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
+using System.Text;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output CSV file path
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: DiagramCommentsExport <inputVisioPath> <outputCsvPath>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputCsvPath = args[1];
-
-        // Load the diagram
-        using (Diagram diagram = new Diagram(inputPath))
-        {
-            // Prepare CSV lines with header
-            List<string> csvLines = new List<string>();
-            csvLines.Add("CommentId,CommentText,Author");
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            // Expect two arguments: input Visio file path and output CSV file path
+            if (args.Length < 2)
             {
-                // Iterate through all annotations (comments) on the page
-                foreach (Annotation annotation in page.PageSheet.Annotations)
+                Console.WriteLine("Usage: DiagramCommentExport <inputVisioFile> <outputCsvFile>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputCsvPath = args[1];
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Build a lookup of reviewer IDs to reviewer names
+            // Reviewer collection is accessed via diagram.DocumentSheet.Reviewers
+            // Reviewer.Name is a Str2Value, retrieve the string via .Value
+            var reviewerNames = new System.Collections.Generic.List<string>();
+            foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
+            {
+                // Ensure the name is not null
+                string name = reviewer.Name?.Value ?? string.Empty;
+                reviewerNames.Add(name);
+            }
+
+            // Prepare the CSV file for writing (UTF-8 without BOM)
+            using (var writer = new StreamWriter(outputCsvPath, false, new UTF8Encoding(false)))
+            {
+                // Write CSV header
+                writer.WriteLine("CommentText,Author");
+
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    long commentId = annotation.MarkerIndex.Value;
-                    string commentText = annotation.Comment.Value;
+                    // Annotations (comments) are stored in the page's PageSheet
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    {
+                        // Retrieve comment text
+                        string commentText = annotation.Comment?.Value ?? string.Empty;
 
-                    // Retrieve author name based on ReviewerID
-                    int reviewerId = annotation.ReviewerID.Value;
-                    string authorName = GetReviewerName(reviewerId, diagram);
+                        // Retrieve reviewer ID and map to reviewer name
+                        int reviewerId = annotation.ReviewerID?.Value ?? -1;
+                        string authorName = string.Empty;
+                        if (reviewerId >= 0 && reviewerId < reviewerNames.Count)
+                        {
+                            authorName = reviewerNames[reviewerId];
+                        }
 
-                    // Escape commas in text fields
-                    string escapedText = commentText.Replace("\"", "\"\"");
-                    string escapedAuthor = authorName.Replace("\"", "\"\"");
+                        // Escape CSV fields (double quotes are escaped by doubling them)
+                        string escapedComment = $"\"{commentText.Replace("\"", "\"\"")}\"";
+                        string escapedAuthor = $"\"{authorName.Replace("\"", "\"\"")}\"";
 
-                    // Build CSV line
-                    string csvLine = $"{commentId},\"{escapedText}\",\"{escapedAuthor}\"";
-                    csvLines.Add(csvLine);
+                        // Write the CSV line
+                        writer.WriteLine($"{escapedComment},{escapedAuthor}");
+                    }
                 }
             }
 
-            // Write all lines to the CSV file
-            File.WriteAllLines(outputCsvPath, csvLines);
-            Console.WriteLine($"Export completed. {csvLines.Count - 1} comment(s) written to '{outputCsvPath}'.");
+            Console.WriteLine($"Comments exported successfully to '{outputCsvPath}'.");
         }
     }
-
-    // Helper method to map ReviewerID to reviewer name
-    private static string GetReviewerName(int reviewerId, Diagram diagram)
-    {
-        int index = 0;
-        foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
-        {
-            if (index == reviewerId)
-            {
-                // Reviewer.Name is a Str2Value; use .Value to get the string
-                return reviewer.Name.Value;
-            }
-            index++;
-        }
-        return "Unknown";
-    }
-}

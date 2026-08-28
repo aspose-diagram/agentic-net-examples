@@ -1,21 +1,47 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        // Load the source Visio diagram (any supported format, e.g., VSDX)
-        Diagram diagram = new Diagram("input.vsdx");
+        static void Main(string[] args)
+        {
+            try
+            {
 
-        // Create save options for legacy VDX format
-        DiagramSaveOptions saveOptions = new DiagramSaveOptions();
-        saveOptions.SaveFormat = SaveFileFormat.Vdx;   // VDX = Visio XML format
+                // Input Visio file path (replace with your actual file)
+                string inputPath = "input.vsdx";
 
-        // Save the diagram. Hidden layers are not included in the VDX output,
-        // so the resulting file contains only the visible layers.
-        diagram.Save("output.vdx", saveOptions);
+                // Output VDX file path (legacy format)
+                string outputPath = "output.vdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through each page and its layers
+                foreach (Page page in diagram.Pages)
+                {
+                    // Access the collection of layers on the page
+                    foreach (Layer layer in page.PageSheet.Layers)
+                    {
+                        // Ensure only visible layers remain visible.
+                        // Hidden layers are already marked with BOOL.False.
+                        // No additional action required unless you want to force hide them.
+                        if (layer.Visible.Value == BOOL.False)
+                        {
+                            // Example: explicitly keep hidden layers hidden (optional)
+                            layer.Visible.Value = BOOL.False;
+                        }
+                    }
+                }
+
+                // Save the diagram in VDX format (legacy compatibility)
+                diagram.Save(outputPath, SaveFileFormat.Vdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

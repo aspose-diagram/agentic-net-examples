@@ -5,84 +5,72 @@ using Aspose.Diagram.ActiveXControls;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Obtain the Visio file bytes from any source (e.g., database, network).
-        byte[] visioData = GetVisioFileBytes();
-
-        // Guard against missing or empty input data.
-        if (visioData == null || visioData.Length == 0)
+        // Example: assume we have Visio file bytes in visioBytes
+        byte[] visioBytes = GetVisioBytes(); // placeholder method
+        using (MemoryStream inputStream = new MemoryStream(visioBytes))
         {
-            Console.Error.WriteLine("Visio data is empty or null.");
-            return;
-        }
+            // Load diagram from memory stream
+            Diagram diagram = new Diagram(inputStream);
 
-        // Load the diagram from a memory stream.
-        using (MemoryStream inputStream = new MemoryStream(visioData))
-        {
-            Diagram diagram;
-            try
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                diagram = new Diagram(inputStream);
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Check if the shape contains an ActiveX control
+                    if (shape.ActiveXControl != null)
+                    {
+                        // Update properties based on the control type
+                        if (shape.ActiveXControl.Type == ControlType.CommandButton)
+                        {
+                            CommandButtonActiveXControl btn = (CommandButtonActiveXControl)shape.ActiveXControl;
+                            btn.Caption = "Updated Caption";
+                            btn.Width = 2.0;   // inches
+                            btn.Height = 0.5;  // inches
+                        }
+                        else if (shape.ActiveXControl.Type == ControlType.CheckBox)
+                        {
+                            CheckBoxActiveXControl chk = (CheckBoxActiveXControl)shape.ActiveXControl;
+                            // Set the checkbox to checked state
+                            chk.Value = CheckValueType.Checked;
+                        }
+                        // Additional control types can be handled here
+                    }
+                }
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
 
-            // Ensure the diagram contains at least one page.
-            if (diagram.Pages.Count == 0)
-            {
-                Console.Error.WriteLine("Diagram contains no pages.");
-                return;
-            }
-
-            // Work with the first page of the diagram.
-            Page page = diagram.Pages[0];
-
-            // Add a CommandButton ActiveX control to the page.
-            long controlShapeId = page.AddActiveXControl(
-                ControlType.CommandButton, // type of control
-                2.0,   // PinX (in inches)
-                2.0,   // PinY (in inches)
-                1.5,   // Width (in inches)
-                0.5);  // Height (in inches)
-
-            // Retrieve the shape that represents the ActiveX control.
-            Shape controlShape = page.Shapes.GetShape(controlShapeId);
-
-            // Cast the generic ActiveXControl to the specific CommandButton type.
-            CommandButtonActiveXControl cmdButton = (CommandButtonActiveXControl)controlShape.ActiveXControl;
-
-            // Update properties of the command button.
-            cmdButton.Caption = "Click Me";
-
-            // Optionally reposition the control on the page.
-            controlShape.XForm.PinX.Value = 3.0;
-            controlShape.XForm.PinY.Value = 3.0;
-
-            // Save the modified diagram back to a memory stream (no disk I/O).
+            // Save the modified diagram back to a memory stream
             using (MemoryStream outputStream = new MemoryStream())
             {
-                try
-                {
-                    diagram.Save(outputStream, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Updated diagram size: {outputStream.Length} bytes");
-                    // The outputStream now contains the updated Visio file.
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
-                }
+                diagram.Save(outputStream, SaveFileFormat.Vsdx);
+                byte[] updatedBytes = outputStream.ToArray();
+                Console.WriteLine($"Updated diagram size: {updatedBytes.Length} bytes");
+                // The updatedBytes array can now be used as needed (e.g., send over network, store in DB)
             }
         }
     }
 
-    // Placeholder method – replace with actual logic to retrieve Visio file bytes.
-    static byte[] GetVisioFileBytes()
+    // Placeholder method to provide Visio file bytes.
+    // Replace with actual data source in a real scenario.
+    static byte[] GetVisioBytes()
     {
-        // Example: return an empty array for demonstration purposes.
-        return new byte[0];
+        // Create a simple diagram with a command button ActiveX control for demonstration.
+        using (Diagram emptyDiagram = new Diagram())
+        {
+            Page page = emptyDiagram.Pages[0];
+            long ctrlId = page.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
+            Shape ctrlShape = page.Shapes.GetShape(ctrlId);
+            CommandButtonActiveXControl btn = (CommandButtonActiveXControl)ctrlShape.ActiveXControl;
+            btn.Caption = "Initial Caption";
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                emptyDiagram.Save(ms, SaveFileFormat.Vsdx);
+                return ms.ToArray();
+            }
+        }
     }
 }

@@ -1,47 +1,42 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the diagram (replace with your actual file path)
+            string diagramPath = "input.vsdx";
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram (replace with your file path)
-                string diagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through each shape on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Check if the shape has gradient fill enabled
+                    if (shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
                     {
-                        // Ensure the shape has a gradient fill defined
-                        if (shape.Fill != null && shape.Fill.GradientFill != null)
+                        // Iterate through all gradient stops of the shape
+                        foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
                         {
-                            var gradientFill = shape.Fill.GradientFill;
-
-                            // Iterate through each gradient stop
-                            foreach (GradientStop stop in gradientFill.GradientStops)
-                            {
-                                // Position is stored as a DoubleValue (0..1)
-                                double position = stop.Position.Value;
-
-                                // Color is stored as a ColorValue (hex string)
-                                string color = stop.Color.Value;
-
-                                Console.WriteLine($"Shape ID {shape.ID}: Stop Position = {position}, Color = {color}");
-                            }
+                            double position = stop.Position.Value;   // Position (0 to 1)
+                            string color = stop.Color.Value;        // Color as hex string (e.g., "#FF0000")
+                            Console.WriteLine($"Shape ID {shape.ID}: Position = {position}, Color = {color}");
                         }
                     }
                 }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

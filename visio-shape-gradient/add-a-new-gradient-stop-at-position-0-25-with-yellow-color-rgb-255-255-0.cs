@@ -1,66 +1,43 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Define input file path
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page of the diagram
-            Page page = diagram.Pages[0];
+            // Load an existing Visio diagram
+            var diagram = new Diagram("input.vsdx");
 
-            // Locate the first non‑deleted shape on the page
-            Shape targetShape = null;
-            foreach (Shape s in page.Shapes)
-            {
-                if (s.Del == BOOL.False)
-                {
-                    targetShape = s;
-                    break;
-                }
-            }
+            // Access the first page (index 0)
+            var page = diagram.Pages[0];
 
-            if (targetShape == null)
-            {
-                throw new Exception("No suitable shape found in the diagram.");
-            }
+            // Retrieve a shape by its ID (example ID = 1)
+            var shape = page.Shapes.GetShape(1);
 
-            // Enable gradient fill on the selected shape
-            targetShape.Fill.FillPattern.Value = 25; // Gradient fill pattern identifier
-            targetShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-            // Set gradient direction; cast enum to int because .Value expects an integer
-            targetShape.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.Linear;
+            // Enable gradient fill
+            shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
+            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+            shape.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.Linear;
 
-            // Remove any existing gradient stops and add a new stop at position 0.25 with yellow color
-            targetShape.Fill.GradientFill.GradientStops.Clear();
-            targetShape.Fill.GradientFill.GradientStops.Add(
+            // Clear any existing gradient stops
+            shape.Fill.GradientFill.GradientStops.Clear();
+
+            // Add a new gradient stop at position 0.25 with yellow color (RGB 255,255,0)
+            shape.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(0.25, MeasureConst.NUM),
                 new ColorValue("#FFFF00", MeasureConst.Undefined));
 
-            // Define output file path
-            string outputPath = "output.vsdx";
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-            // Save the modified diagram to the output file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any errors that occur during processing to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

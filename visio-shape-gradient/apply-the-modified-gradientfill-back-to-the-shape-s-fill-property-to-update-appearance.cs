@@ -13,49 +13,31 @@ class Program
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page
+            // Access the first page (adjust index if needed)
             Page page = diagram.Pages[0];
 
-            // Retrieve the first shape on the page
-            Shape targetShape = null;
-            foreach (Shape shp in page.Shapes)
-            {
-                targetShape = shp;
-                break;
-            }
-
-            if (targetShape == null)
-            {
-                Console.WriteLine("No shapes found on the first page.");
-                return;
-            }
+            // Retrieve the shape you want to modify (replace with the actual shape ID)
+            long shapeId = 1; // example shape ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
             // Apply a gradient fill to the shape
-            // Set fill pattern to Gradient (value 25)
-            targetShape.Fill.FillPattern.Value = 25;
+            shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
+            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True; // Enable gradient
+            shape.Fill.GradientFill.GradientDir.Value = 0; // Direction (0 = left‑to‑right)
 
-            // Enable gradient fill
-            targetShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-
-            // Set gradient direction (0 = left‑to‑right, for example)
-            targetShape.Fill.GradientFill.GradientDir.Value = 0;
-
-            // Clear any existing gradient stops
-            targetShape.Fill.GradientFill.GradientStops.Clear();
-
-            // Add new gradient stops (position, color)
-            targetShape.Fill.GradientFill.GradientStops.Add(
+            // Clear any existing gradient stops and add new ones
+            shape.Fill.GradientFill.GradientStops.Clear();
+            shape.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(0, MeasureConst.NUM),
-                new ColorValue("#0000FF", MeasureConst.Undefined)); // Blue at start
+                new ColorValue("#0000FF", MeasureConst.Undefined)); // Start color (blue)
 
-            targetShape.Fill.GradientFill.GradientStops.Add(
+            shape.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(1, MeasureConst.NUM),
-                new ColorValue("#00FF00", MeasureConst.Undefined)); // Green at end
+                new ColorValue("#00FF00", MeasureConst.Undefined)); // End color (green)
 
             // Save the modified diagram
             string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

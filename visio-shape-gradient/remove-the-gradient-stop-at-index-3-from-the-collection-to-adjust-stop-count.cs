@@ -13,56 +13,45 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the first page
+            // Access the first page (adjust index as needed)
             Page page = diagram.Pages[0];
 
-            // Find a shape that has at least 4 gradient stops
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.Fill != null &&
-                    shape.Fill.GradientFill != null &&
-                    shape.Fill.GradientFill.GradientStops.Count > 3)
-                {
-                    targetShape = shape;
-                    break;
-                }
-            }
+            // Retrieve a shape (example: shape with ID 1)
+            Shape shape = page.Shapes.GetShape(1);
 
-            if (targetShape == null)
-            {
-                Console.WriteLine("No shape with enough gradient stops found.");
-                return;
-            }
+            // Ensure gradient fill is enabled (required before manipulating stops)
+            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Access the gradient fill of the shape
-            GradientFill gradientFill = targetShape.Fill.GradientFill;
+            // Reference to the gradient fill object
+            var gradientFill = shape.Fill.GradientFill;
 
-            // Collect all stops except the one at index 3
-            List<GradientStop> keepers = new List<GradientStop>();
+            // Collect gradient stops except the one at index 3
+            var keptStops = new List<(double Position, string Color)>();
             int currentIndex = 0;
             foreach (GradientStop stop in gradientFill.GradientStops)
             {
-                if (currentIndex != 3)
+                if (currentIndex != 3) // Skip the stop at index 3
                 {
-                    keepers.Add(stop);
+                    double pos = stop.Position.Value;
+                    string col = stop.Color.Value;
+                    keptStops.Add((pos, col));
                 }
                 currentIndex++;
             }
 
-            // Clear the existing stops
+            // Clear all existing stops
             gradientFill.GradientStops.Clear();
 
-            // Re‑add the kept stops
-            foreach (GradientStop stop in keepers)
+            // Re‑add the retained stops
+            foreach (var kv in keptStops)
             {
-                // Preserve original position and color
-                gradientFill.GradientStops.Add(stop.Position, stop.Color);
+                gradientFill.GradientStops.Add(
+                    new DoubleValue(kv.Position, MeasureConst.NUM),
+                    new ColorValue(kv.Color, MeasureConst.Undefined));
             }
 
             // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Gradient stop at index 3 removed and diagram saved.");
 
         }
         catch (System.IO.FileNotFoundException ex)

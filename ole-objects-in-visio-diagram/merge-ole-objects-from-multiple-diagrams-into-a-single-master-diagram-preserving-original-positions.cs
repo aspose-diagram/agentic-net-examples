@@ -1,44 +1,60 @@
 using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
-class MergeOleObjects
+class OleObjectsMerger
 {
+    // Merges OLE objects from multiple Visio diagrams into a single master diagram.
+    // The original positions of the OLE objects are preserved by using Diagram.Combine.
+    public static void MergeDiagrams(string masterDiagramPath, IEnumerable<string> otherDiagramPaths, string outputPath)
+    {
+        // Load the master diagram (the base diagram that will receive the others)
+        Diagram masterDiagram = new Diagram(masterDiagramPath);
+
+        // Iterate through each additional diagram and combine it with the master
+        foreach (string diagramPath in otherDiagramPaths)
+        {
+            // Load the current diagram to be merged
+            Diagram secondDiagram = new Diagram(diagramPath);
+
+            // Combine the second diagram into the master diagram.
+            // This method merges pages, shapes (including OLE objects) and preserves their coordinates.
+            masterDiagram.Combine(secondDiagram);
+
+            // Dispose the second diagram as it is no longer needed
+            secondDiagram.Dispose();
+        }
+
+        // Save the combined diagram to the specified output file in VDX format
+        masterDiagram.Save(outputPath, SaveFileFormat.Vdx);
+
+        // Clean up the master diagram
+        masterDiagram.Dispose();
+    }
+
+    // Example usage
     static void Main()
     {
         try
         {
 
-            // Paths to the source Visio files containing OLE objects
-            string[] sourceFiles = new string[]
+            // Path to the initial master diagram
+            string masterPath = @"C:\Diagrams\Master.vdx";
+
+            // Paths to other diagrams whose OLE objects should be merged
+            List<string> otherPaths = new List<string>
             {
-                "Diagram1.vsdx",
-                "Diagram2.vsdx",
-                "Diagram3.vsdx"
+                @"C:\Diagrams\Diagram1.vdx",
+                @"C:\Diagrams\Diagram2.vdx",
+                @"C:\Diagrams\Diagram3.vdx"
             };
 
-            // Create an empty master diagram
-            Diagram masterDiagram = new Diagram();
+            // Output path for the merged diagram
+            string outputPath = @"C:\Diagrams\MergedResult.vdx";
 
-            // Iterate through each source diagram, load it, and combine into the master diagram
-            foreach (string filePath in sourceFiles)
-            {
-                // Load the source diagram from file
-                Diagram sourceDiagram = new Diagram(filePath);
-
-                // Combine the source diagram into the master diagram.
-                // This preserves the original positions of all shapes, including OLE objects.
-                masterDiagram.Combine(sourceDiagram);
-
-                // Dispose the source diagram to free resources
-                sourceDiagram.Dispose();
-            }
-
-            // Save the merged master diagram to a new file
-            masterDiagram.Save("MergedMasterDiagram.vsdx", SaveFileFormat.Vsdx);
-
-            // Clean up
-            masterDiagram.Dispose();
+            // Perform the merge
+            MergeDiagrams(masterPath, otherPaths, outputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

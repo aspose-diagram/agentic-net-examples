@@ -1,40 +1,44 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file to be processed
+            string filePath = "input.vsdx";
+
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(filePath);
+
+            // ----- Begin field operations -----
+            // Example: update a custom property named "Status" on all shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the original Visio file
-                string visioFilePath = @"C:\Diagrams\SampleDiagram.vsdx";
-
-                // Load the diagram from the file
-                Diagram diagram = new Diagram(visioFilePath);
-
-                // -------------------------------------------------
-                // Perform field operations or other modifications here
-                // Example: modify a shape's text (placeholder code)
-                // -------------------------------------------------
-                // if (diagram.Pages.Count > 0 && diagram.Pages[0].Shapes.Count > 0)
-                // {
-                //     var shape = diagram.Pages[0].Shapes[0];
-                //     shape.Text.Value = "Updated Text";
-                // }
-
-                // Save the modified diagram back to its original location
-                diagram.Save(visioFilePath, SaveFileFormat.Vsdx);
-
-                // Release resources
-                diagram.Dispose();
-
+                foreach (Shape shape in page.Shapes)
+                {
+                    foreach (Prop prop in shape.Props)
+                    {
+                        if (prop.Name == "Status")
+                        {
+                            prop.Value.Val = "Updated";
+                        }
+                    }
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // ----- End field operations -----
+
+            // Save the modified diagram back to its original location
+            diagram.Save(filePath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

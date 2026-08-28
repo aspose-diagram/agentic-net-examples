@@ -1,31 +1,43 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio diagram
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Desired PDF output path
+        string outputPath = "output.pdf";
+
         try
         {
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram from a file (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Configure PDF save options (fallback font for missing glyphs)
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                DefaultFont = "Arial"
+                // AutoFitPageToDrawingContent and SaveFormat are omitted because they are not supported in this version
+            };
 
-            // Create PDF save options to keep vector shapes and high‑quality text
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // The default settings already preserve vector graphics; additional options can be set if needed
-            // Example: pdfOptions.Compliance = PdfCompliance.Pdf15; // default PDF version
-            // Example: pdfOptions.TextCompression = TextCompression.Flate; // default compression
-
-            // Save the entire diagram as a PDF file using the specified options
-            diagram.Save("output.pdf", pdfOptions);
-
+            // Save the diagram as a PDF using the configured options
+            diagram.Save(outputPath, pdfOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

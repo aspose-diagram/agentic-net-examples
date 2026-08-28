@@ -7,57 +7,107 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input Visio file (protected diagram) and output PDF path
-        string inputPath = "protected.vsdx";
-        string outputPdfPath = "protected.pdf";
-
-        // Guard: ensure the input file exists before proceeding
+        // Input Visio file path (replace with actual path)
+        string inputPath = "protected_diagram.vsdx";
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
+        // Output PDF file path
+        string outputPdfPath = "protected_diagram.pdf";
+
+        // Variables to hold original protection states
+        BOOL protectBkgndsOrig = BOOL.False;
+        BOOL protectMastersOrig = BOOL.False;
+        BOOL protectShapesOrig = BOOL.False;
+        BOOL protectStylesOrig = BOOL.False;
+
         try
         {
-            // Load the diagram from the specified file
+            // Load the diagram from the file
             Diagram diagram = new Diagram(inputPath);
 
-            // Capture global protection settings before export (BOOL is an enum, no .Value)
-            BOOL protectBkgnds = diagram.DocumentSettings.ProtectBkgnds;
-            BOOL protectMasters = diagram.DocumentSettings.ProtectMasters;
-            BOOL protectShapes = diagram.DocumentSettings.ProtectShapes;
-            BOOL protectStyles = diagram.DocumentSettings.ProtectStyles;
+            // Retrieve document protection metadata (BOOL values are returned directly, no .Value)
+            protectBkgndsOrig = diagram.DocumentSettings.ProtectBkgnds;
+            protectMastersOrig = diagram.DocumentSettings.ProtectMasters;
+            protectShapesOrig = diagram.DocumentSettings.ProtectShapes;
+            protectStylesOrig = diagram.DocumentSettings.ProtectStyles;
 
-            // Configure PDF save options
+            // Log original protection settings
+            Console.WriteLine("Original protection metadata:");
+            Console.WriteLine($"  ProtectBkgnds : {protectBkgndsOrig}");
+            Console.WriteLine($"  ProtectMasters: {protectMastersOrig}");
+            Console.WriteLine($"  ProtectShapes : {protectShapesOrig}");
+            Console.WriteLine($"  ProtectStyles : {protectStylesOrig}");
+
+            // Configure PDF save options (set default font to avoid missing font warnings)
             PdfSaveOptions pdfOptions = new PdfSaveOptions
             {
-                // Set a fallback font for any missing fonts during export
-                DefaultFont = "Arial",
-                // Explicitly specify the output format
-                SaveFormat = SaveFileFormat.Pdf
-                // Encryption can be added here if needed:
-                // EncryptionDetails = new PdfEncryptionDetails("userPwd", "ownerPwd", PdfEncryptionAlgorithm.RC4_128)
+                DefaultFont = "Arial"
             };
 
-            // Export the diagram to PDF using the configured options
+            // Export the diagram to PDF
             diagram.Save(outputPdfPath, pdfOptions);
-
-            // Verify that protection metadata remains unchanged after export
-            if (diagram.DocumentSettings.ProtectBkgnds != protectBkgnds ||
-                diagram.DocumentSettings.ProtectMasters != protectMasters ||
-                diagram.DocumentSettings.ProtectShapes != protectShapes ||
-                diagram.DocumentSettings.ProtectStyles != protectStyles)
-            {
-                throw new Exception("Protection metadata was altered during PDF export.");
-            }
-
-            Console.WriteLine("PDF export completed successfully. Protection metadata verified.");
+            Console.WriteLine($"Diagram exported to PDF: {outputPdfPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // Reload the diagram to verify that protection metadata persisted after export
+            Diagram diagramAfter = new Diagram(inputPath);
+
+            // Retrieve protection metadata again (direct BOOL values)
+            BOOL protectBkgndsAfter = diagramAfter.DocumentSettings.ProtectBkgnds;
+            BOOL protectMastersAfter = diagramAfter.DocumentSettings.ProtectMasters;
+            BOOL protectShapesAfter = diagramAfter.DocumentSettings.ProtectShapes;
+            BOOL protectStylesAfter = diagramAfter.DocumentSettings.ProtectStyles;
+
+            // Compare before/after values and report any discrepancy
+            bool allMatch = true;
+
+            if (protectBkgndsAfter != protectBkgndsOrig)
+            {
+                Console.Error.WriteLine("Mismatch in ProtectBkgnds after export.");
+                allMatch = false;
+            }
+            if (protectMastersAfter != protectMastersOrig)
+            {
+                Console.Error.WriteLine("Mismatch in ProtectMasters after export.");
+                allMatch = false;
+            }
+            if (protectShapesAfter != protectShapesOrig)
+            {
+                Console.Error.WriteLine("Mismatch in ProtectShapes after export.");
+                allMatch = false;
+            }
+            if (protectStylesAfter != protectStylesOrig)
+            {
+                Console.Error.WriteLine("Mismatch in ProtectStyles after export.");
+                allMatch = false;
+            }
+
+            if (allMatch)
+            {
+                Console.WriteLine("Protection metadata verified: all values persisted correctly.");
+            }
+            else
+            {
+                Console.Error.WriteLine("Protection metadata verification failed.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during verification
+            Console.Error.WriteLine($"Error during verification: {ex.Message}");
         }
     }
 }

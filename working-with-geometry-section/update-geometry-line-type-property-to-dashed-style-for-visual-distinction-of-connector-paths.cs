@@ -4,31 +4,34 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load an existing Visio diagram (replace with your actual file path)
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram from file
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Identify connector shapes (1‑D shapes)
                         if (shape.OneD)
                         {
-                            // Set the line pattern to dashed
+                            // Set the line pattern to dashed for visual distinction
                             shape.Line.LinePattern.Value = LinePatternValue.Dash;
                         }
                     }
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

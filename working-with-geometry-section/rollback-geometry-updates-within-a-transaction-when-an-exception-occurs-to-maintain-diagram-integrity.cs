@@ -1,64 +1,55 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path to the output Visio file after successful updates
-            string outputPath = "output.vsdx";
+            // Input and output file paths
+            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+            string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Preserve original state in a memory stream for rollback
+            // Create a backup of the original diagram in memory
             MemoryStream backupStream = new MemoryStream();
             diagram.Save(backupStream, SaveFileFormat.Vsdx);
-            // Reset stream position for later reading
-            backupStream.Position = 0;
+            backupStream.Position = 0; // Reset stream for reading
 
             try
             {
-                // Example geometry update: move the first shape on the first page
+                // Perform geometry updates inside the transaction
+                // Example: draw a rectangle on the first page
                 Page page = diagram.Pages[0];
-                if (page.Shapes.Count > 0)
-                {
-                    // Retrieve the shape by its ID (first shape)
-                    Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
-                    // Move shape by 1 inch right and 0.5 inch up
-                    shape.Move(1.0, -0.5);
-                }
-
-                // Additional geometry modifications can be placed here
-                // ...
-
-                // Save the updated diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // DrawRectangle(pinX, pinY, width, height)
+                // This creates a rectangle shape; the method returns the shape ID (long)
+                long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 3.0);
+                // Retrieve the shape to modify further if needed
+                Shape rectShape = page.Shapes.GetShape(rectId);
+                // Set a fill color as an example of additional geometry-related change
+                rectShape.Fill.FillForegnd.Value = "#FFCC00"; // orange fill
             }
             catch (Exception ex)
             {
-                // Rollback: reload the original diagram from the backup stream
+                // An error occurred – roll back to the original diagram state
+                Console.WriteLine($"Error during update: {ex.Message}");
+                // Reload the diagram from the backup stream
                 backupStream.Position = 0;
-                Diagram restoredDiagram = new Diagram(backupStream);
-                // Save the restored diagram to the output path to maintain integrity
-                restoredDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Log the error
-                Console.WriteLine("An error occurred during updates. Changes have been rolled back.");
-                Console.WriteLine($"Error details: {ex.Message}");
+                diagram = new Diagram(backupStream);
             }
 
+            // Save the (possibly rolled‑back) diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

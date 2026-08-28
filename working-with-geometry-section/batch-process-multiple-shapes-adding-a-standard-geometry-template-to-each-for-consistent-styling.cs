@@ -1,80 +1,73 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the processed output file
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Assume processing the first page; adjust index if necessary
+                Page page = diagram.Pages[0];
+
+                // Locate the template shape by its universal name (NameU)
+                Shape templateShape = null;
+                foreach (Shape shp in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
+                    if (shp.NameU == "TemplateShape")
+                    {
+                        templateShape = shp;
+                        break;
+                    }
+                }
+
+                if (templateShape == null)
+                    throw new Exception("Template shape with NameU 'TemplateShape' not found on the page.");
+
+                // Iterate over all shapes on the page and apply the geometry template
+                foreach (Shape shp in page.Shapes)
+                {
+                    // Skip the template shape itself
+                    if (shp.ID == templateShape.ID)
                         continue;
 
-                    // Create a new geometry (rectangle) matching the shape's size
-                    Geom rectGeom = new Geom();
+                    // Clear existing geometry
+                    shp.Geoms.Clear();
 
-                    // Move to the origin (0,0) of the shape's local coordinate system
-                    MoveTo move = new MoveTo();
-                    move.X.Value = 0;
-                    move.Y.Value = 0;
-                    rectGeom.CoordinateCol.Add(move);
+                    // Copy geometry sections from the template shape
+                    foreach (Geom tmplGeom in templateShape.Geoms)
+                    {
+                        // Create a new geometry section for the target shape
+                        Geom newGeom = new Geom();
 
-                    // Line to top‑right corner
-                    LineTo line1 = new LineTo();
-                    line1.X.Value = shape.XForm.Width.Value;
-                    line1.Y.Value = 0;
-                    rectGeom.CoordinateCol.Add(line1);
+                        // Copy each coordinate command (MoveTo, LineTo, etc.)
+                        foreach (var coord in tmplGeom.CoordinateCol)
+                        {
+                            // The coordinate objects can be added directly; this performs a shallow copy.
+                            // For a deep copy, instantiate the specific type and copy its fields.
+                            newGeom.CoordinateCol.Add(coord);
+                        }
 
-                    // Line to bottom‑right corner
-                    LineTo line2 = new LineTo();
-                    line2.X.Value = shape.XForm.Width.Value;
-                    line2.Y.Value = shape.XForm.Height.Value;
-                    rectGeom.CoordinateCol.Add(line2);
-
-                    // Line to bottom‑left corner
-                    LineTo line3 = new LineTo();
-                    line3.X.Value = 0;
-                    line3.Y.Value = shape.XForm.Height.Value;
-                    rectGeom.CoordinateCol.Add(line3);
-
-                    // Close the rectangle by returning to the origin
-                    LineTo line4 = new LineTo();
-                    line4.X.Value = 0;
-                    line4.Y.Value = 0;
-                    rectGeom.CoordinateCol.Add(line4);
-
-                    // Replace existing geometry with the new rectangle geometry
-                    shape.Geoms.Clear();
-                    shape.Geoms.Add(rectGeom);
+                        // Add the new geometry section to the shape
+                        shp.Geoms.Add(newGeom);
+                    }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Processing completed. Saved to " + outputPath);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -6,24 +6,18 @@ using Aspose.Diagram;
 
 namespace DiagramGeometryModifier
 {
-    // Represents a point coordinate in the configuration.
-    public class Vertex
+    // Represents a point to be added to a shape's geometry.
+    public class Point
     {
         public double X { get; set; }
         public double Y { get; set; }
     }
 
-    // Represents a single geometry modification instruction.
-    public class GeometryConfig
+    // Represents modification instructions for a specific shape.
+    public class GeometryModification
     {
-        // Shape identifier (as stored in the Visio file).
-        public int ShapeId { get; set; }
-
-        // Index of the geometry within the shape's Geoms collection.
-        public int GeomIndex { get; set; }
-
-        // New vertices that will replace the existing geometry.
-        public List<Vertex> Vertices { get; set; }
+        public int ShapeId { get; set; }               // The unique ID of the shape to modify.
+        public List<Point> Points { get; set; }        // New vertices to append to the shape's first geometry.
     }
 
     class Program
@@ -33,12 +27,12 @@ namespace DiagramGeometryModifier
             try
             {
 
-                // Paths – adjust as needed.
+                // Paths can be supplied via command‑line arguments or hard‑coded for simplicity.
                 string diagramPath = "input.vsdx";
                 string configPath = "config.json";
-                string outputPath = "output_modified.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Load the diagram.
+                // Load the diagram from file.
                 Diagram diagram = new Diagram(diagramPath);
 
                 // Read and deserialize the configuration file.
@@ -49,80 +43,44 @@ namespace DiagramGeometryModifier
                 }
 
                 string json = File.ReadAllText(configPath);
-                List<GeometryConfig> configs = JsonSerializer.Deserialize<List<GeometryConfig>>(json);
+                List<GeometryModification> modifications = JsonSerializer.Deserialize<List<GeometryModification>>(json);
 
-                if (configs == null || configs.Count == 0)
+                if (modifications == null || modifications.Count == 0)
                 {
-                    Console.WriteLine("No geometry modifications defined in the configuration.");
+                    Console.WriteLine("No modifications found in configuration.");
                     return;
                 }
 
-                // Process each configuration entry.
-                foreach (var cfg in configs)
+                // Apply each modification.
+                foreach (GeometryModification mod in modifications)
                 {
-                    // Locate the shape with the specified ShapeId on any page.
-                    Shape targetShape = null;
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            if (shape.ID == cfg.ShapeId)
-                            {
-                                targetShape = shape;
-                                break;
-                            }
-                        }
-                        if (targetShape != null) break;
-                    }
-
+                    Shape targetShape = FindShapeById(diagram, mod.ShapeId);
                     if (targetShape == null)
                     {
-                        Console.WriteLine($"Shape with ID {cfg.ShapeId} not found.");
+                        Console.WriteLine($"Shape with ID {mod.ShapeId} not found.");
                         continue;
                     }
 
-                    // Validate geometry index.
-                    if (cfg.GeomIndex < 0 || cfg.GeomIndex >= targetShape.Geoms.Count)
+                    // Ensure the shape has at least one geometry.
+                    if (targetShape.Geoms.Count == 0)
                     {
-                        Console.WriteLine($"Invalid GeomIndex {cfg.GeomIndex} for shape ID {cfg.ShapeId}.");
+                        Console.WriteLine($"Shape ID {mod.ShapeId} has no geometry to modify.");
                         continue;
                     }
 
-                    // Retrieve the specific geometry.
-                    Geom geom = (Geom)targetShape.Geoms[cfg.GeomIndex];
+                    // Retrieve the first geometry (index 0) explicitly casting to Geom.
+                    Geom geom = (Geom)targetShape.Geoms[0];
 
-                    // Clear existing coordinates (optional – here we mark them as deleted).
-                    foreach (var coord in geom.CoordinateCol)
-                    {
-                        // All coordinate objects inherit from a base that has a Del property.
-                        // Mark each existing segment for deletion.
-                        coord.Del = BOOL.True;
-                    }
-
-                    // Ensure we have at least one vertex to start the path.
-                    if (cfg.Vertices == null || cfg.Vertices.Count == 0)
-                    {
-                        Console.WriteLine($"No vertices provided for shape ID {cfg.ShapeId}, geom index {cfg.GeomIndex}.");
-                        continue;
-                    }
-
-                    // Build new geometry: start with MoveTo, then LineTo for remaining points.
-                    // First vertex becomes MoveTo.
-                    MoveTo move = new MoveTo();
-                    move.X.Value = cfg.Vertices[0].X;
-                    move.Y.Value = cfg.Vertices[0].Y;
-                    geom.CoordinateCol.Add(move);
-
-                    // Subsequent vertices become LineTo segments.
-                    for (int i = 1; i < cfg.Vertices.Count; i++)
+                    // Append each new point as a LineTo segment.
+                    foreach (Point pt in mod.Points)
                     {
                         LineTo line = new LineTo();
-                        line.X.Value = cfg.Vertices[i].X;
-                        line.Y.Value = cfg.Vertices[i].Y;
+                        line.X.Value = pt.X;
+                        line.Y.Value = pt.Y;
                         geom.CoordinateCol.Add(line);
                     }
 
-                    Console.WriteLine($"Modified geometry of shape ID {cfg.ShapeId}, geom index {cfg.GeomIndex}.");
+                    Console.WriteLine($"Modified shape ID {mod.ShapeId} with {mod.Points.Count} new points.");
                 }
 
                 // Save the modified diagram.
@@ -135,5 +93,21 @@ namespace DiagramGeometryModifier
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
+
+        // Helper method to locate a shape by its unique ID across all pages.
+        private static Shape FindShapeById(Diagram diagram, int shapeId)
+        {
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.ID == shapeId)
+                    {
+                        return shape;
+                    }
+                }
+            }
+            return null;
+        }
     }
 }

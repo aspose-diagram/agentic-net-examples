@@ -1,55 +1,56 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Load the source Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Work with the first page (adjust if needed)
-            Page page = diagram.Pages[0];
-
-            // IDs of the shapes to copy from and to (replace with actual IDs)
-            long sourceShapeId = 1;
-            long targetShapeId = 2;
-
-            // Retrieve the source and target shapes
-            Shape sourceShape = page.Shapes.GetShape(sourceShapeId);
-            Shape targetShape = page.Shapes.GetShape(targetShapeId);
-
-            if (sourceShape == null)
+            try
             {
-                throw new Exception($"Source shape with ID {sourceShapeId} not found.");
+
+                // Load the Visio diagram from a file
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Define the universal names of the source and target shapes
+                string sourceShapeNameU = "SourceShape";
+                string targetShapeNameU = "TargetShape";
+
+                // Find the source shape on the first page
+                Shape sourceShape = FindShapeByNameU(diagram.Pages[0], sourceShapeNameU);
+                if (sourceShape == null)
+                    throw new Exception($"Source shape with NameU '{sourceShapeNameU}' not found.");
+
+                // Find the target shape on the first page
+                Shape targetShape = FindShapeByNameU(diagram.Pages[0], targetShapeNameU);
+                if (targetShape == null)
+                    throw new Exception($"Target shape with NameU '{targetShapeNameU}' not found.");
+
+                // Clone geometry (and other design elements) from source to target
+                // The Copy method copies the source shape's data into the target shape
+                targetShape.Copy(sourceShape);
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-            if (targetShape == null)
+            catch (System.IO.FileNotFoundException ex)
             {
-                throw new Exception($"Target shape with ID {targetShapeId} not found.");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
+    }
 
-            // Remove any existing geometry from the target shape
-            targetShape.Geoms.Clear();
-
-            // Clone geometry sections from the source shape to the target shape
-            foreach (Geom geom in sourceShape.Geoms)
-            {
-                // Add each geometry section to the target shape
-                targetShape.Geoms.Add(geom);
-            }
-
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Geometry cloned successfully and diagram saved.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
+        // Helper method to locate a shape by its universal name (NameU) on a given page
+        private static Shape FindShapeByNameU(Page page, string nameU)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.NameU != null && shape.NameU.Equals(nameU, StringComparison.OrdinalIgnoreCase))
+                {
+                    return shape;
+                }
+            }
+            return null;
         }
     }
-}

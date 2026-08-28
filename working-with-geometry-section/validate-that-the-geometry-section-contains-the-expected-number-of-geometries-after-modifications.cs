@@ -2,52 +2,45 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class GeometryValidation
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Choose the first page and first shape for demonstration
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
+            // Access a shape to work with (first shape on the first page)
+            // Shape IDs start at 1, so we use index 1
+            Shape shape = diagram.Pages[0].Shapes[1];
 
-            // Expected number of Geom objects after modifications
+            // Define the expected number of Geom objects after modifications
             int expectedGeomCount = 3;
 
-            // --- Begin modifications to the Geometry section ---
-
-            // Clear existing geometries (optional, depending on scenario)
+            // OPTIONAL: Clear existing geometries to start from a known state
             shape.Geoms.Clear();
 
-            // Add new Geom objects to the shape
+            // Add the expected number of Geom objects to the shape's Geometry collection
             for (int i = 0; i < expectedGeomCount; i++)
             {
-                Geom geom = new Geom();
-                // Example: add a simple line coordinate (optional)
-                // Each Geom can have its own CoordinateCol, but for count validation we only need the Geom objects
-                shape.Geoms.Add(geom);
+                Geom newGeom = new Geom();          // Create a new Geom instance
+                shape.Geoms.Add(newGeom);           // Add it to the collection
             }
 
-            // --- End modifications ---
-
-            // Validate that the Geometry section contains the expected number of Geom objects
+            // Validate that the Geometry collection now contains the expected count
             int actualGeomCount = shape.Geoms.Count;
-
             if (actualGeomCount == expectedGeomCount)
             {
-                Console.WriteLine($"Validation succeeded: Geometry contains {actualGeomCount} Geom objects as expected.");
+                Console.WriteLine($"Validation succeeded: Geometry count is {actualGeomCount} as expected.");
             }
             else
             {
-                Console.WriteLine($"Validation failed: Geometry contains {actualGeomCount} Geom objects, expected {expectedGeomCount}.");
+                Console.WriteLine($"Validation failed: Geometry count is {actualGeomCount}, expected {expectedGeomCount}.");
             }
 
-            // Save the modified diagram (optional)
+            // Save the modified diagram (replace with desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

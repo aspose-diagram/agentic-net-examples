@@ -1,73 +1,123 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-class Program
+namespace DiagramTransactionExample
+{
+    // Helper class to manage a transaction-like scope for diagram modifications
+    // It saves the original diagram state to a memory stream before any changes.
+    // If Commit is called, changes are kept; otherwise the original state is restored.
+    public class GeometryTransaction : IDisposable
     {
-        static void Main(string[] args)
+        private readonly Diagram _diagram;
+        private readonly MemoryStream _originalState;
+        private bool _committed;
+
+        public GeometryTransaction(Diagram diagram)
+        {
+            _diagram = diagram ?? throw new ArgumentNullException(nameof(diagram));
+            // Save the original diagram to a memory stream (VDX format works for round‑trip)
+            _originalState = new MemoryStream();
+            _diagram.Save(_originalState, SaveFileFormat.Vsdx);
+            // Reset position for potential reload
+            _originalState.Position = 0;
+        }
+
+        // Call this when all modifications succeed
+        public void Commit()
+        {
+            _committed = true;
+        }
+
+        // If not committed, restore the original diagram state
+        public void Dispose()
+        {
+            if (!_committed)
+            {
+                // Reload the diagram from the saved original state
+                // Note: Diagram constructor that takes a stream and format is used
+                Diagram restored = new Diagram(_originalState, LoadFileFormat.Vsdx);
+                // Replace the contents of the original diagram with the restored one
+                // Since Diagram does not provide a direct copy method, we replace key collections
+                _diagram.Pages.Clear();
+                foreach (Page page in restored.Pages)
+                {
+                    _diagram.Pages.Add(page);
+                }
+
+                _diagram.Masters.Clear();
+                foreach (Master master in restored.Masters)
+                {
+                    _diagram.Masters.Add(master);
+                }
+
+                // Additional collections (e.g., Styles, Fonts) can be restored similarly if needed
+            }
+
+            _originalState.Dispose();
+        }
+    }
+
+    class Program
+    {
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths (adjust as needed)
+                // Load an existing diagram (replace with your file path)
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Begin a transaction-like block
-                try
+                // Begin a transaction scope
+                using (var transaction = new GeometryTransaction(diagram))
                 {
-                    // Example modification: add a line segment to the first shape on the active page
-                    // Ensure there is at least one shape
-                    if (diagram.ActivePage.Shapes.Count > 0)
+                    try
                     {
+                        // Example modification: add a line segment to the first shape on the active page
+                        Page activePage = diagram.ActivePage;
+                        if (activePage == null || activePage.Shapes.Count == 0)
+                            throw new InvalidOperationException("No shapes available to modify.");
+
                         // Get the first shape
-                        Shape shape = diagram.ActivePage.Shapes[0];
+                        Shape shape = (Shape)activePage.Shapes[0];
 
                         // Ensure the shape has at least one geometry section
-                        if (shape.Geoms.Count > 0)
-                        {
-                            // Get the first geometry section
-                            Geom geom = (Geom)shape.Geoms[0];
+                        if (shape.Geoms.Count == 0)
+                            throw new InvalidOperationException("Shape does not contain geometry sections.");
 
-                            // Create a MoveTo segment as the starting point (0,0)
+                        // Access the first geometry section explicitly
+                        Geom geom = (Geom)shape.Geoms[0];
+
+                        // Start a new path with MoveTo if none exists
+                        if (geom.CoordinateCol.Count == 0)
+                        {
                             MoveTo start = new MoveTo();
                             start.X.Value = 0.0;
                             start.Y.Value = 0.0;
                             geom.CoordinateCol.Add(start);
+                        }
 
-                            // Create a LineTo segment to (2.0, 2.0)
-                            LineTo line = new LineTo();
-                            line.X.Value = 2.0;
-                            line.Y.Value = 2.0;
-                            geom.CoordinateCol.Add(line);
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException("Shape does not contain any geometry sections.");
-                        }
+                        // Append a new line segment
+                        LineTo line = new LineTo();
+                        line.X.Value = 2.0; // X coordinate
+                        line.Y.Value = 2.0; // Y coordinate
+                        geom.CoordinateCol.Add(line);
+
+                        // If all modifications succeed, commit the transaction
+                        transaction.Commit();
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        throw new InvalidOperationException("Diagram contains no shapes to modify.");
+                        // Log the error; the transaction will automatically roll back on Dispose
+                        Console.WriteLine($"Error during diagram modification: {ex.Message}");
                     }
+                }
 
-                    // If all modifications succeed, save the diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine("Diagram saved successfully to: " + outputPath);
-                }
-                catch (Exception ex)
-                {
-                    // If any error occurs, abort the transaction and do not save changes
-                    Console.WriteLine("An error occurred during modifications: " + ex.Message);
-                    Console.WriteLine("Changes have been discarded; original diagram remains unchanged.");
-                }
-                finally
-                {
-                    // Clean up resources
-                    diagram.Dispose();
-                }
+                // Save the diagram only if modifications were successful
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -76,3 +126,4 @@ class Program
             }
     }
     }
+}

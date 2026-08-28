@@ -1,74 +1,49 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class VisioSaveExample
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the original Visio file (could be .vsdx, .vsd, .vdx, etc.)
-            string originalFilePath = @"C:\Diagrams\MyDiagram.vsdx";
+            // Path to the Visio file to be loaded and saved.
+            string filePath = "diagram.vsdx";
 
-            // Load the diagram from the original file
-            Diagram diagram = new Diagram(originalFilePath);
-
-            // -------------------------------------------------
-            // Example geometry modification (adjust as needed)
-            // -------------------------------------------------
-            if (diagram.Pages.Count > 0)
+            // Load the diagram from the specified file.
+            using (Diagram diagram = new Diagram(filePath))
             {
-                // Get the first page
-                Page page = diagram.Pages[0];
-
-                if (page.Shapes.Count > 0)
+                // Example geometry modification:
+                // Move the first shape on the first page by 1 inch in both X and Y directions.
+                if (diagram.Pages.Count > 0)
                 {
-                    // Get the first shape on the page
-                    Shape shape = page.Shapes[0];
+                    Page page = diagram.Pages[0];
 
-                    // Modify the shape's position (PinX, PinY) as an example
-                    shape.XForm.PinX.Value = 5.0; // new X coordinate
-                    shape.XForm.PinY.Value = 5.0; // new Y coordinate
+                    // Ensure the page contains at least one shape.
+                    if (page.Shapes.Count > 0)
+                    {
+                        // Retrieve the first shape in the collection.
+                        Shape firstShape = null;
+                        foreach (Shape s in page.Shapes)
+                        {
+                            firstShape = s;
+                            break;
+                        }
+
+                        // Apply the geometry change if a shape was found.
+                        if (firstShape != null)
+                        {
+                            firstShape.Move(1.0, 1.0); // Move by 1 inch on X and Y axes.
+                        }
+                    }
                 }
+
+                // Save the modified diagram back to the original file path,
+                // preserving the Visio format (VSDX in this example).
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
             }
-
-            // Determine the appropriate SaveFileFormat based on the file extension
-            SaveFileFormat saveFormat;
-            string extension = System.IO.Path.GetExtension(originalFilePath).ToLowerInvariant();
-
-            switch (extension)
-            {
-                case ".vsdx":
-                    saveFormat = SaveFileFormat.Vsdx;
-                    break;
-                case ".vsd":
-                    // .vsd is a binary format; Aspose.Diagram can save it using Vdx (XML) as fallback
-                    saveFormat = SaveFileFormat.Vdx;
-                    break;
-                case ".vdx":
-                    saveFormat = SaveFileFormat.Vdx;
-                    break;
-                case ".vsx":
-                    saveFormat = SaveFileFormat.Vsx;
-                    break;
-                case ".vtx":
-                    saveFormat = SaveFileFormat.Vtx;
-                    break;
-                default:
-                    // Default to Vdx if the extension is unrecognized
-                    saveFormat = SaveFileFormat.Vdx;
-                    break;
-            }
-
-            // Save the modified diagram back to the original file path,
-            // preserving all geometry changes.
-            diagram.Save(originalFilePath, saveFormat);
-
-            // Clean up resources
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

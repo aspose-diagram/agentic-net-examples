@@ -1,4 +1,9 @@
+using System;
 using System.IO;
+
+// Assume the diagram has already been loaded and modified (e.g., geometry adjustments)
+// Export the diagram to PDF to verify the visual appearance
+
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
@@ -10,25 +15,22 @@ class ExportDiagramToPdf
         try
         {
 
-            // Path to the source Visio diagram (already modified as needed)
-            string sourceFile = @"C:\Diagrams\UpdatedDiagram.vsdx";
+            // Load the existing Visio diagram (replace with your actual file path)
+            string inputPath = @"C:\Diagrams\UpdatedDiagram.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path where the PDF will be saved
-            string pdfFile = @"C:\Diagrams\UpdatedDiagram.pdf";
-
-            // Load the diagram using the standard constructor (lifecycle rule)
-            Diagram diagram = new Diagram(sourceFile);
-
-            // Create PDF save options (rule-provided class)
+            // Create PDF save options (default settings are sufficient for a basic export)
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Optional: explicitly set the format to PDF (default is PDF)
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            // Optionally, customize options here, for example:
+            // pdfOptions.Compliance = Aspose.Diagram.Saving.PdfCompliance.Pdf15;
+            // pdfOptions.EnlargePage = true;
 
-            // Save the diagram as PDF using the Save method with SaveOptions (rule-provided)
-            diagram.Save(pdfFile, pdfOptions);
+            // Save the diagram as a PDF file
+            string outputPdfPath = @"C:\Diagrams\UpdatedDiagram.pdf";
+            diagram.Save(outputPdfPath, pdfOptions);
 
-            // Clean up resources
+            // Clean up
             diagram.Dispose();
 
             Console.WriteLine("Diagram exported to PDF successfully.");

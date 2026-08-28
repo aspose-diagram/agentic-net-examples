@@ -1,49 +1,44 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // ID of the shape whose Y‑position should be locked
-            long targetShapeId = 12345; // TODO: replace with the actual shape ID
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Assume the shape is on the first page
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(targetShapeId);
-
-            if (shape != null)
+            try
             {
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Specify the shape ID to lock (replace with actual ID)
+                long targetShapeId = 5; // example ID
+
+                // Retrieve the first page (adjust index if needed)
+                Page page = diagram.Pages[0];
+
+                // Get the shape by its ID
+                Shape shape = page.Shapes.GetShape(targetShapeId);
+
+                if (shape == null)
+                {
+                    throw new Exception($"Shape with ID {targetShapeId} not found.");
+                }
+
                 // Lock the Y‑position (vertical movement) of the shape
                 shape.Protection.LockMoveY.Value = BOOL.True;
-                Console.WriteLine($"Locked Y position for shape ID {targetShapeId}.");
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-            else
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Shape with ID {targetShapeId} not found.");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

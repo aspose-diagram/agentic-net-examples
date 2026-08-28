@@ -10,26 +10,33 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Assume original page dimensions were retrieved earlier.
-            // For example, you might have stored them like:
-            // double originalWidth = ...;
-            // double originalHeight = ...;
+            // Path for the exported PDF file
+            string outputPath = "output.pdf";
 
-            // Create PDF save options.
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Retrieve and display original page dimensions (in inches)
+            foreach (Page page in diagram.Pages)
+            {
+                double width = page.PageSheet.PageProps.PageWidth.Value;
+                double height = page.PageSheet.PageProps.PageHeight.Value;
+                Console.WriteLine($"Page {page.ID}: Width = {width} in, Height = {height} in");
+            }
+
+            // Configure PDF save options to preserve original page size
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";          // fallback font for missing characters
+            pdfOptions.EnlargePage = false;            // keep original dimensions
+            pdfOptions.ExportHiddenPage = false;       // optional: exclude hidden pages
 
-            // Preserve the original page size by leaving PageSize as null.
-            // When PageSize is null Aspose.Diagram uses the source diagram's page dimensions.
-            pdfOptions.PageSize = null;
+            // Export the diagram to PDF
+            diagram.Save(outputPath, pdfOptions);
 
-            // Render all pages of the diagram.
-            pdfOptions.PageCount = diagram.Pages.Count;
-
-            // Save the diagram to PDF while keeping the original page dimensions.
-            diagram.Save("output.pdf", pdfOptions);
+            Console.WriteLine("Export to PDF completed successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,44 +1,35 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output_tagged.vsdx";
+                // Path to the source Visio file
+                const string inputPath = "input.vsdx";
+                // Path for the modified Visio file
+                const string outputPath = "output.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
-
-                // Define the keyword to search for and the tag to apply
-                string keyword = "TODO";
-                string tag = "[Reviewed] ";
 
                 // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the annotations (comments) on the page
-                    var annotations = page.PageSheet.Annotations;
-
-                    // Iterate over each annotation
-                    foreach (Annotation annotation in annotations)
+                    // Access the annotations (comments) collection via the PageSheet
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // Get the current comment text
-                        string currentText = annotation.Comment.Value ?? string.Empty;
-
-                        // Check if the comment meets the criteria (contains the keyword)
-                        if (currentText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                        // Example criteria: comment text contains the word "Review"
+                        if (annotation.Comment.Value != null && annotation.Comment.Value.Contains("Review"))
                         {
-                            // Apply the custom tag if it's not already present
-                            if (!currentText.StartsWith(tag, StringComparison.Ordinal))
+                            // Apply a custom tag if it hasn't been added already
+                            const string tag = "[CustomTag] ";
+                            if (!annotation.Comment.Value.StartsWith(tag))
                             {
-                                annotation.Comment.Value = tag + currentText;
+                                annotation.Comment.Value = tag + annotation.Comment.Value;
                             }
                         }
                     }

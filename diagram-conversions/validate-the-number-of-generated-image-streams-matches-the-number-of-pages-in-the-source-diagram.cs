@@ -17,36 +17,38 @@ class Program
             // Total number of pages in the diagram
             int totalPages = diagram.Pages.Count;
 
-            // Collection to store image streams for each page
+            // List to hold generated image streams
             List<MemoryStream> imageStreams = new List<MemoryStream>();
 
-            // Save each page to a separate memory stream
+            // Configure image save options (PNG format)
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            saveOptions.PageCount = 1; // render one page per stream
+
+            // Generate an image stream for each page
             for (int i = 0; i < totalPages; i++)
             {
-                // Create a memory stream for the current page image
+                saveOptions.PageIndex = i; // specify the page to render
                 MemoryStream ms = new MemoryStream();
-
-                // Configure save options to render only the current page
-                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-                options.PageIndex = i;   // zero‑based index of the page to render
-                options.PageCount = 1;   // render a single page
-
-                // Save the page into the memory stream
-                diagram.Save(ms, options);
-
-                // Reset stream position for potential further use
-                ms.Position = 0;
-
+                diagram.Save(ms, saveOptions);
+                ms.Position = 0; // reset stream position for later use
                 imageStreams.Add(ms);
             }
 
-            // Validate that the number of generated streams matches the number of pages
-            bool isValid = imageStreams.Count == totalPages;
+            // Validate that the number of streams matches the number of pages
+            if (imageStreams.Count == totalPages)
+            {
+                Console.WriteLine("Validation succeeded: stream count matches page count.");
+            }
+            else
+            {
+                Console.WriteLine($"Validation failed: {imageStreams.Count} streams vs {totalPages} pages.");
+            }
 
-            // Output validation result
-            Console.WriteLine($"Diagram pages: {totalPages}");
-            Console.WriteLine($"Generated image streams: {imageStreams.Count}");
-            Console.WriteLine($"Validation passed: {isValid}");
+            // Clean up streams
+            foreach (var stream in imageStreams)
+            {
+                stream.Dispose();
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

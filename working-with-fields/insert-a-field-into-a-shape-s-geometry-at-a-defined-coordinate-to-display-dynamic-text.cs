@@ -1,44 +1,52 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
 
-            // Add a rectangle shape at coordinates (2, 2) inches
-            long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle", false);
-            Shape shape = diagram.ActivePage.Shapes.GetShape((int)shapeId);
+                // Use the first (default) page
+                Page page = diagram.Pages[0];
 
-            // Create a field that will display a dynamic value (e.g., Width * Height)
-            Field field = new Field();
+                // Add a rectangle shape at coordinates (2,2)
+                // The AddShape method returns the shape ID (long)
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
 
-            // Set the field type to a custom formula (Undefined)
-            field.Type.Value = TypeFieldValue.Undefined;
+                // Retrieve the concrete Shape object using the ID
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Define the formula for the field
-            field.Value.Ufev.F = "Width*Height";
-            field.Value.Ufev.Unit = MeasureConst.Undefined;
+                // Ensure the shape is positioned at the desired location
+                shape.XForm.PinX.Value = 2.0;
+                shape.XForm.PinY.Value = 2.0;
 
-            // Ensure no static text overrides the formula
-            field.Value.Val = "";
+                // Create a new text field that will display the current page number dynamically
+                Field pageNumberField = new Field();
 
-            // Add the field to the shape's field collection
-            shape.Fields.Add(field);
+                // Set the field's formula to the Visio function that returns the page number
+                // The formula is stored in the Ufev.F property of the field's Value object
+                pageNumberField.Value.Ufev.F = "PageNum";
 
-            // Save the diagram to a VSDX file
-            diagram.Save("DynamicFieldDiagram.vsdx", SaveFileFormat.Vsdx);
+                // Optionally set a placeholder value (not displayed, but required by the API)
+                pageNumberField.Value.Val = "";
 
-        }
-        catch (System.NullReferenceException ex)
-        {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-        }
+                // Add the field to the shape's Fields collection
+                shape.Fields.Add(pageNumberField);
+
+                // Save the diagram to a VSDX file
+                diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Diagram created and field inserted successfully.");
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

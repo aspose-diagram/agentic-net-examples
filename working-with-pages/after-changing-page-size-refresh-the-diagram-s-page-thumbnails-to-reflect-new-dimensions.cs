@@ -9,24 +9,28 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Paths to the source and destination Visio files
+            string sourcePath = "input.vsdx";
+            string destinationPath = "output.vsdx";
 
-            // Desired page size in inches (e.g., A4 dimensions)
-            double newWidth = 8.27;
-            double newHeight = 11.69;
+            // Load the diagram from file
+            Diagram diagram = new Diagram(sourcePath);
 
-            // Update each page's width and height
+            // Define new page dimensions (A4 size in inches)
+            double newWidth = 8.27;   // Width in inches
+            double newHeight = 11.69; // Height in inches
+
+            // Update each page's size
             foreach (Page page in diagram.Pages)
             {
                 page.PageSheet.PageProps.PageWidth.Value = newWidth;
                 page.PageSheet.PageProps.PageHeight.Value = newHeight;
             }
 
-            // Save the diagram; this refreshes the page thumbnails
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the diagram; this operation refreshes the page thumbnails
+            diagram.Save(destinationPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Page sizes updated and diagram saved successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

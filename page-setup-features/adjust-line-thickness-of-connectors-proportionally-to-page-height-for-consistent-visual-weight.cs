@@ -10,40 +10,36 @@ class Program
         try
         {
 
-            // Path to the source Visio file
+            // Input and output file paths
             string inputPath = "input.vsdx";
-            // Path to the output Visio file
             string outputPath = "output.vsdx";
 
-            // Load the diagram
+            // Load the Visio diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages in the diagram
+                // Proportional factor for line thickness (e.g., 0.5% of page height)
+                const double weightFactor = 0.005;
+
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve the page height (in inches)
+                    // Retrieve the page height in inches
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Define a base line weight (in inches) for a reference page height (e.g., 11 inches)
-                    const double referenceHeight = 11.0; // typical A4 height in inches
-                    const double baseLineWeight = 0.02; // 0.02 inches for the reference height
+                    // Calculate the line weight based on the page height
+                    double lineWeight = pageHeight * weightFactor;
 
-                    // Compute the proportional line weight for the current page
-                    double proportionalWeight = baseLineWeight * (pageHeight / referenceHeight);
-
-                    // Iterate through all shapes on the page
+                    // Adjust line thickness for all connector shapes (1‑D shapes) on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Identify connector shapes (1‑D shapes)
-                        if (shape.OneD)
+                        if (shape.OneD) // Connector detection
                         {
-                            // Apply the calculated line weight
-                            shape.Line.LineWeight.Value = proportionalWeight;
+                            shape.Line.LineWeight.Value = lineWeight;
                         }
                     }
                 }
 
-                // Save the modified diagram back to a Visio file
+                // Save the updated diagram back to VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 

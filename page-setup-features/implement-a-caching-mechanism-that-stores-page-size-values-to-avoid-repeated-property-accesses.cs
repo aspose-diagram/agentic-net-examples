@@ -1,50 +1,79 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-class Program
+namespace DiagramPageSizeCaching
 {
-    static void Main()
+    // Simple cache for page dimensions (width and height in inches)
+    public static class PageSizeCache
     {
-        try
+        // Key: Page ID (unique within a diagram), Value: tuple of width and height
+        private static readonly Dictionary<long, (double Width, double Height)> _cache = new();
+
+        // Retrieves the size of the specified page, using the cache when possible.
+        public static (double Width, double Height) GetPageSize(Diagram diagram, int pageIndex)
         {
+            // Validate page index
+            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+                throw new ArgumentOutOfRangeException(nameof(pageIndex), "Invalid page index.");
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Get the page object
+            Page page = diagram.Pages[pageIndex];
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Use the page's unique ID as the cache key
+            long pageId = page.ID;
+
+            // Return cached value if it exists
+            if (_cache.TryGetValue(pageId, out var size))
+                return size;
+
+            // Access the page properties (this is the expensive operation we want to avoid repeating)
+            double width = page.PageSheet.PageProps.PageWidth.Value;
+            double height = page.PageSheet.PageProps.PageHeight.Value;
+
+            // Store in cache for future calls
+            _cache[pageId] = (width, height);
+
+            return (width, height);
+        }
+
+        // Clears the cache (optional utility)
+        public static void Clear()
+        {
+            _cache.Clear();
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            try
             {
-                // Cache to store page dimensions (width and height) keyed by page ID
-                var pageSizeCache = new Dictionary<int, (double Width, double Height)>();
 
-                // First pass: read page size values and store them in the cache
-                foreach (Page page in diagram.Pages)
+                // Path to the Visio file (replace with an actual file path)
+                const string diagramPath = "example.vsdx";
+
+                // Load the diagram
+                using Diagram diagram = new Diagram(diagramPath);
+
+                // Example: retrieve sizes for all pages using the cache
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    int pageId = page.ID;
-                    double width = page.PageSheet.PageProps.PageWidth.Value;
-                    double height = page.PageSheet.PageProps.PageHeight.Value;
-                    pageSizeCache[pageId] = (width, height);
+                    var (width, height) = PageSizeCache.GetPageSize(diagram, i);
+                    Console.WriteLine($"Page {i + 1} (ID={diagram.Pages[i].ID}): Width={width} inches, Height={height} inches");
                 }
 
-                // Example usage: apply cached sizes back to pages without re‑reading the properties
-                foreach (Page page in diagram.Pages)
-                {
-                    var cachedSize = pageSizeCache[page.ID];
-                    page.PageSheet.PageProps.PageWidth.Value = cachedSize.Width;
-                    page.PageSheet.PageProps.PageHeight.Value = cachedSize.Height;
-                }
+                // Optional: demonstrate that repeated calls hit the cache (no additional property access)
+                // The following call will use the cached values for page 0
+                var cachedSize = PageSizeCache.GetPageSize(diagram, 0);
+                Console.WriteLine($"Cached size for first page: Width={cachedSize.Width}, Height={cachedSize.Height}");
 
-                // Save the diagram with the updated page sizes
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

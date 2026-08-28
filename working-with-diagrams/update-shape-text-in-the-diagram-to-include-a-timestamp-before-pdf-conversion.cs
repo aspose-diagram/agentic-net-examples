@@ -4,15 +4,15 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input Visio file path (replace with actual path)
+                // Input Visio file path
                 string inputPath = "input.vsdx";
                 // Output PDF file path
-                string outputPdfPath = "output.pdf";
+                string outputPath = "output.pdf";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
@@ -20,41 +20,30 @@ class Program
                 // Generate timestamp string
                 string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Retrieve existing plain text (may be empty)
+                        string existingText = shape.Text.Value.Text ?? string.Empty;
 
-                        // Retrieve existing plain text
-                        string originalText = shape.Text.Value.Text;
+                        // Build new text with timestamp prefix
+                        string newText = $"{timestamp} {existingText}".Trim();
 
-                        // Prepare new text with timestamp prefix
-                        string newText = $"{timestamp} {originalText}";
-
-                        // Clear existing text runs
+                        // Clear current text collection and add the new text run
                         shape.Text.Value.Clear();
-
-                        // Add the new text as a single Txt run
                         shape.Text.Value.Add(new Txt(newText));
                     }
                 }
 
                 // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    // Ensure the format is explicitly set (optional but safe)
-                    SaveFormat = SaveFileFormat.Pdf,
-                    // Use a default font to avoid missing font issues
-                    DefaultFont = "Arial"
-                };
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the diagram as PDF with the updated text
-                diagram.Save(outputPdfPath, pdfOptions);
+                // Save the diagram as PDF
+                diagram.Save(outputPath, pdfOptions);
 
             }
             catch (System.IO.FileNotFoundException ex)

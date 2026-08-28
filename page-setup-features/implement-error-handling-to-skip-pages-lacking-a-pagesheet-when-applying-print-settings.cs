@@ -6,17 +6,16 @@ class Program
 {
     static void Main()
     {
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        string outputPath = "output.vsdx";
+
         try
         {
-
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page explicitly typed as Page
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
                     // Skip pages that do not have a PageSheet
@@ -28,48 +27,42 @@ class Program
 
                     try
                     {
-                        // Access the print properties of the page
-                        var printProps = page.PageSheet.PrintProps;
+                        // Apply print settings to the page
 
-                        // Example print settings
-                        // 1. Set orientation to Landscape
-                        printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                        // Set orientation to Landscape
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                        // 2. Set scaling to 75%
-                        printProps.ScaleX.Value = 0.75;
-                        printProps.ScaleY.Value = 0.75;
+                        // Set scaling to 75%
+                        page.PageSheet.PrintProps.ScaleX.Value = 0.75;
+                        page.PageSheet.PrintProps.ScaleY.Value = 0.75;
 
-                        // 3. Fit to a single sheet (1 page across, 1 page down)
-                        printProps.OnPage.Value = BOOL.True;
-                        printProps.PagesX.Value = 1;
-                        printProps.PagesY.Value = 1;
+                        // Enable fit-to-sheet (single page)
+                        page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
+                        page.PageSheet.PrintProps.PagesX.Value = 1;
+                        page.PageSheet.PrintProps.PagesY.Value = 1;
 
-                        // 4. Set uniform margins (0.5 inch)
-                        double marginInches = 0.5;
-                        printProps.PageTopMargin.Value = marginInches;
-                        printProps.PageBottomMargin.Value = marginInches;
-                        printProps.PageLeftMargin.Value = marginInches;
-                        printProps.PageRightMargin.Value = marginInches;
-
-                        Console.WriteLine($"Applied print settings to page '{page.Name}' (ID: {page.ID}).");
+                        // Set page margins (in inches)
+                        page.PageSheet.PrintProps.PageTopMargin.Value = 0.5;
+                        page.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
+                        page.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
+                        page.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
                     }
                     catch (Exception ex)
                     {
-                        // Log any errors but continue processing other pages
+                        // Log any errors that occur while applying settings to this page
                         Console.WriteLine($"Error applying print settings to page '{page.Name}': {ex.Message}");
                     }
                 }
 
-                // Save the modified diagram
+                // Save the updated diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
             }
-
-            Console.WriteLine("Diagram processing completed.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during loading or saving
+            Console.WriteLine($"Failed to process diagram: {ex.Message}");
         }
     }
 }

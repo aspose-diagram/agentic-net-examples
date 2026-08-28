@@ -10,36 +10,37 @@ class Program
         try
         {
 
-            // Input Visio file path (modify as needed)
+            // Input and output file paths (adjust as needed)
             string inputPath = "input.vsdx";
-            // Output Visio file path
             string outputPath = "output.vsdx";
 
-            // Load the diagram
+            // Load the Visio diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
+                // Threshold for deciding orientation based on text length
+                const int textLengthThreshold = 100;
+
                 // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    bool setLandscape = false;
+                    bool needsLandscape = false;
 
-                    // Analyze shapes on the page
+                    // Examine each shape on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve shape dimensions
-                        double width = shape.XForm.Width.Value;
-                        double height = shape.XForm.Height.Value;
+                        // Retrieve plain text from the shape
+                        string plainText = shape.Text.Value.Text ?? string.Empty;
 
-                        // If any shape is wider than it is tall, consider the page landscape
-                        if (width > height)
+                        // If any shape contains long text, mark the page for landscape orientation
+                        if (plainText.Length > textLengthThreshold)
                         {
-                            setLandscape = true;
-                            break;
+                            needsLandscape = true;
+                            break; // No need to check further shapes on this page
                         }
                     }
 
                     // Set page orientation based on analysis
-                    if (setLandscape)
+                    if (needsLandscape)
                     {
                         page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                     }
@@ -52,6 +53,8 @@ class Program
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine("Diagram processing completed. Saved to: " + outputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

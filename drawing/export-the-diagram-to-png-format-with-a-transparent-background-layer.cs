@@ -12,20 +12,18 @@ class ExportDiagramToPng
         try
         {
 
-            // Load the Visio diagram from a file
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Configure image save options for PNG format
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.SaveFormat = SaveFileFormat.Png; // Explicitly set PNG format
-
-            // Set transparent background if the option is available
-            // (Aspose.Diagram uses transparent background for PNG by default;
-            // if a BackgroundColor property exists, it can be set to Color.Transparent)
-            // saveOptions.BackgroundColor = Color.Transparent; // Uncomment if supported
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            pngOptions.SaveFormat = SaveFileFormat.Png;          // Explicitly set PNG format
+            // If the library exposes a BackgroundColor property, set it to transparent.
+            // Uncomment the following line if such a property exists:
+            // pngOptions.BackgroundColor = Color.Transparent;
 
             // Save the diagram as a PNG image with the specified options
-            diagram.Save("output.png", saveOptions);
+            diagram.Save("output.png", pngOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

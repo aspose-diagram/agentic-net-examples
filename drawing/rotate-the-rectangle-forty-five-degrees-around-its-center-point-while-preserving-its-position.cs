@@ -1,35 +1,34 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Create a new empty diagram (contains a default page)
+        // Create a new diagram (uses the create rule)
         Diagram diagram = new Diagram();
 
-        // Get the first (default) page
+        // Access the default page
         Page page = diagram.Pages[0];
 
-        // Define rectangle parameters (center at (5,5), size 2x1 inches)
-        double pinX = 5.0;   // X coordinate of the rectangle's center
-        double pinY = 5.0;   // Y coordinate of the rectangle's center
-        double width = 2.0;  // Width in inches
-        double height = 1.0; // Height in inches
+        // Rectangle parameters (pinX, pinY define the center of rotation)
+        double pinX = 5.0;   // X‑coordinate of the rectangle center
+        double pinY = 5.0;   // Y‑coordinate of the rectangle center
+        double width = 4.0;  // Width of the rectangle
+        double height = 2.0; // Height of the rectangle
 
-        // Draw the rectangle on the page; returns the shape ID
-        long rectId = page.DrawRectangle(pinX, pinY, width, height);
+        // Draw the rectangle and obtain its shape ID
+        long shapeId = page.DrawRectangle(pinX, pinY, width, height);
 
-        // Retrieve the shape object using the returned ID
-        Shape rectangle = page.Shapes.GetShape(rectId);
+        // Retrieve the shape object by its ID
+        Shape rectShape = page.Shapes.GetShape(shapeId);
 
-        // Rotate the rectangle 45 degrees around its center
-        rectangle.SetAngle(45); // Angle is in degrees as per Aspose.Diagram API
+        // Rotate 45 degrees around its center (angle in radians)
+        double angleRadians = Math.PI / 4; // 45° = π/4 rad
+        rectShape.SetAngle(angleRadians);
 
-        // Save the diagram to a PNG file to verify the result
-        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-        diagram.Save("RotatedRectangle.png", saveOptions);
+        // Save the diagram (uses the save rule)
+        diagram.Save("RotatedRectangle.vsdx", SaveFileFormat.Vsdx);
     }
 }

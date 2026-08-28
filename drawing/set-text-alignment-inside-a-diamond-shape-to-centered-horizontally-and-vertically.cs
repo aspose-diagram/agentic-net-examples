@@ -1,11 +1,10 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
 {
-    static void Main()
+    public static void Main()
     {
         try
         {
@@ -13,26 +12,26 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first page (avoid using ActivePage as per rules)
+            // Use the default first page
             Page page = diagram.Pages[0];
 
-            // Add a diamond shape to the page at position (2,2) inches
-            long shapeId = page.AddShape(2.0, 2.0, "Diamond");
+            // Add a diamond shape at (5,5) inches
+            long diamondId = page.AddShape(5.0, 5.0, "Diamond");
 
-            // Retrieve the shape object using the returned ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Retrieve the shape instance
+            Shape diamond = page.Shapes.GetShape(diamondId);
 
-            // Set horizontal text alignment to center
-            shape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+            // Set the shape's text
+            diamond.Text.Value.Clear();
+            diamond.Text.Value.Add(new Txt("Centered Text"));
 
-            // Set vertical text alignment to middle
-            shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
+            // Center text horizontally
+            diamond.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
 
-            // Add sample text to the shape
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt("Sample Text"));
+            // Center text vertically
+            diamond.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
 
-            // Save the diagram to a VSDX file
+            // Save the diagram
             diagram.Save("DiamondAligned.vsdx", SaveFileFormat.Vsdx);
 
         }

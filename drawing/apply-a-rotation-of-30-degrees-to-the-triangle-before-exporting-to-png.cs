@@ -10,22 +10,46 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Retrieve the triangle shape.
-            // Here we assume the triangle is the first shape on the first page.
-            // Adjust the index or use a different lookup method as needed.
-            Shape triangle = diagram.Pages[0].Shapes[1];
+            // Locate the triangle shape by its name and rotate it 30 degrees
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.NameU == "Triangle")
+                    {
+                        // Convert 30 degrees to radians (SetAngle expects radians)
+                        double angleRadians = Math.PI * 30.0 / 180.0;
+                        shape.SetAngle(angleRadians);
+                    }
+                }
+            }
 
-            // Apply a rotation of 30 degrees.
-            // SetAngle expects the angle in radians.
-            double angleInRadians = 30 * Math.PI / 180.0;
-            triangle.SetAngle(angleInRadians);
-
-            // Export the rotated shape to PNG.
+            // Prepare PNG export options
             ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            triangle.ToImage("triangle.png", pngOptions);
+
+            // Export the rotated triangle shape to a PNG file
+            // (Assumes the triangle shape exists; otherwise this block is skipped)
+            Shape triangleShape = null;
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.NameU == "Triangle")
+                    {
+                        triangleShape = shape;
+                        break;
+                    }
+                }
+                if (triangleShape != null) break;
+            }
+
+            if (triangleShape != null)
+            {
+                triangleShape.ToImage("triangle.png", pngOptions);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

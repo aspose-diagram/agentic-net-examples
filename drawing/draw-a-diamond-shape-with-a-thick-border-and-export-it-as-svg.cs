@@ -1,51 +1,50 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Create a new empty Visio diagram
+            Diagram diagram = new Diagram();
+
+            // Get the active page where we will draw the shape
+            Page page = diagram.ActivePage;
+
+            // Define the points of a diamond (top, right, bottom, left, back to top)
+            // The flat double array represents: x1, y1, x2, y2, x3, y3, ...
+            double[] diamondPoints = new double[]
             {
+                5.0, 2.0,   // Top
+                7.0, 4.0,   // Right
+                5.0, 6.0,   // Bottom
+                3.0, 4.0,   // Left
+                5.0, 2.0    // Close back to Top
+            };
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Draw the diamond as a polyline; this returns the shape ID (long)
+            long shapeId = page.DrawPolyline(diamondPoints);
 
-                // Get the active page (the first page)
-                Page page = diagram.ActivePage;
+            // Retrieve the shape object using the returned ID
+            Shape diamond = page.Shapes.GetShape(shapeId);
 
-                // Define points for a diamond shape (top, right, bottom, left, back to top)
-                // Coordinates are in inches
-                double[] diamondPoints = new double[]
-                {
-                    5.0, 7.0,   // Top
-                    7.0, 5.0,   // Right
-                    5.0, 3.0,   // Bottom
-                    3.0, 5.0,   // Left
-                    5.0, 7.0    // Close the polygon
-                };
+            // Set a thick border (line weight) and black line color
+            diamond.Line.LineWeight.Value = 0.05; // thickness in inches
+            diamond.Line.LineColor.Value = "#000000";
 
-                // Draw the diamond polyline; this returns the shape ID
-                long shapeId = page.DrawPolyline(diamondPoints);
+            // Export the diagram (containing the diamond) to SVG format
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            diagram.Save("diamond.svg", svgOptions);
 
-                // Retrieve the shape object using the returned ID
-                Shape diamondShape = page.Shapes.GetShape((int)shapeId);
-
-                // Set a thick border (line weight) and color
-                diamondShape.Line.LineWeight.Value = 0.05; // Thickness in inches
-                diamondShape.Line.LineColor.Value = "#FF0000"; // Red border
-
-                // Export the entire diagram (containing the diamond) as SVG
-                SVGSaveOptions svgOptions = new SVGSaveOptions();
-                diagram.Save("diamond.svg", svgOptions);
-
-                Console.WriteLine("Diamond shape exported to diamond.svg");
-
-            }
-            catch (System.NullReferenceException ex)
-            {
-                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-            }
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+        }
     }
-    }
+}

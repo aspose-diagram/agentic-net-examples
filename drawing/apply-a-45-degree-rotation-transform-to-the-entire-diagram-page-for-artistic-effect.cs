@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,23 +10,22 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the active page of the diagram
-            Page page = diagram.ActivePage;
-
-            // 45 degrees expressed in radians (SetAngle expects radians)
-            double angleRad = 45.0 * Math.PI / 180.0;
-
-            // Rotate every shape on the page by 45 degrees
-            foreach (Shape shape in page.Shapes)
+            // Rotate every shape on each page by 45 degrees (π/4 radians)
+            double angleInRadians = Math.PI / 4;
+            foreach (Page page in diagram.Pages)
             {
-                shape.SetAngle(angleRad);
+                foreach (Shape shape in page.Shapes)
+                {
+                    shape.SetAngle(angleInRadians);
+                }
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

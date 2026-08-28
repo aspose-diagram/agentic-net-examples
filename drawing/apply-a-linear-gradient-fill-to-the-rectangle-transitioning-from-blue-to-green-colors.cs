@@ -1,32 +1,33 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
+
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+            // Get the active page where we will draw the rectangle
+            Page page = diagram.ActivePage;
 
-            // Draw a rectangle shape (pinX, pinY, width, height); returns shape ID as long
+            // Draw a rectangle at position (2,2) with width 4 and height 2 inches
             long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
 
-            // Retrieve the shape object using the ID (cast to int as required by GetShape)
+            // Retrieve the shape object using the returned ID
             Shape rectShape = page.Shapes.GetShape((int)rectId);
 
-            // Set fill pattern to gradient (value 25)
+            // Set the fill pattern to gradient (value 25)
             rectShape.Fill.FillPattern.Value = 25;
 
             // Enable gradient fill
             rectShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Set gradient direction to linear (assign enum as its underlying int value)
+            // Set gradient direction to linear
             rectShape.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.Linear;
 
             // Clear any existing gradient stops
@@ -44,11 +45,11 @@ class Program
 
             // Save the diagram to a VSDX file
             diagram.Save("GradientRectangle.vsdx", SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.NullReferenceException ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
 }

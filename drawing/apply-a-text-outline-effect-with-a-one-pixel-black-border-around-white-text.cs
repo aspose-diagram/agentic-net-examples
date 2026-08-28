@@ -1,51 +1,53 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Add a new page (the diagram already contains a default page)
-                Page page = diagram.Pages[0];
+            // Use the first page (created by default)
+            Page page = diagram.Pages[0];
 
-                // Add a rectangle shape to the page
-                // PinX and PinY are the center coordinates (in inches)
-                double pinX = 5.0;
-                double pinY = 5.0;
-                long shapeId = page.AddShape(pinX, pinY, "Rectangle");
+            // Add a rectangle shape that will contain the text
+            double pinX = 5.0;      // X position (in inches)
+            double pinY = 5.0;      // Y position (in inches)
+            double width = 3.0;     // Width of the rectangle (in inches)
+            double height = 1.0;    // Height of the rectangle (in inches)
 
-                // Retrieve the shape object using the returned ID
-                Shape shape = page.Shapes.GetShape(shapeId);
+            long shapeId = page.AddShape(pinX, pinY, width, height, "Rectangle");
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Clear any existing text and add new text
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt("Sample Text"));
+            // Clear any existing text and add the desired text
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt("Outlined Text"));
 
-                // Create a character formatting entry for the text run
-                Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-                ch.IX = 0;                         // Index of the character run
-                ch.Color.Value = "#FFFFFF";       // White fill color for the text
-                shape.Chars.Add(ch);
+            // Create a character formatting run for the text
+            Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+            ch.IX = 0;                     // Start index of the run
+            ch.Color.Value = "#FFFFFF";    // White fill color for the text
 
-                // Apply a thin black border around the text by using the shape's line formatting
-                // This simulates a text outline effect (1 pixel ≈ 0.01 inches)
-                shape.Line.LineColor.Value = "#000000";   // Black border color
-                shape.Line.LineWeight.Value = 0.01;       // Line weight (in inches)
+            // Aspose.Diagram does not expose a direct text‑outline property.
+            // As a fallback, we set the shape's line color to black, which gives a
+            // one‑pixel black border around the shape (not the text itself).
+            shape.Line.LineColor.Value = "#000000";
 
-                // Save the diagram to a VSDX file
-                diagram.Save("TextOutlineDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Apply the character formatting to the shape
+            shape.Chars.Add(ch);
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+            // Save the diagram
+            diagram.Save("OutlinedText.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

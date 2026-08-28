@@ -1,54 +1,45 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                using (Diagram diagram = new Diagram())
-                {
-                    // Get the first (default) page
-                    Page page = diagram.Pages[0];
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                    // Add a rectangle shape to the page
-                    // Parameters: PinX, PinY, Width, Height, MasterName
-                    double pinX = 5.0;   // horizontal position (in inches)
-                    double pinY = 5.0;   // vertical position (in inches)
-                    double width = 2.0;  // rectangle width (in inches)
-                    double height = 1.0; // rectangle height (in inches)
-                    long shapeId = page.AddShape(pinX, pinY, width, height, "Rectangle");
+            // Use the active page of the diagram
+            Page page = diagram.ActivePage;
 
-                    // Retrieve the shape object using its ID
-                    Shape rectangle = page.Shapes.GetShape(shapeId);
+            // Add a rectangle shape at position (5,5) inches
+            long rectId = page.AddShape(5.0, 5.0, "Rectangle");
 
-                    // Clear any existing text and add new text
-                    rectangle.Text.Value.Clear();
-                    rectangle.Text.Value.Add(new Txt("Visit Example Site"));
+            // Retrieve the shape object using its ID
+            Shape rectShape = page.Shapes.GetShape((int)rectId);
 
-                    // Create a hyperlink that points to the desired URL
-                    Hyperlink link = new Hyperlink
-                    {
-                        Name = "ExampleLink",
-                        Address = { Value = "https://www.example.com" },
-                        Description = { Value = "Open Example Website" }
-                    };
+            // Set the visible text of the rectangle
+            rectShape.Text.Value.Clear();
+            rectShape.Text.Value.Add(new Txt("Visit Example.com"));
 
-                    // Add the hyperlink to the shape's Hyperlinks collection
-                    rectangle.Hyperlinks.Add(link);
+            // Create a hyperlink that points to the desired website
+            Hyperlink link = new Hyperlink();
+            link.Name = "ExampleLink";
+            link.Address.Value = "https://www.example.com";
 
-                    // Save the diagram to a VSDX file
-                    string outputPath = "RectangleWithHyperlink.vsdx";
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
+            // Attach the hyperlink to the rectangle shape
+            rectShape.Hyperlinks.Add(link);
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+            // Save the diagram to a VSDX file
+            diagram.Save("RectangleWithLink.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+        }
     }
-    }
+}

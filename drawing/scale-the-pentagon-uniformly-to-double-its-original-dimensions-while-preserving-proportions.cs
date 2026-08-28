@@ -1,42 +1,46 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        // Create a new diagram (lifecycle create rule)
+        Diagram diagram = new Diagram();
+
+        // Use the first page (a diagram always contains at least one page)
+        Page page = diagram.Pages[0];
+
+        // Define the five vertices of a regular pentagon.
+        // The points are expressed relative to the shape's width and height.
+        double radius = 1.0;               // half of the shape's width/height
+        double[] pentagonPoints = new double[10];
+        for (int i = 0; i < 5; i++)
         {
-            try
-            {
+            // Start at the top vertex and step around the circle.
+            double angle = Math.PI / 2 + i * 2 * Math.PI / 5;
+            pentagonPoints[2 * i] = radius * Math.Cos(angle);     // X coordinate
+            pentagonPoints[2 * i + 1] = radius * Math.Sin(angle); // Y coordinate
+        }
 
-                // Create a new empty diagram (contains a default page)
-                Diagram diagram = new Diagram();
+        // Draw the pentagon using the DrawPolyline rule.
+        // Width and height are set to 2 (diameter of the circumscribed circle).
+        double pinX = 5.0;   // X position of the shape's pin on the page
+        double pinY = 5.0;   // Y position of the shape's pin on the page
+        double shapeWidth = 2.0;
+        double shapeHeight = 2.0;
+        long shapeId = page.DrawPolyline(pinX, pinY, shapeWidth, shapeHeight, pentagonPoints);
 
-                // Get the first (default) page
-                Page page = diagram.Pages[0];
+        // Retrieve the created shape.
+        Shape pentagon = page.Shapes.GetShape(shapeId);
 
-                // Add a pentagon shape at position (5,5) inches
-                // The AddShape method returns a long shape ID
-                long shapeId = page.AddShape(5.0, 5.0, "Pentagon");
+        // Uniformly double the dimensions while preserving proportions.
+        pentagon.XForm.Width.Value *= 2;
+        pentagon.XForm.Height.Value *= 2;
 
-                // Retrieve the shape object using the ID (cast to int as required)
-                Shape pentagon = page.Shapes.GetShape((int)shapeId);
-
-                // Store original dimensions
-                double originalWidth = pentagon.XForm.Width.Value;
-                double originalHeight = pentagon.XForm.Height.Value;
-
-                // Scale uniformly to double the size
-                pentagon.XForm.Width.Value = originalWidth * 2.0;
-                pentagon.XForm.Height.Value = originalHeight * 2.0;
-
-                // Save the diagram to a VSDX file
-                diagram.Save("ScaledPentagon.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        // Save the diagram (lifecycle save rule).
+        diagram.Save("ScaledPentagon.vsdx", SaveFileFormat.Vsdx);
     }
-    }
+}

@@ -1,63 +1,75 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Desired page size (in inches). Example: Letter landscape 11 x 8.5 inches
+            double targetPageWidth = 11.0;
+            double targetPageHeight = 8.5;
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Original page dimensions
+                double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output_scaled.vsdx";
+                // Compute scaling factors for X and Y axes
+                double scaleX = targetPageWidth / originalWidth;
+                double scaleY = targetPageHeight / originalHeight;
 
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Use uniform scaling to preserve aspect ratio (optional)
+                double uniformScale = Math.Min(scaleX, scaleY);
+                scaleX = uniformScale;
+                scaleY = uniformScale;
+
+                // Adjust each shape on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Reference page size (Letter size in inches)
-                    const double referenceWidth = 8.5;
-                    const double referenceHeight = 11.0;
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Iterate through all pages in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Retrieve current page dimensions (in inches)
-                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    // Scale width and height
+                    shape.XForm.Width.Value *= scaleX;
+                    shape.XForm.Height.Value *= scaleY;
 
-                        // Compute scaling factors relative to the reference size
-                        double scaleX = pageWidth / referenceWidth;
-                        double scaleY = pageHeight / referenceHeight;
+                    // Reposition the shape's PinX and PinY to keep relative layout
+                    // Translate Pin to origin, scale, then translate back to new page center
+                    double offsetX = shape.XForm.PinX.Value - (originalWidth / 2.0);
+                    double offsetY = shape.XForm.PinY.Value - (originalHeight / 2.0);
 
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip shapes that are marked as deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
-
-                            // Scale position (PinX, PinY)
-                            shape.XForm.PinX.Value *= scaleX;
-                            shape.XForm.PinY.Value *= scaleY;
-
-                            // Scale size (Width, Height)
-                            shape.XForm.Width.Value *= scaleX;
-                            shape.XForm.Height.Value *= scaleY;
-                        }
-                    }
-
-                    // Save the modified diagram back to Visio format
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    shape.XForm.PinX.Value = (offsetX * scaleX) + (targetPageWidth / 2.0);
+                    shape.XForm.PinY.Value = (offsetY * scaleY) + (targetPageHeight / 2.0);
                 }
 
-                Console.WriteLine("Diagram scaling completed successfully.");
+                // Update the page size to the target dimensions
+                page.PageSheet.PageProps.PageWidth.Value = targetPageWidth;
+                page.PageSheet.PageProps.PageHeight.Value = targetPageHeight;
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the modified diagram to a new file
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            // Dispose the diagram to release resources
+            diagram.Dispose();
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

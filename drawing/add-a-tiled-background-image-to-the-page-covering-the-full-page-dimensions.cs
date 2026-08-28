@@ -4,63 +4,57 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Create a new blank diagram
+            using (Diagram diagram = new Diagram())
             {
+                // Access the first (default) page
+                Page page = diagram.Pages[0];
 
-                // Paths for the source Visio file and the background image.
-                string diagramPath = "input.vsdx";
-                string imagePath = "background.png";
-                string outputPath = "output.vsdx";
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(diagramPath);
+                // Calculate the center point of the page (pin coordinates)
+                double centerX = pageWidth / 2.0;
+                double centerY = pageHeight / 2.0;
 
-                // Process each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Path to the background image file (must exist on disk)
+                const string imagePath = "background.png";
+
+                // Insert the image as a shape that spans the entire page
+                long bgShapeId;
+                using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
                 {
-                    // Retrieve page dimensions (in inches).
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Calculate the center position for the background shape.
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
-
-                    // Insert the image as a shape that spans the full page.
-                    using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
-                    {
-                        // AddShape overload that accepts an image stream.
-                        long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, imgStream);
-
-                        // Retrieve the created shape.
-                        Shape bgShape = page.Shapes.GetShape(shapeId);
-
-                        // Send the shape to the back so it appears behind other content.
-                        bgShape.SendToBack();
-
-                        // Make the background non‑selectable.
-                        bgShape.Protection.LockSelect.Value = BOOL.True;
-
-                        // Set the fill pattern to a picture texture (pattern value 25).
-                        bgShape.Fill.FillPattern.Value = 25;
-                    }
+                    // AddShape(pinX, pinY, width, height, Stream) returns the shape ID
+                    bgShapeId = page.AddShape(centerX, centerY, pageWidth, pageHeight, imgStream);
                 }
 
-                // Save the modified diagram.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Retrieve the shape object using the returned ID
+                Shape bgShape = page.Shapes.GetShape(bgShapeId);
 
-                // Clean up.
-                diagram.Dispose();
+                // Set the fill pattern to picture (value 25) to enable tiling
+                bgShape.Fill.FillPattern.Value = 25;
 
-                Console.WriteLine("Background image tiled and diagram saved successfully.");
+                // Send the background shape to the back so other shapes appear above it
+                bgShape.SendToBack();
 
+                // Make the background non‑selectable
+                bgShape.Protection.LockSelect.Value = BOOL.True;
+
+                // Save the diagram to a VSDX file
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

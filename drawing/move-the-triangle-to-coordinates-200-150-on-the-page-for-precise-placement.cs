@@ -1,38 +1,34 @@
-using System;
 using System.IO;
+using System;
+using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            var diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            // Load the Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (adjust index if needed)
-            var page = diagram.Pages[0];
-
-            // Find the triangle shape by its name (replace "Triangle" with the actual shape name if different)
-            Aspose.Diagram.Shape triangle = null;
-            foreach (Aspose.Diagram.Shape shape in page.Shapes)
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                if (shape.NameU == "Triangle")
+                // Search for the triangle shape by its name (case‑insensitive)
+                foreach (Shape shape in page.Shapes)
                 {
-                    triangle = shape;
-                    break;
+                    if (!string.IsNullOrEmpty(shape.NameU) &&
+                        shape.NameU.Equals("Triangle", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Move the triangle to the absolute position (200, 150) on the page
+                        shape.MoveTo(200.0, 150.0);
+                    }
                 }
             }
 
-            // If the triangle shape is found, move it to the absolute coordinates (200, 150)
-            if (triangle != null)
-            {
-                triangle.MoveTo(200.0, 150.0);
-            }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            // Save the modified diagram (replace with your desired output path)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -3,50 +3,52 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportTriangleShape
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram(@"C:\Path\To\YourDiagram.vsdx");
+            // Input Visio file containing the triangle shape
+            string inputPath = "input.vsdx";
 
-            // Assume the triangle shape is on the first page
-            Page page = diagram.Pages[0];
+            // Output SVG file for the triangle shape
+            string outputPath = "triangle.svg";
 
-            // Find the shape whose name indicates it is a triangle
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
             Shape triangleShape = null;
-            foreach (Shape shape in page.Shapes)
+
+            // Search for a shape whose master name is "Triangle"
+            foreach (Page page in diagram.Pages)
             {
-                // You may need to adjust the condition based on your diagram's naming
-                if (shape.NameU != null && shape.NameU.IndexOf("Triangle", StringComparison.OrdinalIgnoreCase) >= 0)
+                foreach (Shape shape in page.Shapes)
                 {
-                    triangleShape = shape;
-                    break;
+                    if (shape.Del == BOOL.False && shape.Master != null && shape.Master.Name == "Triangle")
+                    {
+                        triangleShape = shape;
+                        break;
+                    }
                 }
+                if (triangleShape != null)
+                    break;
             }
 
             if (triangleShape == null)
-            {
-                Console.WriteLine("Triangle shape not found in the diagram.");
-                return;
-            }
+                throw new Exception("Triangle shape not found in the diagram.");
 
-            // Prepare SVG save options (default options are sufficient for a single shape)
+            // Export the found triangle shape to a standalone SVG file
             SVGSaveOptions svgOptions = new SVGSaveOptions();
+            triangleShape.ToSvg(outputPath, svgOptions);
 
-            // Export only the identified triangle shape to a standalone SVG file
-            string outputSvgPath = @"C:\Path\To\TriangleShape.svg";
-            triangleShape.ToSvg(outputSvgPath, svgOptions);
-
-            Console.WriteLine($"Triangle shape exported successfully to: {outputSvgPath}");
+            Console.WriteLine($"Triangle shape exported successfully to '{outputPath}'.");
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,44 +1,71 @@
 using System;
 using System.IO;
+using System.Xml;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+class VerifyEllipseInSvg
+{
+    static void Main()
     {
-        static void Main()
+        // Define ellipse (circle) parameters
+        double pinX = 5.0;   // X coordinate of the shape's pin (center of rotation)
+        double pinY = 5.0;   // Y coordinate of the shape's pin (center of rotation)
+        double diameter = 4.0; // Width and height (circle)
+
+        // Create a new diagram
+        Diagram diagram = new Diagram();
+
+        // Draw an ellipse (circle) on the first page
+        // DrawEllipse returns the shape ID, which we ignore here
+        diagram.Pages[0].DrawEllipse(pinX, pinY, diameter, diameter);
+
+        // Export the diagram to SVG
+        string svgPath = "circle.svg";
+        diagram.Save(svgPath, SaveFileFormat.Svg);
+
+        // Load the generated SVG for verification
+        XmlDocument svgDoc = new XmlDocument();
+        svgDoc.Load(svgPath);
+
+        // Find all <ellipse> elements
+        XmlNodeList ellipseNodes = svgDoc.GetElementsByTagName("ellipse");
+
+        if (ellipseNodes.Count == 0)
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            Console.WriteLine("Verification failed: No <ellipse> element found in the SVG.");
+            return;
+        }
 
-            // Get the first page (by default a diagram has at least one page)
-            Page page = diagram.Pages[0];
+        // Verify that at least one ellipse has equal radii (i.e., a circle)
+        const double tolerance = 0.0001;
+        bool circleFound = false;
 
-            // Draw a circle using DrawEllipse (pinX, pinY, width, height)
-            // Center at (5,5) inches, radius 2 inches => width and height = 4 inches
-            double pinX = 5.0;
-            double pinY = 5.0;
-            double diameter = 4.0;
-            page.DrawEllipse(pinX, pinY, diameter, diameter);
+        foreach (XmlNode node in ellipseNodes)
+        {
+            // Extract radius attributes (rx, ry)
+            double rx = double.Parse(node.Attributes["rx"].Value);
+            double ry = double.Parse(node.Attributes["ry"].Value);
 
-            // Export the diagram to SVG
-            string svgPath = "output.svg";
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            diagram.Save(svgPath, svgOptions);
-
-            // Verify that the exported SVG contains an <ellipse> element
-            if (!File.Exists(svgPath))
+            // Check if radii are effectively equal
+            if (Math.Abs(rx - ry) <= tolerance)
             {
-                throw new Exception($"SVG file was not created at path: {svgPath}");
-            }
+                // Optionally verify position matches the drawn parameters
+                double cx = double.Parse(node.Attributes["cx"].Value);
+                double cy = double.Parse(node.Attributes["cy"].Value);
 
-            string svgContent = File.ReadAllText(svgPath);
-            if (svgContent.Contains("<ellipse"))
-            {
-                Console.WriteLine("Verification succeeded: <ellipse> element found in the SVG.");
-            }
-            else
-            {
-                throw new Exception("Verification failed: <ellipse> element not found in the exported SVG.");
+                // The SVG coordinates may differ due to internal scaling,
+                // but we can at least ensure the center is close to the pin point.
+                if (Math.Abs(cx - pinX) <= tolerance && Math.Abs(cy - pinY) <= tolerance)
+                {
+                    circleFound = true;
+                    break;
+                }
             }
         }
+
+        if (circleFound)
+            Console.WriteLine("Verification succeeded: SVG contains a correct <ellipse> element representing the drawn circle.");
+        else
+            Console.WriteLine("Verification failed: No matching <ellipse> element with equal radii found.");
     }
+}

@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -12,32 +13,33 @@ class Program
                 string inputPath = "input.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes to find a triangle shape
                 bool triangleFound = false;
+
+                // Iterate through all pages and shapes to locate a triangle shape
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Identify triangle by its master name (e.g., "Triangle")
+                        // Identify the triangle by its master name (e.g., "Triangle")
                         if (shape.Master != null && shape.Master.Name == "Triangle")
                         {
-                            // Apply solid fill pattern
+                            // Apply a solid fill pattern
                             shape.Fill.FillPattern.Value = 1; // 1 = solid
-                            // Set foreground (fill) color to solid red
+                            // Set the foreground fill color to solid red
                             shape.Fill.FillForegnd.Value = "#FF0000";
 
                             triangleFound = true;
-                            // If only one triangle is needed, break out of loops
+                            // If multiple triangles need to be colored, remove the break statement
                             break;
                         }
                     }
-                    if (triangleFound) break;
+
+                    if (triangleFound)
+                        break;
                 }
 
                 if (!triangleFound)
-                {
                     throw new Exception("Triangle shape not found in the diagram.");
-                }
 
                 // Save the modified diagram
                 string outputPath = "output.vsdx";

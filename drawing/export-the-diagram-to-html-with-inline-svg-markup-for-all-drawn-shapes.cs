@@ -10,20 +10,20 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram from a file.
+            Diagram diagram = new Diagram("input.vsd");
 
-            // Set up HTML save options to embed all resources (including SVG) in a single file
+            // Configure HTML save options.
+            // SaveAsSingleFile = true embeds all resources (including SVG) directly into the HTML.
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                SaveAsSingleFile = true,          // embed images/SVG inline
-                ExportHiddenPage = false,         // do not export hidden pages
-                ExportGuideShapes = false,        // skip guide shapes
-                IsExportComments = false,         // skip comments
-                SaveToolBar = false               // optional: omit toolbar for cleaner output
+                SaveAsSingleFile = true,
+                ExportHiddenPage = false,
+                ExportGuideShapes = false,
+                // Optional: set resolution, page size, etc., as needed.
             };
 
-            // Export the diagram to HTML with inline SVG markup
+            // Export the diagram to an HTML file with inline SVG markup.
             diagram.Save("output.html", htmlOptions);
 
         }

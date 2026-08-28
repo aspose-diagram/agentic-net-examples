@@ -9,17 +9,17 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Use the first page (index 0)
+            // Get the first page (use Pages collection, not ActivePage)
             Page page = diagram.Pages[0];
 
             // Define circle parameters
             int circleCount = 5;
-            double startX = 2.0; // inches
-            double startY = 5.0; // inches
-            double spacing = 2.5; // inches between circle centers
-            double radius = 1.0; // inches (width and height will be 2*radius)
+            double startX = 2.0;      // starting X position (in inches)
+            double startY = 5.0;      // Y position for all circles
+            double spacing = 3.0;     // horizontal spacing between circles
+            double radius = 1.0;      // radius of each circle (in inches)
 
-            // Define colors for each circle (hex strings)
+            // Define a set of colors (hex strings) to use based on index
             string[] colors = new string[]
             {
                 "#FF0000", // Red
@@ -31,32 +31,34 @@ class Program
 
             for (int i = 0; i < circleCount; i++)
             {
-                // Calculate center position for this circle
+                // Calculate center position for the current circle
                 double pinX = startX + i * spacing;
                 double pinY = startY;
 
-                // Draw an ellipse (circle) on the page
-                // DrawEllipse expects: pinX, pinY, width, height
-                long shapeId = page.DrawEllipse(pinX, pinY, radius * 2, radius * 2);
+                // Width and height are diameters (2 * radius)
+                double diameter = radius * 2.0;
 
-                // Retrieve the shape object (cast long to int for GetShape)
-                Shape circleShape = page.Shapes.GetShape((int)shapeId);
+                // Draw the circle (ellipse with equal width and height)
+                long shapeId = page.DrawEllipse(pinX, pinY, diameter, diameter);
 
-                // Set the fill foreground color based on index
+                // Retrieve the shape object (GetShape expects an int)
+                Shape shape = page.Shapes.GetShape((int)shapeId);
+
+                // Apply solid fill pattern
+                shape.Fill.FillPattern.Value = 1; // 1 = solid
+
+                // Set fill color based on index (cycle if more circles than colors)
                 string fillColor = colors[i % colors.Length];
-                circleShape.Fill.FillForegnd.Value = fillColor;
+                shape.Fill.FillForegnd.Value = fillColor;
 
                 // Optional: remove outline by setting line pattern to 0 (no line)
-                circleShape.Line.LinePattern.Value = 0;
+                shape.Line.LinePattern.Value = 0;
             }
 
-            // Prepare PNG export options
+            // Configure PNG export options
             ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
             // Save the diagram as a PNG image
-            string outputPath = "circles.png";
-            diagram.Save(outputPath, pngOptions);
-
-            Console.WriteLine($"Diagram with {circleCount} circles saved to '{outputPath}'.");
+            diagram.Save("circles.png", pngOptions);
         }
     }

@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -13,49 +12,43 @@ class Program
         // Get the first (default) page
         Page page = diagram.Pages[0];
 
-        // Define the base pentagon points (closed polygon)
-        // Coordinates are in inches
-        double[] basePoints = new double[]
+        // Define the points of a closed pentagon (relative to its pin)
+        double[] pentagonPoints = new double[]
         {
-            1.0, 0.0,   // Point 1
-            1.5, 1.0,   // Point 2
-            0.5, 1.5,   // Point 3
-            -0.5, 1.0,  // Point 4
-            -1.0, 0.0,  // Point 5
-            1.0, 0.0    // Close back to Point 1
+            0, 0.5,
+            0.475, 0.154,
+            0.293, -0.404,
+            -0.293, -0.404,
+            -0.475, 0.154,
+            0, 0.5 // close the shape
         };
 
-        // Approximate width and height of the pentagon for spacing calculations
-        double shapeWidth = 2.5;   // max X - min X
-        double shapeHeight = 1.5;  // max Y - min Y
-
         // Grid configuration
-        int rows = 3;
-        int cols = 4;
-        double hSpacing = 0.5; // horizontal spacing between shapes
-        double vSpacing = 0.5; // vertical spacing between shapes
+        int rows = 5;
+        int cols = 5;
+        double spacingX = 2.0; // horizontal spacing in inches
+        double spacingY = 2.0; // vertical spacing in inches
+        double startX = 2.0;   // initial X offset
+        double startY = 2.0;   // initial Y offset
 
-        // Duplicate the pentagon across the grid
-        for (int row = 0; row < rows; row++)
+        for (int r = 0; r < rows; r++)
         {
-            for (int col = 0; col < cols; col++)
+            for (int c = 0; c < cols; c++)
             {
-                double offsetX = col * (shapeWidth + hSpacing);
-                double offsetY = row * (shapeHeight + vSpacing);
-
-                double[] shiftedPoints = new double[basePoints.Length];
-                for (int i = 0; i < basePoints.Length; i += 2)
-                {
-                    shiftedPoints[i] = basePoints[i] + offsetX;       // X coordinate
-                    shiftedPoints[i + 1] = basePoints[i + 1] + offsetY; // Y coordinate
-                }
+                double pinX = startX + c * spacingX;
+                double pinY = startY + r * spacingY;
 
                 // Draw the pentagon at the calculated position
-                page.DrawPolyline(shiftedPoints);
+                long shapeId = page.DrawPolyline(pinX, pinY, 1.0, 1.0, pentagonPoints);
+
+                // Retrieve the shape to apply styling (optional)
+                Shape shape = page.Shapes.GetShape((int)shapeId);
+                shape.Fill.FillForegnd.Value = "#ADD8E6"; // light blue fill
+                shape.Line.LineColor.Value = "#0000FF";   // blue outline
             }
         }
 
-        // Save the diagram to a VSDX file
+        // Save the diagram in VSDX format
         diagram.Save("PentagonGrid.vsdx", SaveFileFormat.Vsdx);
     }
 }

@@ -1,37 +1,45 @@
-using System.IO;
 using System;
-using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System.IO;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the Visio diagram (create/load rule)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram (replace with your file path)
+            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
 
-            // Iterate through pages and shapes to locate the pentagon
-            foreach (Page page in diagram.Pages)
+            // Assume the pentagon is on the first page; adjust the page index if needed
+            Aspose.Diagram.Page page = diagram.Pages[0];
+
+            // Find the pentagon shape by its name (or by ID if you know it)
+            // Here we look for a shape whose NameU equals "Pentagon"
+            Aspose.Diagram.Shape pentagon = null;
+            foreach (Aspose.Diagram.Shape shp in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
+                if (shp.NameU != null && shp.NameU.Equals("Pentagon", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    // Assuming the shape's universal name is "Pentagon"
-                    if (shape.NameU == "Pentagon")
-                    {
-                        // Convert 30 degrees to radians (SetAngle expects radians)
-                        double angleRad = Math.PI / 6.0; // 30° = π/6 rad
-
-                        // Rotate the shape around its geometric center (pin)
-                        shape.SetAngle(angleRad);
-                    }
+                    pentagon = shp;
+                    break;
                 }
             }
 
-            // Save the modified diagram (save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // If the shape was not found, you may need to locate it by its ID instead
+            if (pentagon == null)
+            {
+                // Example: use a known shape ID (replace 5 with the actual ID)
+                pentagon = page.Shapes.GetShape(5);
+            }
+
+            // Rotate the pentagon 30 degrees (π/6 radians) around its geometric center
+            // The shape's pin point is its center of rotation, so no additional move is required
+            double angleInRadians = System.Math.PI / 6.0; // 30 degrees
+            pentagon.SetAngle(angleInRadians);
+
+            // Save the modified diagram (replace with your desired output path and format)
+            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

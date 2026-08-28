@@ -10,15 +10,14 @@ class ExportDiagramPages
         try
         {
 
-            // Load the diagram file (replace with your actual file path)
-            string inputFile = "input.vsdx";
-            Diagram diagram = new Diagram(inputFile);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Get total number of pages in the diagram
-            int totalPages = diagram.Pages.Count;
+            int pageCount = diagram.Pages.Count;
 
-            // Loop through each page and save it as a separate PNG with transparent background
-            for (int i = 0; i < totalPages; i++)
+            // Loop through each page and export it as a separate PNG file
+            for (int i = 0; i < pageCount; i++)
             {
                 // Configure image save options for PNG format
                 ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png)
@@ -27,14 +26,14 @@ class ExportDiagramPages
                     PageIndex = i,
                     PageCount = 1,
 
-                    // Render only foreground pages (background will be transparent if not present)
-                    SaveForegroundPagesOnly = true
+                    // Ensure PNG format is used
+                    SaveFormat = SaveFileFormat.Png
                 };
 
-                // Build output file name (e.g., Page_1.png, Page_2.png, ...)
-                string outputFile = $"Page_{i + 1}.png";
+                // Build output file name (e.g., Page_0.png, Page_1.png, ...)
+                string outputFile = $"Page_{i}.png";
 
-                // Save the current page as PNG using the configured options
+                // Save the current page as PNG with the specified options
                 diagram.Save(outputFile, options);
             }
 

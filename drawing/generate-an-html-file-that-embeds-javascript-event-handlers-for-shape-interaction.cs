@@ -1,40 +1,42 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Access the first page (default page is created automatically)
-                Page page = diagram.Pages[0];
+            // Access the first page of the diagram
+            Page page = diagram.Pages[0];
 
-                // Add a rectangle shape at position (2, 2) inches
-                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+            // Add a rectangle shape at position (5,5) inches
+            long shapeId = page.AddShape(5.0, 5.0, "Rectangle");
 
-                // Retrieve the shape instance using the returned ID
-                Shape shape = page.Shapes.GetShape(shapeId);
+            // Retrieve the shape instance using its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Set a double‑click event that triggers JavaScript alert when exported to HTML
-                // The CALLTHIS function with a "javascript:" URI is used for HTML export
-                shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"javascript:alert('Shape clicked')\")";
+            // Assign a double‑click event that triggers a JavaScript alert when the shape is clicked in the HTML view
+            shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"alert('Shape double‑clicked')\")";
 
-                // Export the shape (including the event) to an HTML file
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                shape.ToHTML("ShapeWithEvent.html", htmlOptions);
+            // Configure HTML export options (default settings are sufficient for this example)
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-                Console.WriteLine("HTML file with embedded JavaScript event has been created.");
+            // Export the diagram to an HTML file; the event formula will be embedded as JavaScript
+            diagram.Save("ShapeInteraction.html", htmlOptions);
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+            Console.WriteLine("HTML file with JavaScript event handlers generated successfully.");
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

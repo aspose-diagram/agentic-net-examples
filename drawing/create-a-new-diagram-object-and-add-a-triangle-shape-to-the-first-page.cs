@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
@@ -12,10 +12,15 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Add a triangle shape to the first page (page index 0)
-            // PinX and PinY are the coordinates (in inches) where the shape will be placed
-            // "Triangle" is the master name of the built‑in triangle shape
-            diagram.AddShape(4.0, 5.0, "Triangle", 0);
+            // Get the first page (index 0) of the diagram
+            Page firstPage = diagram.Pages[0];
+
+            // Add a triangle shape to the first page at position (4, 5) inches
+            // "Triangle" is the name of the built‑in master shape in Visio
+            firstPage.AddShape(4.0, 5.0, "Triangle");
+
+            // Save the diagram (using the provided Save method)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (Aspose.Diagram.DiagramException ex)

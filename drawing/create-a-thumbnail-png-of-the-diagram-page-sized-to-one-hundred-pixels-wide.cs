@@ -5,27 +5,47 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input Visio file path (change as needed)
+            string inputPath = "input.vsdx";
 
-            // Create image save options for PNG format
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Output thumbnail path
+            string outputPath = "thumbnail.png";
 
-            // Set the page size so that the generated image is 100 pixels wide.
-            // Height is set to 100 as a simple square thumbnail; adjust as needed for aspect ratio.
-            saveOptions.PageSize = new PageSize(100, 100);
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Get the first page
+                Page page = diagram.Pages[0];
 
-            // Render only the first page (index 0) and limit to a single page
-            saveOptions.PageIndex = 0;
-            saveOptions.PageCount = 1;
+                // Page width in inches
+                double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
 
-            // Save the rendered page as a PNG thumbnail
-            diagram.Save("thumbnail.png", saveOptions);
+                // Default DPI for image rendering (Aspose uses 96 DPI if not set)
+                const float dpi = 96f;
+
+                // Desired thumbnail width in pixels
+                const float targetWidthPx = 100f;
+
+                // Calculate scale factor to achieve the target width
+                float scale = targetWidthPx / ((float)pageWidthInches * dpi);
+
+                // Configure image save options for PNG thumbnail
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    PageIndex = 0,          // Export the first page
+                    Scale = scale           // Apply scaling to reach 100px width
+                };
+
+                // Save the thumbnail
+                diagram.Save(outputPath, saveOptions);
+            }
+
+            Console.WriteLine("Thumbnail PNG saved to: " + outputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -6,33 +6,37 @@ class Program
 {
     static void Main()
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        try
+        {
 
-        // Access the first page (default page)
-        Page page = diagram.Pages[0];
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-        // Define oval (ellipse) parameters: center at (5,5) inches, width 3 inches, height 2 inches
-        double pinX = 5.0;
-        double pinY = 5.0;
-        double width = 3.0;
-        double height = 2.0;
+            // Use the active page (first page) for drawing
+            Page page = diagram.ActivePage;
 
-        // Draw the oval; DrawEllipse returns the shape ID (long)
-        long ovalId = page.DrawEllipse(pinX, pinY, width, height);
+            // Draw an oval (ellipse) with center at (5,5) and size 2x1 inches
+            long ovalId = page.DrawEllipse(5.0, 5.0, 2.0, 1.0);
 
-        // Retrieve the Shape object using the returned ID
-        Shape oval = page.Shapes.GetShape(ovalId);
+            // Retrieve the shape object representing the oval
+            Shape oval = page.Shapes.GetShape(ovalId);
 
-        // Lock the shape's position to prevent any movement
-        oval.Protection.LockMoveX.Value = BOOL.True;
-        oval.Protection.LockMoveY.Value = BOOL.True;
+            // Lock the oval's position to prevent moving
+            oval.Protection.LockMoveX.Value = BOOL.True;
+            oval.Protection.LockMoveY.Value = BOOL.True;
 
-        // Optionally lock size to keep width/height unchanged
-        oval.Protection.LockWidth.Value = BOOL.True;
-        oval.Protection.LockHeight.Value = BOOL.True;
+            // Optionally lock size to keep width and height unchanged
+            oval.Protection.LockWidth.Value = BOOL.True;
+            oval.Protection.LockHeight.Value = BOOL.True;
 
-        // Save the diagram to a VSDX file
-        diagram.Save("LockedOval.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram to a VSDX file
+            diagram.Save("LockedOval.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved with the oval shape locked.");
+
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+        }
     }
 }

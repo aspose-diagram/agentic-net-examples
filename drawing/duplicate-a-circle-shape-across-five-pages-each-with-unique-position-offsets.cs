@@ -1,49 +1,39 @@
 using System;
-using Aspose.Diagram;
+using System.IO;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Create a new Visio diagram
+        Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram();
+
+        // Ensure the diagram has at least five pages
+        while (diagram.Pages.Count < 5)
         {
-            // Create a new empty diagram (contains one default page)
-            Diagram diagram = new Diagram();
-
-            // Define circle parameters
-            double circleWidth = 1.0;   // inches
-            double circleHeight = 1.0;  // inches (equal width => circle)
-            double startPinX = 2.0;     // starting X position
-            double startPinY = 2.0;     // starting Y position
-            double offsetX = 2.5;       // horizontal offset between pages
-            double offsetY = 2.5;       // vertical offset between pages
-
-            // Ensure we have exactly five pages and draw a circle on each with unique offsets
-            for (int i = 0; i < 5; i++)
-            {
-                // Use existing first page for i == 0, otherwise add a new page
-                Page page;
-                if (i == 0)
-                {
-                    page = diagram.Pages[0];
-                }
-                else
-                {
-                    page = new Page();
-                    diagram.Pages.Add(page);
-                }
-
-                // Calculate position for this page
-                double pinX = startPinX + i * offsetX;
-                double pinY = startPinY + i * offsetY;
-
-                // Draw the circle (ellipse with equal width and height)
-                long shapeId = page.DrawEllipse(pinX, pinY, circleWidth, circleHeight);
-
-                // Optional: set a fill color for visual distinction
-                Shape circle = page.Shapes.GetShape(shapeId);
-                circle.Fill.FillForegnd.Value = "#00AAFF"; // light blue fill
-            }
-
-            // Save the diagram to a VSDX file
-            diagram.Save("CircleDiagram.vsdx", SaveFileFormat.Vsdx);
+            diagram.Pages.Add(new Aspose.Diagram.Page());
         }
+
+        // Base position and size for the circle (ellipse with equal width and height)
+        double basePinX = 2.0;      // starting X coordinate (in inches)
+        double basePinY = 2.0;      // starting Y coordinate (in inches)
+        double diameter = 1.0;      // circle diameter (in inches)
+
+        // Add a circle to each of the five pages with a unique offset
+        for (int i = 0; i < 5; i++)
+        {
+            // Calculate offset for the current page
+            double offsetX = basePinX + i * 1.0;   // shift X by 1 inch per page
+            double offsetY = basePinY + i * 0.5;   // shift Y by 0.5 inch per page
+
+            // Get the page reference
+            Aspose.Diagram.Page page = diagram.Pages[i];
+
+            // Draw an ellipse where width == height, resulting in a circle
+            page.DrawEllipse(offsetX, offsetY, diameter, diameter);
+        }
+
+        // Save the diagram to a file (VSDX format)
+        diagram.Save("DuplicatedCircles.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
     }
+}

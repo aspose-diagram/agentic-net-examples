@@ -8,20 +8,21 @@ class Program
             try
             {
 
-                // Paths to the source and destination Visio files
+                // Input and output file paths
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                string outputPath = "output_locked.vsdx";
 
-                // Load the diagram
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Assume the diamond shape is on the first page
+                // Access the first page (adjust index if needed)
                 Page page = diagram.Pages[0];
 
-                // Find the first shape whose master name is "Diamond"
+                // Find the first diamond shape on the page
                 Shape diamondShape = null;
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Ensure the shape has a master and compare its name
                     if (shape.Master != null && shape.Master.Name == "Diamond")
                     {
                         diamondShape = shape;
@@ -43,11 +44,18 @@ class Program
                 // Preserve the original aspect ratio
                 double originalWidth = diamondShape.XForm.Width.Value;
                 double originalHeight = diamondShape.XForm.Height.Value;
-                double aspectRatio = originalHeight / originalWidth;
 
-                // Apply new dimensions while keeping the proportion
+                if (originalWidth == 0)
+                {
+                    throw new Exception("Original width of the shape is zero, cannot compute aspect ratio.");
+                }
+
+                double aspectRatio = originalHeight / originalWidth;
+                double newHeight = newWidth * aspectRatio;
+
+                // Apply the new dimensions
                 diamondShape.XForm.Width.Value = newWidth;
-                diamondShape.XForm.Height.Value = newWidth * aspectRatio;
+                diamondShape.XForm.Height.Value = newHeight;
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);

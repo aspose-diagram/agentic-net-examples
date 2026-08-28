@@ -5,33 +5,35 @@ class Program
     {
         static void Main()
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            try
+            {
 
-            // Access the first (default) page
-            Page page = diagram.Pages[0];
+                // Create a new empty diagram (contains a default page)
+                Diagram diagram = new Diagram();
 
-            // Define position and size for the oval (in inches)
-            double pinX = 5.0;   // center X
-            double pinY = 5.0;   // center Y
-            double width = 4.0;  // horizontal diameter
-            double height = 2.5; // vertical diameter
+                // Add an oval (ellipse) shape to the active page
+                // Parameters: pinX, pinY, width, height (all in inches)
+                long ovalId = diagram.ActivePage.DrawEllipse(2.0, 2.0, 4.0, 2.0);
 
-            // Draw an oval shape on the page; returns the shape ID (long)
-            long shapeId = page.DrawEllipse(pinX, pinY, width, height);
+                // Retrieve the shape instance using the returned ID
+                Shape ovalShape = diagram.ActivePage.Shapes.GetShape(ovalId);
 
-            // Retrieve the Shape object using the ID
-            Shape oval = page.Shapes.GetShape((int)shapeId);
+                // Set a solid fill pattern
+                ovalShape.Fill.FillPattern.Value = 1; // 1 = solid
 
-            // Set a solid fill color (optional, here light blue)
-            oval.Fill.FillForegnd.Value = "#ADD8E6";
+                // Set the fill foreground color (example: red)
+                ovalShape.Fill.FillForegnd.Value = "#FF0000";
 
-            // Set fill transparency to achieve 70% opacity.
-            // Transparency is expressed as a percentage (0 = opaque, 100 = fully transparent).
-            // 70% opacity => 30% transparency.
-            oval.Fill.FillForegndTrans.Value = 30;
+                // Set fill opacity to 70% (70 = 70% transparent)
+                ovalShape.Fill.FillForegndTrans.Value = 70.0;
 
-            // Save the diagram to a VSDX file
-            diagram.Save("OvalWithOpacity.vsdx", SaveFileFormat.Vsdx);
-        }
+                // Save the diagram to a VSDX file
+                diagram.Save("OvalWithOpacity.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (System.NullReferenceException ex)
+            {
+                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            }
+    }
     }

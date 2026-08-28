@@ -7,33 +7,20 @@ class Program
 {
     static void Main()
     {
-        // Input Visio file path (replace with actual path)
-        string inputPath = "input.vsdx";
-        // Desired SVG output file path
-        string outputPath = "output.svg";
-
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
 
-            // Configure SVG export options
-            SVGSaveOptions svgOptions = new SVGSaveOptions
-            {
-                ExportHiddenPage = false,          // Do not export hidden pages
-                ExportGuideShapes = false,         // Exclude guide shapes
-                SVGFitToViewPort = true,           // Fit SVG to viewport
-                ExportElementAsRectTag = true      // Export shapes as <rect> where appropriate
-            };
+            // Load the Visio diagram from a file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Save the diagram as SVG while preserving hierarchy and styles
-            diagram.Save(outputPath, svgOptions);
+            // Save the entire diagram as an SVG file.
+            // This preserves the shape hierarchy and all style information.
+            diagram.Save("output.svg", SaveFileFormat.Svg);
 
-            Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.WriteLine($"Error during SVG export: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

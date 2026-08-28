@@ -1,7 +1,6 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,34 +9,44 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vdx");
+            // Paths to the input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Access the first page (or any specific page)
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page (adjust if needed)
             Page page = diagram.Pages[0];
 
-            // Original rectangle parameters
-            double pinX = 5.0;          // X coordinate of the rectangle's pin (center)
-            double pinY = 5.0;          // Y coordinate of the rectangle's pin (center)
-            double originalWidth = 2.0;
-            double originalHeight = 1.0;
+            // Locate the rectangle shape by its master name
+            Shape rectangle = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.Master != null && shape.Master.Name == "Rectangle")
+                {
+                    rectangle = shape;
+                    break;
+                }
+            }
 
-            // Scale factor to double width and height
-            double scaleFactor = 2.0;
+            if (rectangle == null)
+            {
+                Console.WriteLine("Rectangle shape not found.");
+                return;
+            }
 
-            // Compute new dimensions while preserving aspect ratio
-            double newWidth = originalWidth * scaleFactor;
-            double newHeight = originalHeight * scaleFactor;
+            // Retrieve original dimensions
+            double originalWidth = rectangle.XForm.Width.Value;
+            double originalHeight = rectangle.XForm.Height.Value;
 
-            // Draw the rectangle with the scaled dimensions
-            long shapeId = page.DrawRectangle(pinX, pinY, newWidth, newHeight);
-
-            // (Optional) Adjust the shape's DropOnPageScale if you need to reflect scaling in the shape's properties
-            // Shape shape = page.Shapes[shapeId];
-            // shape.DropOnPageScale = new DoubleValue(scaleFactor * 100); // percentage
+            // Scale width and height proportionally (double size)
+            rectangle.XForm.Width.Value = originalWidth * 2;
+            rectangle.XForm.Height.Value = originalHeight * 2;
 
             // Save the modified diagram
-            diagram.Save("output.vdx", SaveFileFormat.Vdx);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Rectangle scaled and diagram saved successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

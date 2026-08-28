@@ -1,42 +1,50 @@
-using System.IO;
-using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System;
+using System.IO;
 
 class CommentMigration
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Path to the legacy Visio file (e.g., VSD format)
-            string legacyFile = @"C:\Diagrams\legacy.vsd";
+            // Path to the legacy diagram file (any supported older format)
+            string legacyFilePath = "legacy.vsd";
 
-            // Path where the migrated diagram will be saved (e.g., VDX format)
-            string migratedFile = @"C:\Diagrams\migrated.vdx";
+            // Path where the migrated diagram will be saved in the latest format (VDX)
+            string migratedFilePath = "migrated.vdx";
 
-            // Load the legacy diagram using the appropriate load format
-            Diagram legacyDiagram = new Diagram(legacyFile, LoadFileFormat.Vsd);
+            // Determine the appropriate LoadFileFormat based on the legacy file extension
+            LoadFileFormat loadFormat = GetLoadFormat(Path.GetExtension(legacyFilePath));
 
-            // Create a new (empty) diagram instance
-            Diagram newDiagram = new Diagram();
+            // Load the legacy diagram using the constructor that accepts a filename and a LoadFileFormat
+            Diagram diagram = new Diagram(legacyFilePath, loadFormat);
 
-            // Combine the legacy diagram into the new diagram.
-            // This operation copies all pages, shapes, and associated comments.
-            newDiagram.Combine(legacyDiagram);
-
-            // Save the combined diagram in the latest VDX format.
-            newDiagram.Save(migratedFile, SaveFileFormat.Vdx);
-
-            // Clean up resources
-            legacyDiagram.Dispose();
-            newDiagram.Dispose();
+            // Save the diagram in the latest VDX format; comments are preserved automatically
+            diagram.Save(migratedFilePath, SaveFileFormat.Vdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
+    }
+
+    // Helper method to map file extensions to the corresponding LoadFileFormat enum values
+    static LoadFileFormat GetLoadFormat(string extension)
+    {
+        switch (extension.ToLower())
+        {
+            case ".vsd": return LoadFileFormat.Vsd;
+            case ".vsdx": return LoadFileFormat.Vsdx;
+            case ".vdx": return LoadFileFormat.Vdx;
+            case ".vss": return LoadFileFormat.Vss;
+            case ".vssx": return LoadFileFormat.Vssx;
+            case ".vst": return LoadFileFormat.Vst;
+            case ".vstx": return LoadFileFormat.Vstx;
+            case ".vdw": return LoadFileFormat.Vdw;
+            default: return LoadFileFormat.Vsd; // Default fallback
         }
     }
 }

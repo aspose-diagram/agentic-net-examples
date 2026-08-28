@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,26 +10,17 @@ class Program
         try
         {
 
-            // Paths to the source diagrams
-            string firstDiagramPath = "first.vsd";   // VSD file (first diagram)
-            string secondDiagramPath = "second.vsdx"; // VSDX file (second diagram)
+            // Load the first diagram (VSD) – this diagram's page order will be kept first
+            Diagram firstDiagram = new Diagram("first.vsd", LoadFileFormat.Vsd);
 
-            // Path for the combined output diagram
-            string outputDiagramPath = "combined.vsdx";
+            // Load the second diagram (VSDX) – its pages will be appended after the first diagram's pages
+            Diagram secondDiagram = new Diagram("second.vsdx", LoadFileFormat.Vsdx);
 
-            // Load the first diagram (its page order will be preserved)
-            Diagram firstDiagram = new Diagram(firstDiagramPath);
-
-            // Load the second diagram
-            Diagram secondDiagram = new Diagram(secondDiagramPath);
-
-            // Combine the second diagram into the first one.
-            // Pages from the second diagram are appended after the pages of the first diagram,
-            // thus preserving the original order of the first diagram's pages.
+            // Combine the second diagram into the first one
             firstDiagram.Combine(secondDiagram);
 
-            // Save the combined diagram as VSDX
-            firstDiagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+            // Save the combined diagram preserving the VSDX format
+            firstDiagram.Save("combined.vsdx", SaveFileFormat.Vsdx);
 
             // Clean up resources
             firstDiagram.Dispose();

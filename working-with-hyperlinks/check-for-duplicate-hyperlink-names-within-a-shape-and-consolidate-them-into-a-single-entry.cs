@@ -1,49 +1,52 @@
-using System;
 using System.IO;
-using Aspose.Diagram;
+using System;
 using System.Collections.Generic;
+using Aspose.Diagram;
 
-class Program
+class HyperlinkConsolidator
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
+            // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Get the collection of hyperlinks for the current shape
                     HyperlinkCollection hyperlinks = shape.Hyperlinks;
-                    if (hyperlinks == null || hyperlinks.Count <= 1)
-                        continue; // No possible duplicates
 
-                    // Track first occurrence of each hyperlink name
-                    var firstByName = new Dictionary<string, Hyperlink>();
-                    var duplicates = new List<Hyperlink>();
+                    // Dictionary to keep track of the first hyperlink encountered for each name
+                    Dictionary<string, Hyperlink> firstByName = new Dictionary<string, Hyperlink>(StringComparer.OrdinalIgnoreCase);
 
-                    foreach (Hyperlink link in hyperlinks)
+                    // List to collect duplicates that need to be removed
+                    List<Hyperlink> duplicates = new List<Hyperlink>();
+
+                    // Examine each hyperlink in the collection
+                    foreach (Hyperlink hl in hyperlinks)
                     {
-                        string name = link.Name;
-                        if (string.IsNullOrEmpty(name))
-                            continue; // Skip unnamed hyperlinks
+                        // Use empty string if Name is null to avoid null reference issues
+                        string name = hl.Name ?? string.Empty;
 
                         if (firstByName.ContainsKey(name))
                         {
-                            // Duplicate name found – mark for removal
-                            duplicates.Add(link);
+                            // Duplicate found – schedule for removal
+                            duplicates.Add(hl);
                         }
                         else
                         {
-                            firstByName[name] = link;
+                            // First occurrence of this name – store it
+                            firstByName[name] = hl;
                         }
                     }
 
-                    // Remove duplicate hyperlinks, keeping the first occurrence
+                    // Remove duplicate hyperlinks from the shape's collection
                     foreach (Hyperlink dup in duplicates)
                     {
                         hyperlinks.Remove(dup);
@@ -51,7 +54,7 @@ class Program
                 }
             }
 
-            // Save the modified diagram (replace with your desired output path)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

@@ -1,56 +1,72 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists before proceeding
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        string outputPath = "output.vsdx";
+
+        try
         {
-            try
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape has an Event section
+                    if (shape.Event == null)
+                        continue;
+
+                    // Attempt to access a valid event cell (EventXFMod) and apply conditional formatting
+                    try
                     {
-                        // Example: Access a custom event cell named EventCalc.
-                        // The actual cell name may vary; adjust as needed.
-                        // Event cells are accessed via the Event property and the specific cell name.
-                        // Here we use Event.EventXFMod as a placeholder for EventCalc.
+                        // Retrieve the formula string from the EventXFMod cell
                         string eventFormula = shape.Event.EventXFMod.Ufe.F;
 
-                        // Simple condition: if the formula contains the word "TRUE"
-                        // (replace with actual evaluation logic as required)
-                        bool conditionMet = !string.IsNullOrEmpty(eventFormula) && eventFormula.Contains("TRUE", StringComparison.OrdinalIgnoreCase);
-
-                        // Apply conditional formatting based on the condition
-                        if (conditionMet)
+                        // Simple condition: if the formula text contains "TRUE"
+                        if (!string.IsNullOrEmpty(eventFormula) && eventFormula.Contains("TRUE", StringComparison.OrdinalIgnoreCase))
                         {
-                            // Set fill foreground color to red
-                            shape.Fill.FillForegnd.Value = "#FF0000";
+                            // Apply green fill for true condition
+                            shape.Fill.FillForegnd.Value = "#00FF00"; // Green fill
+                            shape.Line.LineColor.Value = "#006600";   // Dark green line
                         }
                         else
                         {
-                            // Set fill foreground color to green
-                            shape.Fill.FillForegnd.Value = "#00FF00";
+                            // Apply red fill for false/other condition
+                            shape.Fill.FillForegnd.Value = "#FF0000"; // Red fill
+                            shape.Line.LineColor.Value = "#660000";   // Dark red line
                         }
                     }
+                    catch (Exception)
+                    {
+                        // If the specific event cell does not exist, ignore and continue
+                        continue;
+                    }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the specified output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during loading, processing, or saving
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

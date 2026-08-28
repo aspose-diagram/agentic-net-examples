@@ -1,108 +1,58 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Path to the source Visio file (can be an existing diagram or a blank one)
-        string sourcePath = "input.vsdx";
-        // Guard: ensure the source file exists
-        if (!File.Exists(sourcePath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {sourcePath}");
-            return;
-        }
-
-        // Path where the diagram with the generated legend will be saved
-        string outputPath = "output_with_legend.vsdx";
-
-        try
-        {
-            // Load the diagram from the source file
-            Diagram diagram = new Diagram(sourcePath);
-
-            // Collect distinct external data categories from DataRecordSets
-            HashSet<string> categories = new HashSet<string>();
-            foreach (DataRecordSet recordSet in diagram.DataRecordSets)
+            // Distinct external data categories to be displayed in the legend
+            string[] categories = new string[]
             {
-                // Use the name of the record set as the category identifier (NameU is not available)
-                if (!string.IsNullOrWhiteSpace(recordSet.Name))
-                {
-                    categories.Add(recordSet.Name);
-                }
-            }
-
-            // If there are no categories, nothing to add
-            if (categories.Count == 0)
-            {
-                Console.WriteLine("No external data categories found. Legend will not be created.");
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                return;
-            }
-
-            // Use the first page (or create one if none exists)
-            Page page;
-            if (diagram.Pages.Count > 0)
-            {
-                page = diagram.Pages[0];
-            }
-            else
-            {
-                page = new Page(1);
-                diagram.Pages.Add(page);
-            }
-
-            // Legend layout parameters (all measurements are in inches)
-            double startX = 1.0;          // left margin
-            double startY = 1.0;          // top margin
-            double boxWidth = 2.0;        // width of each legend box
-            double boxHeight = 0.5;       // height of each legend box
-            double verticalSpacing = 0.6; // space between entries
-
-            // Simple color palette for legend entries
-            string[] palette = new string[]
-            {
-                "#FFB300", "#803E75", "#FF6800", "#A6BDD7",
-                "#C10020", "#CEA262", "#817066", "#007D34",
-                "#F6768E", "#00538A", "#FF7A5C", "#53377A"
+                "Category A",
+                "Category B",
+                "Category C",
+                "Category D"
             };
 
-            int index = 0;
-            foreach (string category in categories)
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Access the first (default) page
+            Page page = diagram.Pages[0];
+
+            // Define legend box dimensions
+            double legendX = 1.0; // left position (in inches)
+            double legendY = 1.0; // top position (in inches)
+            double legendWidth = 2.5; // width of the legend box
+            double lineHeight = 0.3; // vertical space for each category entry
+            double legendHeight = 0.2 + categories.Length * lineHeight; // total height including padding
+
+            // Draw the legend background rectangle
+            long rectId = page.DrawRectangle(legendX, legendY, legendWidth, legendHeight);
+            Shape rectShape = page.Shapes.GetShape(rectId);
+
+            // Set rectangle fill (white) and border (black)
+            rectShape.Fill.FillForegnd.Value = "#FFFFFF";
+            rectShape.Line.LineColor.Value = "#000000";
+
+            // Add a text entry for each category inside the legend box
+            for (int i = 0; i < categories.Length; i++)
             {
-                double posY = startY + index * verticalSpacing;
+                double textX = legendX + 0.1; // small left padding
+                double textY = legendY + 0.1 + i * lineHeight; // position each line vertically
+                double textW = legendWidth - 0.2; // width minus horizontal padding
+                double textH = 0.25; // height of the text shape
 
-                // Add a rectangle shape for the legend entry
-                long shapeId = page.AddShape(startX, posY, boxWidth, boxHeight, "Rectangle", false);
-                Shape legendShape = page.Shapes.GetShape(shapeId);
+                // AddText creates a shape with the specified text
+                Shape txtShape = page.AddText(textX, textY, textW, textH, categories[i]);
 
-                // Set fill color from the palette (cycle if more categories than colors)
-                string fillColor = palette[index % palette.Length];
-                legendShape.Fill.FillForegnd.Value = fillColor;
-
-                // Add the category text inside the rectangle
-                legendShape.Text.Value.Clear();
-                legendShape.Text.Value.Add(new Txt(category));
-
-                // Center the text vertically within the rectangle
-                legendShape.TextXForm.TxtLocPinY.Value = 0.0;               // top of the text block
-                legendShape.TextXForm.TxtPinY.Value = boxHeight / 2.0;      // vertical center
-
-                index++;
+                // Optional: set text color (black) if needed
+                txtShape.Text.Value.Clear();
+                txtShape.Text.Value.Add(new Txt(categories[i]));
+                txtShape.Line.LineColor.Value = "#000000";
             }
 
-            // Save the updated diagram with the legend
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with legend to '{outputPath}'.");
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Save the diagram with the legend to a VSDX file
+            diagram.Save("LegendDiagram.vsdx", SaveFileFormat.Vsdx);
         }
     }
-}

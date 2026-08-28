@@ -1,39 +1,37 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio file (create/load rule)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Define a thin line weight (e.g., 0.028 inches)
+            DoubleValue thinWeight = new DoubleValue { Value = 0.028 };
+
+            // Set the line weight for every shape in each master
+            foreach (Master master in diagram.Masters)
             {
-
-                // Input and output file paths (replace with actual paths as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram from the specified file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all masters in the diagram
-                foreach (Master master in diagram.Masters)
+                foreach (Shape shape in master.Shapes)
                 {
-                    // Iterate through each shape within the master
-                    foreach (Shape shape in master.Shapes)
-                    {
-                        // Set the line weight to a thin value (e.g., 0.02 inches)
-                        shape.Line.LineWeight.Value = 0.02;
-                    }
+                    shape.Line.LineWeight = thinWeight;
                 }
-
-                // Save the modified diagram to the output file
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the updated diagram (save rule)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

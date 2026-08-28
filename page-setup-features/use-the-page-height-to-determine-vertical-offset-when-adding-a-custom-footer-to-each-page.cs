@@ -1,47 +1,56 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect input and output file paths as command‑line arguments.
-        if (args.Length < 2)
+        try
         {
-            Console.WriteLine("Usage: <inputVisioFile> <outputVisioFile>");
-            return;
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Footer text – includes Visio field codes for page number and total pages
+            string footerText = "Confidential - Page &p of &P";
+
+            // Process each page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Define a bottom margin (in inches) for the footer
+                double bottomMargin = 0.5;
+
+                // Calculate the Y coordinate for the footer's pin (center of the text shape)
+                // Subtract half of the text height and the margin from the page height
+                double textHeight = 0.3; // approximate height of the footer text box
+                double pinY = pageHeight - bottomMargin - (textHeight / 2.0);
+
+                // Center the footer horizontally
+                double pinX = pageWidth / 2.0;
+
+                // Width of the footer text box (full page width) and its height
+                double textWidth = pageWidth;
+
+                // Add the footer as a text shape on the current page
+                // Parameters: pinX, pinY, width, height, text, font name, font color (hex), font size (in inches)
+                Shape footerShape = page.AddText(pinX, pinY, textWidth, textHeight, footerText, "Arial", "#000000", 0.2);
+            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Load the Visio diagram.
-        Diagram diagram = new Diagram(inputPath);
-
-        // Iterate through all pages to adjust the footer.
-        foreach (Page page in diagram.Pages)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Retrieve the page height (in inches).
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-            // Define a vertical offset from the bottom edge.
-            // Example: place the footer 0.5 inches above the bottom margin.
-            double footerOffset = 0.5;
-
-            // Optionally, you could compute the offset based on page height.
-            // For demonstration, we set FooterMargin to the desired offset.
-            diagram.HeaderFooter.FooterMargin.Value = footerOffset;
-
-            // Set footer text. Use Visio field code '&p' for the current page number.
-            diagram.HeaderFooter.FooterRight = "Page: &p";
-
-            // If you need a different footer per page, you can customize it here.
-            // Example: include the page name.
-            // diagram.HeaderFooter.FooterLeft = $"Page: {page.Name}";
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-
-        // Save the modified diagram back to a Visio file.
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
 }

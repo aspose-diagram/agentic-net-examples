@@ -1,81 +1,94 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Text.Json;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
-namespace DiagramDimensionComparer
+public class PageDimension
 {
-    // DTO representing page dimensions stored in JSON
-    public class PageDimension
-    {
-        public double Width { get; set; }
-        public double Height { get; set; }
-    }
+    // Width and Height are stored in inches (same units as Visio page properties)
+    public double Width { get; set; }
+    public double Height { get; set; }
+    // Optional identifier to match a page; can be the page name or any custom key
+    public string Name { get; set; }
+}
 
-    class Program
+public class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the Visio diagram file
+            string diagramPath = "input.vsdx";
+
+            // Path to the JSON file that contains previously saved page dimensions
+            string jsonPath = "pageDimensions.json";
+
+            // Load the diagram from file
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Deserialize the JSON file into a list of PageDimension objects
+            List<PageDimension> savedDimensions;
+            using (FileStream jsonStream = File.OpenRead(jsonPath))
             {
+                savedDimensions = JsonSerializer.Deserialize<List<PageDimension>>(jsonStream);
+            }
 
-                // Paths to the diagram file and the JSON file containing saved dimensions
-                string diagramPath = "input.vsdx";
-                string jsonPath = "pageDimensions.json";
+            if (savedDimensions == null)
+            {
+                throw new Exception("Failed to deserialize page dimensions from JSON.");
+            }
 
-                // Load the diagram from file
-                Diagram diagram = new Diagram(diagramPath);
+            // Iterate through each page in the diagram and compare dimensions
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                Page page = diagram.Pages[i];
 
-                // Read and deserialize the JSON file
-                if (!File.Exists(jsonPath))
-                    throw new FileNotFoundException($"JSON file not found: {jsonPath}");
+                // Try to locate a saved dimension entry that matches the page name
+                PageDimension saved = savedDimensions.Find(p => p.Name == page.Name);
 
-                string jsonContent = File.ReadAllText(jsonPath);
-                List<PageDimension> savedDimensions = JsonSerializer.Deserialize<List<PageDimension>>(jsonContent);
-
-                if (savedDimensions == null)
-                    throw new Exception("Failed to deserialize page dimensions from JSON.");
-
-                // Compare each page's dimensions with the saved values
-                int pageCount = diagram.Pages.Count;
-                for (int i = 0; i < pageCount; i++)
+                // If no match by name, fall back to matching by index order
+                if (saved == null && i < savedDimensions.Count)
                 {
-                    Page page = diagram.Pages[i];
-                    double currentWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double currentHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    if (i >= savedDimensions.Count)
-                    {
-                        Console.WriteLine($"No saved dimensions for page {i + 1}. Skipping comparison.");
-                        continue;
-                    }
-
-                    PageDimension saved = savedDimensions[i];
-
-                    bool widthMatch = Math.Abs(saved.Width - currentWidth) < 0.0001;
-                    bool heightMatch = Math.Abs(saved.Height - currentHeight) < 0.0001;
-
-                    if (widthMatch && heightMatch)
-                    {
-                        Console.WriteLine($"Page {i + 1}: dimensions match (Width={currentWidth}, Height={currentHeight}).");
-                    }
-                    else
-                    {
-                        string message = $"Page {i + 1} dimensions mismatch. " +
-                                         $"Saved (W={saved.Width}, H={saved.Height}) vs " +
-                                         $"Current (W={currentWidth}, H={currentHeight}).";
-                        throw new Exception(message);
-                    }
+                    saved = savedDimensions[i];
                 }
 
-                Console.WriteLine("Dimension comparison completed successfully.");
+                if (saved == null)
+                {
+                    Console.WriteLine($"No saved dimensions found for page '{page.Name}'. Skipping comparison.");
+                    continue;
+                }
 
+                // Retrieve current page width and height (values are in inches)
+                double currentWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double currentHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Use a small tolerance to avoid false mismatches due to floating‑point rounding
+                const double tolerance = 0.001;
+                bool widthMatches = Math.Abs(currentWidth - saved.Width) <= tolerance;
+                bool heightMatches = Math.Abs(currentHeight - saved.Height) <= tolerance;
+
+                if (widthMatches && heightMatches)
+                {
+                    Console.WriteLine($"Page '{page.Name}' dimensions match: Width={currentWidth}, Height={currentHeight}");
+                }
+                else
+                {
+                    string error = $"Dimension mismatch on page '{page.Name}'. " +
+                                   $"Current (W:{currentWidth}, H:{currentHeight}) vs Saved (W:{saved.Width}, H:{saved.Height})";
+                    // Throw an exception to indicate the validation failure
+                    throw new Exception(error);
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // No further actions required; the program ends after validation.
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

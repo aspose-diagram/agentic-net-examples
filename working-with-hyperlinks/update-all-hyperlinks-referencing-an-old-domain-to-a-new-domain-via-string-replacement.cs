@@ -1,56 +1,51 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class UpdateHyperlinks
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Define old and new domain strings
+            const string oldDomain = "oldexample.com";
+            const string newDomain = "newexample.com";
+
+            // Load the Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input file, output file, old domain and new domain.
-                // Adjust these paths/values as needed.
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-                string oldDomain = "oldexample.com";
-                string newDomain = "newexample.com";
-
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages.
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page.
-                    foreach (Shape shape in page.Shapes)
+                    // Each shape may contain a collection of hyperlinks
+                    foreach (Hyperlink hyperlink in shape.Hyperlinks)
                     {
-                        // Ensure the shape has a Hyperlinks collection.
-                        if (shape.Hyperlinks != null)
+                        // The Address property returns a Str2Value object; its Value holds the URL string
+                        string address = hyperlink.Address?.Value;
+
+                        // If the address contains the old domain, replace it with the new domain
+                        if (!string.IsNullOrEmpty(address) && address.Contains(oldDomain))
                         {
-                            // Iterate through each hyperlink.
-                            foreach (Hyperlink link in shape.Hyperlinks)
-                            {
-                                // Guard against null Address.
-                                if (link.Address != null && link.Address.Value != null)
-                                {
-                                    // Replace old domain with new domain if present.
-                                    if (link.Address.Value.Contains(oldDomain))
-                                    {
-                                        link.Address.Value = link.Address.Value.Replace(oldDomain, newDomain);
-                                    }
-                                }
-                            }
+                            string updatedAddress = address.Replace(oldDomain, newDomain);
+                            // Update the hyperlink's address
+                            hyperlink.Address.Value = updatedAddress;
                         }
                     }
                 }
-
-                // Save the modified diagram.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram (replace with your desired output path)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

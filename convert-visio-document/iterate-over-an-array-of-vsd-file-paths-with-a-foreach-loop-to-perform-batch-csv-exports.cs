@@ -4,6 +4,7 @@ using Aspose.Diagram;
 
 class BatchCsvExport
 {
+    // Entry point
     static void Main()
     {
         try
@@ -17,16 +18,17 @@ class BatchCsvExport
                 // Add more file paths as needed
             };
 
-            // Iterate over each VSD file and export it to a CSV file
-            foreach (string inputVsdPath in vsdFilePaths)
+            // Iterate over each VSD file and export to CSV
+            foreach (string inputPath in vsdFilePaths)
             {
-                // Determine the output CSV file path (same folder, same name, .csv extension)
-                string outputCsvPath = Path.ChangeExtension(inputVsdPath, ".csv");
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Perform the export using Aspose.Diagram's static Export method
-                // Note: The Export method currently supports VDW format; using .csv as the
-                // extension demonstrates the batch operation pattern requested.
-                Diagram.Export(inputVsdPath, outputCsvPath);
+                // Determine output CSV file name (same name with .csv extension)
+                string outputCsvPath = Path.ChangeExtension(inputPath, ".csv");
+
+                // Perform the CSV export (method not implemented in Aspose.Diagram)
+                ExportDiagramToCsv(diagram, outputCsvPath);
             }
 
         }
@@ -34,5 +36,15 @@ class BatchCsvExport
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    // Placeholder for CSV export logic.
+    // Aspose.Diagram does not provide a direct CSV export, so this method
+    // can be implemented using custom logic or third‑party conversion tools.
+    static void ExportDiagramToCsv(Diagram diagram, string csvFilePath)
+    {
+        // TODO: Implement CSV export according to specific requirements.
+        // For now, raise an exception to indicate the operation is not supported.
+        throw new NotImplementedException("CSV export is not supported by Aspose.Diagram.");
     }
 }

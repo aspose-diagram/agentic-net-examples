@@ -8,40 +8,58 @@ class Program
             // Create a new empty diagram
             using (Diagram diagram = new Diagram())
             {
-                // Get the first (default) page
+                // Access the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Define pentagon parameters
+                // Define custom position (center) and size (radius) for the pentagon
                 double centerX = 5.0;   // inches
                 double centerY = 5.0;   // inches
                 double radius = 2.0;    // inches
-                int sides = 5;
 
-                // Build a flat double array with the pentagon vertices.
-                // The first point is repeated at the end to close the shape.
-                double[] points = new double[(sides + 1) * 2];
-                for (int i = 0; i <= sides; i++)
+                // Calculate the five vertices of a regular pentagon and close the shape by repeating the first point
+                double[] points = new double[]
                 {
-                    double angleDeg = i * 360.0 / sides;
-                    double angleRad = Math.PI * angleDeg / 180.0;
-                    double x = centerX + radius * Math.Cos(angleRad);
-                    double y = centerY + radius * Math.Sin(angleRad);
-                    points[i * 2] = x;
-                    points[i * 2 + 1] = y;
-                }
+                    // Vertex 1
+                    centerX + radius * Math.Cos(-Math.PI / 2),               // X1
+                    centerY + radius * Math.Sin(-Math.PI / 2),               // Y1
 
-                // Draw the pentagon using the flat double array overload.
-                // This returns the shape ID (long).
-                long pentagonId = page.DrawPolyline(points);
+                    // Vertex 2
+                    centerX + radius * Math.Cos(-Math.PI / 2 + 2 * Math.PI / 5),
+                    centerY + radius * Math.Sin(-Math.PI / 2 + 2 * Math.PI / 5),
 
-                // Retrieve the shape object to apply formatting (optional).
-                Shape pentagonShape = page.Shapes.GetShape((int)pentagonId);
-                // Set a red fill color.
-                pentagonShape.Fill.FillForegnd.Value = "#FF0000";
-                // Set a black outline.
-                pentagonShape.Line.LineColor.Value = "#000000";
+                    // Vertex 3
+                    centerX + radius * Math.Cos(-Math.PI / 2 + 4 * Math.PI / 5),
+                    centerY + radius * Math.Sin(-Math.PI / 2 + 4 * Math.PI / 5),
 
-                // Save the diagram to a VSDX file.
+                    // Vertex 4
+                    centerX + radius * Math.Cos(-Math.PI / 2 + 6 * Math.PI / 5),
+                    centerY + radius * Math.Sin(-Math.PI / 2 + 6 * Math.PI / 5),
+
+                    // Vertex 5
+                    centerX + radius * Math.Cos(-Math.PI / 2 + 8 * Math.PI / 5),
+                    centerY + radius * Math.Sin(-Math.PI / 2 + 8 * Math.PI / 5),
+
+                    // Close the polygon (repeat first vertex)
+                    centerX + radius * Math.Cos(-Math.PI / 2),
+                    centerY + radius * Math.Sin(-Math.PI / 2)
+                };
+
+                // Draw the pentagon using a polyline (closed shape)
+                long shapeId = page.DrawPolyline(points);
+
+                // Retrieve the shape object to apply formatting
+                Shape pentagon = page.Shapes.GetShape((int)shapeId);
+
+                // Set fill color (red) and line color (black) with a thin line weight
+                pentagon.Fill.FillForegnd.Value = "#FF0000";          // Red fill
+                pentagon.Line.LineColor.Value = "#000000";          // Black outline
+                pentagon.Line.LineWeight.Value = 0.02;              // Line weight in inches
+
+                // Add a label inside the pentagon
+                pentagon.Text.Value.Clear();
+                pentagon.Text.Value.Add(new Txt("Pentagon"));
+
+                // Save the diagram to a VSDX file
                 diagram.Save("Pentagon.vsdx", SaveFileFormat.Vsdx);
             }
         }

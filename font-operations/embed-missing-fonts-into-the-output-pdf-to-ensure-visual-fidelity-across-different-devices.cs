@@ -1,32 +1,37 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class EmbedMissingFontsToPdf
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the source Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram(@"C:\Input\sample.vsdx");
+            // Load the source Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Create PDF save options
+            // Set a global default font to be used when the original font is missing
+            FontConfigs.DefaultFontName = "Arial";
+
+            // Define font substitutes for specific fonts that might be absent on the target system
+            FontConfigs.SetFontSubstitutes("Times New Roman", new string[] { "Liberation Serif", "Arial" });
+
+            // Configure PDF save options, including the fallback font
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-            // Specify a default font to be used when the original font is missing.
-            // This ensures that Unicode characters are rendered correctly in the PDF.
-            pdfOptions.DefaultFont = "Arial Unicode MS";
+            pdfOptions.DefaultFont = "Arial";               // Fallback font for missing glyphs
+            pdfOptions.Compliance = PdfCompliance.Pdf15;    // Optional: set PDF compliance level
+            pdfOptions.TextCompression = PdfTextCompression.Flate; // Optional: compress PDF text streams
 
             // Save the diagram as PDF using the configured options
-            diagram.Save(@"C:\Output\sample.pdf", pdfOptions);
+            diagram.Save("output.pdf", pdfOptions);
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

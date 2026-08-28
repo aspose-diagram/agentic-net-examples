@@ -3,72 +3,64 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramExport
+class ShapeResourceStreamProvider : IStreamProvider
 {
-    // Custom stream provider that routes resources to subfolders based on shape type.
-    public class CustomStreamProvider : IStreamProvider
+    // Called before a resource stream is needed.
+    public void InitStream(StreamProviderOptions options)
     {
-        // Called before a resource stream is created.
-        public void InitStream(StreamProviderOptions options)
-        {
-            // Determine the base directory where the original resource would be saved.
-            string originalPath = options.DefaultPath; // Read‑only property containing the intended file name.
-            string fileName = Path.GetFileName(originalPath);
-            string baseDir = Path.GetDirectoryName(originalPath) ?? Directory.GetCurrentDirectory();
+        // The default path contains the original resource name (e.g., "image1.png").
+        string defaultPath = options.DefaultPath;
+        string fileName = Path.GetFileName(defaultPath);
 
-            // Simple heuristic to decide subfolder based on file name/content.
-            string subFolder;
-            if (originalPath.IndexOf("image", StringComparison.OrdinalIgnoreCase) >= 0)
-                subFolder = "Images";
-            else if (originalPath.IndexOf("foreign", StringComparison.OrdinalIgnoreCase) >= 0)
-                subFolder = "Foreign";
-            else
-                subFolder = "Resources";
+        // Determine subfolder based on simple heuristics.
+        string subFolder = "Resources";
+        if (defaultPath.IndexOf("image", StringComparison.OrdinalIgnoreCase) >= 0)
+            subFolder = "Images";
+        else if (defaultPath.IndexOf("font", StringComparison.OrdinalIgnoreCase) >= 0)
+            subFolder = "Fonts";
 
-            // Ensure the subfolder exists.
-            string targetDir = Path.Combine(baseDir, subFolder);
-            Directory.CreateDirectory(targetDir);
-
-            // Full path for the resource file.
-            string targetPath = Path.Combine(targetDir, fileName);
-
-            // Assign the stream that Aspose.Diagram will write to.
-            options.Stream = new FileStream(targetPath, FileMode.Create, FileAccess.Write);
-        }
-
-        // Called after the resource stream has been written.
-        public void CloseStream(StreamProviderOptions options)
-        {
-            // Dispose the stream if it was created.
-            options.Stream?.Dispose();
-        }
+        // Ensure the folder exists and create the file stream.
+        string outputDir = Path.Combine("output", subFolder);
+        Directory.CreateDirectory(outputDir);
+        string fullPath = Path.Combine(outputDir, fileName);
+        options.Stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
     }
 
-    class Program
+    // Called after the resource has been written.
+    public void CloseStream(StreamProviderOptions options)
     {
-        static void Main()
+        if (options.Stream != null)
         {
-            try
-            {
-
-                // Load an existing Visio diagram.
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Configure HTML export options and assign the custom stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new CustomStreamProvider();
-
-                // Export the diagram to HTML; resources (images, foreign objects, etc.) will be placed
-                // in subfolders according to the logic in CustomStreamProvider.
-                diagram.Save("output.html", htmlOptions);
-
-                Console.WriteLine("Diagram exported to HTML with resources routed to subfolders.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            options.Stream.Dispose();
+        }
     }
+}
+
+class Program
+{
+    static void Main()
+    {
+        try
+        {
+
+            // Load the source Visio diagram.
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Set up HTML export with the custom stream provider.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = new ShapeResourceStreamProvider();
+
+            // Export to HTML; resources will be placed in the appropriate subfolders.
+            string outputPath = Path.Combine("output", "diagram.html");
+            diagram.Save(outputPath, htmlOptions);
+
+            Console.WriteLine("HTML export completed.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

@@ -1,38 +1,50 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the source diagram file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Prepare image save options for JPEG format
-            ImageSaveOptions jpegOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-
-            // Increase brightness by 20% (default is 0.5, so set to 0.7)
-            jpegOptions.ImageBrightness = 0.7f;
-
-            // Export each page as a separate JPEG with the adjusted brightness
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            try
             {
-                jpegOptions.PageIndex = pageIndex;   // select current page
-                jpegOptions.PageCount = 1;           // export only this page
 
-                string outputFile = $"output_page_{pageIndex + 1}.jpg";
-                diagram.Save(outputFile, jpegOptions);
+                // Path to the source Visio file
+                string sourcePath = "input.vsdx";
+
+                // Directory where JPEG images will be saved
+                string outputDir = "ExportedImages";
+
+                // Ensure the output directory exists
+                if (!Directory.Exists(outputDir))
+                    Directory.CreateDirectory(outputDir);
+
+                // Load the diagram from file
+                Diagram diagram = new Diagram(sourcePath);
+
+                // Iterate through each page in the diagram
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    // Prepare JPEG save options with 20% brightness increase
+                    ImageSaveOptions jpegOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+                    jpegOptions.ImageBrightness = 0.2f; // Increase brightness by 20%
+                    jpegOptions.PageIndex = i;          // Export current page
+                    jpegOptions.PageCount = 1;          // Export only one page
+
+                    // Build output file name (e.g., Page_1.jpg)
+                    string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.jpg");
+
+                    // Save the page as JPEG with the specified options
+                    diagram.Save(outputPath, jpegOptions);
+                }
+
+                Console.WriteLine("Export completed.");
+
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

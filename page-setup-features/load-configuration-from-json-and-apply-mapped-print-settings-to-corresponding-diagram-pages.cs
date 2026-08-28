@@ -3,61 +3,78 @@ using System.IO;
 using System.Text.Json;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Printing;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 namespace DiagramPrintSettings
 {
-    // DTO for JSON configuration
+    // DTO classes matching the JSON structure
     public class PrintConfig
     {
-        public string? PageName { get; set; }          // Name of the page to apply settings
-        public string? Orientation { get; set; }       // "Landscape" or "Portrait"
-        public double? ScaleX { get; set; }            // Scaling factor (e.g., 0.75)
-        public double? ScaleY { get; set; }            // Scaling factor (e.g., 0.75)
-        public bool? FitToSheet { get; set; }          // true to fit page to sheet
-        public double? MarginTop { get; set; }         // Top margin in points
-        public double? MarginBottom { get; set; }      // Bottom margin in points
-        public double? MarginLeft { get; set; }        // Left margin in points
-        public double? MarginRight { get; set; }       // Right margin in points
-        public int? PagesX { get; set; }               // Number of pages horizontally when fitting
-        public int? PagesY { get; set; }               // Number of pages vertically when fitting
+        public List<PagePrintConfig> Pages { get; set; } = new();
+    }
+
+    public class PagePrintConfig
+    {
+        public string Name { get; set; } = string.Empty;          // Page name to match
+        public string Orientation { get; set; } = "Portrait";    // "Landscape" or "Portrait"
+        public double ScaleX { get; set; } = 1.0;                // Scaling factor (e.g., 0.75)
+        public double ScaleY { get; set; } = 1.0;
+        public bool FitToSheet { get; set; } = false;            // Enable fit‑to‑sheet
+        public int PagesX { get; set; } = 1;                     // Sheets across
+        public int PagesY { get; set; } = 1;                     // Sheets down
+        public MarginConfig Margins { get; set; } = new();       // Margins in inches
+    }
+
+    public class MarginConfig
+    {
+        public double Top { get; set; } = 0.0;
+        public double Bottom { get; set; } = 0.0;
+        public double Left { get; set; } = 0.0;
+        public double Right { get; set; } = 0.0;
     }
 
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Expect three arguments: input diagram path, JSON config path, output diagram path
-            if (args.Length != 3)
+            // Prompt user for input diagram path
+            Console.Write("Enter the path to the Visio diagram file: ");
+            string diagramPath = Console.ReadLine()?.Trim() ?? string.Empty;
+
+            if (!File.Exists(diagramPath))
             {
-                Console.WriteLine("Usage: DiagramPrintSettings <inputDiagram> <configJson> <outputDiagram>");
+                Console.WriteLine("Diagram file not found.");
                 return;
             }
 
-            string diagramPath = args[0];
-            string jsonPath = args[1];
-            string outputPath = args[2];
+            // Prompt user for JSON configuration path
+            Console.Write("Enter the path to the JSON configuration file: ");
+            string jsonPath = Console.ReadLine()?.Trim() ?? string.Empty;
 
-            // Load JSON configuration
-            List<PrintConfig>? configs;
+            if (!File.Exists(jsonPath))
+            {
+                Console.WriteLine("JSON configuration file not found.");
+                return;
+            }
+
+            // Load and deserialize JSON configuration
+            PrintConfig config;
             try
             {
                 string jsonContent = File.ReadAllText(jsonPath);
-                configs = JsonSerializer.Deserialize<List<PrintConfig>>(jsonContent);
-                if (configs == null)
+                config = JsonSerializer.Deserialize<PrintConfig>(jsonContent, new JsonSerializerOptions
                 {
-                    Console.WriteLine("Failed to deserialize JSON configuration.");
-                    return;
-                }
+                    PropertyNameCaseInsensitive = true
+                }) ?? new PrintConfig();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error reading JSON file: {ex.Message}");
+                Console.WriteLine($"Failed to read or parse JSON: {ex.Message}");
                 return;
             }
 
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram;
             try
             {
@@ -65,71 +82,75 @@ namespace DiagramPrintSettings
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading diagram: {ex.Message}");
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
                 return;
             }
 
-            // Apply print settings to each page based on configuration
-            foreach (Page page in diagram.Pages)
+            // Apply print settings to matching pages
+            foreach (PagePrintConfig pageConfig in config.Pages)
             {
-                // Find matching configuration by page name (case‑insensitive)
-                PrintConfig? cfg = configs.Find(c =>
-                    !string.IsNullOrEmpty(c.PageName) &&
-                    string.Equals(c.PageName, page.Name, StringComparison.OrdinalIgnoreCase));
-
-                if (cfg == null)
+                // Find page by name (case‑insensitive)
+                Page? targetPage = null;
+                foreach (Page page in diagram.Pages)
                 {
-                    // No specific settings for this page; skip
+                    if (string.Equals(page.Name, pageConfig.Name, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(page.NameU, pageConfig.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetPage = page;
+                        break;
+                    }
+                }
+
+                if (targetPage == null)
+                {
+                    Console.WriteLine($"Page \"{pageConfig.Name}\" not found in diagram.");
                     continue;
                 }
 
-                var printProps = page.PageSheet.PrintProps;
+                // Access the PrintProps collection
+                var printProps = targetPage.PageSheet.PrintProps;
 
                 // Orientation
-                if (!string.IsNullOrEmpty(cfg.Orientation))
+                if (string.Equals(pageConfig.Orientation, "Landscape", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (cfg.Orientation.Equals("Landscape", StringComparison.OrdinalIgnoreCase))
-                        printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                    else if (cfg.Orientation.Equals("Portrait", StringComparison.OrdinalIgnoreCase))
-                        printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                    printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                }
+                else
+                {
+                    printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
                 }
 
                 // Scaling
-                if (cfg.ScaleX.HasValue)
-                    printProps.ScaleX.Value = cfg.ScaleX.Value;
-                if (cfg.ScaleY.HasValue)
-                    printProps.ScaleY.Value = cfg.ScaleY.Value;
+                if (pageConfig.ScaleX > 0) printProps.ScaleX.Value = pageConfig.ScaleX;
+                if (pageConfig.ScaleY > 0) printProps.ScaleY.Value = pageConfig.ScaleY;
 
-                // Fit to sheet (OnPage)
-                if (cfg.FitToSheet.HasValue)
-                    printProps.OnPage.Value = cfg.FitToSheet.Value ? BOOL.True : BOOL.False;
+                // Fit to sheet
+                printProps.OnPage.Value = pageConfig.FitToSheet ? BOOL.True : BOOL.False;
+                printProps.PagesX.Value = pageConfig.PagesX;
+                printProps.PagesY.Value = pageConfig.PagesY;
 
-                // Number of pages when fitting
-                if (cfg.PagesX.HasValue)
-                    printProps.PagesX.Value = cfg.PagesX.Value;
-                if (cfg.PagesY.HasValue)
-                    printProps.PagesY.Value = cfg.PagesY.Value;
+                // Margins (values are in inches)
+                printProps.PageTopMargin.Value = pageConfig.Margins.Top;
+                printProps.PageBottomMargin.Value = pageConfig.Margins.Bottom;
+                printProps.PageLeftMargin.Value = pageConfig.Margins.Left;
+                printProps.PageRightMargin.Value = pageConfig.Margins.Right;
 
-                // Margins: Visio expects inches; convert from points (1 point = 1/72 inch)
-                if (cfg.MarginTop.HasValue)
-                    printProps.PageTopMargin.Value = cfg.MarginTop.Value / 72.0;
-                if (cfg.MarginBottom.HasValue)
-                    printProps.PageBottomMargin.Value = cfg.MarginBottom.Value / 72.0;
-                if (cfg.MarginLeft.HasValue)
-                    printProps.PageLeftMargin.Value = cfg.MarginLeft.Value / 72.0;
-                if (cfg.MarginRight.HasValue)
-                    printProps.PageRightMargin.Value = cfg.MarginRight.Value / 72.0;
+                Console.WriteLine($"Applied print settings to page \"{targetPage.Name}\".");
             }
 
             // Save the updated diagram
+            string outputPath = Path.Combine(
+                Path.GetDirectoryName(diagramPath) ?? string.Empty,
+                Path.GetFileNameWithoutExtension(diagramPath) + "_Updated.vsdx");
+
             try
             {
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error saving diagram: {ex.Message}");
+                Console.WriteLine($"Failed to save diagram: {ex.Message}");
             }
         }
     }

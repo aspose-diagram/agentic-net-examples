@@ -6,31 +6,26 @@ class Program
 {
     static void Main()
     {
-        try
-        {
+        // Create a new diagram (uses the provided create rule)
+        Diagram diagram = new Diagram();
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+        // Access the first page
+        Page page = diagram.Pages[0];
 
-            // Access the page that contains the oval shape (e.g., first page)
-            Page page = diagram.Pages[0];
+        // Draw an oval (ellipse) on the page
+        // Parameters: pinX, pinY, width, height
+        long shapeId = page.DrawEllipse(5.0, 5.0, 2.0, 1.0);
 
-            // Retrieve the oval shape by its ID (replace 1 with the actual shape ID)
-            Shape oval = page.Shapes.GetShape(1);
+        // Retrieve the created shape
+        Shape oval = page.Shapes.GetShape(shapeId);
 
-            // Convert 30 degrees to radians (Aspose.Diagram expects radians)
-            double angleInRadians = 30.0 * Math.PI / 180.0;
+        // Convert 30 degrees to radians (Aspose.Diagram expects radians)
+        double angleRadians = Math.PI / 6.0; // 30 degrees
 
-            // Set the rotation angle of the oval shape
-            oval.SetAngle(angleInRadians);
+        // Set the rotation angle of the oval
+        oval.SetAngle(angleRadians);
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        // Save the diagram (uses the provided save rule)
+        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
     }
 }

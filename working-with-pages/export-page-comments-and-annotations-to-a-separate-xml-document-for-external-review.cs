@@ -1,89 +1,56 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Xml;
 using Aspose.Diagram;
+using System.Xml.Linq;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input Visio file path
-        string visioPath = "input.vsdx";
-        // Guard: ensure the Visio file exists
-        if (!File.Exists(visioPath)) { Console.Error.WriteLine($"File not found: {visioPath}"); return; }
-
-        // Output XML file path
-        string xmlOutputPath = "CommentsExport.xml";
-
-        try
+        static void Main(string[] args)
         {
-            // Load the diagram within a using block to ensure disposal
-            using (Diagram diagram = new Diagram(visioPath))
+            try
             {
-                // Build a map of reviewer indices to reviewer names (Reviewer has no ID property)
-                Dictionary<int, string> reviewerMap = new Dictionary<int, string>();
-                int reviewerIndex = 0;
-                foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
-                {
-                    // Reviewer.Name is a Str2Value; use .Value to get the string
-                    reviewerMap[reviewerIndex] = reviewer.Name.Value;
-                    reviewerIndex++;
-                }
 
-                // Configure XML writer settings for pretty output
-                XmlWriterSettings settings = new XmlWriterSettings
-                {
-                    Indent = true,
-                    IndentChars = "  "
-                };
+                // Input Visio file path
+                string visioPath = "input.vsdx";
+                // Output XML file path
+                string xmlOutputPath = "comments.xml";
 
-                // Create the XML writer
-                using (XmlWriter writer = XmlWriter.Create(xmlOutputPath, settings))
+                // Load the Visio diagram
+                using (Diagram diagram = new Diagram(visioPath))
                 {
-                    writer.WriteStartDocument();
-                    writer.WriteStartElement("Comments");
+                    // Create the root element for the XML document
+                    XElement root = new XElement("Comments");
 
-                    // Iterate through all pages in the diagram
+                    // Iterate through each page in the diagram
                     foreach (Page page in diagram.Pages)
                     {
-                        // Access annotations (comments) on the page
+                        // Retrieve the annotations (comments) collection for the current page
                         foreach (Annotation annotation in page.PageSheet.Annotations)
                         {
-                            writer.WriteStartElement("Comment");
+                            // Build an XML element representing the comment
+                            XElement commentElement = new XElement("Comment",
+                                new XAttribute("PageName", page.Name ?? string.Empty),
+                                new XAttribute("MarkerIndex", annotation.MarkerIndex.Value),
+                                new XAttribute("ShapeID", annotation.ShapeID),
+                                new XAttribute("ReviewerID", annotation.ReviewerID.Value),
+                                new XAttribute("CommentText", annotation.Comment.Value ?? string.Empty)
+                            );
 
-                            // Write page name attribute
-                            writer.WriteAttributeString("PageName", page.NameU);
-
-                            // Write associated shape ID (0 if not linked to a shape)
-                            writer.WriteAttributeString("ShapeID", annotation.ShapeID.ToString());
-
-                            // Resolve reviewer name using the reviewer index from the annotation
-                            string reviewerName = "Unknown";
-                            if (reviewerMap.TryGetValue(annotation.ReviewerID.Value, out string name))
-                            {
-                                reviewerName = name;
-                            }
-                            writer.WriteAttributeString("Reviewer", reviewerName);
-
-                            // Write comment text
-                            writer.WriteAttributeString("Text", annotation.Comment.Value);
-
-                            writer.WriteEndElement(); // </Comment>
+                            // Add the comment element to the root
+                            root.Add(commentElement);
                         }
                     }
 
-                    writer.WriteEndElement(); // </Comments>
-                    writer.WriteEndDocument();
+                    // Create the XDocument and save it to the specified file
+                    XDocument doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
+                    doc.Save(xmlOutputPath);
                 }
 
-                Console.WriteLine($"Comments exported to '{xmlOutputPath}'.");
+                Console.WriteLine("Comments exported successfully to " + xmlOutputPath);
+
             }
-        }
-        catch (Exception ex)
-        {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

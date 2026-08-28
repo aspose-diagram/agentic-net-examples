@@ -13,14 +13,18 @@ class Program
             // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Configure HTML save options to embed all shape images as Base64 data URIs
+            // Set up HTML save options to embed all shape images as Base64 data URIs
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                // When true, the HTML is saved as a single file with images embedded as Base64 strings
-                SaveAsSingleFile = true
+                // When true, the HTML is saved as a single file with images embedded as Base64
+                SaveAsSingleFile = true,
+
+                // Optional: render all pages (default is all pages)
+                PageIndex = 0,
+                PageCount = int.MaxValue
             };
 
-            // Save the diagram as HTML using the configured options
+            // Save the diagram as HTML with the specified options
             diagram.Save("output.html", htmlOptions);
 
         }

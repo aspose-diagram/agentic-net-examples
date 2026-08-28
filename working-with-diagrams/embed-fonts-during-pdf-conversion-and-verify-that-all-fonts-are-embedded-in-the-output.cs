@@ -11,41 +11,55 @@ class Program
             try
             {
 
-                // Paths to input Visio file and output PDF
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                string outputPath = "output.pdf";
-
-                // Configure font folder (adjust the path as needed)
-                // The second argument indicates whether to search subfolders recursively
-                FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
+                // Path for the output PDF file
+                string outputPdfPath = "output.pdf";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Verify that every font used in the diagram is installed on the system
-                InstalledFontCollection systemFonts = new InstalledFontCollection();
-                var installedFontNames = systemFonts.Families
-                    .Select(f => f.Name)
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                // Configure font folder (system fonts) and default fallback font
+                string systemFontFolder = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+                // The SetFontFolder method requires two parameters: path and recursive flag
+                FontConfigs.SetFontFolder(systemFontFolder, true);
+                // Set a default font to use when a required font is missing
+                FontConfigs.DefaultFontName = "Arial";
 
-                foreach (Font font in diagram.Fonts)
+                // Prepare PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Ensure the same default font is set for the save operation
+                pdfOptions.DefaultFont = "Arial";
+
+                // Save the diagram as PDF
+                diagram.Save(outputPdfPath, pdfOptions);
+                Console.WriteLine($"Diagram saved to PDF: {outputPdfPath}");
+
+                // Verify that all fonts used in the diagram are available on the system
+                // (and therefore can be embedded in the PDF)
+                InstalledFontCollection installedFonts = new InstalledFontCollection();
+
+                bool allFontsEmbedded = true;
+                foreach (Aspose.Diagram.Font diagramFont in diagram.Fonts)
                 {
-                    if (!installedFontNames.Contains(font.Name))
+                    bool fontExists = installedFonts.Families.Any(f =>
+                        string.Equals(f.Name, diagramFont.Name, StringComparison.OrdinalIgnoreCase));
+
+                    if (!fontExists)
                     {
-                        throw new Exception($"Font '{font.Name}' used in the diagram is not installed on the system.");
+                        allFontsEmbedded = false;
+                        Console.WriteLine($"Missing system font: {diagramFont.Name}");
                     }
                 }
 
-                // Set PDF save options and specify a fallback default font
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                if (allFontsEmbedded)
                 {
-                    DefaultFont = "Arial"
-                };
-
-                // Save the diagram as PDF; fonts will be embedded automatically
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine("PDF saved successfully with all fonts embedded.");
+                    Console.WriteLine("All fonts used in the diagram are available and will be embedded in the PDF.");
+                }
+                else
+                {
+                    throw new Exception("One or more fonts used in the diagram are not available on the system. PDF may have missing font embeddings.");
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)

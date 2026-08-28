@@ -11,24 +11,24 @@ class Program
         {
 
             // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            var diagram = new Diagram("input.vsdx");
 
-            // Combine all hidden‑info flags to remove everything that can be hidden
-            int removeMask = (int)(
-                RemoveHiddenInfoItem.PersonalInfo |
-                RemoveHiddenInfoItem.Shapes |
-                RemoveHiddenInfoItem.Masters |
-                RemoveHiddenInfoItem.Styles |
-                RemoveHiddenInfoItem.DataRecordSets);
+            // Combine all hidden information flags
+            int hiddenInfoFlags =
+                (int)RemoveHiddenInfoItem.PersonalInfo |
+                (int)RemoveHiddenInfoItem.Shapes |
+                (int)RemoveHiddenInfoItem.Masters |
+                (int)RemoveHiddenInfoItem.Styles |
+                (int)RemoveHiddenInfoItem.DataRecordSets;
 
-            // Remove hidden information from the diagram
-            diagram.RemoveHiddenInformation(removeMask);
+            // Remove hidden information based on the combined flags
+            diagram.RemoveHiddenInformation(hiddenInfoFlags);
 
-            // Verify that no hidden information remains
+            // Verify that the diagram no longer contains hidden information
             bool hasHiddenInfo = diagram.HasHiddenInfo();
             Console.WriteLine("Has hidden information after removal: " + hasHiddenInfo);
 
-            // Save the cleaned diagram (optional)
+            // Save the cleaned diagram to a new file
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

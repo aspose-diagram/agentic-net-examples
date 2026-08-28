@@ -10,23 +10,19 @@ class Program
         try
         {
 
-            // Load the first diagram (base diagram)
+            // Load the diagrams to be merged
             Diagram diagram1 = new Diagram("Diagram1.vsdx");
-
-            // Load the second diagram to be merged
             Diagram diagram2 = new Diagram("Diagram2.vsdx");
 
             // Merge the second diagram into the first one
             diagram1.Combine(diagram2);
 
-            // Prepare image save options for PNG format
+            // Prepare image save options for a PNG thumbnail of the first page
             ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Render only the first page (0‑based index)
-            imgOptions.PageIndex = 0;
-            // Optional: set resolution or other properties if needed
-            // imgOptions.Resolution = 96;
+            imgOptions.PageIndex = 0;   // first page (0‑based index)
+            imgOptions.PageCount = 1;   // render only this page
 
-            // Save the thumbnail of the first page as PNG
+            // Save the thumbnail image
             diagram1.Save("Thumbnail.png", imgOptions);
 
             // Clean up resources

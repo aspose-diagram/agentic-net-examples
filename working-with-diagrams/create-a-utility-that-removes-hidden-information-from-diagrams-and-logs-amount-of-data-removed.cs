@@ -3,40 +3,40 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class HiddenInfoCleaner
+public static class HiddenInfoCleaner
 {
     // Removes hidden information and macros from a Visio diagram,
-    // then saves the cleaned diagram to a new file.
-    public void Clean(string inputFilePath, string outputFilePath)
+    // then saves the cleaned file and logs what was removed.
+    public static void Clean(string inputFilePath, string outputFilePath)
     {
-        // Load the diagram from the specified file.
+        // Load the diagram using the provided constructor (lifecycle rule)
         using (Diagram diagram = new Diagram(inputFilePath))
         {
-            // Check if the diagram contains hidden information before cleaning.
-            bool hasHiddenInfoBefore = diagram.HasHiddenInfo();
-            Console.WriteLine($"Hidden information present before cleaning: {hasHiddenInfoBefore}");
+            // Check if the diagram contains any hidden information
+            bool hasHiddenInfo = diagram.HasHiddenInfo();
+            Console.WriteLine($"Diagram has hidden information: {hasHiddenInfo}");
 
-            // Remove all categories of hidden information.
-            int allHiddenInfoItems =
-                (int)RemoveHiddenInfoItem.PersonalInfo |
-                (int)RemoveHiddenInfoItem.Shapes |
-                (int)RemoveHiddenInfoItem.Masters |
-                (int)RemoveHiddenInfoItem.Styles |
-                (int)RemoveHiddenInfoItem.DataRecordSets;
+            // Remove all types of hidden information (PersonalInfo, Shapes, Masters, Styles, DataRecordSets)
+            // Combine enum values using bitwise OR (1|2|4|8|16 = 31)
+            int allHiddenInfoFlags = (int)(
+                RemoveHiddenInfoItem.PersonalInfo |
+                RemoveHiddenInfoItem.Shapes |
+                RemoveHiddenInfoItem.Masters |
+                RemoveHiddenInfoItem.Styles |
+                RemoveHiddenInfoItem.DataRecordSets);
 
-            diagram.RemoveHiddenInformation(allHiddenInfoItems);
-            Console.WriteLine("Removed hidden information categories: PersonalInfo, Shapes, Masters, Styles, DataRecordSets.");
+            diagram.RemoveHiddenInformation(allHiddenInfoFlags);
+            Console.WriteLine("Removed hidden information (PersonalInfo, Shapes, Masters, Styles, DataRecordSets).");
 
-            // Remove any VBA/macros that may be embedded.
+            // Remove any VBA/macros present in the diagram
             diagram.RemoveMacro();
             Console.WriteLine("Removed VBA/macros from the diagram.");
 
-            // Check if hidden information still exists after cleaning.
-            bool hasHiddenInfoAfter = diagram.HasHiddenInfo();
-            Console.WriteLine($"Hidden information present after cleaning: {hasHiddenInfoAfter}");
+            // Verify removal
+            bool stillHasHiddenInfo = diagram.HasHiddenInfo();
+            Console.WriteLine($"Diagram still has hidden information after cleanup: {stillHasHiddenInfo}");
 
-            // Save the cleaned diagram using the same format as the source.
-            // SaveFileFormat.Vdx is used as a common Visio format; adjust if needed.
+            // Save the cleaned diagram using the provided Save method (lifecycle rule)
             diagram.Save(outputFilePath, SaveFileFormat.Vdx);
             Console.WriteLine($"Cleaned diagram saved to: {outputFilePath}");
         }
@@ -44,8 +44,7 @@ public class HiddenInfoCleaner
 }
 
 // Example usage:
-// var cleaner = new HiddenInfoCleaner();
-// cleaner.Clean("input.vsdx", "output.vsdx");
+// HiddenInfoCleaner.Clean("input.vsdx", "output_cleaned.vdx");
 
 class Program
 {
@@ -54,8 +53,7 @@ class Program
         try
         {
 
-            var obj = new HiddenInfoCleaner();
-            obj.Clean("", "");
+            HiddenInfoCleaner.Clean("", "");
 
         }
         catch (Aspose.Diagram.DiagramException ex)

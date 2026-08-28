@@ -3,36 +3,32 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class DiagramHtmlPipeline
 {
     static void Main()
     {
         try
         {
 
-            // Paths to the source diagram, the template diagram, and the output HTML file.
-            string diagramPath = "input.vsdx";
-            string templatePath = "template.vsdx";
-            string outputPath = "merged.html";
+            // Load the primary diagram from a file
+            Diagram mainDiagram = new Diagram("inputDiagram.vsdx");
 
-            // Load the main diagram.
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the template diagram from a file
+            Diagram templateDiagram = new Diagram("templateDiagram.vst");
 
-            // Load the template diagram.
-            Diagram template = new Diagram(templatePath);
+            // Merge the template into the main diagram
+            mainDiagram.Combine(templateDiagram);
 
-            // Merge the template into the main diagram.
-            diagram.Combine(template);
+            // Configure HTML save options to embed CSS and generate a single HTML file
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            {
+                SaveAsSingleFile = true,      // Embed all resources (including CSS) into one file
+                SaveToolBar = false,          // Optional: hide the toolbar in the output
+                PageCount = int.MaxValue      // Render all pages
+            };
 
-            // Set HTML export options.
-            // SaveAsSingleFile embeds CSS, images and other resources into the HTML file.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.SaveAsSingleFile = true;
-            // Provide a fallback font in case the diagram contains characters without a matching font.
-            htmlOptions.DefaultFont = "Arial";
-
-            // Export the merged diagram to HTML.
-            diagram.Save(outputPath, htmlOptions);
+            // Save the merged diagram as HTML with embedded CSS
+            mainDiagram.Save("mergedOutput.html", htmlOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -20,7 +20,7 @@ class Program
             // Create PDF save options (default settings)
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Save the diagram as a PDF file; metadata will be embedded
+            // Save the diagram as a PDF with the specified metadata
             diagram.Save("output.pdf", pdfOptions);
 
         }

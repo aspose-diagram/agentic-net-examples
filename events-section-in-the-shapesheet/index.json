@@ -1,11 +1,11 @@
 {
   "category": "events-section-in-the-shapesheet",
   "display_name": "Events Section In The Shapesheet",
-  "version": "26.7.0",
+  "version": "26.8.0",
   "framework": "net8.0",
   "total": 33,
   "pass_rate": 100.0,
-  "generated": "2026-07-27",
+  "generated": "2026-08-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -32,7 +32,8 @@
       "task": "Apply a global eventvalidate formula that enforces naming conventions for shape titles",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -49,7 +50,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -65,15 +67,14 @@
       "task": "Automate the removal of duplicate eventcomment cells to streamline diagram metadata across all pages",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -100,7 +101,9 @@
       "task": "Compare eventcell values between two versions of a diagram to detect changes in event logic",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -114,7 +117,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -130,7 +134,6 @@
       "task": "Configure the eventshaperesized cell to maintain aspect ratio by applying a scaling formula",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -148,8 +151,7 @@
       "task": "Copy eventformula cells from a template shape to newly created shapes in a batch operation",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "AddShape",
@@ -201,7 +203,6 @@
       "task": "Create a custom event handler that logs shape ids whenever the eventmouseleave cell fires",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -219,11 +220,12 @@
       "task": "Create a utility that clones eventsection cells from a master shape to a group of duplicates",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
+        "Masters",
         "Pages",
         "Save",
         "Shapes"
@@ -236,7 +238,9 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -252,14 +256,19 @@
       "task": "Extract eventcell formulas and visualize them as a directed graph to analyze dependencies",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Reflection",
+        "System.Text",
+        "System.Text.RegularExpressions"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -286,7 +295,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -320,7 +329,6 @@
       "task": "Import event definitions from a csv file and apply them to corresponding shapes programmatically",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -328,6 +336,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -373,8 +382,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram"
@@ -386,6 +394,7 @@
       "task": "Programmatically disable all eventmouseover cells to improve diagram rendering performance during batch processing",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -409,9 +418,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -420,9 +429,9 @@
       "task": "Remove all eventcomment cells from a diagram to clean up unused event definitions",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Reflection"
       ],
       "key_apis": [
         "Diagram",
@@ -456,6 +465,7 @@
       "task": "Set the eventshapedatachanged cell to invoke a custom script that recalculates dependent values",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -510,8 +520,8 @@
       "task": "Use a regular expression to filter shapes whose eventcomment cell contains a specific keyword",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Text.RegularExpressions"
       ],
@@ -529,13 +539,14 @@
       "task": "Use conditional logic in the eventafterupdate cell to trigger different actions based on shape type",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -564,7 +575,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.Reflection"
       ],
       "key_apis": [
         "Diagram",

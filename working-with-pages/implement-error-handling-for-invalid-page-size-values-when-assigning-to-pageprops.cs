@@ -1,61 +1,69 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Ensure required arguments are provided: input file, width, height, output file.
+        if (args.Length < 4)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <pageWidthInInches> <pageHeightInInches> <outputVisioPath>");
+            return;
+        }
 
-                // Path to the source Visio file
-                const string inputPath = "input.vsdx";
-                // Path for the output Visio file after processing
-                const string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Desired page size (in inches)
-                double newWidth = 8.27;   // Example: A4 width
-                double newHeight = 11.69; // Example: A4 height
-
-                // Validate page size values
-                if (!IsValidPageSize(newWidth, newHeight))
-                {
-                    throw new Exception($"Invalid page dimensions: Width={newWidth}, Height={newHeight}. Both must be greater than zero.");
-                }
-
-                // Apply the new size to each page with error handling
-                foreach (Page page in diagram.Pages)
-                {
-                    try
-                    {
-                        page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                        page.PageSheet.PageProps.PageHeight.Value = newHeight;
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log the error and continue with the next page
-                        Console.WriteLine($"Failed to set size for page ID {page.ID}: {ex.Message}");
-                    }
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Helper method to validate page dimensions
-        private static bool IsValidPageSize(double width, double height)
+        // Assign and validate the input diagram path.
+        string inputPath = args[0];
+        if (!File.Exists(inputPath))
         {
-            // Width and height must be positive numbers
-            return width > 0 && height > 0;
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Assign and validate the output diagram path (directory must exist).
+        string outputPath = args[3];
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (string.IsNullOrEmpty(outputDir) || !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        // Parse and validate page width.
+        if (!double.TryParse(args[1], out double pageWidth) || pageWidth <= 0)
+        {
+            Console.Error.WriteLine($"Invalid page width: '{args[1]}'. Width must be a positive number.");
+            return;
+        }
+
+        // Parse and validate page height.
+        if (!double.TryParse(args[2], out double pageHeight) || pageHeight <= 0)
+        {
+            Console.Error.WriteLine($"Invalid page height: '{args[2]}'. Height must be a positive number.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the specified file.
+            using Diagram diagram = new Diagram(inputPath);
+
+            // Retrieve the first page (index 0) to modify its size.
+            Page page = diagram.Pages[0];
+
+            // Assign validated width and height to the page properties (values are in inches).
+            page.PageSheet.PageProps.PageWidth.Value = pageWidth;   // Set page width.
+            page.PageSheet.PageProps.PageHeight.Value = pageHeight; // Set page height.
+
+            // Save the modified diagram to the output path using VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Page size updated and diagram saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or I/O errors and report them.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

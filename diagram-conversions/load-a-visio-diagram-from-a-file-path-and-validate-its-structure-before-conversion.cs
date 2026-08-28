@@ -1,9 +1,9 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using System.IO;
 
-class Program
+class VisioLoader
 {
     static void Main()
     {
@@ -11,35 +11,39 @@ class Program
         {
 
             // Path to the Visio file to be loaded
-            string filePath = @"C:\Path\To\Your\Diagram.vsdx";
+            string filePath = @"C:\Diagrams\sample.vsdx";
 
-            // Detect the file format (optional, uses the provided FileFormatUtil)
-            var formatInfo = FileFormatUtil.DetectFileFormat(filePath);
+            // Detect the file format of the Visio document
+            FileFormatInfo formatInfo = FileFormatUtil.DetectFileFormat(filePath);
 
-            // Load the diagram using the detected format via LoadOptions
-            var loadOptions = new LoadOptions(formatInfo.LoadFormat);
-            var diagram = new Diagram(filePath, loadOptions);
+            // Prepare load options based on the detected format
+            LoadOptions loadOptions = new LoadOptions(formatInfo.LoadFormat);
 
-            // Basic structural validation: ensure the document contains at least one page
+            // Load the diagram using the constructor that accepts a file path and LoadOptions
+            Diagram diagram = new Diagram(filePath, loadOptions);
+
+            // Basic validation of the diagram structure
             if (diagram.Pages == null || diagram.Pages.Count == 0)
             {
-                throw new InvalidOperationException("The loaded diagram does not contain any pages.");
+                throw new InvalidOperationException("The diagram does not contain any pages.");
             }
 
-            // Additional validation can be performed using the Validation property if needed
-            // Example (if the Validation class provides an IsValid flag):
-            // if (diagram.Validation != null && !diagram.Validation.IsValid)
-            // {
-            //     throw new InvalidOperationException("Diagram validation failed.");
-            // }
+            // Optional: iterate through pages to ensure each has at least one shape
+            foreach (Page page in diagram.Pages)
+            {
+                if (page.Shapes == null || page.Shapes.Count == 0)
+                {
+                    Console.WriteLine($"Warning: Page '{page.Name}' contains no shapes.");
+                }
+            }
 
-            // If we reach this point, the diagram is considered structurally valid
-            Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
+            // At this point the diagram is loaded and validated; further conversion logic can follow.
+            Console.WriteLine("Diagram loaded and validated successfully.");
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -8,25 +9,28 @@ class Program
     {
         try
         {
-            // Create a new empty diagram
-            Diagram originalDiagram = new Diagram();
+            // Initialize a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Add a custom property to the original diagram
+            // Add a custom document property to the original diagram
             CustomProp originalProp = new CustomProp();
-            originalProp.Name = "MyProp";
+            originalProp.Name = "MyCustomProp";
             originalProp.PropType = PropType.String;
+            originalProp.CustomValue = new CustomValue();
             originalProp.CustomValue.ValueString = "OriginalValue";
-            originalDiagram.DocumentProps.CustomProps.Add(originalProp);
+            diagram.DocumentProps.CustomProps.Add(originalProp);
 
-            // Clone the diagram by saving to a temporary file and loading it back
-            string tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".vsdx");
-            originalDiagram.Save(tempPath, SaveFileFormat.Vsdx);
-            if (!File.Exists(tempPath))
+            // Clone the diagram by saving to a memory stream and loading a new instance
+            Diagram clonedDiagram;
+            using (MemoryStream ms = new MemoryStream())
             {
-                Console.Error.WriteLine($"Failed to create temporary file for cloning: {tempPath}");
-                return;
+                // Save the original diagram into the stream in VSDX format
+                diagram.Save(ms, SaveFileFormat.Vsdx);
+                ms.Position = 0; // Reset stream position for reading
+
+                // Load a new diagram from the stream (deep copy)
+                clonedDiagram = new Diagram(ms);
             }
-            Diagram clonedDiagram = new Diagram(tempPath);
 
             // Update the custom property in the cloned diagram
             if (clonedDiagram.DocumentProps.CustomProps.Count == 0)
@@ -35,30 +39,27 @@ class Program
             CustomProp clonedProp = clonedDiagram.DocumentProps.CustomProps[0];
             clonedProp.CustomValue.ValueString = "UpdatedValue";
 
-            // Validate that the original diagram's custom property remains unchanged
-            if (originalDiagram.DocumentProps.CustomProps.Count == 0)
-                throw new Exception("Original diagram lost the custom property after cloning.");
+            // Verify the original diagram's custom property remains unchanged
+            if (diagram.DocumentProps.CustomProps.Count == 0)
+                throw new Exception("Original diagram does not contain the custom property.");
 
-            CustomProp checkOriginalProp = originalDiagram.DocumentProps.CustomProps[0];
+            CustomProp checkOriginalProp = diagram.DocumentProps.CustomProps[0];
             if (checkOriginalProp.CustomValue.ValueString != "OriginalValue")
-                throw new Exception("Original diagram's custom property was modified after cloning.");
+                throw new Exception("Original diagram's custom property was altered after cloning.");
 
-            // Validate that the cloned diagram reflects the update
+            // Verify the cloned diagram reflects the update
             if (clonedProp.CustomValue.ValueString != "UpdatedValue")
-                throw new Exception("Cloned diagram's custom property does not reflect the updated value.");
+                throw new Exception("Cloned diagram's custom property was not updated correctly.");
 
-            // Output success messages
-            Console.WriteLine("Validation successful:");
-            Console.WriteLine($"Original property value: {checkOriginalProp.CustomValue.ValueString}");
-            Console.WriteLine($"Cloned property value: {clonedProp.CustomValue.ValueString}");
+            Console.WriteLine("Validation successful: original custom property unchanged, clone updated.");
 
-            // Save both diagrams to files for visual inspection (optional)
-            originalDiagram.Save("original.vsdx", SaveFileFormat.Vsdx);
+            // Save both diagrams to files for persistence (optional)
+            diagram.Save("original.vsdx", SaveFileFormat.Vsdx);
             clonedDiagram.Save("clone.vsdx", SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Output any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

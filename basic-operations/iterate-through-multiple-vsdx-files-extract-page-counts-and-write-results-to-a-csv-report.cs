@@ -1,43 +1,45 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class VsdxPageCountReport
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Folder containing VSDX files
+        // Directory containing VSDX files – adjust as needed
         string inputFolder = @"C:\VisioFiles";
 
         // Output CSV file path
-        string csvReportPath = @"C:\VisioReport\PageCounts.csv";
+        string csvReportPath = @"C:\VisioFiles\PageCountReport.csv";
 
-        // Ensure the output directory exists
-        Directory.CreateDirectory(Path.GetDirectoryName(csvReportPath));
+        // Collect results
+        var results = new List<(string FileName, int PageCount)>();
 
-        // Get all VSDX files in the input folder (non‑recursive)
-        string[] vsdxFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+        // Iterate over all .vsdx files in the folder
+        foreach (string filePath in Directory.GetFiles(inputFolder, "*.vsdx"))
+        {
+            // Load the Visio diagram using the Diagram constructor (load rule)
+            using (Diagram diagram = new Diagram(filePath))
+            {
+                // Extract the number of pages
+                int pageCount = diagram.Pages.Count;
 
-        // Open a StreamWriter for the CSV report
+                // Store the result
+                results.Add((Path.GetFileName(filePath), pageCount));
+            }
+        }
+
+        // Write results to CSV
         using (var writer = new StreamWriter(csvReportPath))
         {
-            // Write CSV header
-            writer.WriteLine("FilePath,PageCount");
+            // Header
+            writer.WriteLine("FileName,PageCount");
 
-            // Process each VSDX file
-            foreach (string filePath in vsdxFiles)
+            // Data rows
+            foreach (var entry in results)
             {
-                // Load the Visio diagram using the provided constructor (load rule)
-                using (var diagram = new Diagram(filePath))
-                {
-                    // Extract the number of pages from the diagram
-                    int pageCount = diagram.Pages.Count;
-
-                    // Write the result as a CSV line
-                    // Escape commas in the file path if necessary
-                    string escapedPath = filePath.Contains(",") ? $"\"{filePath}\"" : filePath;
-                    writer.WriteLine($"{escapedPath},{pageCount}");
-                }
+                writer.WriteLine($"{entry.FileName},{entry.PageCount}");
             }
         }
 

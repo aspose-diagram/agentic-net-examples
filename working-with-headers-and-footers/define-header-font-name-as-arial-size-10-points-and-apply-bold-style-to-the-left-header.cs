@@ -9,19 +9,25 @@ class Program
         try
         {
 
-            // Load an existing diagram (replace with actual load logic as per your lifecycle rule)
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Set the left header text
-            diagram.HeaderFooter.HeaderLeft = "Your Header Text";
+            // Set the left header text (optional, can be any string)
+            diagram.HeaderFooter.HeaderLeft = "My Header";
 
-            // Configure the header/footer font
+            // Access the header/footer font object
             HeaderFooterFont headerFont = diagram.HeaderFooter.HeaderFooterFont;
-            headerFont.FaceName = "Arial";   // Font name
-            headerFont.Height = 10;          // Font size in points
-            headerFont.Weight = 700;         // Bold weight (typically 700)
 
-            // Save the modified diagram (replace with actual save logic as per your lifecycle rule)
+            // Define the font name as Arial
+            headerFont.FaceName = "Arial";
+
+            // Define the font size as 10 points
+            headerFont.Height = 10;
+
+            // Apply bold style (weight 700 corresponds to bold in GDI)
+            headerFont.Weight = 700;
+
+            // Save the modified diagram (replace with your desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

@@ -1,68 +1,30 @@
-using System;
 using System.IO;
-using System.Text;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportDiagramToHtmlWithEmbeddedSvg
+class ExportDiagramToHtml
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram from a file
+            var diagram = new Diagram("input.vsdx");
 
-            // StringBuilder to construct the final HTML content
-            StringBuilder htmlBuilder = new StringBuilder();
-
-            // Basic HTML header
-            htmlBuilder.AppendLine("<!DOCTYPE html>");
-            htmlBuilder.AppendLine("<html>");
-            htmlBuilder.AppendLine("<head>");
-            htmlBuilder.AppendLine("<meta charset=\"UTF-8\">");
-            htmlBuilder.AppendLine("<title>Diagram Export</title>");
-            htmlBuilder.AppendLine("</head>");
-            htmlBuilder.AppendLine("<body>");
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Configure HTML save options to embed all resources (including SVG) into a single file
+            var htmlOptions = new HTMLSaveOptions
             {
-                htmlBuilder.AppendLine($"<h2>Page: {page.Name}</h2>");
+                // Embed images, SVGs, CSS, etc., into the generated HTML file
+                SaveAsSingleFile = true,
 
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Generate a temporary SVG file for the current shape
-                    string tempSvgPath = Path.GetTempFileName();
-                    try
-                    {
-                        // Use the provided Shape.ToSvg method (lifecycle rule)
-                        shape.ToSvg(tempSvgPath, new SVGSaveOptions());
+                // Optional: set a title for the HTML page
+                Title = "Exported Diagram"
+            };
 
-                        // Read the SVG content
-                        string svgContent = File.ReadAllText(tempSvgPath);
-
-                        // Embed the SVG directly into the HTML
-                        htmlBuilder.AppendLine("<div class=\"shape-svg\">");
-                        htmlBuilder.AppendLine(svgContent);
-                        htmlBuilder.AppendLine("</div>");
-                    }
-                    finally
-                    {
-                        // Clean up the temporary file
-                        if (File.Exists(tempSvgPath))
-                            File.Delete(tempSvgPath);
-                    }
-                }
-            }
-
-            // Close HTML tags
-            htmlBuilder.AppendLine("</body>");
-            htmlBuilder.AppendLine("</html>");
-
-            // Save the assembled HTML to a file
-            File.WriteAllText("output.html", htmlBuilder.ToString(), Encoding.UTF8);
+            // Save the diagram as HTML with embedded SVG resources for all shapes
+            diagram.Save("output.html", htmlOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

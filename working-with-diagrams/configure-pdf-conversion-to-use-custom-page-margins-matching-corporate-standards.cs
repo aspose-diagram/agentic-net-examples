@@ -9,20 +9,15 @@ class Program
             try
             {
 
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
+                // Load an existing Visio diagram (replace with actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-                // Path for the exported PDF file
-                string outputPath = "output.pdf";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Corporate standard margins (in inches)
-                double topMargin = 0.5;
-                double bottomMargin = 0.5;
-                double leftMargin = 0.5;
-                double rightMargin = 0.5;
+                // Define corporate standard margins (in inches)
+                double topMargin = 0.5;    // 0.5 inch
+                double bottomMargin = 0.5; // 0.5 inch
+                double leftMargin = 0.5;   // 0.5 inch
+                double rightMargin = 0.5;  // 0.5 inch
 
                 // Apply margins to every page in the diagram
                 foreach (Page page in diagram.Pages)
@@ -34,22 +29,18 @@ class Program
                     page.PageSheet.PrintProps.PageRightMargin.Value = rightMargin;
                 }
 
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    // Ensure the format is explicitly set
-                    SaveFormat = SaveFileFormat.Pdf,
-                    // Optional: set a default font to handle missing fonts
-                    DefaultFont = "Arial"
-                };
+                // Configure PDF save options (optional: set default font for missing fonts)
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
 
-                // Save the diagram as PDF with the configured options
+                // Save the diagram as PDF with the configured margins
+                string outputPath = "output.pdf";
                 diagram.Save(outputPath, pdfOptions);
 
                 // Clean up resources
                 diagram.Dispose();
 
-                Console.WriteLine("PDF export completed with custom margins.");
+                Console.WriteLine("PDF exported successfully with custom margins.");
 
             }
             catch (System.IO.FileNotFoundException ex)

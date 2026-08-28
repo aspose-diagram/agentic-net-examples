@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
@@ -16,20 +16,45 @@ class Program
             // Access the VBA project within the diagram
             VbaProject vbaProject = diagram.VbaProject;
 
-            // Retrieve the VBA module you want to update (replace "Module1" with the actual module name)
-            VbaModule module = vbaProject.Modules["Module1"];
+            // Name of the VBA module to be updated
+            string targetModuleName = "Module1";
 
-            // New macro code to replace the existing content
-            string newMacro = @"
+            // Locate the module by name
+            VbaModule module = null;
+            foreach (VbaModule mod in vbaProject.Modules)
+            {
+                if (mod.Name.Equals(targetModuleName, StringComparison.OrdinalIgnoreCase))
+                {
+                    module = mod;
+                    break;
+                }
+            }
+
+            // If the module exists, replace its code; otherwise add a new procedural module
+            if (module != null)
+            {
+                // Replace the existing VBA code with new macro statements
+                module.Codes = @"
             Sub NewMacro()
             MsgBox ""Hello from new macro!""
             End Sub
             ";
+            }
+            else
+            {
+                // Add a new procedural module with the specified name
+                int index = vbaProject.Modules.Add(VbaModuleType.Procedural, targetModuleName);
+                module = vbaProject.Modules[index];
 
-            // Replace the module's code with the new macro statements
-            module.Codes = newMacro;
+                // Set the VBA code for the newly added module
+                module.Codes = @"
+            Sub NewMacro()
+            MsgBox ""Hello from new macro!""
+            End Sub
+            ";
+            }
 
-            // Save the updated diagram
+            // Save the updated diagram to a new file
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

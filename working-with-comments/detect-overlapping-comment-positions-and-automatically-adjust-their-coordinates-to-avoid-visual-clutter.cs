@@ -1,71 +1,62 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
-{
-    // Threshold distance (in inches) to consider two comments overlapping
-    private const double OverlapThreshold = 0.2;
-
-    // Offset applied to a comment when an overlap is detected
-    private const double OffsetStep = 0.3;
-
-    public static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the diagram (replace with your actual file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Process each page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Collect annotations (comments) on the page
-                var annotations = page.PageSheet.Annotations;
 
-                // Simple O(N^2) overlap detection and adjustment
-                for (int i = 0; i < annotations.Count; i++)
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Process each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    Annotation annA = annotations[i];
-
-                    // Retrieve current coordinates (assumed to be stored in X and Y cells)
-                    double xA = annA.X.Value;
-                    double yA = annA.Y.Value;
-
-                    for (int j = i + 1; j < annotations.Count; j++)
+                    // Collect existing annotations
+                    List<Annotation> originalAnnotations = new List<Annotation>();
+                    foreach (Annotation ann in page.PageSheet.Annotations)
                     {
-                        Annotation annB = annotations[j];
-                        double xB = annB.X.Value;
-                        double yB = annB.Y.Value;
+                        originalAnnotations.Add(ann);
+                    }
 
-                        // Compute Euclidean distance between the two comments
-                        double distance = Math.Sqrt(Math.Pow(xA - xB, 2) + Math.Pow(yA - yB, 2));
+                    // Offset step (in inches) to separate overlapping comments
+                    double offsetStep = 0.5;
+                    int index = 0;
 
-                        // If the comments are too close, shift the second one
-                        if (distance < OverlapThreshold)
-                        {
-                            // Apply an offset to the second comment's position
-                            annB.X.Value = xB + OffsetStep;
-                            annB.Y.Value = yB + OffsetStep;
+                    // Clear original comment text and add a new comment with adjusted coordinates
+                    foreach (Annotation ann in originalAnnotations)
+                    {
+                        string commentText = ann.Comment.Value;
 
-                            // Update local variables for further comparisons
-                            xB = annB.X.Value;
-                            yB = annB.Y.Value;
-                        }
+                        // Clear the original comment to avoid duplication
+                        ann.Comment.Value = string.Empty;
+
+                        // Calculate new position
+                        double newPinX = index * offsetStep;
+                        double newPinY = index * offsetStep;
+
+                        // Add the comment at the new position
+                        page.AddComment(newPinX, newPinY, commentText);
+
+                        index++;
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the adjusted diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

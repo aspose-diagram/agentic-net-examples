@@ -5,80 +5,76 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    // Asynchronously loads a Visio diagram, updates its hyperlinks, and saves it.
-    static async Task UpdateHyperlinksAsync(string inputPath, string outputPath)
     {
-        // Open the source file with asynchronous I/O.
-        await using var inputStream = new FileStream(
-            inputPath,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.Read,
-            bufferSize: 4096,
-            useAsync: true);
-
-        // Load the diagram from the stream.
-        var diagram = new Diagram(inputStream);
-
-        // Iterate through all pages and shapes to modify hyperlinks.
-        foreach (Page page in diagram.Pages)
+        // Entry point – async to avoid blocking the UI thread (console in this case)
+        static async Task Main(string[] args)
         {
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                if (shape.Hyperlinks != null)
-                {
-                    foreach (Hyperlink link in shape.Hyperlinks)
-                    {
-                        // Example modification: replace an old domain with a new one.
-                        if (link.Address != null && link.Address.Value != null)
-                        {
-                            link.Address.Value = link.Address.Value.Replace("http://oldsite.com", "https://newsite.com");
-                        }
 
-                        // Optionally update the description.
-                        if (link.Description != null && link.Description.Value != null)
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Perform load, modify, and save on a background thread
+                await Task.Run(() =>
+                {
+                    // Load diagram from a file stream (asynchronous file I/O)
+                    using (FileStream inputStream = new FileStream(
+                        inputPath,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.Read,
+                        bufferSize: 4096,
+                        useAsync: true))
+                    {
+                        // Diagram constructor reads from the stream
+                        Diagram diagram = new Diagram(inputStream);
+
+                        // Update all hyperlinks in the diagram
+                        UpdateHyperlinks(diagram);
+
+                        // Save the modified diagram to a file stream (asynchronous file I/O)
+                        using (FileStream outputStream = new FileStream(
+                            outputPath,
+                            FileMode.Create,
+                            FileAccess.Write,
+                            FileShare.None,
+                            bufferSize: 4096,
+                            useAsync: true))
                         {
-                            link.Description.Value = "Updated hyperlink";
+                            // Save using the overload that accepts a stream and a format
+                            diagram.Save(outputStream, SaveFileFormat.Vsdx);
+                        }
+                    }
+                });
+
+                Console.WriteLine("Diagram processing completed.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
+
+        // Iterates through all pages and shapes, updating hyperlink addresses
+        private static void UpdateHyperlinks(Diagram diagram)
+        {
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Ensure the Hyperlinks collection exists
+                    if (shape.Hyperlinks != null)
+                    {
+                        foreach (Hyperlink link in shape.Hyperlinks)
+                        {
+                            // Set a new address for each hyperlink
+                            link.Address.Value = "https://example.com";
                         }
                     }
                 }
             }
         }
-
-        // Save the modified diagram asynchronously.
-        await using var outputStream = new FileStream(
-            outputPath,
-            FileMode.Create,
-            FileAccess.Write,
-            FileShare.None,
-            bufferSize: 4096,
-            useAsync: true);
-
-        // Diagram.Save is synchronous; wrap it in Task.Run to avoid blocking the UI thread.
-        await Task.Run(() => diagram.Save(outputStream, SaveFileFormat.Vsdx));
     }
-
-    // Entry point of the console application.
-    static async Task Main(string[] args)
-    {
-        if (args.Length < 2)
-        {
-            Console.WriteLine("Usage: <inputVisioPath> <outputVisioPath>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        try
-        {
-            await UpdateHyperlinksAsync(inputPath, outputPath);
-            Console.WriteLine("Diagram processed and saved successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error: {ex.Message}");
-        }
-    }
-}

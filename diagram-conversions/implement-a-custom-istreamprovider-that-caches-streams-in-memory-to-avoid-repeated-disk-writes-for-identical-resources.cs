@@ -6,39 +6,52 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramHtmlExport
 {
-    // Custom stream provider that caches streams in memory.
+    // Custom IStreamProvider that caches streams in memory.
     public class MemoryCacheStreamProvider : IStreamProvider
     {
-        // Cache keyed by the default path of the resource.
+        // Cache keyed by the resource path (DefaultPath).
         private readonly Dictionary<string, MemoryStream> _cache = new Dictionary<string, MemoryStream>(StringComparer.OrdinalIgnoreCase);
 
-        // Called by Aspose.Diagram when a new stream is required.
+        // Called by Aspose when a new stream is required.
         public void InitStream(StreamProviderOptions options)
         {
-            // Use the DefaultPath as the key. It is read‑only, so we only read it.
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
+            // Use the DefaultPath as the cache key.
             string key = options.DefaultPath ?? string.Empty;
 
-            if (_cache.TryGetValue(key, out MemoryStream cachedStream))
+            if (_cache.TryGetValue(key, out MemoryStream existingStream))
             {
                 // Reuse the existing memory stream.
-                // Reset position to the beginning for a fresh write.
-                cachedStream.Position = 0;
-                options.Stream = cachedStream;
+                existingStream.Position = 0;
+                options.Stream = existingStream;
             }
             else
             {
                 // Create a new memory stream and store it in the cache.
-                MemoryStream newStream = new MemoryStream();
-                _cache[key] = newStream;
-                options.Stream = newStream;
+                MemoryStream ms = new MemoryStream();
+                _cache[key] = ms;
+                options.Stream = ms;
             }
         }
 
-        // Called by Aspose.Diagram after the stream is no longer needed.
+        // Called by Aspose after the stream is no longer needed.
         public void CloseStream(StreamProviderOptions options)
         {
-            // No action required for in‑memory streams.
-            // The cached streams remain available for future InitStream calls.
+            // No disposal here; keep the stream in cache for future reuse.
+            // Ensure any buffered data is flushed.
+            options.Stream?.Flush();
+        }
+
+        // Optional helper to retrieve the cached data for a given path.
+        public byte[] GetCachedData(string path)
+        {
+            if (path == null) return null;
+            if (_cache.TryGetValue(path, out MemoryStream ms))
+            {
+                return ms.ToArray();
+            }
+            return null;
         }
     }
 
@@ -49,26 +62,34 @@ namespace DiagramHtmlExport
             try
             {
 
-                // Load an existing diagram (replace with your actual file path).
-                string inputPath = "sample.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+                // Load a diagram (replace with your actual file path).
+                string diagramPath = "sample.vsdx";
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Configure HTML export options and assign the custom stream provider.
+                // Configure HTML save options and assign the custom stream provider.
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    StreamProvider = new MemoryCacheStreamProvider(),
-                    // Optional: export all pages as a single HTML file.
-                    SaveAsSingleFile = true
+                    SaveAsSingleFile = false,
+                    StreamProvider = new MemoryCacheStreamProvider()
                 };
 
-                // Export the diagram to HTML. The HTML files (or a single file) will be written to memory.
-                string outputPath = "output.html";
-                diagram.Save(outputPath, htmlOptions);
+                // Export the diagram to HTML.
+                string outputHtml = "output.html";
+                diagram.Save(outputHtml, htmlOptions);
 
-                // At this point the HTML content resides in the memory cache.
-                // Example: retrieve the generated HTML from the provider's cache.
-                // (In a real scenario you might write the cached stream to disk or use it directly.)
-                Console.WriteLine("HTML export completed. Streams are cached in memory.");
+                // Example: retrieve cached stream data for a specific resource (e.g., an image).
+                // The key corresponds to the DefaultPath used internally by Aspose during export.
+                // Here we just demonstrate how to access the cache; actual keys depend on the export process.
+                var provider = (MemoryCacheStreamProvider)htmlOptions.StreamProvider;
+                byte[] cachedImage = provider.GetCachedData("image1.png");
+                if (cachedImage != null)
+                {
+                    Console.WriteLine($"Cached image size: {cachedImage.Length} bytes");
+                }
+                else
+                {
+                    Console.WriteLine("No cached data found for the specified resource.");
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)

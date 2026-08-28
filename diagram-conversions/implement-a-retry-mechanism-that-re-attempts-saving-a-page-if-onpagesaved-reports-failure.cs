@@ -1,88 +1,124 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 namespace DiagramPageSaveRetry
 {
-    // Callback implementation for PDF page saving events
-    public class PageSavingCallback : IPageSavingCallback
+    // Custom callback to capture pages that failed during the initial save.
+    // The callback is invoked for each page when using PdfSaveOptions.
+    public class RetryPageSavingCallback : IPageSavingCallback
     {
-        // Called before a page starts saving
+        // Store indexes of pages that need to be retried.
+        public static List<int> FailedPageIndexes { get; } = new List<int>();
+
+        // Called before a page starts saving – not used here.
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+            // No action needed at start.
         }
 
-        // Called after a page has been saved
+        // Called after a page has been saved.
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-            // No built‑in failure indicator; retry logic is handled in the main loop.
+            // Simulate a failure condition.
+            // In a real scenario, you would inspect args for error information.
+            // For demonstration, treat odd‑numbered pages as failures.
+            if (args.PageIndex % 2 == 1) // zero‑based index
+            {
+                // Record the failed page for later retry.
+                FailedPageIndexes.Add(args.PageIndex);
+            }
         }
     }
 
     class Program
     {
+        // Maximum number of retry attempts per page.
+        private const int MaxRetryAttempts = 3;
+
         static void Main()
         {
             try
             {
 
-                // Path to the source Visio file (replace with actual path)
-                string sourcePath = "input.vsdx";
+                // Path to the source Visio diagram.
+                const string inputPath = "input.vsdx";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
+                // Path for the primary PDF output.
+                const string outputPdf = "output.pdf";
 
-                // Get total number of pages
-                int pageCount = diagram.Pages.Count;
-
-                // Maximum number of retry attempts per page
-                const int maxRetries = 3;
-
-                // Iterate through each page and save individually with retry logic
-                for (int i = 0; i < pageCount; i++)
+                // Ensure the input file exists.
+                if (!File.Exists(inputPath))
                 {
-                    int attempt = 0;
-                    bool success = false;
-                    string outputPath = $"output_page_{i + 1}.pdf";
+                    throw new FileNotFoundException($"Input file not found: {inputPath}");
+                }
 
-                    while (attempt < maxRetries && !success)
+                // Load the diagram.
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Configure PDF save options with the custom callback.
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
                     {
-                        attempt++;
-                        try
-                        {
-                            // Configure PDF save options for the specific page
-                            PdfSaveOptions pdfOptions = new PdfSaveOptions
-                            {
-                                // Export only the current page
-                                PageIndex = i,
-                                // Assign the callback to receive page events
-                                PageSavingCallback = new PageSavingCallback()
-                            };
+                        DefaultFont = "Arial",
+                        PageSavingCallback = new RetryPageSavingCallback()
+                    };
 
-                            // Save the current page
-                            diagram.Save(outputPath, pdfOptions);
-                            success = true;
-                            Console.WriteLine($"Page {i + 1} saved successfully on attempt {attempt}.");
-                        }
-                        catch (Exception ex)
+                    // Initial save – pages that meet the simulated failure condition
+                    // will be recorded by the callback.
+                    diagram.Save(outputPdf, pdfOptions);
+
+                    // If any pages failed, attempt retries.
+                    if (RetryPageSavingCallback.FailedPageIndexes.Count > 0)
+                    {
+                        Console.WriteLine("Retrying failed pages...");
+
+                        foreach (int pageIndex in RetryPageSavingCallback.FailedPageIndexes)
                         {
-                            Console.WriteLine($"Error saving page {i + 1} on attempt {attempt}: {ex.Message}");
-                            if (attempt >= maxRetries)
+                            bool success = false;
+                            int attempt = 0;
+
+                            while (!success && attempt < MaxRetryAttempts)
                             {
-                                Console.WriteLine($"Failed to save page {i + 1} after {maxRetries} attempts.");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Retrying page {i + 1}...");
+                                attempt++;
+
+                                try
+                                {
+                                    // Create new PDF options targeting a single page.
+                                    PdfSaveOptions retryOptions = new PdfSaveOptions
+                                    {
+                                        DefaultFont = "Arial",
+                                        // Render only the specific page.
+                                        PageIndex = pageIndex,
+                                        PageCount = 1
+                                    };
+
+                                    // Save the specific page to a temporary file.
+                                    string tempFile = $"output_page_{pageIndex}_retry_{attempt}.pdf";
+                                    diagram.Save(tempFile, retryOptions);
+
+                                    // If no exception, the retry succeeded.
+                                    Console.WriteLine($"Page {pageIndex} saved successfully on attempt {attempt}.");
+                                    success = true;
+                                }
+                                catch (Exception ex)
+                                {
+                                    // Log the failure and continue to next attempt.
+                                    Console.WriteLine($"Attempt {attempt} for page {pageIndex} failed: {ex.Message}");
+                                    if (attempt >= MaxRetryAttempts)
+                                    {
+                                        Console.WriteLine($"Page {pageIndex} could not be saved after {MaxRetryAttempts} attempts.");
+                                    }
+                                }
                             }
                         }
                     }
+                    else
+                    {
+                        Console.WriteLine("All pages saved successfully on the first pass.");
+                    }
                 }
-
-                // Clean up
-                diagram.Dispose();
 
             }
             catch (System.IO.FileNotFoundException ex)

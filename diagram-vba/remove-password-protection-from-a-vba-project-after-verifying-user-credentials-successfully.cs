@@ -1,51 +1,63 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Vba;
 
-class Program
+class RemoveVbaPassword
 {
-    static void Main(string[] args)
+    // Placeholder method for user credential verification.
+    // Replace with actual authentication logic as needed.
+    static bool VerifyUser(string userName, string password)
     {
-        // Expect input and output file paths as command‑line arguments
-        if (args.Length < 2)
-        {
-            Console.WriteLine("Usage: <inputVisioFile> <outputVisioFile>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Simple console‑based credential verification
-        Console.Write("Enter username: ");
-        string username = Console.ReadLine();
-
-        Console.Write("Enter password: ");
-        string password = Console.ReadLine();
-
-        if (!ValidateCredentials(username, password))
-        {
-            Console.WriteLine("Invalid credentials. Operation aborted.");
-            return;
-        }
-
-        // Load the Visio diagram
-        Diagram diagram = new Diagram(inputPath);
-
-        // Remove VBA project data (clears password protection)
-        diagram.VbProjectData = null;
-
-        // Save the diagram in a macro‑enabled format to preserve the (now unprotected) VBA structure
-        diagram.Save(outputPath, SaveFileFormat.Vsdm);
-
-        Console.WriteLine("Password protection removed and file saved successfully.");
+        // Example: simple check against hard‑coded credentials.
+        // In production, integrate with your authentication system.
+        return userName == "admin" && password == "secret";
     }
 
-    // Replace this with real authentication logic as needed
-    static bool ValidateCredentials(string user, string pass)
+    static void Main()
     {
-        // Example hard‑coded check
-        return user == "admin" && pass == "secret";
+        try
+        {
+
+            // Path to the source Visio diagram.
+            string sourcePath = "ProtectedDiagram.vsdx";
+
+            // Load the diagram. Aspose.Diagram handles encrypted files internally
+            // when the correct passwords are supplied via PdfEncryptionDetails
+            // (if the diagram is saved as PDF). For a Visio file, the load method
+            // does not require additional parameters.
+            Diagram diagram = new Diagram(sourcePath);
+
+            // Prompt (or otherwise obtain) user credentials.
+            // Here we use hard‑coded values for illustration.
+            string userName = "admin";
+            string password = "secret";
+
+            // Verify the credentials before proceeding.
+            if (!VerifyUser(userName, password))
+            {
+                Console.WriteLine("Authentication failed. Operation aborted.");
+                return;
+            }
+
+            // At this point the user is authenticated.
+            // Remove the VBA project data which contains the password protection.
+            // Setting VbProjectData to null effectively strips the VBA project
+            // (including any password) from the diagram.
+            diagram.VbProjectData = null;
+
+            // Optionally, you can also remove any remaining macros completely.
+            // diagram.RemoveMacro();
+
+            // Save the modified diagram to a new file.
+            string outputPath = "DiagramWithoutVbaPassword.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Password protection removed and diagram saved to: " + outputPath);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

@@ -4,35 +4,35 @@ using Aspose.Diagram.Saving;
 
 namespace CustomPageNamingExample
 {
-    // Callback implementation that changes the page title before each page is saved
-    public class CustomPageSavingCallback : IPageSavingCallback
+    // Callback class to modify page titles during PDF saving
+    public class CustomPageNamingCallback : IPageSavingCallback
     {
         private readonly Diagram _diagram;
 
-        public CustomPageSavingCallback(Diagram diagram)
+        // Receive the diagram instance to access its pages
+        public CustomPageNamingCallback(Diagram diagram)
         {
-            _diagram = diagram;
+            _diagram = diagram ?? throw new ArgumentNullException(nameof(diagram));
         }
 
-        // Called when a page starts to be saved
+        // Called before a page is saved
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            // Ensure the page index is within the collection bounds
+            // args.PageIndex is zero‑based; retrieve the corresponding page
             if (args.PageIndex >= 0 && args.PageIndex < _diagram.Pages.Count)
             {
-                // Set a custom name for the page; this name will be used as the title in the output
-                _diagram.Pages[args.PageIndex].Name = $"Custom Title {args.PageIndex + 1}";
+                Page page = _diagram.Pages[args.PageIndex];
+                // Set a custom name for the page
+                string customName = $"CustomPage_{args.PageIndex + 1}";
+                page.Name = customName;
+                page.NameU = customName; // universal name
             }
-
-            // Keep the page in the output (default is true, but we set it explicitly)
-            args.IsToOutput = true;
         }
 
-        // Called when a page finishes saving
+        // Called after a page is saved
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            // No special handling needed after a page is saved; just indicate that more pages may follow
-            args.HasMorePages = args.PageIndex < args.PageCount - 1;
+            // No additional actions needed after saving each page
         }
     }
 
@@ -43,17 +43,23 @@ namespace CustomPageNamingExample
             try
             {
 
-                // Load an existing Visio diagram
-                Diagram diagram = new Diagram(@"InputDiagram.vsdx");
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path for the output PDF file
+                string outputPath = "output.pdf";
 
-                // Prepare PDF save options and attach the custom callback
-                PdfSaveOptions saveOptions = new PdfSaveOptions
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    PageSavingCallback = new CustomPageSavingCallback(diagram)
-                };
+                    // Create PDF save options and assign the custom callback
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.PageSavingCallback = new CustomPageNamingCallback(diagram);
 
-                // Save the diagram to PDF; the callback will rename each page during the save process
-                diagram.Save(@"OutputDiagram.pdf", saveOptions);
+                    // Save the diagram as PDF; the callback will rename pages during saving
+                    diagram.Save(outputPath, pdfOptions);
+                }
+
+                Console.WriteLine("Diagram saved to PDF with custom page names.");
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -1,69 +1,69 @@
 using System;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Determine the folder to scan for Visio diagram files.
-        string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+        // Folder containing Visio diagram files
+        string folderPath = "Diagrams"; // Change this path as needed
 
         if (!Directory.Exists(folderPath))
         {
-            Console.Error.WriteLine($"Folder not found: {folderPath}");
+            Console.WriteLine($"Folder not found: {folderPath}");
             return;
         }
 
-        // Supported Visio file extensions.
-        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx" };
+        // Retrieve all files in the folder
+        string[] allFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
 
-        // Collect all diagram files in the folder (non‑recursive).
-        var diagramFiles = Directory.GetFiles(folderPath)
-                                    .Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
-                                    .ToArray();
-
-        if (diagramFiles.Length == 0)
+        // Define supported Visio file extensions
+        string[] supportedExtensions = new string[]
         {
-            Console.WriteLine("No Visio diagram files found in the specified folder.");
-            return;
-        }
+            ".vsdx", ".vsd", ".vdx",
+            ".vssx", ".vss", ".vtx",
+            ".vstx", ".vst", ".vssm",
+            ".vsdm", ".vstm"
+        };
 
-        Console.WriteLine("Inventory Management Report");
-        Console.WriteLine("----------------------------");
-        Console.WriteLine($"Folder: {folderPath}");
-        Console.WriteLine();
-
-        foreach (var filePath in diagramFiles)
+        // Process each file
+        foreach (string filePath in allFiles)
         {
-            // Guard to ensure the file actually exists before processing.
-            if (!File.Exists(filePath))
+            string extension = Path.GetExtension(filePath);
+            bool isSupported = false;
+
+            // Check if the file has a supported extension
+            foreach (string supExt in supportedExtensions)
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                continue;
+                if (string.Equals(extension, supExt, StringComparison.OrdinalIgnoreCase))
+                {
+                    isSupported = true;
+                    break;
+                }
             }
+
+            if (!isSupported)
+                continue; // Skip unsupported files
 
             try
             {
-                // Load the diagram using the constructor that accepts a file path.
+                // Load the diagram
                 Diagram diagram = new Diagram(filePath);
 
-                // Count custom properties at the document level.
+                // Count custom document properties
                 int customPropCount = diagram.DocumentProps.CustomProps.Count;
 
-                Console.WriteLine($"Diagram: {Path.GetFileName(filePath)}");
-                Console.WriteLine($"Custom Property Count: {customPropCount}");
-                Console.WriteLine();
+                // Output the result
+                Console.WriteLine($"Diagram: {Path.GetFileName(filePath)} - Custom Properties: {customPropCount}");
+
+                // Dispose the diagram to free resources
+                diagram.Dispose();
             }
             catch (Exception ex)
             {
-                // Report any errors but continue processing other files.
-                Console.Error.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
-                Console.Error.WriteLine();
+                Console.WriteLine($"Error processing '{Path.GetFileName(filePath)}': {ex.Message}");
             }
         }
-
-        Console.WriteLine("Report generation completed.");
     }
 }

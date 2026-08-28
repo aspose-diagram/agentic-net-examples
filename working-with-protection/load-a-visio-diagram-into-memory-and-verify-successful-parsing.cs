@@ -6,47 +6,39 @@ class Program
 {
     static void Main()
     {
+        // Path to the Visio file to be loaded
+        string visioFilePath = @"C:\Path\To\Your\Diagram.vsdx";
+
+        // Ensure the file exists before attempting to load
+        if (!File.Exists(visioFilePath))
+        {
+            Console.WriteLine("Visio file not found: " + visioFilePath);
+            return;
+        }
+
+        // Load the diagram using the constructor that accepts a file name
+        Diagram diagram = null;
         try
         {
-
-            // Path to the Visio file to be loaded
-            string filePath = "sample.vsdx";
-
-            // Detect the file format before loading (optional verification step)
-            var formatInfo = FileFormatUtil.DetectFileFormat(filePath);
-            Console.WriteLine($"Detected format: {formatInfo.FileFormatType}");
-
-            Diagram diagram = null;
-            try
-            {
-                // Load the diagram into memory using the file‑path constructor
-                diagram = new Diagram(filePath);
-
-                // Simple verification: ensure the diagram contains at least one page
-                if (diagram.Pages.Count > 0)
-                {
-                    Console.WriteLine($"Diagram loaded successfully. Pages count: {diagram.Pages.Count}");
-                }
-                else
-                {
-                    Console.WriteLine("Diagram loaded but contains no pages.");
-                }
-            }
-            catch (Exception ex)
-            {
-                // Loading failed – output the error message
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-            }
-            finally
-            {
-                // Release resources
-                diagram?.Dispose();
-            }
-
+            diagram = new Diagram(visioFilePath);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine("Error loading diagram: " + ex.Message);
+            return;
         }
+
+        // Verify that the diagram was parsed successfully
+        if (diagram != null && diagram.Pages != null && diagram.Pages.Count > 0)
+        {
+            Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
+        }
+        else
+        {
+            Console.WriteLine("Diagram loaded but contains no pages or is invalid.");
+        }
+
+        // Dispose the diagram when done
+        diagram?.Dispose();
     }
 }

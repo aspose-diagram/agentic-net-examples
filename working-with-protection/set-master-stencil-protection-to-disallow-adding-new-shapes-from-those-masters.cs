@@ -1,26 +1,31 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Create a new empty Visio diagram
-            Diagram diagram = new Diagram();
 
-            // Set global document protection to prevent adding new shapes from masters
-            // This disables the ability to drop shapes from stencils (masters) into the diagram
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Disallow adding new shapes from masters by enabling master protection
             diagram.DocumentSettings.ProtectMasters = BOOL.True;
 
-            // Optionally, you can also protect other aspects of the document if needed
-            // diagram.DocumentSettings.ProtectShapes = BOOL.True;
-            // diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
-            // diagram.DocumentSettings.ProtectStyles = BOOL.True;
-
-            // Save the protected diagram to a VSDX file
-            string outputPath = "ProtectedDiagram.vsdx";
+            // Save the protected diagram to a new file
+            string outputPath = "output_protected.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            Console.WriteLine($"Diagram saved with master protection at: {outputPath}");
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

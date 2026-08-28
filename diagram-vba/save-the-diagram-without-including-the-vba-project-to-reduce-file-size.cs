@@ -10,20 +10,19 @@ class Program
         try
         {
 
-            // Path to the source Visio file
-            string inputFile = "input.vsdx";
+            // Load the existing Visio diagram from a file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Path for the output file without VBA project
-            string outputFile = "output_without_vba.vsdx";
-
-            // Load the diagram from the file
-            Diagram diagram = new Diagram(inputFile);
-
-            // Remove any VBA macros to reduce file size
+            // Remove any VBA/macros from the diagram to reduce file size
             diagram.RemoveMacro();
 
-            // Save the diagram in the same format (VSDX) without the VBA project
-            diagram.Save(outputFile, SaveFileFormat.Vsdx);
+            // Save the diagram back to a file (same format as the original)
+            // Using SaveFileFormat to specify the output format
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            // Alternatively, you can use SaveOptions if you need more control:
+            // DiagramSaveOptions options = new DiagramSaveOptions(SaveFileFormat.Vsdx);
+            // diagram.Save("output.vsdx", options);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -11,22 +11,19 @@ class Program
         {
 
             // Load the Visio diagram from a file
-            using (var diagram = new Diagram("input.vsdx"))
-            {
-                // Set up HTML save options
-                var htmlOptions = new HTMLSaveOptions
-                {
-                    // Use a web‑safe font as fallback for any missing fonts
-                    DefaultFont = "Arial",
-                    // Save the whole diagram as a single HTML file (embeds images, CSS, etc.)
-                    SaveAsSingleFile = true,
-                    // Optional: omit the toolbar for cleaner output
-                    SaveToolBar = false
-                };
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Export the diagram to HTML with the specified options
-                diagram.Save("output.html", htmlOptions);
-            }
+            // Set up HTML export options
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.DefaultFont = "Arial";          // web‑safe font to ensure consistent rendering
+            htmlOptions.SaveAsSingleFile = true;        // embed all resources (images, CSS) in one HTML file
+            htmlOptions.Title = "Exported Diagram";     // optional title for the HTML page
+
+            // Export the diagram to HTML using the configured options
+            diagram.Save("output.html", htmlOptions);
+
+            // Release resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

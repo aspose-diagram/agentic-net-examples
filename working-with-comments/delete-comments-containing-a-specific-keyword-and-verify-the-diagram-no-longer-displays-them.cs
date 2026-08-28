@@ -1,73 +1,62 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output Visio file path after comment removal
+            string outputPath = "output.vsdx";
+            // Keyword to search for in comments
+            string keyword = "TODO";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and remove comments containing the keyword
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file, output file and the keyword to search for in comments
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-                string keyword = "TODO";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and collect annotations that contain the keyword
-                foreach (Page page in diagram.Pages)
+                // Annotations (comments) are stored in the page's PageSheet
+                foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    var annotations = page.PageSheet.Annotations;
-                    var toRemove = new List<Annotation>();
-
-                    foreach (Annotation ann in annotations)
+                    string commentText = annotation.Comment.Value;
+                    if (!string.IsNullOrEmpty(commentText) && commentText.Contains(keyword))
                     {
-                        // Ensure the comment text is not null before checking
-                        if (ann.Comment.Value != null && ann.Comment.Value.Contains(keyword))
-                        {
-                            toRemove.Add(ann);
-                        }
-                    }
-
-                    // Remove the collected annotations from the page
-                    foreach (Annotation ann in toRemove)
-                    {
-                        // AnnotationCollection supports removal by object
-                        annotations.Remove(ann);
+                        // Clear the comment text to effectively delete it
+                        annotation.Comment.Value = string.Empty;
                     }
                 }
-
-                // Verify that no remaining annotation contains the keyword
-                bool stillExists = false;
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Annotation ann in page.PageSheet.Annotations)
-                    {
-                        if (ann.Comment.Value != null && ann.Comment.Value.Contains(keyword))
-                        {
-                            stillExists = true;
-                            break;
-                        }
-                    }
-                    if (stillExists) break;
-                }
-
-                if (stillExists)
-                {
-                    throw new Exception($"Comment with keyword '{keyword}' still exists after deletion.");
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Verification: ensure no remaining comment contains the keyword
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                foreach (Annotation annotation in page.PageSheet.Annotations)
+                {
+                    string commentText = annotation.Comment.Value;
+                    if (!string.IsNullOrEmpty(commentText) && commentText.Contains(keyword))
+                    {
+                        throw new Exception($"Comment with keyword \"{keyword}\" still exists after deletion.");
+                    }
+                }
             }
+
+            Console.WriteLine("All comments containing the keyword have been removed successfully.");
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

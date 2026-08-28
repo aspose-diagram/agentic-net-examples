@@ -1,62 +1,54 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Manipulation;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Create a new empty diagram inside a try/catch to capture Aspose errors.
-        try
+        static void Main()
         {
-            Diagram diagram = new Diagram();
+            try
+            {
 
-            // Retrieve the first page (the diagram always contains at least one page).
-            Page page = diagram.Pages[0];
+                // Paths to the source and destination Visio files
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-            // Add two rectangle shapes that will serve as the connector's endpoints.
-            // AddShape returns a shape ID (long), so we store the ID and then fetch the Shape object.
-            long shape1Id = page.AddShape(2.0, 5.0, "Rectangle");
-            Shape shape1 = page.Shapes.GetShape(shape1Id);
+                // Load the diagram from the file
+                Diagram diagram = new Diagram(inputPath);
 
-            long shape2Id = page.AddShape(8.0, 5.0, "Rectangle");
-            Shape shape2 = page.Shapes.GetShape(shape2Id);
+                // Get the first page (you can change the index if needed)
+                Page page = diagram.Pages[0];
 
-            // Add a dynamic connector shape; again retrieve the Shape instance via its ID.
-            long connectorId = page.AddShape(5.0, 5.0, "Dynamic connector");
-            Shape connector = page.Shapes.GetShape(connectorId);
+                // Find a connector shape on the page.
+                // Connectors are 1‑D shapes (OneD == true) or have the master name "Dynamic connector".
+                Shape connector = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.OneD || (shape.Master != null && shape.Master.Name == "Dynamic connector"))
+                    {
+                        connector = shape;
+                        break;
+                    }
+                }
 
-            // Connect shape1 to shape2 using the connector.
-            // The ConnectionPointPlace enum specifies the exact segment (bottom of shape1, top of shape2).
-            page.ConnectShapesViaConnector(
-                shape1Id,
-                ConnectionPointPlace.Bottom,
-                shape2Id,
-                ConnectionPointPlace.Top,
-                connectorId);
+                if (connector == null)
+                {
+                    Console.WriteLine("No connector shape was found on the page.");
+                    return;
+                }
 
-            // Determine a point on the connector where the comment should appear.
-            // Here we use the connector's own PinX and PinY (its centre) as the comment location.
-            double commentX = connector.XForm.PinX.Value;
-            double commentY = connector.XForm.PinY.Value;
+                // Attach a comment directly to the connector shape.
+                // The comment will be positioned at the shape's default comment location.
+                page.AddComment(connector, "Review this connector segment.");
 
-            // Attach a comment to the connector at the calculated coordinates.
-            page.AddComment(commentX, commentY, "This is a comment on the connector segment.");
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Define the output file path.
-            string outputPath = "ConnectorWithComment.vsdx";
+                Console.WriteLine($"Comment added to connector (ID: {connector.ID}) and diagram saved to '{outputPath}'.");
 
-            // Save the diagram using the correct overload (path + SaveFileFormat).
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

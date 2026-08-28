@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -13,34 +12,30 @@ class Program
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
-                // Font name to target (case‑insensitive comparison)
+                // The font name to target for bold styling
                 string targetFontName = "Calibri";
 
-                // Load the diagram
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
                         // Ensure the shape contains text
-                        if (shape.Text == null || string.IsNullOrWhiteSpace(shape.Text.Value.Text))
-                            continue;
-
-                        // Iterate through character formatting runs
-                        foreach (Aspose.Diagram.Char ch in shape.Chars)
+                        if (shape.Text != null && !string.IsNullOrEmpty(shape.Text.Value.Text))
                         {
-                            // Check if the character run uses the target font
-                            if (string.Equals(ch.FontName.Value, targetFontName, StringComparison.OrdinalIgnoreCase))
+                            // Iterate through each character formatting run
+                            foreach (Aspose.Diagram.Char ch in shape.Chars)
                             {
-                                // Apply bold style while preserving existing styles
-                                ch.Style.Value |= StyleValue.Bold;
+                                // Check if the character uses the target font
+                                if (ch.FontName.Value == targetFontName)
+                                {
+                                    // Apply bold style while preserving existing styles
+                                    ch.Style.Value |= StyleValue.Bold;
+                                }
                             }
                         }
                     }

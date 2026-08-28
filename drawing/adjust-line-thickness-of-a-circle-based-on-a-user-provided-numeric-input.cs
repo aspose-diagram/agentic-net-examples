@@ -1,36 +1,46 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        // Prompt user for line thickness (points)
-        Console.Write("Enter line thickness (in points): ");
-        double thickness = double.Parse(Console.ReadLine());
+        static void Main()
+        {
+            // Prompt the user for the desired line thickness (in inches)
+            Console.Write("Enter line thickness (in inches, e.g., 0.02): ");
+            string input = Console.ReadLine();
 
-        // Create a new diagram (lifecycle create rule)
-        Diagram diagram = new Diagram();
+            if (!double.TryParse(input, out double lineThickness) || lineThickness <= 0)
+            {
+                Console.WriteLine("Invalid input. Please provide a positive numeric value.");
+                return;
+            }
 
-        // Use the first page (a diagram always contains at least one page)
-        Page page = diagram.Pages[0];
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-        // Circle parameters
-        double centerX = 5.0;   // X coordinate of the circle's center
-        double centerY = 5.0;   // Y coordinate of the circle's center
-        double radius  = 2.0;   // Desired radius
-        double width   = radius * 2; // Width of the ellipse (circle)
-        double height  = radius * 2; // Height of the ellipse (circle)
+            // Use the first page (default page is always present)
+            Page page = diagram.Pages[0];
 
-        // Draw the circle (ellipse with equal width and height)
-        long shapeId = page.DrawEllipse(centerX, centerY, width, height);
+            // Draw a circle (ellipse with equal width and height)
+            // Parameters: PinX, PinY (center), Width, Height
+            double centerX = 5.0;   // inches from the left edge
+            double centerY = 5.0;   // inches from the top edge
+            double diameter = 4.0;  // inches
 
-        // Retrieve the shape and set its line thickness
-        Shape circle = page.Shapes.GetShape(shapeId);
-        circle.Line.LineWeight.Value = thickness;
+            long shapeId = page.DrawEllipse(centerX, centerY, diameter, diameter);
 
-        // Save the diagram (lifecycle save rule)
-        diagram.Save("Circle.vdx", SaveFileFormat.Vdx);
+            // Retrieve the shape object to modify its line properties
+            Shape circleShape = page.Shapes.GetShape(shapeId);
+
+            // Set the line thickness (weight) using the user-provided value
+            circleShape.Line.LineWeight.Value = lineThickness;
+
+            // Save the diagram as a PNG image
+            string outputPath = "CircleWithCustomThickness.png";
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            diagram.Save(outputPath, saveOptions);
+
+            Console.WriteLine($"Diagram saved to '{outputPath}' with line thickness {lineThickness} inches.");
+        }
     }
-}

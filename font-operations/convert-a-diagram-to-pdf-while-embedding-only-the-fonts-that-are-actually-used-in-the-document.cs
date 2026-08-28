@@ -13,11 +13,8 @@ class Program
             // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create PDF save options – by default only the fonts actually used are embedded
+            // Create PDF save options – default behavior embeds only the fonts actually used
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-            // (Optional) Specify a fallback font for characters that cannot be rendered
-            // pdfOptions.DefaultFont = "Arial";
 
             // Save the diagram as PDF using the specified options
             diagram.Save("output.pdf", pdfOptions);

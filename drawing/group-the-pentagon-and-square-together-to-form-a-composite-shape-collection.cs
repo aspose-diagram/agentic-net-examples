@@ -1,37 +1,55 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Get the first page (adjust index if needed)
+            // Use the first (default) page
             Page page = diagram.Pages[0];
 
-            // Retrieve the pentagon and square shapes by their names (replace with actual names/IDs)
-            Shape pentagon = page.Shapes.GetShape("Pentagon");
-            Shape square   = page.Shapes.GetShape("Square");
+            // -------------------------------------------------
+            // 1. Add a pentagon using DrawPolyline.
+            //    The points are defined as a flat double array:
+            //    (x1, y1, x2, y2, ..., x5, y5, x1, y1) – the first point
+            //    is repeated to close the polygon.
+            // -------------------------------------------------
+            double[] pentagonPoints = new double[]
+            {
+                2.0, 2.0,   // Point 1
+                3.5, 1.0,   // Point 2
+                5.0, 2.0,   // Point 3
+                4.5, 4.0,   // Point 4
+                2.5, 4.0,   // Point 5
+                2.0, 2.0    // Close polygon
+            };
+            long pentagonId = page.DrawPolyline(pentagonPoints);
+            Shape pentagonShape = page.Shapes.GetShape(pentagonId);
 
-            // Group the two shapes into a composite shape
-            Shape groupShape = page.Shapes.Group(new Shape[] { pentagon, square });
+            // -------------------------------------------------
+            // 2. Add a square using DrawRectangle.
+            //    Parameters: pinX, pinY (center), width, height.
+            // -------------------------------------------------
+            double squareCenterX = 4.0;
+            double squareCenterY = 6.0;
+            double squareSize = 2.0; // width = height
+            long squareId = page.DrawRectangle(squareCenterX, squareCenterY, squareSize, squareSize);
+            Shape squareShape = page.Shapes.GetShape(squareId);
 
-            // Optional: give the group a meaningful name
+            // -------------------------------------------------
+            // 3. Group the pentagon and square together.
+            //    The Group method takes an array of Shape objects
+            //    and returns the newly created group shape.
+            // -------------------------------------------------
+            Shape groupShape = page.Shapes.Group(new Shape[] { pentagonShape, squareShape });
             groupShape.Name = "PentagonSquareGroup";
 
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // -------------------------------------------------
+            // 4. Save the diagram to a VSDX file.
+            // -------------------------------------------------
+            diagram.Save("GroupedShapes.vsdx", SaveFileFormat.Vsdx);
         }
     }
-}

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -11,60 +10,48 @@ class Program
             try
             {
 
-                // Input Visio file path
-                string visioPath = @"C:\Input\sample.vsdx";
+                // Input Visio file path (absolute)
+                string visioPath = @"C:\Diagrams\sample.vsdx";
 
-                // Output HTML file path
-                string htmlOutputPath = @"C:\Output\sample.html";
+                // Output HTML file path (absolute)
+                string htmlPath = @"C:\Diagrams\output.html";
 
-                // Load the Visio diagram
+                // Load the diagram
                 Diagram diagram = new Diagram(visioPath);
 
-                // Configure HTML save options (default settings)
+                // Export diagram to HTML using default options
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-
-                // Save the diagram as HTML
-                diagram.Save(htmlOutputPath, htmlOptions);
+                diagram.Save(htmlPath, htmlOptions);
 
                 // Post‑process the generated HTML to replace absolute file paths with relative paths
-                try
-                {
-                    string htmlContent = File.ReadAllText(htmlOutputPath);
+                // Read the HTML content
+                string htmlContent = File.ReadAllText(htmlPath);
 
-                    // Replace Windows absolute paths (e.g., C:\folder\file.png) with just the file name
-                    string processedContent = ReplaceAbsolutePaths(htmlContent);
+                // Determine the directory part of the HTML file path
+                string baseDirectory = Path.GetDirectoryName(Path.GetFullPath(htmlPath));
 
-                    // Overwrite the HTML file with the processed content
-                    File.WriteAllText(htmlOutputPath, processedContent);
-                }
-                catch (Exception ex)
+                if (!string.IsNullOrEmpty(baseDirectory))
                 {
-                    // Propagate any errors
-                    throw new Exception("Error processing HTML file: " + ex.Message, ex);
+                    // Ensure the directory ends with a separator for accurate replacement
+                    string baseDirWithSeparator = baseDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+
+                    // Replace back‑slash absolute paths with relative paths
+                    htmlContent = htmlContent.Replace(baseDirWithSeparator, string.Empty);
+
+                    // Also replace forward‑slash variants (in case HTML uses them)
+                    string baseDirWithForwardSlash = baseDirectory.Replace('\\', '/').TrimEnd('/') + "/";
+                    htmlContent = htmlContent.Replace(baseDirWithForwardSlash, string.Empty);
                 }
+
+                // Write the modified HTML back to the file
+                File.WriteAllText(htmlPath, htmlContent);
+
+                Console.WriteLine("HTML export completed and absolute paths have been converted to relative paths.");
 
             }
-            catch (System.IO.DirectoryNotFoundException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
-
-        /// <summary>
-        /// Replaces absolute Windows file paths in the HTML content with relative file names.
-        /// </summary>
-        /// <param name="html">The original HTML content.</param>
-        /// <returns>HTML content with absolute paths replaced by relative file names.</returns>
-        private static string ReplaceAbsolutePaths(string html)
-        {
-            // Pattern matches paths like C:\folder\subfolder\file.ext
-            string pattern = @"[A-Za-z]:\\[^\s""']+";
-
-            return Regex.Replace(html, pattern, match =>
-            {
-                // Extract only the file name from the matched absolute path
-                string fileName = Path.GetFileName(match.Value);
-                return fileName ?? match.Value;
-            }, RegexOptions.IgnoreCase);
-        }
     }

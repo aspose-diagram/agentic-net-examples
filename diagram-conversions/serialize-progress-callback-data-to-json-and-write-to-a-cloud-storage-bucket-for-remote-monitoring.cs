@@ -1,51 +1,43 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 namespace DiagramProgressMonitoring
 {
-    // Class to hold progress information for each page event
-    public class PageProgressInfo
+    // Class to hold progress information for each page saved
+    public class ProgressInfo
     {
         public int PageIndex { get; set; }
         public int PageCount { get; set; }
-        public string Event { get; set; } // "Start" or "End"
         public DateTime Timestamp { get; set; }
     }
 
-    // Implementation of the page saving callback to capture progress
-    public class PageSavingCallback : IPageSavingCallback
+    // Implementation of IPageSavingCallback to capture page saving events
+    public class MyPageSavingCallback : IPageSavingCallback
     {
-        private readonly List<PageProgressInfo> _progressList;
-
-        public PageSavingCallback(List<PageProgressInfo> progressList)
-        {
-            _progressList = progressList;
-        }
+        // Collected progress data
+        public List<ProgressInfo> ProgressData { get; } = new List<ProgressInfo>();
 
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            _progressList.Add(new PageProgressInfo
-            {
-                PageIndex = args.PageIndex,
-                PageCount = args.PageCount,
-                Event = "Start",
-                Timestamp = DateTime.UtcNow
-            });
+            // No action needed at start of page saving for this scenario
         }
 
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            _progressList.Add(new PageProgressInfo
+            // Record progress after each page is saved
+            ProgressData.Add(new ProgressInfo
             {
                 PageIndex = args.PageIndex,
                 PageCount = args.PageCount,
-                Event = "End",
                 Timestamp = DateTime.UtcNow
             });
+
+            // Example: stop after first page (optional)
+            // args.HasMorePages = false;
         }
     }
 
@@ -57,37 +49,37 @@ namespace DiagramProgressMonitoring
             {
 
                 // Path to the source Visio diagram
-                string diagramPath = "input.vsdx";
+                string inputPath = "input.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+                Diagram diagram = new Diagram(inputPath);
 
-                // Prepare a list to collect progress data
-                List<PageProgressInfo> progressData = new List<PageProgressInfo>();
-
-                // Configure PDF save options with the custom callback
+                // Prepare PDF save options and assign the custom callback
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.PageSavingCallback = new PageSavingCallback(progressData);
+                MyPageSavingCallback callback = new MyPageSavingCallback();
+                pdfOptions.PageSavingCallback = callback;
 
-                // Output PDF path (could be any format; PDF is used to trigger page callbacks)
-                string pdfOutputPath = "output.pdf";
+                // Output PDF file path
+                string outputPdfPath = "output.pdf";
 
-                // Save the diagram using the options (this will invoke the callback)
-                diagram.Save(pdfOutputPath, pdfOptions);
+                // Save the diagram as PDF, invoking the callback for each page
+                diagram.Save(outputPdfPath, pdfOptions);
 
-                // Serialize progress data to JSON
-                string json = JsonSerializer.Serialize(progressData, new JsonSerializerOptions { WriteIndented = true });
+                // Serialize the collected progress data to JSON
+                string json = JsonSerializer.Serialize(callback.ProgressData, new JsonSerializerOptions { WriteIndented = true });
 
-                // Define the "cloud storage bucket" path (simulated as a local folder)
-                string bucketFolder = Path.Combine("cloud_bucket");
+                // Define a path representing the cloud storage bucket (replace with actual bucket integration as needed)
+                string bucketFolder = "cloud_bucket";
+                string bucketFilePath = Path.Combine(bucketFolder, "progress.json");
+
+                // Ensure the bucket folder exists
                 Directory.CreateDirectory(bucketFolder);
-                string jsonFilePath = Path.Combine(bucketFolder, "progress.json");
 
-                // Write JSON to the bucket
-                File.WriteAllText(jsonFilePath, json);
+                // Write JSON to the bucket location
+                File.WriteAllText(bucketFilePath, json);
 
-                // Optional: inform the user
-                Console.WriteLine($"Progress data written to: {jsonFilePath}");
+                // Inform the user
+                Console.WriteLine($"Progress data written to {bucketFilePath}");
 
             }
             catch (System.IO.FileNotFoundException ex)

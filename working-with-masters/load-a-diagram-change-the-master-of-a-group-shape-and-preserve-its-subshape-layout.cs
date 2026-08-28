@@ -1,105 +1,78 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramGroupMasterChange
+class Program
 {
-    // Helper class to store sub‑shape geometry
-    class SubShapeInfo
+    static void Main(string[] args)
     {
-        public long Id { get; set; }
-        public double PinX { get; set; }
-        public double PinY { get; set; }
-        public double Width { get; set; }
-        public double Height { get; set; }
-        public double Angle { get; set; }
-    }
-
-    class Program
-    {
-        static void Main()
+        // Expect three arguments: input diagram path, output diagram path, and the target master name.
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: <program> <inputPath> <outputPath> <newMasterName>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+        string newMasterName = args[2];
+
+        try
+        {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Locate the first group shape on the first page.
+            Page page = diagram.Pages[0];
+            Shape? groupShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Find the first group shape on the page
-                Aspose.Diagram.Shape? groupShape = null;
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                // Identify a group shape by its TypeValue.
+                if (shape.Type == TypeValue.Group)
                 {
-                    if (shape.Type == TypeValue.Group)
-                    {
-                        groupShape = shape;
-                        break;
-                    }
+                    groupShape = shape;
+                    break;
                 }
-
-                if (groupShape == null)
-                {
-                    throw new Exception("No group shape found on the page.");
-                }
-
-                // Preserve layout of sub‑shapes
-                List<SubShapeInfo> subShapeInfos = new List<SubShapeInfo>();
-                foreach (Aspose.Diagram.Shape subShape in groupShape.Shapes)
-                {
-                    SubShapeInfo info = new SubShapeInfo
-                    {
-                        Id = subShape.ID,
-                        PinX = subShape.XForm.PinX.Value,
-                        PinY = subShape.XForm.PinY.Value,
-                        Width = subShape.XForm.Width.Value,
-                        Height = subShape.XForm.Height.Value,
-                        Angle = subShape.XForm.Angle.Value
-                    };
-                    subShapeInfos.Add(info);
-                }
-
-                // Specify the new master name (must exist in the diagram's masters collection)
-                string newMasterName = "NewGroupMaster";
-
-                // Retrieve the new master
-                Master? newMaster = diagram.Masters.GetMasterByName(newMasterName);
-                if (newMaster == null)
-                {
-                    throw new Exception($"Master \"{newMasterName}\" not found in the diagram.");
-                }
-
-                // Change the master of the group shape
-                groupShape.Master = newMaster;
-
-                // Re‑apply the preserved sub‑shape geometry
-                foreach (SubShapeInfo info in subShapeInfos)
-                {
-                    Aspose.Diagram.Shape? subShape = groupShape.Shapes.GetShape(info.Id);
-                    if (subShape != null)
-                    {
-                        subShape.XForm.PinX.Value = info.PinX;
-                        subShape.XForm.PinY.Value = info.PinY;
-                        subShape.XForm.Width.Value = info.Width;
-                        subShape.XForm.Height.Value = info.Height;
-                        subShape.XForm.Angle.Value = info.Angle;
-                    }
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Guard: ensure a group shape was found.
+            if (groupShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine("No group shape found in the diagram.");
+                return;
             }
-    }
+
+            // Verify that the target master exists in the diagram's master collection.
+            Master? targetMaster = diagram.Masters.GetMasterByName(newMasterName);
+            if (targetMaster == null)
+            {
+                Console.Error.WriteLine($"Master \"{newMasterName}\" not found in the diagram.");
+                return;
+            }
+
+            // Preserve the current master name for logging.
+            string oldMasterName = groupShape.Master?.Name ?? "(none)";
+            Console.WriteLine($"Changing master of group shape (ID={groupShape.ID}) from \"{oldMasterName}\" to \"{newMasterName}\".");
+
+            // Assign the new master to the group shape. This operation keeps the sub‑shape layout intact.
+            groupShape.Master = targetMaster;
+
+            // Save the modified diagram to the output path using VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

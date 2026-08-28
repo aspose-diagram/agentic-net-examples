@@ -4,31 +4,29 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Path to the Visio file (can be passed as a command‑line argument)
-            string filePath = args.Length > 0 ? args[0] : "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // Enumerate all custom properties defined at the document level
-            foreach (CustomProp prop in diagram.DocumentProps.CustomProps)
+            // Load the Visio diagram from a file (replace with your actual file path)
+            string filePath = "input.vsdx";
+            using (Diagram diagram = new Diagram(filePath))
             {
-                // Output name‑value pair to the console
-                Console.WriteLine($"{prop.Name} = {prop.CustomValue}");
+                // Get the collection of custom properties defined at the document level
+                var customProps = diagram.DocumentProps.CustomProps;
+
+                // Enumerate each custom property and output its name and value
+                foreach (CustomProp prop in customProps)
+                {
+                    Console.WriteLine($"Name: {prop.Name}, Value: {prop.CustomValue}");
+                }
             }
 
-            // Release resources
-            diagram.Dispose();
-
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

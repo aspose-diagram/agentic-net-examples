@@ -1,9 +1,7 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -24,36 +22,38 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and collect shapes that contain ActiveX controls
-            foreach (Page page in diagram.Pages)
+            // Work with the first page
+            Page page = diagram.Pages[0];
+
+            // Locate the first shape that contains an ActiveX control
+            Shape shapeWithControl = null;
+            foreach (Shape shape in page.Shapes)
             {
-                // List to hold shapes that need to be removed
-                List<Shape> shapesToRemove = new List<Shape>();
-
-                foreach (Shape shape in page.Shapes)
+                if (shape.ActiveXControl != null)
                 {
-                    // Check if the shape has an ActiveX control (property is read‑only, so we cannot set it to null)
-                    if (shape.ActiveXControl != null)
-                    {
-                        // Mark the shape for removal
-                        shapesToRemove.Add(shape);
-                    }
-                }
-
-                // Remove the marked shapes from the page
-                foreach (Shape shape in shapesToRemove)
-                {
-                    page.Shapes.Remove(shape);
+                    shapeWithControl = shape;
+                    break;
                 }
             }
+
+            // If no such shape exists, report and exit
+            if (shapeWithControl == null)
+            {
+                Console.Error.WriteLine("No shape with an ActiveX control was found in the diagram.");
+                return;
+            }
+
+            // Remove the shape containing the ActiveX control from the page.
+            // Direct assignment to ActiveXControl is not allowed (read‑only), so the shape itself is removed.
+            page.Shapes.Remove(shapeWithControl);
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

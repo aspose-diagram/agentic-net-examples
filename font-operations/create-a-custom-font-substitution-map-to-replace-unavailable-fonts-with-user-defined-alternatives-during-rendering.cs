@@ -1,40 +1,57 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing.Text;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load an existing Visio diagram (uses the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Define custom font substitution:
-            // If the diagram contains "Comic Sans MS" and it is not installed,
-            // Aspose.Diagram will try "Arial" first, then "Times New Roman".
-            FontConfigs.SetFontSubstitutes(
-                "Comic Sans MS",
-                new string[] { "Arial", "Times New Roman" }
-            );
-
-            // Optionally set a default font for rendering when no substitute is found.
-            // Here we use PNG image output as an example.
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+            try
             {
-                DefaultFont = "Arial"
-            };
 
-            // Save the diagram with the specified options (uses the provided save rule)
-            diagram.Save("output.png", saveOptions);
+                // Configure custom font folder (replace with your actual path)
+                // The second parameter indicates whether to search subfolders recursively.
+                FontConfigs.SetFontFolder(@"C:\CustomFonts", true);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Set a global fallback font for any missing fonts during rendering.
+                FontConfigs.DefaultFontName = "Arial";
+
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Retrieve the list of installed system fonts using Aspose.Drawing.Text.
+                InstalledFontCollection installedFontCollection = new InstalledFontCollection();
+                HashSet<string> installedFontNames = new HashSet<string>(
+                    installedFontCollection.Families.Select(f => f.Name),
+                    StringComparer.OrdinalIgnoreCase);
+
+                // Enumerate fonts used in the diagram and report any that are not installed.
+                foreach (Font font in diagram.Fonts)
+                {
+                    if (!installedFontNames.Contains(font.Name))
+                    {
+                        Console.WriteLine($"Missing font detected: '{font.Name}'. It will be substituted with the default font '{FontConfigs.DefaultFontName}'.");
+                    }
+                }
+
+                // Prepare PDF save options and ensure the default font is set.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                {
+                    DefaultFont = FontConfigs.DefaultFontName
+                };
+
+                // Save the diagram to PDF, applying the font substitution.
+                diagram.Save("output.pdf", pdfOptions);
+
+                Console.WriteLine("Diagram saved successfully with font substitution.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

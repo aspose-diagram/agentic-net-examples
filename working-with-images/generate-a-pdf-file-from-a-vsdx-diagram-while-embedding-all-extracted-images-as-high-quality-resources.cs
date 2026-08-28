@@ -7,68 +7,92 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file (VSDX) and output PDF file paths
-        string inputPath = "input.vsdx";
-        string outputPath = "output.pdf";
+        // Expect two arguments: input VSDX path and output PDF path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <input.vsdx> <output.pdf>");
+            return;
+        }
 
-        // Validate input file existence
+        // Input diagram file path.
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        Diagram diagram;
+        // Output PDF file path.
+        string outputPath = args[1];
+        // Guard: ensure the output directory exists (create if missing).
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
         try
         {
-            // Load the Visio diagram
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            // Report loading errors
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+            // Load the Visio diagram from the VSDX file.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Iterate through all pages and shapes to locate image (foreign) shapes
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            // Iterate all pages and shapes to locate foreign (image) shapes.
+            foreach (Page page in diagram.Pages)
             {
-                // Identify foreign (image) shapes
-                if (shape.Type == TypeValue.Foreign)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Extract raw image data (byte array) from the shape
-                    byte[] imageData = shape.ForeignData.Value;
-
-                    // Output the size of each extracted image
-                    Console.WriteLine($"Extracted image from Shape ID {shape.ID}: {imageData?.Length ?? 0} bytes");
+                    // Identify image shapes by TypeValue.Foreign.
+                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
+                    {
+                        // Extract raw image bytes.
+                        byte[] imageBytes = shape.ForeignData.Value;
+                        // Log image extraction (size in bytes) – images will be embedded automatically in PDF.
+                        Console.WriteLine($"Extracted image from shape ID {shape.ID}: {imageBytes.Length} bytes");
+                    }
                 }
             }
-        }
 
-        // Configure PDF save options for high‑quality output
-        PdfSaveOptions pdfOptions = new PdfSaveOptions
-        {
-            // Ensure hidden pages are not exported (optional)
-            ExportHiddenPage = false,
-            // Set a default font to avoid missing‑glyph issues
-            DefaultFont = "Arial"
-        };
+            // Configure PDF save options.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                // Use a common fallback font.
+                DefaultFont = "Arial",
+                // Do not export hidden pages.
+                ExportHiddenPage = false
+                // AutoFitPageToDrawingContent property is unavailable in this version; omitted.
+            };
 
-        try
-        {
-            // Save the diagram as a PDF using the configured options
+            // Assign a custom page‑saving callback to log page processing.
+            pdfOptions.PageSavingCallback = new CustomPageSavingCallback();
+
+            // Save the diagram as a PDF using the configured options.
             diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"PDF successfully saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report saving errors
-            Console.Error.WriteLine($"Error saving PDF: {ex.Message}");
-            return;
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
+    }
+}
 
-        Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
+// Custom callback to receive page‑saving events during PDF export.
+class CustomPageSavingCallback : IPageSavingCallback
+{
+    // Called before a page starts saving.
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
+    }
+
+    // Called after a page has finished saving.
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1}");
+        // Continue processing remaining pages (default behavior).
+        args.HasMorePages = true;
     }
 }

@@ -10,38 +10,37 @@ class Program
         try
         {
 
-            // Input Visio file path
+            // Paths to the source Visio file and the output PDF
             string inputPath = "input.vsdx";
-            // Output PDF file path
             string outputPath = "output.pdf";
 
             // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            Diagram diagram = new Diagram(inputPath);
+
+            // Set print visibility of the "Confidential" layer to false on every page
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages to locate the 'Confidential' layer
-                foreach (Page page in diagram.Pages)
+                foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Access the layer collection of the current page
-                    foreach (Layer layer in page.PageSheet.Layers)
+                    if (layer.Name.Value == "Confidential")
                     {
-                        // Compare layer name (use .Value to get the string)
-                        if (layer.Name.Value == "Confidential")
-                        {
-                            // Set the print visibility to false
-                            layer.Print.Value = BOOL.False;
-                        }
+                        layer.Print.Value = BOOL.False;
                     }
                 }
-
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-                // Save the diagram as a PDF
-                diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine("PDF generated with 'Confidential' layer hidden from printing.");
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            pdfOptions.ExportHiddenPage = false;
+
+            // Save the diagram as a PDF
+            diagram.Save(outputPath, pdfOptions);
+
+            // Clean up
+            diagram.Dispose();
+
+            Console.WriteLine("Print‑ready PDF generated successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

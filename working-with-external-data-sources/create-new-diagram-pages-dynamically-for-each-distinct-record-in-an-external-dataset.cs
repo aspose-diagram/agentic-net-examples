@@ -1,6 +1,5 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using System.Data;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
@@ -9,49 +8,55 @@ class Program
 {
     static void Main()
     {
-        // Create a new empty diagram (lifecycle create)
-        Diagram diagram = new Diagram();
-
-        // Load external data (replace with real data source as needed)
+        // -------------------------------------------------
+        // 1. Load external data (example uses a DataTable)
+        // -------------------------------------------------
         DataTable externalData = GetExternalData();
 
-        // Determine distinct values for which pages will be created
-        var distinctKeys = new HashSet<string>();
+        // -------------------------------------------------
+        // 2. Create a new empty Visio diagram
+        // -------------------------------------------------
+        Diagram diagram = new Diagram(); // uses the default constructor
+
+        // -------------------------------------------------
+        // 3. For each distinct record, add a new page
+        // -------------------------------------------------
         foreach (DataRow row in externalData.Rows)
         {
-            distinctKeys.Add(row["Category"].ToString());
-        }
-
-        // Dynamically add a page for each distinct record
-        foreach (string key in distinctKeys)
-        {
-            // Add a new page to the diagram
+            // Create a new page
             Page newPage = new Page();
             diagram.Pages.Add(newPage);
 
-            // Set a meaningful name for the page
-            newPage.Name = key;
+            // Optionally set a meaningful name for the page
+            // (e.g., using a column called "Title" from the data row)
+            if (externalData.Columns.Contains("Title") && row["Title"] != DBNull.Value)
+            {
+                newPage.Name = row["Title"].ToString();
+            }
 
-            // Example: place a shape on the page (optional)
-            // diagram.AddShape(4.25, 5.5, "Rectangle", 0);
+            // Additional page customization can be done here,
+            // such as setting background, size, etc.
         }
 
-        // Save the diagram to a file (lifecycle save)
+        // -------------------------------------------------
+        // 4. Save the diagram to a file
+        // -------------------------------------------------
+        // Save as VDX (Visio 2003-2007 XML format)
         diagram.Save("DynamicPagesOutput.vdx", SaveFileFormat.Vdx);
     }
 
-    // Mock method to simulate retrieving external data
+    // Mock method to simulate retrieving external data.
+    // Replace this with actual data access logic (e.g., database query, CSV read, etc.).
     static DataTable GetExternalData()
     {
         DataTable table = new DataTable();
-        table.Columns.Add("Id", typeof(int));
-        table.Columns.Add("Category", typeof(string));
-        table.Columns.Add("Value", typeof(string));
+        table.Columns.Add("ID", typeof(int));
+        table.Columns.Add("Title", typeof(string));
 
-        table.Rows.Add(1, "Alpha", "A1");
-        table.Rows.Add(2, "Beta", "B1");
-        table.Rows.Add(3, "Alpha", "A2");
-        table.Rows.Add(4, "Gamma", "G1");
+        // Sample distinct records
+        table.Rows.Add(1, "Page One");
+        table.Rows.Add(2, "Page Two");
+        table.Rows.Add(3, "Page Three");
 
         return table;
     }

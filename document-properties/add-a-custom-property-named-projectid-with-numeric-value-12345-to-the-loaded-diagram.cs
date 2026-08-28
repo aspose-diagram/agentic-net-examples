@@ -10,18 +10,18 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load the existing Visio diagram
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
             // Create a new custom property
-            CustomProp projectIdProp = new CustomProp();
-            projectIdProp.Name = "ProjectId";
-            projectIdProp.PropType = PropType.Number;
-            projectIdProp.CustomValue.ValueString = "12345";
+            CustomProp customProp = new CustomProp();
+            customProp.Name = "ProjectId";
+            customProp.PropType = PropType.Number;
+            customProp.CustomValue.ValueString = "12345";
 
-            // Add the custom property to the diagram's custom properties collection
-            diagram.DocumentProps.CustomProps.Add(projectIdProp);
+            // Add the custom property to the document's custom properties collection
+            diagram.DocumentProps.CustomProps.Add(customProp);
 
             // Save the diagram with the new custom property
             string outputPath = "output.vsdx";

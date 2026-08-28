@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
@@ -12,23 +12,20 @@ class Program
             // Create a new diagram
             Diagram diagram = new Diagram();
 
-            // Use the first page (a new diagram contains one default page)
-            Page page = diagram.Pages[0];
+            // Add a new page to the diagram
+            Page page = new Page();
+            diagram.Pages.Add(page);
 
-            // Add a rectangle shape to the page
-            double pinX = 4.25;   // X coordinate of the shape's pin
-            double pinY = 5.5;    // Y coordinate of the shape's pin
-            string masterName = "Rectangle";
-            long shapeId = page.AddShape(pinX, pinY, masterName);
+            // Add a rectangle shape to the page (master name "Rectangle")
+            long shapeId = page.AddShape(4.25, 5.5, "Rectangle");
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Create a hyperlink that opens the default mail client
-            Hyperlink hyperlink = new Hyperlink();
-            hyperlink.Address.Value = "mailto:someone@example.com";
-            hyperlink.Description.Value = "Send email";
+            // Create a hyperlink that uses a mailto: address
+            Hyperlink mailLink = new Hyperlink();
+            mailLink.Address.Value = "mailto:someone@example.com";
 
             // Attach the hyperlink to the shape
-            shape.Hyperlinks.Add(hyperlink);
+            shape.Hyperlinks.Add(mailLink);
 
             // Save the diagram to a VSDX file
             diagram.Save("HyperlinkDiagram.vsdx", SaveFileFormat.Vsdx);

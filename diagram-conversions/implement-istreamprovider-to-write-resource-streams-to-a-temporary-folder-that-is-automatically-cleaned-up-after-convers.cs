@@ -1,88 +1,105 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class TempFolderStreamProvider : IStreamProvider
+namespace DiagramHtmlExport
 {
-    private readonly string _tempFolder;
-
-    public TempFolderStreamProvider()
+    // Implements IStreamProvider to write resources (images, CSS, etc.) to a temporary folder.
+    // The folder is deleted when Cleanup() is called after the conversion.
+    public class TempFolderStreamProvider : IStreamProvider
     {
-        // Create a unique temporary folder for this conversion
-        _tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(_tempFolder);
-    }
+        private string _tempFolder;
+        private readonly List<string> _createdFiles = new List<string>();
 
-    // Called by Aspose.Diagram when a resource stream is needed
-    public void InitStream(StreamProviderOptions options)
-    {
-        // Combine the temporary folder with the default path provided by the options
-        // DefaultPath is read‑only and contains the relative file name (e.g., "images/img1.png")
-        string filePath = Path.Combine(_tempFolder, options.DefaultPath);
-
-        // Ensure the directory for the file exists
-        string dir = Path.GetDirectoryName(filePath);
-        if (!Directory.Exists(dir))
-            Directory.CreateDirectory(dir);
-
-        // Assign a writable FileStream to the options
-        options.Stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
-    }
-
-    // Called after the resource has been written
-    public void CloseStream(StreamProviderOptions options)
-    {
-        options.Stream?.Dispose();
-        options.Stream = null;
-    }
-
-    // Cleanup method to delete the temporary folder after conversion
-    public void Cleanup()
-    {
-        if (Directory.Exists(_tempFolder))
+        // Creates the temporary folder on first use and opens a file stream for the resource.
+        public void InitStream(StreamProviderOptions options)
         {
+            if (string.IsNullOrEmpty(_tempFolder))
+            {
+                _tempFolder = Path.Combine(Path.GetTempPath(), "AsposeDiagramTemp_" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(_tempFolder);
+            }
+
+            // options.DefaultPath is read‑only; use it to build the file name.
+            string filePath = Path.Combine(_tempFolder, options.DefaultPath);
+            var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+            options.Stream = fileStream;
+            _createdFiles.Add(filePath);
+        }
+
+        // Closes the stream after the resource has been written.
+        public void CloseStream(StreamProviderOptions options)
+        {
+            options.Stream?.Dispose();
+        }
+
+        // Deletes all files and the temporary folder.
+        public void Cleanup()
+        {
+            foreach (var file in _createdFiles)
+            {
+                try
+                {
+                    if (File.Exists(file))
+                        File.Delete(file);
+                }
+                catch
+                {
+                    // Ignored – best‑effort cleanup.
+                }
+            }
+
             try
             {
-                Directory.Delete(_tempFolder, true);
+                if (!string.IsNullOrEmpty(_tempFolder) && Directory.Exists(_tempFolder))
+                    Directory.Delete(_tempFolder, true);
             }
             catch
             {
-                // Ignored – folder may be in use or already deleted
+                // Ignored – best‑effort cleanup.
             }
         }
     }
-}
 
-public class Program
-{
-    public static void Main()
+    public class Program
     {
-        try
+        public static void Main()
         {
+            try
+            {
 
-            // Load a diagram (replace with your actual file path)
-            string inputPath = "sample.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+                // Load a diagram (replace with your actual file path).
+                string inputPath = "sample.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // Configure HTML save options with the custom stream provider
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            TempFolderStreamProvider streamProvider = new TempFolderStreamProvider();
-            htmlOptions.StreamProvider = streamProvider;
+                // Configure HTML export options.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    // Example: export all pages as separate files.
+                    PageCount = int.MaxValue,
+                    SaveAsSingleFile = false
+                };
 
-            // Save the diagram to HTML; resources (images, CSS, etc.) will be written to the temp folder
-            string outputHtml = "output.html";
-            diagram.Save(outputHtml, htmlOptions);
+                // Assign the custom stream provider.
+                var provider = new TempFolderStreamProvider();
+                htmlOptions.StreamProvider = provider;
 
-            // Clean up temporary resources
-            streamProvider.Cleanup();
+                // Export to HTML.
+                string outputHtml = "output.html";
+                diagram.Save(outputHtml, htmlOptions);
 
-            Console.WriteLine($"Diagram exported to {outputHtml}");
+                // Clean up temporary resources.
+                provider.Cleanup();
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                Console.WriteLine($"Diagram exported to '{outputHtml}'. Temporary resources have been removed.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

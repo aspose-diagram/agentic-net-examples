@@ -5,128 +5,115 @@ using System.Text.Json;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramJsonMapper
-{
-    // Model representing a node in the hierarchical JSON
-    public class Node
-    {
-        public string Name { get; set; }
-        public List<Node> Children { get; set; } = new();
-    }
-
-    public class Program
+class Program
     {
         // Entry point
-        public static void Main(string[] args)
+        static void Main()
         {
-            // Validate arguments
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramJsonMapper <jsonFilePath> <outputVsdxPath>");
-                return;
-            }
-
-            string jsonPath = args[0];
-            string outputPath = args[1];
-
-            // Load and deserialize JSON
-            if (!File.Exists(jsonPath))
-            {
-                Console.WriteLine($"JSON file not found: {jsonPath}");
-                return;
-            }
-
-            string jsonContent = File.ReadAllText(jsonPath);
-            Node rootNode;
             try
             {
-                rootNode = JsonSerializer.Deserialize<Node>(jsonContent);
-                if (rootNode == null)
+
+                // Sample hierarchical JSON (could be read from a file)
+                string json = @"
+                [
+                    {
+                        ""name"": ""RootGroup"",
+                        ""children"": [
+                            { ""name"": ""ChildShape1"" },
+                            {
+                                ""name"": ""SubGroup"",
+                                ""children"": [
+                                    { ""name"": ""GrandChildShape1"" },
+                                    { ""name"": ""GrandChildShape2"" }
+                                ]
+                            },
+                            { ""name"": ""ChildShape2"" }
+                        ]
+                    }
+                ]";
+
+                // Parse JSON
+                JsonDocument doc = JsonDocument.Parse(json);
+                JsonElement rootArray = doc.RootElement;
+
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
+
+                // Ensure there is at least one page
+                Page page = diagram.Pages[0];
+
+                // Starting coordinates for the first root group
+                double startX = 2.0;
+                double startY = 2.0;
+                double horizontalSpacing = 3.0;
+                double verticalSpacing = 2.5;
+
+                // Process each top‑level element
+                int index = 0;
+                foreach (JsonElement element in rootArray.EnumerateArray())
                 {
-                    Console.WriteLine("Failed to deserialize JSON.");
-                    return;
+                    double offsetX = startX + index * horizontalSpacing;
+                    double offsetY = startY;
+
+                    // Recursively create shapes/groups
+                    CreateNode(page, element, offsetX, offsetY, horizontalSpacing, verticalSpacing);
+                    index++;
                 }
+
+                // Save the diagram as VSDX
+                diagram.Save("HierarchicalDiagram.vsdx", SaveFileFormat.Vsdx);
+
             }
-            catch (Exception ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.WriteLine($"JSON deserialization error: {ex.Message}");
-                return;
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
+    }
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Ensure there is at least one page
-            if (diagram.Pages.Count == 0)
-            {
-                diagram.Pages.Add(new Page(0));
-            }
-
-            Page page = diagram.Pages[0];
-
-            // Starting coordinates for the root shape
-            double startX = 2.0;
-            double startY = 2.0;
-
-            // Build the diagram recursively
-            Shape rootGroup = BuildGroup(diagram, page, rootNode, startX, startY, 0);
-
-            // Optionally, you could set the name of the root group
-            if (rootGroup != null)
-            {
-                rootGroup.Name = rootNode.Name ?? "RootGroup";
-            }
-
-            // Save the diagram as VSDX
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
-        }
-
-        // Recursively creates shapes and groups them according to the hierarchy
-        private static Shape BuildGroup(Diagram diagram, Page page, Node node, double posX, double posY, int depth)
+        // Recursively creates a shape (rectangle) for the current node,
+        // creates child shapes, and groups them together.
+        // Returns the ID of the created group (or the shape itself if no children).
+        static long CreateNode(Page page, JsonElement node, double posX, double posY,
+                               double hSpacing, double vSpacing)
         {
-            // Create a rectangle shape for the current node
-            // Using master name "Rectangle" which is available in the default stencil
-            long rectId = diagram.AddShape(posX, posY, "Rectangle", 0);
-            Shape rectShape = page.Shapes.GetShape((int)rectId);
-            rectShape.Name = node.Name ?? $"Node_{depth}";
-            // Add text to the rectangle
-            rectShape.Text.Value.Clear();
-            rectShape.Text.Value.Add(new Txt(node.Name ?? $"Node_{depth}"));
+            // Create a rectangle shape representing this node
+            // Width and height are fixed for simplicity
+            double shapeWidth = 1.5;
+            double shapeHeight = 0.8;
+            long shapeId = page.AddShape(posX, posY, shapeWidth, shapeHeight, "Rectangle");
+            Shape shape = page.Shapes.GetShape(shapeId);
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt(node.GetProperty("name").GetString() ?? "Unnamed"));
 
-            // If there are no children, return the rectangle shape itself
-            if (node.Children == null || node.Children.Count == 0)
+            // Check for children
+            if (node.TryGetProperty("children", out JsonElement children) && children.ValueKind == JsonValueKind.Array)
             {
-                return rectShape;
-            }
-
-            // Prepare a list to hold the parent rectangle and all child shapes/groups
-            List<Shape> groupMembers = new List<Shape> { rectShape };
-
-            // Layout children vertically with an offset
-            double childOffsetX = 2.5; // horizontal offset between parent and children
-            double childOffsetY = 2.0; // vertical spacing between sibling children
-            double currentY = posY;
-
-            foreach (Node child in node.Children)
-            {
-                // Recursively build child group/shape
-                Shape childShape = BuildGroup(diagram, page, child, posX + childOffsetX, currentY, depth + 1);
-                if (childShape != null)
+                List<Shape> childShapes = new List<Shape>();
+                int childIndex = 0;
+                foreach (JsonElement child in children.EnumerateArray())
                 {
-                    groupMembers.Add(childShape);
+                    // Position children below the parent, offset horizontally
+                    double childX = posX + childIndex * hSpacing;
+                    double childY = posY + vSpacing;
+
+                    long childId = CreateNode(page, child, childX, childY, hSpacing, vSpacing);
+                    Shape childShape = page.Shapes.GetShape(childId);
+                    childShapes.Add(childShape);
+                    childIndex++;
                 }
-                // Move down for the next sibling
-                currentY += childOffsetY;
+
+                // Include the parent shape in the group
+                List<Shape> groupMembers = new List<Shape> { shape };
+                groupMembers.AddRange(childShapes);
+
+                // Create the group
+                Shape groupShape = page.Shapes.Group(groupMembers.ToArray());
+
+                // Return the group's ID
+                return groupShape.ID;
             }
 
-            // Create a group containing the parent rectangle and its children
-            Shape groupShape = page.Shapes.Group(groupMembers.ToArray());
-
-            // Optionally, set the group's name
-            groupShape.Name = node.Name ?? $"Group_{depth}";
-
-            return groupShape;
+            // No children – return the shape's ID
+            return shapeId;
         }
     }
-}

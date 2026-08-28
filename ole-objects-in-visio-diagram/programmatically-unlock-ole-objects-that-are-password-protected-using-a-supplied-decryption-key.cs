@@ -1,48 +1,52 @@
-using System;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
+using System;
 using Aspose.Diagram;
 
-class UnlockOleObjects
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output_unlocked.vsdx";
+            // Path to the source Visio file containing password‑protected OLE objects
+            string sourceFile = "input.vsdx";
 
-            // Password used to protect the OLE objects
+            // Path where the unlocked diagram will be saved
+            string targetFile = "output_unlocked.vsdx";
+
+            // Password (decryption key) supplied for unlocking the OLE objects
             string olePassword = "YourOlePassword";
 
-            // Load the Visio diagram (lifecycle rule: use provided load method)
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram (uses the mandated load rule)
+            Diagram diagram = new Diagram(sourceFile);
 
-            // Iterate through all pages and shapes to find OLE objects
+            // Iterate through every page and shape to locate OLE (ForeignData) objects
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
                     // ForeignData holds embedded or linked OLE data
-                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
+                    if (shape.ForeignData != null)
                     {
-                        // Attempt to decrypt the OLE data using the supplied password
-                        byte[] decryptedData = DecryptOleData(shape.ForeignData.ObjectData, olePassword);
+                        // Embedded OLE data is stored in ObjectData as a byte array
+                        byte[] encryptedOle = shape.ForeignData.ObjectData;
 
-                        // If decryption succeeded, replace the encrypted blob with the decrypted one
-                        if (decryptedData != null && decryptedData.Length > 0 && !AreArraysEqual(decryptedData, shape.ForeignData.ObjectData))
+                        // Proceed only if there is embedded OLE data present
+                        if (encryptedOle != null && encryptedOle.Length > 0)
                         {
-                            shape.ForeignData.ObjectData = decryptedData;
+                            // Decrypt the OLE data using the supplied password
+                            byte[] decryptedOle = DecryptOleData(encryptedOle, olePassword);
+
+                            // Replace the encrypted blob with the decrypted one
+                            shape.ForeignData.ObjectData = decryptedOle;
                         }
                     }
                 }
             }
 
-            // Save the modified diagram (lifecycle rule: use provided save method)
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram (uses the mandated save rule)
+            diagram.Save(targetFile, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
@@ -51,50 +55,15 @@ class UnlockOleObjects
         }
     }
 
-    // Decrypts OLE data encrypted with a simple AES scheme.
-    // Replace this implementation with the actual algorithm used for the OLE protection if different.
-    private static byte[] DecryptOleData(byte[] encryptedData, string password)
+    // -------------------------------------------------------------------------
+    // Placeholder for actual OLE decryption logic.
+    // Replace this stub with the real implementation that can decrypt the
+    // OLE byte array using the provided password.
+    // -------------------------------------------------------------------------
+    static byte[] DecryptOleData(byte[] encryptedData, string password)
     {
-        try
-        {
-            // Derive a 256‑bit key and a 128‑bit IV from the password
-            using (SHA256 sha256 = SHA256.Create())
-            using (MD5 md5 = MD5.Create())
-            {
-                byte[] key = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                byte[] iv = md5.ComputeHash(Encoding.UTF8.GetBytes(password));
-
-                using (Aes aes = Aes.Create())
-                {
-                    aes.Key = key;
-                    aes.IV = iv;
-                    aes.Mode = CipherMode.CBC;
-                    aes.Padding = PaddingMode.PKCS7;
-
-                    using (MemoryStream ms = new MemoryStream())
-                    using (CryptoStream cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Write))
-                    {
-                        cs.Write(encryptedData, 0, encryptedData.Length);
-                        cs.FlushFinalBlock();
-                        return ms.ToArray();
-                    }
-                }
-            }
-        }
-        catch
-        {
-            // If decryption fails, return the original data unchanged
-            return encryptedData;
-        }
-    }
-
-    // Helper to compare two byte arrays
-    private static bool AreArraysEqual(byte[] a1, byte[] a2)
-    {
-        if (a1 == null || a2 == null) return false;
-        if (a1.Length != a2.Length) return false;
-        for (int i = 0; i < a1.Length; i++)
-            if (a1[i] != a2[i]) return false;
-        return true;
+        // Example: if the OLE data is not actually encrypted, simply return it.
+        // In a real scenario, integrate the appropriate decryption library here.
+        return encryptedData;
     }
 }

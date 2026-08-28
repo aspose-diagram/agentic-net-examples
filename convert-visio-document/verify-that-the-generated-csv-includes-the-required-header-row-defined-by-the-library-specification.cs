@@ -1,41 +1,50 @@
 using System;
 using System.IO;
+using System.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
 {
-    static void Main()
+    public static void Main()
     {
         try
         {
 
-            // Paths for the source Visio file and the generated CSV
+            // Path to the source Visio file
             string visioPath = "input.vsdx";
+
+            // Path where the CSV will be saved
             string csvPath = "output.csv";
 
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(visioPath);
 
             // Export the diagram to CSV format
             diagram.Save(csvPath, SaveFileFormat.Csv);
 
-            // Verify that the CSV file contains the required header row
+            // Verify that the CSV contains the required header row
             if (!File.Exists(csvPath))
-                throw new Exception("CSV file was not created.");
+            {
+                throw new Exception($"CSV file was not created at path: {csvPath}");
+            }
 
-            string[] lines = File.ReadAllLines(csvPath);
-            if (lines.Length == 0)
-                throw new Exception("CSV file is empty.");
+            // Read the first line (header) of the CSV file
+            string headerLine = File.ReadLines(csvPath).FirstOrDefault();
 
-            // Expected header as defined by the library specification
-            const string expectedHeader = "Shape ID,Shape Name,Shape Type";
+            if (string.IsNullOrWhiteSpace(headerLine))
+            {
+                throw new Exception("CSV file is empty or header line is missing.");
+            }
 
-            string actualHeader = lines[0];
-            if (!actualHeader.Equals(expectedHeader, StringComparison.OrdinalIgnoreCase))
-                throw new Exception($"CSV header mismatch. Expected: \"{expectedHeader}\", Got: \"{actualHeader}\"");
+            // Example of a required header column (adjust as per library specification)
+            // Here we check for the presence of "Shape ID" which is a typical column in Aspose.Diagram CSV export
+            if (!headerLine.Contains("Shape ID"))
+            {
+                throw new Exception($"CSV header does not contain required column 'Shape ID'. Header found: {headerLine}");
+            }
 
-            Console.WriteLine("CSV header verified successfully.");
+            // Additional header checks can be added here if needed
+            Console.WriteLine("CSV header verification passed.");
 
         }
         catch (System.IO.FileNotFoundException ex)

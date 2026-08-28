@@ -1,76 +1,55 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Input Visio file and output PDF paths
-            string visioPath = "input.vsdx";
-            string pdfPath = "output.pdf";
-
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(visioPath))
-            {
-                // Assume we validate the first page; extend as needed for multiple pages
-                Page page = diagram.Pages[0];
-
-                // Retrieve page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Determine original orientation
-                string originalOrientation = pageWidth > pageHeight ? "Landscape" : "Portrait";
-
-                // Save diagram to PDF
-                Aspose.Diagram.Saving.PdfSaveOptions pdfOptions = new Aspose.Diagram.Saving.PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                diagram.Save(pdfPath, pdfOptions);
-            }
-
-            // Load the generated PDF using Aspose.Pdf (fully qualified to avoid namespace conflict)
-            Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document(pdfPath);
             try
             {
-                // Validate orientation for each PDF page
-                for (int i = 1; i <= pdfDoc.Pages.Count; i++) // Aspose.Pdf pages are 1‑based
+
+                // Input Visio file path (adjust as needed)
+                string visioPath = "input.vsdx";
+                // Output PDF file path
+                string pdfPath = "output.pdf";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(visioPath);
+
+                // Validate page orientation by checking width-to-height ratios
+                foreach (Page page in diagram.Pages)
                 {
-                    var pageInfo = pdfDoc.Pages[i].PageInfo;
-                    double pdfWidth = pageInfo.Width;
-                    double pdfHeight = pageInfo.Height;
+                    double width = page.PageSheet.PageProps.PageWidth.Value;   // inches
+                    double height = page.PageSheet.PageProps.PageHeight.Value; // inches
 
-                    string pdfOrientation = pdfWidth > pdfHeight ? "Landscape" : "Portrait";
-
-                    // Compare with original orientation (assuming single‑page Visio)
-                    if (pdfOrientation != (pdfWidth > pdfHeight ? "Landscape" : "Portrait"))
+                    if (height == 0)
                     {
-                        // This condition will never be true; kept for logical symmetry
+                        throw new Exception($"Page '{page.Name}' has zero height, cannot compute ratio.");
                     }
 
-                    // If orientation does not match the original Visio page orientation, report error
-                    if (pdfOrientation != (pdfWidth > pdfHeight ? "Landscape" : "Portrait"))
-                    {
-                        throw new Exception($"Page {i} orientation mismatch: Visio was {pdfOrientation}, PDF is {pdfOrientation}");
-                    }
+                    double ratio = width / height;
 
-                    // Output validation result
-                    Console.WriteLine($"Page {i}: Orientation verified as {pdfOrientation} (Width={pdfWidth}, Height={pdfHeight})");
+                    // Determine orientation based on ratio
+                    string orientation = ratio > 1 ? "Landscape" : "Portrait";
+
+                    Console.WriteLine($"Page '{page.Name}': Width={width}in, Height={height}in, Ratio={ratio:F2} => {orientation}");
                 }
-            }
-            finally
-            {
-                pdfDoc.Dispose();
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial"; // fallback font for missing characters
+                pdfOptions.ExportHiddenPage = false; // do not export hidden pages
+
+                // Save the diagram as PDF
+                diagram.Save(pdfPath, pdfOptions);
+
+                Console.WriteLine($"Diagram successfully saved to PDF at '{pdfPath}'.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

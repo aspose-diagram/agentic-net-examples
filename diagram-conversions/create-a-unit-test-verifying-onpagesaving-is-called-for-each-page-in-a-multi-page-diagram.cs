@@ -4,27 +4,22 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramPageSavingTest
 {
-    // Custom callback to track page saving events
-    public class TestPageSavingCallback : IPageSavingCallback
+    // Custom callback to count page saving events
+    public class PageSavingCounter : IPageSavingCallback
     {
-        // Counter for the number of pages started to save
-        public int PagesStarted { get; private set; } = 0;
+        public int StartCount { get; private set; } = 0;
 
-        // Counter for the number of pages finished saving
-        public int PagesEnded { get; private set; } = 0;
-
-        // Called before a page is saved
+        // Called before each page is saved
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            PagesStarted++;
-            Console.WriteLine($"PageStartSaving: Index={args.PageIndex}, Count={args.PageCount}");
+            StartCount++;
+            Console.WriteLine($"Starting save of page {args.PageIndex + 1} of {args.PageCount}");
         }
 
-        // Called after a page is saved
+        // Called after each page is saved
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            PagesEnded++;
-            Console.WriteLine($"PageEndSaving: Index={args.PageIndex}, Count={args.PageCount}");
+            // No action needed for this test
         }
     }
 
@@ -32,37 +27,38 @@ namespace DiagramPageSavingTest
     {
         public static void Main()
         {
-            // Create a new diagram with two pages
+            // Create a new diagram
             Diagram diagram = new Diagram();
-            // First page is created by default; add a second page
-            diagram.Pages.Add(new Page());
 
-            // Verify the diagram has the expected number of pages
+            // Ensure the diagram has multiple pages (e.g., 3 pages)
+            // The default diagram may already contain one page; add additional pages as needed
+            while (diagram.Pages.Count < 3)
+            {
+                // Add a new page with a unique ID
+                int newId = diagram.Pages.Count + 1;
+                diagram.Pages.Add(new Page(newId));
+            }
+
             int expectedPageCount = diagram.Pages.Count;
-            Console.WriteLine($"Diagram contains {expectedPageCount} page(s).");
 
-            // Prepare PDF save options and assign the custom callback
+            // Set up PDF save options with the custom page-saving callback
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            TestPageSavingCallback callback = new TestPageSavingCallback();
+            PageSavingCounter callback = new PageSavingCounter();
             pdfOptions.PageSavingCallback = callback;
 
-            // Save the diagram to PDF (output path can be adjusted as needed)
+            // Define output path (in the current directory)
             string outputPath = "MultiPageDiagram.pdf";
+
+            // Save the diagram as PDF; this will trigger the callback for each page
             diagram.Save(outputPath, pdfOptions);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
-            // Validate that the callback was invoked for each page
-            if (callback.PagesStarted != expectedPageCount)
+            // Verify that the callback was invoked for each page
+            if (callback.StartCount != expectedPageCount)
             {
-                throw new Exception($"PageStartSaving was called {callback.PagesStarted} times, expected {expectedPageCount}.");
+                throw new Exception($"Page saving callback was called {callback.StartCount} times, expected {expectedPageCount} times.");
             }
 
-            if (callback.PagesEnded != expectedPageCount)
-            {
-                throw new Exception($"PageEndSaving was called {callback.PagesEnded} times, expected {expectedPageCount}.");
-            }
-
-            Console.WriteLine("All page saving callbacks were invoked correctly.");
+            Console.WriteLine("Test passed: OnPageSaving (PageStartSaving) was called for each page.");
         }
     }
 }

@@ -2,45 +2,38 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class RetrieveGradientFill
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (index 0)
-            Page page = diagram.Pages[0];
+            // Access a specific shape; here we take the first shape on the first page
+            // Adjust the indices as needed for your scenario
+            Shape shape = diagram.Pages[0].Shapes[1];
 
-            // Retrieve a shape by its ID (example uses ID = 1)
-            Shape shape = page.Shapes.GetShape(1);
-
-            // Get the Fill property of the shape
+            // Retrieve the Fill object of the shape
             Fill fill = shape.Fill;
 
-            // Obtain the GradientFill object associated with the shape's fill
-            GradientFill gradient = fill.GradientFill;
+            // Obtain the GradientFill object from the Fill
+            GradientFill gradientFill = fill.GradientFill;
 
-            // Example: check whether the gradient is enabled
-            if (gradient.GradientEnabled.Value == BOOL.True)
+            // Example: output whether the gradient is enabled
+            if (gradientFill != null && gradientFill.GradientEnabled != null)
             {
-                Console.WriteLine("Gradient fill is enabled for this shape.");
+                Console.WriteLine("Gradient Enabled: " + gradientFill.GradientEnabled.Value);
             }
             else
             {
-                Console.WriteLine("Gradient fill is not enabled for this shape.");
+                Console.WriteLine("No gradient fill information available.");
             }
 
-            // Iterate through gradient stops and display their positions and colors
-            foreach (GradientStop stop in gradient.GradientStops)
-            {
-                double position = stop.Position.Value; // position (0 to 1)
-                string colorHex = stop.Color.Value;   // color as hex string, e.g., "#FF0000"
-                Console.WriteLine($"Stop at {position} with color {colorHex}");
-            }
+            // (Optional) Save the diagram if any modifications were made
+            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

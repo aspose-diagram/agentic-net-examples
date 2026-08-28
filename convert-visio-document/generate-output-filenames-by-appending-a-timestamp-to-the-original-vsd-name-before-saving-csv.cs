@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,20 +10,21 @@ class Program
         {
 
             // Path to the source VSD file
-            string inputVsd = "sample.vsd";
+            string inputVsdPath = @"C:\Diagrams\sample.vsd";
 
-            // Load the diagram (uses Aspose.Diagram constructor)
-            Diagram diagram = new Diagram(inputVsd);
+            // Load the diagram (creation and loading)
+            Diagram diagram = new Diagram(inputVsdPath);
 
-            // Create a timestamp string (e.g., 20231130153045)
+            // Build a timestamp string (e.g., 20230820153045)
             string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
 
-            // Build the output CSV filename by inserting the timestamp before the extension
-            string baseName = Path.GetFileNameWithoutExtension(inputVsd);
-            string outputCsv = $"{baseName}_{timestamp}.csv";
+            // Create the output CSV filename by inserting the timestamp before the extension
+            string directory = Path.GetDirectoryName(inputVsdPath);
+            string baseName = Path.GetFileNameWithoutExtension(inputVsdPath);
+            string outputCsvPath = Path.Combine(directory, $"{baseName}_{timestamp}.csv");
 
-            // Save the diagram as CSV using the Save method rule
-            diagram.Save(outputCsv, SaveFileFormat.Csv);
+            // Save the diagram as CSV using the provided Save(string, SaveFileFormat) method
+            diagram.Save(outputCsvPath, SaveFileFormat.Csv);
 
         }
         catch (System.IO.FileNotFoundException ex)

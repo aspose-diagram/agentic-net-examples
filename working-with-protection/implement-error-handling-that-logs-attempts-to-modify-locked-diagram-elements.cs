@@ -1,111 +1,109 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Path to the source Visio file
-    private const string InputPath = "input.vsdx";
-    // Path to the output Visio file after attempted modifications
-    private const string OutputPath = "output.vsdx";
-
-    static void Main()
+    static void Main(string[] args)
     {
-        // Verify that the input file exists before attempting to load it
-        if (!File.Exists(InputPath))
-        {
-            Console.Error.WriteLine($"File not found: {InputPath}");
-            return;
-        }
+        // Input and output file paths (adjust as needed)
+        string inputPath = "input.vsdx";
+        string outputPath = "output_modified.vsdx";
 
-        Diagram diagram;
         try
         {
-            // Load the diagram from the specified file
-            diagram = new Diagram(InputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Iterate through all pages and shapes to apply modifications
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                // Attempt to modify the shape only if it is not locked
-                ModifyShapeIfUnlocked(shape);
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    AttemptModifyShape(shape);
+                }
             }
-        }
 
-        try
-        {
-            // Save the diagram (even if no changes were made)
-            diagram.Save(OutputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+            // Log any unexpected errors
+            Console.WriteLine($"Error: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Tries to modify a shape only if it is not locked.
-    /// Logs any attempt to modify a locked attribute.
-    /// </summary>
-    /// <param name="shape">The shape to process.</param>
-    private static void ModifyShapeIfUnlocked(Shape shape)
+    // Tries to modify a shape but respects its protection settings
+    static void AttemptModifyShape(Shape shape)
     {
-        // Example modification: increase width by 1 inch
-        if (shape.Protection.LockWidth.Value == BOOL.True)
+        // Check for movement lock
+        if (shape.Protection.LockMoveX.Value == BOOL.True ||
+            shape.Protection.LockMoveY.Value == BOOL.True)
         {
-            Console.WriteLine($"[Lock] Shape ID {shape.ID} - Width is locked. Modification skipped.");
+            Console.WriteLine($"Shape ID {shape.ID} is locked from moving. Skipping move operation.");
         }
         else
         {
-            try
-            {
-                double originalWidth = shape.XForm.Width.Value;
-                shape.XForm.Width.Value = originalWidth + 1.0;
-                Console.WriteLine($"[Modify] Shape ID {shape.ID} - Width changed from {originalWidth} to {shape.XForm.Width.Value}.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Error] Shape ID {shape.ID} - Failed to modify width: {ex.Message}");
-            }
+            // Example move: shift shape by 0.5 inches right and up
+            shape.Move(0.5, 0.5);
+            Console.WriteLine($"Moved shape ID {shape.ID}.");
         }
 
-        // Example modification: change line color to red (no specific lock property exists for line)
-        try
+        // Check for size lock
+        if (shape.Protection.LockWidth.Value == BOOL.True ||
+            shape.Protection.LockHeight.Value == BOOL.True)
         {
-            shape.Line.LineColor.Value = "#FF0000";
-            Console.WriteLine($"[Modify] Shape ID {shape.ID} - Line color set to red.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Error] Shape ID {shape.ID} - Failed to set line color: {ex.Message}");
-        }
-
-        // Example modification: move shape horizontally by 0.5 inch
-        if (shape.Protection.LockMoveX.Value == BOOL.True)
-        {
-            Console.WriteLine($"[Lock] Shape ID {shape.ID} - Horizontal move is locked. Modification skipped.");
+            Console.WriteLine($"Shape ID {shape.ID} is locked from resizing. Skipping resize operation.");
         }
         else
         {
-            try
-            {
-                double originalPinX = shape.XForm.PinX.Value;
-                shape.XForm.PinX.Value = originalPinX + 0.5;
-                Console.WriteLine($"[Modify] Shape ID {shape.ID} - PinX moved from {originalPinX} to {shape.XForm.PinX.Value}.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Error] Shape ID {shape.ID} - Failed to move shape: {ex.Message}");
-            }
+            // Example resize: increase width and height by 0.2 inches
+            shape.SetWidth(shape.XForm.Width.Value + 0.2);
+            shape.SetHeight(shape.XForm.Height.Value + 0.2);
+            Console.WriteLine($"Resized shape ID {shape.ID}.");
+        }
+
+        // Check for rotation lock
+        if (shape.Protection.LockRotate.Value == BOOL.True)
+        {
+            Console.WriteLine($"Shape ID {shape.ID} is locked from rotating. Skipping rotation operation.");
+        }
+        else
+        {
+            // Example rotation: rotate 15 degrees (converted to radians)
+            double angleDeg = 15;
+            double angleRad = (Math.PI / 180) * angleDeg;
+            shape.SetAngle(angleRad);
+            Console.WriteLine($"Rotated shape ID {shape.ID} by {angleDeg} degrees.");
+        }
+
+        // Check for text edit lock
+        if (shape.Protection.LockTextEdit.Value == BOOL.True)
+        {
+            Console.WriteLine($"Shape ID {shape.ID} is locked from text editing. Skipping text update.");
+        }
+        else
+        {
+            // Example text update
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt($"Updated at {DateTime.Now}"));
+            Console.WriteLine($"Updated text of shape ID {shape.ID}.");
+        }
+
+        // Check for delete lock (prevent deletion)
+        if (shape.Protection.LockDelete.Value == BOOL.True)
+        {
+            Console.WriteLine($"Shape ID {shape.ID} is locked from deletion. Skipping delete operation.");
+        }
+        else
+        {
+            // Example delete flag (mark as deleted)
+            shape.Del = BOOL.True;
+            Console.WriteLine($"Marked shape ID {shape.ID} as deleted.");
         }
     }
 }

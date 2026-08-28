@@ -1,82 +1,66 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expected arguments: inputVisioPath shapeId outputVisioPath
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <inputVisioPath> <shapeId> <outputVisioPath>");
-            return;
-        }
-
-        // Assign input and output paths
-        string inputPath = args[0];
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Parse shape ID (may throw if not a number)
-        long shapeIdLong = long.Parse(args[1]);
-        string outputPath = args[2];
-
         try
         {
-            // Load the diagram from the input file
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the shape with the specified ID across all pages
-            Shape targetShape = null;
-            foreach (Page page in diagram.Pages)
-            {
-                // GetShape expects an int ID; cast safely
-                int shapeId = (int)shapeIdLong;
-                targetShape = page.Shapes.GetShape(shapeId);
-                if (targetShape != null)
-                    break;
-            }
+            // Identify the target shape (example: shape with ID = 5)
+            // You can also locate by name using shape.NameU or other criteria.
+            long targetShapeId = 5;
+            // Access the first page (adjust index if needed)
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes.GetShape(targetShapeId);
 
-            if (targetShape == null)
+            if (shape == null)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeIdLong} not found.");
+                Console.WriteLine($"Shape with ID {targetShapeId} not found.");
                 return;
             }
 
-            // Remove all protection locks from the shape
-            targetShape.Protection.LockAspect.Value = BOOL.False;
-            targetShape.Protection.LockBegin.Value = BOOL.False;
-            // LockCalcWH is not a valid property; omitted per API rules
-            targetShape.Protection.LockCrop.Value = BOOL.False;
-            targetShape.Protection.LockCustProp.Value = BOOL.False;
-            targetShape.Protection.LockDelete.Value = BOOL.False;
-            targetShape.Protection.LockEnd.Value = BOOL.False;
-            targetShape.Protection.LockFormat.Value = BOOL.False;
-            targetShape.Protection.LockFromGroupFormat.Value = BOOL.False;
-            targetShape.Protection.LockGroup.Value = BOOL.False;
-            targetShape.Protection.LockHeight.Value = BOOL.False;
-            targetShape.Protection.LockMoveX.Value = BOOL.False;
-            targetShape.Protection.LockMoveY.Value = BOOL.False;
-            targetShape.Protection.LockRotate.Value = BOOL.False;
-            targetShape.Protection.LockSelect.Value = BOOL.False;
-            targetShape.Protection.LockTextEdit.Value = BOOL.False;
-            targetShape.Protection.LockThemeColors.Value = BOOL.False;
-            targetShape.Protection.LockThemeEffects.Value = BOOL.False;
-            targetShape.Protection.LockVtxEdit.Value = BOOL.False;
-            targetShape.Protection.LockWidth.Value = BOOL.False;
+            // Remove protection by setting all lock properties to FALSE
+            shape.Protection.LockAspect.Value = BOOL.False;
+            shape.Protection.LockBegin.Value = BOOL.False;
+            shape.Protection.LockCalcWH.Value = BOOL.False;
+            shape.Protection.LockCrop.Value = BOOL.False;
+            shape.Protection.LockCustProp.Value = BOOL.False;
+            shape.Protection.LockDelete.Value = BOOL.False;
+            shape.Protection.LockEnd.Value = BOOL.False;
+            shape.Protection.LockFormat.Value = BOOL.False;
+            shape.Protection.LockFromGroupFormat.Value = BOOL.False;
+            shape.Protection.LockGroup.Value = BOOL.False;
+            shape.Protection.LockHeight.Value = BOOL.False;
+            shape.Protection.LockMoveX.Value = BOOL.False;
+            shape.Protection.LockMoveY.Value = BOOL.False;
+            shape.Protection.LockRotate.Value = BOOL.False;
+            shape.Protection.LockSelect.Value = BOOL.False;
+            shape.Protection.LockTextEdit.Value = BOOL.False;
+            shape.Protection.LockThemeColors.Value = BOOL.False;
+            shape.Protection.LockThemeEffects.Value = BOOL.False;
+            shape.Protection.LockVtxEdit.Value = BOOL.False;
+            shape.Protection.LockWidth.Value = BOOL.False;
 
-            // Save the modified diagram to the output path
+            // Optionally, also clear the deletion flag if it was set
+            shape.Del = BOOL.False;
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Protection removed and diagram saved successfully.");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

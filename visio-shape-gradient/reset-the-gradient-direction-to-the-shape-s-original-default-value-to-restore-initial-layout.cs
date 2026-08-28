@@ -1,42 +1,49 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path to the output Visio file
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Paths for input and output Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram from the input file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Check if the shape uses a gradient fill (FillPattern value 25)
+                    if (shape.Fill != null && shape.Fill.FillPattern != null && shape.Fill.FillPattern.Value == 25)
                     {
-                        // Check if the shape has a gradient fill enabled
-                        if (shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
+                        // Ensure the gradient fill structure exists
+                        if (shape.Fill.GradientFill != null && shape.Fill.GradientFill.GradientDir != null)
                         {
-                            // Reset the gradient direction to the default (0)
+                            // Reset the gradient direction to the default value (0)
                             shape.Fill.GradientFill.GradientDir.Value = 0;
                         }
                     }
                 }
-
-                // Save the modified diagram, preserving the original format
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,34 +1,21 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect three arguments: input diagram path, CSV file path, output diagram path
-            if (args.Length != 3)
-            {
-                Console.WriteLine("Usage: DiagramEventImporter <inputDiagram.vsdx> <events.csv> <outputDiagram.vsdx>");
-                return;
-            }
 
-            string diagramPath = args[0];
-            string csvPath = args[1];
-            string outputPath = args[2];
+            // Paths – adjust as needed
+            string diagramPath = "input.vsdx";
+            string csvPath = "events.csv";
+            string outputPath = "output.vsdx";
 
-            // Load the diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(diagramPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
             // Verify CSV file exists
             if (!File.Exists(csvPath))
@@ -37,115 +24,82 @@ class Program
                 return;
             }
 
-            // Process each line of the CSV
-            // Expected CSV format: ShapeId,EventName,Formula
-            // Example: 5,EventDblClick,"CALLTHIS(\"ThisDocument.ShowAlert\")"
-            foreach (string line in File.ReadLines(csvPath))
+            // Read all lines from the CSV (expected format: ShapeId,EventName,Formula)
+            string[] lines = File.ReadAllLines(csvPath);
+            foreach (string rawLine in lines)
             {
-                // Skip empty lines
-                if (string.IsNullOrWhiteSpace(line))
+                // Skip empty or whitespace-only lines
+                if (string.IsNullOrWhiteSpace(rawLine))
                     continue;
 
-                // Split by comma, respecting possible quoted commas
-                string[] parts = SplitCsvLine(line);
+                // Split by comma – simple CSV parsing (no quoted fields handling)
+                string[] parts = rawLine.Split(',');
                 if (parts.Length < 3)
                 {
-                    Console.WriteLine($"Invalid CSV line (expected at least 3 columns): {line}");
+                    Console.WriteLine($"Invalid line (expected at least 3 columns): {rawLine}");
                     continue;
                 }
 
                 // Parse ShapeId
                 if (!long.TryParse(parts[0].Trim(), out long shapeId))
                 {
-                    Console.WriteLine($"Invalid ShapeId in line: {line}");
+                    Console.WriteLine($"Invalid ShapeId value: {parts[0]}");
                     continue;
                 }
 
                 string eventName = parts[1].Trim();
-                string formula = parts[2].Trim().Trim('\"'); // Remove surrounding quotes if present
+                string formula = parts[2].Trim();
 
-                // Retrieve the shape from the first page (adjust if needed)
-                Shape shape;
-                try
+                // Locate the shape by ID across all pages
+                Shape shape = null;
+                foreach (Page page in diagram.Pages)
                 {
-                    shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+                    shape = page.Shapes.GetShape(shapeId);
+                    if (shape != null)
+                        break;
                 }
-                catch (Exception)
+
+                if (shape == null)
                 {
-                    Console.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                    Console.WriteLine($"Shape with ID {shapeId} not found.");
                     continue;
                 }
 
-                // Apply the event formula based on the event name
-                try
+                // Apply the event formula to the appropriate event cell
+                switch (eventName)
                 {
-                    switch (eventName)
-                    {
-                        case "EventXFMod":
-                            shape.Event.EventXFMod.Ufe.F = formula;
-                            break;
-                        case "EventDblClick":
-                            shape.Event.EventDblClick.Ufe.F = formula;
-                            break;
-                        case "EventDrop":
-                            shape.Event.EventDrop.Ufe.F = formula;
-                            break;
-                        case "EventMultiDrop":
-                            shape.Event.EventMultiDrop.Ufe.F = formula;
-                            break;
-                        case "TheText":
-                            shape.Event.TheText.Ufe.F = formula;
-                            break;
-                        case "TheData":
-                            shape.Event.TheData.Ufe.F = formula;
-                            break;
-                        default:
-                            Console.WriteLine($"Unsupported event name '{eventName}' for shape ID {shapeId}.");
-                            break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error setting event for shape ID {shapeId}: {ex.Message}");
+                    case "EventXFMod":
+                        shape.Event.EventXFMod.Ufe.F = formula;
+                        break;
+                    case "EventDblClick":
+                        shape.Event.EventDblClick.Ufe.F = formula;
+                        break;
+                    case "EventDrop":
+                        shape.Event.EventDrop.Ufe.F = formula;
+                        break;
+                    case "EventMultiDrop":
+                        shape.Event.EventMultiDrop.Ufe.F = formula;
+                        break;
+                    case "TheText":
+                        shape.Event.TheText.Ufe.F = formula;
+                        break;
+                    case "TheData":
+                        shape.Event.TheData.Ufe.F = formula;
+                        break;
+                    default:
+                        Console.WriteLine($"Unsupported event name: {eventName}");
+                        break;
                 }
             }
 
             // Save the modified diagram
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to {outputPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
-            }
+            diagram.Save(outputPath, SaveFileFormat.Csv);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+
         }
-
-        // Simple CSV splitter handling commas inside double quotes
-        private static string[] SplitCsvLine(string line)
+        catch (System.IO.FileNotFoundException ex)
         {
-            var result = new System.Collections.Generic.List<string>();
-            bool inQuotes = false;
-            int start = 0;
-
-            for (int i = 0; i < line.Length; i++)
-            {
-                if (line[i] == '\"')
-                {
-                    inQuotes = !inQuotes;
-                }
-                else if (line[i] == ',' && !inQuotes)
-                {
-                    result.Add(line.Substring(start, i - start));
-                    start = i + 1;
-                }
-            }
-
-            // Add the last field
-            if (start <= line.Length)
-                result.Add(line.Substring(start));
-
-            return result.ToArray();
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

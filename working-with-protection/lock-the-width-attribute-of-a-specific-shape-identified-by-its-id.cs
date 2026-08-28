@@ -1,44 +1,55 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // Expect three arguments: input diagram path, shape ID, output diagram path
+            if (args.Length != 3)
+            {
+                Console.WriteLine("Usage: DiagramLockWidthExample <inputPath> <shapeId> <outputPath>");
+                return;
+            }
 
-            // Input and output Visio file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            string inputPath = args[0];
+            string shapeIdArg = args[1];
+            string outputPath = args[2];
 
-            // ID of the shape whose width should be locked
-            long targetShapeId = 5; // replace with the actual shape ID
+            if (!long.TryParse(shapeIdArg, out long shapeId))
+            {
+                Console.WriteLine("Invalid shape ID. It must be a numeric value.");
+                return;
+            }
 
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (adjust if needed)
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(targetShapeId);
-            if (shape == null)
+            // Find the shape by ID on any page
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                throw new Exception($"Shape with ID {targetShapeId} not found.");
+                // GetShape returns null if the ID is not present on this page
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape != null)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
+
+            if (targetShape == null)
+            {
+                Console.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
+                return;
             }
 
             // Lock the width attribute of the shape
-            shape.Protection.LockWidth.Value = BOOL.True;
+            targetShape.Protection.LockWidth.Value = BOOL.True;
 
-            // Save the modified diagram
+            // Save the modified diagram (preserving the original format)
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Shape width locked and diagram saved to '{outputPath}'.");
         }
     }
-}

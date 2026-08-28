@@ -1,53 +1,42 @@
+using System.IO;
 using System;
 using System.Diagnostics;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        // Create a new diagram (default constructor creates a diagram with one page)
+        Diagram diagram = new Diagram();
+
+        // Get the first page where rectangles will be added
+        Page page = diagram.Pages[0];
+
+        // Start measuring the time taken to add 100 rectangles
+        Stopwatch stopwatch = Stopwatch.StartNew();
+
+        // Add 100 rectangle shapes using the DrawRectangle method
+        for (int i = 0; i < 100; i++)
         {
-            try
-            {
+            // Example positioning; adjust as needed
+            double pinX = 1.0 + i * 0.1; // X coordinate of the rectangle's pin
+            double pinY = 1.0;          // Y coordinate of the rectangle's pin
+            double width = 0.5;         // Width of the rectangle (in inches)
+            double height = 0.3;        // Height of the rectangle (in inches)
 
-                // Create a new empty diagram
-                using (Diagram diagram = new Diagram())
-                {
-                    // Ensure there is at least one page
-                    if (diagram.Pages.Count == 0)
-                    {
-                        diagram.Pages.Add(new Page());
-                    }
+            // Draw the rectangle on the page
+            page.DrawRectangle(pinX, pinY, width, height);
+        }
 
-                    // Get the first page
-                    Page page = diagram.Pages[0];
+        // Stop the timer
+        stopwatch.Stop();
 
-                    // Start timing
-                    Stopwatch sw = Stopwatch.StartNew();
+        // Log the elapsed time in milliseconds
+        Console.WriteLine($"Time to add 100 rectangles: {stopwatch.ElapsedMilliseconds} ms");
 
-                    // Add 100 rectangle shapes
-                    for (int i = 0; i < 100; i++)
-                    {
-                        // Position shapes in a grid for simplicity
-                        double pinX = (i % 10) * 1.5 + 1; // 1 inch spacing
-                        double pinY = (i / 10) * 1.5 + 1;
-                        double width = 1.0;
-                        double height = 0.5;
-
-                        // Add a rectangle shape; returns the shape ID (long)
-                        page.AddShape(pinX, pinY, width, height, "Rectangle");
-                    }
-
-                    // Stop timing
-                    sw.Stop();
-
-                    // Log the duration in milliseconds
-                    Console.WriteLine($"Added 100 rectangle shapes in {sw.ElapsedMilliseconds} ms.");
-                }
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        // Optional: save the diagram to verify the shapes were added
+        diagram.Save("RectanglesDiagram.vsdx", SaveFileFormat.Vsdx);
     }
-    }
+}

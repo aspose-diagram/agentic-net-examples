@@ -9,22 +9,19 @@ class Program
         try
         {
 
-            // Path to the folder that contains additional TrueType fonts
-            string customFontFolder = @"C:\MyFonts";
-
-            // Set the folder for the whole Aspose.Diagram library (recursive scan of subfolders)
+            // Configure the custom font folder (search subfolders recursively)
+            string customFontFolder = @"C:\CustomFonts";
             FontConfigs.SetFontFolder(customFontFolder, true);
 
-            // Load a diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Optional: set a fallback font in case a required font is missing
+            FontConfigs.DefaultFontName = "Arial";
 
-            // Optionally, set the font directories for this specific diagram instance
-            diagram.FontDirs = new[] { customFontFolder };
+            // Load a Visio diagram (replace with your actual file path)
+            string inputPath = "sample.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Perform diagram processing here...
-
-            // Save the diagram (replace with your desired output path and format)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram to PDF to verify that the custom fonts are applied
+            diagram.Save("output.pdf", SaveFileFormat.Pdf);
 
         }
         catch (System.IO.FileNotFoundException ex)

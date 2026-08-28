@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -13,17 +13,23 @@ class Program
             // Load the diagram file
             Diagram diagram = new Diagram("input.vsdx");
 
+            // ---------- Render OLE object previews to images with custom DPI ----------
             // Create image save options for PNG format
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Set the desired resolution (dots per inch) for higher clarity
+            imgOptions.Resolution = 300f; // 300 DPI
 
-            // Set custom DPI (e.g., 300) to improve OLE object preview clarity
-            saveOptions.Resolution = 300f; // DPI
+            // Save the diagram (or specific pages) as PNG images using the custom DPI
+            diagram.Save("output_page.png", imgOptions);
 
-            // Optional: keep the original scale
-            saveOptions.Scale = 1.0f;
+            // ---------- Optionally, render to PDF with custom DPI ----------
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Apply the same DPI settings for PDF rendering
+            pdfOptions.HorizontalResolution = 300;
+            pdfOptions.VerticalResolution = 300;
 
-            // Save the rendered diagram (including OLE object previews) to an image file
-            diagram.Save("output.png", saveOptions);
+            // Save the diagram as PDF with the higher DPI settings
+            diagram.Save("output.pdf", pdfOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

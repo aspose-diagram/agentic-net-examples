@@ -3,91 +3,95 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VisioBatchCleaner
-{
-    // Entry point
-    static void Main(string[] args)
+class Program
     {
-        // Validate input folder
-        if (args.Length == 0)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Please provide the folder path containing Visio files.");
-            return;
-        }
-
-        string folderPath = args[0];
-        if (!Directory.Exists(folderPath))
-        {
-            Console.WriteLine($"Folder does not exist: {folderPath}");
-            return;
-        }
-
-        // Process each Visio file in the folder (non‑recursive)
-        foreach (string filePath in Directory.GetFiles(folderPath))
-        {
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            // Consider only supported Visio extensions
-            if (ext != ".vsd" && ext != ".vsdx" && ext != ".vsdm" &&
-                ext != ".vss" && ext != ".vssx" && ext != ".vssm" &&
-                ext != ".vst" && ext != ".vstx" && ext != ".vstm")
+            // Get folder path from command line or ask the user
+            string folderPath;
+            if (args.Length > 0 && Directory.Exists(args[0]))
             {
-                continue;
+                folderPath = args[0];
+            }
+            else
+            {
+                Console.Write("Enter the full path of the folder containing Visio files: ");
+                folderPath = Console.ReadLine()?.Trim() ?? string.Empty;
+                if (!Directory.Exists(folderPath))
+                {
+                    Console.WriteLine("Folder does not exist. Exiting.");
+                    return;
+                }
             }
 
-            try
-            {
-                // Load the diagram using the appropriate constructor
-                using (Diagram diagram = new Diagram(filePath))
-                {
-                    // Remove unused masters and other hidden information
-                    // Parameter 0 removes all hidden/unused data
-                    diagram.RemoveHiddenInformation(0);
+            // Supported Visio extensions
+            string[] extensions = new[] { "*.vsdx", "*.vsd", "*.vdx", "*.vssx", "*.vss", "*.vstx", "*.vst" };
 
-                    // Optional: also strip any VBA/macros that may be present
+            // Collect all files matching the extensions
+            var visioFiles = new System.Collections.Generic.List<string>();
+            foreach (var ext in extensions)
+            {
+                visioFiles.AddRange(Directory.GetFiles(folderPath, ext, SearchOption.AllDirectories));
+            }
+
+            if (visioFiles.Count == 0)
+            {
+                Console.WriteLine("No Visio files found in the specified folder.");
+                return;
+            }
+
+            Console.WriteLine($"Found {visioFiles.Count} Visio file(s). Processing...");
+
+            foreach (var filePath in visioFiles)
+            {
+                try
+                {
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Remove hidden information (including unused masters) and macros to reduce size
+                    diagram.RemoveHiddenInformation(0);
                     diagram.RemoveMacro();
 
-                    // Determine the save format based on original extension
-                    SaveFileFormat saveFormat = GetSaveFormatFromExtension(ext);
+                    // Determine the appropriate SaveFileFormat based on original extension
+                    SaveFileFormat format = GetSaveFileFormat(Path.GetExtension(filePath));
 
-                    // Overwrite the original file with cleaned content
-                    diagram.Save(filePath, saveFormat);
+                    // Overwrite the original file with the cleaned diagram
+                    diagram.Save(filePath, format);
+
+                    Console.WriteLine($"Processed: {filePath}");
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing '{filePath}': {ex.Message}");
+                }
+            }
 
-                Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
-            }
+            Console.WriteLine("Batch processing completed.");
         }
-    }
 
-    // Maps file extension to the corresponding Aspose.Diagram SaveFileFormat enum value
-    private static SaveFileFormat GetSaveFormatFromExtension(string extension)
-    {
-        switch (extension)
+        // Maps file extensions to the corresponding SaveFileFormat enum values
+        private static SaveFileFormat GetSaveFileFormat(string extension)
         {
-            case ".vsd":
-                return SaveFileFormat.Vsd;
-            case ".vsdx":
-                return SaveFileFormat.Vsdx;
-            case ".vsdm":
-                return SaveFileFormat.Vsdm;
-            case ".vss":
-                return SaveFileFormat.Vss;
-            case ".vssx":
-                return SaveFileFormat.Vssx;
-            case ".vssm":
-                return SaveFileFormat.Vssm;
-            case ".vst":
-                return SaveFileFormat.Vst;
-            case ".vstx":
-                return SaveFileFormat.Vstx;
-            case ".vstm":
-                return SaveFileFormat.Vstm;
-            default:
-                // Default to Vsd if unknown (should not happen due to earlier filter)
-                return SaveFileFormat.Vsd;
+            switch (extension.ToLowerInvariant())
+            {
+                case ".vsdx":
+                    return SaveFileFormat.Vsdx;
+                case ".vsd":
+                    return SaveFileFormat.Vsd;
+                case ".vdx":
+                    return SaveFileFormat.Vdx;
+                case ".vssx":
+                    return SaveFileFormat.Vssx;
+                case ".vss":
+                    return SaveFileFormat.Vss;
+                case ".vstx":
+                    return SaveFileFormat.Vstx;
+                case ".vst":
+                    return SaveFileFormat.Vst;
+                default:
+                    // Default to Vsdx if unknown
+                    return SaveFileFormat.Vsdx;
+            }
         }
     }
-}

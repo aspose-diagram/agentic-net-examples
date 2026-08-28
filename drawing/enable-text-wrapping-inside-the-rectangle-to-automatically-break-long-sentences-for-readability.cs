@@ -12,33 +12,37 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Add a new page to the diagram
-            Page page = new Page();
-            diagram.Pages.Add(page);
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Add a rectangle shape to the page (PinX, PinY, Width, Height, master name)
-            long rectShapeId = page.AddShape(5.0, 5.0, 3.0, 2.0, "Rectangle");
+            // Add a rectangle shape (master name "Rectangle") at position (5,5) inches with width and height of 4 inches
+            long rectId = page.AddShape(5.0, 5.0, 4.0, 4.0, "Rectangle");
 
             // Retrieve the shape object using its ID
-            Shape rectShape = page.Shapes.GetShape(rectShapeId);
+            Shape rectShape = page.Shapes.GetShape(rectId);
 
-            // Clear any existing text and add a long sentence
+            // Clear any existing text (optional)
             rectShape.Text.Value.Clear();
-            rectShape.Text.Value.Add(new Txt("This is a very long sentence that should automatically wrap inside the rectangle shape to improve readability."));
 
-            // Adjust margins to give the text some padding
-            double marginInches = 0.1; // 0.1 inch margin
-            rectShape.TextBlock.LeftMargin.Value = marginInches;
-            rectShape.TextBlock.RightMargin.Value = marginInches;
-            rectShape.TextBlock.TopMargin.Value = marginInches;
-            rectShape.TextBlock.BottomMargin.Value = marginInches;
+            // Add a long sentence that should wrap inside the rectangle
+            string longText = "This is a very long sentence that will automatically wrap inside the rectangle shape to improve readability and demonstrate text wrapping functionality.";
+            rectShape.Text.Value.Add(new Txt(longText));
 
-            // Save the diagram to a VSDX file
-            diagram.Save("WrappedTextDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Note: Text wrapping is automatically handled based on shape size; explicit Wrap cell is not exposed in the API.
+
+            // Optionally adjust margins so the text does not touch the shape borders
+            rectShape.TextBlock.LeftMargin.Value = 0.1;   // 0.1 inch left margin
+            rectShape.TextBlock.RightMargin.Value = 0.1;  // 0.1 inch right margin
+            rectShape.TextBlock.TopMargin.Value = 0.1;    // 0.1 inch top margin
+            rectShape.TextBlock.BottomMargin.Value = 0.1; // 0.1 inch bottom margin
+
+            // Save the diagram as a PNG image to verify the result
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            diagram.Save("WrappedRectangle.png", saveOptions);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

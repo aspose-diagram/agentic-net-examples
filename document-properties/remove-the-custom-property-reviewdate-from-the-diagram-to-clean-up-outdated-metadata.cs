@@ -1,47 +1,54 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Path where the modified file will be saved
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
+
+                // Input Visio file path (modify as needed)
+                string inputPath = "input.vsdx";
+                // Output Visio file path after removal of the custom property
+                string outputPath = "output_cleaned.vsdx";
+
+                // Load the diagram from the file
+                Diagram diagram = new Diagram(inputPath);
+
                 // Access the collection of custom properties
                 var customProps = diagram.DocumentProps.CustomProps;
 
-                // Find and remove the custom property named "ReviewDate"
-                for (int i = customProps.Count - 1; i >= 0; i--)
+                // Find the custom property named "ReviewDate"
+                CustomProp? reviewDateProp = null;
+                foreach (CustomProp prop in customProps)
                 {
-                    var prop = customProps[i];
                     if (prop.Name == "ReviewDate")
                     {
-                        customProps.Remove(prop);
-                        Console.WriteLine("Removed custom property 'ReviewDate'.");
+                        reviewDateProp = prop;
                         break;
                     }
+                }
+
+                // If the property exists, remove it from the collection
+                if (reviewDateProp != null)
+                {
+                    customProps.Remove(reviewDateProp);
+                    Console.WriteLine("Custom property 'ReviewDate' removed.");
+                }
+                else
+                {
+                    Console.WriteLine("Custom property 'ReviewDate' not found; no changes made.");
                 }
 
                 // Save the updated diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved to '{outputPath}'.");
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

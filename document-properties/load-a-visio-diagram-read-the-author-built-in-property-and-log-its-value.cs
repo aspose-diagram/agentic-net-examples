@@ -9,17 +9,18 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            var diagram = new Diagram("input.vsdx"); // replace with your file path
+            // Path to the Visio file
+            string filePath = "input.vsdx";
 
-            // Read the built‑in "Author" property (mapped to Creator)
-            string author = diagram.DocumentProps.Creator;
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(filePath))
+            {
+                // Read the built‑in Author (Creator) property
+                string author = diagram.DocumentProps.Creator;
 
-            // Log the author value
-            Console.WriteLine($"Author: {author}");
-
-            // Clean up resources
-            diagram.Dispose();
+                // Log the author value
+                Console.WriteLine($"Author: {author}");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

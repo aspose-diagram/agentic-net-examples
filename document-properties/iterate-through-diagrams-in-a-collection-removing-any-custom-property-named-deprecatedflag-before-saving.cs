@@ -1,51 +1,63 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Define the input diagram file paths.
-                string[] diagramPaths = new string[]
-                {
-                    @"C:\Diagrams\Diagram1.vsdx",
-                    @"C:\Diagrams\Diagram2.vsdx",
-                    // Add more paths as needed.
-                };
+                // Input folder containing Visio files
+                string inputFolder = @"C:\Visio\Input";
+                // Output folder for processed files
+                string outputFolder = @"C:\Visio\Output";
 
-                // Process each diagram.
-                foreach (string inputPath in diagramPaths)
+                // Ensure output directory exists
+                if (!Directory.Exists(outputFolder))
                 {
-                    // Load the diagram from file.
-                    Diagram diagram = new Diagram(inputPath);
+                    Directory.CreateDirectory(outputFolder);
+                }
 
-                    // Remove any custom property named "DeprecatedFlag".
+                // Get all Visio files (VSDX) in the input folder
+                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+
+                foreach (string filePath in diagramFiles)
+                {
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Access custom properties collection
                     var customProps = diagram.DocumentProps.CustomProps;
-                    // Iterate backwards to safely remove items while iterating.
+
+                    // Iterate backwards to safely remove items
                     for (int i = customProps.Count - 1; i >= 0; i--)
                     {
                         var prop = customProps[i];
+                        // Remove property named "DeprecatedFlag"
                         if (prop.Name == "DeprecatedFlag")
                         {
                             customProps.Remove(prop);
                         }
                     }
 
-                    // Define the output path (overwrite the original file in this example).
-                    string outputPath = inputPath; // Change if you want a different location.
+                    // Prepare output file path
+                    string fileName = Path.GetFileName(filePath);
+                    string outputPath = Path.Combine(outputFolder, fileName);
 
-                    // Save the modified diagram using the appropriate SaveFileFormat.
+                    // Save the modified diagram
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
+                Console.WriteLine("Processing completed.");
+
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (System.IO.DirectoryNotFoundException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
             }
     }
     }

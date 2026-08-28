@@ -6,38 +6,68 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Determine the folder to process; use the first argument or the current directory.
-            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+            // Determine the folder to process
+            string folderPath;
+            if (args.Length > 0 && Directory.Exists(args[0]))
+            {
+                folderPath = args[0];
+            }
+            else
+            {
+                Console.Write("Enter the full path of the folder containing Visio files: ");
+                folderPath = Console.ReadLine();
+                if (!Directory.Exists(folderPath))
+                {
+                    Console.WriteLine("Folder does not exist. Exiting.");
+                    return;
+                }
+            }
 
-            // Generate a uniform BatchId for this run.
-            string batchId = Guid.NewGuid().ToString();
-
-            // Process all Visio files with .vsdx extension in the folder.
-            string[] visioFiles = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
-
+            // Get all Visio files (common extensions) in the folder
+            string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
             foreach (string filePath in visioFiles)
             {
-                // Load the diagram from file.
-                Diagram diagram = new Diagram(filePath);
-
-                // Create a new custom property.
-                CustomProp batchProp = new CustomProp
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                // Process only supported Visio formats
+                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
                 {
-                    Name = "BatchId",
-                    PropType = PropType.String,
-                    CustomValue = { ValueString = batchId }
-                };
+                    continue;
+                }
 
-                // Add the custom property to the document.
-                diagram.DocumentProps.CustomProps.Add(batchProp);
+                try
+                {
+                    // Load the diagram
+                    using (Diagram diagram = new Diagram(filePath))
+                    {
+                        // Remove existing BatchId property if it exists
+                        for (int i = diagram.DocumentProps.CustomProps.Count - 1; i >= 0; i--)
+                        {
+                            var existingProp = diagram.DocumentProps.CustomProps[i];
+                            if (existingProp.Name == "BatchId")
+                            {
+                                diagram.DocumentProps.CustomProps.Remove(existingProp);
+                            }
+                        }
 
-                // Save the diagram, overwriting the original file.
-                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                        // Create a new custom property
+                        var batchIdProp = new CustomProp();
+                        batchIdProp.Name = "BatchId";
+                        batchIdProp.PropType = PropType.String;
+                        batchIdProp.CustomValue.ValueString = Guid.NewGuid().ToString();
 
-                // Release resources.
-                diagram.Dispose();
+                        // Add the custom property to the diagram
+                        diagram.DocumentProps.CustomProps.Add(batchIdProp);
 
-                Console.WriteLine($"Processed file: {Path.GetFileName(filePath)}");
+                        // Save the diagram, overwriting the original file
+                        diagram.Save(filePath, SaveFileFormat.Vsdx);
+                    }
+
+                    Console.WriteLine($"Processed file: {Path.GetFileName(filePath)}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
+                }
             }
 
             Console.WriteLine("Batch processing completed.");

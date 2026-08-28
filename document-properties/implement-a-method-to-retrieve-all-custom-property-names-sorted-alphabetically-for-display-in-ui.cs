@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
@@ -9,21 +10,21 @@ class Program
             try
             {
 
-                // Example usage: load a diagram file and display sorted custom property names.
-                // Replace "sample.vsdx" with the actual path to your Visio file.
-                string diagramPath = "sample.vsdx";
+                // Path to the Visio file
+                string filePath = "sample.vsdx";
 
-                // Load the diagram using the constructor (create/load rule).
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Retrieve sorted custom property names.
-                List<string> sortedNames = GetSortedCustomPropertyNames(diagram);
-
-                // Display the names in the console (UI placeholder).
-                Console.WriteLine("Custom Property Names (Alphabetical):");
-                foreach (string name in sortedNames)
+                // Load the diagram
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    Console.WriteLine(name);
+                    // Retrieve sorted custom property names
+                    List<string> propertyNames = GetSortedCustomPropertyNames(diagram);
+
+                    // Display the names
+                    Console.WriteLine("Custom Property Names (sorted):");
+                    foreach (string name in propertyNames)
+                    {
+                        Console.WriteLine(name);
+                    }
                 }
 
             }
@@ -34,33 +35,24 @@ class Program
     }
 
         /// <summary>
-        /// Retrieves all custom property names from the diagram's DocumentProps.CustomProps collection,
-        /// sorts them alphabetically, and returns the sorted list.
+        /// Retrieves all custom property names from the diagram and returns them sorted alphabetically.
         /// </summary>
-        /// <param name="diagram">The Aspose.Diagram.Diagram instance.</param>
-        /// <returns>Alphabetically sorted list of custom property names.</returns>
-        static List<string> GetSortedCustomPropertyNames(Diagram diagram)
+        /// <param name="diagram">The loaded Aspose.Diagram.Diagram instance.</param>
+        /// <returns>A list of custom property names sorted in ascending order.</returns>
+        private static List<string> GetSortedCustomPropertyNames(Diagram diagram)
         {
-            if (diagram == null)
-                throw new ArgumentNullException(nameof(diagram));
-
-            // Access the custom properties collection.
+            // Access the collection of custom properties
             var customProps = diagram.DocumentProps.CustomProps;
 
-            // Collect the names.
+            // Extract the Name of each custom property
             List<string> names = new List<string>();
             for (int i = 0; i < customProps.Count; i++)
             {
-                // Each item is a CustomProp; retrieve its Name.
-                var prop = customProps[i];
-                if (prop != null && !string.IsNullOrEmpty(prop.Name))
-                {
-                    names.Add(prop.Name);
-                }
+                // Each item is a CustomProp; its Name property holds the property name
+                names.Add(customProps[i].Name);
             }
 
-            // Sort alphabetically (case-insensitive).
-            names.Sort(StringComparer.OrdinalIgnoreCase);
-            return names;
+            // Sort alphabetically and return
+            return names.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
         }
     }

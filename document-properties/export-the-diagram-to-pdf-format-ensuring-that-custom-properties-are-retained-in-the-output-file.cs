@@ -10,23 +10,17 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your source file)
+            // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Configure PDF save options.
-            // Custom document properties are preserved automatically.
-            // Additional options can be set here if needed.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                // Example: include hidden pages so that any hidden custom data is kept.
-                ExportHiddenPage = true
-            };
+            // (Optional) Add or modify custom document properties here.
+            // diagram.DocumentProps.Add(new DocumentProperty { Name = "MyCustomProp", Value = "CustomValue" });
 
-            // Export the diagram to PDF using the configured options.
+            // Create PDF save options – default settings retain document properties
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+            // Export the diagram to PDF while preserving custom properties
             diagram.Save("output.pdf", pdfOptions);
-
-            // Clean up resources.
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

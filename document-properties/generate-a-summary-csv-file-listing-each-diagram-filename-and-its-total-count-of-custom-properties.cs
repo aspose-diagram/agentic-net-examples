@@ -1,43 +1,40 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
-class Program
+class DiagramCustomPropertiesSummary
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect two arguments: input folder containing diagrams and output CSV file path
-        if (args.Length < 2)
+        // Folder containing Visio diagram files
+        string diagramsFolder = @"C:\Diagrams";
+
+        // Output CSV file path
+        string csvPath = @"C:\Diagrams\summary.csv";
+
+        // Get all Visio files (adjust extensions as needed)
+        string[] diagramFiles = Directory.GetFiles(diagramsFolder, "*.vsdx");
+
+        // Create CSV and write header
+        using (var csvWriter = new StreamWriter(csvPath))
         {
-            Console.WriteLine("Usage: Program <inputFolder> <outputCsv>");
-            return;
-        }
+            csvWriter.WriteLine("Filename,CustomPropertyCount");
 
-        string inputFolder = args[0];
-        string outputCsv = args[1];
-
-        var csvLines = new List<string>();
-        csvLines.Add("Filename,CustomPropertiesCount");
-
-        // Retrieve all Visio diagram files (adjust extension filter as needed)
-        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-
-        foreach (string filePath in diagramFiles)
-        {
-            // Load diagram using Aspose.Diagram constructor (load rule)
-            using (var diagram = new Diagram(filePath))
+            foreach (string filePath in diagramFiles)
             {
-                // Count custom properties in the document
-                int customPropCount = diagram.DocumentProps.CustomProps.Count;
+                // Load diagram from file
+                using (var diagram = new Diagram(filePath))
+                {
+                    // Count custom properties in the document
+                    int customPropCount = diagram.DocumentProps.CustomProps.Count;
 
-                // Add entry to CSV
-                string fileName = Path.GetFileName(filePath);
-                csvLines.Add($"{fileName},{customPropCount}");
+                    // Write result line to CSV
+                    string fileName = Path.GetFileName(filePath);
+                    csvWriter.WriteLine($"{fileName},{customPropCount}");
+                }
             }
         }
 
-        // Write the summary CSV file
-        File.WriteAllLines(outputCsv, csvLines);
+        Console.WriteLine("Summary CSV created at: " + csvPath);
     }
 }

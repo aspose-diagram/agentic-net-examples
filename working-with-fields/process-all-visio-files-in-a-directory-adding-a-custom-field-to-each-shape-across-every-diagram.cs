@@ -3,58 +3,39 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VisioBatchProcessor
+class Program
 {
-    // Custom field value to add to each shape
-    private const string CustomFieldValue = "MyCustomField";
-
-    static void Main(string[] args)
+    static void Main()
     {
-        // Directory containing Visio files; adjust as needed
-        string directoryPath = @"C:\VisioFiles";
+        // Directory containing Visio files
+        string inputDirectory = @"C:\VisioFiles";
 
-        // Process each Visio file in the directory
-        foreach (string filePath in Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly))
+        // Get all Visio files (common extensions)
+        string[] visioFiles = Directory.GetFiles(inputDirectory, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in visioFiles)
         {
-            // Filter supported Visio extensions
             string extension = Path.GetExtension(filePath).ToLowerInvariant();
-            if (extension != ".vsd" && extension != ".vsdx" && extension != ".vdx")
-                continue;
+            if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
+                continue; // Skip non‑Visio files
 
-            // Load the diagram using the provided constructor
+            // Load the diagram using the constructor that accepts a file path
             Diagram diagram = new Diagram(filePath);
 
-            // Iterate through all pages
+            // Iterate through every page and every shape on the page
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Add or update a custom field (using Data1 as an example)
-                    shape.Data1 = CustomFieldValue;
+                    // Add a custom field – using the Data1 property as an example
+                    shape.Data1 = "MyCustomFieldValue";
                 }
             }
 
-            // Save the modified diagram back to the original file using the provided Save method
-            // Preserve the original format based on file extension
-            SaveFileFormat saveFormat = GetSaveFormatFromExtension(extension);
-            diagram.Save(filePath, saveFormat);
-        }
-    }
+            // Save the modified diagram, overwriting the original file
+            diagram.Save(filePath, SaveFileFormat.Vsdx);
 
-    // Helper to map file extension to SaveFileFormat enumeration
-    private static SaveFileFormat GetSaveFormatFromExtension(string extension)
-    {
-        switch (extension)
-        {
-            case ".vsd":
-                return SaveFileFormat.Vsdx; // Save as VSDX to retain compatibility
-            case ".vsdx":
-                return SaveFileFormat.Vsdx;
-            case ".vdx":
-                return SaveFileFormat.Vdx;
-            default:
-                return SaveFileFormat.Vsdx;
+            // Release resources
+            diagram.Dispose();
         }
     }
 }

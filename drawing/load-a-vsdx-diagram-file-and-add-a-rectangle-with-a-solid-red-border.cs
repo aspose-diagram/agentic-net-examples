@@ -4,32 +4,29 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Paths to the input and output Visio files
+            // Input and output file paths
             string inputPath = "input.vsdx";
             string outputPath = "output.vsdx";
 
             // Load the existing VSDX diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page of the diagram
+            // Get the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape.
-            // Parameters: pinX, pinY (center of the shape), width, height (in inches)
-            long rectangleId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
+            // Add a rectangle shape (pinX, pinY, width, height)
+            long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 3.0);
 
-            // Retrieve the newly added shape using its ID
-            Shape rectangle = page.Shapes.GetShape(rectangleId);
+            // Retrieve the newly added rectangle shape
+            Shape rectangle = page.Shapes.GetShape(rectId);
 
             // Set a solid red border for the rectangle
             rectangle.Line.LineColor.Value = "#FF0000";
-            // Optional: ensure the line pattern is solid (default is solid)
-            // rectangle.Line.LinePattern.Value = LinePatternValue.Solid;
 
             // Save the modified diagram back to VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);

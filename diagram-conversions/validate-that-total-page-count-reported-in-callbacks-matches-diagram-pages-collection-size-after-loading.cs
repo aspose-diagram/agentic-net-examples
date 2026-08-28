@@ -4,29 +4,36 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramPageCountValidation
 {
-    // Callback implementation to verify page count during PDF export
-    public class MyPageSavingCallback : IPageSavingCallback
+    // Custom callback to validate page count during PDF saving
+    public class PageCountValidator : IPageSavingCallback
     {
-        private readonly int _expectedPageCount;
+        private readonly Diagram _diagram;
 
-        public MyPageSavingCallback(int expectedPageCount)
+        public PageCountValidator(Diagram diagram)
         {
-            _expectedPageCount = expectedPageCount;
+            _diagram = diagram ?? throw new ArgumentNullException(nameof(diagram));
         }
 
-        // Called before a page starts saving – no validation needed here
+        // Called before each page is saved
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            // Intentionally left blank
+            // args.PageCount is the total number of pages reported by the callback
+            int reportedCount = args.PageCount;
+            int actualCount = _diagram.Pages.Count;
+
+            if (reportedCount != actualCount)
+            {
+                throw new Exception($"Page count mismatch: reported {reportedCount}, actual {actualCount}.");
+            }
+
+            // Optional: log successful validation for the current page
+            Console.WriteLine($"Page {args.PageIndex + 1}/{reportedCount} validated successfully.");
         }
 
-        // Called after a page has been saved – perform the validation
+        // Called after each page is saved
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            if (args.PageCount != _expectedPageCount)
-            {
-                throw new Exception($"Page count mismatch: callback reported {args.PageCount}, but diagram contains {_expectedPageCount} pages.");
-            }
+            // No additional validation needed here
         }
     }
 
@@ -34,37 +41,35 @@ namespace DiagramPageCountValidation
     {
         public static void Main()
         {
+            // Path to the input Visio file (replace with actual file path)
+            string inputPath = "input.vsdx";
+
+            // Path to the output PDF file
+            string outputPath = "output.pdf";
+
             try
             {
-
-                // Path to the source Visio file (replace with an actual file path)
-                string inputPath = "input.vsdx";
-
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Capture the expected page count from the loaded diagram
-                int expectedPageCount = diagram.Pages.Count;
+                // Create the custom callback, passing the loaded diagram
+                var validator = new PageCountValidator(diagram);
 
-                // Configure PDF save options and assign the custom callback
+                // Configure PDF save options and assign the callback
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                pdfOptions.PageSavingCallback = new MyPageSavingCallback(expectedPageCount);
+                pdfOptions.PageSavingCallback = validator;
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Ensure correct format
 
-                // Path for the exported PDF (replace with desired output path)
-                string outputPath = "output.pdf";
-
-                // Save the diagram as PDF, triggering the callback validation
+                // Save the diagram as PDF (triggers the callback)
                 diagram.Save(outputPath, pdfOptions);
 
-                // If no exception was thrown, validation succeeded
-                Console.WriteLine("Page count validation succeeded.");
-
+                Console.WriteLine("Diagram saved successfully and page count validated.");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Report any errors, including page count mismatches
+                Console.WriteLine($"Error: {ex.Message}");
             }
-    }
+        }
     }
 }

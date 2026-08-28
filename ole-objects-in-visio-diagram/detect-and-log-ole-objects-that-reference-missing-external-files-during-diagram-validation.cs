@@ -9,7 +9,7 @@ class Program
         try
         {
 
-            // Load the Visio diagram
+            // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Iterate through all pages
@@ -18,10 +18,10 @@ class Program
                 // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape contains foreign (OLE) data
+                    // Ensure the shape contains foreign data (possible OLE object)
                     if (shape.ForeignData != null)
                     {
-                        // Determine if the OLE object is a linked object
+                        // Check if the foreign data represents a linked OLE object
                         if ((shape.ForeignData.ObjectType & ObjectType.LinkedObject) == ObjectType.LinkedObject)
                         {
                             // Get the external file path referenced by the OLE object
@@ -30,15 +30,15 @@ class Program
                             // If the path is set and the file does not exist, log the issue
                             if (!string.IsNullOrEmpty(sourcePath) && !File.Exists(sourcePath))
                             {
-                                Console.WriteLine($"Missing OLE reference - Page: '{page.Name}', Shape ID: {shape.ID}, File: '{sourcePath}'");
+                                Console.WriteLine($"Missing OLE file on page '{page.Name}', shape ID {shape.ID}: {sourcePath}");
                             }
                         }
                     }
                 }
             }
 
-            // Save the diagram (optional, here just to demonstrate lifecycle compliance)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Clean up resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

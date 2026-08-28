@@ -7,16 +7,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
+        // Paths to the input and output Visio files
         string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Path to the output Visio file
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
         string outputPath = "output.vsdx";
 
         try
@@ -24,15 +18,13 @@ class Program
             // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Build a lookup of reviewer index to reviewer name
-            Dictionary<int, string> reviewerNames = new Dictionary<int, string>();
-            int reviewerIndex = 0;
-            foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
+            // Define role‑to‑color mapping (hex color strings)
+            var roleColors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                // Reviewer.Name is a Str2Value; use .Value to get the string
-                reviewerNames[reviewerIndex] = reviewer.Name.Value;
-                reviewerIndex++;
-            }
+                { "Manager",   "#FFCCCC" }, // Light red
+                { "Developer", "#CCFFCC" }, // Light green
+                { "Tester",    "#CCCCFF" }  // Light blue
+            };
 
             // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
@@ -40,52 +32,43 @@ class Program
                 // Iterate through all annotations (comments) on the current page
                 foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    // Get the reviewer index for this comment
+                    // Retrieve the reviewer ID associated with the comment
                     int reviewerId = annotation.ReviewerID.Value;
 
-                    // Determine the reviewer name; if not found, use empty string
-                    string reviewerName = reviewerNames.ContainsKey(reviewerId) ? reviewerNames[reviewerId] : string.Empty;
+                    // Determine the reviewer role (using the reviewer name as a placeholder for role)
+                    string role = "Default";
+                    // Access the reviewer directly by index (Reviewer.ID does not exist)
+                    if (reviewerId >= 0 && reviewerId < diagram.DocumentSheet.Reviewers.Count)
+                    {
+                        var reviewer = diagram.DocumentSheet.Reviewers[reviewerId];
+                        // Reviewer.Name is a Str2Value; use .Value to get the string
+                        role = reviewer.Name.Value;
+                    }
 
-                    // Decide background color based on role (author name)
-                    string backgroundColor = GetColorForRole(reviewerName);
+                    // Choose a background color based on the role
+                    if (!roleColors.TryGetValue(role, out string bgColor))
+                    {
+                        // Fallback color if the role is not mapped
+                        bgColor = "#FFFFFF"; // White
+                    }
 
-                    // Retrieve the shape associated with the comment (if any)
-                    // ShapeID is an integer; use GetShape to obtain the shape instance
-                    Shape shape = page.Shapes.GetShape(annotation.ShapeID);
+                    // Retrieve the shape referenced by the annotation and set its fill foreground color
+                    long shapeId = annotation.ShapeID; // ShapeID is a long primitive
+                    Shape shape = page.Shapes.GetShape(shapeId);
                     if (shape != null)
                     {
-                        // Apply solid fill pattern (1 = solid)
-                        shape.Fill.FillPattern.Value = 1;
-                        // Set the fill foreground color to the role‑based color
-                        shape.Fill.FillForegnd.Value = backgroundColor;
+                        shape.Fill.FillForegnd.Value = bgColor;
                     }
                 }
             }
 
-            // Save the modified diagram to the output path
+            // Save the modified diagram to the output path using the VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
-    }
-
-    // Helper method to map reviewer role/name to a hex color string
-    private static string GetColorForRole(string reviewerName)
-    {
-        // Example role mapping; adjust as needed
-        switch (reviewerName.Trim().ToLower())
-        {
-            case "manager":
-                return "#FFCCCC"; // Light red
-            case "developer":
-                return "#CCFFCC"; // Light green
-            case "tester":
-                return "#CCCCFF"; // Light blue
-            default:
-                return "#FFFFFF"; // White (default)
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

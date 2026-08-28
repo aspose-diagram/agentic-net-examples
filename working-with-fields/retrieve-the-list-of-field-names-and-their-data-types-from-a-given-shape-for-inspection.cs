@@ -3,50 +3,65 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the Visio file
+                // Path to the Visio file (adjust as needed)
                 string diagramPath = "input.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Specify the page index and shape ID you want to inspect
-                int pageIndex = 0;      // first page
-                int shapeId = 1;        // example shape ID
+                // Get the first page
+                Page page = diagram.Pages[0];
 
-                // Retrieve the page
-                Page page = diagram.Pages[pageIndex];
+                // Determine which shape to inspect
+                Shape shape = null;
 
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape == null)
+                if (args.Length > 0 && int.TryParse(args[0], out int shapeId))
                 {
-                    Console.WriteLine($"Shape with ID {shapeId} not found on page {pageIndex}.");
-                    return;
+                    // Try to retrieve shape by the provided ID
+                    shape = page.Shapes.GetShape(shapeId);
+                    if (shape == null)
+                    {
+                        Console.WriteLine($"Shape with ID {shapeId} not found on page '{page.Name}'.");
+                        return;
+                    }
+                }
+                else
+                {
+                    // Fallback: use the first shape on the page
+                    foreach (Shape s in page.Shapes)
+                    {
+                        shape = s;
+                        break;
+                    }
+
+                    if (shape == null)
+                    {
+                        Console.WriteLine($"No shapes found on page '{page.Name}'.");
+                        return;
+                    }
                 }
 
-                // Ensure the shape has custom properties (Props) collection
-                if (shape.Props == null || shape.Props.Count == 0)
+                Console.WriteLine($"Inspecting shape ID: {shape.ID}, Name: {shape.Name}");
+
+                // Iterate custom properties (Props) – these act as fields with names and data types
+                if (shape.Props != null && shape.Props.Count > 0)
+                {
+                    Console.WriteLine("Custom Properties (Name : Data Type):");
+                    foreach (Prop prop in shape.Props)
+                    {
+                        // prop.Type.Value is an enum indicating the data type
+                        string typeName = prop.Type.Value.ToString();
+                        Console.WriteLine($"{prop.Name} : {typeName}");
+                    }
+                }
+                else
                 {
                     Console.WriteLine("The shape does not contain any custom properties.");
-                    return;
-                }
-
-                // Iterate through each custom property and output its name and data type
-                Console.WriteLine($"Custom properties for shape ID {shapeId}:");
-                foreach (Prop prop in shape.Props)
-                {
-                    // Property name
-                    string name = prop.Name;
-
-                    // Property data type (enum value)
-                    string typeName = prop.Type.Value.ToString();
-
-                    Console.WriteLine($"- Name: {name}, Type: {typeName}");
                 }
 
             }

@@ -3,51 +3,74 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect two arguments: input Visio file path and output CSV file path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: ConnectorCsvExport <inputVisioPath> <outputCsvPath>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputCsvPath = args[1];
+            // Path to the Visio file to be processed
+            string inputPath = "input.vsdx"; // TODO: replace with actual file path
+            // Path where the CSV report will be saved
+            string outputCsv = "connectors_report.csv";
 
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            try
+            // Create a CSV file and write the header
+            using (StreamWriter writer = new StreamWriter(outputCsv))
             {
-                using (StreamWriter writer = new StreamWriter(outputCsvPath, false))
+                writer.WriteLine("PageName,FromShapeID,FromShapeName,ToShapeID,ToShapeName,FromCell,ToCell");
+
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Write CSV header
-                    writer.WriteLine("FromShapeId,ToShapeId,FromCell,ToCell");
+                    string pageName = page.Name ?? string.Empty;
 
-                    // Iterate through all pages and their connector collections
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through each connector (Connect) on the page
+                    foreach (Connect connect in page.Connects)
                     {
-                        foreach (Connect connect in page.Connects)
-                        {
-                            long fromId = connect.FromSheet;
-                            long toId = connect.ToSheet;
-                            string fromCell = connect.FromCell ?? string.Empty;
-                            string toCell = connect.ToCell ?? string.Empty;
+                        // Retrieve source and target shapes using their IDs
+                        Shape fromShape = page.Shapes.GetShape(connect.FromSheet);
+                        Shape toShape = page.Shapes.GetShape(connect.ToSheet);
 
-                            // Write connector information as a CSV line
-                            writer.WriteLine($"{fromId},{toId},{fromCell},{toCell}");
-                        }
+                        string fromName = fromShape?.Name ?? string.Empty;
+                        string toName = toShape?.Name ?? string.Empty;
+
+                        // Build a CSV line, escaping fields that may contain commas or quotes
+                        string line = string.Join(",",
+                            Escape(pageName),
+                            connect.FromSheet.ToString(),
+                            Escape(fromName),
+                            connect.ToSheet.ToString(),
+                            Escape(toName),
+                            Escape(connect.FromCell),
+                            Escape(connect.ToCell));
+
+                        writer.WriteLine(line);
                     }
                 }
+            }
 
-                Console.WriteLine($"Connector information exported successfully to '{outputCsvPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error during export: {ex.Message}");
-                throw;
-            }
+            Console.WriteLine($"Connector report has been saved to '{outputCsv}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+
+    // Helper method to escape CSV fields containing commas, quotes, or line breaks
+    static string Escape(string field)
+    {
+        if (field == null) return string.Empty;
+        bool mustQuote = field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r");
+        if (mustQuote)
+        {
+            field = field.Replace("\"", "\"\"");
+            return $"\"{field}\"";
+        }
+        return field;
+    }
+}

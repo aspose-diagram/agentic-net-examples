@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,19 +9,25 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
+            // Load an existing Visio diagram
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the global header/footer font settings
+            // Preserve existing font name and size for the header/footer
             var headerFont = diagram.HeaderFooter.HeaderFooterFont;
+            string existingFaceName = headerFont.FaceName;
+            int existingHeight = headerFont.Height; // height is stored as an integer (points)
 
-            // Preserve existing font name (FaceName) and size (Height)
-            // Apply bold style by setting the weight to 700 and enable underline
-            headerFont.Weight = 700;          // Bold
-            headerFont.Underline = BOOL.True; // Underline
+            // Apply bold (Weight = 700) and underline (Underline = BOOL.True) to the center header font
+            headerFont.FaceName = existingFaceName; // keep original font name
+            headerFont.Height = existingHeight;     // keep original font size
+            headerFont.Weight = 700;                // 700 corresponds to bold
+            headerFont.Underline = BOOL.True;       // enable underline
 
-            // Save the diagram with the updated header formatting
+            // Optionally set the center header text (preserve existing text if needed)
+            // diagram.HeaderFooter.HeaderCenter = "Your Header Text";
+
+            // Save the modified diagram
             string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 

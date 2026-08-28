@@ -1,122 +1,92 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect a single argument: the directory containing Visio files
-        if (args.Length == 0)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: VisioHeaderFooterTool <directoryPath>");
-            return;
-        }
-
-        string directoryPath = args[0];
-
-        if (!Directory.Exists(directoryPath))
-        {
-            Console.Error.WriteLine($"Error: Directory does not exist - {directoryPath}");
-            return;
-        }
-
-        // Supported Visio file extensions
-        string[] extensions = new[]
-        {
-            ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx",
-            ".vssx", ".vss", ".vstx", ".vst",
-            ".vsdm", ".vssm", ".vstm"
-        };
-
-        // Get all files with supported extensions
-        var files = Directory.GetFiles(directoryPath);
-        foreach (var filePath in files)
-        {
-            // Guard to ensure the file actually exists
-            if (!File.Exists(filePath))
+            // Verify that a directory path was provided
+            if (args.Length == 0)
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                continue;
+                Console.WriteLine("Usage: VisioHeaderFooterTool <directoryPath>");
+                return;
             }
 
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (Array.IndexOf(extensions, ext) < 0)
+            string directoryPath = args[0];
+
+            if (!Directory.Exists(directoryPath))
             {
-                continue; // Skip non‑Visio files
+                Console.WriteLine($"Error: Directory does not exist - {directoryPath}");
+                return;
             }
 
-            try
+            // Supported Visio extensions and their corresponding SaveFileFormat values
+            var formatMap = new Dictionary<string, SaveFileFormat>(StringComparer.OrdinalIgnoreCase)
             {
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
+                { ".vsdx", SaveFileFormat.Vsdx },
+                { ".vsd",  SaveFileFormat.Vsd },
+                { ".vdx",  SaveFileFormat.Vdx },
+                { ".vsx",  SaveFileFormat.Vsx },
+                { ".vtx",  SaveFileFormat.Vtx },
+                { ".vssx", SaveFileFormat.Vssx },
+                { ".vss",  SaveFileFormat.Vss },
+                { ".vstx", SaveFileFormat.Vstx },
+                { ".vst",  SaveFileFormat.Vst },
+                { ".vssm", SaveFileFormat.Vssm },
+                { ".vstm", SaveFileFormat.Vstm },
+                { ".vsdm", SaveFileFormat.Vsdm }
+            };
 
-                // Apply header/footer template
-                ApplyHeaderFooterTemplate(diagram);
+            // Retrieve all files in the directory (non‑recursive)
+            string[] files = Directory.GetFiles(directoryPath);
 
-                // Determine appropriate SaveFileFormat based on extension
-                SaveFileFormat format = GetSaveFileFormat(ext);
-                if (format == 0)
+            foreach (string filePath in files)
+            {
+                string extension = Path.GetExtension(filePath);
+                if (!formatMap.ContainsKey(extension))
                 {
-                    Console.WriteLine($"Skipping unsupported format for file: {filePath}");
+                    // Skip non‑Visio files
                     continue;
                 }
 
-                // Save back to the same file (overwrites original)
-                diagram.Save(filePath, format);
-                Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
+                try
+                {
+                    // Load the Visio diagram
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Apply header/footer template
+                    diagram.HeaderFooter.HeaderLeft   = "Company Name";
+                    diagram.HeaderFooter.HeaderCenter = "Confidential";
+                    diagram.HeaderFooter.HeaderRight  = "Created: &d";
+
+                    diagram.HeaderFooter.FooterLeft   = "Document ID: 12345";
+                    diagram.HeaderFooter.FooterCenter = "Page &p of &P";
+                    diagram.HeaderFooter.FooterRight  = "Generated on &d";
+
+                    // Set margins (in inches)
+                    diagram.HeaderFooter.HeaderMargin.Value = 0.5;
+                    diagram.HeaderFooter.FooterMargin.Value = 0.5;
+
+                    // Configure global font for header/footer
+                    var hfFont = diagram.HeaderFooter.HeaderFooterFont;
+                    hfFont.FaceName = "Arial";
+                    hfFont.Weight   = 700;   // Bold
+                    hfFont.Height   = -16;   // Approx. 12pt (negative mapping per specification)
+
+                    // Save the diagram back in its original format
+                    SaveFileFormat saveFormat = formatMap[extension];
+                    diagram.Save(filePath, saveFormat);
+
+                    Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to process {Path.GetFileName(filePath)}: {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to process {Path.GetFileName(filePath)}: {ex.Message}");
-            }
+
+            Console.WriteLine("Header/footer application completed.");
         }
     }
-
-    // Sets a predefined header/footer on the diagram
-    private static void ApplyHeaderFooterTemplate(Diagram diagram)
-    {
-        // Header text (left, center, right)
-        diagram.HeaderFooter.HeaderLeft = "Company Confidential";
-        diagram.HeaderFooter.HeaderCenter = "";
-        diagram.HeaderFooter.HeaderRight = "&d"; // Current date
-
-        // Footer text (left, center, right)
-        diagram.HeaderFooter.FooterLeft = "";
-        diagram.HeaderFooter.FooterCenter = "Page &p of &P"; // Page number / total pages
-        diagram.HeaderFooter.FooterRight = "Generated by VisioHeaderFooterTool";
-
-        // Margins (in inches)
-        diagram.HeaderFooter.HeaderMargin.Value = 0.5;
-        diagram.HeaderFooter.FooterMargin.Value = 0.5;
-
-        // Font styling
-        var font = diagram.HeaderFooter.HeaderFooterFont;
-        font.FaceName = "Arial";
-        font.Weight = 700;               // Bold
-        font.Height = -16;               // Approx. 12pt (12 * -1.333 ≈ -16)
-        font.Italic = BOOL.False;        // Italic flag uses BOOL
-        font.Underline = BOOL.False;     // Underline flag uses BOOL
-    }
-
-    // Maps file extension to the corresponding SaveFileFormat enum value
-    private static SaveFileFormat GetSaveFileFormat(string extension)
-    {
-        switch (extension)
-        {
-            case ".vsdx": return SaveFileFormat.Vsdx;
-            case ".vsd":  return SaveFileFormat.Vsd;
-            case ".vdx":  return SaveFileFormat.Vdx;
-            case ".vsx":  return SaveFileFormat.Vsx;
-            case ".vtx":  return SaveFileFormat.Vtx;
-            case ".vssx": return SaveFileFormat.Vssx;
-            case ".vss":  return SaveFileFormat.Vss;
-            case ".vstx": return SaveFileFormat.Vstx;
-            case ".vst":  return SaveFileFormat.Vst;
-            case ".vsdm": return SaveFileFormat.Vsdm;
-            case ".vssm": return SaveFileFormat.Vssm;
-            case ".vstm": return SaveFileFormat.Vstm;
-            default: return 0; // Invalid/unsupported format
-        }
-    }
-}

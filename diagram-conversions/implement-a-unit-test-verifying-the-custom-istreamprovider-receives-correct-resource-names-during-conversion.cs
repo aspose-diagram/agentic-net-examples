@@ -4,73 +4,87 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace AsposeDiagramIStreamProviderTest
+namespace AsposeDiagramStreamProviderTest
 {
-    // Custom IStreamProvider that records the default path for each resource.
+    // Custom IStreamProvider that records the resource names (DefaultPath) requested during HTML export
     public class RecordingStreamProvider : IStreamProvider
     {
-        // List to store the resource names (DefaultPath) received during export.
-        public List<string> ReceivedPaths { get; } = new List<string>();
+        // List to store the resource names received
+        public List<string> ReceivedResourceNames { get; } = new();
 
-        // Called by Aspose.Diagram before writing a resource.
+        // Called by Aspose.Diagram when a resource stream is needed
         public void InitStream(StreamProviderOptions options)
         {
-            // Record the path/name of the resource.
-            ReceivedPaths.Add(options.DefaultPath);
-            // Provide a writable stream (in-memory) for the resource.
+            // DefaultPath is read‑only and contains the name of the resource (e.g., an image file name)
+            if (!string.IsNullOrEmpty(options.DefaultPath))
+            {
+                ReceivedResourceNames.Add(options.DefaultPath);
+            }
+
+            // Provide a writable stream for the resource; using a MemoryStream as a placeholder
             options.Stream = new MemoryStream();
         }
 
-        // Called after the resource has been written.
+        // Called after the resource has been written
         public void CloseStream(StreamProviderOptions options)
         {
-            // Dispose the temporary stream if it was created.
+            // Dispose the temporary stream if it was created
             options.Stream?.Dispose();
         }
     }
 
-    public class Program
+    class Program
     {
-        public static void Main()
+        static void Main()
         {
             try
             {
-                // Create an empty diagram.
-                Diagram diagram = new Diagram();
 
-                // Add a simple shape to ensure at least one external resource is generated.
-                // This creates a rectangle on the first page.
-                diagram.AddShape(1.0, 1.0, 2.0, 1.0, "Rectangle", 0);
+                // Prepare output folder
+                string outputFolder = Path.Combine(Path.GetTempPath(), "AsposeDiagramHtmlTest");
+                Directory.CreateDirectory(outputFolder);
+                string htmlOutputPath = Path.Combine(outputFolder, "diagram.html");
 
-                // Prepare HTML export options and assign the custom stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                RecordingStreamProvider provider = new RecordingStreamProvider();
-                htmlOptions.StreamProvider = provider;
+                // Create a new diagram
+                using Diagram diagram = new Diagram();
 
-                // Export the diagram to HTML. The provider will be invoked for each resource.
-                string outputPath = "output.html";
-                diagram.Save(outputPath, htmlOptions);
+                // Add a simple rectangle shape to ensure at least one resource is generated
+                // Using the built‑in "Rectangle" master on the first page (page index 0)
+                long shapeId = diagram.AddShape(1.0, 1.0, "Rectangle", 0);
+                // Retrieve the shape to set some text (optional, just to have content)
+                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+                shape.Text.Value.Add(new Txt("Test Shape"));
 
-                // Verify that the provider received at least one resource name.
-                if (provider.ReceivedPaths.Count == 0)
+                // Set up HTML save options with the custom stream provider
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    throw new Exception("IStreamProvider was not invoked during HTML export.");
+                    StreamProvider = new RecordingStreamProvider()
+                };
+
+                // Save the diagram as HTML
+                diagram.Save(htmlOutputPath, htmlOptions);
+
+                // Verify that the stream provider received at least one resource name
+                var provider = (RecordingStreamProvider)htmlOptions.StreamProvider;
+                if (provider.ReceivedResourceNames.Count == 0)
+                {
+                    throw new Exception("IStreamProvider did not receive any resource names during HTML export.");
                 }
 
-                // Output the collected resource paths for diagnostic purposes.
-                Console.WriteLine("IStreamProvider received the following resource paths:");
-                foreach (string path in provider.ReceivedPaths)
+                // Output the captured resource names for inspection
+                Console.WriteLine("IStreamProvider captured the following resource names:");
+                foreach (string name in provider.ReceivedResourceNames)
                 {
-                    Console.WriteLine(path);
+                    Console.WriteLine($"- {name}");
                 }
 
-                Console.WriteLine("Test passed: IStreamProvider was called correctly.");
+                Console.WriteLine("Test completed successfully.");
+
             }
-            catch (Exception ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                // Write any errors to the error stream.
-                Console.Error.WriteLine($"Error: {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
-        }
+    }
     }
 }

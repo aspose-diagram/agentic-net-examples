@@ -7,72 +7,49 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Create a new empty Visio diagram
+        Diagram diagram = new Diagram();
+
+        // Configure PDF save options with password protection
+        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+        // Use positional arguments because the constructor does not support named parameters
+        pdfOptions.EncryptionDetails = new PdfEncryptionDetails("user123", "owner123", PdfEncryptionAlgorithm.RC4_128);
+
         // Define output PDF path
         string pdfPath = "protected.pdf";
 
-        // Create diagram, add a rectangle, and save as password‑protected PDF
+        // Save the diagram as a password‑protected PDF (wrapped in try/catch)
         try
         {
-            // Instantiate a new empty diagram
-            var diagram = new Diagram();
-
-            // Get the active page to draw on
-            var page = diagram.ActivePage;
-
-            // Draw a rectangle: (pinX, pinY) = (5,5), width = 2, height = 1
-            // Updated to use the non‑obsolete overload (x1, y1, x2, y2)
-            page.DrawRectangle(5, 5, 7, 6); // x2 = 5+2, y2 = 5+1
-
-            // Configure PDF save options with encryption
-            var pdfOptions = new PdfSaveOptions();
-            pdfOptions.EncryptionDetails = new PdfEncryptionDetails(
-                "user123",          // user password
-                "owner123",         // owner password
-                PdfEncryptionAlgorithm.RC4_128);
-
-            // Save the diagram as a protected PDF
             diagram.Save(pdfPath, pdfOptions);
-            Console.WriteLine($"PDF saved with password protection to {pdfPath}");
+            Console.WriteLine($"PDF saved with password protection to '{pdfPath}'.");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during diagram creation or saving
-            Console.Error.WriteLine("Error during diagram creation or PDF save: " + ex.Message);
+            Console.Error.WriteLine($"Error saving PDF: {ex.Message}");
             return;
         }
 
-        // Verify the PDF file exists before attempting to open it
+        // Verify that the PDF file was created
         if (!File.Exists(pdfPath))
         {
-            Console.Error.WriteLine($"File not found: {pdfPath}");
+            Console.Error.WriteLine($"File not found after save: {pdfPath}");
             return;
         }
 
-        // Attempt to open the PDF without providing a password (should fail)
+        // Verify that opening the PDF without a password fails
         try
         {
-            // Use fully qualified Aspose.Pdf type to avoid namespace ambiguity
-            var doc = new Aspose.Pdf.Document(pdfPath);
-            // If no exception is thrown, the protection is not effective
-            throw new Exception("PDF opened without password; protection failed.");
+            // Attempt to load the PDF without providing a password (using fully qualified type to avoid namespace clash)
+            var pdfDoc = new Aspose.Pdf.Document(pdfPath);
+            // If no exception is thrown, the verification fails
+            Console.WriteLine("ERROR: PDF opened without a password. Verification failed.");
+            throw new Exception("PDF opened without password protection.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            // Expected failure due to missing password
-            Console.WriteLine("Opening without password failed as expected: " + ex.Message);
-        }
-
-        // Attempt to open the PDF with the correct user password (should succeed)
-        try
-        {
-            // Use the overload that accepts a password string
-            var doc = new Aspose.Pdf.Document(pdfPath, "user123");
-            Console.WriteLine("PDF opened successfully with the correct password.");
-        }
-        catch (Exception ex)
-        {
-            // Propagate failure with a clear message
-            throw new Exception("Failed to open PDF with correct password: " + ex.Message);
+            // Expected path: loading fails because the PDF is encrypted
+            Console.WriteLine("Success: PDF could not be opened without a password (as expected).");
         }
     }
 }

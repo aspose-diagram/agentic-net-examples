@@ -1,70 +1,96 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class TestStreamProvider : IStreamProvider
+namespace AsposeDiagramStreamProviderTest
 {
-    public int CallCount { get; private set; } = 0;
-
-    public void InitStream(StreamProviderOptions options)
+    // Custom IStreamProvider implementation that records the default path of each resource
+    public class TestStreamProvider : IStreamProvider
     {
-        CallCount++;
-        // Provide a dummy stream if the API expects one.
-        if (options.Stream == null)
+        // List to store the default path (file name) of each received resource
+        public List<string> ReceivedPaths { get; } = new List<string>();
+
+        // Called by Aspose.Diagram before writing a resource (image, shape, etc.)
+        public void InitStream(StreamProviderOptions options)
         {
+            // Record the default path which contains the file name and extension
+            ReceivedPaths.Add(options.DefaultPath);
+
+            // Provide a dummy memory stream for the resource data
             options.Stream = new MemoryStream();
         }
-    }
 
-    public void CloseStream(StreamProviderOptions options)
-    {
-        // No cleanup required for this test.
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        try
+        // Called after the resource has been written
+        public void CloseStream(StreamProviderOptions options)
         {
-
-            // Create a new diagram.
-            Diagram diagram = new Diagram();
-
-            // Add a rectangle shape.
-            long rectId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle");
-
-            // Add an image (foreign) shape using an empty memory stream as placeholder.
-            using (MemoryStream imgStream = new MemoryStream())
-            {
-                long imgId = diagram.ActivePage.AddShape(4.0, 4.0, 2.0, 2.0, imgStream);
-            }
-
-            // Set up HTML export options with the custom stream provider.
-            TestStreamProvider provider = new TestStreamProvider();
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = provider;
-
-            // Export the diagram to HTML.
-            string outputPath = "test_output.html";
-            diagram.Save(outputPath, htmlOptions);
-
-            // Verify that the stream provider was called for both resources (shape and image).
-            if (provider.CallCount != 2)
-            {
-                throw new Exception($"Expected 2 stream provider calls, but received {provider.CallCount}.");
-            }
-            else
-            {
-                Console.WriteLine("IStreamProvider received correct number of resource callbacks.");
-            }
-
+            // Dispose the dummy stream if it was created
+            options.Stream?.Dispose();
         }
-        catch (System.NullReferenceException ex)
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            try
+            {
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
+
+                // Use the first page (created by default)
+                Page page = diagram.Pages[0];
+
+                // Add a simple rectangle shape using a built‑in master name
+                // The AddShape method returns the shape ID (long)
+                long rectShapeId = page.AddShape(2.0, 2.0, "Rectangle");
+
+                // Retrieve the shape instance to ensure it was created successfully
+                Shape rectShape = page.Shapes.GetShape(rectShapeId);
+                if (rectShape == null)
+                    throw new Exception("Failed to create rectangle shape.");
+
+                // Add an image shape using an empty memory stream as placeholder image data
+                using (MemoryStream dummyImage = new MemoryStream())
+                {
+                    long imageShapeId = page.AddShape(5.0, 5.0, 2.0, 2.0, dummyImage);
+                    Shape imageShape = page.Shapes.GetShape(imageShapeId);
+                    if (imageShape == null)
+                        throw new Exception("Failed to create image shape.");
+                }
+
+                // Prepare HTML export options and assign the custom stream provider
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                TestStreamProvider provider = new TestStreamProvider();
+                htmlOptions.StreamProvider = provider;
+
+                // Export the diagram to HTML (the file path is irrelevant for the test)
+                diagram.Save("test_output.html", htmlOptions);
+
+                // Verify that the provider received both image and shape resource types
+                // Image resources typically have a .png extension, shape resources a .svg extension
+                bool hasImage = provider.ReceivedPaths.Exists(p => p.EndsWith(".png", StringComparison.OrdinalIgnoreCase));
+                bool hasShape = provider.ReceivedPaths.Exists(p => p.EndsWith(".svg", StringComparison.OrdinalIgnoreCase));
+
+                if (!hasImage || !hasShape)
+                    throw new Exception($"IStreamProvider did not receive expected resource types. Image: {hasImage}, Shape: {hasShape}");
+
+                // Output result to console for visual confirmation
+                Console.WriteLine("IStreamProvider received the following resource paths:");
+                foreach (string path in provider.ReceivedPaths)
+                {
+                    Console.WriteLine($"- {path}");
+                }
+
+                Console.WriteLine("Test completed successfully.");
+            }
+            catch (Exception ex)
+            {
+                // Write any errors to the error stream and exit
+                Console.Error.WriteLine($"Error: {ex.Message}");
+                return;
+            }
         }
     }
 }

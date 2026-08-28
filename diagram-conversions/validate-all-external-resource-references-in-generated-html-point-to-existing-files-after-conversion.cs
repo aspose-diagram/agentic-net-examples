@@ -1,117 +1,82 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class HtmlResourceStreamProvider : IStreamProvider
-{
-    private readonly string _outputFolder;
-    public List<string> CreatedResources { get; } = new List<string>();
-
-    public HtmlResourceStreamProvider(string outputFolder)
-    {
-        _outputFolder = outputFolder;
-        Directory.CreateDirectory(_outputFolder);
-    }
-
-    public void InitStream(StreamProviderOptions options)
-    {
-        // options.DefaultPath provides the relative path for the resource
-        string resourcePath = Path.Combine(_outputFolder, options.DefaultPath);
-        string resourceDir = Path.GetDirectoryName(resourcePath);
-        if (!Directory.Exists(resourceDir))
-            Directory.CreateDirectory(resourceDir);
-
-        // Assign a file stream to the options so Aspose can write the resource
-        options.Stream = new FileStream(resourcePath, FileMode.Create, FileAccess.Write);
-        CreatedResources.Add(resourcePath);
-    }
-
-    public void CloseStream(StreamProviderOptions options)
-    {
-        // Close the stream after Aspose finishes writing the resource
-        options.Stream?.Close();
-    }
-}
-
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Paths
-            string inputDiagramPath = "input.vsdx";
-            string outputFolder = "output";
-            string htmlFilePath = Path.Combine(outputFolder, "diagram.html");
+                // Paths for input Visio file and output HTML file
+                string inputVisioPath = "input.vsdx";
+                string outputHtmlPath = "output.html";
 
-            // Ensure output folder exists
-            Directory.CreateDirectory(outputFolder);
+                // Load the diagram
+                Diagram diagram = new Diagram(inputVisioPath);
 
-            // Load diagram
-            Diagram diagram = new Diagram(inputDiagramPath);
+                // Export diagram to HTML
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                diagram.Save(outputHtmlPath, htmlOptions);
 
-            // Set up HTML export with custom stream provider
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            HtmlResourceStreamProvider streamProvider = new HtmlResourceStreamProvider(outputFolder);
-            htmlOptions.StreamProvider = streamProvider;
+                // Validate external resource references in the generated HTML
+                ValidateHtmlResources(outputHtmlPath);
 
-            // Export to HTML
-            diagram.Save(htmlFilePath, htmlOptions);
-
-            // Validate external resource references in the generated HTML
-            ValidateHtmlResources(htmlFilePath, outputFolder);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
 
-    static void ValidateHtmlResources(string htmlFilePath, string baseFolder)
-    {
-        if (!File.Exists(htmlFilePath))
-            throw new Exception($"HTML file not found: {htmlFilePath}");
-
-        string htmlContent = File.ReadAllText(htmlFilePath);
-
-        // Regex to find src or href attributes (case-insensitive)
-        Regex regex = new Regex(@"(?i)(src|href)\s*=\s*[""']([^""']+)[""']", RegexOptions.Compiled);
-        MatchCollection matches = regex.Matches(htmlContent);
-
-        List<string> missingFiles = new List<string>();
-
-        foreach (Match match in matches)
+        static void ValidateHtmlResources(string htmlFilePath)
         {
-            string url = match.Groups[2].Value.Trim();
+            if (!File.Exists(htmlFilePath))
+            {
+                Console.WriteLine($"HTML file not found: {htmlFilePath}");
+                return;
+            }
 
-            // Skip absolute URLs (http, https, data, etc.)
-            if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
-                url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
-                continue;
+            string htmlContent = File.ReadAllText(htmlFilePath);
+            // Find src and href attributes
+            Regex regex = new Regex(@"(?:src|href)\s*=\s*[""']([^""']+)[""']", RegexOptions.IgnoreCase);
+            MatchCollection matches = regex.Matches(htmlContent);
 
-            // Resolve relative path against the base folder
-            string resourcePath = Path.Combine(baseFolder, url.Replace('/', Path.DirectorySeparatorChar));
+            string htmlDirectory = Path.GetDirectoryName(htmlFilePath) ?? string.Empty;
+            bool allResourcesExist = true;
 
-            if (!File.Exists(resourcePath))
-                missingFiles.Add(resourcePath);
-        }
+            foreach (Match match in matches)
+            {
+                string resourcePath = match.Groups[1].Value;
 
-        if (missingFiles.Count > 0)
-        {
-            Console.WriteLine("Missing external resources detected:");
-            foreach (string missing in missingFiles)
-                Console.WriteLine($" - {missing}");
-            throw new Exception("HTML validation failed due to missing resources.");
-        }
-        else
-        {
-            Console.WriteLine("All external resource references in the HTML are valid.");
+                // Skip absolute URLs (http, https, data, etc.)
+                if (resourcePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                    resourcePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+                    resourcePath.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // Resolve relative paths
+                string fullPath = Path.GetFullPath(Path.Combine(htmlDirectory, resourcePath));
+
+                if (!File.Exists(fullPath))
+                {
+                    Console.WriteLine($"Missing resource: {resourcePath} (resolved to {fullPath})");
+                    allResourcesExist = false;
+                }
+            }
+
+            if (allResourcesExist)
+            {
+                Console.WriteLine("All external resources referenced in the HTML exist.");
+            }
+            else
+            {
+                throw new Exception("One or more external resources referenced in the HTML are missing.");
+            }
         }
     }
-}

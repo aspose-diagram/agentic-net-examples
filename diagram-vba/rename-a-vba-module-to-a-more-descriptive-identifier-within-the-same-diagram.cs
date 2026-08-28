@@ -16,20 +16,13 @@ class Program
             // Access the VBA project contained in the diagram
             VbaProject vbaProject = diagram.VbaProject;
 
-            // Define the current module name and the desired new name
-            string oldModuleName = "OldModule";
-            string newModuleName = "NewDescriptiveModule";
+            // Retrieve the module you want to rename (replace "OldModuleName" with the actual name)
+            VbaModule module = vbaProject.Modules["OldModuleName"];
 
-            // Retrieve the module by its current name
-            VbaModule module = vbaProject.Modules[oldModuleName];
+            // Assign a new, more descriptive name to the module
+            module.Name = "DescriptiveModuleName";
 
-            // If the module exists, rename it
-            if (module != null)
-            {
-                module.Name = newModuleName;
-            }
-
-            // Save the modified diagram
+            // Save the diagram with the updated VBA module name
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

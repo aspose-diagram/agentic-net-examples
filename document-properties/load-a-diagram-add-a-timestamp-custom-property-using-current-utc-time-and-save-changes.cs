@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Properties;
 
 class Program
 {
@@ -10,20 +9,22 @@ class Program
         try
         {
 
-            // Paths to the input and output Visio files
+            // Path to the input Visio file
             string inputPath = "input.vsdx";
+            // Path to the output Visio file
             string outputPath = "output.vsdx";
 
-            // Load the existing diagram
+            // Load the diagram from file
             Diagram diagram = new Diagram(inputPath);
 
-            // Create a custom property to store the current UTC timestamp
+            // Create a new custom property for the timestamp
             CustomProp timestampProp = new CustomProp();
             timestampProp.Name = "Timestamp";
             timestampProp.PropType = PropType.String;
-            timestampProp.CustomValue.ValueString = DateTime.UtcNow.ToString("o");
+            timestampProp.CustomValue = new CustomValue();
+            timestampProp.CustomValue.ValueString = DateTime.UtcNow.ToString("o"); // ISO 8601 format
 
-            // Add the custom property to the diagram's custom properties collection
+            // Add the custom property to the document properties collection
             diagram.DocumentProps.CustomProps.Add(timestampProp);
 
             // Save the diagram with the new custom property

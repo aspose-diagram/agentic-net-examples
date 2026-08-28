@@ -1,83 +1,61 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Path to the Visio file (provide via command line or hard‑code)
-        string filePath = args.Length > 0 ? args[0] : "input.vsdx";
-
-        // Guard to ensure the file exists before proceeding
-        if (!File.Exists(filePath))
-        {
-            Console.Error.WriteLine($"File not found: {filePath}");
-            return;
-        }
-
         try
         {
-            // Load the diagram (Diagram does not implement IDisposable, so no using block)
-            Diagram diagram = new Diagram(filePath);
 
-            // Dictionary to track layer names and the layers (with their pages) that share the name
-            var layerNameMap = new Dictionary<string, List<(Layer layer, Page page)>>(StringComparer.OrdinalIgnoreCase);
+            // Path to the Visio file to be validated
+            string inputPath = "input.vsdx";
 
-            // Iterate all pages in the diagram
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Track all layer names across the document
+            var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var duplicateReports = new List<string>();
+
+            // Iterate through each page and its layers
             foreach (Page page in diagram.Pages)
             {
-                // Iterate all layers on the current page
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Retrieve the layer name (fallback to empty string if null)
-                    string name = layer.Name.Value ?? string.Empty;
+                    string name = layer.Name.Value;
 
-                    // Ensure a list exists for this name
-                    if (!layerNameMap.TryGetValue(name, out var list))
+                    // If the name already exists, record a duplicate
+                    if (!seenNames.Add(name))
                     {
-                        list = new List<(Layer layer, Page page)>();
-                        layerNameMap[name] = list;
-                    }
-
-                    // Store the layer together with its owning page for later reporting
-                    list.Add((layer, page));
-                }
-            }
-
-            // Flag to indicate whether duplicates were found
-            bool duplicatesFound = false;
-
-            // Report duplicate layer names
-            foreach (var kvp in layerNameMap)
-            {
-                if (kvp.Value.Count > 1)
-                {
-                    duplicatesFound = true;
-                    Console.WriteLine($"Duplicate layer name \"{kvp.Key}\" found on {kvp.Value.Count} layers:");
-                    foreach (var entry in kvp.Value)
-                    {
-                        // Output page name and layer index for context
-                        Console.WriteLine($"  Page: \"{entry.page.Name}\", Layer IX: {entry.layer.IX}");
+                        duplicateReports.Add($"Duplicate layer name \"{name}\" found on page \"{page.Name}\".");
                     }
                 }
             }
 
-            if (!duplicatesFound)
+            // Output the validation results
+            if (duplicateReports.Count == 0)
             {
                 Console.WriteLine("All layer names are unique.");
             }
             else
             {
-                // Optionally raise an exception to signal validation failure
-                throw new Exception("Duplicate layer names detected in the diagram.");
+                Console.WriteLine("Duplicate layer names detected:");
+                foreach (string report in duplicateReports)
+                {
+                    Console.WriteLine(report);
+                }
             }
+
+            // Save the diagram (optional, demonstrates proper save usage)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

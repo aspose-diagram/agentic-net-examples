@@ -15,44 +15,38 @@ class Program
                 // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Get the collection of layers for the current page
-                    var layers = page.PageSheet.Layers;
-
-                    // Iterate through each layer by index
-                    for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
+                    // Iterate through each layer defined on the page
+                    foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        Layer layer = layers[layerIndex];
+                        int layerIndex = layer.IX;                     // Index of the layer
+                        string layerName = layer.Name.Value;           // Human‑readable name of the layer
                         int connectorCount = 0;
 
-                        // Iterate through all shapes on the page
+                        // Examine every shape on the page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Check if the shape is a connector (1‑D shape)
+                            // Connector shapes are 1‑D shapes (OneD == true)
                             if (shape.OneD)
                             {
-                                // Ensure the shape has layer membership information
-                                if (shape.LayerMem != null && shape.LayerMem.LayerMember != null)
+                                // Layer membership is stored as a semicolon‑separated list of indexes
+                                string memberString = shape.LayerMem.LayerMember.Value;
+
+                                if (!string.IsNullOrEmpty(memberString))
                                 {
-                                    string memberValue = shape.LayerMem.LayerMember.Value; // e.g., "0;2"
-                                    if (!string.IsNullOrEmpty(memberValue))
+                                    string[] memberIndexes = memberString.Split(';');
+                                    foreach (string idx in memberIndexes)
                                     {
-                                        // Split the semicolon‑separated list of layer indexes
-                                        string[] parts = memberValue.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                                        foreach (string part in parts)
+                                        if (idx == layerIndex.ToString())
                                         {
-                                            if (int.TryParse(part, out int idx) && idx == layerIndex)
-                                            {
-                                                connectorCount++;
-                                                break; // Shape belongs to this layer, no need to check further
-                                            }
+                                            connectorCount++;
+                                            break; // Shape counted for this layer; no need to check other indexes
                                         }
                                     }
                                 }
                             }
                         }
 
-                        // Output the result for the current layer
-                        Console.WriteLine($"Page \"{page.Name}\" - Layer \"{layer.Name.Value}\" (Index {layerIndex}) contains {connectorCount} connector shape(s).");
+                        Console.WriteLine($"Layer '{layerName}' contains {connectorCount} connector shape(s).");
                     }
                 }
 

@@ -11,64 +11,52 @@ class Program
         {
 
             // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the document
-            foreach (Page page in diagram.Pages)
+            // Assume the watermark layer is on the first page
+            Page page = diagram.Pages[0];
+
+            // Find the index of the layer named "Watermark"
+            int watermarkLayerIndex = -1;
+            foreach (Layer layer in page.PageSheet.Layers)
             {
-                // Locate the layer named "Watermark" on the current page
-                Layer watermarkLayer = null;
-                foreach (Layer layer in page.PageSheet.Layers)
+                if (layer.Name.Value.Equals("Watermark", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (layer.Name.Value == "Watermark")
-                    {
-                        watermarkLayer = layer;
-                        break;
-                    }
+                    watermarkLayerIndex = layer.IX;
+                    break;
                 }
+            }
 
-                // If the Watermark layer does not exist on this page, skip to the next page
-                if (watermarkLayer == null)
+            if (watermarkLayerIndex == -1)
+            {
+                throw new Exception("Layer named 'Watermark' was not found.");
+            }
+
+            // Apply 50% transparency to all shapes that belong to the Watermark layer
+            foreach (Shape shape in page.Shapes)
+            {
+                string member = shape.LayerMem.LayerMember.Value;
+                if (string.IsNullOrEmpty(member))
                     continue;
 
-                int watermarkIndex = watermarkLayer.IX; // Index of the Watermark layer
-
-                // Process every shape on the page
-                foreach (Shape shape in page.Shapes)
+                string[] indices = member.Split(';');
+                foreach (string idxStr in indices)
                 {
-                    // Ensure the shape has layer membership information
-                    if (shape.LayerMem == null)
-                        continue;
-
-                    string layerMember = shape.LayerMem.LayerMember.Value;
-                    if (string.IsNullOrEmpty(layerMember))
-                        continue;
-
-                    // Check if the shape belongs to the Watermark layer
-                    string[] members = layerMember.Split(';');
-                    bool belongsToWatermark = false;
-                    foreach (string member in members)
+                    if (int.TryParse(idxStr, out int idx) && idx == watermarkLayerIndex)
                     {
-                        if (int.TryParse(member, out int idx) && idx == watermarkIndex)
-                        {
-                            belongsToWatermark = true;
-                            break;
-                        }
+                        // Set fill foreground transparency
+                        shape.Fill.FillForegndTrans.Value = 50;
+                        // Set line color transparency
+                        shape.Line.LineColorTrans.Value = 50;
+                        break;
                     }
-
-                    if (!belongsToWatermark)
-                        continue;
-
-                    // Set fill foreground transparency to 50%
-                    shape.Fill.FillForegndTrans.Value = 50;
-
-                    // Set line color transparency to 50%
-                    shape.Line.LineColorTrans.Value = 50;
                 }
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

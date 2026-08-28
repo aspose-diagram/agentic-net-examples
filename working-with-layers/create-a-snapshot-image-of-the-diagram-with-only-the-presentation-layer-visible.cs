@@ -10,23 +10,17 @@ class Program
         try
         {
 
-            // Path to the source Visio diagram
+            // Load the Visio diagram from a file
             string inputPath = "input.vsdx";
-
-            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Name of the layer to keep visible
-            string targetLayerName = "Presentation";
-
-            // Iterate through all pages in the diagram
+            // Iterate through all pages and set layer visibility
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all layers on the page
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Set visibility: only the target layer is visible
-                    if (layer.Name.Value.Equals(targetLayerName, StringComparison.OrdinalIgnoreCase))
+                    // Only the layer named "Presentation" should be visible
+                    if (layer.Name.Value == "Presentation")
                     {
                         layer.Visible.Value = BOOL.True;
                     }
@@ -37,14 +31,12 @@ class Program
                 }
             }
 
-            // Configure image export options (PNG format)
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Configure image save options (PNG format)
+            ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
 
-            // Export the diagram as an image snapshot
+            // Save the snapshot image with the applied layer visibility
             string outputPath = "snapshot.png";
-            diagram.Save(outputPath, saveOptions);
-
-            Console.WriteLine($"Snapshot saved to '{outputPath}' with only the '{targetLayerName}' layer visible.");
+            diagram.Save(outputPath, options);
 
         }
         catch (System.IO.FileNotFoundException ex)

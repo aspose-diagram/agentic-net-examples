@@ -1,57 +1,40 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Ensure a file path argument was provided.
-        if (args.Length == 0)
-        {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
-            return;
-        }
-
-        // Assign the first argument to a variable.
-        string visioPath = args[0];
-
-        // Verify that the specified file exists.
-        if (!File.Exists(visioPath))
-        {
-            Console.Error.WriteLine($"File not found: {visioPath}");
-            return;
-        }
-
         try
         {
-            // Load the Visio diagram from the provided file path.
-            Diagram diagram = new Diagram(visioPath);
 
-            // Iterate over each page in the diagram.
+            // Path to the Visio file (adjust as needed)
+            string inputPath = "input.vsdx";
+
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Output the page name and ID for context.
-                Console.WriteLine($"Page: {page.Name} (ID: {page.ID})");
+                Console.WriteLine($"Page: {page.Name}");
 
-                // Access the collection of layers defined on the page's sheet.
+                // Iterate through each layer on the current page
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Retrieve the layer's display name.
-                    string layerName = layer.Name.Value;
-
-                    // Determine visibility status using the BOOL enum.
+                    // Determine visibility status
                     string visibility = layer.Visible.Value == BOOL.True ? "Visible" : "Hidden";
 
-                    // Output the layer name along with its visibility.
-                    Console.WriteLine($"  Layer: {layerName}, Visibility: {visibility}");
+                    // Output layer name and its visibility
+                    Console.WriteLine($"  Layer: {layer.Name.Value}, Visibility: {visibility}");
                 }
             }
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any exceptions that occur during loading or processing to the error stream.
-            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

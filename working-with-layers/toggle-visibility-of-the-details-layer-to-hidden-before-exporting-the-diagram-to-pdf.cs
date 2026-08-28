@@ -5,51 +5,41 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Expect input Visio file and output PDF file paths as arguments
+        if (args.Length < 2)
         {
+            Console.WriteLine("Usage: <inputVisioFile> <outputPdfFile>");
+            return;
+        }
 
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output PDF file path
-            string outputPath = "output.pdf";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+        // Load the diagram from the specified file
+        Diagram diagram = new Diagram(inputPath);
+
+        // Hide the layer named "Details" on every page
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Layer layer in page.PageSheet.Layers)
             {
-                // Iterate through all pages to find the 'Details' layer
-                foreach (Page page in diagram.Pages)
+                if (layer.Name.Value == "Details")
                 {
-                    // Access the layer collection of the page
-                    foreach (Layer layer in page.PageSheet.Layers)
-                    {
-                        // Compare layer name (case-sensitive)
-                        if (layer.Name.Value == "Details")
-                        {
-                            // Hide the layer
-                            layer.Visible.Value = BOOL.False;
-                        }
-                    }
+                    layer.Visible.Value = BOOL.False;
                 }
-
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    // Ensure hidden pages/layers are not exported
-                    ExportHiddenPage = false
-                };
-
-                // Export the diagram to PDF
-                diagram.Save(outputPath, pdfOptions);
             }
-
-            Console.WriteLine("Diagram exported to PDF with 'Details' layer hidden.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Configure PDF save options to exclude hidden pages/layers
+        PdfSaveOptions pdfOptions = new PdfSaveOptions
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            ExportHiddenPage = false,
+            DefaultFont = "Arial"
+        };
+
+        // Export the diagram to PDF
+        diagram.Save(outputPath, pdfOptions);
     }
 }

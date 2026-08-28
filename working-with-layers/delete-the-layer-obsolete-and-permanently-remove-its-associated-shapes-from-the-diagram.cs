@@ -1,63 +1,65 @@
-using System;
 using System.IO;
-using System.Linq;
+using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+
+using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-
-        // Path for the output Visio file after removal
-        string outputPath = "output.vsdx";
-        // Guard to ensure the output directory exists (optional, but prevents later errors)
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir)) { Console.Error.WriteLine($"Output directory not found: {outputDir}"); return; }
-
         try
         {
-            // Load the diagram from the input file
-            Diagram diagram = new Diagram(inputPath);
 
-            // Name of the layer to delete
-            const string targetLayerName = "Obsolete";
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
             // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Locate the layer with the specified name on the current page
-                Layer layerToDelete = null;
+                // Locate the layer named "Obsolete"
+                int obsoleteLayerIndex = -1;
+                Layer obsoleteLayer = null;
+                int currentIndex = 0;
+
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Compare the layer's name value with the target name
-                    if (layer.Name.Value == targetLayerName)
+                    if (layer.Name.Value == "Obsolete")
                     {
-                        layerToDelete = layer;
+                        obsoleteLayerIndex = currentIndex;
+                        obsoleteLayer = layer;
                         break;
                     }
+                    currentIndex++;
                 }
 
-                // If the layer does not exist on this page, continue to next page
-                if (layerToDelete == null)
+                // If the layer was not found, continue to the next page
+                if (obsoleteLayerIndex == -1)
                     continue;
 
-                // The layer index (as string) used in the shape's LayerMember property
-                string layerIndexString = layerToDelete.IX.ToString();
+                // Collect shapes that belong to the "Obsolete" layer
+                List<Shape> shapesToRemove = new List<Shape>();
 
-                // Collect shapes that belong to the target layer
-                System.Collections.Generic.List<Shape> shapesToRemove = new System.Collections.Generic.List<Shape>();
                 foreach (Shape shape in page.Shapes)
                 {
-                    // LayerMember is a semicolon‑separated list of layer indexes
-                    string member = shape.LayerMem.LayerMember.Value;
-                    if (!string.IsNullOrEmpty(member) && member.Split(';').Contains(layerIndexString))
+                    string layerMember = shape.LayerMem.LayerMember.Value;
+                    if (string.IsNullOrEmpty(layerMember))
+                        continue;
+
+                    // The LayerMember string contains semicolon‑separated layer indexes
+                    string[] members = layerMember.Split(';');
+                    foreach (string member in members)
                     {
-                        shapesToRemove.Add(shape);
+                        if (int.TryParse(member, out int idx) && idx == obsoleteLayerIndex)
+                        {
+                            shapesToRemove.Add(shape);
+                            break;
+                        }
                     }
                 }
 
@@ -67,17 +69,18 @@ class Program
                     page.Shapes.Remove(shape);
                 }
 
-                // Finally, remove the layer itself from the page's layer collection
-                page.PageSheet.Layers.Remove(layerToDelete);
+                // Hide the layer (Aspose.Diagram does not provide a direct removal method)
+                obsoleteLayer.Visible.Value = BOOL.False;
+                obsoleteLayer.Print.Value = BOOL.False;
             }
 
-            // Save the modified diagram to the output file
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -5,37 +5,45 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input Visio file path
+            // Path to the source Visio diagram
             string inputPath = "input.vsdx";
-            // Output SVG file path
-            string outputPath = "output.svg";
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and set layer visibility
+            // Iterate through all pages (handles multi‑page documents)
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through each layer on the page
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Make only the 'Technical' layer visible
-                    if (layer.Name.Value == "Technical")
+                    // Make only the "Technical" layer visible; hide all others
+                    if (layer.Name.Value.Equals("Technical", StringComparison.OrdinalIgnoreCase))
+                    {
                         layer.Visible.Value = BOOL.True;
+                    }
                     else
+                    {
                         layer.Visible.Value = BOOL.False;
+                    }
                 }
             }
 
-            // Configure SVG save options (optional: exclude hidden pages)
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            svgOptions.ExportHiddenPage = false;
+            // Configure SVG export options
+            SVGSaveOptions svgOptions = new SVGSaveOptions
+            {
+                ExportHiddenPage = false // exclude hidden pages from the export
+            };
 
-            // Save the diagram as SVG
+            // Path for the exported SVG file
+            string outputPath = "output.svg";
+
+            // Save the diagram as SVG using the configured options
             diagram.Save(outputPath, svgOptions);
 
         }

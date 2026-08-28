@@ -1,71 +1,75 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Expect the first argument to be the Visio file path.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: <program> <visio-file-path>");
+            return;
+        }
+
+        string visioPath = args[0];
+        // Verify that the input file exists.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"File not found: {visioPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(visioPath);
 
-            // Path to the Visio file; can be passed as a command‑line argument
-            string filePath = args.Length > 0 ? args[0] : "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // Iterate through each page in the diagram
+            // Iterate through each page in the document.
             foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine($"Page: {page.Name}");
-
-                // Iterate through each layer on the current page
+                // Access the collection of layers defined for the current page.
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    int layerIndex = layer.IX;
-                    string layerIndexStr = layerIndex.ToString();
+                    // Prepare a counter for shapes belonging to this layer.
                     int shapeCount = 0;
 
-                    // Count shapes that belong to this layer
+                    // Iterate over all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Get the layer membership string (e.g., "0;2;3")
+                        // Retrieve the layer membership string (e.g., "0;2;5").
                         string member = shape.LayerMem?.LayerMember?.Value;
 
+                        // If the shape is assigned to any layers, check for the current layer index.
                         if (!string.IsNullOrEmpty(member))
                         {
-                            // Split the membership string and check for the current layer index
-                            string[] parts = member.Split(';');
-                            foreach (string part in parts)
+                            // Split the semicolon‑separated list and compare each entry.
+                            string[] indices = member.Split(';');
+                            foreach (string idx in indices)
                             {
-                                if (part == layerIndexStr)
+                                // Increment the counter when the layer index matches.
+                                if (idx == layer.IX.ToString())
                                 {
                                     shapeCount++;
-                                    break;
+                                    break; // No need to check further indices for this shape.
                                 }
                             }
                         }
                     }
 
-                    // Determine visibility text
-                    string visibility = layer.Visible.Value == BOOL.True ? "Visible" : "Hidden";
+                    // Convert the BOOL enum to a readable string.
+                    string visibility = layer.Visible.Value == BOOL.True ? "True" : "False";
 
-                    // Output the summary for this layer
-                    Console.WriteLine($"Layer: {layer.Name.Value}, Visibility: {visibility}, Shape Count: {shapeCount}");
+                    // Output the summary line for the current layer.
+                    Console.WriteLine($"Page: {page.Name} | Layer: {layer.Name.Value} | Visible: {visibility} | ShapeCount: {shapeCount}");
                 }
-
-                Console.WriteLine(); // Blank line between pages
             }
-
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any Aspose.Diagram errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

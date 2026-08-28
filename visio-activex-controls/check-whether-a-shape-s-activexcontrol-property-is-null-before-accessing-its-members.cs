@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
@@ -18,24 +18,19 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check whether the shape contains an ActiveX control
+                    // Check if the shape contains an ActiveX control before accessing its members
                     if (shape.ActiveXControl != null)
                     {
-                        // Safe to access members of the ActiveX control
+                        // Example: read the IsEnabled property of the ActiveX control
                         bool isEnabled = shape.ActiveXControl.IsEnabled;
 
-                        // Example usage: output the control state
-                        Console.WriteLine($"Shape ID {shape.ID} has an ActiveX control. IsEnabled = {isEnabled}");
-                    }
-                    else
-                    {
-                        // Shape does not have an ActiveX control
-                        Console.WriteLine($"Shape ID {shape.ID} does not contain an ActiveX control.");
+                        // Perform any required logic with the retrieved value
+                        // (e.g., log, modify, or conditionally process the shape)
                     }
                 }
             }
 
-            // Save the diagram (if any modifications were made)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

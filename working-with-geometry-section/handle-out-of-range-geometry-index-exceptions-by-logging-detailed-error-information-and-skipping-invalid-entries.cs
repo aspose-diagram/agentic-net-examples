@@ -8,68 +8,57 @@ class Program
             try
             {
 
-                // Input and output file paths (adjust as needed)
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                string outputPath = "output_processed.vsdx";
+                // Path for the processed output file
+                string outputPath = "output.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through pages, shapes, and geometry sections
+                // Process each page and its shapes
                 for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    var page = diagram.Pages[pageIndex];
 
-                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Shape shape = page.Shapes[shapeIndex];
-                        long shapeId = shape.ID;
-
-                        // Iterate over each Geom collection in the shape
+                        // Iterate through the geometry sections of the shape
                         for (int geomIndex = 0; geomIndex < shape.Geoms.Count; geomIndex++)
                         {
-                            // The Geoms collection returns objects; cast to Geom
-                            Geom geom = (Geom)shape.Geoms[geomIndex];
-
-                            // Iterate over the coordinate collection safely
-                            for (int coordIndex = 0; coordIndex < geom.CoordinateCol.Count; coordIndex++)
+                            try
                             {
-                                try
+                                // Retrieve the geometry object
+                                var geom = (Geom)shape.Geoms[geomIndex];
+
+                                // Example operation: iterate over coordinate collection
+                                for (int coordIndex = 0; coordIndex < geom.CoordinateCol.Count; coordIndex++)
                                 {
-                                    // Access the geometry segment; the exact type (MoveTo, LineTo, etc.) is not required here
-                                    object segment = geom.CoordinateCol[coordIndex];
-                                    // Example operation: just output the segment type
-                                    Console.WriteLine($"Page {pageIndex}, Shape ID {shapeId}, Geom {geomIndex}, Coord {coordIndex}: {segment.GetType().Name}");
+                                    var segment = geom.CoordinateCol[coordIndex];
+                                    // Placeholder for any geometry manipulation logic
+                                    // e.g., segment.X.Value = segment.X.Value + 0.1;
                                 }
-                                catch (IndexOutOfRangeException ex)
-                                {
-                                    // Log detailed error information and continue with the next entry
-                                    Console.WriteLine($"[ERROR] Out-of-range geometry index encountered:");
-                                    Console.WriteLine($"  Page Index   : {pageIndex}");
-                                    Console.WriteLine($"  Shape ID     : {shapeId}");
-                                    Console.WriteLine($"  Geom Index   : {geomIndex}");
-                                    Console.WriteLine($"  Coord Index  : {coordIndex}");
-                                    Console.WriteLine($"  Exception    : {ex.Message}");
-                                    // Skip this invalid entry and continue
-                                }
-                                catch (Exception ex)
-                                {
-                                    // Catch any other unexpected exceptions, log, and continue
-                                    Console.WriteLine($"[ERROR] Unexpected exception while processing geometry:");
-                                    Console.WriteLine($"  Page Index   : {pageIndex}");
-                                    Console.WriteLine($"  Shape ID     : {shapeId}");
-                                    Console.WriteLine($"  Geom Index   : {geomIndex}");
-                                    Console.WriteLine($"  Coord Index  : {coordIndex}");
-                                    Console.WriteLine($"  Exception    : {ex.GetType().Name} - {ex.Message}");
-                                }
+                            }
+                            catch (IndexOutOfRangeException ex)
+                            {
+                                // Log detailed error information and skip the invalid geometry entry
+                                Console.WriteLine($"[Warning] Page {pageIndex + 1}, Shape ID {shape.ID}, Geometry index {geomIndex} is out of range. Details: {ex.Message}");
+                                continue;
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log unexpected errors without halting the entire processing
+                                Console.WriteLine($"[Error] Unexpected exception on Page {pageIndex + 1}, Shape ID {shape.ID}, Geometry index {geomIndex}. Details: {ex}");
+                                continue;
                             }
                         }
                     }
                 }
 
-                // Save the processed diagram
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram processing complete. Saved to '{outputPath}'.");
+
+                Console.WriteLine("Processing completed successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

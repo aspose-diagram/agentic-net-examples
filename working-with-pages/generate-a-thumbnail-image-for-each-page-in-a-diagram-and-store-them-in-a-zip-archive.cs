@@ -6,48 +6,44 @@ using Aspose.Diagram.Saving;
 
 class DiagramThumbnailsToZip
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input Visio file path
-            string visioFilePath = @"C:\Input\sample.vsdx";
+            // Path to the source Visio diagram
+            string diagramPath = "input.vsdx";
 
-            // Output ZIP file path that will contain the thumbnails
-            string zipFilePath = @"C:\Output\thumbnails.zip";
+            // Path where the zip archive with thumbnails will be created
+            string zipPath = "thumbnails.zip";
 
-            // Load the diagram using the provided constructor (lifecycle rule)
-            using (Diagram diagram = new Diagram(visioFilePath))
+            // Load the diagram using the constructor that accepts a file name
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Create a ZIP archive for the thumbnails
-                using (FileStream zipStream = new FileStream(zipFilePath, FileMode.Create))
+                // Create the zip archive for writing
+                using (FileStream zipStream = new FileStream(zipPath, FileMode.Create))
                 using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
                 {
-                    // Iterate through each page in the diagram
+                    // Iterate through all pages in the diagram
                     for (int i = 0; i < diagram.Pages.Count; i++)
                     {
                         // Configure image save options for the current page
                         ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
                         {
-                            PageIndex = i,          // 0‑based index of the page to render
-                            PageCount = 1,          // Render only this page
-                            Resolution = 96,        // DPI (optional, adjust as needed)
-                            // Additional options can be set here if required
+                            PageIndex = i,      // zero‑based index of the page to render
+                            PageCount = 1,      // render only this page
+                            Resolution = 96     // optional: set DPI for the thumbnail
                         };
 
                         // Render the page to a memory stream
                         using (MemoryStream imgStream = new MemoryStream())
                         {
-                            // Save the diagram page as an image using the provided Save overload (lifecycle rule)
                             diagram.Save(imgStream, imgOptions);
                             imgStream.Seek(0, SeekOrigin.Begin);
 
-                            // Create an entry in the ZIP archive for this thumbnail
+                            // Add the image as an entry in the zip archive
                             string entryName = $"page_{i + 1}.png";
                             ZipArchiveEntry entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
-
-                            // Write the image data into the ZIP entry
                             using (Stream entryStream = entry.Open())
                             {
                                 imgStream.CopyTo(entryStream);
@@ -57,12 +53,10 @@ class DiagramThumbnailsToZip
                 }
             }
 
-            Console.WriteLine("Thumbnails have been generated and stored in the ZIP archive.");
-
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

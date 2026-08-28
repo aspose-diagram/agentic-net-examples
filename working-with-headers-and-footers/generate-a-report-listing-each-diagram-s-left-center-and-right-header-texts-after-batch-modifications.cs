@@ -6,55 +6,51 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Determine the folder to process. Use the first argument if provided,
-            // otherwise default to the current working directory.
+            // Determine the folder containing the diagrams.
+            // If a path is passed as the first argument, use it; otherwise, use the current directory.
             string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
 
-            // Find all Visio files (VSDX) in the folder.
-            string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx");
-
-            if (diagramFiles.Length == 0)
+            if (!Directory.Exists(folderPath))
             {
-                Console.WriteLine("No Visio files found in the specified folder.");
+                Console.WriteLine($"Error: The folder \"{folderPath}\" does not exist.");
                 return;
             }
 
-            // Prepare a simple text report.
-            string reportPath = Path.Combine(folderPath, "HeaderFooterReport.txt");
-            using (StreamWriter writer = new StreamWriter(reportPath, false))
+            // Get all Visio files in the folder (common extensions).
+            string[] diagramFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
+            string[] supportedExtensions = { ".vsdx", ".vsd", ".vdx", ".vssx", ".vss", ".vstx", ".vst", ".vtx" };
+
+            foreach (string filePath in diagramFiles)
             {
-                writer.WriteLine("Visio Header/Footer Report");
-                writer.WriteLine($"Generated on {DateTime.Now}");
-                writer.WriteLine(new string('-', 50));
-
-                foreach (string file in diagramFiles)
+                string extension = Path.GetExtension(filePath);
+                if (Array.IndexOf(supportedExtensions, extension, 0, supportedExtensions.Length) < 0)
                 {
-                    // Load the diagram.
-                    Diagram diagram = new Diagram(file);
-
-                    // Retrieve header texts; treat null as empty string.
-                    string left = diagram.HeaderFooter.HeaderLeft ?? string.Empty;
-                    string center = diagram.HeaderFooter.HeaderCenter ?? string.Empty;
-                    string right = diagram.HeaderFooter.HeaderRight ?? string.Empty;
-
-                    // Output to console.
-                    Console.WriteLine($"File: {Path.GetFileName(file)}");
-                    Console.WriteLine($"  Header Left   : {left}");
-                    Console.WriteLine($"  Header Center : {center}");
-                    Console.WriteLine($"  Header Right  : {right}");
-                    Console.WriteLine();
-
-                    // Write to the report file.
-                    writer.WriteLine($"File: {Path.GetFileName(file)}");
-                    writer.WriteLine($"  Header Left   : {left}");
-                    writer.WriteLine($"  Header Center : {center}");
-                    writer.WriteLine($"  Header Right  : {right}");
-                    writer.WriteLine();
+                    // Skip non‑Visio files.
+                    continue;
                 }
 
-                writer.WriteLine("Report generation completed.");
-            }
+                try
+                {
+                    // Load the diagram.
+                    Diagram diagram = new Diagram(filePath);
 
-            Console.WriteLine($"Report saved to: {reportPath}");
+                    // Retrieve header texts. Use empty string if any are null.
+                    string leftHeader   = diagram.HeaderFooter.HeaderLeft   ?? string.Empty;
+                    string centerHeader = diagram.HeaderFooter.HeaderCenter ?? string.Empty;
+                    string rightHeader  = diagram.HeaderFooter.HeaderRight  ?? string.Empty;
+
+                    // Output the information.
+                    Console.WriteLine($"File: {Path.GetFileName(filePath)}");
+                    Console.WriteLine($"  Header Left:   \"{leftHeader}\"");
+                    Console.WriteLine($"  Header Center: \"{centerHeader}\"");
+                    Console.WriteLine($"  Header Right:  \"{rightHeader}\"");
+                    Console.WriteLine(); // Blank line for readability
+                }
+                catch (Exception ex)
+                {
+                    // Report any errors loading or processing the diagram.
+                    Console.WriteLine($"Failed to process \"{Path.GetFileName(filePath)}\": {ex.Message}");
+                }
+            }
         }
     }

@@ -4,18 +4,25 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Determine the folder to process. Use the first argument if provided, otherwise use the current directory.
-            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+            // Folder containing the Visio files to process.
+            string inputFolder = @"C:\VisioFiles";
+            // Optional: folder to save the updated files.
+            string outputFolder = @"C:\VisioFiles\Processed";
 
-            // Get all Visio files in the folder (common extensions). Adjust the pattern list as needed.
-            string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (string filePath in visioFiles)
+            // Ensure the output folder exists.
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
+
+            // Process each Visio file in the input folder.
+            string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (string filePath in files)
             {
-                // Process only files with known Visio extensions.
+                // Consider only supported Visio extensions.
                 string extension = Path.GetExtension(filePath).ToLowerInvariant();
-                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
+                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx" &&
+                    extension != ".vsx" && extension != ".vtx" && extension != ".vsdm")
                 {
                     continue;
                 }
@@ -28,27 +35,34 @@ class Program
                     // Apply a uniform header margin of 0.25 inches.
                     diagram.HeaderFooter.HeaderMargin.Value = 0.25;
 
-                    // Save the diagram back to the same file, using the appropriate format.
-                    if (extension == ".vsdx")
+                    // Determine the save format based on the original extension.
+                    SaveFileFormat format = extension switch
                     {
-                        diagram.Save(filePath, SaveFileFormat.Vsdx);
-                    }
-                    else if (extension == ".vsd")
-                    {
-                        diagram.Save(filePath, SaveFileFormat.Vsd);
-                    }
-                    else // .vdx
-                    {
-                        diagram.Save(filePath, SaveFileFormat.Vdx);
-                    }
+                        ".vsdx" => SaveFileFormat.Vsdx,
+                        ".vsd"  => SaveFileFormat.Vsd,
+                        ".vdx"  => SaveFileFormat.Vdx,
+                        ".vsx"  => SaveFileFormat.Vsx,
+                        ".vtx"  => SaveFileFormat.Vtx,
+                        ".vsdm" => SaveFileFormat.Vsdm,
+                        _       => SaveFileFormat.Vsdx
+                    };
 
-                    Console.WriteLine($"Successfully updated header margin for: {Path.GetFileName(filePath)}");
+                    // Build the output file path.
+                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+
+                    // Save the updated diagram.
+                    diagram.Save(outputPath, format);
+
+                    Console.WriteLine($"Successfully processed: {filePath}");
                 }
                 catch (Exception ex)
                 {
-                    // Log any failures without stopping the batch process.
-                    Console.WriteLine($"Failed to process {Path.GetFileName(filePath)}. Error: {ex.Message}");
+                    // Log any failures without stopping the batch.
+                    Console.WriteLine($"Failed to process: {filePath}");
+                    Console.WriteLine($"Error: {ex.Message}");
                 }
             }
+
+            Console.WriteLine("Batch processing completed.");
         }
     }

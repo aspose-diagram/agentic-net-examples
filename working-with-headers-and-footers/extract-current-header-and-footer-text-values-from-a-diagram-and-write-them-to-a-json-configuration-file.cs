@@ -5,7 +5,7 @@ using Aspose.Diagram;
 
 namespace HeaderFooterExtractor
 {
-    // DTO for JSON serialization
+    // DTO for JSON configuration
     public class HeaderFooterConfig
     {
         public string HeaderLeft { get; set; }
@@ -18,16 +18,16 @@ namespace HeaderFooterExtractor
 
     public class Program
     {
-        public static void Main(string[] args)
+        public static void Main()
         {
             try
             {
 
-                // Input Visio file path (modify as needed)
-                string diagramPath = "input.vsdx";
+                // Path to the Visio diagram file
+                const string diagramPath = "input.vsdx";
 
-                // Output JSON configuration file path
-                string jsonPath = "headerFooterConfig.json";
+                // Path for the output JSON configuration file
+                const string outputJsonPath = "headerFooterConfig.json";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(diagramPath);
@@ -44,13 +44,12 @@ namespace HeaderFooterExtractor
                 };
 
                 // Serialize to JSON with indentation for readability
-                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                string jsonContent = JsonSerializer.Serialize(config, jsonOptions);
+                string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
 
                 // Write JSON to file
-                File.WriteAllText(jsonPath, jsonContent);
+                File.WriteAllText(outputJsonPath, json);
 
-                Console.WriteLine($"Header and footer values have been exported to '{jsonPath}'.");
+                Console.WriteLine($"Header and footer configuration saved to '{outputJsonPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

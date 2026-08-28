@@ -7,13 +7,13 @@ class Program
 {
     static void Main()
     {
-        // Create a new empty diagram
+        // Create a new diagram instance
         Diagram diagram = new Diagram();
 
-        // Set the right footer text
-        diagram.HeaderFooter.FooterRight = "My custom right footer text";
+        // Assign a new string to the right portion of the footer
+        diagram.HeaderFooter.FooterRight = "Confidential - Draft";
 
-        // Save the diagram as VDX using the built‑in Save method with SaveFileFormat
+        // Save the diagram as a VDX file
         diagram.Save("output.vdx", SaveFileFormat.Vdx);
     }
 }

@@ -10,34 +10,32 @@ class HeaderComparison
         {
 
             // Paths to the two Visio diagrams to compare
-            string diagramPath1 = @"C:\Diagrams\Diagram1.vsdx";
-            string diagramPath2 = @"C:\Diagrams\Diagram2.vsdx";
+            string diagramPath1 = "Diagram1.vsdx";
+            string diagramPath2 = "Diagram2.vsdx";
 
-            // Path to the log file where differences will be recorded
-            string logFilePath = @"C:\Diagrams\HeaderComparisonLog.txt";
-
-            // Load the first diagram using the Aspose.Diagram constructor that accepts a file path
+            // Load the diagrams using Aspose.Diagram constructors (lifecycle rule)
             Diagram diagram1 = new Diagram(diagramPath1);
-            // Load the second diagram
             Diagram diagram2 = new Diagram(diagramPath2);
 
             // Retrieve the left header text from each diagram
             string headerLeft1 = diagram1.HeaderFooter.HeaderLeft;
             string headerLeft2 = diagram2.HeaderFooter.HeaderLeft;
 
-            // Open the log file for appending
-            using (StreamWriter logWriter = new StreamWriter(logFilePath, true))
+            // Prepare the log file
+            string logPath = "HeaderComparisonLog.txt";
+            using (StreamWriter logWriter = new StreamWriter(logPath, false))
             {
-                // Compare the header texts and write the result to the log
-                if (!string.Equals(headerLeft1, headerLeft2, StringComparison.Ordinal))
+                // Compare the header texts and write differences (if any)
+                if (headerLeft1 == headerLeft2)
                 {
-                    logWriter.WriteLine($"[{DateTime.Now}] HeaderLeft differs:");
-                    logWriter.WriteLine($"  Diagram 1: \"{headerLeft1}\"");
-                    logWriter.WriteLine($"  Diagram 2: \"{headerLeft2}\"");
+                    logWriter.WriteLine("HeaderLeft texts are identical.");
+                    logWriter.WriteLine($"HeaderLeft: \"{headerLeft1}\"");
                 }
                 else
                 {
-                    logWriter.WriteLine($"[{DateTime.Now}] HeaderLeft is identical: \"{headerLeft1}\"");
+                    logWriter.WriteLine("HeaderLeft texts differ:");
+                    logWriter.WriteLine($"Diagram 1 HeaderLeft: \"{headerLeft1}\"");
+                    logWriter.WriteLine($"Diagram 2 HeaderLeft: \"{headerLeft2}\"");
                 }
             }
 

@@ -13,13 +13,11 @@ class Program
             // Load the VSDX diagram from file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Configure image save options:
-            // - Save format: TIFF
-            // - Color mode: Grayscale (applies to all rendered pages)
+            // Configure image save options for TIFF format with grayscale color mode
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
-            saveOptions.ImageColorMode = ImageColorMode.Grayscale;
+            saveOptions.ImageColorMode = ImageColorMode.Grayscale; // Apply grayscale filter to all rendered pages
 
-            // Export all pages of the diagram as a multipage TIFF file
+            // Export all pages of the diagram as a multi‑page TIFF file
             diagram.Save("output.tiff", saveOptions);
 
         }

@@ -10,17 +10,18 @@ class Program
         try
         {
 
-            // Load the Visio diagram from file
+            // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Set up image save options for a multi‑page TIFF with LZW compression
-            ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Tiff);
-            options.TiffCompression = TiffCompression.Lzw;   // Apply LZW compression
-            options.PageCount = int.MaxValue;                // Render all pages (default)
-            options.PageIndex = 0;                           // Start from the first page
+            // Configure image save options for a multi‑page TIFF
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
+            // Use LZW compression to reduce file size (default is Lzw, set explicitly for clarity)
+            saveOptions.TiffCompression = TiffCompression.Lzw;
+            // PageCount defaults to MaxValue, which renders all pages; set explicitly if needed
+            // saveOptions.PageCount = int.MaxValue;
 
             // Save all pages as a single multi‑page TIFF file
-            diagram.Save("output.tiff", options);
+            diagram.Save("output.tiff", saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

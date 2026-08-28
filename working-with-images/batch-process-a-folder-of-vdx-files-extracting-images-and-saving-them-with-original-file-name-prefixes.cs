@@ -1,78 +1,48 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+class VdxImageExtractor
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Folder containing VDX files
+        string inputFolder = @"C:\VisioFiles";
+        // Folder where extracted images will be saved
+        string outputFolder = @"C:\ExtractedImages";
+
+        // Ensure output directory exists
+        Directory.CreateDirectory(outputFolder);
+
+        // Process each VDX file in the input folder
+        foreach (string vdxPath in Directory.GetFiles(inputFolder, "*.vdx"))
         {
-            // Determine the folder containing VDX files.
-            string inputFolder;
-            if (args.Length > 0)
+            // Load the diagram using the constructor that accepts a file path
+            using (Diagram diagram = new Diagram(vdxPath))
             {
-                inputFolder = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the full path to the folder containing VDX files: ");
-                inputFolder = Console.ReadLine()?.Trim() ?? string.Empty;
-            }
+                string filePrefix = Path.GetFileNameWithoutExtension(vdxPath);
+                int shapeCounter = 0;
 
-            if (!Directory.Exists(inputFolder))
-            {
-                Console.WriteLine($"Folder not found: {inputFolder}");
-                return;
-            }
-
-            // Create an output folder for extracted images.
-            string outputFolder = Path.Combine(inputFolder, "ExtractedImages");
-            Directory.CreateDirectory(outputFolder);
-
-            // Process each VDX file in the folder.
-            string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx", SearchOption.TopDirectoryOnly);
-            foreach (string vdxPath in vdxFiles)
-            {
-                try
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Load the Visio diagram.
-                    Diagram diagram = new Diagram(vdxPath);
-
-                    // Use the original file name (without extension) as a prefix.
-                    string filePrefix = Path.GetFileNameWithoutExtension(vdxPath);
-
-                    // Iterate through all pages and shapes to find embedded images.
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Image shapes are of type Foreign.
-                            if (shape.Type == TypeValue.Foreign)
-                            {
-                                // The raw image bytes are stored in ForeignData.
-                                byte[] imageData = shape.ForeignData?.Value;
-                                if (imageData != null && imageData.Length > 0)
-                                {
-                                    // Build a unique file name: <originalFile>_Shape<ID>.png
-                                    string imageFileName = $"{filePrefix}_Shape{shape.ID}.png";
-                                    string imagePath = Path.Combine(outputFolder, imageFileName);
+                        shapeCounter++;
 
-                                    // Write the image bytes to disk.
-                                    File.WriteAllBytes(imagePath, imageData);
-                                    Console.WriteLine($"Extracted image to: {imagePath}");
-                                }
-                            }
-                        }
+                        // Build the output image file name with original file prefix
+                        string imageFileName = $"{filePrefix}_shape{shapeCounter}.png";
+                        string imagePath = Path.Combine(outputFolder, imageFileName);
+
+                        // Save the shape as an image (PNG format)
+                        shape.ToImage(imagePath, new ImageSaveOptions(SaveFileFormat.Png));
                     }
-
-                    // Dispose the diagram to release resources.
-                    diagram.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing '{vdxPath}': {ex.Message}");
                 }
             }
-
-            Console.WriteLine("Batch processing completed.");
         }
+
+        Console.WriteLine("Image extraction completed.");
     }
+}

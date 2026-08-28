@@ -10,14 +10,15 @@ class Program
         try
         {
 
-            // Load the VSDX diagram
+            // Load the VSDX diagram from file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Configure JPEG quality (80%)
+            // Create image save options for JPEG format
             ImageSaveOptions jpegOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+            // Set the compression quality to 80%
             jpegOptions.JpegQuality = 80;
 
-            // Save the diagram as a JPEG image
+            // Save the diagram as a JPEG image using the specified options
             diagram.Save("output.jpg", jpegOptions);
 
         }

@@ -1,73 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the VDX diagram file
-        string diagramPath = "input.vdx";
-
-        // Guard to ensure the file exists before proceeding
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
-
         try
         {
-            // Load the diagram using the VDX format
+
+            // Path to the VDX file (modify as needed)
+            string diagramPath = "input.vdx";
+
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath, LoadFileFormat.Vdx);
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify image (foreign) shapes by their type
+                    // Identify image (foreign) shapes
                     if (shape.Type == TypeValue.Foreign)
                     {
-                        // Retrieve shape dimensions on the page (in inches)
+                        // Retrieve shape dimensions (in inches)
                         double widthInches = shape.XForm.Width.Value;
                         double heightInches = shape.XForm.Height.Value;
-                        Console.WriteLine($"Shape ID {shape.ID}: Page dimensions = {widthInches:F2}\" x {heightInches:F2}\"");
 
-                        // Check for embedded image data within the foreign shape
-                        if (shape.ForeignData != null && shape.ForeignData.Value != null && shape.ForeignData.Value.Length > 0)
+                        Console.WriteLine($"Shape ID: {shape.ID}");
+                        Console.WriteLine($"  Dimensions: {widthInches:F2}\" x {heightInches:F2}\"");
+
+                        // Retrieve raw image data
+                        byte[] imageData = shape.ForeignData.Value;
+                        if (imageData == null || imageData.Length == 0)
                         {
-                            // Load the raw image bytes into a memory stream
-                            using (MemoryStream ms = new MemoryStream(shape.ForeignData.Value))
-                            {
-                                // Use the fully qualified Aspose.Drawing.Image to avoid ambiguity
-                                using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
-                                {
-                                    // Extract pixel dimensions
-                                    int pixelWidth = img.Width;
-                                    int pixelHeight = img.Height;
-
-                                    // Determine color depth (bits per pixel)
-                                    int bitsPerPixel = Aspose.Drawing.Image.GetPixelFormatSize(img.PixelFormat);
-
-                                    Console.WriteLine($"    Pixel dimensions = {pixelWidth} x {pixelHeight}");
-                                    Console.WriteLine($"    Color depth = {bitsPerPixel} bits per pixel");
-                                }
-                            }
+                            Console.WriteLine("  No image data found.");
+                            continue;
                         }
-                        else
+
+                        // Load image using Aspose.Drawing to get color depth
+                        using (MemoryStream ms = new MemoryStream(imageData))
+                        using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
                         {
-                            Console.WriteLine("    No embedded image data found.");
+                            int colorDepth = Aspose.Drawing.Image.GetPixelFormatSize(img.PixelFormat);
+                            Console.WriteLine($"  Color Depth: {colorDepth} bits per pixel");
                         }
                     }
                 }
             }
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

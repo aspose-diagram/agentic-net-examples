@@ -6,7 +6,7 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input VDX file path and output directory
+            // Validate arguments: args[0] = input VDX file, args[1] = output directory
             if (args.Length < 2)
             {
                 Console.WriteLine("Usage: ExtractEmbeddedImages <input.vdx> <output_directory>");
@@ -26,7 +26,7 @@ class Program
             Directory.CreateDirectory(outputDir);
 
             // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vdx);
 
             int imageCount = 0;
 
@@ -35,17 +35,26 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify embedded images (foreign shapes)
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null && shape.ForeignData.Value.Length > 0)
+                    // Identify embedded images: TypeValue.Foreign indicates a foreign (image) shape
+                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
                     {
-                        // Generate a unique file name using shape ID
-                        string fileName = $"Image_{shape.ID}_{Guid.NewGuid():N}.png";
+                        byte[] imageBytes = shape.ForeignData.Value;
+
+                        // Build a file name using shape ID to ensure uniqueness
+                        string fileName = $"image_{shape.ID}.png";
                         string outputPath = Path.Combine(outputDir, fileName);
 
-                        // Write the raw image bytes to file
-                        File.WriteAllBytes(outputPath, shape.ForeignData.Value);
-                        Console.WriteLine($"Extracted image to: {outputPath}");
-                        imageCount++;
+                        // Write the raw image data to disk
+                        try
+                        {
+                            File.WriteAllBytes(outputPath, imageBytes);
+                            Console.WriteLine($"Extracted image to: {outputPath}");
+                            imageCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed to write image for shape ID {shape.ID}: {ex.Message}");
+                        }
                     }
                 }
             }

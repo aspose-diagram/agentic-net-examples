@@ -11,40 +11,38 @@ class VisioToSvgExporter
         {
 
             // Path to the source Visio file
-            string visioFilePath = @"C:\Docs\sample.vsdx";
+            string inputVisioPath = "input.vsdx";
 
-            // Path for the exported SVG file
-            string svgOutputPath = @"C:\Docs\sample_page.svg";
+            // Path where the SVG of the selected page will be saved
+            string outputSvgPath = "page1.svg";
 
-            // Index of the page to export (0‑based). Change as needed.
-            int pageIndexToExport = 2;
+            // Zero‑based index of the page to export (e.g., 0 for the first page)
+            int pageIndexToExport = 0;
 
             // Load the Visio diagram from file
-            Diagram diagram = new Diagram(visioFilePath);
-
-            // Configure SVG export options
-            SVGSaveOptions svgOptions = new SVGSaveOptions
+            using (Diagram diagram = new Diagram(inputVisioPath))
             {
-                // Specify which page to render
-                PageIndex = pageIndexToExport,
+                // Configure SVG save options
+                SVGSaveOptions svgOptions = new SVGSaveOptions
+                {
+                    // Specify which page to render
+                    PageIndex = pageIndexToExport,
 
-                // Optional: fit the generated SVG to the viewport
-                SVGFitToViewPort = true,
+                    // Optional: keep hidden pages out of the output
+                    ExportHiddenPage = false,
 
-                // Optional: export hidden pages if needed
-                ExportHiddenPage = false
-            };
+                    // Optional: fit the generated SVG to the viewport
+                    SVGFitToViewPort = true
+                };
 
-            // Save the selected page as SVG using the configured options
-            diagram.Save(svgOutputPath, svgOptions);
-
-            // Release resources
-            diagram.Dispose();
+                // Save the selected page as SVG
+                diagram.Save(outputSvgPath, svgOptions);
+            }
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

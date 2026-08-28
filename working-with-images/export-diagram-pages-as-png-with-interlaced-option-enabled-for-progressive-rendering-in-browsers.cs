@@ -14,7 +14,9 @@ class Program
             string sourcePath = "input.vsdx";
 
             // Folder where PNG files will be saved
-            string outputFolder = "output";
+            string outputFolder = "output_pngs";
+
+            // Ensure the output directory exists
             Directory.CreateDirectory(outputFolder);
 
             // Load the diagram
@@ -23,20 +25,17 @@ class Program
             // Export each page as a PNG image
             for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Configure PNG export options
-                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-                options.PageIndex = i; // zero‑based page index
+                // Configure PNG save options for the current page
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                pngOptions.PageIndex = i; // zero‑based page index
 
-                // Note: Aspose.Diagram does not expose an Interlaced property for PNG.
-                // Interlaced PNG export is not supported directly.
-
+                // Build the output file name
                 string outputPath = Path.Combine(outputFolder, $"Page_{i + 1}.png");
-                diagram.Save(outputPath, options);
+
+                // Save the page as PNG
+                diagram.Save(outputPath, pngOptions);
                 Console.WriteLine($"Saved page {i + 1} to {outputPath}");
             }
-
-            // Clean up resources
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

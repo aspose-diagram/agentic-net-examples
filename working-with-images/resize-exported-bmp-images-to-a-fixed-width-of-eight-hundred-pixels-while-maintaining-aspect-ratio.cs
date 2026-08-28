@@ -1,52 +1,69 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect two arguments: input Visio file path and output folder path.
-        if (args.Length < 2)
-        {
-            Console.WriteLine("Usage: <program> <inputVisioFile> <outputFolder>");
-            return;
-        }
+        // Path to the source Visio file
+        string visioPath = "input.vsdx";
+        // Verify the Visio file exists before proceeding
+        if (!File.Exists(visioPath)) { Console.Error.WriteLine($"File not found: {visioPath}"); return; }
 
-        string inputPath = args[0];
-        string outputFolder = args[1];
-
-        // Load the Visio diagram.
-        using (Diagram diagram = new Diagram(inputPath))
+        try
         {
-            // Iterate through all pages in the diagram.
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(visioPath);
+            // Ensure the diagram is disposed at the end of processing
+            using (diagram)
             {
-                var page = diagram.Pages[i];
+                // Iterate through all pages in the diagram
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                {
+                    Page page = diagram.Pages[pageIndex];
 
-                // Get page dimensions in inches.
-                double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeightInches = page.PageSheet.PageProps.PageHeight.Value;
+                    // Export the current page as BMP using Aspose.Diagram's ImageSaveOptions
+                    string bmpPath = $"Page_{page.ID}_original.bmp";
+                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Bmp);
+                    imgOptions.PageIndex = pageIndex; // zero‑based page index
+                    diagram.Save(bmpPath, imgOptions);
 
-                // Desired output width in pixels.
-                const int targetWidthPx = 800;
+                    // Resize the exported BMP to a width of 800 pixels while keeping aspect ratio
+                    using (Aspose.Drawing.Image originalImage = Aspose.Drawing.Image.FromFile(bmpPath))
+                    {
+                        int originalWidth = originalImage.Width;
+                        int originalHeight = originalImage.Height;
 
-                // Calculate target height to maintain aspect ratio.
-                int targetHeightPx = (int)Math.Round(targetWidthPx * pageHeightInches / pageWidthInches);
+                        // Desired width
+                        int targetWidth = 800;
+                        // Calculate proportional height
+                        int targetHeight = (int)(originalHeight * (targetWidth / (double)originalWidth));
 
-                // Configure image save options for BMP with the calculated size.
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Bmp);
-                saveOptions.PageSize = new PageSize(targetWidthPx, targetHeightPx);
+                        // Create a new bitmap with the target dimensions
+                        using (Aspose.Drawing.Bitmap resizedBitmap = new Aspose.Drawing.Bitmap(targetWidth, targetHeight))
+                        {
+                            // Draw the original image onto the new bitmap with high‑quality scaling
+                            using (Aspose.Drawing.Graphics graphics = Aspose.Drawing.Graphics.FromImage(resizedBitmap))
+                            {
+                                graphics.InterpolationMode = Aspose.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                graphics.DrawImage(originalImage, 0, 0, targetWidth, targetHeight);
+                            }
 
-                // Build output file name.
-                string outputPath = System.IO.Path.Combine(outputFolder, $"Page_{i + 1}.bmp");
+                            // Overwrite the original BMP with the resized version
+                            resizedBitmap.Save(bmpPath, Aspose.Drawing.Imaging.ImageFormat.Bmp);
+                        }
+                    }
 
-                // Save the page as a BMP image with the specified dimensions.
-                diagram.Save(outputPath, saveOptions);
-
-                Console.WriteLine($"Exported page {i + 1} to {outputPath} (Width: {targetWidthPx}px, Height: {targetHeightPx}px)");
+                    Console.WriteLine($"Page {page.ID} exported and resized to 800px width: {bmpPath}");
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

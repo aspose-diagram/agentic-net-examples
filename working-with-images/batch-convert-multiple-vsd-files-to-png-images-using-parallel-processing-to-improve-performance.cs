@@ -2,57 +2,46 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Validate arguments: input folder and output folder
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: VsdToPngBatch <inputFolder> <outputFolder>");
-                return;
-            }
 
-            string inputFolder = args[0];
-            string outputFolder = args[1];
+            // Folder containing the source VSD files
+            string inputFolder = @"C:\InputVsd";
 
-            if (!Directory.Exists(inputFolder))
-            {
-                Console.WriteLine($"Input folder does not exist: {inputFolder}");
-                return;
-            }
+            // Folder where PNG images will be saved
+            string outputFolder = @"C:\OutputPng";
 
-            // Ensure output folder exists
+            // Ensure the output directory exists
             Directory.CreateDirectory(outputFolder);
 
-            // Get all .vsd files in the input folder (non‑recursive)
+            // Get all VSD files in the input folder
             string[] vsdFiles = Directory.GetFiles(inputFolder, "*.vsd");
 
-            // Process files in parallel to improve performance
-            Parallel.ForEach(vsdFiles, vsdFile =>
+            // Convert each VSD to PNG in parallel
+            Parallel.ForEach(vsdFiles, vsdPath =>
             {
-                try
+                // Load the diagram from the VSD file
+                using (Diagram diagram = new Diagram(vsdPath))
                 {
-                    // Load the VSD diagram using the appropriate load format
-                    using (Diagram diagram = new Diagram(vsdFile, LoadFileFormat.Vsd))
-                    {
-                        // Build output PNG file path
-                        string pngFileName = Path.GetFileNameWithoutExtension(vsdFile) + ".png";
-                        string pngPath = Path.Combine(outputFolder, pngFileName);
+                    // Build the output PNG file path
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(vsdPath);
+                    string pngPath = Path.Combine(outputFolder, fileNameWithoutExt + ".png");
 
-                        // Save the diagram as PNG
-                        diagram.Save(pngPath, SaveFileFormat.Png);
-                    }
-
-                    Console.WriteLine($"Converted: {Path.GetFileName(vsdFile)}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error converting {Path.GetFileName(vsdFile)}: {ex.Message}");
+                    // Save the diagram as a PNG image
+                    diagram.Save(pngPath, SaveFileFormat.Png);
                 }
             });
 
-            Console.WriteLine("Batch conversion completed.");
+        }
+        catch (System.IO.DirectoryNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
+}

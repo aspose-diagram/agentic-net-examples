@@ -3,48 +3,45 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramExportValidator
+class Program
 {
-    // Size limit: 2 megabytes
-    private const long MaxImageSizeBytes = 2L * 1024 * 1024;
-
     static void Main()
     {
         try
         {
 
-            // Load the source Visio diagram (replace with actual file path)
+            // Load the diagram from a file (lifecycle rule: load)
             var diagram = new Diagram("input.vsdx");
 
-            // Prepare image save options (PNG used as example)
-            var imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
-            {
-                // Optional: set quality or other options here if needed
-            };
+            // Prepare image save options (used for both validation and final export)
+            var imageOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Example: set JPEG quality if needed (optional)
+            // imageOptions.JpegQuality = 90;
 
-            // Validate each shape's exported image size
-            foreach (Page page in diagram.Pages)
+            const long maxFileSizeBytes = 2 * 1024 * 1024; // 2 MB
+
+            // Validate each shape's rendered image size
+            foreach (var page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                foreach (var shape in page.Shapes)
                 {
                     using (var ms = new MemoryStream())
                     {
-                        // Export shape to memory stream using the same options that will be used for final export
-                        shape.ToImage(ms, imgOptions);
+                        // Render shape to a memory stream
+                        shape.ToImage(ms, imageOptions);
 
-                        // Check the generated image size
-                        if (ms.Length > MaxImageSizeBytes)
+                        // Check the size of the rendered image
+                        if (ms.Length > maxFileSizeBytes)
                         {
                             throw new InvalidOperationException(
-                                $"Shape ID {shape.ID} on page {page.ID} exceeds the 2 MB size limit (size: {ms.Length} bytes).");
+                                $"Shape ID {shape.ID} on page {page.ID} exceeds the 2 MB limit (size: {ms.Length} bytes).");
                         }
                     }
                 }
             }
 
-            // All images are within the allowed size – proceed with diagram export
-            // Example: export the whole diagram as a PNG image (first page)
-            diagram.Save("output.png", SaveFileFormat.Png);
+            // All images are within the size limit; export the diagram (lifecycle rule: save)
+            diagram.Save("output.png", imageOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

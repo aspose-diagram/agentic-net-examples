@@ -10,16 +10,18 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create ImageSaveOptions and set anti‑aliasing (high‑quality smoothing)
-            // Note: SmoothingMode affects raster formats; for SVG it is ignored but the code follows the requirement.
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Svg);
-            saveOptions.SmoothingMode = SmoothingMode.HighQuality;
+            // Create SVG save options
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-            // Save the diagram as SVG using the configured options
-            diagram.Save("output.svg", saveOptions);
+            // NOTE: SVGSaveOptions does not expose a direct anti‑aliasing property.
+            // For raster formats you could use ImageSaveOptions.SmoothingMode = SmoothingMode.HighQuality.
+            // Since SVG is a vector format, anti‑aliasing is handled by the viewer/rendering engine.
+
+            // Save the diagram as SVG
+            diagram.Save("output.svg", svgOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

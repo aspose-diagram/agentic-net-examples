@@ -1,41 +1,38 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.Printing;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                // Adjust ScaleX for each page to 75% (reduce size by 25%)
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and set the horizontal print scaling to 75%
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the print properties of the page
-                    var printProps = page.PageSheet.PrintProps;
-
-                    // Set the horizontal scaling factor
-                    printProps.ScaleX.Value = 0.75;
+                    // Access the PrintProps via the PageSheet and assign the new scale value
+                    page.PageSheet.PrintProps.ScaleX.Value = 0.75;
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram back to a Visio file (replace with your desired output path)
                 string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Clean up resources
+                diagram.Dispose();
+
+                Console.WriteLine("Print scaling applied and diagram saved successfully.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

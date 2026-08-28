@@ -10,25 +10,30 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a local file
-            Diagram diagram = new Diagram(@"C:\InputDiagram.vsdx");
+            // Path to the source Visio file
+            string sourceDiagramPath = @"C:\Diagrams\sample.vsdx";
 
-            // Access a shape to be converted (example: first shape on the first page)
+            // Load the diagram (uses the standard constructor)
+            Diagram diagram = new Diagram(sourceDiagramPath);
+
+            // Select a shape to convert – here we take the first shape on the first page
             Shape shape = diagram.Pages[0].Shapes[0];
 
-            // Configure HTML save options (optional settings)
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-            {
-                SaveAsSingleFile = true // save as a single HTML file
-            };
+            // UNC network share where the HTML output will be written
+            string uncHtmlPath = @"\\Server\Share\output.html";
 
-            // Create a file stream that points to a network share (UNC path)
-            using (FileStream networkStream = new FileStream(@"\\ServerName\ShareFolder\ShapeOutput.html",
-                                                             FileMode.Create,
-                                                             FileAccess.Write))
+            // Create a file stream that points to the UNC location
+            using (FileStream outputStream = new FileStream(uncHtmlPath, FileMode.Create, FileAccess.Write))
             {
-                // Export the shape to HTML and write directly to the UNC stream
-                shape.ToHTML(networkStream, htmlOptions);
+                // Configure HTML save options as needed
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    // Example: save everything into a single HTML file
+                    SaveAsSingleFile = true
+                };
+
+                // Write the shape's HTML representation directly to the UNC stream
+                shape.ToHTML(outputStream, htmlOptions);
             }
 
         }

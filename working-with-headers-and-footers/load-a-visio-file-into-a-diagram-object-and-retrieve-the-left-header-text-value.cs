@@ -4,22 +4,22 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Path to the Visio file (adjust as needed)
-            string filePath = "sample.vsdx";
+            // Path to the Visio file to be loaded
+            string filePath = "example.vsdx";
 
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(filePath);
 
             // Retrieve the left header text
             string leftHeader = diagram.HeaderFooter.HeaderLeft;
 
-            // Display the header text
-            Console.WriteLine($"Left Header: {leftHeader}");
+            // Output the retrieved value
+            Console.WriteLine($"Left Header Text: {leftHeader}");
 
         }
         catch (System.IO.FileNotFoundException ex)

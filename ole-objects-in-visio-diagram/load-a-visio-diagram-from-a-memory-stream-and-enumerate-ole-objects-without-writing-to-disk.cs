@@ -4,59 +4,72 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Determine the Visio file path: use first command‑line argument or a default placeholder.
+        string visioFilePath = args.Length > 0 ? args[0] : "example.vsdx";
+        // Guard to ensure the file exists before attempting to read it.
+        if (!File.Exists(visioFilePath))
+        {
+            Console.Error.WriteLine($"File not found: {visioFilePath}");
+            return;
+        }
+
+        // Load the Visio file bytes from disk (reading only, no writing involved).
+        byte[] visioFileBytes = GetVisioFileBytes(visioFilePath);
+
+        // Wrap Aspose.Diagram operations in a try/catch to capture any runtime errors.
         try
         {
-
-            // Load a Visio file into a memory stream (replace with your own source stream as needed)
-            string filePath = "sample.vsdx"; // Example file path; adjust as necessary
-            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            // Load the Visio diagram from the memory stream.
+            using (MemoryStream memoryStream = new MemoryStream(visioFileBytes))
             {
-                using (MemoryStream memoryStream = new MemoryStream())
-                {
-                    fileStream.CopyTo(memoryStream);
-                    memoryStream.Position = 0; // Reset stream position before loading
+                Diagram diagram = new Diagram(memoryStream);
 
-                    // Load the diagram from the memory stream
-                    using (Diagram diagram = new Diagram(memoryStream))
+                // Iterate through all pages and shapes to locate OLE (foreign) objects.
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
                     {
-                        EnumerateOleObjects(diagram);
+                        // Verify the shape is a foreign (OLE) shape and that it contains an OLE object.
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ForeignType == ForeignType.Object)
+                        {
+                            // Retrieve the embedded OLE binary data.
+                            byte[] oleData = shape.ForeignData.ObjectData;
+
+                            // Ensure the data is present before processing.
+                            if (oleData != null && oleData.Length > 0)
+                            {
+                                Console.WriteLine("OLE object found:");
+                                Console.WriteLine($"  Page Name : {page.Name}");
+                                Console.WriteLine($"  Shape ID  : {shape.ID}");
+                                Console.WriteLine($"  Data Size : {oleData.Length} bytes");
+                            }
+                        }
                     }
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors encountered during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
-    static void EnumerateOleObjects(Diagram diagram)
+    // Reads the Visio file bytes from the specified path.
+    static byte[] GetVisioFileBytes(string path)
     {
-        // Iterate through all pages and shapes to find OLE objects
-        foreach (Aspose.Diagram.Page page in diagram.Pages)
+        // Guard to ensure the file exists (redundant if called after earlier check, but kept for safety).
+        if (!File.Exists(path))
         {
-            foreach (Aspose.Diagram.Shape shape in page.Shapes)
-            {
-                // Verify the shape is a foreign OLE object
-                if (shape.Type == TypeValue.Foreign &&
-                    shape.ForeignData != null &&
-                    shape.ForeignData.ForeignType == ForeignType.Object)
-                {
-                    byte[] oleData = shape.ForeignData.ObjectData;
-
-                    if (oleData != null && oleData.Length > 0)
-                    {
-                        Console.WriteLine($"Page \"{page.Name}\" - Shape ID {shape.ID} contains OLE data ({oleData.Length} bytes).");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Page \"{page.Name}\" - Shape ID {shape.ID} is an OLE placeholder with no data.");
-                    }
-                }
-            }
+            Console.Error.WriteLine($"File not found: {path}");
+            return Array.Empty<byte>();
         }
+
+        // Return the file contents as a byte array.
+        return File.ReadAllBytes(path);
     }
 }

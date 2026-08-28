@@ -5,90 +5,79 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        // Guard: ensure input file exists
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output Visio file path
-        string outputPath = "output.vsdx";
-
-        // Placeholder image to use for PowerPoint OLE objects
-        string placeholderImagePath = "placeholder.png";
-        // Guard: ensure placeholder image exists
-        if (!File.Exists(placeholderImagePath))
-        {
-            Console.Error.WriteLine($"File not found: {placeholderImagePath}");
-            return;
-        }
-
-        try
-        {
-            // Load the diagram from the input file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Collect shapes that need replacement (PowerPoint OLE objects)
-            var shapesToReplace = new List<(Page page, Shape shape)>();
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+                // Output Visio file path
+                string outputPath = "output.vsdx";
+                // Placeholder image file path (must exist)
+                string placeholderImagePath = "placeholder.png";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through each page in the diagram
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Ensure the shape is an OLE foreign object
-                    if (shape.Type == TypeValue.Foreign &&
-                        shape.ForeignData != null &&
-                        shape.ForeignData.ForeignType == ForeignType.Object)
+                    // Collect IDs of PowerPoint OLE shapes to replace
+                    List<long> oleShapeIds = new List<long>();
+
+                    // Enumerate shapes on the page
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Identify PowerPoint OLE objects via the source file name
-                        string sourceName = shape.ForeignData.ObjectSourceFullName;
-                        if (!string.IsNullOrEmpty(sourceName) &&
-                            sourceName.IndexOf(".ppt", StringComparison.OrdinalIgnoreCase) >= 0)
+                        // Verify the shape is an OLE foreign object
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ObjectSourceFullName != null)
                         {
-                            shapesToReplace.Add((page, shape));
+                            string sourceName = shape.ForeignData.ObjectSourceFullName;
+                            // Check if the OLE object is a PowerPoint file
+                            if (sourceName.EndsWith(".ppt", StringComparison.OrdinalIgnoreCase) ||
+                                sourceName.EndsWith(".pptx", StringComparison.OrdinalIgnoreCase))
+                            {
+                                oleShapeIds.Add(shape.ID);
+                            }
+                        }
+                    }
+
+                    // Replace each identified OLE shape with a placeholder image
+                    foreach (long shapeId in oleShapeIds)
+                    {
+                        // Retrieve the original OLE shape
+                        Aspose.Diagram.Shape oleShape = page.Shapes.GetShape(shapeId);
+
+                        // Preserve position and size
+                        double pinX = oleShape.XForm.PinX.Value;
+                        double pinY = oleShape.XForm.PinY.Value;
+                        double width = oleShape.XForm.Width.Value;
+                        double height = oleShape.XForm.Height.Value;
+
+                        // Remove the OLE shape from the page
+                        page.Shapes.Remove(oleShape);
+
+                        // Add a new shape containing the placeholder image
+                        using (FileStream imgStream = new FileStream(placeholderImagePath, FileMode.Open, FileAccess.Read))
+                        {
+                            long newShapeId = page.AddShape(pinX, pinY, width, height, imgStream);
+                            Aspose.Diagram.Shape placeholderShape = page.Shapes.GetShape(newShapeId);
+
+                            // Optionally add a caption indicating replacement
+                            placeholderShape.Text.Value.Clear();
+                            placeholderShape.Text.Value.Add(new Txt("PowerPoint Placeholder"));
                         }
                     }
                 }
-            }
 
-            // Replace each identified OLE shape with the placeholder image
-            foreach (var entry in shapesToReplace)
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Page page = entry.page;
-                Shape oleShape = entry.shape;
-
-                // Preserve position and size using XForm properties
-                double pinX = oleShape.XForm.PinX.Value;
-                double pinY = oleShape.XForm.PinY.Value; // corrected property
-                double width = oleShape.XForm.Width.Value;
-                double height = oleShape.XForm.Height.Value;
-
-                // Remove the original OLE shape from the page
-                page.Shapes.Remove(oleShape);
-
-                // Add the placeholder image shape at the same location and size
-                using (FileStream imgStream = new FileStream(placeholderImagePath, FileMode.Open, FileAccess.Read))
-                {
-                    long newShapeId = page.AddShape(pinX, pinY, width, height, imgStream);
-                    // Optionally retrieve the new shape if further modifications are needed
-                    // Shape placeholderShape = page.Shapes.GetShape(newShapeId);
-                }
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save the modified diagram to the output file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
     }
-}
+    }

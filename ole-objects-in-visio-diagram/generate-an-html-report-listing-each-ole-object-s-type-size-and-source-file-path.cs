@@ -3,93 +3,86 @@ using System.IO;
 using System.Text;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the Visio file to be processed
-            string visioFilePath = "input.vsdx";
-
-            // Path where the HTML report will be saved
-            string reportPath = "OleObjectsReport.html";
-
-            // Ensure the input file exists
-            if (!File.Exists(visioFilePath))
+            try
             {
-                throw new FileNotFoundException($"Visio file not found: {visioFilePath}");
-            }
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(visioFilePath))
-            {
-                // Prepare HTML content
-                StringBuilder htmlBuilder = new StringBuilder();
+                // Input Visio file path (change as needed)
+                string inputPath = "input.vsdx";
+                // Output HTML report path
+                string outputPath = "OleReport.html";
 
-                htmlBuilder.AppendLine("<!DOCTYPE html>");
-                htmlBuilder.AppendLine("<html lang=\"en\">");
-                htmlBuilder.AppendLine("<head>");
-                htmlBuilder.AppendLine("<meta charset=\"UTF-8\">");
-                htmlBuilder.AppendLine("<title>OLE Objects Report</title>");
-                htmlBuilder.AppendLine("<style>");
-                htmlBuilder.AppendLine("table { border-collapse: collapse; width: 100%; }");
-                htmlBuilder.AppendLine("th, td { border: 1px solid #ddd; padding: 8px; }");
-                htmlBuilder.AppendLine("th { background-color: #f2f2f2; }");
-                htmlBuilder.AppendLine("</style>");
-                htmlBuilder.AppendLine("</head>");
-                htmlBuilder.AppendLine("<body>");
-                htmlBuilder.AppendLine("<h1>OLE Objects Report</h1>");
-                htmlBuilder.AppendLine("<table>");
-                htmlBuilder.AppendLine("<tr><th>Page Name</th><th>Shape ID</th><th>OLE Type</th><th>Width (inches)</th><th>Height (inches)</th><th>Source Path</th></tr>");
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes
+                // Build HTML content
+                StringBuilder html = new StringBuilder();
+                html.AppendLine("<!DOCTYPE html>");
+                html.AppendLine("<html lang=\"en\">");
+                html.AppendLine("<head>");
+                html.AppendLine("<meta charset=\"UTF-8\">");
+                html.AppendLine("<title>OLE Objects Report</title>");
+                html.AppendLine("<style>");
+                html.AppendLine("table { border-collapse: collapse; width: 100%; }");
+                html.AppendLine("th, td { border: 1px solid #ddd; padding: 8px; }");
+                html.AppendLine("th { background-color: #f2f2f2; }");
+                html.AppendLine("</style>");
+                html.AppendLine("</head>");
+                html.AppendLine("<body>");
+                html.AppendLine("<h1>OLE Objects Report</h1>");
+                html.AppendLine("<table>");
+                html.AppendLine("<tr><th>Page</th><th>Shape ID</th><th>OLE Type</th><th>Width (inches)</th><th>Height (inches)</th><th>Source Path</th></tr>");
+
+                // Iterate through pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Verify the shape is an OLE object
-                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
+                        // Ensure the shape is a foreign OLE object
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
                         {
-                            // Ensure ObjectData is present (optional for this report)
+                            // Verify ObjectData exists
                             if (shape.ForeignData.ObjectData == null || shape.ForeignData.ObjectData.Length == 0)
-                            {
-                                continue; // Skip if no binary data
-                            }
+                                continue;
 
-                            // Retrieve OLE details
-                            string oleType = shape.ForeignData.ObjectSourceFullName ?? "Unknown";
+                            // Retrieve size (if available)
                             double width = shape.ForeignData.ObjectWidth;
                             double height = shape.ForeignData.ObjectHeight;
 
-                            // Build a table row
-                            htmlBuilder.AppendLine("<tr>");
-                            htmlBuilder.AppendLine($"<td>{page.Name}</td>");
-                            htmlBuilder.AppendLine($"<td>{shape.ID}</td>");
-                            htmlBuilder.AppendLine($"<td>{oleType}</td>");
-                            htmlBuilder.AppendLine($"<td>{width:F2}</td>");
-                            htmlBuilder.AppendLine($"<td>{height:F2}</td>");
-                            htmlBuilder.AppendLine($"<td>{oleType}</td>");
-                            htmlBuilder.AppendLine("</tr>");
+                            // Retrieve source file path (may be empty)
+                            string sourcePath = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
+
+                            // Append row to HTML table
+                            html.AppendLine("<tr>");
+                            html.AppendLine($"<td>{page.Name}</td>");
+                            html.AppendLine($"<td>{shape.ID}</td>");
+                            html.AppendLine("<td>OLE Object</td>");
+                            html.AppendLine($"<td>{width:F2}</td>");
+                            html.AppendLine($"<td>{height:F2}</td>");
+                            html.AppendLine($"<td>{System.Web.HttpUtility.HtmlEncode(sourcePath)}</td>");
+                            html.AppendLine("</tr>");
                         }
                     }
                 }
 
-                htmlBuilder.AppendLine("</table>");
-                htmlBuilder.AppendLine("</body>");
-                htmlBuilder.AppendLine("</html>");
+                html.AppendLine("</table>");
+                html.AppendLine("</body>");
+                html.AppendLine("</html>");
 
                 // Write the HTML report to file
-                File.WriteAllText(reportPath, htmlBuilder.ToString(), Encoding.UTF8);
+                File.WriteAllText(outputPath, html.ToString());
+
+                Console.WriteLine($"OLE report generated: {outputPath}");
+
             }
-
-            Console.WriteLine($"OLE objects report generated at: {Path.GetFullPath(reportPath)}");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

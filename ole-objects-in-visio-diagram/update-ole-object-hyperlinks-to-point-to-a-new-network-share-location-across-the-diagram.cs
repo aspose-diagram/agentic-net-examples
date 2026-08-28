@@ -1,64 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Validate arguments: input diagram path, output diagram path, new network share base path
-            if (args.Length < 3)
+            try
             {
-                Console.WriteLine("Usage: OLEHyperlinkUpdater <inputDiagramPath> <outputDiagramPath> <newNetworkShareBasePath>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-            string newBasePath = args[2];
+                // Input Visio file path
+                string inputPath = "input.vsdx";
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Output Visio file path
+                string outputPath = "output.vsdx";
 
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
-            {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                // New network share base path (ensure it ends with a backslash)
+                string newNetworkShare = @"\\newshare\folder\";
+
+                // Load the diagram from file
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the shape is an OLE object and has foreign data of type Object
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ForeignType == ForeignType.Object)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Verify the Hyperlinks collection is not null
-                        if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                        // Verify the shape is an OLE object (Foreign) and contains an embedded object
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ForeignType == ForeignType.Object)
                         {
-                            // Update each hyperlink address
-                            foreach (Hyperlink link in shape.Hyperlinks)
+                            // Ensure the shape has a Hyperlinks collection
+                            if (shape.Hyperlinks != null)
                             {
-                                if (link != null && link.Address != null && link.Address.Value != null)
+                                // Update each hyperlink address to point to the new network share
+                                foreach (Hyperlink link in shape.Hyperlinks)
                                 {
-                                    // Extract the file name from the existing address
-                                    string oldAddress = link.Address.Value;
-                                    string fileName = Path.GetFileName(oldAddress);
-
-                                    // Build the new address using the provided network share base path
-                                    string newAddress = Path.Combine(newBasePath, fileName);
-
-                                    // Assign the new address back to the hyperlink
-                                    link.Address.Value = newAddress;
-
-                                    Console.WriteLine($"Updated hyperlink for shape ID {shape.ID}: {oldAddress} -> {newAddress}");
+                                    // Preserve the original file name (if any) and prepend the new share path
+                                    string originalAddress = link.Address?.Value ?? string.Empty;
+                                    string fileName = Path.GetFileName(originalAddress);
+                                    link.Address.Value = newNetworkShare + fileName;
                                 }
                             }
                         }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram (preserving the original format, here using Vsdx)
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }

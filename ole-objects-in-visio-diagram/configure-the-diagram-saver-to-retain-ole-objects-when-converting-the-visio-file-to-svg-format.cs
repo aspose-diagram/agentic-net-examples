@@ -1,23 +1,28 @@
-using System;
 using System.IO;
+using System;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
             // Load the Visio diagram
-            var diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Create SVG save options
-            var svgOptions = new Aspose.Diagram.Saving.SVGSaveOptions();
+            // Set up SVG save options
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-            // Retain OLE objects by embedding them (do not save images separately)
+            // Keep OLE objects embedded in the SVG (do not save them as separate image files)
             svgOptions.IsSavingImageSeparately = false;
 
-            // Save the diagram as SVG using the configured options
+            // Specify that the output format is SVG
+            svgOptions.SaveFormat = SaveFileFormat.Svg;
+
+            // Save the diagram to SVG using the configured options
             diagram.Save("output.svg", svgOptions);
 
         }

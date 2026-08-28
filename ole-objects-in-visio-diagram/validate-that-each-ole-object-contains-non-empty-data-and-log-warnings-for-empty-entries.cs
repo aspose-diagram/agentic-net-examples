@@ -9,7 +9,7 @@ class OleDataValidator
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
+            // Load the Visio diagram (replace with actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Iterate through all pages in the diagram
@@ -19,35 +19,32 @@ class OleDataValidator
                 foreach (Shape shape in page.Shapes)
                 {
                     // Check if the shape contains foreign (OLE) data
-                    ForeignData foreignData = shape.ForeignData;
-                    if (foreignData != null)
+                    ForeignData foreign = shape.ForeignData;
+                    if (foreign == null)
+                        continue; // No foreign data, skip
+
+                    // Determine if the foreign data represents an OLE object
+                    // Typically, OLE objects have a non‑zero ObjectType when ForeignType is "Object"
+                    bool isOleObject = foreign.ObjectType != ObjectType.Undefined && foreign.ObjectType != 0;
+                    if (!isOleObject)
+                        continue; // Not an OLE object, skip
+
+                    // Evaluate embedded OLE data
+                    bool hasEmbeddedData = foreign.ObjectData != null && foreign.ObjectData.Length > 0;
+
+                    // Evaluate linked OLE data (source file name)
+                    bool hasLinkedData = !string.IsNullOrWhiteSpace(foreign.ObjectSourceFullName);
+
+                    // If both embedded and linked data are missing/empty, log a warning
+                    if (!hasEmbeddedData && !hasLinkedData)
                     {
-                        bool hasData = false;
-
-                        // For embedded OLE objects, ObjectData holds the binary content
-                        if (foreignData.ObjectData != null && foreignData.ObjectData.Length > 0)
-                        {
-                            hasData = true;
-                        }
-
-                        // For linked OLE objects, ObjectSourceFullName holds the source file path
-                        // Consider it non‑empty if the path string is not null or whitespace
-                        if (!hasData && !string.IsNullOrWhiteSpace(foreignData.ObjectSourceFullName))
-                        {
-                            hasData = true;
-                        }
-
-                        // If no data was found, log a warning with shape identification details
-                        if (!hasData)
-                        {
-                            Console.WriteLine(
-                                $"Warning: OLE object in shape ID {shape.ID} on page \"{page.Name}\" is empty.");
-                        }
+                        Console.WriteLine(
+                            $"Warning: OLE object in shape ID {shape.ID} on page \"{page.Name}\" contains no data.");
                     }
                 }
             }
 
-            // Save the diagram (optional – here we just save a copy)
+            // Save the diagram (if any modifications were made; here we just preserve the original)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

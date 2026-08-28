@@ -1,6 +1,6 @@
-using Aspose.Diagram;
 using System;
 using System.IO;
+using Aspose.Diagram;
 
 class ExtractOleObjects
 {
@@ -9,8 +9,12 @@ class ExtractOleObjects
         try
         {
 
-            // Load the Visio diagram (uses the provided load rule)
+            // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
+
+            // Output folder for extracted OLE files
+            string outputFolder = "ExtractedOleObjects";
+            Directory.CreateDirectory(outputFolder);
 
             int oleCounter = 0;
 
@@ -19,32 +23,39 @@ class ExtractOleObjects
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Shapes that contain OLE data expose ForeignData
-                    if (shape.ForeignData != null)
+                    // Check if the shape contains foreign (OLE) data
+                    ForeignData foreignData = shape.ForeignData;
+                    if (foreignData == null) continue;
+
+                    // Embedded OLE object data
+                    byte[] oleBytes = foreignData.ObjectData;
+                    if (oleBytes == null || oleBytes.Length == 0) continue;
+
+                    // Determine file extension
+                    string sourceName = foreignData.ObjectSourceFullName;
+                    string extension = ".bin"; // fallback
+
+                    if (!string.IsNullOrEmpty(sourceName))
                     {
-                        ForeignData foreign = shape.ForeignData;
-
-                        // Embedded OLE objects store their binary in ObjectData
-                        if (foreign.ObjectData != null && foreign.ObjectData.Length > 0)
-                        {
-                            // Try to preserve the original file extension
-                            string extension = ".bin";
-                            if (!string.IsNullOrEmpty(foreign.ObjectSourceFullName))
-                            {
-                                string extFromSource = Path.GetExtension(foreign.ObjectSourceFullName);
-                                if (!string.IsNullOrEmpty(extFromSource))
-                                    extension = extFromSource;
-                            }
-
-                            string outputFile = $"OleObject_{oleCounter}{extension}";
-                            File.WriteAllBytes(outputFile, foreign.ObjectData);
-                            oleCounter++;
-                        }
+                        extension = Path.GetExtension(sourceName);
+                        if (string.IsNullOrEmpty(extension))
+                            extension = ".bin";
                     }
+
+                    // Build output file name
+                    string fileName = $"OleObject_{oleCounter}{extension}";
+                    string filePath = Path.Combine(outputFolder, fileName);
+
+                    // Save the binary data to file
+                    File.WriteAllBytes(filePath, oleBytes);
+                    Console.WriteLine($"Extracted OLE object to: {filePath}");
+
+                    oleCounter++;
                 }
             }
 
-            // No diagram saving required for extraction; saving would use the provided Save methods.
+            // Optionally, save the diagram unchanged (demonstrating use of Save rule)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

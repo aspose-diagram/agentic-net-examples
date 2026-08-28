@@ -1,11 +1,11 @@
 {
   "category": "ole-objects-in-visio-diagram",
   "display_name": "Ole Objects In Visio Diagram",
-  "version": "26.7.0",
+  "version": "26.8.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-07-28",
+  "generated": "2026-08-28",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,16 +14,15 @@
       "task": "Add a new ole object linking to a word document at a specified page location",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -39,6 +38,7 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -49,7 +49,6 @@
       "task": "Apply a security password to ole objects that contain confidential pdf content before exporting",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -69,8 +68,7 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -87,9 +85,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
-        "System.IO",
-        "System.Linq"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -105,7 +101,6 @@
       "task": "Compress ole object streams using zip compression before saving the visio diagram to reduce file size",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.IO.Compression"
@@ -123,10 +118,14 @@
       "file": "configure-the-diagram-saver-to-retain-ole-objects-when-converting-the-visio-file-to-svg-format.cs",
       "task": "Configure the diagram saver to retain ole objects when converting the visio file to svg format",
       "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "Diagram",
+        "SVGSaveOptions",
         "Save",
         "diagram"
       ]
@@ -137,6 +136,7 @@
       "task": "Convert embedded ole excel worksheets to csv files while preserving cell formatting information",
       "namespaces": [
         "Aspose.Cells",
+        "Aspose.Cells.Saving",
         "Aspose.Diagram",
         "System",
         "System.IO"
@@ -157,7 +157,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -197,9 +196,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -208,7 +207,6 @@
       "task": "Enable lazy loading of ole objects to improve initial diagram opening performance",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -250,9 +248,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -296,8 +294,7 @@
       "task": "Iterate through ole objects and log their bounding box coordinates for layout analysis",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -348,6 +345,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -361,9 +359,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO",
-        "System.Security.Cryptography",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -398,15 +394,14 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "ImageSaveOptions",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -470,8 +465,7 @@
       "task": "Set ole object display mode to icon only and customize the icon caption for better readability",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -487,7 +481,6 @@
       "task": "Update ole object hyperlinks to point to a new network share location across the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

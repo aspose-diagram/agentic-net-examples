@@ -1,44 +1,48 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Get the first (default) page; ensure at least one page exists
+            Page page = diagram.Pages[0];
 
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
-                {
-                    throw new Exception("Diagram has no pages.");
-                }
+            // Add a rectangle shape that will act as the hyperlink target
+            // Parameters: PinX, PinY, Width, Height, Master name, isCalculate (bool)
+            long shapeId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle", false);
+            Shape shape = page.Shapes.GetShape((int)shapeId);
 
-                // Get the first page
-                Page page = diagram.Pages[0];
+            // Set visible text for the shape
+            shape.Text.Value.Add(new Txt("Open PDF"));
 
-                // Add a rectangle shape to the page
-                // Parameters: PinX, PinY, Width, Height, Master name, isCalculate (bool)
-                long shapeId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle", false);
-                Shape shape = page.Shapes.GetShape((int)shapeId);
+            // Create a hyperlink that points to a PDF file
+            Hyperlink link = new Hyperlink();
+            // Address of the PDF document (relative or absolute URL)
+            link.Address.Value = "https://example.com/document.pdf";
+            // Optional description (tooltip)
+            link.Description.Value = "Open the PDF in a new browser window";
+            // Instruct Visio to open the link in a new window/tab
+            // NewWindow expects a BOOL value, not an integer
+            link.NewWindow.Value = BOOL.True;
 
-                // Add a hyperlink that points to a PDF document
-                Hyperlink link = new Hyperlink();
-                link.Address.Value = "https://example.com/document.pdf"; // URL of the PDF
-                link.Description.Value = "Open PDF in new browser window";
-                shape.Hyperlinks.Add(link);
+            // Add the hyperlink to the shape's Hyperlinks collection
+            shape.Hyperlinks.Add(link);
 
-                // Save the diagram to a VSDX file
-                diagram.Save("HyperlinkDiagram.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+            // Save the diagram to a VSDX file so the hyperlink can be tested in Visio or a viewer
+            diagram.Save("HyperlinkDiagram.vsdx", SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

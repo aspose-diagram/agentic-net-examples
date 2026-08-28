@@ -1,52 +1,55 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Create a new diagram
-            Diagram diagram = new Diagram();
+                // Create a new diagram
+                Diagram diagram = new Diagram();
 
-            // Add a rectangle shape to the active page
-            // Parameters: PinX, PinY, master name, isCalculate (bool)
-            long rectId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle", false);
+                // Use the first page (default page is created automatically)
+                Page page = diagram.Pages[0];
 
-            // Retrieve the shape object using the returned ID
-            Shape rect = diagram.ActivePage.Shapes.GetShape((int)rectId);
+                // Add a rectangle shape to the page
+                // Parameters: pinX, pinY, width, height, master name, isCalculate
+                long rectId = page.AddShape(2.0, 2.0, 3.0, 1.5, "Rectangle", false);
 
-            // Lock the rectangle to prevent modifications during batch processing
-            rect.Protection.LockMoveX.Value = BOOL.True;
-            rect.Protection.LockMoveY.Value = BOOL.True;
-            rect.Protection.LockWidth.Value = BOOL.True;
-            rect.Protection.LockHeight.Value = BOOL.True;
-            rect.Protection.LockRotate.Value = BOOL.True;
-            rect.Protection.LockVtxEdit.Value = BOOL.True;
+                // Retrieve the shape object using the returned ID
+                Shape rectangle = page.Shapes.GetShape(rectId);
 
-            // ------------------------------
-            // Perform batch drawing operations here
-            // (e.g., add other shapes, connectors, styling, etc.)
-            // ------------------------------
+                // Lock the rectangle to prevent modifications during batch processing
+                rectangle.Protection.LockMoveX.Value = BOOL.True;
+                rectangle.Protection.LockMoveY.Value = BOOL.True;
+                rectangle.Protection.LockWidth.Value = BOOL.True;
+                rectangle.Protection.LockHeight.Value = BOOL.True;
+                rectangle.Protection.LockRotate.Value = BOOL.True;
+                rectangle.Protection.LockVtxEdit.Value = BOOL.True;
 
-            // After all drawing steps are completed, unlock the rectangle
-            rect.Protection.LockMoveX.Value = BOOL.False;
-            rect.Protection.LockMoveY.Value = BOOL.False;
-            rect.Protection.LockWidth.Value = BOOL.False;
-            rect.Protection.LockHeight.Value = BOOL.False;
-            rect.Protection.LockRotate.Value = BOOL.False;
-            rect.Protection.LockVtxEdit.Value = BOOL.False;
+                // -------------------------------------------------
+                // Perform batch drawing steps here
+                // (e.g., add other shapes, connectors, apply styles, etc.)
+                // -------------------------------------------------
 
-            // Save the diagram to a VSDX file
-            diagram.Save("LockedRectangleDiagram.vsdx", SaveFileFormat.Vsdx);
+                // After all drawing steps are completed, unlock the rectangle
+                rectangle.Protection.LockMoveX.Value = BOOL.False;
+                rectangle.Protection.LockMoveY.Value = BOOL.False;
+                rectangle.Protection.LockWidth.Value = BOOL.False;
+                rectangle.Protection.LockHeight.Value = BOOL.False;
+                rectangle.Protection.LockRotate.Value = BOOL.False;
+                rectangle.Protection.LockVtxEdit.Value = BOOL.False;
 
-        }
-        catch (System.NullReferenceException ex)
-        {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-        }
+                // Save the diagram to a VSDX file
+                diagram.Save("LockedRectangleDiagram.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

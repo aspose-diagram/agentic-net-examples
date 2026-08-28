@@ -13,8 +13,7 @@ class Program
         // Get the first (default) page
         Page page = diagram.Pages[0];
 
-        // Draw an oval (ellipse) on the page
-        // Parameters: pinX, pinY (center), width, height (in inches)
+        // Draw an oval (ellipse) at position (5,5) with width 4 inches and height 2 inches
         long shapeId = page.DrawEllipse(5.0, 5.0, 4.0, 2.0);
 
         // Retrieve the shape object using the returned ID
@@ -25,6 +24,6 @@ class Program
 
         // Export the diagram as a PNG image
         ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-        diagram.Save("output.png", pngOptions);
+        diagram.Save("oval.png", pngOptions);
     }
 }

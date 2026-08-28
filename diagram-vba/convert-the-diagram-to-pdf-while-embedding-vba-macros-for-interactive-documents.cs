@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.Vba;
@@ -10,41 +11,47 @@ class Program
             try
             {
 
-                // Input Visio file path (must exist)
-                string inputPath = "input.vsdx";
-                // Output PDF file path
-                string outputPath = "output.pdf";
+                // Input Visio file (must exist)
+                string inputVisioPath = "input.vsdx";
 
-                // Load the diagram from file
-                Diagram diagram = new Diagram(inputPath);
+                // Paths for the macro‑enabled Visio file and the final PDF
+                string macroEnabledPath = "output.vsdm";
+                string pdfOutputPath = "output.pdf";
 
-                // Ensure the diagram has a VBA project (creates one if absent)
-                if (diagram.VbaProject == null)
-                {
-                    throw new Exception("VBA project is not available in the loaded diagram.");
-                }
+                // Load the diagram
+                Diagram diagram = new Diagram(inputVisioPath);
 
-                // Add a new procedural VBA module
-                int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "MyMacroModule");
-                var vbaModule = diagram.VbaProject.Modules[moduleIndex];
+                // -------------------------------------------------
+                // Embed VBA macro
+                // -------------------------------------------------
+                // Add a new procedural module named "MyMacro"
+                int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "MyMacro");
+                VbaModule vbaModule = diagram.VbaProject.Modules[moduleIndex];
 
-                // Set VBA code for the module
+                // Set the VBA code for the module
                 vbaModule.Codes = @"
-                Attribute VB_Name = ""MyMacroModule""
+                Attribute VB_Name = ""MyMacro""
                 Sub HelloWorld()
                 MsgBox ""Hello from VBA!""
                 End Sub
                 ";
 
-                // Configure PDF save options
+                // Save the diagram in a macro‑enabled format (VSDM)
+                diagram.Save(macroEnabledPath, SaveFileFormat.Vsdm);
+                Console.WriteLine($"Macro‑enabled Visio file saved to: {macroEnabledPath}");
+
+                // -------------------------------------------------
+                // Export to PDF
+                // -------------------------------------------------
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Ensure the options know they are for PDF
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Optional: set a default font for any missing fonts
                 pdfOptions.DefaultFont = "Arial";
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set format tracker
 
-                // Save the diagram as PDF (VBA macros remain embedded in the source Visio file)
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine($"Diagram converted to PDF and saved at: {outputPath}");
+                // Save the diagram as PDF (macros are not carried into PDF, but the source contains them)
+                diagram.Save(pdfOutputPath, pdfOptions);
+                Console.WriteLine($"PDF file saved to: {pdfOutputPath}");
 
             }
             catch (System.IO.FileNotFoundException ex)

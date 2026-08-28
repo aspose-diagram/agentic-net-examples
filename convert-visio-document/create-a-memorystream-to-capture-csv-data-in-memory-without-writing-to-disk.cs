@@ -9,27 +9,24 @@ class Program
         try
         {
 
-            // Load an existing diagram (replace with your source file)
+            // Load the diagram (replace with your source file)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create a memory stream to hold the CSV output
+            // Create a memory stream to capture CSV data
             using (MemoryStream csvStream = new MemoryStream())
             {
-                // Save the diagram as CSV directly into the memory stream
+                // Save the diagram as CSV into the memory stream
                 diagram.Save(csvStream, SaveFileFormat.Csv);
 
-                // Reset the stream position to the beginning for reading
+                // Rewind the stream to read its contents
                 csvStream.Position = 0;
 
-                // Example: read the CSV data as a string (optional)
+                // Example: read the CSV text from the memory stream
                 using (StreamReader reader = new StreamReader(csvStream))
                 {
-                    string csvContent = reader.ReadToEnd();
-                    Console.WriteLine(csvContent);
+                    string csvData = reader.ReadToEnd();
+                    Console.WriteLine(csvData);
                 }
-
-                // At this point, csvStream contains the CSV data in memory
-                // It can be returned, sent over a network, etc., without touching the file system
             }
 
         }

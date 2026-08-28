@@ -1,52 +1,88 @@
 using System;
 using System.IO;
 using System.Diagnostics;
+using System.Globalization;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input folder containing VSD files
-        string inputFolder = @"C:\VisioFiles";
-        // Output folder for CSV files
-        string outputFolder = @"C:\VisioCsvOutput";
-        // Path to the performance log CSV
-        string logPath = Path.Combine(outputFolder, "ConversionPerformanceLog.csv");
-
-        // Ensure output folder exists
-        Directory.CreateDirectory(outputFolder);
-
-        // Prepare the log file with header
-        using (var logWriter = new StreamWriter(logPath, false))
+        static void Main(string[] args)
         {
-            logWriter.WriteLine("FileName,DurationMs");
-
-            // Get all .vsd files in the input folder
-            string[] vsdFiles = Directory.GetFiles(inputFolder, "*.vsd", SearchOption.TopDirectoryOnly);
-            foreach (string vsdPath in vsdFiles)
+            try
             {
-                string fileName = Path.GetFileName(vsdPath);
-                string csvOutputPath = Path.Combine(outputFolder, Path.ChangeExtension(fileName, ".csv"));
 
-                // Measure conversion time
-                Stopwatch sw = Stopwatch.StartNew();
+                // Folder containing source VSD files
+                string inputFolder = @"C:\Visio\Input";
+                // Folder where converted files will be saved
+                string outputFolder = @"C:\Visio\Output";
+                // Path to the CSV log file
+                string csvLogPath = @"C:\Visio\ConversionLog.csv";
 
-                // Load the VSD diagram
-                Diagram diagram = new Diagram(vsdPath);
+                // Ensure output folder exists
+                Directory.CreateDirectory(outputFolder);
 
-                // Save as CSV
-                diagram.Save(csvOutputPath, SaveFileFormat.Csv);
+                // Process each VSD file in the input folder
+                foreach (string vsdFilePath in Directory.GetFiles(inputFolder, "*.vsd"))
+                {
+                    string fileName = Path.GetFileName(vsdFilePath);
+                    string outputFilePath = Path.Combine(outputFolder, Path.ChangeExtension(fileName, ".vdx"));
 
-                sw.Stop();
+                    // Start timing the conversion
+                    Stopwatch sw = Stopwatch.StartNew();
 
-                // Log the duration
-                logWriter.WriteLine($"{fileName},{sw.ElapsedMilliseconds}");
-                Console.WriteLine($"Converted {fileName} in {sw.ElapsedMilliseconds} ms");
+                    // Load the VSD diagram
+                    Diagram diagram = new Diagram(vsdFilePath);
+
+                    // Perform conversion (example: VSD -> VDX)
+                    diagram.Save(outputFilePath, SaveFileFormat.Csv);
+
+                    // Stop timing
+                    sw.Stop();
+
+                    // Log the result to CSV
+                    LogConversion(csvLogPath, fileName, sw.Elapsed);
+                }
+
+            }
+            catch (System.IO.DirectoryNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            }
+    }
+
+        /// <summary>
+        /// Appends a conversion record to the CSV log file.
+        /// </summary>
+        /// <param name="csvPath">Path to the CSV file.</param>
+        /// <param name="fileName">Name of the processed VSD file.</param>
+        /// <param name="duration">Time taken for the conversion.</param>
+        private static void LogConversion(string csvPath, string fileName, TimeSpan duration)
+        {
+            bool fileExists = File.Exists(csvPath);
+            using (StreamWriter writer = new StreamWriter(csvPath, true))
+            {
+                // Write header if the file is newly created
+                if (!fileExists)
+                {
+                    writer.WriteLine("FileName,ConversionStartUtc,ConversionDurationMs");
+                }
+
+                string startUtc = DateTime.UtcNow.Subtract(duration).ToString("o", CultureInfo.InvariantCulture);
+                long durationMs = (long)duration.TotalMilliseconds;
+
+                writer.WriteLine($"{EscapeCsv(fileName)},{startUtc},{durationMs}");
             }
         }
 
-        Console.WriteLine("All conversions completed. Performance log saved to:");
-        Console.WriteLine(logPath);
+        /// <summary>
+        /// Escapes a CSV field by wrapping it in double quotes if needed.
+        /// </summary>
+        private static string EscapeCsv(string field)
+        {
+            if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
+            {
+                return $"\"{field.Replace("\"", "\"\"")}\"";
+            }
+            return field;
+        }
     }
-}

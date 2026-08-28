@@ -1,101 +1,77 @@
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Aspose.Diagram;
 
-namespace ODataDiagramSync
+class Program
 {
-    // Represents a single record from the OData feed.
-    public class ODataItem
+    static void Main()
     {
-        public string ShapeName { get; set; }
-        public string Data1 { get; set; }
-        public string Data2 { get; set; }
-        public string Data3 { get; set; }
-    }
-
-    public class Program
-    {
-        // Entry point of the console application.
-        public static async Task Main(string[] args)
+        try
         {
-            if (args.Length < 3)
+
+            // Path to the Visio diagram file to be updated
+            string diagramPath = "input.vsdx";
+
+            // OData service endpoint returning JSON data (adjust URL as needed)
+            string odataUrl = "https://example.com/odata/Items";
+
+            // Load the existing diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Retrieve OData JSON payload
+            using (HttpClient httpClient = new HttpClient())
             {
-                Console.WriteLine("Usage: ODataDiagramSync <inputVisioPath> <outputVisioPath> <odataUrl>");
-                return;
-            }
+                string json = httpClient.GetStringAsync(odataUrl).Result;
 
-            string inputVisioPath = args[0];
-            string outputVisioPath = args[1];
-            string odataUrl = args[2];
+                // Deserialize JSON into an array of items (Id and Value fields expected)
+                var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                Item[] items = JsonSerializer.Deserialize<Item[]>(json, jsonOptions);
 
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputVisioPath);
-
-            // Retrieve OData feed.
-            List<ODataItem> odataItems = await FetchODataAsync(odataUrl);
-            if (odataItems == null)
-            {
-                Console.WriteLine("Failed to retrieve OData feed.");
-                return;
-            }
-
-            // Build a lookup dictionary for fast shape matching.
-            Dictionary<string, ODataItem> lookup = new Dictionary<string, ODataItem>(StringComparer.OrdinalIgnoreCase);
-            foreach (ODataItem item in odataItems)
-            {
-                if (!string.IsNullOrWhiteSpace(item.ShapeName))
+                // Build a lookup dictionary keyed by Id for fast access
+                var lookup = new System.Collections.Generic.Dictionary<string, string>();
+                if (items != null)
                 {
-                    lookup[item.ShapeName] = item;
-                }
-            }
-
-            // Iterate through all pages and shapes, updating Data fields where a match is found.
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.NameU != null && lookup.TryGetValue(shape.NameU, out ODataItem match))
+                    foreach (Item item in items)
                     {
-                        // Update shape data fields directly (no .Value needed for Data1/Data2/Data3).
-                        shape.Data1 = match.Data1 ?? string.Empty;
-                        shape.Data2 = match.Data2 ?? string.Empty;
-                        shape.Data3 = match.Data3 ?? string.Empty;
+                        if (!string.IsNullOrEmpty(item.Id))
+                        {
+                            lookup[item.Id] = item.Value ?? string.Empty;
+                        }
+                    }
+                }
 
-                        Console.WriteLine($"Updated shape '{shape.NameU}' (ID: {shape.ID}) with OData values.");
+                // Iterate through all pages and shapes in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Use the universal shape name (NameU) as the key to match OData records
+                        string key = shape.NameU;
+                        if (lookup.TryGetValue(key, out string value))
+                        {
+                            // Synchronize external data into shape's custom data fields
+                            shape.Data1 = value;                                 // Store external value
+                            shape.Data2 = DateTime.Now.ToString("yyyy-MM-dd");   // Example: store sync timestamp
+                        }
                     }
                 }
             }
 
-            // Save the modified diagram.
-            diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputVisioPath}'.");
-        }
+            // Save the updated diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-        // Helper method to fetch and deserialize OData JSON.
-        private static async Task<List<ODataItem>> FetchODataAsync(string url)
+        }
+        catch (System.IO.FileNotFoundException ex)
         {
-            try
-            {
-                using HttpClient client = new HttpClient();
-                HttpResponseMessage response = await client.GetAsync(url);
-                response.EnsureSuccessStatusCode();
-
-                string json = await response.Content.ReadAsStringAsync();
-                List<ODataItem> items = JsonSerializer.Deserialize<List<ODataItem>>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return items;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching OData: {ex.Message}");
-                return null;
-            }
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    // Helper class representing the expected OData JSON structure
+    private class Item
+    {
+        public string Id { get; set; }
+        public string Value { get; set; }
     }
 }

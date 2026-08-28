@@ -5,83 +5,109 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Path to the source Visio file (template or existing diagram)
-                string sourceFile = "template.vsdx";
+            // Path to the source Visio file (template)
+            string visioPath = "template.vsdx";
 
-                // Path to the output Visio file after loading data
-                string outputFile = "output.vsdx";
+            // Path to the output Visio file
+            string outputPath = "output.vsdx";
 
-                // Measure memory before loading the diagram
-                long memoryBeforeLoad = GC.GetTotalMemory(forceFullCollection: true);
-                Console.WriteLine($"Memory before loading diagram: {memoryBeforeLoad / 1024 / 1024} MB");
+            // Measure memory before loading the diagram
+            long beforeDiagramLoad = GC.GetTotalMemory(true);
 
-                // Load the diagram using the constructor that accepts a file name
-                Diagram diagram = new Diagram(sourceFile);
+            // Load diagram using the constructor (lifecycle rule)
+            Diagram diagram = new Diagram(visioPath);
 
-                // Measure memory after diagram is loaded
-                long memoryAfterLoad = GC.GetTotalMemory(forceFullCollection: true);
-                Console.WriteLine($"Memory after loading diagram: {memoryAfterLoad / 1024 / 1024} MB");
-                Console.WriteLine($"Memory increase for diagram load: {(memoryAfterLoad - memoryBeforeLoad) / 1024 / 1024} MB");
+            // Measure memory after loading the diagram
+            long afterDiagramLoad = GC.GetTotalMemory(true);
+            Console.WriteLine($"Memory used to load diagram: {afterDiagramLoad - beforeDiagramLoad} bytes");
 
-                // Simulate loading a large external dataset
-                // Here we create a DataRecordSet and fill its ADOData property with a large XML string.
-                DataRecordSet dataRecordSet = new DataRecordSet
-                {
-                    ID = 1,
-                    Name = "LargeDataSet"
-                };
+            // Measure memory before loading the external dataset
+            long beforeDataLoad = GC.GetTotalMemory(true);
 
-                // Generate a large XML payload (e.g., 100 MB of dummy data)
-                int rows = 500000; // Adjust to achieve desired size
-                StringWriter xmlWriter = new StringWriter();
-                xmlWriter.WriteLine(@"<?xml version=""1.0""?>");
-                xmlWriter.WriteLine(@"<xml>");
-                xmlWriter.WriteLine(@"<data>");
-                for (int i = 0; i < rows; i++)
-                {
-                    xmlWriter.WriteLine($@"<row><Column1>Value{i}</Column1><Column2>{Guid.NewGuid()}</Column2></row>");
-                }
-                xmlWriter.WriteLine(@"</data>");
-                xmlWriter.WriteLine(@"</xml>");
-                dataRecordSet.ADOData = xmlWriter.ToString();
+            // Load a large external dataset into a DataRecordSet
+            DataRecordSet dataRecordSet = LoadLargeDataRecordSet("largeData.csv");
 
-                // Measure memory after creating the large dataset
-                long memoryAfterDataCreation = GC.GetTotalMemory(forceFullCollection: true);
-                Console.WriteLine($"Memory after creating large DataRecordSet: {memoryAfterDataCreation / 1024 / 1024} MB");
-                Console.WriteLine($"Memory increase for data creation: {(memoryAfterDataCreation - memoryAfterLoad) / 1024 / 1024} MB");
+            // Measure memory after loading the dataset
+            long afterDataLoad = GC.GetTotalMemory(true);
+            Console.WriteLine($"Memory used to load dataset: {afterDataLoad - beforeDataLoad} bytes");
 
-                // Add the DataRecordSet to the diagram's collection
-                diagram.DataRecordSets.Add(dataRecordSet);
+            // Add the DataRecordSet to the diagram
+            diagram.DataRecordSets.Add(dataRecordSet);
 
-                // Measure memory after adding the DataRecordSet to the diagram
-                long memoryAfterAdd = GC.GetTotalMemory(forceFullCollection: true);
-                Console.WriteLine($"Memory after adding DataRecordSet to diagram: {memoryAfterAdd / 1024 / 1024} MB");
-                Console.WriteLine($"Memory increase for adding to diagram: {(memoryAfterAdd - memoryAfterDataCreation) / 1024 / 1024} MB");
+            // Refresh the diagram to apply any automatic linking (optional)
+            diagram.Refresh();
 
-                // Optionally, refresh the data record set (no external DB in this example)
-                // dataRecordSet.Refresh();
+            // Measure memory before saving the diagram
+            long beforeSave = GC.GetTotalMemory(true);
 
-                // Save the diagram using the Save method with a specific format
-                diagram.Save(outputFile, SaveFileFormat.Vsdx);
+            // Save diagram using the Save method (lifecycle rule)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                // Measure memory after saving
-                long memoryAfterSave = GC.GetTotalMemory(forceFullCollection: true);
-                Console.WriteLine($"Memory after saving diagram: {memoryAfterSave / 1024 / 1024} MB");
-                Console.WriteLine($"Total memory increase from start to end: {(memoryAfterSave - memoryBeforeLoad) / 1024 / 1024} MB");
+            // Measure memory after saving the diagram
+            long afterSave = GC.GetTotalMemory(true);
+            Console.WriteLine($"Memory change during save: {afterSave - beforeSave} bytes");
 
-                // Clean up
-                diagram.Dispose();
+            // Clean up resources
+            diagram.Dispose();
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
+
+    // Helper method to load a CSV file into a DataRecordSet
+    static DataRecordSet LoadLargeDataRecordSet(string csvPath)
+    {
+        // Create a new DataRecordSet instance
+        DataRecordSet drs = new DataRecordSet();
+
+        // Assign a friendly name
+        drs.Name = Path.GetFileNameWithoutExtension(csvPath);
+
+        // Read all lines from the CSV (for demonstration; streaming is preferable for very large files)
+        string[] lines = File.ReadAllLines(csvPath);
+        if (lines.Length == 0)
+            return drs;
+
+        // First line contains column headers
+        string[] headers = lines[0].Split(',');
+
+        // Build ADO XML representation required by Aspose.Diagram
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        sb.AppendLine("<xml>");
+        sb.AppendLine("<schema>");
+        foreach (string header in headers)
+        {
+            sb.AppendLine($"<column name=\"{header}\" type=\"string\"/>");
+        }
+        sb.AppendLine("</schema>");
+        sb.AppendLine("<data>");
+        for (int i = 1; i < lines.Length; i++)
+        {
+            string[] fields = lines[i].Split(',');
+            sb.Append("<row>");
+            for (int j = 0; j < headers.Length; j++)
+            {
+                // Escape XML special characters
+                string value = System.Security.SecurityElement.Escape(fields[j]);
+                sb.Append($"<field>{value}</field>");
+            }
+            sb.AppendLine("</row>");
+        }
+        sb.AppendLine("</data>");
+        sb.AppendLine("</xml>");
+
+        // Assign the generated XML to the DataRecordSet
+        drs.ADOData = sb.ToString();
+
+        return drs;
     }
+}

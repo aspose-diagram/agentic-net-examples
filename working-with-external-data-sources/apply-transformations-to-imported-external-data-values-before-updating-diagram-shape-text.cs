@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -9,72 +11,65 @@ class Program
             try
             {
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the updated Visio file
+                // Paths to the input diagram and external CSV data file
+                string diagramPath = "input.vsdx";
+                string csvPath = "data.csv";
                 string outputPath = "output.vsdx";
 
-                try
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Read external data from CSV into a dictionary (key: shape NameU, value: raw data)
+                Dictionary<string, string> dataMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                using (StreamReader reader = new StreamReader(csvPath))
                 {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(inputPath);
-
-                    // Refresh external data connections to ensure latest data is loaded
-                    diagram.Refresh();
-
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                    while (!reader.EndOfStream)
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
+                        string line = reader.ReadLine();
+                        if (string.IsNullOrWhiteSpace(line))
+                            continue;
+
+                        string[] parts = line.Split(',');
+                        if (parts.Length >= 2)
                         {
-                            // Example: If the shape has a Data1 value that can be parsed as a number,
-                            // apply a transformation (e.g., multiply by 2) and update the shape text.
-                            if (!string.IsNullOrWhiteSpace(shape.Data1))
-                            {
-                                if (double.TryParse(shape.Data1, out double originalValue))
-                                {
-                                    // Transformation logic: double the value
-                                    double transformedValue = originalValue * 2;
-
-                                    // Update the Data1 field with the transformed value
-                                    shape.Data1 = transformedValue.ToString();
-
-                                    // Update the shape's displayed text to reflect the new value
-                                    shape.Text.Value.Clear();
-                                    shape.Text.Value.Add(new Txt($"Value: {transformedValue}"));
-                                }
-                            }
-
-                            // Example: If the shape has a Data2 value that represents a date,
-                            // convert it to a different format before updating the text.
-                            if (!string.IsNullOrWhiteSpace(shape.Data2))
-                            {
-                                if (DateTime.TryParse(shape.Data2, out DateTime dateValue))
-                                {
-                                    // Transformation: format date as "yyyy-MM-dd"
-                                    string formattedDate = dateValue.ToString("yyyy-MM-dd");
-
-                                    // Update the Data2 field
-                                    shape.Data2 = formattedDate;
-
-                                    // Update the shape's displayed text
-                                    shape.Text.Value.Clear();
-                                    shape.Text.Value.Add(new Txt($"Date: {formattedDate}"));
-                                }
-                            }
+                            string key = parts[0].Trim();
+                            string val = parts[1].Trim();
+                            dataMap[key] = val;
                         }
                     }
+                }
 
-                    // Save the updated diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-                catch (Exception ex)
+                // Iterate through all pages and shapes, updating text where a matching entry exists
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Simple error handling
-                    Console.WriteLine($"Error: {ex.Message}");
-                    throw;
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        string shapeName = shape.NameU;
+                        if (dataMap.ContainsKey(shapeName))
+                        {
+                            string rawValue = dataMap[shapeName];
+                            string transformedValue;
+
+                            // Example transformation: numeric values are multiplied by 1.5, others are upper‑cased
+                            if (double.TryParse(rawValue, out double numeric))
+                            {
+                                double newValue = numeric * 1.5;
+                                transformedValue = newValue.ToString("F2");
+                            }
+                            else
+                            {
+                                transformedValue = rawValue.ToUpperInvariant();
+                            }
+
+                            // Clear existing text and set the transformed value
+                            shape.Text.Value.Clear();
+                            shape.Text.Value.Add(new Txt(transformedValue));
+                        }
+                    }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Csv);
 
             }
             catch (System.IO.FileNotFoundException ex)

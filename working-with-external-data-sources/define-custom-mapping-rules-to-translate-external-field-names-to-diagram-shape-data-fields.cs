@@ -1,75 +1,74 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load an existing Visio diagram (replace with your file path)
+                // Input Visio file path
                 string inputPath = "input.vsdx";
+                // Output Visio file path
+                string outputPath = "output.vsdx";
+
+                // Define mapping: external field name -> shape data field (Data1, Data2, Data3)
+                var fieldMapping = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "CustomerID", "Data1" },
+                    { "OrderNumber", "Data2" },
+                    { "Status", "Data3" }
+                };
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // External data source: field name -> value
-                Dictionary<string, string> externalData = new Dictionary<string, string>
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    { "CustomerName", "Acme Corp" },
-                    { "OrderId", "12345" },
-                    { "Amount", "$1,000" }
-                };
-
-                // Mapping: external field name -> shape data field (Data1, Data2, Data3)
-                Dictionary<string, string> fieldToShapeData = new Dictionary<string, string>
-                {
-                    { "CustomerName", "Data1" },
-                    { "OrderId", "Data2" },
-                    { "Amount", "Data3" }
-                };
-
-                // Apply the mapping to every shape on every page
-                foreach (Aspose.Diagram.Page page in diagram.Pages)
-                {
-                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
+                        // Example: assume external data is stored in shape.NameU as "CustomerID=123;OrderNumber=456;Status=Open"
+                        // Parse the name string into key/value pairs
+                        if (string.IsNullOrWhiteSpace(shape.NameU))
                             continue;
 
-                        // Iterate over each mapping entry
-                        foreach (KeyValuePair<string, string> mapEntry in fieldToShapeData)
+                        var pairs = shape.NameU.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var pair in pairs)
                         {
-                            string externalField = mapEntry.Key;
-                            string shapeDataField = mapEntry.Value;
+                            var kv = pair.Split(new[] { '=' }, 2);
+                            if (kv.Length != 2)
+                                continue;
 
-                            // Ensure the external data contains the field
-                            if (!externalData.TryGetValue(externalField, out string externalValue))
-                                continue; // No value to assign
+                            string externalName = kv[0].Trim();
+                            string externalValue = kv[1].Trim();
 
-                            // Assign the value to the appropriate DataX property
-                            switch (shapeDataField)
+                            if (fieldMapping.TryGetValue(externalName, out string targetDataField))
                             {
-                                case "Data1":
-                                    shape.Data1 = externalValue;
-                                    break;
-                                case "Data2":
-                                    shape.Data2 = externalValue;
-                                    break;
-                                case "Data3":
-                                    shape.Data3 = externalValue;
-                                    break;
-                                default:
-                                    // Unknown Data field – ignore or handle as needed
-                                    break;
+                                // Assign the value to the appropriate Data field
+                                switch (targetDataField)
+                                {
+                                    case "Data1":
+                                        shape.Data1 = externalValue;
+                                        break;
+                                    case "Data2":
+                                        shape.Data2 = externalValue;
+                                        break;
+                                    case "Data3":
+                                        shape.Data3 = externalValue;
+                                        break;
+                                    default:
+                                        // If an unsupported field is specified, ignore it
+                                        break;
+                                }
                             }
                         }
                     }
                 }
 
-                // Save the updated diagram
-                string outputPath = "output.vsdx";
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

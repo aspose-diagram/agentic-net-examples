@@ -1,102 +1,66 @@
-using System;
 using System.IO;
+using System;
+using System.Xml;
 using System.Xml.Linq;
+using System.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Paths to the Visio file and the XML data source
-        string diagramPath = "input.vsdx";
-        string xmlDataPath = "data.xml";
-        string outputPath = "output.vsdx";
-
-        // Load the Visio diagram
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(diagramPath);
-            Console.WriteLine("Diagram loaded successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
 
-        // Load the XML data that contains mapping information
-        XDocument xmlDoc;
-        try
-        {
-            xmlDoc = XDocument.Load(xmlDataPath);
-            Console.WriteLine("XML data loaded successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load XML data: {ex.Message}");
-            return;
-        }
+            // Paths to the Visio file and the XML mapping file
+            string diagramPath = "input.vsdx";
+            string xmlPath = "mapping.xml";
 
-        // Example mapping format:
-        // <ShapeMappings>
-        //   <ShapeMapping>
-        //     <ShapeName>MyShape</ShapeName>
-        //     <Text>Hello World</Text>
-        //   </ShapeMapping>
-        //   ...
-        // </ShapeMappings>
-
-        foreach (var mapping in xmlDoc.Root.Elements("ShapeMapping"))
-        {
-            string shapeName = (string)mapping.Element("ShapeName");
-            string newText = (string)mapping.Element("Text");
-
-            if (string.IsNullOrEmpty(shapeName))
-                continue;
-
-            // Locate the shape by its universal name (NameU) across all pages
-            Shape targetShape = FindShapeByNameU(diagram, shapeName);
-            if (targetShape != null)
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Replace the shape's text content
-                targetShape.Text.Value.Clear();
-                targetShape.Text.Value.Add(new Txt(newText));
-                Console.WriteLine($"Updated shape '{shapeName}' with text '{newText}'.");
-            }
-            else
-            {
-                Console.WriteLine($"Shape '{shapeName}' not found in the diagram.");
-            }
-        }
+                // Load the XML mapping document
+                XDocument xdoc = XDocument.Load(xmlPath);
 
-        // Save the modified diagram
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to save diagram: {ex.Message}");
-        }
-    }
+                // Build a dictionary: shape ID -> data values
+                var mappings = xdoc.Root?
+                    .Elements("Shape")
+                    .Select(e => new
+                    {
+                        Id = (long?) (int?) e.Attribute("id") ?? 0,
+                        Data1 = (string) e.Attribute("data1"),
+                        Data2 = (string) e.Attribute("data2")
+                    })
+                    .Where(m => m.Id != 0)
+                    .ToDictionary(m => m.Id);
 
-    // Helper method to find a shape by its NameU on any page
-    private static Shape FindShapeByNameU(Diagram diagram, string nameU)
-    {
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                if (!string.IsNullOrEmpty(shape.NameU) &&
-                    shape.NameU.Equals(nameU, StringComparison.OrdinalIgnoreCase))
+                if (mappings != null && mappings.Count > 0)
                 {
-                    return shape;
+                    // Iterate through all pages and shapes, applying the mapping
+                    foreach (Page page in diagram.Pages)
+                    {
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            if (mappings.TryGetValue(shape.ID, out var map))
+                            {
+                                if (map.Data1 != null)
+                                    shape.Data1 = map.Data1;   // Shape data properties are simple strings
+                                if (map.Data2 != null)
+                                    shape.Data2 = map.Data2;
+                            }
+                        }
+                    }
                 }
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
         }
-        return null;
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

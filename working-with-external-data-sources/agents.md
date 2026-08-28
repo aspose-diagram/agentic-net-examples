@@ -4,10 +4,10 @@ display_name: Working With External Data Sources
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.7.0
+version: 26.8.0
 examples: 29
 pass_rate: 100.0
-generated: 2026-08-03
+generated: 2026-08-28
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 29 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.7.0 |
+| Aspose.Diagram Version | 26.8.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-08-03 |
+| Last Updated | 2026-08-28 |
 
 ## Persona
 
@@ -63,23 +63,23 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 29 | Core diagram API |
 | `System` | 29 | Console, Math, DateTime, Exception |
-| `System.IO` | 22 | File, Stream, Path, Directory operations |
+| `System.IO` | 21 | File, Stream, Path, Directory operations |
 | `Aspose.Diagram.Saving` | 17 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 13 | List, Dictionary, HashSet |
-| `System.Text.Json` | 5 | JSON serialization |
-| `System.Net.Http` | 3 | Supporting utilities |
-| `System.Threading.Tasks` | 3 | Supporting utilities |
+| `System.Collections.Generic` | 12 | List, Dictionary, HashSet |
+| `System.Text.Json` | 6 | JSON serialization |
+| `System.Net.Http` | 4 | Supporting utilities |
+| `System.Xml` | 2 | Supporting utilities |
 | `System.Data` | 2 | Supporting utilities |
+| `System.Linq` | 2 | LINQ queries on collections |
 | `System.Xml.Linq` | 2 | Supporting utilities |
-| `System.Xml` | 1 | Supporting utilities |
 | `System.Xml.Xsl` | 1 | Supporting utilities |
 | `Aspose.Diagram.Manipulation` | 1 | Supporting utilities |
 | `Aspose.Cells` | 1 | Supporting utilities |
-| `System.Linq` | 1 | LINQ queries on collections |
 | `System.Threading` | 1 | Supporting utilities |
-| `System.Data.SqlClient` | 1 | Supporting utilities |
+| `System.Threading.Tasks` | 1 | Supporting utilities |
 | `System.Text` | 1 | StringBuilder |
 | `System.Diagnostics` | 1 | Supporting utilities |
+| `System.Data.Common` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -114,31 +114,31 @@ class Program
 | [apply-transformations-to-imported-external-data-values-before-updating-diagram-shape-text.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/apply-transformations-to-imported-external-data-values-before-updating-diagram-shape-text.cs) | `Diagram`, `Pages`, `Save` | Apply transformations to imported external data values before updating diagram shape text |
 | [apply-xslt-transformations-to-xml-data-before-importing-into-diagram-shape-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/apply-xslt-transformations-to-xml-data-before-importing-into-diagram-shape-properties.cs) | `Diagram`, `Pages`, `Save` | Apply xslt transformations to xml data before importing into diagram shape properties |
 | [connect-to-a-sql-server-database-and-populate-diagram-shapes-with-query-results.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/connect-to-a-sql-server-database-and-populate-diagram-shapes-with-query-results.cs) | `Diagram`, `Save`, `diagram` | Connect to a sql server database and populate diagram shapes with query results |
-| [create-new-diagram-pages-dynamically-for-each-distinct-record-in-an-external-dataset.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/create-new-diagram-pages-dynamically-for-each-distinct-record-in-an-external-dataset.cs) | `AddShape`, `Diagram`, `Page` | Create new diagram pages dynamically for each distinct record in an external dataset |
+| [create-new-diagram-pages-dynamically-for-each-distinct-record-in-an-external-dataset.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/create-new-diagram-pages-dynamically-for-each-distinct-record-in-an-external-dataset.cs) | `Diagram`, `Page`, `Pages` | Create new diagram pages dynamically for each distinct record in an external dataset |
 | [create-swimlane-diagrams-where-lane-definitions-are-driven-by-external-csv-rows.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/create-swimlane-diagrams-where-lane-definitions-are-driven-by-external-csv-rows.cs) | `Diagram`, `Pages`, `Save` | Create swimlane diagrams where lane definitions are driven by external csv rows |
 | [define-custom-mapping-rules-to-translate-external-field-names-to-diagram-shape-data-fields.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/define-custom-mapping-rules-to-translate-external-field-names-to-diagram-shape-data-fields.cs) | `Diagram`, `Pages`, `Save` | Define custom mapping rules to translate external field names to diagram shape data fields |
-| [export-diagram-shape-data-to-a-csv-file-for-external-reporting-and-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/export-diagram-shape-data-to-a-csv-file-for-external-reporting-and-analysis.cs) | `Diagram`, `Pages`, `Save` | Export diagram shape data to a csv file for external reporting and analysis |
+| [export-diagram-shape-data-to-a-csv-file-for-external-reporting-and-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/export-diagram-shape-data-to-a-csv-file-for-external-reporting-and-analysis.cs) | `Diagram`, `Save`, `diagram` | Export diagram shape data to a csv file for external reporting and analysis |
 | [export-diagram-shape-data-to-an-excel-workbook-for-further-manipulation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/export-diagram-shape-data-to-an-excel-workbook-for-further-manipulation.cs) | `Diagram`, `Pages`, `Shapes` | Export diagram shape data to an excel workbook for further manipulation |
-| [filter-external-data-using-linq-before-binding-to-diagram-shapes-to-reduce-clutter.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/filter-external-data-using-linq-before-binding-to-diagram-shapes-to-reduce-clutter.cs) | `AddShape`, `Diagram`, `Pages` | Filter external data using linq before binding to diagram shapes to reduce clutter |
-| [generate-a-diagram-legend-automatically-from-distinct-external-data-categories.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/generate-a-diagram-legend-automatically-from-distinct-external-data-categories.cs) | `AddShape`, `Diagram`, `Page` | Generate a diagram legend automatically from distinct external data categories |
+| [filter-external-data-using-linq-before-binding-to-diagram-shapes-to-reduce-clutter.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/filter-external-data-using-linq-before-binding-to-diagram-shapes-to-reduce-clutter.cs) | `Diagram`, `Pages`, `Save` | Filter external data using linq before binding to diagram shapes to reduce clutter |
+| [generate-a-diagram-legend-automatically-from-distinct-external-data-categories.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/generate-a-diagram-legend-automatically-from-distinct-external-data-categories.cs) | `Diagram`, `Pages`, `Save` | Generate a diagram legend automatically from distinct external data categories |
 | [implement-retry-logic-when-loading-data-from-an-unstable-network-source-for-diagram-updates.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/implement-retry-logic-when-loading-data-from-an-unstable-network-source-for-diagram-updates.cs) | `Diagram`, `Save`, `diagram` | Implement retry logic when loading data from an unstable network source for diagram updates |
 | [import-shape-data-from-a-csv-file-and-bind-each-row-to-corresponding-diagram-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/import-shape-data-from-a-csv-file-and-bind-each-row-to-corresponding-diagram-shapes.cs) | `Diagram`, `Pages`, `Save` | Import shape data from a csv file and bind each row to corresponding diagram shapes |
-| [integrate-sharepoint-list-items-as-external-data-to-drive-diagram-shape-content.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/integrate-sharepoint-list-items-as-external-data-to-drive-diagram-shape-content.cs) | `Diagram`, `Pages`, `Save` | Integrate sharepoint list items as external data to drive diagram shape content |
+| [integrate-sharepoint-list-items-as-external-data-to-drive-diagram-shape-content.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/integrate-sharepoint-list-items-as-external-data-to-drive-diagram-shape-content.cs) | `AddShape`, `Diagram`, `Pages` | Integrate sharepoint list items as external data to drive diagram shape content |
 | [load-a-visio-diagram-from-an-xml-data-source-and-map-elements-to-shape-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/load-a-visio-diagram-from-an-xml-data-source-and-map-elements-to-shape-properties.cs) | `Diagram`, `Pages`, `Save` | Load a visio diagram from an xml data source and map elements to shape properties |
-| [log-each-step-of-the-external-data-import-process-for-audit-and-debugging-purposes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/log-each-step-of-the-external-data-import-process-for-audit-and-debugging-purposes.cs) | `Diagram`, `Save`, `diagram` | Log each step of the external data import process for audit and debugging purposes |
-| [map-hierarchical-json-arrays-to-nested-shape-groups-within-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/map-hierarchical-json-arrays-to-nested-shape-groups-within-the-diagram.cs) | `AddShape`, `Diagram`, `Page` | Map hierarchical json arrays to nested shape groups within the diagram |
-| [merge-hierarchical-xml-data-into-grouped-shapes-within-the-visio-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/merge-hierarchical-xml-data-into-grouped-shapes-within-the-visio-diagram.cs) | `AddShape`, `Diagram`, `Page` | Merge hierarchical xml data into grouped shapes within the visio diagram |
-| [perform-batch-processing-of-multiple-diagrams-each-loading-data-from-separate-csv-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/perform-batch-processing-of-multiple-diagrams-each-loading-data-from-separate-csv-files.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Perform batch processing of multiple diagrams each loading data from separate csv files |
+| [log-each-step-of-the-external-data-import-process-for-audit-and-debugging-purposes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/log-each-step-of-the-external-data-import-process-for-audit-and-debugging-purposes.cs) | `Diagram`, `Save`, `connection` | Log each step of the external data import process for audit and debugging purposes |
+| [map-hierarchical-json-arrays-to-nested-shape-groups-within-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/map-hierarchical-json-arrays-to-nested-shape-groups-within-the-diagram.cs) | `AddShape`, `Diagram`, `Pages` | Map hierarchical json arrays to nested shape groups within the diagram |
+| [merge-hierarchical-xml-data-into-grouped-shapes-within-the-visio-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/merge-hierarchical-xml-data-into-grouped-shapes-within-the-visio-diagram.cs) | `AddShape`, `Diagram`, `Pages` | Merge hierarchical xml data into grouped shapes within the visio diagram |
+| [perform-batch-processing-of-multiple-diagrams-each-loading-data-from-separate-csv-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/perform-batch-processing-of-multiple-diagrams-each-loading-data-from-separate-csv-files.cs) | `Diagram`, `Pages`, `Save` | Perform batch processing of multiple diagrams each loading data from separate csv files |
 | [populate-shape-hyperlinks-using-urls-retrieved-from-an-external-data-feed.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/populate-shape-hyperlinks-using-urls-retrieved-from-an-external-data-feed.cs) | `Diagram`, `Pages`, `Save` | Populate shape hyperlinks using urls retrieved from an external data feed |
 | [populate-shape-tooltips-with-descriptive-text-sourced-from-an-external-database.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/populate-shape-tooltips-with-descriptive-text-sourced-from-an-external-database.cs) | `Diagram`, `Pages`, `Save` | Populate shape tooltips with descriptive text sourced from an external database |
-| [preserve-unicode-characters-when-importing-text-data-from-external-csv-files-into-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/preserve-unicode-characters-when-importing-text-data-from-external-csv-files-into-shapes.cs) | `Diagram`, `Pages`, `Save` | Preserve unicode characters when importing text data from external csv files into shapes |
+| [preserve-unicode-characters-when-importing-text-data-from-external-csv-files-into-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/preserve-unicode-characters-when-importing-text-data-from-external-csv-files-into-shapes.cs) | `Diagram`, `Save`, `diagram` | Preserve unicode characters when importing text data from external csv files into shapes |
 | [profile-memory-usage-while-loading-large-external-datasets-into-a-visio-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/profile-memory-usage-while-loading-large-external-datasets-into-a-visio-diagram.cs) | `Diagram`, `Save`, `diagram` | Profile memory usage while loading large external datasets into a visio diagram |
 | [retrieve-json-data-from-a-rest-endpoint-and-assign-values-to-shape-custom-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/retrieve-json-data-from-a-rest-endpoint-and-assign-values-to-shape-custom-properties.cs) | `Diagram`, `Pages`, `Prop` | Retrieve json data from a rest endpoint and assign values to shape custom properties |
 | [set-shape-visibility-dynamically-based-on-boolean-values-from-an-external-data-source.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/set-shape-visibility-dynamically-based-on-boolean-values-from-an-external-data-source.cs) | `Diagram`, `Pages`, `Save` | Set shape visibility dynamically based on boolean values from an external data source |
-| [use-ado-net-to-fetch-data-from-an-oracle-database-and-populate-diagram-shapes-accordingly.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/use-ado-net-to-fetch-data-from-an-oracle-database-and-populate-diagram-shapes-accordingly.cs) | `AddShape`, `Diagram`, `Page` | Use ado net to fetch data from an oracle database and populate diagram shapes accordingly |
+| [use-ado-net-to-fetch-data-from-an-oracle-database-and-populate-diagram-shapes-accordingly.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/use-ado-net-to-fetch-data-from-an-oracle-database-and-populate-diagram-shapes-accordingly.cs) | `AddShape`, `Diagram`, `Pages` | Use ado net to fetch data from an oracle database and populate diagram shapes accordingly |
 | [use-an-odata-feed-to-synchronize-external-data-with-diagram-shape-data-fields.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/use-an-odata-feed-to-synchronize-external-data-with-diagram-shape-data-fields.cs) | `Diagram`, `Pages`, `Save` | Use an odata feed to synchronize external data with diagram shape data fields |
 | [use-external-data-to-set-shape-fill-colors-according-to-categorical-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/use-external-data-to-set-shape-fill-colors-according-to-categorical-values.cs) | `Diagram`, `Pages`, `Save` | Use external data to set shape fill colors according to categorical values |
-| [validate-external-data-against-a-predefined-schema-before-mapping-to-diagram-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/validate-external-data-against-a-predefined-schema-before-mapping-to-diagram-shapes.cs) | `AddShape`, `Diagram`, `Page` | Validate external data against a predefined schema before mapping to diagram shapes |
+| [validate-external-data-against-a-predefined-schema-before-mapping-to-diagram-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-external-data-sources/validate-external-data-against-a-predefined-schema-before-mapping-to-diagram-shapes.cs) | `Diagram`, `Pages`, `Save` | Validate external data against a predefined schema before mapping to diagram shapes |
 
 ## Command Reference
 
@@ -228,13 +228,12 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - `Diagram`
 - `Page`
 - `Pages`
-- `PdfSaveOptions`
 - `Prop`
 - `Save`
 - `Shapes`
+- `connection`
 - `diagram`
 - `page`
-- `shape`
 
 ## Real-World Use Cases
 
@@ -250,7 +249,7 @@ Frequently asked questions about **Working With External Data Sources** in **Asp
 
 **Q: How do I get started with Working With External Data Sources in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.8.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -281,4 +280,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-08-03 | Examples: 29 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-08-28 | Examples: 29 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

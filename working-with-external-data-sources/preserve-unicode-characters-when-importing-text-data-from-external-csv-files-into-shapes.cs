@@ -6,82 +6,65 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Prompt user for input diagram path
-            Console.Write("Enter the path to the Visio diagram file (e.g., diagram.vsdx): ");
-            string diagramPath = Console.ReadLine()?.Trim();
-            if (string.IsNullOrEmpty(diagramPath) || !File.Exists(diagramPath))
-                throw new Exception("Diagram file not found.");
-
-            // Prompt user for CSV file path
-            Console.Write("Enter the path to the CSV file containing shape text data: ");
-            string csvPath = Console.ReadLine()?.Trim();
-            if (string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
-                throw new Exception("CSV file not found.");
-
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Read CSV lines using UTF-8 encoding to preserve Unicode characters
-            using (var reader = new StreamReader(csvPath, Encoding.UTF8))
+            try
             {
-                string line;
-                while ((line = reader.ReadLine()) != null)
+
+                // Path to the CSV file containing Unicode text (UTF‑8 encoded)
+                string csvPath = "data.csv";
+
+                // Path to the output Visio diagram
+                string outputPath = "output.vsdx";
+
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
+
+                // Get the first (default) page
+                Page page = diagram.ActivePage;
+
+                // Read all lines from the CSV using UTF‑8 encoding to preserve Unicode characters
+                string[] lines = File.ReadAllLines(csvPath, Encoding.UTF8);
+
+                // Simple layout: start at (1,1) inches and move down 1.5 inches per line
+                double startX = 1.0;
+                double startY = 1.0;
+                double lineHeight = 1.5;
+                double textBoxWidth = 4.0;
+                double textBoxHeight = 0.5;
+
+                for (int i = 0; i < lines.Length; i++)
                 {
-                    // Skip empty lines
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
+                    string text = lines[i];
 
-                    // Simple CSV split on first comma (shape identifier, text)
-                    int commaIndex = line.IndexOf(',');
-                    if (commaIndex < 0)
-                        continue; // Invalid line format
+                    // Add a text shape for each line; AddText returns a Shape object
+                    Shape textShape = page.AddText(
+                        startX,
+                        startY + i * lineHeight,
+                        textBoxWidth,
+                        textBoxHeight,
+                        text);
 
-                    string shapeIdentifier = line.Substring(0, commaIndex).Trim();
-                    string shapeText = line.Substring(commaIndex + 1).Trim();
-
-                    // Find the shape by NameU (case‑insensitive)
-                    Shape targetShape = null;
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            if (string.Equals(shape.NameU, shapeIdentifier, StringComparison.OrdinalIgnoreCase))
-                            {
-                                targetShape = shape;
-                                break;
-                            }
-                        }
-                        if (targetShape != null)
-                            break;
-                    }
-
-                    if (targetShape == null)
-                    {
-                        Console.WriteLine($"Warning: Shape \"{shapeIdentifier}\" not found.");
-                        continue;
-                    }
-
-                    // Replace the shape's text with the Unicode string from CSV
-                    targetShape.Text.Value.Clear();
-                    targetShape.Text.Value.Add(new Txt(shapeText));
+                    // Optional: set a font that supports Unicode characters
+                    // This ensures characters are rendered correctly when the diagram is saved
+                    textShape.Text.Value.Clear();
+                    textShape.Text.Value.Add(new Txt(text));
+                    textShape.TextStyle = null; // use default style
                 }
+
+                // Configure save options to use a Unicode‑capable default font
+                DiagramSaveOptions saveOptions = new DiagramSaveOptions();
+                saveOptions.DefaultFont = "Arial Unicode MS";
+
+                // Save the diagram in VSDX format
+                diagram.Save(outputPath, saveOptions);
+
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
             }
-
-            // Prepare save options with a Unicode‑capable default font
-            var saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
-            saveOptions.DefaultFont = "Arial Unicode MS";
-
-            // Prompt for output path
-            Console.Write("Enter the output path for the updated diagram (e.g., updated.vsdx): ");
-            string outputPath = Console.ReadLine()?.Trim();
-            if (string.IsNullOrEmpty(outputPath))
-                throw new Exception("Output path is required.");
-
-            // Save the diagram with the specified options
-            diagram.Save(outputPath, saveOptions);
-
-            Console.WriteLine("Diagram saved successfully with Unicode text preserved.");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }

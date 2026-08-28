@@ -1,84 +1,65 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        // Placeholder for the provided load rule
-        static Diagram LoadDiagram(string path)
+        try
         {
-            // The actual implementation is supplied by the rule set.
-            return new Diagram(path);
-        }
 
-        // Placeholder for the provided save rule
-        static void SaveDiagram(Diagram diagram, string path)
-        {
-            // The actual implementation is supplied by the rule set.
-            diagram.Save(path, SaveFileFormat.Vsdx);
-        }
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-        static void Main(string[] args)
-        {
-            try
+            // Example external data: shape universal name -> numeric value
+            var externalValues = new Dictionary<string, double>
             {
+                { "Shape1", 120.0 },
+                { "Shape2", 80.0 },
+                { "Shape3", 150.0 }
+            };
 
-                // Load the Visio diagram using the rule‑provided method.
-                Diagram diagram = LoadDiagram("input.vsdx");
+            // Threshold for conditional formatting
+            double threshold = 100.0;
 
-                // Define thresholds (could be read from an external file).
-                // For illustration we use hard‑coded values.
-                var thresholds = new Dictionary<string, double>
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    { "High",   80.0 },
-                    { "Medium", 50.0 }
-                };
-
-                // Iterate through all pages and shapes.
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
+                    // Apply formatting only if we have a value for the shape
+                    if (externalValues.TryGetValue(shape.NameU, out double value))
                     {
-                        // Assume the shape's Data1 cell contains the numeric value to evaluate.
-                        if (double.TryParse(shape.Data1, out double shapeValue))
+                        if (value > threshold)
                         {
-                            // Apply conditional formatting based on the thresholds.
-                            if (shapeValue >= thresholds["High"])
-                            {
-                                // High values – apply a red style.
-                                shape.SetPresetThemeStyleMatrics(
-                                    PresetStyleMatricsValue.Style3,
-                                    PresetColorMatricsValue.Color3);
-                            }
-                            else if (shapeValue >= thresholds["Medium"])
-                            {
-                                // Medium values – apply an orange style.
-                                shape.SetPresetThemeStyleMatrics(
-                                    PresetStyleMatricsValue.Style2,
-                                    PresetColorMatricsValue.Color2);
-                            }
-                            else
-                            {
-                                // Low values – apply a green style.
-                                shape.SetPresetThemeStyleMatrics(
-                                    PresetStyleMatricsValue.Style1,
-                                    PresetColorMatricsValue.Color1);
-                            }
-
-                            // Refresh the shape to ensure the visual changes take effect.
-                            shape.RefreshData();
+                            // High value: use Style1 with Color1
+                            shape.SetPresetThemeStyleMatrics(
+                                PresetStyleMatricsValue.Style1,
+                                PresetColorMatricsValue.Color1);
                         }
+                        else
+                        {
+                            // Low value: use Style2 with Color2
+                            shape.SetPresetThemeStyleMatrics(
+                                PresetStyleMatricsValue.Style2,
+                                PresetColorMatricsValue.Color2);
+                        }
+
+                        // Refresh shape to ensure changes are applied
+                        shape.RefreshData();
                     }
                 }
-
-                // Save the modified diagram using the rule‑provided method.
-                SaveDiagram(diagram, "output.vsdx");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

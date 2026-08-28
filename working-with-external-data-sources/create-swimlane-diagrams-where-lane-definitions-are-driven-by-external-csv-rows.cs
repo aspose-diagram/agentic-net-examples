@@ -7,90 +7,87 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the CSV file that defines swimlane rows
-        string csvPath = "lanes.csv";
+        // Path to the CSV file (first argument or default name)
+        string csvPath = args.Length > 0 ? args[0] : "lanes.csv";
         if (!File.Exists(csvPath))
         {
             Console.Error.WriteLine($"File not found: {csvPath}");
             return;
         }
 
-        // Path for the generated Visio diagram
+        // Path for the generated diagram
         string outputPath = "SwimlaneDiagram.vsdx";
 
         try
         {
-            // Load all CSV lines (skip empty lines)
+            // Read all non‑empty lines from the CSV
             string[] lines = File.ReadAllLines(csvPath);
+            // Prepare a list of lane definitions (name, width, fill color)
+            var lanes = new System.Collections.Generic.List<(string Name, double Width, string Color)>();
+            foreach (string line in lines)
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                // Expected CSV format: Name,WidthInInches,HexColor (e.g., "Sales,2.5,#FFCC00")
+                string[] parts = line.Split(',');
+                string name = parts[0].Trim();
+                double width = parts.Length > 1 && double.TryParse(parts[1], out double w) ? w : 2.0; // default width 2"
+                string color = parts.Length > 2 ? parts[2].Trim() : "#FFFFFF"; // default white
+                lanes.Add((name, width, color));
+            }
+
             // Create a new empty diagram (contains a default page)
             Diagram diagram = new Diagram();
 
-            // Retrieve the first (and only) page
+            // Retrieve the first page to draw on
             Page page = diagram.Pages[0];
 
-            // Iterate over each CSV line to create a lane
-            foreach (string rawLine in lines)
+            // Page dimensions (in inches) – use default Visio page size
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+            // Horizontal margin from the left edge
+            double margin = 0.5; // 0.5"
+
+            // Current X position for the next lane (left edge)
+            double currentX = margin;
+
+            // Center Y coordinate for all lanes (vertical centering)
+            double centerY = pageHeight / 2.0;
+
+            // Iterate over each lane definition and draw a rectangle
+            foreach (var lane in lanes)
             {
-                // Trim whitespace and ignore blank lines
-                string line = rawLine.Trim();
-                if (string.IsNullOrEmpty(line))
-                    continue;
+                // Compute the center X of the rectangle based on its left edge and width
+                double centerX = currentX + lane.Width / 2.0;
 
-                // Expected CSV format: LaneName,PinX,PinY,Width,Height,FillColorHex
-                // Example: "Marketing,1,5,4,2,#FFCC00"
-                string[] parts = line.Split(',');
-                if (parts.Length < 6)
-                {
-                    Console.Error.WriteLine($"Invalid CSV format: {line}");
-                    continue;
-                }
-
-                // Parse lane name
-                string laneName = parts[0].Trim();
-
-                // Parse numeric values with invariant culture
-                if (!double.TryParse(parts[1].Trim(), out double pinX) ||
-                    !double.TryParse(parts[2].Trim(), out double pinY) ||
-                    !double.TryParse(parts[3].Trim(), out double width) ||
-                    !double.TryParse(parts[4].Trim(), out double height))
-                {
-                    Console.Error.WriteLine($"Numeric parsing failed for line: {line}");
-                    continue;
-                }
-
-                // Parse fill color (hex string, e.g., "#FFCC00")
-                string fillColor = parts[5].Trim();
-                if (!fillColor.StartsWith("#"))
-                {
-                    Console.Error.WriteLine($"Invalid color format for line: {line}");
-                    continue;
-                }
-
-                // Draw a rectangle representing the swimlane
-                long shapeId = page.DrawRectangle(pinX, pinY, width, height);
+                // Draw the rectangle (pinX, pinY, width, height)
+                long shapeId = page.DrawRectangle(centerX, centerY, lane.Width, pageHeight - 2 * margin);
 
                 // Retrieve the shape object using the returned ID
-                Shape laneShape = page.Shapes.GetShape(shapeId);
-
-                // Apply fill color to the lane shape
-                laneShape.Fill.FillForegnd.Value = fillColor;
+                Shape shape = page.Shapes.GetShape(shapeId);
 
                 // Clear any existing text and add the lane name
-                laneShape.Text.Value.Clear();
-                laneShape.Text.Value.Add(new Txt(laneName));
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt(lane.Name));
 
-                // Optional: center the text horizontally and vertically
-                laneShape.TextXForm.TxtLocPinX.Value = 0.5; // center horizontally
-                laneShape.TextXForm.TxtLocPinY.Value = 0.5; // center vertically
+                // Apply the fill color (hex string, e.g., "#FFCC00")
+                shape.Fill.FillForegnd.Value = lane.Color;
+
+                // Optional: set a thin black line around the lane
+                shape.Line.LineColor.Value = "#000000";
+                shape.Line.LineWeight.Value = 0.01; // thin line
+
+                // Update the X position for the next lane
+                currentX += lane.Width;
             }
 
-            // Save the diagram to VSDX format
+            // Save the diagram as VSDX
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Swimlane diagram created successfully: {outputPath}");
+            Console.WriteLine($"Swimlane diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any unexpected errors
+            // Write any unexpected errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

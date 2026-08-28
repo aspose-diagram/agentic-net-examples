@@ -1,66 +1,81 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Define input directories
-            string diagramsFolder = @"C:\Diagrams";
-            string csvFolder = @"C:\CsvData";
-            string outputFolder = @"C:\ProcessedDiagrams";
 
-            // Ensure output directory exists
+            // Folder containing the source Visio diagrams
+            string diagramsFolder = "Diagrams";
+            // Folder containing CSV files with the same base names as the diagrams
+            string csvFolder = "CsvData";
+            // Folder where the processed diagrams will be saved
+            string outputFolder = "Output";
+
+            // Ensure the output directory exists
             if (!Directory.Exists(outputFolder))
+            {
                 Directory.CreateDirectory(outputFolder);
+            }
 
             // Get all Visio files (e.g., .vsdx) in the diagrams folder
             string[] diagramFiles = Directory.GetFiles(diagramsFolder, "*.vsdx");
 
             foreach (string diagramPath in diagramFiles)
             {
+                // Determine the matching CSV file based on the diagram file name
+                string baseName = Path.GetFileNameWithoutExtension(diagramPath);
+                string csvPath = Path.Combine(csvFolder, baseName + ".csv");
+
+                if (!File.Exists(csvPath))
+                {
+                    Console.WriteLine($"CSV file not found for diagram '{baseName}'. Skipping.");
+                    continue;
+                }
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(diagramPath);
+
                 try
                 {
-                    // Determine corresponding CSV file (same base name)
-                    string baseName = Path.GetFileNameWithoutExtension(diagramPath);
-                    string csvPath = Path.Combine(csvFolder, baseName + ".csv");
-
-                    if (!File.Exists(csvPath))
+                    // Read all lines from the CSV file
+                    string[] csvLines = File.ReadAllLines(csvPath);
+                    if (csvLines.Length == 0)
                     {
-                        Console.WriteLine($"CSV file not found for diagram '{baseName}'. Skipping.");
+                        Console.WriteLine($"CSV file '{csvPath}' is empty. Skipping.");
                         continue;
                     }
 
-                    // Load the diagram
-                    Diagram diagram = new Diagram(diagramPath);
+                    // Use the first line of the CSV as the new text for the first shape
+                    string newText = csvLines[0];
 
-                    // Read CSV content (use first line as example data)
-                    string[] csvLines = File.ReadAllLines(csvPath);
-                    string csvData = csvLines.Length > 0 ? csvLines[0] : string.Empty;
+                    // Access the first page of the diagram
+                    Page page = diagram.Pages[0];
 
-                    // Update shape named "DataPlaceholder" on each page with CSV data
-                    foreach (Page page in diagram.Pages)
+                    // Find the first shape on the page
+                    Aspose.Diagram.Shape firstShape = null;
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            if (shape.NameU != null && shape.NameU.Equals("DataPlaceholder", StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Clear existing text and add new text from CSV
-                                shape.Text.Value.Clear();
-                                shape.Text.Value.Add(new Txt(csvData));
-                            }
-                        }
+                        firstShape = shape;
+                        break;
                     }
 
-                    // Save the updated diagram as PDF
-                    string outputPath = Path.Combine(outputFolder, baseName + ".pdf");
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.DefaultFont = "Arial";
-                    diagram.Save(outputPath, pdfOptions);
+                    if (firstShape != null)
+                    {
+                        // Replace the shape's text
+                        firstShape.Text.Value.Clear();
+                        firstShape.Text.Value.Add(new Txt(newText));
+                        Console.WriteLine($"Updated shape ID {firstShape.ID} in diagram '{baseName}'.");
+                    }
 
-                    Console.WriteLine($"Processed and saved: {outputPath}");
+                    // Save the updated diagram to the output folder
+                    string outputPath = Path.Combine(outputFolder, baseName + "_updated.vsdx");
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Saved updated diagram to '{outputPath}'.");
                 }
                 catch (Exception ex)
                 {
@@ -69,5 +84,11 @@ class Program
             }
 
             Console.WriteLine("Batch processing completed.");
+
+        }
+        catch (System.IO.DirectoryNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
+}

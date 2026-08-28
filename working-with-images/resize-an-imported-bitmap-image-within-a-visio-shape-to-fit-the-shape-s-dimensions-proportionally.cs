@@ -1,82 +1,92 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Drawing;
+using Aspose.Diagram.Saving;
+using Aspose.Drawing; // For image dimension extraction
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (must exist)
+        string inputPath = "input.vsdx";
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path (will be overwritten if exists)
+        string outputPath = "output_resized.vsdx";
+
+        try
+        {
+            // Load the Visio diagram from the file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output_resized.vsdx";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                    // Identify imported bitmap images (foreign shapes)
+                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
+                        // Load the bitmap image from the shape's foreign data
+                        using (MemoryStream ms = new MemoryStream(shape.ForeignData.Value))
+                        using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
                         {
-                            // Identify imported bitmap shapes (foreign objects)
-                            if (shape.Type == TypeValue.Foreign &&
-                                shape.ForeignData != null &&
-                                shape.ForeignData.Value != null &&
-                                shape.ForeignData.Value.Length > 0)
+                            // Image dimensions in pixels
+                            double imgWidthPx = img.Width;
+                            double imgHeightPx = img.Height;
+
+                            // Shape dimensions in inches (Visio internal units)
+                            double shapeWidthIn = shape.XForm.Width.Value;
+                            double shapeHeightIn = shape.XForm.Height.Value;
+
+                            // Convert shape size to a comparable aspect ratio
+                            double shapeAspect = shapeWidthIn / shapeHeightIn;
+                            double imgAspect = imgWidthPx / imgHeightPx;
+
+                            // Determine new shape dimensions that preserve image aspect ratio
+                            double newWidthIn = shapeWidthIn;
+                            double newHeightIn = shapeHeightIn;
+
+                            if (imgAspect > shapeAspect)
                             {
-                                // Load the bitmap from the foreign data stream
-                                using (MemoryStream ms = new MemoryStream(shape.ForeignData.Value))
-                                {
-                                    using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
-                                    {
-                                        // Image aspect ratio
-                                        double imgAspect = (double)img.Width / img.Height;
-
-                                        // Current shape dimensions (in inches)
-                                        double shapeWidth = shape.XForm.Width.Value;
-                                        double shapeHeight = shape.XForm.Height.Value;
-                                        double shapeAspect = shapeWidth / shapeHeight;
-
-                                        double newWidth, newHeight;
-
-                                        // Fit the image proportionally within the shape bounds
-                                        if (imgAspect > shapeAspect)
-                                        {
-                                            // Image is wider relative to shape; limit by width
-                                            newWidth = shapeWidth;
-                                            newHeight = shapeWidth / imgAspect;
-                                        }
-                                        else
-                                        {
-                                            // Image is taller relative to shape; limit by height
-                                            newHeight = shapeHeight;
-                                            newWidth = shapeHeight * imgAspect;
-                                        }
-
-                                        // Apply the new dimensions to the shape
-                                        shape.XForm.Width.Value = newWidth;
-                                        shape.XForm.Height.Value = newHeight;
-                                    }
-                                }
+                                // Image is wider relative to shape; limit by width
+                                newHeightIn = shapeWidthIn / imgAspect;
                             }
+                            else
+                            {
+                                // Image is taller relative to shape; limit by height
+                                newWidthIn = shapeHeightIn * imgAspect;
+                            }
+
+                            // Apply the calculated dimensions back to the shape
+                            shape.XForm.Width.Value = newWidthIn;
+                            shape.XForm.Height.Value = newHeightIn;
+
+                            // Center the image within the original bounding box by adjusting PinX/PinY
+                            // (optional: keep the shape centered on its original center)
+                            double deltaX = (shapeWidthIn - newWidthIn) / 2.0;
+                            double deltaY = (shapeHeightIn - newHeightIn) / 2.0;
+                            shape.XForm.PinX.Value += deltaX;
+                            shape.XForm.PinY.Value += deltaY;
                         }
                     }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
                 }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the modified diagram using VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

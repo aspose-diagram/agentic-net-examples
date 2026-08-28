@@ -1,62 +1,62 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the Visio file (replace with actual file path)
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure there is at least one page and one shape
-            if (diagram.Pages.Count == 0)
+            try
             {
-                Console.WriteLine("The diagram contains no pages.");
-                return;
+
+                // Load the diagram from a file (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Access the first page of the diagram
+                Page page = diagram.Pages[0];
+
+                // Retrieve a shape (using shape ID 1 as an example)
+                Shape shape = page.Shapes.GetShape(1);
+
+                // Get the gradient fill of the shape
+                GradientFill gradientFill = shape.Fill.GradientFill;
+
+                // Check if gradient fill is enabled
+                if (gradientFill.GradientEnabled.Value == BOOL.True)
+                {
+                    // Locate the gradient stop at index 0
+                    GradientStop firstStop = null;
+                    int currentIndex = 0;
+                    foreach (GradientStop stop in gradientFill.GradientStops)
+                    {
+                        if (currentIndex == 0)
+                        {
+                            firstStop = stop;
+                            break;
+                        }
+                        currentIndex++;
+                    }
+
+                    if (firstStop != null)
+                    {
+                        // Read the color value (hex string) of the first gradient stop
+                        string colorHex = firstStop.Color.Value;
+                        Console.WriteLine($"First gradient stop color: {colorHex}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("No gradient stop found at index 0.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Gradient fill is not enabled for this shape.");
+                }
+
             }
-
-            // Get the first page
-            Page page = diagram.Pages[0];
-
-            if (page.Shapes.Count == 0)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("The page contains no shapes.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Get the first shape (replace index as needed)
-            Shape shape = page.Shapes[0];
-
-            // Access the gradient fill of the shape
-            GradientFill gradientFill = shape.Fill.GradientFill;
-
-            // Ensure gradient stops exist
-            if (gradientFill.GradientStops.Count == 0)
-            {
-                Console.WriteLine("The shape has no gradient stops.");
-                return;
-            }
-
-            // Access the gradient stop at index 0
-            GradientStop firstStop = gradientFill.GradientStops[0];
-
-            // Read its color value (hex string)
-            string colorHex = firstStop.Color.Value;
-
-            // Output the color value for analysis
-            Console.WriteLine($"Gradient stop 0 color: {colorHex}");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

@@ -10,17 +10,31 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio diagram
+            string sourceFile = "input.vsdx";
 
-            // Configure image save options for high‑resolution TIFF
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
-            saveOptions.Resolution = 300;               // Set DPI (e.g., 300 for high quality)
-            saveOptions.TiffCompression = TiffCompression.Lzw; // Optional compression
-            // Do NOT set DefaultFont to preserve original font styles and weights
+            // Path for the high‑resolution TIFF output
+            string outputFile = "output.tiff";
 
-            // Render and save the diagram as a TIFF image
-            diagram.Save("output.tiff", saveOptions);
+            // Load the diagram (create/load lifecycle)
+            Diagram diagram = new Diagram(sourceFile);
+
+            // Configure image save options for TIFF
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff)
+            {
+                // Set a high DPI resolution (e.g., 300 DPI)
+                Resolution = 300,
+
+                // Preserve original fonts (default behavior). 
+                // If needed, you can specify a fallback font:
+                // DefaultFont = "Arial",
+
+                // Optional: use LZW compression for TIFF
+                TiffCompression = TiffCompression.Lzw
+            };
+
+            // Render and save the diagram as a TIFF image (save lifecycle)
+            diagram.Save(outputFile, saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

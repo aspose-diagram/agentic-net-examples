@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -12,28 +11,23 @@ class Program
 
             // Path to the source Visio file
             string inputPath = "input.vsdx";
-            // Path for the protected output file
-            string outputPath = "output_protected.vsdx";
 
             // Load the diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Apply read‑only protection to the entire document.
-                // This prevents editing of shapes, masters, backgrounds and styles.
-                diagram.DocumentSettings.ProtectShapes = BOOL.True;
-                diagram.DocumentSettings.ProtectMasters = BOOL.True;
+                // Apply read‑only protection to the entire document
                 diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
+                diagram.DocumentSettings.ProtectMasters = BOOL.True;
+                diagram.DocumentSettings.ProtectShapes = BOOL.True;
                 diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
-                // NOTE: Aspose.Diagram does not provide a property to set an edit‑password.
-                // The protection flags above enforce read‑only behavior, but a password
-                // cannot be assigned via the current API.
+                // Note: Aspose.Diagram does not support assigning a password for editing restrictions.
+                // The protection flags above make the document read‑only in Visio.
 
                 // Save the protected diagram
+                string outputPath = "output_protected.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            Console.WriteLine("Diagram has been saved with read‑only protection.");
 
         }
         catch (System.IO.FileNotFoundException ex)

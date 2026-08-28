@@ -1,38 +1,40 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Load an existing Visio diagram that contains a circle and an oval
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Get the first page of the diagram
+            // Get the first (default) page
             Page page = diagram.Pages[0];
 
-            // Retrieve the shapes to be grouped (replace the IDs with the actual IDs of your circle and oval)
-            Shape circle = page.Shapes.GetShape(1);
-            Shape oval   = page.Shapes.GetShape(2);
+            // Draw a circle (ellipse with equal width and height)
+            // Parameters: pinX, pinY, width, height
+            long circleId = page.DrawEllipse(2.0, 2.0, 1.5, 1.5);
 
-            // Group the circle and oval together
-            Shape group = page.Shapes.Group(new Shape[] { circle, oval });
+            // Draw an oval (ellipse with different width and height)
+            long ovalId = page.DrawEllipse(5.0, 2.0, 2.0, 1.0);
 
-            // Create SVG save options (default configuration)
+            // Retrieve the Shape objects from their IDs
+            Shape circleShape = page.Shapes.GetShape(circleId);
+            Shape ovalShape = page.Shapes.GetShape(ovalId);
+
+            // Group the two shapes together
+            Shape groupShape = page.Shapes.Group(new Shape[] { circleShape, ovalShape });
+
+            // Export the group as a single SVG file
             SVGSaveOptions svgOptions = new SVGSaveOptions();
+            // Optionally, set the page index if needed (default is 0)
+            svgOptions.PageIndex = 0;
 
-            // Export the grouped shape as a single SVG file
-            group.ToSvg("group.svg", svgOptions);
+            // Save the group shape to SVG
+            groupShape.ToSvg("GroupedShapes.svg", svgOptions);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Optional: inform the user
+            Console.WriteLine("Grouped circle and oval have been exported to GroupedShapes.svg");
         }
     }
-}

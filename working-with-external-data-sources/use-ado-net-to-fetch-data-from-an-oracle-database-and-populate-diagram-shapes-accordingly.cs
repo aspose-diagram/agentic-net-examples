@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Data.Common;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
@@ -8,57 +9,69 @@ class Program
 {
     static void Main(string[] args)
     {
-        // NOTE: Oracle data access requires external libraries not available in this project.
-        // The following mock data simulates rows that would be retrieved from an Oracle database.
-        DataTable mockTable = new DataTable();
-        mockTable.Columns.Add("POSX", typeof(double));
-        mockTable.Columns.Add("POSY", typeof(double));
-        mockTable.Columns.Add("WIDTH", typeof(double));
-        mockTable.Columns.Add("HEIGHT", typeof(double));
-        mockTable.Columns.Add("MASTER_NAME", typeof(string));
-        mockTable.Columns.Add("SHAPE_TEXT", typeof(string));
+        // Oracle connection details – replace with actual credentials and data source
+        string connectionString = "User Id=myUser;Password=myPassword;Data Source=MyOracleDB";
 
-        // Add sample rows – replace this block with actual Oracle data retrieval logic.
-        mockTable.Rows.Add(1.0, 2.0, 1.5, 1.0, "Rectangle", "First Shape");
-        mockTable.Rows.Add(3.0, 4.0, 2.0, 1.5, "Ellipse", "Second Shape");
+        // Provider name for Oracle Managed Data Access
+        string providerName = "Oracle.ManagedDataAccess.Client";
 
-        // Create an empty diagram and ensure it has at least one page.
-        Diagram diagram = new Diagram();
-        if (diagram.Pages.Count == 0)
-        {
-            diagram.Pages.Add(new Page());
-        }
-        Page page = diagram.Pages[0];
+        // SQL query to retrieve shape data (ID, Name, X, Y coordinates)
+        string query = "SELECT ID, NAME, POSX, POSY FROM SHAPE_DATA";
 
+        // Attempt to create a diagram and populate it with data from the database
         try
         {
-            // Iterate over the mock data (replace with OracleDataReader loop in real scenario).
-            foreach (DataRow row in mockTable.Rows)
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Ensure there is at least one page to work with
+            Page page = diagram.Pages[0];
+
+            // Obtain a provider‑agnostic factory for the Oracle provider
+            DbProviderFactory factory = DbProviderFactories.GetFactory(providerName);
+
+            // Open Oracle connection and read data
+            using (DbConnection conn = factory.CreateConnection())
             {
-                // Retrieve values from the data row.
-                double posX = Convert.ToDouble(row["POSX"]);
-                double posY = Convert.ToDouble(row["POSY"]);
-                double width = Convert.ToDouble(row["WIDTH"]);
-                double height = Convert.ToDouble(row["HEIGHT"]);
-                string masterName = row["MASTER_NAME"].ToString();
-                string shapeText = row["SHAPE_TEXT"].ToString();
+                conn.ConnectionString = connectionString;
+                conn.Open();
 
-                // Add a shape based on the master name and dimensions.
-                long shapeId = page.AddShape(posX, posY, width, height, masterName);
-                Shape shape = page.Shapes.GetShape(shapeId);
+                using (DbCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = query;
 
-                // Populate the shape's text.
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt(shapeText));
+                    using (DbDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            // Retrieve values from the data reader
+                            double posX = Convert.ToDouble(reader["POSX"]);
+                            double posY = Convert.ToDouble(reader["POSY"]);
+                            string shapeName = reader["NAME"].ToString();
+
+                            // Add a rectangle shape at the specified position (isCalculate = false)
+                            long shapeId = page.AddShape(posX, posY, "Rectangle", false);
+
+                            // Retrieve the shape object to modify its properties
+                            Shape shape = page.Shapes.GetShape(shapeId);
+
+                            // Clear any existing text and set the shape's text to the name from the database
+                            shape.Text.Value.Clear();
+                            shape.Text.Value.Add(new Txt(shapeName));
+
+                            // Optional: set a fill color for visual distinction
+                            shape.Fill.FillForegnd.Value = "#FFCC00"; // Light orange
+                        }
+                    }
+                }
             }
 
-            // Save the diagram to VSDX format.
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved successfully.");
+            // Save the diagram to a VSDX file
+            diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

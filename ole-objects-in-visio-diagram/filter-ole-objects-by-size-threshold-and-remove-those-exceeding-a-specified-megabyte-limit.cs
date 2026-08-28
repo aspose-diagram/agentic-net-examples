@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class OleSizeFilter
@@ -11,19 +11,21 @@ class OleSizeFilter
 
             // Path to the source Visio file
             string inputPath = "input.vsdx";
-            // Path to the output Visio file
-            string outputPath = "output.vsdx";
 
-            // Maximum allowed OLE object size in megabytes
-            double maxSizeMb = 5.0;
+            // Path to the output Visio file
+            string outputPath = "output_filtered.vsdx";
+
+            // Size limit in megabytes (e.g., 5 MB)
+            const double sizeLimitMb = 5.0;
+            long sizeLimitBytes = (long)(sizeLimitMb * 1024 * 1024);
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the diagram
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Iterate backwards to allow safe removal of shapes
+                // Iterate backwards through shapes to allow safe removal
                 for (int i = page.Shapes.Count - 1; i >= 0; i--)
                 {
                     Shape shape = page.Shapes[i];
@@ -31,13 +33,17 @@ class OleSizeFilter
                     // Check if the shape contains foreign (OLE) data
                     if (shape.ForeignData != null && shape.ForeignData.ObjectData != null)
                     {
-                        // Calculate the size of the OLE object in megabytes
-                        double sizeMb = shape.ForeignData.ObjectData.Length / (1024.0 * 1024.0);
+                        // Size of the embedded OLE object in bytes
+                        long oleSize = shape.ForeignData.ObjectData.Length;
 
-                        // Remove the shape if it exceeds the size threshold
-                        if (sizeMb > maxSizeMb)
+                        // If the OLE object exceeds the size limit, remove the shape
+                        if (oleSize > sizeLimitBytes)
                         {
-                            page.Shapes.Remove(shape);
+                            // Optionally, log the removal
+                            Console.WriteLine($"Removing shape ID {shape.ID} (OLE size: {oleSize / (1024 * 1024.0):F2} MB) from page \"{page.Name}\".");
+
+                            // Remove the shape from the page
+                            page.Shapes.RemoveAt(i);
                         }
                     }
                 }
@@ -45,6 +51,8 @@ class OleSizeFilter
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Processing complete. Filtered file saved to: " + outputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

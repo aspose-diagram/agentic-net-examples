@@ -1,58 +1,59 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page, convert dimensions from inches to millimeters,
+            // and store the results as custom document properties.
+            int pageIndex = 0;
+            foreach (Page page in diagram.Pages)
             {
+                // Retrieve page width and height in inches
+                double widthInches = page.PageSheet.PageProps.PageWidth.Value;
+                double heightInches = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
+                // Convert to millimeters (1 inch = 25.4 mm)
+                double widthMm = widthInches * 25.4;
+                double heightMm = heightInches * 25.4;
 
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Retrieve the first page (index 0)
-                    Page page = diagram.Pages[0];
+                // Create and add a custom property for the page width in mm
+                CustomProp widthProp = new CustomProp();
+                widthProp.Name = $"Page_{pageIndex}_WidthMm";
+                widthProp.PropType = PropType.String;
+                widthProp.CustomValue.ValueString = widthMm.ToString("F2");
+                diagram.DocumentProps.CustomProps.Add(widthProp);
 
-                    // Page dimensions are stored in inches
-                    double widthInches = page.PageSheet.PageProps.PageWidth.Value;
-                    double heightInches = page.PageSheet.PageProps.PageHeight.Value;
+                // Create and add a custom property for the page height in mm
+                CustomProp heightProp = new CustomProp();
+                heightProp.Name = $"Page_{pageIndex}_HeightMm";
+                heightProp.PropType = PropType.String;
+                heightProp.CustomValue.ValueString = heightMm.ToString("F2");
+                diagram.DocumentProps.CustomProps.Add(heightProp);
 
-                    // Convert inches to millimeters (1 inch = 25.4 mm)
-                    double widthMillimeters = widthInches * 25.4;
-                    double heightMillimeters = heightInches * 25.4;
-
-                    // Create custom property for page width in mm
-                    CustomProp widthProp = new CustomProp();
-                    widthProp.Name = "PageWidthMm";
-                    widthProp.PropType = PropType.String;
-                    widthProp.CustomValue.ValueString = widthMillimeters.ToString("F2");
-
-                    // Create custom property for page height in mm
-                    CustomProp heightProp = new CustomProp();
-                    heightProp.Name = "PageHeightMm";
-                    heightProp.PropType = PropType.String;
-                    heightProp.CustomValue.ValueString = heightMillimeters.ToString("F2");
-
-                    // Add the custom properties to the document's metadata
-                    diagram.DocumentProps.CustomProps.Add(widthProp);
-                    diagram.DocumentProps.CustomProps.Add(heightProp);
-
-                    // Save the diagram back to a Visio file
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-
-                Console.WriteLine("Page dimensions converted to millimeters and stored in metadata.");
-
+                pageIndex++;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Dispose();
+
+            Console.WriteLine("Page dimensions converted to millimeters and stored as custom properties.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

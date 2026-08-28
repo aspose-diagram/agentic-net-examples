@@ -10,19 +10,20 @@ class Program
         try
         {
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram (lifecycle rule: load)
+            var diagram = new Diagram("input.vsdx");
 
-            // Create SVG save options
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            // Configure SVG save options
+            var svgOptions = new SVGSaveOptions
+            {
+                // Preserve the original viewbox by disabling automatic fit to viewport
+                SVGFitToViewPort = false,
 
-            // Preserve the original viewbox by disabling automatic fit to viewport
-            svgOptions.SVGFitToViewPort = false;
+                // Export rectangle shapes as <rect> tags so they can be styled via CSS
+                ExportElementAsRectTag = true
+            };
 
-            // Enable CSS styling for shapes (e.g., custom line patterns)
-            svgOptions.IsSavingCustomLinePattern = true;
-
-            // Save the diagram as SVG using the configured options
+            // Save the diagram as SVG using the configured options (lifecycle rule: save)
             diagram.Save("output.svg", svgOptions);
 
         }

@@ -2,9 +2,9 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
@@ -18,18 +18,23 @@ public class Program
             // ID of the shape whose height should be locked
             long targetShapeId = 5; // replace with the actual shape ID
 
-            // Retrieve the shape from the first page (adjust page index if needed)
+            // Access the first page (adjust if the shape is on a different page)
             Page page = diagram.Pages[0];
-            Shape shape = page.Shapes.GetShape(targetShapeId);
 
-            // Lock the height attribute
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(targetShapeId);
+            if (shape == null)
+            {
+                Console.WriteLine($"Shape with ID {targetShapeId} not found.");
+                return;
+            }
+
+            // Lock the height attribute of the shape
             shape.Protection.LockHeight.Value = BOOL.True;
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Height of shape ID {targetShapeId} has been locked and diagram saved to '{outputPath}'.");
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Height attribute locked and diagram saved successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

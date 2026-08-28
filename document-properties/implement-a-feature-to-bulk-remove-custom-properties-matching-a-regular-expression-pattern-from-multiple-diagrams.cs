@@ -7,76 +7,73 @@ class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Example usage:
+            // args[0] - folder path containing diagram files
+            // args[1] - regular expression pattern to match custom property names
+            if (args.Length < 2)
             {
+                Console.WriteLine("Usage: BulkCustomPropertyRemoval <folderPath> <regexPattern>");
+                return;
+            }
 
-                // Input folder containing Visio files
-                string inputFolder = @"C:\Visio\Input";
-                // Output folder where modified files will be saved
-                string outputFolder = @"C:\Visio\Output";
-                // Regular expression pattern to match custom property names
-                string pattern = @"^Temp_.*$";
+            string folderPath = args[0];
+            string pattern = args[1];
 
-                // Ensure output folder exists
-                if (!Directory.Exists(outputFolder))
+            if (!Directory.Exists(folderPath))
+            {
+                Console.WriteLine($"Folder does not exist: {folderPath}");
+                return;
+            }
+
+            // Get all Visio files (VSDX, VSD, VDX, etc.) in the folder
+            string[] diagramFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (string filePath in diagramFiles)
+            {
+                // Filter supported Visio extensions
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
                 {
-                    Directory.CreateDirectory(outputFolder);
+                    continue;
                 }
 
-                // Compile the regex once for efficiency
-                Regex regex = new Regex(pattern, RegexOptions.IgnoreCase);
-
-                // Process each Visio file in the input folder
-                string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-                foreach (string filePath in files)
+                try
                 {
-                    // Only process supported Visio formats
-                    string extension = Path.GetExtension(filePath).ToLowerInvariant();
-                    if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
-                    {
-                        Console.WriteLine($"Skipping unsupported file: {filePath}");
-                        continue;
-                    }
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
 
-                    try
-                    {
-                        // Load the diagram
-                        Diagram diagram = new Diagram(filePath);
+                    // Access custom properties collection
+                    var customProps = diagram.DocumentProps.CustomProps;
 
-                        // Collect custom properties that match the pattern
-                        var propsToRemove = new System.Collections.Generic.List<CustomProp>();
-                        foreach (CustomProp prop in diagram.DocumentProps.CustomProps)
+                    // Iterate over a copy of the collection to avoid modification during enumeration
+                    var propsToRemove = new System.Collections.Generic.List<CustomProp>();
+                    foreach (CustomProp prop in customProps)
+                    {
+                        if (prop != null && !string.IsNullOrEmpty(prop.Name))
                         {
-                            if (regex.IsMatch(prop.Name))
+                            if (Regex.IsMatch(prop.Name, pattern))
                             {
                                 propsToRemove.Add(prop);
                             }
                         }
-
-                        // Remove the matching custom properties
-                        foreach (CustomProp prop in propsToRemove)
-                        {
-                            diagram.DocumentProps.CustomProps.Remove(prop);
-                        }
-
-                        // Save the modified diagram to the output folder
-                        string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                        Console.WriteLine($"Processed and saved: {outputPath}");
                     }
-                    catch (Exception ex)
+
+                    // Remove matching properties
+                    foreach (CustomProp prop in propsToRemove)
                     {
-                        Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                        customProps.Remove(prop);
+                        Console.WriteLine($"Removed custom property '{prop.Name}' from file '{Path.GetFileName(filePath)}'.");
                     }
+
+                    // Save the diagram back (overwrite original file)
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
+                    diagram.Dispose();
                 }
-
-                Console.WriteLine("Bulk removal operation completed.");
-
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                }
             }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
-    }
+
+            Console.WriteLine("Bulk removal completed.");
+        }
     }

@@ -3,37 +3,31 @@ using Aspose.Diagram;
 
 namespace CommentLockExample
 {
-    // Simple class to manage comment locking logic
-    public static class CommentLocker
+    // Helper class to manage comment lock state
+    public class CommentLocker
     {
-        // Flag indicating whether comments are unlocked for editing
-        private static bool _unlockComments = false;
+        private readonly System.Collections.Generic.HashSet<long> _lockedComments = new();
 
-        // Unlock comments globally
-        public static void UnlockComments()
+        // Lock a comment by its unique MarkerIndex
+        public void LockComment(long commentId)
         {
-            _unlockComments = true;
+            _lockedComments.Add(commentId);
         }
 
-        // Lock comments globally
-        public static void LockComments()
+        // Unlock a comment by its unique MarkerIndex
+        public void UnlockComment(long commentId)
         {
-            _unlockComments = false;
+            _lockedComments.Remove(commentId);
         }
 
-        // Attempt to edit a comment; succeeds only if comments are unlocked
-        public static void EditComment(Page page, long markerIndex, string newText)
+        // Attempt to edit a comment; respects lock unless unlockFlag is true
+        public void EditComment(Page page, long commentId, string newText, bool unlockFlag = false)
         {
-            if (!_unlockComments)
-            {
-                throw new InvalidOperationException("Comments are locked. Unlock them before editing.");
-            }
-
             // Find the annotation with the specified MarkerIndex
             Annotation target = null;
             foreach (Annotation ann in page.PageSheet.Annotations)
             {
-                if (ann.MarkerIndex.Value == markerIndex)
+                if (ann.MarkerIndex.Value == commentId)
                 {
                     target = ann;
                     break;
@@ -41,18 +35,14 @@ namespace CommentLockExample
             }
 
             if (target == null)
-            {
-                throw new ArgumentException($"No comment found with MarkerIndex {markerIndex}.");
-            }
+                throw new Exception($"Comment with ID {commentId} not found.");
 
-            // Update the comment text
+            // If the comment is locked and unlockFlag is not set, prevent editing
+            if (_lockedComments.Contains(commentId) && !unlockFlag)
+                throw new Exception($"Comment {commentId} is locked and cannot be edited.");
+
+            // Perform the edit
             target.Comment.Value = newText;
-        }
-
-        // Add a new comment to a page (or shape) – comments are added unlocked by default
-        public static void AddComment(Page page, double x, double y, string text)
-        {
-            page.AddComment(x, y, text);
         }
     }
 
@@ -63,60 +53,74 @@ namespace CommentLockExample
             try
             {
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
+                // Create a new diagram
+                Diagram diagram = new Diagram();
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Add a simple rectangle shape to the active page
+                // Parameters: PinX, PinY, Master name, Master ID (0 for default)
+                diagram.AddShape(5.0, 5.0, "Rectangle", 0);
 
-                // Assume we work with the first page
-                Page page = diagram.Pages[0];
+                // Retrieve the shape we just added (first shape on the page)
+                Page page = diagram.ActivePage;
+                Shape shape = page.Shapes[1]; // Shapes collection is 1‑based
 
-                // Add a sample comment
-                CommentLocker.AddComment(page, 5.0, 5.0, "Initial comment");
+                // Add a comment associated with the shape
+                page.AddComment(shape, "Initial comment text");
 
-                // Lock comments to prevent further edits
-                CommentLocker.LockComments();
+                // Retrieve the newly added annotation to obtain its MarkerIndex (unique ID)
+                Annotation comment = null;
+                foreach (Annotation ann in page.PageSheet.Annotations)
+                {
+                    // The most recent annotation will have the highest MarkerIndex
+                    if (comment == null || ann.MarkerIndex.Value > comment.MarkerIndex.Value)
+                        comment = ann;
+                }
 
-                // Attempt to edit the comment (will throw because comments are locked)
+                if (comment == null)
+                    throw new Exception("Failed to add comment.");
+
+                long commentId = comment.MarkerIndex.Value;
+                Console.WriteLine($"Added comment with ID {commentId}.");
+
+                // Initialize the locker and lock the comment
+                CommentLocker locker = new CommentLocker();
+                locker.LockComment(commentId);
+                Console.WriteLine($"Comment {commentId} is now locked.");
+
+                // Attempt to edit without unlocking (should fail)
                 try
                 {
-                    // Retrieve the MarkerIndex of the first comment for demonstration
-                    long markerId = page.PageSheet.Annotations[0].MarkerIndex.Value;
-                    CommentLocker.EditComment(page, markerId, "Edited text");
+                    locker.EditComment(page, commentId, "Attempted edit while locked");
+                    Console.WriteLine("Edit succeeded unexpectedly.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Edit failed: {ex.Message}");
+                    Console.WriteLine($"Edit prevented: {ex.Message}");
                 }
 
-                // Unlock comments to allow editing
-                CommentLocker.UnlockComments();
+                // Unlock the comment and edit again
+                locker.UnlockComment(commentId);
+                Console.WriteLine($"Comment {commentId} has been unlocked.");
 
-                // Now editing succeeds
                 try
                 {
-                    long markerId = page.PageSheet.Annotations[0].MarkerIndex.Value;
-                    CommentLocker.EditComment(page, markerId, "Edited after unlock");
-                    Console.WriteLine("Comment edited successfully.");
+                    locker.EditComment(page, commentId, "Edited after unlock");
+                    Console.WriteLine("Edit after unlock succeeded.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Edit failed: {ex.Message}");
+                    Console.WriteLine($"Unexpected failure: {ex.Message}");
                 }
 
-                // Save the modified diagram
+                // Save the diagram to a file
+                string outputPath = "LockedCommentsDiagram.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Clean up
-                diagram.Dispose();
+                Console.WriteLine($"Diagram saved to {outputPath}.");
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

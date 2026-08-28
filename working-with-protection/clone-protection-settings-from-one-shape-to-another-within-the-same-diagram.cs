@@ -1,55 +1,40 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-class CloneShapeProtection
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (or specify the required page index/name)
+            // Access the first page (adjust index if needed)
             Page page = diagram.Pages[0];
 
-            // Identify the source shape (the shape whose protection settings will be copied)
-            // Here we assume the shape is identified by its name; adjust as needed (e.g., by ID)
+            // Locate the source and target shapes by their names
             Shape sourceShape = null;
-            foreach (Shape shp in page.Shapes)
-            {
-                if (shp.Name == "SourceShapeName") // replace with actual source shape name
-                {
-                    sourceShape = shp;
-                    break;
-                }
-            }
-
-            // Identify the target shape (the shape that will receive the protection settings)
             Shape targetShape = null;
-            foreach (Shape shp in page.Shapes)
+
+            foreach (Shape shape in page.Shapes)
             {
-                if (shp.Name == "TargetShapeName") // replace with actual target shape name
-                {
-                    targetShape = shp;
-                    break;
-                }
+                if (shape.Name == "SourceShape")
+                    sourceShape = shape;
+                else if (shape.Name == "TargetShape")
+                    targetShape = shape;
             }
 
             // Ensure both shapes were found before proceeding
-            if (sourceShape == null || targetShape == null)
+            if (sourceShape != null && targetShape != null)
             {
-                Console.WriteLine("Source or target shape not found.");
-                return;
+                // Clone all protection settings from the source shape to the target shape
+                targetShape.Copy(sourceShape);
             }
 
-            // Clone protection settings from source to target.
-            // Shape.Copy copies all shape properties, including the Protection settings.
-            targetShape.Copy(sourceShape);
-
-            // Save the modified diagram (replace with desired output path and format)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

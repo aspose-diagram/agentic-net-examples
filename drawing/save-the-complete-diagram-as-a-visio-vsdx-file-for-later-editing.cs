@@ -6,12 +6,12 @@ class Program
 {
     static void Main()
     {
-        // Create a new diagram (or load an existing one)
+        // Create a new Visio diagram (empty)
         Diagram diagram = new Diagram();
 
-        // TODO: add pages, shapes, etc., if needed
+        // (Optional) Add pages, masters, shapes, etc. to the diagram here
 
-        // Save the diagram as a Visio VSDX file for later editing
+        // Save the diagram in VSDX format for later editing
         diagram.Save("MyDiagram.vsdx", SaveFileFormat.Vsdx);
     }
 }

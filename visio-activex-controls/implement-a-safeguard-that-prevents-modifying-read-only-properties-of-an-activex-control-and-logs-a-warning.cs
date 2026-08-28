@@ -3,64 +3,54 @@ using System.Reflection;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
-namespace ActiveXReadOnlyGuard
+namespace ActiveXReadOnlyGuardExample
 {
-    // Helper class that safely sets properties on ActiveX controls
-    public static class ActiveXPropertyGuard
+    // Helper class that checks for read‑only properties before modifying an ActiveX control
+    public static class ActiveXGuard
     {
-        // Attempts to set a property; logs a warning if the property is read‑only or does not exist
-        public static void SetPropertyIfWritable(ActiveXControl control, string propertyName, object value)
+        // Attempts to set a property value; logs a warning if the property is read‑only
+        public static void TrySetProperty<T>(ActiveXControl control, string propertyName, T value)
         {
             if (control == null)
-            {
-                Console.WriteLine("Warning: ActiveX control instance is null.");
                 return;
-            }
 
-            // Get the type of the concrete control (e.g., CommandButtonActiveXControl)
-            Type ctrlType = control.GetType();
-
-            // Find the property (public instance)
-            PropertyInfo propInfo = ctrlType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+            // Get the property info using reflection
+            PropertyInfo propInfo = control.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
             if (propInfo == null)
             {
-                Console.WriteLine($"Warning: Property '{propertyName}' does not exist on control type '{ctrlType.Name}'.");
+                Console.WriteLine($"[Warning] Property '{propertyName}' does not exist on control type '{control.GetType().Name}'.");
                 return;
             }
 
             // Check if the property can be written to
             if (!propInfo.CanWrite)
             {
-                Console.WriteLine($"Warning: Property '{propertyName}' on control type '{ctrlType.Name}' is read‑only. Modification skipped.");
+                Console.WriteLine($"[Warning] Attempted to modify read‑only property '{propertyName}' on control type '{control.GetType().Name}'. Modification skipped.");
                 return;
             }
 
-            // Attempt to set the value, handling type conversion if necessary
+            // Set the property value
             try
             {
-                // Convert the value to the property's type if needed
-                object convertedValue = Convert.ChangeType(value, propInfo.PropertyType);
-                propInfo.SetValue(control, convertedValue);
-                Console.WriteLine($"Info: Property '{propertyName}' set to '{value}' on control type '{ctrlType.Name}'.");
+                propInfo.SetValue(control, value);
+                Console.WriteLine($"[Info] Property '{propertyName}' set to '{value}'.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Warning: Failed to set property '{propertyName}' on control type '{ctrlType.Name}'. Exception: {ex.Message}");
+                Console.WriteLine($"[Error] Failed to set property '{propertyName}': {ex.Message}");
             }
         }
     }
 
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Path to the input Visio diagram (replace with actual path)
+                // Load an existing Visio diagram
                 string inputPath = "input.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages and shapes to find ActiveX controls
@@ -68,24 +58,23 @@ namespace ActiveXReadOnlyGuard
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Check if the shape hosts an ActiveX control
-                        if (shape.ActiveXControl != null)
-                        {
-                            ActiveXControl activeX = shape.ActiveXControl;
+                        ActiveXControl activeX = shape.ActiveXControl;
+                        if (activeX == null)
+                            continue;
 
-                            // Example: attempt to modify Width (read‑write) and Type (read‑only)
-                            ActiveXPropertyGuard.SetPropertyIfWritable(activeX, "Width", 150.0);   // Width in points
-                            ActiveXPropertyGuard.SetPropertyIfWritable(activeX, "Height", 30.0);   // Height in points
-                            ActiveXPropertyGuard.SetPropertyIfWritable(activeX, "Type", ControlType.CheckBox); // Read‑only, will log warning
+                        Console.WriteLine($"[Info] Found ActiveX control of type '{activeX.Type}' on shape ID {shape.ID}.");
 
-                            // Additional property examples
-                            ActiveXPropertyGuard.SetPropertyIfWritable(activeX, "IsEnabled", true); // Read‑write
-                            ActiveXPropertyGuard.SetPropertyIfWritable(activeX, "IsLocked", false); // Read‑write
-                        }
+                        // Example: attempt to modify a writable property (Width)
+                        ActiveXGuard.TrySetProperty(activeX, "Width", 2.0);
+
+                        // Example: attempt to modify a read‑only property (Data)
+                        // This should trigger a warning and skip the modification
+                        byte[] dummyData = new byte[] { 0x01, 0x02, 0x03 };
+                        ActiveXGuard.TrySetProperty(activeX, "Data", dummyData);
                     }
                 }
 
-                // Save the modified diagram (output path can be adjusted)
+                // Save the diagram after processing
                 string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 

@@ -11,30 +11,24 @@ class Program
         {
 
             // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Configure HTML save options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            using (var diagram = new Diagram("input.vsdx"))
             {
-                // Embed all resources (images, CSS) into a single HTML file for easy navigation
-                SaveAsSingleFile = true,
+                // Configure HTML save options
+                var htmlOptions = new HTMLSaveOptions
+                {
+                    // Embed all resources (CSS, JS, images) into a single HTML file
+                    SaveAsSingleFile = true,
 
-                // Include a title for the HTML page
-                Title = "Interactive Diagram",
+                    // Include the default navigation toolbar for page switching
+                    SaveToolBar = true,
 
-                // Disable the default toolbar if you want a cleaner UI
-                SaveToolBar = false,
+                    // Set a custom title for the generated HTML page
+                    Title = "Interactive Diagram"
+                };
 
-                // Export all pages (default) and enable navigation between them
-                PageCount = int.MaxValue,
-                PageIndex = 0,
-
-                // Set resolution for generated images (optional)
-                Resolution = 96
-            };
-
-            // Save the diagram as an HTML file with the specified options
-            diagram.Save("output.html", htmlOptions);
+                // Save the diagram as an HTML file with the specified options
+                diagram.Save("output.html", htmlOptions);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

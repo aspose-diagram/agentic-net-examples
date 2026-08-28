@@ -1,74 +1,97 @@
 using System;
 using System.IO;
+using System.Text;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Expect two arguments: input Visio file path and output CSV file path
+            if (args.Length < 2)
             {
+                Console.WriteLine("Usage: DiagramEventExport <inputVisioFile> <outputCsvFile>");
+                return;
+            }
 
-                // Input Visio file path (adjust as needed)
-                string diagramPath = "input.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-                // Output CSV file path
-                string csvPath = "shape_events.csv";
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+            // Prepare CSV writer
+            using (StreamWriter writer = new StreamWriter(outputPath, false, Encoding.UTF8))
+            {
+                // Write CSV header
+                writer.WriteLine("PageName,ShapeID,ShapeNameU,EventXFMod,EventDblClick,EventDrop,EventMultiDrop,TheText,TheData");
 
-                // Create a CSV writer
-                using (StreamWriter writer = new StreamWriter(csvPath))
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Write CSV header
-                    writer.WriteLine("PageName,ShapeID,ShapeName,EventXFMod,EventDblClick,EventDrop,EventMultiDrop,TheText,TheData");
-
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve event cell formulas (may be empty)
+                        string eventXFMod = shape.Event.EventXFMod?.Ufe?.F ?? string.Empty;
+                        string eventDblClick = shape.Event.EventDblClick?.Ufe?.F ?? string.Empty;
+                        string eventDrop = shape.Event.EventDrop?.Ufe?.F ?? string.Empty;
+                        string eventMultiDrop = shape.Event.EventMultiDrop?.Ufe?.F ?? string.Empty;
+                        string theText = shape.Event.TheText?.Ufe?.F ?? string.Empty;
+                        string theData = shape.Event.TheData?.Ufe?.F ?? string.Empty;
+
+                        // Build CSV line with proper escaping
+                        List<string> fields = new List<string>
                         {
-                            // Retrieve event cell formulas; use empty string if null
-                            string eventXFMod = shape.Event.EventXFMod?.Ufe?.F ?? string.Empty;
-                            string eventDblClick = shape.Event.EventDblClick?.Ufe?.F ?? string.Empty;
-                            string eventDrop = shape.Event.EventDrop?.Ufe?.F ?? string.Empty;
-                            string eventMultiDrop = shape.Event.EventMultiDrop?.Ufe?.F ?? string.Empty;
-                            string theText = shape.Event.TheText?.Ufe?.F ?? string.Empty;
-                            string theData = shape.Event.TheData?.Ufe?.F ?? string.Empty;
+                            page.Name,
+                            shape.ID.ToString(),
+                            shape.NameU ?? string.Empty,
+                            eventXFMod,
+                            eventDblClick,
+                            eventDrop,
+                            eventMultiDrop,
+                            theText,
+                            theData
+                        };
 
-                            // Escape commas in values
-                            eventXFMod = EscapeCsv(eventXFMod);
-                            eventDblClick = EscapeCsv(eventDblClick);
-                            eventDrop = EscapeCsv(eventDrop);
-                            eventMultiDrop = EscapeCsv(eventMultiDrop);
-                            theText = EscapeCsv(theText);
-                            theData = EscapeCsv(theData);
-
-                            // Write a CSV line for the shape
-                            writer.WriteLine($"{EscapeCsv(page.Name)},{shape.ID},{EscapeCsv(shape.Name)},{eventXFMod},{eventDblClick},{eventDrop},{eventMultiDrop},{theText},{theData}");
-                        }
+                        writer.WriteLine(BuildCsvLine(fields));
                     }
                 }
-
-                Console.WriteLine($"Event cell values exported to '{csvPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
 
-        // Helper to escape CSV fields containing commas or quotes
-        private static string EscapeCsv(string field)
+            Console.WriteLine($"Event cell values exported successfully to '{outputPath}'.");
+        }
+
+        // Helper method to escape CSV fields according to RFC 4180
+        private static string BuildCsvLine(IEnumerable<string> fields)
         {
-            if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
+            StringBuilder sb = new StringBuilder();
+            bool first = true;
+            foreach (string field in fields)
             {
-                field = field.Replace("\"", "\"\"");
-                return $"\"{field}\"";
+                if (!first)
+                    sb.Append(',');
+
+                string escaped = field ?? string.Empty;
+                bool mustQuote = escaped.Contains(',') || escaped.Contains('\"') || escaped.Contains('\n') || escaped.Contains('\r');
+
+                if (mustQuote)
+                {
+                    escaped = escaped.Replace("\"", "\"\"");
+                    sb.Append('\"').Append(escaped).Append('\"');
+                }
+                else
+                {
+                    sb.Append(escaped);
+                }
+
+                first = false;
             }
-            return field;
+            return sb.ToString();
         }
     }

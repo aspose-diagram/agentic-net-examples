@@ -1,37 +1,39 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
+
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first (default) page
+            // Use the first (default) page
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape to the page (returns the shape ID)
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+            // Add a rectangle shape at position (2,2) on the page
+            // The fourth parameter (isCalculate) must be a boolean
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
 
-            // Retrieve the shape object using its ID
+            // Retrieve the Shape object using the returned ID
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Set a supported event cell (EventXFMod) to call a macro that applies a default style.
-            // EventShapeAdded does not exist; EventXFMod is the closest valid event cell.
-            shape.Event.EventXFMod.Ufe.F = "CALLTHIS(\"ThisDocument.ApplyDefaultStyle\")";
+            // Set the EventDrop cell to assign a default style ("Normal") when the shape is added/dropped
+            // The formula is a valid Visio formula that runs on the drop event
+            shape.Event.EventDrop.Ufe.F = "SETSTYLE(\"Normal\")";
 
-            // Save the diagram as VSDX
-            diagram.Save("Output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram to a VSDX file
+            diagram.Save("EventShapeAddedDemo.vsdx", SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

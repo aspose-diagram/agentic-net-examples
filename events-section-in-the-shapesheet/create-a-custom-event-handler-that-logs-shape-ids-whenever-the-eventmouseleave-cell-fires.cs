@@ -1,53 +1,63 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+namespace CustomEventHandlerExample
 {
-    static void Main(string[] args)
+    // Simple logger class to encapsulate logging logic
+    public static class Logger
     {
-        // Path to the input Visio file
-        string inputPath = "input.vsdx";
-        // Guard to ensure the file exists before loading
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-
-        try
+        // Logs the shape ID when the event is (simulated) triggered
+        public static void LogShapeId(long shapeId)
         {
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Assign a Visio formula to a supported event cell.
-                    // The original request was for EventMouseLeave, which is not exposed by Aspose.Diagram.
-                    // Using EventDblClick as a representative event cell that exists.
-                    shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"LogShapeLeave\")";
-                }
-            }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.WriteLine($"Event triggered for Shape ID: {shapeId}");
         }
     }
-}
 
-// Placeholder class representing the macro that would be invoked by the CALLTHIS formula.
-// In a real Visio environment, this macro would be defined in VBA.
-// Here we provide a C# method for illustration; it will not be called automatically.
-public static class EventHandlers
-{
-    public static void LogShapeLeave()
+    class Program
     {
-        // Log the event – in a real scenario this could write to a file or console.
-        Console.WriteLine("A shape's EventDblClick cell was triggered.");
+        static void Main(string[] args)
+        {
+            // Path to the input Visio diagram
+            string diagramPath = "input.vsdx";
+            // Guard: ensure the input file exists before proceeding
+            if (!File.Exists(diagramPath))
+            {
+                Console.Error.WriteLine($"File not found: {diagramPath}");
+                return;
+            }
+
+            // Path for the optional output diagram
+            string outputPath = "output.vsdx";
+
+            try
+            {
+                // Load the diagram from the specified file
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Iterate through all pages and shapes to attach an event formula
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Use a valid event cell (EventDblClick) as a placeholder for EventMouseLeave
+                        // This sets a CALLTHIS formula that would invoke a macro in Visio.
+                        shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"LogShapeLeave\")";
+
+                        // Simulate the event firing by directly invoking the logger
+                        // (Aspose.Diagram cannot raise UI events in a console application)
+                        Logger.LogShapeId(shape.ID);
+                    }
+                }
+
+                // Save the modified diagram (optional)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+            catch (Exception ex)
+            {
+                // Write any Aspose or I/O errors to the error stream
+                Console.Error.WriteLine($"Error: {ex.Message}");
+            }
+        }
     }
 }

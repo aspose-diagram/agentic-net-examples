@@ -1,108 +1,64 @@
-using System;
 using System.IO;
+using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Load the diagram (replace with your file path)
-        string inputPath = "input.vsdx";
-        // Verify input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-
-        Diagram diagram;
         try
         {
-            // Load diagram inside try/catch to capture loading errors
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
 
-        // Backup dictionary: Shape ID (long) -> (Event Cell Name -> Formula)
-        var eventBackup = new Dictionary<long, Dictionary<string, string>>();
+            // Load the Visio diagram (uses the provided load rule)
+            Diagram diagram = new Diagram("input.vsdx");
 
-        try
-        {
-            // Iterate through all pages and shapes to backup event formulas
+            // Backup the Event section of each shape across all pages
+            // The key is the shape ID, the value is a deep clone of its Event object
+            var eventBackup = new Dictionary<long, Event>();
+
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    var shapeEvents = new Dictionary<string, string>();
-
-                    // Backup known event cells (add more if needed)
-                    shapeEvents["EventXFMod"] = shape.Event.EventXFMod.Ufe.F;
-                    shapeEvents["EventDblClick"] = shape.Event.EventDblClick.Ufe.F;
-                    shapeEvents["EventDrop"] = shape.Event.EventDrop.Ufe.F;
-                    shapeEvents["EventMultiDrop"] = shape.Event.EventMultiDrop.Ufe.F;
-                    shapeEvents["TheText"] = shape.Event.TheText.Ufe.F;
-                    shapeEvents["TheData"] = shape.Event.TheData.Ufe.F;
-
-                    // Store backup using shape.ID (long)
-                    eventBackup[shape.ID] = shapeEvents;
-                }
-            }
-
-            // -------------------------
-            // Perform bulk modifications
-            // -------------------------
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Example modification: set a double-click event to call a custom macro
-                    shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"MyCustomMacro\")";
-
-                    // Example modification: clear the drop event
-                    shape.Event.EventDrop.Ufe.F = "";
-                }
-            }
-
-            // -------------------------
-            // Optional: Rollback to original event formulas
-            // -------------------------
-            bool needRollback = false; // set to true if rollback is required
-
-            if (needRollback)
-            {
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
+                    if (shape.Event != null)
                     {
-                        if (eventBackup.TryGetValue(shape.ID, out var savedEvents))
-                        {
-                            shape.Event.EventXFMod.Ufe.F = savedEvents["EventXFMod"];
-                            shape.Event.EventDblClick.Ufe.F = savedEvents["EventDblClick"];
-                            shape.Event.EventDrop.Ufe.F = savedEvents["EventDrop"];
-                            shape.Event.EventMultiDrop.Ufe.F = savedEvents["EventMultiDrop"];
-                            shape.Event.TheText.Ufe.F = savedEvents["TheText"];
-                            shape.Event.TheData.Ufe.F = savedEvents["TheData"];
-                        }
+                        // Event.Clone creates a deep copy (as per documentation)
+                        eventBackup[shape.ID] = (Event)shape.Event.Clone();
                     }
                 }
             }
 
-            // Save the modified (or rolled‑back) diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Capture any errors during processing or saving
-            Console.Error.WriteLine($"Processing error: {ex.Message}");
-        }
-        finally
-        {
-            // Cleanup resources
-            diagram?.Dispose();
-        }
+            // -----------------------------------------------------------------
+            // Perform bulk modifications on the diagram here.
+            // Example: shape.Event = null; // (placeholder for actual changes)
+            // -----------------------------------------------------------------
 
-        Console.WriteLine("Processing completed.");
+            // If a rollback is needed, restore the original Event objects from the backup
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (eventBackup.TryGetValue(shape.ID, out Event originalEvent))
+                    {
+                        // Clone again to avoid sharing the same instance between shapes
+                        shape.Event = (Event)originalEvent.Clone();
+                    }
+                    else
+                    {
+                        // No original event existed for this shape; ensure it's cleared
+                        shape.Event = null;
+                    }
+                }
+            }
+
+            // Save the modified (or rolled‑back) diagram (uses the provided save rule)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

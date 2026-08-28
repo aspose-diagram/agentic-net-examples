@@ -1,68 +1,60 @@
 using System;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Verify that a directory path was provided
-            if (args.Length == 0)
+            // Get directory path from command line or ask the user
+            string directoryPath;
+            if (args.Length > 0 && Directory.Exists(args[0]))
             {
-                Console.WriteLine("Please provide a directory path containing Visio files.");
-                return;
+                directoryPath = args[0];
+            }
+            else
+            {
+                Console.Write("Enter the directory path containing Visio files: ");
+                directoryPath = Console.ReadLine();
+                if (!Directory.Exists(directoryPath))
+                {
+                    Console.WriteLine("Directory does not exist.");
+                    return;
+                }
             }
 
-            string inputDirectory = args[0];
-
-            if (!Directory.Exists(inputDirectory))
-            {
-                Console.WriteLine($"The directory \"{inputDirectory}\" does not exist.");
-                return;
-            }
-
-            // Define Visio file extensions to process
+            // Supported Visio extensions
             string[] visioExtensions = new[] { ".vsd", ".vsdx", ".vdx", ".vss", ".vssx", ".vst", ".vstx", ".vsx", ".vtx", ".vdw" };
 
-            // Get all Visio files in the directory (non‑recursive)
-            var visioFiles = Directory.GetFiles(inputDirectory)
-                                      .Where(f => visioExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
-                                      .ToList();
-
-            if (!visioFiles.Any())
+            // Process each Visio file in the directory (non‑recursive)
+            foreach (string filePath in Directory.GetFiles(directoryPath))
             {
-                Console.WriteLine("No Visio files found in the specified directory.");
-                return;
-            }
+                if (Array.IndexOf(visioExtensions, Path.GetExtension(filePath).ToLower()) < 0)
+                    continue; // skip non‑Visio files
 
-            foreach (var visioFilePath in visioFiles)
-            {
                 try
                 {
-                    // Load the Visio diagram from file using the Diagram constructor (lifecycle rule)
-                    using (var diagram = new Diagram(visioFilePath))
+                    // Load diagram from a read‑only file stream
+                    using (FileStream inputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                    using (Diagram diagram = new Diagram(inputStream))
                     {
-                        // Prepare an output stream for HTML (lifecycle rule)
-                        using (var htmlStream = new MemoryStream())
+                        // Prepare output HTML file path
+                        string outputFileName = Path.ChangeExtension(filePath, ".html");
+                        using (FileStream outputStream = new FileStream(outputFileName, FileMode.Create, FileAccess.Write))
                         {
-                            // Save the diagram to the stream in HTML format (save rule)
-                            diagram.Save(htmlStream, SaveFileFormat.Html);
-
-                            // Determine output HTML file path (same name with .html extension)
-                            string htmlFilePath = Path.ChangeExtension(visioFilePath, ".html");
-
-                            // Write the stream content to the HTML file
-                            File.WriteAllBytes(htmlFilePath, htmlStream.ToArray());
-
-                            Console.WriteLine($"Converted \"{Path.GetFileName(visioFilePath)}\" to HTML successfully.");
+                            // Save diagram as HTML to the output stream
+                            diagram.Save(outputStream, SaveFileFormat.Html);
                         }
                     }
+
+                    Console.WriteLine($"Converted: {Path.GetFileName(filePath)} -> {Path.GetFileName(Path.ChangeExtension(filePath, ".html"))}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to convert \"{Path.GetFileName(visioFilePath)}\": {ex.Message}");
+                    Console.WriteLine($"Failed to convert {Path.GetFileName(filePath)}: {ex.Message}");
                 }
             }
+
+            Console.WriteLine("Conversion process completed.");
         }
     }

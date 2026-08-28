@@ -10,25 +10,29 @@ class Program
         try
         {
 
-            // Path to the source Visio file
-            string sourcePath = "input.vsdx";
+            // Load a Visio file into a byte array (could be from any source, e.g., database, network)
+            byte[] diagramBytes = File.ReadAllBytes("input.vsdx");
 
-            // Load the file into a memory stream
-            using (FileStream fileStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read))
-            using (MemoryStream memoryStream = new MemoryStream())
+            // Create a memory stream from the byte array
+            using (MemoryStream inputStream = new MemoryStream(diagramBytes))
             {
-                fileStream.CopyTo(memoryStream);
-                memoryStream.Position = 0; // Reset stream position before loading
+                // Use the Diagram constructor that accepts a Stream to load the diagram from memory
+                Diagram diagram = new Diagram(inputStream);
 
-                // Use the Diagram constructor that accepts a Stream to load from memory
-                using (Diagram diagram = new Diagram(memoryStream))
+                // Perform any required operations on the diagram here
+                // ...
+
+                // Save the diagram back to a memory stream in the same format (VSDX)
+                using (MemoryStream outputStream = new MemoryStream())
                 {
-                    // Example operation: you could modify the diagram here
+                    diagram.Save(outputStream, SaveFileFormat.Vsdx);
 
-                    // Save the diagram to a new file using the Save method
-                    string outputPath = "output.vsdx";
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Optionally write the result to a file
+                    File.WriteAllBytes("output.vsdx", outputStream.ToArray());
                 }
+
+                // Clean up the Diagram object
+                diagram.Dispose();
             }
 
         }

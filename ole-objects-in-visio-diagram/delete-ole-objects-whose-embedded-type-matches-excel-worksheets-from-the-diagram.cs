@@ -9,46 +9,44 @@ class Program
             try
             {
 
-                // Input and output Visio files
+                // Path to the source Visio diagram
                 string inputPath = "input.vsdx";
+                // Path for the resulting diagram after OLE removal
                 string outputPath = "output.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and collect OLE shapes that embed Excel worksheets
-                List<Shape> shapesToDelete = new List<Shape>();
-
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
+                    // Collect shapes that need to be removed to avoid modifying the collection during iteration
+                    List<Shape> shapesToRemove = new List<Shape>();
+
+                    // Examine each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Verify the shape is an OLE object
+                        // Ensure the shape is a foreign (OLE) object and has embedded data
                         if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ObjectData != null)
                         {
-                            // Identify the embedded object type via the source file name
+                            // The source file name (or extension) indicates the embedded object's type
                             string sourceName = shape.ForeignData.ObjectSourceFullName;
-                            if (!string.IsNullOrEmpty(sourceName))
+
+                            if (!string.IsNullOrEmpty(sourceName) &&
+                                (sourceName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase) ||
+                                 sourceName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) ||
+                                 sourceName.EndsWith(".xlsm", StringComparison.OrdinalIgnoreCase)))
                             {
-                                string lowerSource = sourceName.ToLowerInvariant();
-                                // Check for Excel file extensions
-                                if (lowerSource.EndsWith(".xls") || lowerSource.EndsWith(".xlsx"))
-                                {
-                                    shapesToDelete.Add(shape);
-                                }
+                                // This OLE object is an Excel worksheet – mark it for removal
+                                shapesToRemove.Add(shape);
                             }
                         }
                     }
-                }
 
-                // Remove the identified shapes from their respective pages
-                foreach (Shape shape in shapesToDelete)
-                {
-                    // The shape's parent page can be accessed via the Shape.Page property
-                    Page parentPage = shape.Page;
-                    if (parentPage != null)
+                    // Remove the identified OLE shapes from the page
+                    foreach (Shape oleShape in shapesToRemove)
                     {
-                        parentPage.Shapes.Remove(shape);
+                        page.Shapes.Remove(oleShape);
                     }
                 }
 

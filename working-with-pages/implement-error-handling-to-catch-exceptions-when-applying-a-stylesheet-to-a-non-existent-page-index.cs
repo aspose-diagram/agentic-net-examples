@@ -9,40 +9,43 @@ class ApplyStyleWithErrorHandling
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Define the page index we want to style
-            int targetPageIndex = 5; // Example index that may not exist
-
-            // Define style IDs (use -1 for defaults if not needed)
-            int textStyleId = -1;
-            int lineStyleId = -1;
-            int fillStyleId = -1;
+            // Index of the page we want to style
+            int targetPageIndex = 5; // Example index; may be out of range
 
             try
             {
-                // Attempt to retrieve the page by its index.
-                // GetPage throws an exception if the page does not exist.
+                // Verify that the page index exists in the document
+                if (targetPageIndex < 0 || targetPageIndex >= diagram.Pages.Count)
+                    throw new ArgumentOutOfRangeException(
+                        nameof(targetPageIndex),
+                        $"Page index {targetPageIndex} does not exist. Valid range is 0 to {diagram.Pages.Count - 1}.");
+
+                // Retrieve the page using the GetPage method (by ID, which is the same as the index)
                 Page page = diagram.Pages.GetPage(targetPageIndex);
 
-                // Apply the style to the retrieved page.
-                page.ApplyStyle(textStyleId, lineStyleId, fillStyleId);
+                // Define style IDs (use -1 for defaults you do not want to change)
+                int textStyleId = 0;   // Example text style ID
+                int lineStyleId = -1;  // Keep existing line style
+                int fillStyleId = -1;  // Keep existing fill style
 
-                Console.WriteLine($"Style applied successfully to page index {targetPageIndex}.");
+                // Apply the style to the page
+                page.ApplyStyle(textStyleId, lineStyleId, fillStyleId);
             }
             catch (ArgumentOutOfRangeException ex)
             {
-                // Specific handling for out‑of‑range page index
-                Console.WriteLine($"Error: Page index {targetPageIndex} is out of range. {ex.Message}");
+                // Handle the case where the page index is invalid
+                Console.WriteLine($"Invalid page index: {ex.Message}");
             }
             catch (Exception ex)
             {
-                // General fallback for any other errors
-                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+                // Handle any other unexpected errors
+                Console.WriteLine($"An error occurred while applying the style: {ex.Message}");
             }
 
-            // Optionally save the modified diagram
+            // Optionally, save the modified diagram (replace with desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

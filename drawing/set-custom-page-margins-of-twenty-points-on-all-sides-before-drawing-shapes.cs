@@ -1,45 +1,51 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
-            // Initialize a new empty diagram inside a using block for proper disposal
+
+            // Create a new diagram instance
             using (Diagram diagram = new Diagram())
             {
-                // Convert 20 points to inches (Visio uses inches for margins)
-                double marginInInches = 20.0 / 72.0;
+                // Define margin: 20 points = 20/72 inches
+                double marginInches = 20.0 / 72.0;
 
-                // Apply the same margins to every existing page (none at creation, but loop is safe)
+                // Apply the margin to every page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Set top, bottom, left, and right margins via the PrintProps collection
-                    page.PageSheet.PrintProps.PageTopMargin.Value = marginInInches;
-                    page.PageSheet.PrintProps.PageBottomMargin.Value = marginInInches;
-                    page.PageSheet.PrintProps.PageLeftMargin.Value = marginInInches;
-                    page.PageSheet.PrintProps.PageRightMargin.Value = marginInInches;
+                    page.PageSheet.PrintProps.PageTopMargin.Value = marginInches;
+                    page.PageSheet.PrintProps.PageBottomMargin.Value = marginInches;
+                    page.PageSheet.PrintProps.PageLeftMargin.Value = marginInches;
+                    page.PageSheet.PrintProps.PageRightMargin.Value = marginInches;
                 }
 
-                // Add a rectangle shape to the first page; fourth argument is a bool (isCalculate)
-                long shapeId = diagram.Pages[0].AddShape(2.0, 2.0, "Rectangle", false);
-                // Retrieve the shape object using the returned ID
-                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-                // Clear any existing text and add new sample text
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt("Sample Shape"));
+                // Example shape creation after margins are set
+                Page firstPage = diagram.Pages[0];
+                double pinX = 2.0;   // X position in inches
+                double pinY = 2.0;   // Y position in inches
+                double width = 3.0;  // Width in inches
+                double height = 1.5; // Height in inches
+
+                // Add a rectangle shape (master name "Rectangle")
+                long shapeId = firstPage.AddShape(pinX, pinY, width, height, "Rectangle");
+                Shape rectangle = firstPage.Shapes.GetShape(shapeId);
+
+                // Optional: set a fill color for the rectangle
+                rectangle.Fill.FillForegnd.Value = "#FFCC00";
 
                 // Save the diagram to a VSDX file
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                diagram.Save("Output.vsdx", SaveFileFormat.Vsdx);
             }
+
         }
-        catch (Exception ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            // Output any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

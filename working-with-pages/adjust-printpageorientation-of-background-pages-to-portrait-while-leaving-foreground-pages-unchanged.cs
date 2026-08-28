@@ -1,44 +1,57 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate that an input file path was provided.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
+            return;
+        }
+
+        // Assign input and output file paths.
+        string inputPath = args[0];
+        // If no output path is supplied, create one by appending "_modified" before the extension.
+        string outputPath = args.Length > 1 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_modified" + Path.GetExtension(inputPath));
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the modified Visio file
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Iterate over each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Check if the page is a background page
+                // Check if the current page is a background page.
                 if (page.Background == BOOL.True)
                 {
-                    // Set print orientation to Portrait for background pages
+                    // Set the print orientation of background pages to Portrait.
                     page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-                    Console.WriteLine($"Background page '{page.Name}' orientation set to Portrait.");
                 }
+                // Foreground pages are left unchanged.
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the output path using VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

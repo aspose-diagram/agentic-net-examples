@@ -10,32 +10,27 @@ class Program
         try
         {
 
-            // Path to the input Visio file
+            // Input Visio file path
             string inputPath = "input.vsdx";
+            // Output XPS file path
+            string outputPath = "output.xps";
 
             // Load the diagram from file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and set orientation to Landscape for non‑background pages
+            // Change orientation to Landscape for every non‑background page
             foreach (Page page in diagram.Pages)
             {
-                // Skip background pages
                 if (page.Background == BOOL.False)
                 {
-                    // Set print orientation to Landscape
                     page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                 }
             }
 
-            // Configure XPS save options (optional settings can be adjusted here)
-            XPSSaveOptions xpsOptions = new XPSSaveOptions();
-            xpsOptions.ExportHiddenPage = false; // do not export hidden pages
-
-            // Path to the output XPS file
-            string outputPath = "output.xps";
-
-            // Save the diagram as XPS using the configured options
-            diagram.Save(outputPath, xpsOptions);
+            // Export the diagram to XPS
+            XPSSaveOptions options = new XPSSaveOptions();
+            options.ExportHiddenPage = false; // export only foreground pages
+            diagram.Save(outputPath, options);
 
         }
         catch (System.IO.FileNotFoundException ex)

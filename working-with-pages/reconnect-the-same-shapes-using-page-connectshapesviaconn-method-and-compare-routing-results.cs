@@ -1,93 +1,98 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Manipulation;
+using Aspose.Diagram.Manipulation; // for ConnectionPointPlace enum
+using Aspose.Diagram.Saving;      // for SaveFileFormat
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Input Visio file path (required)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        if (!File.Exists(inputPath))
         {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+        // Output directory (optional, defaults to current directory)
+        string outputDir = args.Length > 1 ? args[1] : Directory.GetCurrentDirectory();
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+        // Define the routing styles to compare
+        ConnectorsTypeValue[] routingStyles = new ConnectorsTypeValue[]
+        {
+            ConnectorsTypeValue.StraightLines,
+            ConnectorsTypeValue.CurvedLines
+        };
+
+        foreach (ConnectorsTypeValue style in routingStyles)
+        {
+            try
             {
-                // Assume we work with the first page
+                // Load the diagram fresh for each routing style
+                Diagram diagram = new Diagram(inputPath);
+
+                // Access the first page (assumes at least one page exists)
                 Page page = diagram.Pages[0];
 
-                // Find two non‑connector shapes on the page
+                // Locate two non‑connector shapes to be linked
                 Shape shape1 = null;
                 Shape shape2 = null;
                 foreach (Shape s in page.Shapes)
                 {
-                    if (!s.OneD) // non‑1D shapes are regular shapes
+                    // Skip 1‑D connector shapes (OneD == true)
+                    if (s.OneD) continue;
+
+                    if (shape1 == null)
+                        shape1 = s;
+                    else if (shape2 == null)
                     {
-                        if (shape1 == null)
-                            shape1 = s;
-                        else if (shape2 == null)
-                        {
-                            shape2 = s;
-                            break;
-                        }
+                        shape2 = s;
+                        break;
                     }
                 }
 
+                // Ensure we have two shapes to connect
                 if (shape1 == null || shape2 == null)
                 {
-                    Console.WriteLine("Unable to find two regular shapes to connect.");
+                    Console.Error.WriteLine("Unable to find two non‑connector shapes on the page.");
                     return;
                 }
 
-                long shape1Id = shape1.ID;
-                long shape2Id = shape2.ID;
-
-                // Add a dynamic connector shape (connector)
-                long connectorId = diagram.AddShape(0, 0, "Dynamic connector", 0);
+                // Add a dynamic connector shape (master name must exist in the stencil)
+                long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
                 Shape connector = page.Shapes.GetShape(connectorId);
 
-                // Record the initial routing type of the connector
-                ConnectorsTypeValue initialRouting = connector.GetConnectorsType();
+                // Apply the current routing style to the connector
+                connector.SetConnectorsType(style);
 
-                Console.WriteLine($"Initial connector routing: {initialRouting}");
+                // Connect shape1 (right side) to shape2 (bottom side) using the connector
+                page.ConnectShapesViaConnector(
+                    shape1.ID,
+                    ConnectionPointPlace.Right,
+                    shape2.ID,
+                    ConnectionPointPlace.Bottom,
+                    connectorId);
 
-                // Connect the two shapes using the connector
-                page.ConnectShapesViaConnector(shape1Id, ConnectionPointPlace.Right,
-                                              shape2Id, ConnectionPointPlace.Bottom,
-                                              connectorId);
+                // Build output file name that reflects the routing style
+                string outFile = Path.Combine(outputDir, $"output_{style}.vsdx");
 
-                // Change the connector routing to curved lines
-                connector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
-                ConnectorsTypeValue afterRouting = connector.GetConnectorsType();
+                // Save the diagram with the applied routing
+                diagram.Save(outFile, SaveFileFormat.Vsdx);
 
-                Console.WriteLine($"Connector routing after change: {afterRouting}");
-
-                // Re‑connect the same shapes with the updated routing
-                // (First remove existing connection by deleting the connector)
-                page.Shapes.Remove(connector);
-                // Add a new connector for the second connection
-                long newConnectorId = diagram.AddShape(0, 0, "Dynamic connector", 0);
-                Shape newConnector = page.Shapes.GetShape(newConnectorId);
-                newConnector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
-
-                page.ConnectShapesViaConnector(shape1Id, ConnectionPointPlace.Right,
-                                              shape2Id, ConnectionPointPlace.Bottom,
-                                              newConnectorId);
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+                Console.WriteLine($"Saved diagram with routing '{style}' to: {outFile}");
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            catch (Exception ex)
+            {
+                // Log any Aspose.Diagram errors
+                Console.Error.WriteLine($"Error processing routing style '{style}': {ex.Message}");
+            }
         }
     }
 }

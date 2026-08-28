@@ -10,27 +10,41 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
+            // Input Visio file path
             string inputPath = "input.vsdx";
-            using (Diagram diagram = new Diagram(inputPath))
+            // Output PDF file path
+            string outputPath = "output.pdf";
+
+            try
             {
-                // Ensure all pages are visible in the UI
-                foreach (Page page in diagram.Pages)
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Set UI visibility to Visible for each page
-                    page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Visible;
+                    // Ensure all pages are visible in the UI
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Set UI visibility to Visible for each page
+                        page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Visible;
+                    }
+
+                    // Configure PDF save options to exclude hidden pages
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
+                    {
+                        ExportHiddenPage = false,
+                        DefaultFont = "Arial"
+                    };
+
+                    // Save the diagram as PDF
+                    diagram.Save(outputPath, pdfOptions);
                 }
 
-                // Configure PDF save options to exclude hidden pages
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.ExportHiddenPage = false;
-
-                // Export the diagram to PDF
-                string outputPath = "output.pdf";
-                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine("Diagram exported to PDF successfully.");
             }
-
-            Console.WriteLine("Diagram exported to PDF with all pages visible.");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                throw;
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

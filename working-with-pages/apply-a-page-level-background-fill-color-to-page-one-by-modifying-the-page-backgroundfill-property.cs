@@ -1,67 +1,65 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Create a new empty diagram
-        using (Diagram diagram = new Diagram())
+        try
         {
-            try
-            {
-                // Ensure at least one foreground page exists
-                if (diagram.Pages.Count == 0)
-                {
-                    diagram.Pages.Add(new Page());
-                }
 
-                // Retrieve the first (foreground) page
+            // Create a new diagram (empty document)
+            using (Diagram diagram = new Diagram())
+            {
+                // Ensure there is at least one foreground page
                 Page foregroundPage = diagram.Pages[0];
 
-                // Create a new background page
+                // Create a background page
                 Page backgroundPage = new Page();
+                backgroundPage.Background = BOOL.True; // Mark as background page
 
-                // Mark the page as a background canvas
-                backgroundPage.Background = BOOL.True;
+                // Copy page dimensions from the foreground page
+                backgroundPage.PageSheet.PageProps.PageWidth.Value = foregroundPage.PageSheet.PageProps.PageWidth.Value;
+                backgroundPage.PageSheet.PageProps.PageHeight.Value = foregroundPage.PageSheet.PageProps.PageHeight.Value;
 
-                // Add the background page to the diagram
-                diagram.Pages.Add(backgroundPage);
-
-                // Obtain the dimensions of the foreground page (in inches)
-                double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
-
-                // Calculate the centre point for the rectangle shape
+                // Add a rectangle shape that spans the entire page
+                // PinX and PinY are the center of the shape; for a full‑page rectangle,
+                // they are set to half the width/height.
+                double pageWidth = backgroundPage.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = backgroundPage.PageSheet.PageProps.PageHeight.Value;
                 double pinX = pageWidth / 2.0;
                 double pinY = pageHeight / 2.0;
 
-                // Add a rectangle shape that spans the whole page on the background page
-                // The last argument (isCalculate) must be a bool, not an int
-                long rectId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle", false);
+                // Add the rectangle shape using the built‑in "Rectangle" master
+                long rectShapeId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle");
+                Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
 
-                // Retrieve the newly added shape to set its fill properties
-                Shape backgroundRect = backgroundPage.Shapes.GetShape(rectId);
+                // Apply solid fill with a light blue color
+                rectShape.Fill.FillPattern.Value = 1;               // Solid fill
+                rectShape.Fill.FillForegnd.Value = "#ADD8E6";       // Light blue (hex)
 
-                // Set a solid fill pattern (1) and a light‑blue colour
-                backgroundRect.Fill.FillPattern.Value = 1;               // 1 = solid fill
-                backgroundRect.Fill.FillForegnd.Value = "#ADD8E6";       // Light blue
+                // Remove the outline
+                rectShape.Line.LinePattern.Value = 0;               // No line
 
-                // Remove the border by setting the line pattern to 0 (no line)
-                backgroundRect.Line.LinePattern.Value = 0;
+                // Send the rectangle to the back so other shapes appear above it
+                rectShape.SendToBack();
 
-                // Link the foreground page to the background page
+                // Attach the background page to the foreground page
                 foregroundPage.BackPage = backgroundPage;
 
-                // Save the diagram as VSDX
-                diagram.Save("PageBackground.vsdx", SaveFileFormat.Vsdx);
+                // Add the background page to the diagram's page collection
+                diagram.Pages.Add(backgroundPage);
+
+                // Save the diagram to a VSDX file
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
-            catch (Exception ex)
-            {
-                // Output any errors that occur during processing
-                Console.Error.WriteLine($"Error: {ex.Message}");
-            }
+
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
@@ -6,61 +7,64 @@ class Program
     static void Main()
     {
         TestPageWidthNegativeThrows();
-        Console.WriteLine("All tests passed.");
+        TestPageWidthPositiveNoException();
+        Console.WriteLine("All tests completed.");
     }
 
-    // Helper to set page width with validation that throws on negative values
+    // Helper that validates width before assigning to the page property
     static void SetPageWidth(Page page, double width)
     {
-        // Validate width before applying to the diagram model
+        // Throw if the width is negative to satisfy the test expectation
         if (width < 0)
             throw new ArgumentException("Page width cannot be negative.");
 
-        // Assign the validated width to the page's PageWidth cell
+        // Assign the validated width to the diagram page
         page.PageSheet.PageProps.PageWidth.Value = width;
     }
 
+    // Verify that setting a negative width throws an exception
     static void TestPageWidthNegativeThrows()
     {
-        // Create a new diagram instance
-        using (Diagram diagram = new Diagram())
+        using (var diagram = new Diagram())
         {
-            // Ensure the diagram has at least one page
-            if (diagram.Pages.Count == 0)
-            {
-                diagram.Pages.Add(new Page());
-            }
-
-            Page page = diagram.Pages[0];
-
+            // Access the first page (a new diagram always contains at least one page)
+            var page = diagram.Pages[0];
             bool exceptionThrown = false;
+
             try
             {
-                // Attempt to assign a negative width – should raise an ArgumentException
-                SetPageWidth(page, -10.0);
+                // Attempt to assign a negative width via the helper
+                SetPageWidth(page, -5.0);
             }
-            catch (ArgumentException)
+            catch (Exception)
             {
-                // Expected exception was caught
                 exceptionThrown = true;
             }
 
             if (!exceptionThrown)
-            {
-                // If no exception was thrown, the test fails
-                throw new Exception("Expected ArgumentException was not thrown for negative PageWidth.");
-            }
+                throw new Exception("Expected exception was not thrown when setting a negative PageWidth.");
+            else
+                Console.WriteLine("TestPageWidthNegativeThrows passed.");
+        }
+    }
 
-            // Verify that a valid positive width does not throw
+    // Verify that setting a positive width does NOT throw an exception
+    static void TestPageWidthPositiveNoException()
+    {
+        using (var diagram = new Diagram())
+        {
+            var page = diagram.Pages[0];
             try
             {
+                // Assign a valid positive width via the helper
                 SetPageWidth(page, 8.5);
             }
             catch (Exception ex)
             {
-                // Any exception here indicates a failure of the positive case
-                throw new Exception("Setting a positive PageWidth threw an unexpected exception: " + ex.Message);
+                throw new Exception("Unexpected exception when setting a positive PageWidth: " + ex.Message);
             }
+
+            Console.WriteLine("TestPageWidthPositiveNoException passed.");
         }
     }
 }

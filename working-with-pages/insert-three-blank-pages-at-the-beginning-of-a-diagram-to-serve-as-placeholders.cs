@@ -3,33 +3,44 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class InsertBlankPages
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the existing Visio diagram (uses the provided load rule)
-            string inputFile = "input.vsdx";
-            Diagram diagram = new Diagram(inputFile);
+            // Paths to the source and destination Visio files.
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Insert three blank pages at the beginning
-            for (int i = 0; i < 3; i++)
+            // Load the existing diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Determine the current maximum page ID.
+            int maxPageId = 0;
+            foreach (Page page in diagram.Pages)
             {
-                // Create a new empty page
-                Page blankPage = new Page();
-
-                // Add the page to the document's page collection
-                diagram.Pages.Add(blankPage);
-
-                // Move the newly added page to the first position (index 0)
-                blankPage.MoveTo(0);
+                if (page.ID > maxPageId)
+                    maxPageId = page.ID;
             }
 
-            // Save the modified diagram (uses the provided save rule)
-            string outputFile = "output.vsdx";
-            diagram.Save(outputFile, SaveFileFormat.Vsdx);
+            // Insert three blank pages at the beginning of the diagram.
+            for (int i = 0; i < 3; i++)
+            {
+                // Create a new page with a unique ID.
+                maxPageId++;
+                Page newPage = new Page(maxPageId);
+
+                // Add the page to the diagram.
+                diagram.Pages.Add(newPage);
+
+                // Move the newly added page to the first position (index 0).
+                newPage.MoveTo(0);
+            }
+
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

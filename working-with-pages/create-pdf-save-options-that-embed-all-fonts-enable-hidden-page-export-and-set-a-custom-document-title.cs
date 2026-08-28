@@ -9,26 +9,33 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram (replace with your file path)
-                using (Diagram diagram = new Diagram("input.vsdx"))
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path for the exported PDF file
+                string outputPath = "output.pdf";
+
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
                     // Set a custom document title
-                    diagram.DocumentProps.Title = "Custom Document Title";
+                    diagram.DocumentProps.Title = "My Custom Document Title";
 
                     // Configure PDF save options
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
+                    {
+                        // Ensure hidden pages are exported
+                        ExportHiddenPage = true,
+                        // Set a default font to be used for missing fonts
+                        DefaultFont = "Arial",
+                        // Explicitly set the save format (required by the API)
+                        SaveFormat = SaveFileFormat.Pdf
+                    };
 
-                    // Embed all fonts by specifying a default fallback font (Aspose embeds fonts automatically when possible)
-                    pdfOptions.DefaultFont = "Arial";
-
-                    // Enable export of hidden pages
-                    pdfOptions.ExportHiddenPage = true;
-
-                    // Save the diagram as PDF with the configured options
-                    diagram.Save("output.pdf", pdfOptions);
+                    // Save the diagram as PDF with the specified options
+                    diagram.Save(outputPath, pdfOptions);
                 }
 
-                Console.WriteLine("Diagram exported to PDF successfully.");
+                Console.WriteLine("Diagram has been exported to PDF successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -1,58 +1,70 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Saving;
 
-public class DiagramProcessor
+public class Program
 {
     // Cached AutoSpaceOptions instance reused for all diagrams
-    private static readonly AutoSpaceOptions CachedOptions = CreateAutoSpaceOptions();
+    private static readonly AutoSpaceOptions autoSpaceOptions = CreateAutoSpaceOptions();
 
     private static AutoSpaceOptions CreateAutoSpaceOptions()
     {
         var options = new AutoSpaceOptions();
-        // Configure spacing (in inches) as needed
+        // Set desired spacing between shapes (in inches)
         options.DistanceInHorizontal = 0.5;
         options.DistanceInVertical = 0.5;
         return options;
     }
 
-    public static void ProcessDiagram(string inputPath, string outputPath)
+    public static void Main()
     {
-        // Load the diagram from the specified file
-        var diagram = new Diagram(inputPath);
-
-        // Apply auto‑spacing to each page using the cached options
-        foreach (Page page in diagram.Pages)
-        {
-            page.AutoSpaceShapes(page.Shapes, CachedOptions);
-        }
-
-        // Save the modified diagram as VSDX
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-    }
-
-    public static void Main(string[] args)
-    {
-        if (args.Length < 2)
-        {
-            Console.WriteLine("Usage: DiagramProcessor <input.vsdx> <output.vsdx>");
-            return;
-        }
-
-        string inputFile = args[0];
-        string outputFile = args[1];
-
         try
         {
-            ProcessDiagram(inputFile, outputFile);
-            Console.WriteLine($"Diagram processed and saved to '{outputFile}'.");
+
+            string inputFolder = "InputDiagrams";
+            string outputFolder = "OutputDiagrams";
+
+            // Ensure the output directory exists
+            if (!Directory.Exists(outputFolder))
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+
+            // Process all VSDX files in the input folder
+            string[] files = Directory.GetFiles(inputFolder, "*.vsdx");
+            foreach (string filePath in files)
+            {
+                try
+                {
+                    // Load the diagram from file
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Apply AutoSpace to each page using the cached options
+                    foreach (Page page in diagram.Pages)
+                    {
+                        page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
+                    }
+
+                    // Save the updated diagram
+                    string fileName = Path.GetFileNameWithoutExtension(filePath);
+                    string outputPath = Path.Combine(outputFolder, fileName + "_spaced.vsdx");
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
+                catch (Exception ex)
+                {
+                    // Log any errors and continue with the next file
+                    Console.WriteLine($"Error processing '{filePath}': {ex.Message}");
+                }
+            }
+
+            Console.WriteLine("All diagrams have been processed.");
+
         }
-        catch (Exception ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
-            throw;
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

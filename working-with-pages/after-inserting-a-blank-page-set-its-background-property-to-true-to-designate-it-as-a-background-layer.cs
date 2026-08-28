@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -14,7 +13,7 @@ class Program
             Page newPage = new Page();
             diagram.Pages.Add(newPage);
 
-            // Designate the new page as a background layer
+            // Designate the new page as a background page
             newPage.Background = BOOL.True;
 
             // Save the diagram to a VSDX file

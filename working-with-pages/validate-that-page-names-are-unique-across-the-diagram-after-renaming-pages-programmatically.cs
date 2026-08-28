@@ -11,19 +11,17 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load the diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Rename each page (example: prepend "Renamed_" to the original name)
+            // Example: rename each page programmatically
             for (int i = 0; i < diagram.Pages.Count; i++)
             {
                 Page page = diagram.Pages[i];
-                page.Name = "Renamed_" + page.Name;
-                // Also update the universal name to keep consistency
-                page.NameU = page.Name;
+                page.Name = $"Page_{i}";
             }
 
-            // Validate that all page names are unique after renaming
+            // Validate that all page names are unique
             HashSet<string> pageNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             bool duplicateFound = false;
 
@@ -31,27 +29,18 @@ class Program
             {
                 if (!pageNames.Add(page.Name))
                 {
-                    Console.WriteLine($"Duplicate page name detected: {page.Name}");
                     duplicateFound = true;
+                    Console.WriteLine($"Duplicate page name detected: {page.Name}");
                 }
             }
 
-            if (duplicateFound)
-            {
-                Console.WriteLine("Page name validation failed: duplicates exist.");
-            }
-            else
+            if (!duplicateFound)
             {
                 Console.WriteLine("All page names are unique.");
             }
 
-            // Save the modified diagram
-            PdfSaveOptions saveOptions = new PdfSaveOptions
-            {
-                // Ensure each Visio page is saved as a separate PDF page
-                SplitMultiPages = true
-            };
-            diagram.Save("output.pdf", saveOptions);
+            // Save the diagram (replace with your desired output path)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

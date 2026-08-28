@@ -1,37 +1,37 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input and output file paths (adjust as needed)
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Insert dynamic header and footer.
+            // Visio field codes are used inside the strings:
+            // &[Page]   – current page number
+            // &[Pages]  – total number of pages
+            // &[DocTitle] – document title (from DocumentProps.Title)
+            diagram.HeaderFooter.HeaderCenter = "Page &[Page] of &[Pages]";
+            diagram.HeaderFooter.FooterCenter = "Title: &[DocTitle]";
 
-            // Retrieve the document title; use a fallback if it's empty
-            string title = diagram.DocumentProps.Title;
-            if (string.IsNullOrWhiteSpace(title))
+            // Optional: set font color (e.g., dark gray) and margins if needed
+            // diagram.HeaderFooter.HeaderFooterColor = 0x404040; // RGB hex
+            // diagram.HeaderFooter.HeaderMargin = 0.2; // inches
+            // diagram.HeaderFooter.FooterMargin = 0.2; // inches
+
+            // Save the diagram as PDF, splitting each Visio page into a separate PDF page
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
             {
-                title = "Untitled Diagram";
-            }
-
-            // Set global header and footer.
-            // HeaderLeft will display the diagram title on every page.
-            diagram.HeaderFooter.HeaderLeft = title;
-
-            // FooterRight uses the Visio field code '&p' to insert the current page number.
-            diagram.HeaderFooter.FooterRight = "Page: &p";
-
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                SplitMultiPages = true
+            };
+            diagram.Save("output.pdf", pdfOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

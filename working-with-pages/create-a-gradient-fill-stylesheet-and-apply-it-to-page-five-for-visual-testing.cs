@@ -1,54 +1,78 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        using (Diagram diagram = new Diagram())
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            // Ensure the diagram has at least five pages
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there are at least five pages; add blank pages if needed
             while (diagram.Pages.Count < 5)
             {
+                // Create a new blank page and add it to the collection
                 diagram.Pages.Add(new Page());
             }
 
-            // Create a stylesheet that defines a gradient fill
-            StyleSheet gradientStyle = new StyleSheet();
-            gradientStyle.ID = diagram.StyleSheets.Count + 1; // unique ID
+            // Retrieve the fifth page (zero‑based index 4)
+            Page pageFive = diagram.Pages[4];
 
-            // Set fill to gradient pattern (value 25)
+            // Create a new stylesheet for gradient fill
+            StyleSheet gradientStyle = new StyleSheet
+            {
+                // Assign a unique ID based on current count
+                ID = diagram.StyleSheets.Count + 1,
+                // Optional: give the style a readable name
+                Name = "GradientStyle"
+            };
+
+            // Set fill pattern to gradient (value 25 per API)
             gradientStyle.Fill.FillPattern.Value = 25;
-            // Enable the gradient
+            // Enable gradient fill
             gradientStyle.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-            // Set gradient direction (0 = left‑to‑right)
+            // Set gradient direction (0 = horizontal, adjust as needed)
             gradientStyle.Fill.GradientFill.GradientDir.Value = 0;
-            // Clear any existing gradient stops
+            // Clear any existing gradient stops (should be empty for new style)
             gradientStyle.Fill.GradientFill.GradientStops.Clear();
-            // Add a blue stop at the start (position 0)
+            // Add a blue start stop at position 0
             gradientStyle.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(0, MeasureConst.NUM),
                 new ColorValue("#0000FF", MeasureConst.Undefined));
-            // Add a green stop at the end (position 1)
+            // Add a green end stop at position 1
             gradientStyle.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(1, MeasureConst.NUM),
                 new ColorValue("#00FF00", MeasureConst.Undefined));
 
-            // Add the stylesheet to the diagram's collection
+            // Add the new stylesheet to the diagram's collection
             diagram.StyleSheets.Add(gradientStyle);
 
-            // Retrieve page five (zero‑based index 4) and apply the stylesheet
-            Page pageFive = diagram.Pages[4];
+            // Apply the stylesheet to page five (text, line, and fill styles use the same ID)
             pageFive.ApplyStyle(gradientStyle.ID, gradientStyle.ID, gradientStyle.ID);
 
-            // Save the diagram for visual verification
-            string outputPath = "GradientFillTest.vsdx";
+            // Save the modified diagram to the output file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-
-        Console.WriteLine("Diagram saved with gradient fill stylesheet applied to page five.");
+        catch (Exception ex)
+        {
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

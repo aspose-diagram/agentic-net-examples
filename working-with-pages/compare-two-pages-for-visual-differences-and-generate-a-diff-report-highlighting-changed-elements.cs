@@ -4,168 +4,157 @@ using System.Collections.Generic;
 using System.Text;
 using Aspose.Diagram;
 
-namespace DiagramPageDiff
+class Program
 {
-    // Holds simplified shape information for comparison
-    class ShapeInfo
+    static void Main(string[] args)
     {
-        public long Id { get; set; }
-        public string MasterName { get; set; }
-        public double PinX { get; set; }
-        public double PinY { get; set; }
-        public double Width { get; set; }
-        public double Height { get; set; }
-        public string Text { get; set; }
-        public string LineColor { get; set; }
-        public string FillColor { get; set; }
-    }
-
-    class Program
-    {
-        static void Main(string[] args)
+        // Expect at least two arguments: source diagram path and target diagram path.
+        if (args.Length < 2)
         {
-            // Expect three arguments: diagram file path, first page name, second page name
-            if (args.Length != 3)
+            Console.Error.WriteLine("Usage: DiffPages <sourceDiagram> <targetDiagram> [reportPath]");
+            return;
+        }
+
+        // Assign input file paths.
+        string sourcePath = args[0];
+        // Guard: ensure source file exists.
+        if (!File.Exists(sourcePath)) { Console.Error.WriteLine($"File not found: {sourcePath}"); return; }
+
+        string targetPath = args[1];
+        // Guard: ensure target file exists.
+        if (!File.Exists(targetPath)) { Console.Error.WriteLine($"File not found: {targetPath}"); return; }
+
+        // Optional report output path.
+        string reportPath = args.Length >= 3 ? args[2] : null;
+        if (reportPath != null && string.IsNullOrWhiteSpace(reportPath))
+        {
+            Console.Error.WriteLine("Report path is empty.");
+            return;
+        }
+
+        try
+        {
+            // Load source diagram.
+            Diagram sourceDiagram = new Diagram(sourcePath);
+            // Load target diagram.
+            Diagram targetDiagram = new Diagram(targetPath);
+
+            // Retrieve the first page from each diagram (index 0).
+            Page sourcePage = sourceDiagram.Pages[0];
+            Page targetPage = targetDiagram.Pages[0];
+
+            // Build dictionaries keyed by shape universal name (NameU) for quick lookup.
+            var sourceShapes = new Dictionary<string, Shape>(StringComparer.OrdinalIgnoreCase);
+            foreach (Shape s in sourcePage.Shapes)
             {
-                Console.WriteLine("Usage: DiagramPageDiff <diagramPath> <pageName1> <pageName2>");
-                return;
+                // Use NameU as key; if empty, fallback to ID string.
+                string key = !string.IsNullOrEmpty(s.NameU) ? s.NameU : s.ID.ToString();
+                sourceShapes[key] = s;
             }
 
-            string diagramPath = args[0];
-            // Guard: ensure the diagram file exists
-            if (!File.Exists(diagramPath))
+            var targetShapes = new Dictionary<string, Shape>(StringComparer.OrdinalIgnoreCase);
+            foreach (Shape s in targetPage.Shapes)
             {
-                Console.Error.WriteLine($"File not found: {diagramPath}");
-                return;
+                string key = !string.IsNullOrEmpty(s.NameU) ? s.NameU : s.ID.ToString();
+                targetShapes[key] = s;
             }
 
-            string pageName1 = args[1];
-            string pageName2 = args[2];
+            // Prepare a StringBuilder for the diff report.
+            StringBuilder report = new StringBuilder();
 
-            try
+            // Detect removed and modified shapes.
+            foreach (var kvp in sourceShapes)
             {
-                // Load the diagram inside a using block to ensure disposal
-                using (Diagram diagram = new Diagram(diagramPath))
+                string name = kvp.Key;
+                Shape srcShape = kvp.Value;
+
+                if (!targetShapes.TryGetValue(name, out Shape tgtShape))
                 {
-                    // Retrieve the two pages by name
-                    Page page1 = diagram.Pages.GetPage(pageName1);
-                    Page page2 = diagram.Pages.GetPage(pageName2);
+                    // Shape exists in source but not in target → removed.
+                    report.AppendLine($"Removed shape: {name}");
+                    continue;
+                }
 
-                    if (page1 == null || page2 == null)
-                    {
-                        Console.WriteLine("One or both pages not found in the diagram.");
-                        return;
-                    }
+                // Compare key visual properties.
+                List<string> changes = new List<string>();
 
-                    // Extract shape information from each page
-                    List<ShapeInfo> shapesPage1 = ExtractShapes(page1);
-                    List<ShapeInfo> shapesPage2 = ExtractShapes(page2);
+                // Position comparison (PinX, PinY).
+                double srcPinX = srcShape.XForm.PinX.Value;
+                double tgtPinX = tgtShape.XForm.PinX.Value;
+                if (Math.Abs(srcPinX - tgtPinX) > 0.001) changes.Add($"PinX: {srcPinX:F3} → {tgtPinX:F3}");
 
-                    // Generate diff report
-                    StringBuilder report = new StringBuilder();
-                    report.AppendLine($"Diff Report for pages \"{pageName1}\" vs \"{pageName2}\"");
-                    report.AppendLine($"Generated on {DateTime.Now}");
-                    report.AppendLine();
+                double srcPinY = srcShape.XForm.PinY.Value;
+                double tgtPinY = tgtShape.XForm.PinY.Value;
+                if (Math.Abs(srcPinY - tgtPinY) > 0.001) changes.Add($"PinY: {srcPinY:F3} → {tgtPinY:F3}");
 
-                    // Compare shape counts
-                    if (shapesPage1.Count != shapesPage2.Count)
-                    {
-                        report.AppendLine($"Shape count differs: {pageName1} has {shapesPage1.Count}, {pageName2} has {shapesPage2.Count}");
-                    }
+                // Size comparison (Width, Height).
+                double srcWidth = srcShape.XForm.Width.Value;
+                double tgtWidth = tgtShape.XForm.Width.Value;
+                if (Math.Abs(srcWidth - tgtWidth) > 0.001) changes.Add($"Width: {srcWidth:F3} → {tgtWidth:F3}");
 
-                    // Compare shapes by index (assuming similar ordering)
-                    int maxCount = Math.Max(shapesPage1.Count, shapesPage2.Count);
-                    for (int i = 0; i < maxCount; i++)
-                    {
-                        if (i >= shapesPage1.Count)
-                        {
-                            report.AppendLine($"Extra shape in {pageName2}: ID {shapesPage2[i].Id}");
-                            continue;
-                        }
-                        if (i >= shapesPage2.Count)
-                        {
-                            report.AppendLine($"Extra shape in {pageName1}: ID {shapesPage1[i].Id}");
-                            continue;
-                        }
+                double srcHeight = srcShape.XForm.Height.Value;
+                double tgtHeight = tgtShape.XForm.Height.Value;
+                if (Math.Abs(srcHeight - tgtHeight) > 0.001) changes.Add($"Height: {srcHeight:F3} → {tgtHeight:F3}");
 
-                        ShapeInfo s1 = shapesPage1[i];
-                        ShapeInfo s2 = shapesPage2[i];
+                // Text comparison.
+                string srcText = srcShape.Text?.Value?.Text ?? string.Empty;
+                string tgtText = tgtShape.Text?.Value?.Text ?? string.Empty;
+                if (!srcText.Equals(tgtText, StringComparison.Ordinal))
+                    changes.Add($"Text: \"{srcText}\" → \"{tgtText}\"");
 
-                        // Compare each property and log differences
-                        if (s1.MasterName != s2.MasterName)
-                            report.AppendLine($"Shape ID {s1.Id}: Master changed from \"{s1.MasterName}\" to \"{s2.MasterName}\"");
+                // Line color comparison.
+                string srcLineColor = srcShape.Line?.LineColor?.Value ?? string.Empty;
+                string tgtLineColor = tgtShape.Line?.LineColor?.Value ?? string.Empty;
+                if (!srcLineColor.Equals(tgtLineColor, StringComparison.OrdinalIgnoreCase))
+                    changes.Add($"LineColor: {srcLineColor} → {tgtLineColor}");
 
-                        if (!AreClose(s1.PinX, s2.PinX) || !AreClose(s1.PinY, s2.PinY))
-                            report.AppendLine($"Shape ID {s1.Id}: Position changed from ({s1.PinX:F3}, {s1.PinY:F3}) to ({s2.PinX:F3}, {s2.PinY:F3})");
+                // Fill color comparison.
+                string srcFillColor = srcShape.Fill?.FillForegnd?.Value ?? string.Empty;
+                string tgtFillColor = tgtShape.Fill?.FillForegnd?.Value ?? string.Empty;
+                if (!srcFillColor.Equals(tgtFillColor, StringComparison.OrdinalIgnoreCase))
+                    changes.Add($"FillColor: {srcFillColor} → {tgtFillColor}");
 
-                        if (!AreClose(s1.Width, s2.Width) || !AreClose(s1.Height, s2.Height))
-                            report.AppendLine($"Shape ID {s1.Id}: Size changed from ({s1.Width:F3} x {s1.Height:F3}) to ({s2.Width:F3} x {s2.Height:F3})");
-
-                        if (s1.Text != s2.Text)
-                            report.AppendLine($"Shape ID {s1.Id}: Text changed from \"{s1.Text}\" to \"{s2.Text}\"");
-
-                        if (s1.LineColor != s2.LineColor)
-                            report.AppendLine($"Shape ID {s1.Id}: Line color changed from \"{s1.LineColor}\" to \"{s2.LineColor}\"");
-
-                        if (s1.FillColor != s2.FillColor)
-                            report.AppendLine($"Shape ID {s1.Id}: Fill color changed from \"{s1.FillColor}\" to \"{s2.FillColor}\"");
-                    }
-
-                    // Output report to console
-                    Console.WriteLine(report.ToString());
-
-                    // Also write report to a text file in the same directory as the diagram
-                    string reportPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "diff_report.txt");
-                    try
-                    {
-                        File.WriteAllText(reportPath, report.ToString());
-                        Console.WriteLine($"Diff report saved to: {reportPath}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Failed to write report file: {ex.Message}");
-                    }
+                // If any differences were found, record them.
+                if (changes.Count > 0)
+                {
+                    report.AppendLine($"Modified shape: {name}");
+                    foreach (string change in changes)
+                        report.AppendLine($"  - {change}");
                 }
             }
-            catch (Exception ex)
-            {
-                // Capture any Aspose.Diagram related errors
-                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            }
-        }
 
-        // Extracts a list of ShapeInfo objects from a given page, ignoring deleted shapes
-        private static List<ShapeInfo> ExtractShapes(Page page)
-        {
-            List<ShapeInfo> list = new List<ShapeInfo>();
-            // Iterate over all shapes on the page
-            foreach (Shape shape in page.Shapes)
+            // Detect added shapes (present only in target).
+            foreach (var kvp in targetShapes)
             {
-                // Skip shapes marked as deleted
-                if (shape.Del == BOOL.True) continue;
-
-                // Build ShapeInfo from the shape's properties
-                ShapeInfo info = new ShapeInfo
+                string name = kvp.Key;
+                if (!sourceShapes.ContainsKey(name))
                 {
-                    Id = shape.ID,
-                    MasterName = shape.Master?.Name ?? "None",
-                    PinX = shape.XForm.PinX.Value,
-                    PinY = shape.XForm.PinY.Value,
-                    Width = shape.XForm.Width.Value,
-                    Height = shape.XForm.Height.Value,
-                    Text = shape.Text.Value.Text, // plain concatenated text
-                    LineColor = shape.Line.LineColor.Value,
-                    FillColor = shape.Fill.FillForegnd.Value
-                };
-                list.Add(info);
+                    report.AppendLine($"Added shape: {name}");
+                }
             }
-            return list;
-        }
 
-        // Helper to compare double values within a tolerance
-        private static bool AreClose(double a, double b, double tolerance = 0.001)
+            // Output the diff report to console.
+            Console.WriteLine("=== Visual Diff Report ===");
+            Console.WriteLine(report.ToString());
+
+            // If a report file path was provided, write the report to that file.
+            if (!string.IsNullOrEmpty(reportPath))
+            {
+                try
+                {
+                    File.WriteAllText(reportPath, report.ToString());
+                    Console.WriteLine($"Report written to: {reportPath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to write report file: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
         {
-            return Math.Abs(a - b) <= tolerance;
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

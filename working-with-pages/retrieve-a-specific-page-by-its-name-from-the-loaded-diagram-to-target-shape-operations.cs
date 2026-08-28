@@ -9,40 +9,32 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            // (Assuming the create/load rule provides a method to load a diagram from a file)
-            Diagram diagram = new Diagram(@"C:\Diagrams\sample.vsdx");
+            // Path to the Visio file to load
+            string inputPath = "input.vsdx";
 
-            // Retrieve the page with the specified name
-            // The PageCollection.GetPage(string) method returns the Page object matching the name.
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Name of the page you want to retrieve
             string targetPageName = "MyPage";
-            Page targetPage = diagram.Pages.GetPage(targetPageName);
 
-            // Verify that the page was found
-            if (targetPage == null)
+            // Retrieve the page by its name
+            Page page = diagram.Pages.GetPage(targetPageName);
+
+            // Validate that the page exists
+            if (page == null)
             {
-                Console.WriteLine($"Page \"{targetPageName}\" not found in the diagram.");
-                return;
+                throw new Exception($"Page '{targetPageName}' not found in the diagram.");
             }
 
-            Console.WriteLine($"Successfully retrieved page \"{targetPage.Name}\" (ID: {targetPage.ID}).");
+            // Output basic page information
+            Console.WriteLine($"Page found: ID = {page.ID}, Name = {page.Name}, NameU = {page.NameU}");
 
-            // Example: retrieve a shape by name on the obtained page
-            string shapeName = "MyShape";
-            Shape shape = targetPage.Shapes.GetShape(shapeName);
-
-            if (shape != null)
+            // Example: iterate over shapes on the retrieved page
+            foreach (Shape shape in page.Shapes)
             {
-                Console.WriteLine($"Shape \"{shape.Name}\" found on page \"{targetPage.Name}\".");
-                // Perform further shape operations here...
+                Console.WriteLine($"Shape ID = {shape.ID}, Name = {shape.Name}");
             }
-            else
-            {
-                Console.WriteLine($"Shape \"{shapeName}\" not found on page \"{targetPage.Name}\".");
-            }
-
-            // Save the diagram if any modifications were made
-            diagram.Save(@"C:\Diagrams\sample_modified.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

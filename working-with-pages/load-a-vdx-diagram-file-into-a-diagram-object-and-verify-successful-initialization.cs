@@ -2,33 +2,30 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class LoadDiagramExample
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the VDX file to be loaded
-            string vdxFilePath = "input.vdx";
+            // Path to the VDX diagram file
+            string filePath = "sample.vdx";
 
-            // Load the diagram using the constructor that accepts a file name.
-            // This automatically detects the format based on the file extension.
-            Diagram diagram = new Diagram(vdxFilePath);
+            // Load the diagram using the constructor that accepts a file name
+            Diagram diagram = new Diagram(filePath);
 
-            // Verify that the diagram was loaded successfully.
-            // A simple check is to ensure the object is not null and contains at least one page.
-            if (diagram != null && diagram.Pages.Count > 0)
+            // Verify that the diagram was initialized correctly
+            if (diagram != null && diagram.Pages != null && diagram.Pages.Count > 0)
             {
-                Console.WriteLine("Diagram loaded successfully.");
-                Console.WriteLine($"Number of pages: {diagram.Pages.Count}");
+                Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
             }
             else
             {
-                Console.WriteLine("Failed to load the diagram or the diagram contains no pages.");
+                Console.WriteLine("Failed to load diagram.");
             }
 
-            // Dispose the diagram when done to release resources.
+            // Clean up resources
             diagram.Dispose();
 
         }

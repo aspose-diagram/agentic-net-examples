@@ -1,57 +1,70 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate argument count
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        // Assign input and output file paths
+        string inputPath = args[0];
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+        // No existence check for outputPath; it will be created/overwritten
+
+        try
+        {
+            // Load the Visio diagram from the input file
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate through each page in the diagram
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Iterate through each page in the diagram
-                    for (int i = 0; i < diagram.Pages.Count; i++)
+                    // Retrieve the current page
+                    Page page = diagram.Pages[i];
+
+                    // Get current page dimensions (in inches)
+                    double width = page.PageSheet.PageProps.PageWidth.Value;
+                    double height = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Determine if the page is landscape (width greater than height)
+                    if (width > height)
                     {
-                        Page page = diagram.Pages[i];
+                        // Swap width and height to convert to portrait orientation
+                        page.PageSheet.PageProps.PageWidth.Value = height;
+                        page.PageSheet.PageProps.PageHeight.Value = width;
 
-                        // Retrieve current page dimensions (in inches)
-                        double width = page.PageSheet.PageProps.PageWidth.Value;
-                        double height = page.PageSheet.PageProps.PageHeight.Value;
-
-                        // Determine if the page is landscape (width greater than height)
-                        if (width > height)
-                        {
-                            // Set print orientation to Portrait
-                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-
-                            // Swap width and height to rotate the page dimensions
-                            page.PageSheet.PageProps.PageWidth.Value = height;
-                            page.PageSheet.PageProps.PageHeight.Value = width;
-                        }
-                        else
-                        {
-                            // Ensure portrait pages retain Portrait orientation
-                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-                        }
+                        // Explicitly set the print orientation to Portrait
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
                     }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    else
+                    {
+                        // Ensure portrait orientation for pages already in portrait
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                    }
                 }
 
-                Console.WriteLine("Page orientation adjustment completed.");
-
+                // Save the modified diagram to the output path using VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

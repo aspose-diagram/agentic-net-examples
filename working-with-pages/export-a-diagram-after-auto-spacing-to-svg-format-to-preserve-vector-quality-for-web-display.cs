@@ -1,52 +1,55 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-
-                // Output SVG file path
-                string outputPath = "output.svg";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Configure auto‑spacing options
+                AutoSpaceOptions spaceOptions = new AutoSpaceOptions
                 {
-                    // Get the first page of the diagram
-                    Page page = diagram.Pages[0];
+                    DistanceInHorizontal = 2, // horizontal spacing in inches
+                    DistanceInVertical = 2    // vertical spacing in inches
+                };
 
-                    // Configure auto‑spacing options
-                    AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
-                    autoSpaceOptions.DistanceInHorizontal = 2; // horizontal spacing
-                    autoSpaceOptions.DistanceInVertical = 2;   // vertical spacing
-
-                    // Apply auto‑spacing to all shapes on the page
-                    page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
-
-                    // Configure SVG save options (optional settings)
-                    SVGSaveOptions svgOptions = new SVGSaveOptions();
-                    svgOptions.ExportHiddenPage = false;
-                    svgOptions.ExportGuideShapes = false;
-                    svgOptions.SVGFitToViewPort = true;
-                    svgOptions.ExportElementAsRectTag = true;
-
-                    // Save the diagram as SVG
-                    diagram.Save(outputPath, svgOptions);
+                // Apply auto‑spacing to each page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    page.AutoSpaceShapes(page.Shapes, spaceOptions);
                 }
 
-                Console.WriteLine($"Diagram exported to SVG at: {outputPath}");
+                // Configure SVG export options
+                SVGSaveOptions svgOptions = new SVGSaveOptions
+                {
+                    ExportHiddenPage = false,
+                    ExportGuideShapes = false,
+                    SVGFitToViewPort = true,
+                    ExportElementAsRectTag = true
+                };
 
+                // Export the diagram to SVG format
+                string outputPath = "output.svg";
+                diagram.Save(outputPath, svgOptions);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("Diagram has been auto‑spaced and exported to SVG successfully.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

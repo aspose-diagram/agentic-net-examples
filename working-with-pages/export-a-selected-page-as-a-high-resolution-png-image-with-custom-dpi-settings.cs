@@ -1,43 +1,27 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportPageAsHighResPng
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio diagram
-            string sourcePath = "input.vsdx";
+            // Load the source Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Path for the exported PNG image
-            string outputPath = "page_2_highres.png";
+            // Configure image save options for PNG with a custom DPI (e.g., 300)
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            saveOptions.Resolution = 300f;          // Set horizontal and vertical DPI
+            saveOptions.PageIndex = 2;              // Zero‑based index of the page to export (e.g., third page)
+            saveOptions.PageCount = 1;              // Export only this single page
+            saveOptions.EnlargePage = true;         // Enlarge page if needed (default is true)
 
-            // Index of the page to export (0‑based). For example, export page 2.
-            int pageIndex = 1;
-
-            // Load the diagram
-            Diagram diagram = new Diagram(sourcePath);
-
-            // Configure image save options for PNG with custom DPI
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-            {
-                // Set desired resolution (dots per inch)
-                Resolution = 300f,          // Horizontal and vertical DPI
-
-                // Export only the selected page
-                PageIndex = pageIndex,      // First page to render (0‑based)
-                PageCount = 1,              // Number of pages to render
-
-                // Optional: keep original page size without enlargement
-                EnlargePage = false
-            };
-
-            // Save the selected page as a high‑resolution PNG
-            diagram.Save(outputPath, saveOptions);
+            // Export the selected page as a high‑resolution PNG image
+            diagram.Save("selected_page.png", saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

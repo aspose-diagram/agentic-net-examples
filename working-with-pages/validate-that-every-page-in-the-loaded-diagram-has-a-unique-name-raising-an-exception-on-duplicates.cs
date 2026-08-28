@@ -1,50 +1,51 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-class DiagramPageValidator
-{
-    static void Main(string[] args)
+class Program
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Path to the Visio diagram file
-            string diagramPath = "input.vsdx";
+                // Load the diagram (replace with your actual file path)
+                var diagram = new Diagram("input.vsdx");
 
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
+                // Validate that each page has a unique universal name (NameU)
+                ValidateUniquePageNames(diagram);
 
-            // Validate that each page has a unique universal name (NameU)
-            EnsureUniquePageNames(diagram);
+                // If validation passes, you can continue processing or save the diagram
+                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-            // Continue with further processing or saving if needed
-            // diagram.Save("output.vsdx");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
 
-    static void EnsureUniquePageNames(Diagram diagram)
-    {
-        // HashSet to track encountered page names
-        HashSet<string> pageNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        // Iterate through all pages in the diagram
-        foreach (Page page in diagram.Pages)
+        /// <summary>
+        /// Checks that all pages in the diagram have distinct NameU values.
+        /// Throws an InvalidOperationException if a duplicate is found.
+        /// </summary>
+        /// <param name="diagram">The Aspose.Diagram Diagram instance to validate.</param>
+        static void ValidateUniquePageNames(Diagram diagram)
         {
-            string name = page.NameU ?? string.Empty;
+            // Use a HashSet to track encountered page names efficiently
+            var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // If the name already exists, raise an exception
-            if (!pageNames.Add(name))
+            // Iterate through the PageCollection
+            foreach (Page page in diagram.Pages)
             {
-                throw new InvalidOperationException(
-                    $"Duplicate page name detected: \"{name}\". All pages must have unique names.");
+                string pageName = page.NameU ?? string.Empty;
+
+                // If the name already exists, raise an exception
+                if (!seenNames.Add(pageName))
+                {
+                    throw new InvalidOperationException(
+                        $"Duplicate page name detected: \"{pageName}\". Each page must have a unique NameU.");
+                }
             }
         }
     }
-}

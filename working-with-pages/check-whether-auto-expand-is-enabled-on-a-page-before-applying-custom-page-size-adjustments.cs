@@ -4,40 +4,38 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Path to the source Visio file
+            // Path to the Visio file (you can modify or obtain from user input)
             string inputPath = "input.vsdx";
-            // Path for the modified Visio file
-            string outputPath = "output_modified.vsdx";
+            string outputPath = "output.vsdx";
 
             // Load the diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages in the diagram
+                // Desired custom page size in inches (example: A4 size)
+                double customWidth = 8.27;
+                double customHeight = 11.69;
+
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Check if auto‑expand (automatic page resizing) is enabled
-                    bool isAutoExpandEnabled = page.PageSheet.PageProps.DrawingResizeType.Value == DrawingResizeTypeValue.Automatically;
+                    // Check the auto‑expand (DrawingResizeType) setting
+                    var resizeType = page.PageSheet.PageProps.DrawingResizeType.Value;
 
-                    if (isAutoExpandEnabled)
+                    if (resizeType == DrawingResizeTypeValue.Automatically)
                     {
-                        Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) has auto‑expand enabled. Applying custom size.");
-
-                        // Example custom size: A4 dimensions in inches
-                        double customWidth = 8.27;   // inches
-                        double customHeight = 11.69; // inches
-
-                        page.PageSheet.PageProps.PageWidth.Value = customWidth;
-                        page.PageSheet.PageProps.PageHeight.Value = customHeight;
+                        Console.WriteLine($"Page \"{page.Name}\" has auto‑expand enabled. Skipping size adjustment.");
+                        continue; // Skip size change for this page
                     }
-                    else
-                    {
-                        Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) does NOT have auto‑expand enabled. Skipping size adjustment.");
-                    }
+
+                    // Auto‑expand is disabled; apply custom size
+                    page.PageSheet.PageProps.PageWidth.Value = customWidth;
+                    page.PageSheet.PageProps.PageHeight.Value = customHeight;
+                    Console.WriteLine($"Page \"{page.Name}\" size set to {customWidth} x {customHeight} inches.");
                 }
 
                 // Save the modified diagram

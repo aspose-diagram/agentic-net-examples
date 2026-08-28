@@ -3,60 +3,71 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
 
-interface IDiagramService
+namespace DiagramAutoSpaceDemo
 {
-    void ApplyAutoSpace(Diagram diagram);
-}
-
-class DiagramService : IDiagramService
-{
-    private readonly AutoSpaceOptions _options;
-
-    public DiagramService(AutoSpaceOptions options)
+    // Service interface for auto‑spacing a page
+    public interface IAutoSpaceService
     {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
+        void AutoSpace(Page page);
     }
 
-    public void ApplyAutoSpace(Diagram diagram)
+    // Concrete implementation that receives AutoSpaceOptions via DI
+    public class AutoSpaceService : IAutoSpaceService
     {
-        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
+        private readonly AutoSpaceOptions _options;
 
-        // Use the first page for auto-spacing
-        Page page = diagram.Pages[0];
-        page.AutoSpaceShapes(page.Shapes, _options);
+        public AutoSpaceService(AutoSpaceOptions options)
+        {
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+        }
+
+        public void AutoSpace(Page page)
+        {
+            if (page == null) throw new ArgumentNullException(nameof(page));
+
+            // Apply auto‑spacing using the injected options
+            page.AutoSpaceShapes(page.Shapes, _options);
+        }
     }
-}
 
-class Program
-{
-    static void Main()
+    public class Program
     {
-        try
+        public static void Main()
         {
+            try
+            {
 
-            // Configure AutoSpaceOptions (injected via DI)
-            AutoSpaceOptions options = new AutoSpaceOptions();
-            options.DistanceInHorizontal = 2.0;
-            options.DistanceInVertical = 2.0;
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
 
-            // Create the service with injected options
-            IDiagramService service = new DiagramService(options);
+                // Load the diagram (uses the Diagram(string) constructor)
+                Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram (replace with actual file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+                // Configure AutoSpaceOptions (horizontal and vertical distances in inches)
+                AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions
+                {
+                    DistanceInHorizontal = 2.0,
+                    DistanceInVertical = 2.0
+                };
 
-            // Apply auto-spacing using the service
-            service.ApplyAutoSpace(diagram);
+                // Dependency injection: create the service with the configured options
+                IAutoSpaceService autoSpaceService = new AutoSpaceService(autoSpaceOptions);
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Apply auto‑spacing to every page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    autoSpaceService.AutoSpace(page);
+                }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

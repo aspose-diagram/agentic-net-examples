@@ -10,17 +10,31 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file (auto‑spaced diagram)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file (VSD, VDX, VSDX, etc.)
+            string sourceFile = "input.vsdx";
 
-            // Configure PDF save options – enable page enlargement to fit the drawing content
+            // Desired output PDF file path
+            string outputPdf = "output.pdf";
+
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(sourceFile);
+
+            // Configure PDF save options (optional customizations)
             PdfSaveOptions pdfOptions = new PdfSaveOptions
             {
-                EnlargePage = true   // ensures the PDF page expands to include all shapes
+                // Export all pages (default behavior)
+                PageCount = int.MaxValue,
+                // Example: set PDF compliance level if needed
+                // Compliance = Aspose.Diagram.Saving.PdfCompliance.Pdf15,
+                // Example: enlarge page to fit drawing content
+                // EnlargePage = true
             };
 
-            // Export the diagram to PDF for sharing with non‑Visio users
-            diagram.Save("output.pdf", pdfOptions);
+            // Save the diagram as PDF using the specified options
+            diagram.Save(outputPdf, pdfOptions);
+
+            // Release resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

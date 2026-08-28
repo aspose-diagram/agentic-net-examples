@@ -1,66 +1,50 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main(string[] args)
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Get the Visio file path from command‑line arguments or prompt the user.
-            string filePath;
-            if (args.Length > 0)
+            try
             {
-                filePath = args[0];
-            }
-            else
-            {
-                Console.Write("Enter Visio file path: ");
-                filePath = Console.ReadLine();
-            }
 
-            // Load the diagram.
-            Diagram diagram = new Diagram(filePath);
+                // Path to the Visio file to analyze
+                string filePath = "input.vsdx";
 
-            // Iterate through each page in the diagram.
-            foreach (Page page in diagram.Pages)
-            {
-                Console.WriteLine($"Page: {page.NameU} (ID: {page.ID})");
-                bool foundOrphan = false;
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
 
-                // Iterate through each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted.
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Console.WriteLine($"Page: {page.NameU} (ID: {page.ID})");
 
-                    // Retrieve IDs of shapes connected to this shape.
-                    long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
-
-                    // If there are no connections, the shape is an orphan.
-                    if (connectedIds == null || connectedIds.Length == 0)
+                    // Iterate through each shape on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foundOrphan = true;
-                        Console.WriteLine($"  Orphan Shape - ID: {shape.ID}, NameU: {shape.NameU}");
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve IDs of shapes connected to this shape
+                        long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
+
+                        // If there are no connections, the shape is an orphan
+                        if (connectedIds == null || connectedIds.Length == 0)
+                        {
+                            string shapeName = string.IsNullOrEmpty(shape.NameU) ? "(no name)" : shape.NameU;
+                            Console.WriteLine($"  Orphan Shape - ID: {shape.ID}, NameU: {shapeName}");
+                        }
                     }
                 }
 
-                if (!foundOrphan)
-                {
-                    Console.WriteLine("  No orphan shapes on this page.");
-                }
+                // Dispose the diagram to release resources
+                diagram.Dispose();
+
             }
-
-            // Clean up resources.
-            diagram.Dispose();
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

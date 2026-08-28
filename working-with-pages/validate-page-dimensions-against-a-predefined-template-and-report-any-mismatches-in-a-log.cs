@@ -1,87 +1,80 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Expect at least the diagram file path; optional second argument is the log file path.
-            if (args.Length < 1)
-            {
-                Console.WriteLine("Usage: PageDimensionValidator <diagramPath> [logPath]");
-                return;
-            }
-
-            string diagramPath = args[0];
-            string logPath = args.Length >= 2 ? args[1] : null;
-
-            // Define the expected page dimensions (in inches) for each page name.
-            var template = new Dictionary<string, (double Width, double Height)>(StringComparer.OrdinalIgnoreCase)
-            {
-                // Example entries – adjust as needed for your template.
-                { "Page-1", (8.27, 11.69) }, // A4 portrait
-                { "Page-2", (11.69, 8.27) }  // A4 landscape
-            };
-
-            var logLines = new List<string>();
-
             try
             {
-                // Load the Visio diagram.
-                using (var diagram = new Diagram(diagramPath))
+
+                // Path to the Visio file to be validated
+                string diagramPath = "input.vsdx";
+
+                // Define expected page dimensions (in inches) for each page name
+                // Example: A4 size for "Page-1" and Letter size for "Page-2"
+                var expectedDimensions = new System.Collections.Generic.Dictionary<string, (double Width, double Height)>
                 {
-                    // Iterate through each page in the diagram.
+                    { "Page-1", (8.27, 11.69) },   // A4
+                    { "Page-2", (8.5, 11.0) }      // Letter
+                };
+
+                bool anyMismatch = false;
+
+                // Load the diagram inside a using block to ensure proper disposal
+                using (Diagram diagram = new Diagram(diagramPath))
+                {
+                    // Iterate through all pages in the diagram
                     foreach (Page page in diagram.Pages)
                     {
-                        string pageName = page.Name;
+                        // Retrieve actual page width and height (values are in inches)
                         double actualWidth = page.PageSheet.PageProps.PageWidth.Value;
                         double actualHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                        if (template.TryGetValue(pageName, out var expected))
-                        {
-                            const double tolerance = 0.01; // inches tolerance for comparison
-                            bool widthMatch = Math.Abs(actualWidth - expected.Width) <= tolerance;
-                            bool heightMatch = Math.Abs(actualHeight - expected.Height) <= tolerance;
+                        // Use the page name as the key for expected dimensions
+                        string pageName = page.Name;
 
-                            if (widthMatch && heightMatch)
+                        if (expectedDimensions.TryGetValue(pageName, out var expected))
+                        {
+                            // Compare expected and actual dimensions with a small tolerance
+                            const double tolerance = 0.01; // inches
+                            bool widthMatches = Math.Abs(actualWidth - expected.Width) <= tolerance;
+                            bool heightMatches = Math.Abs(actualHeight - expected.Height) <= tolerance;
+
+                            if (!widthMatches || !heightMatches)
                             {
-                                string msg = $"[OK] Page \"{pageName}\" matches template (Width={actualWidth:F2}, Height={actualHeight:F2}).";
-                                Console.WriteLine(msg);
-                                logLines.Add(msg);
+                                anyMismatch = true;
+                                Console.WriteLine($"[Mismatch] Page '{pageName}': Expected {expected.Width}x{expected.Height} inches, " +
+                                                  $"Actual {actualWidth:F2}x{actualHeight:F2} inches.");
                             }
                             else
                             {
-                                string msg = $"[MISMATCH] Page \"{pageName}\" dimensions differ. Expected (W={expected.Width:F2}, H={expected.Height:F2}), Actual (W={actualWidth:F2}, H={actualHeight:F2}).";
-                                Console.WriteLine(msg);
-                                logLines.Add(msg);
+                                Console.WriteLine($"[OK] Page '{pageName}' dimensions match the template.");
                             }
                         }
                         else
                         {
-                            string msg = $"[WARNING] No template entry for page \"{pageName}\". Actual dimensions (W={actualWidth:F2}, H={actualHeight:F2}).";
-                            Console.WriteLine(msg);
-                            logLines.Add(msg);
+                            // No template defined for this page; log as informational
+                            Console.WriteLine($"[Info] No template defined for page '{pageName}'. " +
+                                              $"Actual size: {actualWidth:F2}x{actualHeight:F2} inches.");
                         }
                     }
                 }
 
-                // Write the collected log to a file if a log path was provided.
-                if (!string.IsNullOrEmpty(logPath))
+                // If any mismatches were found, throw an exception to indicate validation failure
+                if (anyMismatch)
                 {
-                    File.WriteAllLines(logPath, logLines);
-                    Console.WriteLine($"Log written to: {logPath}");
+                    throw new Exception("One or more pages do not match the predefined dimensions. See log for details.");
                 }
+                else
+                {
+                    Console.WriteLine("All pages validated successfully against the template.");
+                }
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                string error = $"Error processing diagram: {ex.Message}";
-                Console.WriteLine(error);
-                if (!string.IsNullOrEmpty(logPath))
-                {
-                    File.WriteAllLines(logPath, new[] { error });
-                }
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
+    }
     }

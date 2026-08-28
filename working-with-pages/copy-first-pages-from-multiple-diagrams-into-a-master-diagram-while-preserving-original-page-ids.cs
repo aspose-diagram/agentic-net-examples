@@ -1,88 +1,69 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Paths of source Visio files whose first pages will be copied
+            var sourceFiles = new List<string>
             {
+                "Diagram1.vsdx",
+                "Diagram2.vsdx",
+                "Diagram3.vsdx"
+            };
 
-                // List of source diagram file paths
-                List<string> sourceFiles = new List<string>
+            // Create an empty master diagram
+            using (var master = new Diagram())
+            {
+                foreach (var filePath in sourceFiles)
                 {
-                    "Diagram1.vsdx",
-                    "Diagram2.vsdx",
-                    "Diagram3.vsdx"
-                };
+                    // Load each source diagram
+                    using (var src = new Diagram(filePath))
+                    {
+                        // Skip if the source diagram has no pages
+                        if (src.Pages.Count == 0) continue;
 
-                // Create an empty master diagram
-                Diagram masterDiagram = new Diagram();
+                        // Get the first page from the source diagram
+                        var srcPage = src.Pages[0];
 
-                // Remove the default empty page that is created with a new Diagram
-                if (masterDiagram.Pages.Count > 0)
-                {
-                    Page defaultPage = masterDiagram.Pages[0];
-                    masterDiagram.Pages.Remove(defaultPage);
+                        // Create a new page for the master diagram
+                        var newPage = new Page();
+
+                        // Preserve original identifiers and basic properties
+                        newPage.ID = srcPage.ID;
+                        newPage.Name = srcPage.Name;
+                        newPage.NameU = srcPage.NameU;
+                        newPage.Background = srcPage.Background;
+                        newPage.AssociatedPage = srcPage.AssociatedPage;
+                        newPage.BackPage = srcPage.BackPage;
+                        newPage.ReviewerID = srcPage.ReviewerID;
+                        newPage.ViewCenterX = srcPage.ViewCenterX;
+                        newPage.ViewCenterY = srcPage.ViewCenterY;
+                        newPage.ViewScale = srcPage.ViewScale;
+
+                        // Copy the complete pagesheet (shapes, styles, etc.)
+                        newPage.PageSheet.Copy(srcPage.PageSheet);
+
+                        // Add the prepared page to the master diagram
+                        master.Pages.Add(newPage);
+                    }
                 }
 
-                // Keep track of page IDs already added to avoid duplicates
-                HashSet<int> usedPageIds = new HashSet<int>();
-
-                foreach (string filePath in sourceFiles)
-                {
-                    // Load source diagram
-                    Diagram srcDiagram = new Diagram(filePath);
-
-                    // Copy masters from source to master diagram
-                    foreach (Master srcMaster in srcDiagram.Masters)
-                    {
-                        // Add master by name; if already exists, AddMaster will ignore duplication
-                        masterDiagram.AddMaster(srcDiagram, srcMaster.Name);
-                    }
-
-                    // Ensure the source diagram has at least one page
-                    if (srcDiagram.Pages.Count == 0)
-                        continue;
-
-                    // Get the first page from the source diagram
-                    Page srcPage = srcDiagram.Pages[0];
-
-                    // Add the page to the master diagram
-                    masterDiagram.Pages.Add(srcPage);
-
-                    // Retrieve the page that was just added (it will be the last in the collection)
-                    Page addedPage = masterDiagram.Pages[masterDiagram.Pages.Count - 1];
-
-                    // Preserve original page ID if it does not conflict
-                    int originalId = srcPage.ID;
-                    if (usedPageIds.Contains(originalId))
-                    {
-                        // If conflict occurs, generate a new unique ID
-                        int newId = 1;
-                        while (usedPageIds.Contains(newId))
-                            newId++;
-                        addedPage.ID = newId;
-                        usedPageIds.Add(newId);
-                    }
-                    else
-                    {
-                        addedPage.ID = originalId;
-                        usedPageIds.Add(originalId);
-                    }
-
-                    // Optionally preserve the original page name
-                    addedPage.Name = srcPage.Name;
-                }
-
-                // Save the merged master diagram
-                masterDiagram.Save("MasterDiagram.vsdx", SaveFileFormat.Vsdx);
-
+                // Save the resulting master diagram
+                master.Save("MasterDiagram.vsdx", SaveFileFormat.Vsdx);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

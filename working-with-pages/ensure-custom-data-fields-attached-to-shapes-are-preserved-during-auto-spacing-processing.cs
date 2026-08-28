@@ -2,58 +2,51 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.AutoLayout;
 
 class PreserveCustomDataDuringAutoSpace
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input and output Visio file paths
-            string inputPath = @"C:\Diagrams\input.vsdx";
-            string outputPath = @"C:\Diagrams\output.vsdx";
-
             // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Assume we work with the first page
+            // Assume we work with the first page; adjust as needed
             Page page = diagram.Pages[0];
 
-            // Store custom data fields (Data1, Data2, Data3) for each shape by its ID
-            var customDataMap = new Dictionary<long, (string Data1, string Data2, string Data3)>();
+            // Store custom data fields (Data1, Data2, Data3) for each shape keyed by shape ID
+            var customData = new Dictionary<long, (string Data1, string Data2, string Data3)>();
             foreach (Shape shape in page.Shapes)
             {
-                // Only store for shapes that have custom data (non‑null)
-                customDataMap[shape.ID] = (shape.Data1, shape.Data2, shape.Data3);
+                customData[shape.ID] = (shape.Data1, shape.Data2, shape.Data3);
             }
 
-            // Prepare auto‑spacing options (example distances)
-            AutoSpaceOptions options = new AutoSpaceOptions
+            // Configure autospace options (example distances in inches)
+            var options = new AutoSpaceOptions
             {
-                DistanceInHorizontal = 0.5, // inches
-                DistanceInVertical = 0.5    // inches
+                DistanceInHorizontal = 0.5, // horizontal spacing
+                DistanceInVertical = 0.5    // vertical spacing
             };
 
             // Perform auto‑spacing on all shapes of the page
             page.AutoSpaceShapes(page.Shapes, options);
 
-            // Re‑apply the previously stored custom data fields
+            // Re‑apply the stored custom data fields after auto‑spacing
             foreach (Shape shape in page.Shapes)
             {
-                if (customDataMap.TryGetValue(shape.ID, out var data))
+                if (customData.TryGetValue(shape.ID, out var data))
                 {
                     shape.Data1 = data.Data1;
                     shape.Data2 = data.Data2;
                     shape.Data3 = data.Data3;
                 }
-
-                // Refresh shape data to ensure position changes are reflected
-                shape.RefreshData();
             }
 
             // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

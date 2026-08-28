@@ -1,60 +1,93 @@
 using System;
 using System.IO;
-using System.Text;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input Visio file, page name (or index), output CSV file
+        if (args.Length < 3)
+        {
+            // Show usage information and exit gracefully instead of throwing
+            Console.Error.WriteLine("Usage: ShapeInfoExtractor <inputVisioPath> <pageNameOrIndex> <outputCsvPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input Visio file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string pageIdentifier = args[1];
+        string outputCsvPath = args[2];
+
         try
         {
-
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Select the page you want to process (0‑based index)
-            int pageIndex = 0;
-            Page page = diagram.Pages[pageIndex];
-
-            // Prepare CSV content
-            StringBuilder csv = new StringBuilder();
-            csv.AppendLine("ShapeName,PinX,PinY");
-
-            // Iterate through all shapes on the page
-            foreach (Shape shape in page.Shapes)
+            // Load the diagram from the specified file
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Shape name (fallback to empty string if null)
-                string name = shape.Name ?? string.Empty;
+                // Retrieve the target page (try by name first)
+                Page page = diagram.Pages.GetPage(pageIdentifier);
+                if (page == null)
+                {
+                    // If not found by name, attempt to parse as a zero‑based index
+                    if (int.TryParse(pageIdentifier, out int pageIndex) &&
+                        pageIndex >= 0 && pageIndex < diagram.Pages.Count)
+                    {
+                        page = diagram.Pages[pageIndex];
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine($"Page '{pageIdentifier}' not found in the diagram.");
+                        return;
+                    }
+                }
 
-                // Position values (fallback to 0 if not available)
-                double pinX = shape.XForm?.PinX?.Value ?? 0;
-                double pinY = shape.XForm?.PinY?.Value ?? 0;
+                // Open CSV writer for the output file (overwrite if exists)
+                using (StreamWriter writer = new StreamWriter(outputCsvPath, false))
+                {
+                    // Write CSV header line
+                    writer.WriteLine("Name,PinX,PinY");
 
-                // Escape commas or quotes in the name
-                string escapedName = EscapeCsv(name);
+                    // Iterate over all shapes on the selected page
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                csv.AppendLine($"{escapedName},{pinX},{pinY}");
+                        // Retrieve shape name (fallback to empty string if null)
+                        string shapeName = shape.Name ?? string.Empty;
+                        // Retrieve shape position coordinates
+                        double pinX = shape.XForm.PinX.Value;
+                        double pinY = shape.XForm.PinY.Value;
+
+                        // Write a CSV line with escaped name and coordinates
+                        writer.WriteLine($"{EscapeCsv(shapeName)},{pinX},{pinY}");
+                    }
+                }
             }
-
-            // Write CSV to file (replace with desired output path)
-            File.WriteAllText("shapes.csv", csv.ToString());
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 
-    // Helper to escape CSV fields containing special characters
-    static string EscapeCsv(string field)
+    // Helper to escape commas, quotes, and line breaks in CSV fields
+    private static string EscapeCsv(string field)
     {
-        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
-        {
+        if (field.Contains("\""))
             field = field.Replace("\"", "\"\"");
-            return $"\"{field}\"";
-        }
+
+        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r"))
+            field = $"\"{field}\"";
+
         return field;
     }
 }

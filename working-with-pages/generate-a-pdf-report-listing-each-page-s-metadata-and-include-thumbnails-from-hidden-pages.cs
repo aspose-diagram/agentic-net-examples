@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,81 +8,107 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        const string visioPath = "input.vsdx";
-        // Guard: ensure the Visio file exists
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: DiagramReport <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string visioPath = args[0];
+        // Guard: ensure the Visio file exists.
         if (!File.Exists(visioPath))
         {
             Console.Error.WriteLine($"File not found: {visioPath}");
             return;
         }
 
-        // Path for the generated PDF report
-        const string pdfReportPath = "Report.pdf";
+        string pdfPath = args[1];
+        // Guard: ensure the output directory exists (create if necessary).
+        string pdfDir = Path.GetDirectoryName(pdfPath);
+        if (!string.IsNullOrEmpty(pdfDir) && !Directory.Exists(pdfDir))
+        {
+            try { Directory.CreateDirectory(pdfDir); }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+                return;
+            }
+        }
 
         try
         {
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(visioPath))
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(visioPath);
+
+            // Create a new PDF document (fully qualified Aspose.Pdf namespace to avoid ambiguity).
+            Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document();
+
+            // Iterate over all pages in the diagram.
+            int pageIndex = 0; // zero‑based index required by ImageSaveOptions.
+            foreach (Page page in diagram.Pages)
             {
-                // Create an Aspose.Pdf document (fully qualified to avoid namespace conflict)
-                var pdfDoc = new Aspose.Pdf.Document();
+                // Add a new page to the PDF for this Visio page.
+                Aspose.Pdf.Page pdfPage = pdfDoc.Pages.Add();
 
-                // Iterate through all pages in the diagram
-                int pageIndex = 0;
-                foreach (Aspose.Diagram.Page page in diagram.Pages)
+                // Determine if the Visio page is hidden (UIVisibility.Value is UIVisibilityValue).
+                bool isHidden = page.PageSheet.PageProps.UIVisibility.Value == UIVisibilityValue.Hidden;
+
+                // Build a metadata string for the current Visio page.
+                string meta = $"Page Index: {pageIndex}\n" +
+                              $"Page ID: {page.ID}\n" +
+                              $"Name: {page.Name}\n" +
+                              $"Universal Name: {page.NameU}\n" +
+                              $"Width (in): {page.PageSheet.PageProps.PageWidth.Value}\n" +
+                              $"Height (in): {page.PageSheet.PageProps.PageHeight.Value}\n" +
+                              $"Hidden: {isHidden}";
+
+                // Add the metadata as a text fragment.
+                Aspose.Pdf.Text.TextFragment tf = new Aspose.Pdf.Text.TextFragment(meta);
+                tf.TextState.FontSize = 12; // readable font size.
+                tf.TextState.Font = Aspose.Pdf.Text.FontRepository.FindFont("Arial");
+                tf.Margin = new Aspose.Pdf.MarginInfo { Top = 20, Left = 20 };
+                pdfPage.Paragraphs.Add(tf);
+
+                // If the page is hidden, generate a thumbnail image.
+                if (isHidden)
                 {
-                    // ----- Gather page metadata -----
-                    string metadata = $"Page Index: {pageIndex}{Environment.NewLine}" +
-                                      $"Page ID: {page.ID}{Environment.NewLine}" +
-                                      $"Name: {page.Name}{Environment.NewLine}" +
-                                      $"Universal Name: {page.NameU}{Environment.NewLine}" +
-                                      $"Is Background: {page.Background == Aspose.Diagram.BOOL.True}{Environment.NewLine}" +
-                                      $"Width (in): {page.PageSheet.PageProps.PageWidth.Value}{Environment.NewLine}" +
-                                      $"Height (in): {page.PageSheet.PageProps.PageHeight.Value}{Environment.NewLine}";
+                    // Configure image export options for a single page.
+                    ImageSaveOptions imgOpts = new ImageSaveOptions(SaveFileFormat.Png);
+                    imgOpts.PageIndex = pageIndex;          // render the current page.
+                    imgOpts.ExportHiddenPage = true;        // allow hidden page rendering.
+                    imgOpts.Resolution = 150;               // reasonable DPI for a thumbnail.
 
-                    // ----- Add a new PDF page for this diagram page -----
-                    Aspose.Pdf.Page pdfPage = pdfDoc.Pages.Add();
-
-                    // Add metadata text
-                    var textFragment = new Aspose.Pdf.Text.TextFragment(metadata);
-                    pdfPage.Paragraphs.Add(textFragment);
-
-                    // ----- Export the current diagram page as a PNG thumbnail -----
-                    var imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    // Export the page to a memory stream.
+                    using (MemoryStream imgStream = new MemoryStream())
                     {
-                        ExportHiddenPage = true,   // Include hidden pages in the export
-                        PageIndex = pageIndex,     // Export the current page only
-                        PageCount = 1              // Ensure only one page is rendered
-                    };
+                        diagram.Save(imgStream, imgOpts);
+                        imgStream.Position = 0; // reset stream for reading.
 
-                    using (var imgStream = new MemoryStream())
-                    {
-                        // Save the single page as an image to the memory stream
-                        diagram.Save(imgStream, imgOptions);
-                        imgStream.Position = 0; // Reset stream position for reading
+                        // Create an Aspose.Pdf image from the stream.
+                        Aspose.Pdf.Image pdfImg = new Aspose.Pdf.Image();
+                        pdfImg.ImageStream = imgStream;
 
-                        // Create an Aspose.Pdf image from the stream (use parameterless ctor then set stream)
-                        var pdfImage = new Aspose.Pdf.Image();
-                        pdfImage.ImageStream = imgStream; // Assign the image data
-                        pdfImage.FixWidth = 200;          // Optionally set image width (points)
+                        // Scale the image to fit within the PDF page width (optional).
+                        pdfImg.FixWidth = pdfPage.PageInfo.Width - 40; // leave margins.
 
-                        // Add the image below the metadata text
-                        pdfPage.Paragraphs.Add(pdfImage);
+                        // Add a small vertical gap before the image.
+                        pdfPage.Paragraphs.Add(new Aspose.Pdf.Text.TextFragment("\nThumbnail:"));
+                        // Insert the image into the PDF page.
+                        pdfPage.Paragraphs.Add(pdfImg);
                     }
-
-                    pageIndex++;
                 }
 
-                // Save the assembled PDF report
-                pdfDoc.Save(pdfReportPath);
+                // Increment the page index for the next iteration.
+                pageIndex++;
             }
 
-            Console.WriteLine("PDF report generated successfully.");
+            // Save the assembled PDF report.
+            pdfDoc.Save(pdfPath);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console
+            // Write any unexpected errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

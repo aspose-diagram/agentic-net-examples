@@ -1,29 +1,47 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Master name to filter shapes
+        string targetMasterName = "Rectangle";
+
+        // Output Visio file path
+        string outputPath = "output.vsdx";
+
+        try
+        {
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Store original positions of all shapes (to restore non-target shapes later)
+                Dictionary<long, (double PinX, double PinY)> originalPositions = new Dictionary<long, (double, double)>();
+                // Keep IDs of shapes that match the target master name
+                HashSet<long> targetShapeIds = new HashSet<long>();
 
-                // Load the Visio diagram from a file
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the master name to target for auto‑spacing
-                const string targetMasterName = "Process";
-
-                // Choose the page to work on (first page in this example)
-                Page page = diagram.Pages[0];
-
-                // Collect shape IDs that use the specified master
-                var targetShapeIds = new System.Collections.Generic.List<long>();
+                // First pass: collect target shapes and record positions of all shapes
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Record current position for every shape
+                    originalPositions[shape.ID] = (shape.XForm.PinX.Value, shape.XForm.PinY.Value);
+
                     // Ensure the shape has a master before accessing its name
                     if (shape.Master != null && shape.Master.Name == targetMasterName)
                     {
@@ -31,58 +49,35 @@ class Program
                     }
                 }
 
-                // If no matching shapes are found, exit gracefully
-                if (targetShapeIds.Count == 0)
+                // Configure auto‑spacing options (horizontal and vertical gaps)
+                AutoSpaceOptions options = new AutoSpaceOptions
                 {
-                    Console.WriteLine($"No shapes with master \"{targetMasterName}\" were found.");
-                    return;
-                }
+                    DistanceInHorizontal = 1.0, // 1 inch gap horizontally
+                    DistanceInVertical = 1.0    // 1 inch gap vertically
+                };
 
-                // Define spacing parameters (in inches)
-                double horizontalSpacing = 1.0; // space between shapes horizontally
-                double verticalSpacing = 1.0;   // space between shapes vertically
+                // Apply auto‑spacing to all shapes on the page
+                page.AutoSpaceShapes(page.Shapes, options);
 
-                // Determine starting position (use the position of the first matching shape)
-                Shape firstShape = page.Shapes.GetShape(targetShapeIds[0]);
-                double startX = firstShape.XForm.PinX.Value;
-                double startY = firstShape.XForm.PinY.Value;
-
-                // Arrange shapes in a simple grid layout
-                int columns = (int)Math.Ceiling(Math.Sqrt(targetShapeIds.Count));
-                int currentColumn = 0;
-                int currentRow = 0;
-
-                foreach (long shapeId in targetShapeIds)
+                // Second pass: restore positions of shapes that are NOT in the target set
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes.GetShape(shapeId);
-
-                    // Calculate new position
-                    double newX = startX + (currentColumn * horizontalSpacing);
-                    double newY = startY + (currentRow * verticalSpacing);
-
-                    // Apply new position
-                    shape.XForm.PinX.Value = newX;
-                    shape.XForm.PinY.Value = newY;
-
-                    // Move to next column; wrap to next row when needed
-                    currentColumn++;
-                    if (currentColumn >= columns)
+                    if (!targetShapeIds.Contains(shape.ID) && originalPositions.TryGetValue(shape.ID, out var pos))
                     {
-                        currentColumn = 0;
-                        currentRow++;
+                        shape.XForm.PinX.Value = pos.PinX;
+                        shape.XForm.PinY.Value = pos.PinY;
                     }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output_spaced.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Auto‑spacing applied to shapes with master \"{targetMasterName}\" and saved to \"{outputPath}\".");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

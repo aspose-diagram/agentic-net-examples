@@ -4,62 +4,88 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Verify that input and output folder arguments are provided
+        if (args.Length < 2)
         {
-            // Determine the folder to process: use first argument if provided, otherwise current directory
-            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+            Console.Error.WriteLine("Usage: BatchVdxToPdf <inputFolder> <outputFolder>");
+            return;
+        }
 
-            if (!Directory.Exists(folderPath))
+        // Assign input and output folder paths
+        string inputFolder = args[0];
+        string outputFolder = args[1];
+
+        // Guard: ensure input folder exists
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder not found: {inputFolder}");
+            return;
+        }
+
+        // Guard: ensure output folder exists (create if missing)
+        if (!Directory.Exists(outputFolder))
+        {
+            try
             {
-                Console.WriteLine($"Folder does not exist: {folderPath}");
-                return;
+                Directory.CreateDirectory(outputFolder);
             }
-
-            // Get all .vdx files in the folder (non‑recursive)
-            string[] vdxFiles = Directory.GetFiles(folderPath, "*.vdx", SearchOption.TopDirectoryOnly);
-
-            if (vdxFiles.Length == 0)
+            catch (Exception ex)
             {
-                Console.WriteLine("No VDX files found in the specified folder.");
+                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
                 return;
-            }
-
-            foreach (string vdxFile in vdxFiles)
-            {
-                try
-                {
-                    // Load the Visio diagram using the VDX format
-                    using (Diagram diagram = new Diagram(vdxFile, LoadFileFormat.Vdx))
-                    {
-                        // Set each page's print orientation to Portrait
-                        foreach (Page page in diagram.Pages)
-                        {
-                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-                        }
-
-                        // Prepare PDF save options
-                        PdfSaveOptions pdfOptions = new PdfSaveOptions
-                        {
-                            // Ensure the format is explicitly set (required when Aspose.Pdf is also referenced)
-                            SaveFormat = SaveFileFormat.Pdf,
-                            // Optional: specify a default font to avoid missing‑font issues
-                            DefaultFont = "Arial"
-                        };
-
-                        // Determine output PDF file path (same name, .pdf extension)
-                        string pdfFile = Path.ChangeExtension(vdxFile, ".pdf");
-
-                        // Save the diagram as PDF using the options
-                        diagram.Save(pdfFile, pdfOptions);
-
-                        Console.WriteLine($"Converted '{Path.GetFileName(vdxFile)}' to PDF successfully.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{vdxFile}': {ex.Message}");
-                }
             }
         }
+
+        // Retrieve all VDX files in the input folder
+        string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx");
+
+        // Iterate over each VDX file
+        foreach (string filePath in vdxFiles)
+        {
+            // Guard: ensure the VDX file still exists
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
+            }
+
+            Console.WriteLine($"Processing file: {filePath}");
+
+            try
+            {
+                // Load the Visio diagram from the VDX file
+                using (Diagram diagram = new Diagram(filePath))
+                {
+                    // Iterate over each page in the diagram
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Set the page orientation to Portrait
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                    }
+
+                    // Prepare PDF save options (optional: set default font)
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.DefaultFont = "Arial";
+
+                    // Build the output PDF file path (same name, .pdf extension)
+                    string outputPdfPath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(filePath) + ".pdf");
+
+                    // Save the diagram as PDF using the specified options
+                    diagram.Save(outputPdfPath, pdfOptions);
+                }
+
+                Console.WriteLine($"Successfully saved PDF: {Path.GetFileName(outputFolder)}");
+            }
+            catch (Exception ex)
+            {
+                // Log any errors that occur during processing of the current file
+                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
+            }
+        }
+
+        Console.WriteLine("Batch processing completed.");
     }
+}

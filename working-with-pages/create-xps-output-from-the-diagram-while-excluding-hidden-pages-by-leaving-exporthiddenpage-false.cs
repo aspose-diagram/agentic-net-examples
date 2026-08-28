@@ -1,39 +1,39 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Desired output XPS file path
+            string outputPath = "output.xps";
 
-                // Path for the XPS output
-                string outputPath = "output.xps";
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Load the diagram from file
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Configure XPS save options to exclude hidden pages
-                    XPSSaveOptions xpsOptions = new XPSSaveOptions
-                    {
-                        ExportHiddenPage = false
-                    };
+            // Configure XPS save options to exclude hidden pages
+            XPSSaveOptions options = new XPSSaveOptions();
+            options.ExportHiddenPage = false;
 
-                    // Save the diagram as XPS using the configured options
-                    diagram.Save(outputPath, xpsOptions);
-                }
+            // Save the diagram as XPS
+            diagram.Save(outputPath, options);
 
-                Console.WriteLine("Diagram exported to XPS successfully.");
+            // Clean up resources
+            diagram.Dispose();
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine("Diagram successfully saved to XPS without hidden pages.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,59 +9,49 @@ class Program
             try
             {
 
-                // Path to the source Visio file
+                // Path to the source Visio file (replace with actual path)
                 string sourcePath = "input.vsdx";
 
                 // Load the source diagram
                 Diagram sourceDiagram = new Diagram(sourcePath);
 
-                int pageCount = sourceDiagram.Pages.Count;
-
-                for (int i = 0; i < pageCount; i++)
+                // Iterate through each page in the source diagram
+                for (int i = 0; i < sourceDiagram.Pages.Count; i++)
                 {
-                    // Create a new empty diagram for the current page
-                    Diagram pageDiagram = new Diagram();
-
-                    // Copy all masters from the source diagram
-                    foreach (Master master in sourceDiagram.Masters)
-                    {
-                        // Add master by name from the source diagram
-                        pageDiagram.AddMaster(sourceDiagram, master.Name);
-                    }
-
-                    // Retrieve the source page
+                    // Get the current page from the source diagram
                     Page srcPage = sourceDiagram.Pages[i];
 
-                    // Create a new page and copy its PageSheet (size, properties, etc.)
-                    Page newPage = new Page();
-                    newPage.Name = srcPage.Name;
-                    newPage.NameU = srcPage.NameU;
-                    newPage.PageSheet.Copy(srcPage.PageSheet);
+                    // Create a new empty diagram for the single page export
+                    Diagram singlePageDiagram = new Diagram();
 
-                    // Add the new page to the diagram
-                    pageDiagram.Pages.Add(newPage);
-
-                    // Copy shapes that have an associated master
-                    foreach (Shape shape in srcPage.Shapes)
+                    // Copy all masters from the source diagram to the new diagram
+                    foreach (Master master in sourceDiagram.Masters)
                     {
-                        if (shape.Master != null)
-                        {
-                            // Add the shape to the new diagram using the same master
-                            pageDiagram.AddShape(shape, shape.Master.Name, pageDiagram.Pages.Count - 1);
-                        }
+                        singlePageDiagram.Masters.Add(master);
                     }
 
-                    // Build output file name using the page index
-                    string outputFileName = $"Page_{i}{Path.GetExtension(sourcePath)}";
+                    // Remove the default empty page that is created by the default constructor
+                    if (singlePageDiagram.Pages.Count > 0)
+                    {
+                        Page defaultPage = singlePageDiagram.Pages[0];
+                        singlePageDiagram.Pages.Remove(defaultPage);
+                    }
 
-                    // Save the single‑page diagram as VSDX
-                    pageDiagram.Save(outputFileName, SaveFileFormat.Vsdx);
+                    // Add the source page to the new diagram
+                    // The page is added as a reference; this is sufficient for export purposes
+                    singlePageDiagram.Pages.Add(srcPage);
 
-                    // Clean up the per‑page diagram
-                    pageDiagram.Dispose();
+                    // Build the output file name using the page index
+                    string outputPath = $"Page_{i}.vsdx";
+
+                    // Save the new diagram containing only the current page
+                    singlePageDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                    // Dispose the temporary diagram to free resources
+                    singlePageDiagram.Dispose();
                 }
 
-                // Clean up the source diagram
+                // Dispose the source diagram
                 sourceDiagram.Dispose();
 
                 Console.WriteLine("Export completed.");

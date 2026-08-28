@@ -1,35 +1,43 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Create a new empty diagram
-            using (Diagram diagram = new Diagram())
+            try
             {
-                // Access the first (zero‑based) page
+
+                // Create a new empty diagram.
+                Diagram diagram = new Diagram();
+
+                // Ensure there is at least one page (page index 0).
+                if (diagram.Pages.Count == 0)
+                {
+                    diagram.Pages.Add(new Page());
+                }
+
+                // Access the first page (page zero).
                 Page page = diagram.Pages[0];
 
-                // Add a dynamic connector shape at (0,0) using the master name "Dynamic connector"
-                long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector");
+                // Add a dynamic connector shape using the built‑in master name.
+                // PinX and PinY are arbitrary coordinates (in inches).
+                long connectorId = page.AddShape(2.0, 2.0, "Dynamic connector");
 
-                // Retrieve the shape and assign the desired name
+                // Retrieve the shape object by its ID.
                 Shape connector = page.Shapes.GetShape(connectorId);
+
+                // Assign a meaningful name to the connector.
                 connector.Name = "LinkConnector";
+                connector.NameU = "LinkConnector";
 
-                // Save the diagram (optional, demonstrates that the shape was added)
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // (Optional) Dispose the diagram when done to free resources.
+                diagram.Dispose();
+
             }
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

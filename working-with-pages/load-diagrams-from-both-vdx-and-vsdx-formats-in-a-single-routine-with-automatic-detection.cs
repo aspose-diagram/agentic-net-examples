@@ -4,44 +4,38 @@ using Aspose.Diagram;
 
 class Program
 {
-    // Loads a Visio diagram, automatically detecting VDX or VSDX format.
-    static Diagram LoadDiagram(string filePath)
-    {
-        // Determine file extension (case‑insensitive).
-        string ext = Path.GetExtension(filePath).ToLowerInvariant();
-
-        // Choose the appropriate LoadFileFormat enum value.
-        LoadFileFormat format = ext switch
-        {
-            ".vdx"  => LoadFileFormat.Vdx,
-            ".vsdx" => LoadFileFormat.Vsdx,
-            _ => throw new Exception($"Unsupported file extension '{ext}'. Only .vdx and .vsdx are supported.")
-        };
-
-        // Use the constructor that accepts a format for explicit loading.
-        return new Diagram(filePath, format);
-    }
-
     static void Main(string[] args)
     {
+        // Expect one or more file paths as command‑line arguments
         if (args.Length == 0)
         {
-            Console.WriteLine("Please provide one or more Visio file paths as arguments.");
+            Console.WriteLine("Please provide at least one diagram file path (VDX or VSDX).");
             return;
         }
 
-        foreach (string filePath in args)
+        foreach (var filePath in args)
         {
             try
             {
-                // Load the diagram inside a using block to ensure proper disposal.
-                using Diagram diagram = LoadDiagram(filePath);
-                Console.WriteLine($"Successfully loaded '{filePath}'. Pages count: {diagram.Pages.Count}");
+                // Load the diagram; the constructor detects VDX, VSDX, etc. automatically
+                Diagram diagram = LoadDiagram(filePath);
+                Console.WriteLine($"Successfully loaded '{filePath}'. Page count: {diagram.Pages.Count}");
+
+                // Example: save the loaded diagram as PDF to verify the load succeeded
+                string pdfPath = Path.ChangeExtension(filePath, ".pdf");
+                diagram.Save(pdfPath, SaveFileFormat.Pdf);
+                Console.WriteLine($"Saved PDF to '{pdfPath}'.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to load '{filePath}': {ex.Message}");
+                Console.WriteLine($"Error processing '{filePath}': {ex.Message}");
             }
         }
+    }
+
+    // Loads a Visio diagram from the given path; format detection is handled internally
+    static Diagram LoadDiagram(string path)
+    {
+        return new Diagram(path);
     }
 }

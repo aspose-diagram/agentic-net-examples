@@ -1,50 +1,61 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths for input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram from file
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Retrieve original page dimensions (in inches)
-                    double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    // List to hold report lines
+                    List<string> reportLines = new List<string>();
 
-                    // Define new dimensions (e.g., increase each side by 1 inch)
-                    double newWidth = originalWidth + 1.0;
-                    double newHeight = originalHeight + 1.0;
+                    // Iterate through each page
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Capture original dimensions (in inches)
+                        double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
+                        double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Apply the new dimensions to the page
-                    page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                    page.PageSheet.PageProps.PageHeight.Value = newHeight;
+                        // Define new dimensions (example: increase each side by 1 inch)
+                        double newWidth = originalWidth + 1.0;
+                        double newHeight = originalHeight + 1.0;
 
-                    // Output a report line for this page
-                    Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
-                    Console.WriteLine($"  Original Size: {originalWidth}in x {originalHeight}in");
-                    Console.WriteLine($"  New Size:      {newWidth}in x {newHeight}in");
+                        // Apply new dimensions
+                        page.PageSheet.PageProps.PageWidth.Value = newWidth;
+                        page.PageSheet.PageProps.PageHeight.Value = newHeight;
+
+                        // Record the change in the report
+                        string line = $"Page ID {page.ID} (Name: {page.Name}) - Original: {originalWidth:F2}\" x {originalHeight:F2}\" , New: {newWidth:F2}\" x {newHeight:F2}\"";
+                        reportLines.Add(line);
+                    }
+
+                    // Output the report to console
+                    Console.WriteLine("=== Page Size Modification Report ===");
+                    foreach (string line in reportLines)
+                    {
+                        Console.WriteLine(line);
+                    }
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Modified diagram saved to: {outputPath}");
                 }
 
-                // Save the modified diagram to a new file
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

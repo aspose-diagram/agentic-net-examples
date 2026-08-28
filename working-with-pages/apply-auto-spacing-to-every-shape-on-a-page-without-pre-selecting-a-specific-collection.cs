@@ -2,7 +2,7 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-using Aspose.Diagram.AutoLayout; // Namespace for AutoSpaceOptions
+using Aspose.Diagram.AutoLayout; // Namespace for AutoSpaceOptions (if needed)
 
 class AutoSpaceExample
 {
@@ -14,20 +14,20 @@ class AutoSpaceExample
             // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Configure auto‑spacing options (distances are in inches)
-            AutoSpaceOptions options = new AutoSpaceOptions
-            {
-                DistanceInHorizontal = 0.5, // horizontal spacing
-                DistanceInVertical = 0.5    // vertical spacing
-            };
-
-            // Apply auto‑spacing to every page in the document
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Auto‑space all shapes on the current page
+                // Create autospace options – set desired horizontal and vertical distances (in inches)
+                AutoSpaceOptions options = new AutoSpaceOptions
+                {
+                    DistanceInHorizontal = 0.5, // 0.5 inch horizontal spacing
+                    DistanceInVertical = 0.5    // 0.5 inch vertical spacing
+                };
+
+                // Apply autospace to all shapes on the current page
                 page.AutoSpaceShapes(page.Shapes, options);
 
-                // Optional: re‑center the drawing after spacing
+                // Optional: center the drawing after spacing
                 page.CenterDrawing();
             }
 

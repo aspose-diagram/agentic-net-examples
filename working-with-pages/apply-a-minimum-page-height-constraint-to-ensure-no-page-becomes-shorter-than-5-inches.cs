@@ -1,39 +1,43 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input and output file paths (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Minimum page height in inches
+                const double minHeight = 5.0;
 
-                // Input and output file paths can be passed as command‑line arguments.
-                // If not provided, default placeholders are used.
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Ensure every page has a height of at least 5 inches.
+                // Iterate through all pages and enforce the minimum height
                 foreach (Page page in diagram.Pages)
                 {
                     double currentHeight = page.PageSheet.PageProps.PageHeight.Value;
-                    if (currentHeight < 5.0)
+                    if (currentHeight < minHeight)
                     {
-                        page.PageSheet.PageProps.PageHeight.Value = 5.0;
+                        page.PageSheet.PageProps.PageHeight.Value = minHeight;
                     }
                 }
 
-                // Save the modified diagram back to Visio format.
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

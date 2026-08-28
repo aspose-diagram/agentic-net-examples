@@ -1,38 +1,43 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Printing;
+using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+
+        // Verify that the source file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Path where the modified Visio file will be saved
+        string outputPath = "output.vsdx";
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Input and output file paths (replace with actual paths as needed)
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Retrieve the first page (index 0) – assume the diagram has at least one page
+            Page page = diagram.Pages[0];
 
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Set each page to use printer defaults for orientation
-                foreach (Page page in diagram.Pages)
-                {
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.SameAsPrinter;
-                }
+            // Set the page's print orientation to follow the printer's default settings
+            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.SameAsPrinter;
 
-                // Save the updated diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
-
-            Console.WriteLine("Print orientation set to SameAsPrinter and diagram saved.");
-
+            // Save the updated diagram back to a VSDX file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

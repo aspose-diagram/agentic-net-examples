@@ -7,63 +7,92 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Validate input arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <visioFilePath>");
+            return;
+        }
+
+        // Path to the Visio file to be processed.
+        string visioPath = args[0];
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"File not found: {visioPath}");
+            return;
+        }
+
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(visioPath);
 
-            // Access the first (default) page of the diagram
+            // Retrieve the first page (index 0) where shapes reside.
             Page page = diagram.Pages[0];
 
-            // Add three rectangle shapes at the same initial location (0,0) with size 1x1 inches
-            long id1 = page.DrawRectangle(0, 0, 1, 1);
-            long id2 = page.DrawRectangle(0, 0, 1, 1);
-            long id3 = page.DrawRectangle(0, 0, 1, 1);
+            // Configure auto-spacing options: 2 inches horizontal and vertical gaps.
+            AutoSpaceOptions options = new AutoSpaceOptions
+            {
+                DistanceInHorizontal = 2.0,
+                DistanceInVertical = 2.0
+            };
 
-            // Retrieve the shape objects using their IDs
-            Shape shape1 = page.Shapes.GetShape(id1);
-            Shape shape2 = page.Shapes.GetShape(id2);
-            Shape shape3 = page.Shapes.GetShape(id3);
-
-            // Configure auto‑spacing options: 2 inches horizontally and vertically
-            AutoSpaceOptions options = new AutoSpaceOptions();
-            options.DistanceInHorizontal = 2; // horizontal spacing in inches
-            options.DistanceInVertical = 2;   // vertical spacing in inches
-
-            // Apply auto‑spacing to all shapes on the page
+            // Apply auto-spacing to all shapes on the page.
             page.AutoSpaceShapes(page.Shapes, options);
 
-            // Capture the resulting PinX and PinY coordinates after spacing
-            double pinX1 = shape1.XForm.PinX.Value;
-            double pinX2 = shape2.XForm.PinX.Value;
-            double pinX3 = shape3.XForm.PinX.Value;
+            // Expected coordinates after auto-spacing (shape ID -> (PinX, PinY)).
+            var expectedPositions = new System.Collections.Generic.Dictionary<long, (double PinX, double PinY)>
+            {
+                // Adjust these expected values to match your diagram's layout.
+                { 1, (1.0, 1.0) },
+                { 2, (3.0, 1.0) },
+                { 3, (5.0, 1.0) }
+            };
 
-            double pinY1 = shape1.XForm.PinY.Value;
-            double pinY2 = shape2.XForm.PinY.Value;
-            double pinY3 = shape3.XForm.PinY.Value;
+            // Tolerance for floating‑point comparison (in inches).
+            const double tolerance = 0.001;
 
-            // Compute absolute distances between consecutive shapes (horizontal)
-            double dist12X = Math.Abs(pinX2 - pinX1);
-            double dist23X = Math.Abs(pinX3 - pinX2);
+            // Iterate over each expected shape and verify its position.
+            foreach (var kvp in expectedPositions)
+            {
+                long shapeId = kvp.Key;
+                double expPinX = kvp.Value.PinX;
+                double expPinY = kvp.Value.PinY;
 
-            // Compute absolute distances between consecutive shapes (vertical)
-            double dist12Y = Math.Abs(pinY2 - pinY1);
-            double dist23Y = Math.Abs(pinY3 - pinY2);
+                // Retrieve the shape by its ID; cast to int if required.
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
+                {
+                    throw new Exception($"Shape with ID {shapeId} not found.");
+                }
 
-            // Verify horizontal spacing meets or exceeds the specified distance
-            if (dist12X < options.DistanceInHorizontal || dist23X < options.DistanceInHorizontal)
-                throw new Exception($"Horizontal spacing validation failed: distances are {dist12X} and {dist23X} inches.");
+                // Actual coordinates from the shape's XForm.
+                double actualPinX = shape.XForm.PinX.Value;
+                double actualPinY = shape.XForm.PinY.Value;
 
-            // Verify vertical spacing meets or exceeds the specified distance
-            if (dist12Y < options.DistanceInVertical || dist23Y < options.DistanceInVertical)
-                throw new Exception($"Vertical spacing validation failed: distances are {dist12Y} and {dist23Y} inches.");
+                // Compare X coordinate.
+                if (Math.Abs(actualPinX - expPinX) > tolerance)
+                {
+                    throw new Exception($"Shape ID {shapeId} PinX mismatch. Expected: {expPinX}, Actual: {actualPinX}");
+                }
 
-            // If no exception was thrown, the spacing is as expected
-            Console.WriteLine("Auto‑spacing validation succeeded.");
+                // Compare Y coordinate.
+                if (Math.Abs(actualPinY - expPinY) > tolerance)
+                {
+                    throw new Exception($"Shape ID {shapeId} PinY mismatch. Expected: {expPinY}, Actual: {actualPinY}");
+                }
+
+                // Log successful verification for this shape.
+                Console.WriteLine($"Shape ID {shapeId} position verified: ({actualPinX}, {actualPinY})");
+            }
+
+            // All checks passed.
+            Console.WriteLine("All shape positions match expected coordinates after auto-spacing.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any unexpected errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

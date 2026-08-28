@@ -9,13 +9,17 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file.
-            // The Diagram(string) constructor loads the diagram automatically.
-            Diagram diagram = new Diagram("sample.vsdx");
+            // Path to the Visio file to be loaded
+            string filePath = "sample.vsdx";
 
-            // The 'diagram' variable now holds the loaded Diagram object
-            // and can be used for further processing.
-            Console.WriteLine("Diagram loaded successfully. Pages count: " + diagram.Pages.Count);
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(filePath);
+
+            // The 'diagram' object is now ready for further processing
+            // Example: access the active page
+            Page activePage = diagram.ActivePage;
+
+            // (Additional processing can be added here)
 
         }
         catch (System.IO.FileNotFoundException ex)

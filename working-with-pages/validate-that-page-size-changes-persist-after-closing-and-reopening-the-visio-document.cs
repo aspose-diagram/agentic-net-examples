@@ -1,62 +1,90 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Paths for the original and modified Visio files
-        string originalPath = "original.vsdx";
-        string modifiedPath = "modified.vsdx";
-
-        // Create a new diagram and add a page
-        using (Diagram diagram = new Diagram())
+        // Input Visio file path (required argument)
+        string inputPath = args.Length > 0 ? args[0] : "";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            // Add a blank page
-            diagram.Pages.Add(new Page());
-
-            // Access the first page
-            Page page = diagram.Pages[0];
-
-            // Set custom page size (e.g., A5 size)
-            double newWidth = 5.83;   // inches
-            double newHeight = 8.27;  // inches
-            page.PageSheet.PageProps.PageWidth.Value = newWidth;
-            page.PageSheet.PageProps.PageHeight.Value = newHeight;
-
-            // Save the diagram with the modified page size
-            diagram.Save(modifiedPath, SaveFileFormat.Vsdx);
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
         }
 
-        // Reload the saved diagram to verify persistence
-        using (Diagram loadedDiagram = new Diagram(modifiedPath))
+        // Temporary file to store the modified diagram
+        string tempPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "temp_modified.vsdx");
+
+        // Desired page dimensions (A4 size in inches)
+        double targetWidth = 8.27;
+        double targetHeight = 11.69;
+
+        try
         {
-            // Retrieve the first page
-            Page loadedPage = loadedDiagram.Pages[0];
+            // Load the original diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Read the page dimensions
-            double loadedWidth = loadedPage.PageSheet.PageProps.PageWidth.Value;
-            double loadedHeight = loadedPage.PageSheet.PageProps.PageHeight.Value;
+            // Access the first page (index 0)
+            Page page = diagram.Pages[0];
 
-            // Expected dimensions (same as set earlier)
-            double expectedWidth = 5.83;
-            double expectedHeight = 8.27;
+            // Set new page width and height using the correct cell paths
+            page.PageSheet.PageProps.PageWidth.Value = targetWidth;
+            page.PageSheet.PageProps.PageHeight.Value = targetHeight;
+
+            // Save the modified diagram to a temporary file in VSDX format
+            diagram.Save(tempPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occurred during modification/saving
+            Console.Error.WriteLine($"Error during modification: {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // Re-open the saved diagram to verify persistence
+            Diagram reopenedDiagram = new Diagram(tempPath);
+            Page reopenedPage = reopenedDiagram.Pages[0];
+
+            // Retrieve the persisted dimensions
+            double persistedWidth = reopenedPage.PageSheet.PageProps.PageWidth.Value;
+            double persistedHeight = reopenedPage.PageSheet.PageProps.PageHeight.Value;
+
+            // Define a tolerance for floating‑point comparison
+            const double tolerance = 0.001;
 
             // Validate width
-            if (Math.Abs(loadedWidth - expectedWidth) > 0.001)
-            {
-                throw new Exception($"Page width mismatch. Expected: {expectedWidth}, Actual: {loadedWidth}");
-            }
-
+            bool widthMatches = Math.Abs(persistedWidth - targetWidth) <= tolerance;
             // Validate height
-            if (Math.Abs(loadedHeight - expectedHeight) > 0.001)
-            {
-                throw new Exception($"Page height mismatch. Expected: {expectedHeight}, Actual: {loadedHeight}");
-            }
+            bool heightMatches = Math.Abs(persistedHeight - targetHeight) <= tolerance;
 
-            Console.WriteLine("Page size changes persisted successfully after reload.");
+            if (widthMatches && heightMatches)
+            {
+                Console.WriteLine("Page size change persisted successfully.");
+                Console.WriteLine($"Width: {persistedWidth} inches, Height: {persistedHeight} inches");
+            }
+            else
+            {
+                // Throw an exception to indicate validation failure
+                throw new Exception($"Page size mismatch after reload. Expected ({targetWidth}, {targetHeight}) but got ({persistedWidth}, {persistedHeight}).");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occurred during verification
+            Console.Error.WriteLine($"Verification error: {ex.Message}");
+        }
+        finally
+        {
+            // Clean up the temporary file if it exists
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { /* ignore cleanup errors */ }
+            }
         }
     }
 }

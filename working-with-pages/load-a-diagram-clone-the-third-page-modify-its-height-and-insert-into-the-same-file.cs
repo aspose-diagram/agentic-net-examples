@@ -9,36 +9,51 @@ class Program
         try
         {
 
-            // Path to the Visio file
-            string filePath = "input.vsdx";
+            // Path to the existing Visio file
+            string inputPath = "input.vsdx";
 
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Verify that the diagram has at least three pages (index 0‑based)
+            // Ensure there are at least three pages
             if (diagram.Pages.Count < 3)
             {
                 throw new Exception("The diagram does not contain a third page to clone.");
             }
 
-            // Retrieve the third page (index 2)
-            Page thirdPage = diagram.Pages[2];
+            // Retrieve the third page (zero‑based index 2)
+            Page sourcePage = diagram.Pages[2];
 
-            // Create a new blank page that will hold the clone
+            // Create a new blank page instance
             Page clonedPage = new Page();
 
-            // Add the new page to the diagram's page collection
+            // Copy all contents from the source page to the new page
+            clonedPage.Copy(sourcePage);
+
+            // Modify the height of the cloned page (e.g., increase by 2 inches)
+            double originalHeight = sourcePage.PageSheet.PageProps.PageHeight.Value;
+            clonedPage.PageSheet.PageProps.PageHeight.Value = originalHeight + 2.0;
+
+            // Optionally, keep the same width as the source page
+            clonedPage.PageSheet.PageProps.PageWidth.Value = sourcePage.PageSheet.PageProps.PageWidth.Value;
+
+            // Assign a unique ID to the new page
+            int maxId = 0;
+            foreach (Page p in diagram.Pages)
+            {
+                if (p.ID > maxId)
+                    maxId = p.ID;
+            }
+            clonedPage.ID = maxId + 1;
+
+            // Give the cloned page a distinct name
+            clonedPage.Name = "ClonedPage3";
+
+            // Insert the cloned page into the diagram
             diagram.Pages.Add(clonedPage);
 
-            // Copy the contents of the third page into the new page
-            thirdPage.Copy(clonedPage);
-
-            // Modify the height of the cloned page (value is in inches)
-            double newHeightInches = 11.0; // example height
-            clonedPage.PageSheet.PageProps.PageHeight.Value = newHeightInches;
-
-            // Save the updated diagram back to the same file
-            diagram.Save(filePath, SaveFileFormat.Vsdx);
+            // Save the updated diagram (overwrites the original file)
+            diagram.Save(inputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

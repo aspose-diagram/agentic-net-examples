@@ -5,36 +5,51 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and output file path
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: DiagramPageHeightAdjuster <inputPath> <outputPath>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+                // Input Visio file path
+                string inputPath = "input.vsdx";
 
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
+                // Output Visio file path (can overwrite the original or be a new file)
+                string outputPath = "output.vsdx";
 
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                // Count the number of shapes on the current page
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Ensure there is at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Work with the first page (index 0)
+                Page page = diagram.Pages[0];
+
+                // Count the number of shapes on the page
                 int shapeCount = page.Shapes.Count;
 
-                // Define a height factor (e.g., 1 inch per shape)
-                double heightPerShape = 1.0; // inches
+                // Define height per shape (in inches)
+                double heightPerShape = 1.0; // 1 inch per shape
 
-                // Calculate the new page height based on the shape count
-                double newHeight = shapeCount * heightPerShape;
+                // Calculate new page height (add a small margin)
+                double newHeight = shapeCount * heightPerShape + 0.5; // 0.5 inch margin
 
-                // Set the page height (values are in inches)
+                // Set the page height
                 page.PageSheet.PageProps.PageHeight.Value = newHeight;
-            }
 
-            // Save the modified diagram back to a Visio file (VSDX format)
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
+                Console.WriteLine($"Page height set to {newHeight} inches based on {shapeCount} shapes.");
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Diagram saved successfully.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }

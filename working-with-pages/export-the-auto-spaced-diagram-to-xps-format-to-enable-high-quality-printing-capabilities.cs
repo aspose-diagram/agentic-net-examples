@@ -3,26 +3,29 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ExportDiagramToXps
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (auto‑spaced diagram)
+            // Load the Visio diagram (auto‑spaced diagram) from a file
             Diagram diagram = new Diagram("input.vsd");
 
-            // Configure XPS save options
+            // Create XPS save options – can customize if needed
             XPSSaveOptions xpsOptions = new XPSSaveOptions
             {
-                // Do not export hidden pages (optional, adjust as needed)
+                // Example: do not export hidden pages
                 ExportHiddenPage = false,
-                // Save only foreground pages for a cleaner output (optional)
+                // Export all pages (default)
+                PageIndex = 0,
+                PageCount = int.MaxValue,
+                // Save only foreground pages (default)
                 SaveForegroundPagesOnly = true
             };
 
-            // Save the diagram to XPS format for high‑quality printing
+            // Save the diagram to XPS format using the specified options
             diagram.Save("output.xps", xpsOptions);
 
         }

@@ -1,63 +1,43 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Verify the input file exists before proceeding
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-
-        // Load the diagram from file
-        Diagram diagram = new Diagram(inputPath);
-
-        // Access the first page of the diagram
-        Page page = diagram.Pages[0];
-
-        // Set up auto‑spacing options (distance in inches)
-        AutoSpaceOptions spacingOptions = new AutoSpaceOptions
-        {
-            DistanceInHorizontal = 2,
-            DistanceInVertical = 2
-        };
-
-        // Apply auto‑spacing to all shapes on the page inside a try/catch to capture any errors
         try
         {
-            page.AutoSpaceShapes(page.Shapes, spacingOptions);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error during auto‑spacing: {ex.Message}");
-            return;
-        }
 
-        // NOTE: Aspose.Diagram does not provide a Validate method. 
-        // The spacing operation is assumed successful if no exception was thrown.
+            // Load the diagram (using the provided load rule)
+            using (Diagram diagram = new Diagram("input.vsdx"))
+            {
+                // Configure layout options with desired spacing (in inches)
+                LayoutOptions layoutOptions = new LayoutOptions
+                {
+                    SpaceShapes = 0.5f // example spacing
+                };
 
-        // Path for the output Visio file
-        string outputPath = "output.vsdx";
-        // Verify the output directory is writable (optional guard)
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-            return;
-        }
+                // Apply layout (spacing) to each page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    page.Layout(layoutOptions);
+                }
 
-        // Save the updated diagram using the correct overload with SaveFileFormat
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Validate the diagram after spacing
+                // Aspose.Diagram provides a Validation property to access validation results
+                Validation validation = diagram.Validation;
+                Console.WriteLine($"Validation issues count: {validation.Issues.Count}");
+
+                // Save the diagram (using the provided save rule)
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            }
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

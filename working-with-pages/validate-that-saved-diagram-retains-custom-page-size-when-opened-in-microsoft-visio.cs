@@ -1,73 +1,44 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Define custom page size in inches (landscape 11"x8.5")
-        double customWidth = 11.0;
-        double customHeight = 8.5;
+        const double customWidth = 5.0;   // inches
+        const double customHeight = 7.0;  // inches
+        const string filePath = "customPageSize.vsdx";
 
-        // Path for the temporary VSDX file
-        string filePath = "customPageSize.vsdx";
-
-        try
+        // Create a new diagram, add a page, and set custom page dimensions
+        using (Diagram diagram = new Diagram())
         {
-            // Create a new diagram – it already contains a default page (index 0)
-            Diagram diagram = new Diagram();
-
-            // Retrieve the existing first page instead of adding a new one
-            Page page = diagram.Pages[0];
-
-            // Apply the custom dimensions to the page
+            diagram.Pages.Add(new Page());                     // add a blank page
+            Page page = diagram.Pages[0];                      // retrieve the first page
             page.PageSheet.PageProps.PageWidth.Value = customWidth;
             page.PageSheet.PageProps.PageHeight.Value = customHeight;
 
-            // Save the diagram with the custom page size
+            // Save the diagram to a VSDX file
             diagram.Save(filePath, SaveFileFormat.Vsdx);
         }
-        catch (Exception ex)
+
+        // Load the saved diagram and verify that the page size is preserved
+        using (Diagram loadedDiagram = new Diagram(filePath))
         {
-            Console.Error.WriteLine($"Error during diagram creation or saving: {ex.Message}");
-            return;
-        }
-
-        // Verify that the file was created before attempting to load it
-        if (!File.Exists(filePath))
-        {
-            Console.Error.WriteLine($"File not found after save: {filePath}");
-            return;
-        }
-
-        try
-        {
-            // Load the saved diagram
-            Diagram loadedDiagram = new Diagram(filePath);
-
-            // Ensure the diagram contains at least one page
-            if (loadedDiagram.Pages.Count == 0)
-                throw new Exception("No pages found in the loaded diagram.");
-
-            // Retrieve the first (and only) page
             Page loadedPage = loadedDiagram.Pages[0];
             double loadedWidth = loadedPage.PageSheet.PageProps.PageWidth.Value;
             double loadedHeight = loadedPage.PageSheet.PageProps.PageHeight.Value;
 
-            // Allow a tiny tolerance for floating‑point differences
-            const double tolerance = 0.001;
-            bool widthMatches = Math.Abs(loadedWidth - customWidth) <= tolerance;
-            bool heightMatches = Math.Abs(loadedHeight - customHeight) <= tolerance;
+            const double tolerance = 0.001; // allow minor floating‑point differences
+            if (Math.Abs(loadedWidth - customWidth) > tolerance ||
+                Math.Abs(loadedHeight - customHeight) > tolerance)
+            {
+                throw new Exception(
+                    $"Page size mismatch. Expected {customWidth}x{customHeight} inches, " +
+                    $"but got {loadedWidth}x{loadedHeight} inches.");
+            }
 
-            if (!widthMatches || !heightMatches)
-                throw new Exception($"Page size mismatch. Expected ({customWidth}, {customHeight}) but got ({loadedWidth}, {loadedHeight}).");
-
-            Console.WriteLine($"Page size retained correctly: width={loadedWidth}, height={loadedHeight}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error during diagram loading or validation: {ex.Message}");
+            Console.WriteLine($"Page size retained correctly: {loadedWidth} x {loadedHeight} inches.");
         }
     }
 }

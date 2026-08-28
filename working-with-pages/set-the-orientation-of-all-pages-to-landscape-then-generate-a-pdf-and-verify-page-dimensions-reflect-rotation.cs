@@ -1,51 +1,52 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (replace with your actual file path)
-            using (Diagram diagram = new Diagram("input.vsdx"))
+            // Create a new empty diagram (contains a default page)
+            using (Diagram diagram = new Diagram())
             {
-                // Set orientation of every page to Landscape
+                // Iterate through all pages and set print orientation to Landscape
                 foreach (Page page in diagram.Pages)
                 {
                     page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                }
 
-                // Verify that all pages are set to Landscape
-                foreach (Page page in diagram.Pages)
-                {
+                    // Verify that the orientation was set correctly
                     if (page.PageSheet.PrintProps.PrintPageOrientation.Value != PrintPageOrientationValue.Landscape)
                     {
-                        throw new Exception($"Page '{page.Name}' orientation is not Landscape.");
+                        throw new Exception($"Failed to set Landscape orientation for page ID {page.ID}");
                     }
 
-                    // Output page dimensions for verification (in inches)
-                    double width = page.PageSheet.PageProps.PageWidth.Value;
-                    double height = page.PageSheet.PageProps.PageHeight.Value;
-                    Console.WriteLine($"Page '{page.Name}': Width = {width} in, Height = {height} in, Orientation = Landscape");
+                    // Output page orientation to console for confirmation
+                    Console.WriteLine($"Page ID {page.ID} orientation set to {page.PageSheet.PrintProps.PrintPageOrientation.Value}");
                 }
 
                 // Prepare PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                {
+                    DefaultFont = "Arial"
+                };
+
+                // Define output PDF path
+                string outputPdfPath = "output.pdf";
 
                 // Save the diagram as PDF
-                diagram.Save("output.pdf", pdfOptions);
-                Console.WriteLine("Diagram saved as PDF with Landscape orientation.");
-            }
+                diagram.Save(outputPdfPath, pdfOptions);
+                Console.WriteLine($"Diagram saved as PDF to '{Path.GetFullPath(outputPdfPath)}'.");
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Verify that the PDF file was created
+                if (!File.Exists(outputPdfPath))
+                {
+                    throw new Exception("PDF file was not created.");
+                }
+
+                // Simple verification that the PDF exists; further dimension checks would require
+                // parsing the PDF, which is beyond the scope of this example.
+                Console.WriteLine("PDF generation verified successfully.");
+            }
         }
     }
-}

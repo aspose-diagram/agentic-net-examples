@@ -1,49 +1,42 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vdx");
+
+            // Verify that the document has at least three pages
+            if (diagram.Pages.Count >= 3)
             {
+                // Access the third page (zero‑based index)
+                Page pageThree = diagram.Pages[2];
 
-                // Paths to the source and destination Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram within a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(inputPath))
+                // Confirm the page contains no shapes
+                if (pageThree.Shapes.Count == 0)
                 {
-                    // Verify that the diagram has at least three pages (0‑based index)
-                    if (diagram.Pages.Count < 3)
-                    {
-                        throw new Exception("The diagram does not contain a third page to delete.");
-                    }
+                    // Remove the empty page from the document
+                    diagram.Pages.Remove(pageThree);
 
-                    // Retrieve the third page (index 2)
-                    Page pageToDelete = diagram.Pages[2];
-
-                    // Confirm the page contains no shapes
-                    if (pageToDelete.Shapes.Count > 0)
-                    {
-                        throw new Exception("Page 3 is not empty and cannot be deleted to preserve data integrity.");
-                    }
-
-                    // Remove the page from the diagram
-                    diagram.Pages.Remove(pageToDelete);
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Release unmanaged resources held by the page
+                    pageThree.Dispose();
                 }
-
-                Console.WriteLine("Page 3 has been successfully removed (if it was empty) and the diagram saved.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the updated diagram
+            diagram.Save("output.vdx", SaveFileFormat.Vdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

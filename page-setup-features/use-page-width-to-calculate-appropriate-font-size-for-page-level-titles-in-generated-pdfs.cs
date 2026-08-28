@@ -7,43 +7,67 @@ class Program
 {
     static void Main()
     {
-        // Create a new empty diagram
-        using (Diagram diagram = new Diagram())
+        try
         {
-            // Add a new page to the diagram
-            Page page = new Page();
-            diagram.Pages.Add(page);
 
-            // Set page dimensions (A4 size in inches)
-            page.PageSheet.PageProps.PageWidth.Value = 8.27;   // width
-            page.PageSheet.PageProps.PageHeight.Value = 11.69; // height
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Calculate title font size as a proportion of the page width (e.g., 5%)
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double titleFontSizeInInches = pageWidth * 0.05; // 5% of page width
+            // Load the diagram inside a using block to ensure proper disposal
+            using Diagram diagram = new Diagram(inputPath);
 
-            // Title text and formatting
-            string titleText = "Document Title";
-            string fontName = "Arial";
-            string fontColor = "#000000";
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Retrieve the page width (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
 
-            // Position the title at the top center of the page
-            double pinX = pageWidth / 2.0;                                   // center horizontally
-            double pinY = page.PageSheet.PageProps.PageHeight.Value - 0.5;   // half‑inch from top edge
-            double titleBoxWidth = pageWidth * 0.8;                          // 80% of page width
-            double titleBoxHeight = titleFontSizeInInches * 2;               // enough height for the text
+                // Calculate a font size that is 10% of the page width.
+                // Shape.Char.Size.Value expects a size in inches.
+                double titleFontSizeInInches = pageWidth * 0.10;
 
-            // Add the title shape with the calculated font size (size is in inches)
-            Shape titleShape = page.AddText(pinX, pinY, titleBoxWidth, titleBoxHeight,
-                                            titleText, fontName, fontColor, titleFontSizeInInches);
+                // Locate a shape whose universal name is "Title"
+                Shape titleShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.NameU != null && shape.NameU.Equals("Title", StringComparison.OrdinalIgnoreCase))
+                    {
+                        titleShape = shape;
+                        break;
+                    }
+                }
 
-            // Configure PDF save options and set a default font for fallback
+                // If a title shape exists, update its text and font size
+                if (titleShape != null)
+                {
+                    // Replace any existing text
+                    titleShape.Text.Value.Clear();
+                    titleShape.Text.Value.Add(new Txt("Page Title"));
+
+                    // Ensure there is at least one Char entry for formatting
+                    if (titleShape.Chars.Count == 0)
+                    {
+                        titleShape.Chars.Add(new Aspose.Diagram.Char());
+                    }
+
+                    // Apply the calculated font size (in inches) and a fallback font
+                    titleShape.Chars[0].Size.Value = titleFontSizeInInches;
+                    titleShape.Chars[0].FontName.Value = "Arial";
+                }
+            }
+
+            // Configure PDF save options (set a default font for fallback)
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = fontName;
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // explicit format
+            pdfOptions.DefaultFont = "Arial";
 
-            // Save the diagram as a PDF file
-            diagram.Save("output.pdf", pdfOptions);
+            // Save the modified diagram as a PDF
+            string outputPath = "output.pdf";
+            diagram.Save(outputPath, pdfOptions);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

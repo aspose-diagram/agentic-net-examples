@@ -2,7 +2,6 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Properties;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,38 +10,40 @@ class Program
         try
         {
 
-            // Path to the source Visio file
+            // Paths to the input and output Visio files
             string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Capture the built‑in creation date (TimeCreated) before any changes
+            // Capture the built‑in CreatedDate (TimeCreated) before adding custom properties
             DateTime createdBefore = diagram.DocumentProps.TimeCreated;
 
-            // Create and add a custom document property
+            // Create a custom property
             CustomProp customProp = new CustomProp();
             customProp.Name = "MyCustomProp";
             customProp.PropType = PropType.String;
             customProp.CustomValue.ValueString = "CustomValue";
+
+            // Add the custom property to the document
             diagram.DocumentProps.CustomProps.Add(customProp);
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Reload the saved diagram to verify persisted values
+            // Reload the saved diagram to verify the built‑in property
             Diagram reloadedDiagram = new Diagram(outputPath);
             DateTime createdAfter = reloadedDiagram.DocumentProps.TimeCreated;
 
-            // Validate that the built‑in creation date has not changed
+            // Validate that the built‑in CreatedDate has not changed
             if (createdBefore != createdAfter)
             {
-                throw new Exception($"Created date changed from {createdBefore} to {createdAfter}");
+                throw new Exception($"CreatedDate changed from {createdBefore} to {createdAfter}");
             }
             else
             {
-                Console.WriteLine("Built‑in CreatedDate remains unchanged after adding custom properties.");
+                Console.WriteLine("Built-in CreatedDate unchanged after adding custom property.");
             }
 
         }

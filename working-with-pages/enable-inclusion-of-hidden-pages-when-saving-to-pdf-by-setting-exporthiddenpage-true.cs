@@ -10,26 +10,17 @@ class Program
         try
         {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Path for the resulting PDF file
-            string outputPath = "output.pdf";
+            // Configure PDF save options to include hidden pages
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                ExportHiddenPage = true // Ensure hidden pages are exported
+            };
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Set up PDF save options to include hidden pages
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.ExportHiddenPage = true;
-
-            // Save the diagram as PDF using the configured options
-            diagram.Save(outputPath, pdfOptions);
-
-            // Clean up resources
-            diagram.Dispose();
-
-            Console.WriteLine("PDF saved with hidden pages included.");
+            // Save the diagram as PDF with the specified options
+            diagram.Save("output.pdf", pdfOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

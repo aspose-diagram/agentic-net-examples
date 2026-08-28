@@ -1,100 +1,73 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class UpdateDiagramVersionBatch
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect the first argument to be the path of the configuration file.
+        if (args.Length == 0)
         {
-            // Expect the first argument to be the path of the configuration file.
-            // Each line in the config file should be: <diagramFilePath>=<VersionValue>
-            if (args.Length == 0)
-            {
-                Console.WriteLine("Usage: DiagramVersionBatchUpdater <configFilePath>");
-                return;
-            }
-
-            string configPath = args[0];
-            if (!File.Exists(configPath))
-            {
-                Console.WriteLine($"Config file not found: {configPath}");
-                return;
-            }
-
-            // Load configuration into a dictionary.
-            var versionMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var rawLine in File.ReadAllLines(configPath))
-            {
-                string line = rawLine.Trim();
-                if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
-                    continue; // Skip empty lines and comments.
-
-                var parts = line.Split(new[] { '=' }, 2);
-                if (parts.Length != 2)
-                {
-                    Console.WriteLine($"Invalid line (ignored): {line}");
-                    continue;
-                }
-
-                string diagramPath = parts[0].Trim();
-                string versionValue = parts[1].Trim();
-
-                if (!File.Exists(diagramPath))
-                {
-                    Console.WriteLine($"Diagram file not found (ignored): {diagramPath}");
-                    continue;
-                }
-
-                versionMap[diagramPath] = versionValue;
-            }
-
-            // Process each diagram.
-            foreach (var kvp in versionMap)
-            {
-                string diagramPath = kvp.Key;
-                string newVersion = kvp.Value;
-
-                try
-                {
-                    // Load the diagram.
-                    using (var diagram = new Diagram(diagramPath))
-                    {
-                        // Update the Version property.
-                        diagram.Version = newVersion;
-
-                        // Determine save format based on file extension.
-                        SaveFileFormat format = GetSaveFormatFromExtension(diagramPath);
-
-                        // Save back to the same file (overwrite).
-                        diagram.Save(diagramPath, format);
-                    }
-
-                    Console.WriteLine($"Updated Version for '{diagramPath}' to '{newVersion}'.");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing '{diagramPath}': {ex.Message}");
-                }
-            }
+            Console.WriteLine("Usage: UpdateDiagramVersionBatch <configFilePath>");
+            return;
         }
 
-        // Helper to map file extensions to Aspose.Diagram SaveFileFormat.
-        private static SaveFileFormat GetSaveFormatFromExtension(string filePath)
+        string configFilePath = args[0];
+
+        if (!File.Exists(configFilePath))
         {
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            switch (ext)
+            Console.WriteLine($"Config file not found: {configFilePath}");
+            return;
+        }
+
+        // Each line in the config file should have the format:
+        // <DiagramFilePath>|<VersionString>
+        // Example:
+        // C:\Diagrams\sample1.vsdx|14
+        // C:\Diagrams\sample2.vsdx|15
+        foreach (string line in File.ReadAllLines(configFilePath))
+        {
+            // Skip empty lines or comment lines starting with '#'
+            if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith("#"))
+                continue;
+
+            string[] parts = line.Split(new[] { '|' }, 2);
+            if (parts.Length != 2)
             {
-                case ".vsdx":
-                case ".vsd":
-                case ".vdx":
-                    return SaveFileFormat.Vdx;
-                case ".vsx":
-                    return SaveFileFormat.Vsx;
-                default:
-                    // Default to VDX if unknown.
-                    return SaveFileFormat.Vdx;
+                Console.WriteLine($"Invalid line format (expected 'path|version'): {line}");
+                continue;
+            }
+
+            string diagramPath = parts[0].Trim();
+            string versionValue = parts[1].Trim();
+
+            if (!File.Exists(diagramPath))
+            {
+                Console.WriteLine($"Diagram file not found: {diagramPath}");
+                continue;
+            }
+
+            try
+            {
+                // Load the diagram using the constructor that accepts a file path.
+                using (Diagram diagram = new Diagram(diagramPath))
+                {
+                    // Update the Version property.
+                    diagram.Version = versionValue;
+
+                    // Save the diagram back to the same file using VDX format.
+                    // Adjust the SaveFileFormat if the original format differs.
+                    diagram.Save(diagramPath, SaveFileFormat.Vdx);
+                }
+
+                Console.WriteLine($"Updated version for: {diagramPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing {diagramPath}: {ex.Message}");
             }
         }
     }
+}

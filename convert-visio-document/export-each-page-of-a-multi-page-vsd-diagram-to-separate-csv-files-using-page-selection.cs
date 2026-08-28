@@ -1,7 +1,6 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,43 +9,35 @@ class Program
         try
         {
 
-            // Path to the source Visio file (multi‑page diagram)
+            // Path to the source Visio file (replace with actual file path)
             string sourcePath = "input.vsdx";
 
-            // Load the diagram
+            // Load the multi‑page diagram
             Diagram sourceDiagram = new Diagram(sourcePath);
+
+            // Ensure the output directory exists
+            string outputDir = "output";
+            Directory.CreateDirectory(outputDir);
 
             // Iterate through each page in the source diagram
             for (int i = 0; i < sourceDiagram.Pages.Count; i++)
             {
-                // Retrieve the current page
-                Page page = sourceDiagram.Pages[i];
-
                 // Create a new empty diagram
                 Diagram pageDiagram = new Diagram();
 
-                // Remove the automatically created empty page
-                if (pageDiagram.Pages.Count > 0)
-                {
-                    Page emptyPage = pageDiagram.Pages[0];
-                    pageDiagram.Pages.Remove(emptyPage);
-                }
+                // Remove the default empty page that is created with a new diagram
+                Page defaultPage = pageDiagram.Pages[0];
+                pageDiagram.Pages.Remove(defaultPage);
 
-                // Add the selected page from the source diagram
-                pageDiagram.Pages.Add(page);
+                // Add the current page from the source diagram to the new diagram
+                pageDiagram.Pages.Add(sourceDiagram.Pages[i]);
 
-                // Define output CSV file name (e.g., Page_1.csv, Page_2.csv, ...)
-                string outputCsv = $"Page_{i + 1}.csv";
+                // Build the CSV file name for the current page (1‑based index)
+                string csvPath = Path.Combine(outputDir, $"Page_{i + 1}.csv");
 
-                // Save the new diagram as CSV (only the added page will be exported)
-                pageDiagram.Save(outputCsv, SaveFileFormat.Csv);
-
-                // Clean up the temporary diagram instance
-                pageDiagram.Dispose();
+                // Export the single‑page diagram to CSV
+                pageDiagram.Save(csvPath, SaveFileFormat.Csv);
             }
-
-            // Clean up the source diagram
-            sourceDiagram.Dispose();
 
             Console.WriteLine("Export completed.");
 

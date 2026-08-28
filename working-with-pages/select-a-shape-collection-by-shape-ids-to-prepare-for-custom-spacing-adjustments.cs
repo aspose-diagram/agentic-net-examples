@@ -1,5 +1,6 @@
 using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,35 +11,37 @@ class Program
         try
         {
 
-            // Path to the source Visio file
+            // Load the Visio diagram from a file (replace with your actual file path)
             string inputPath = "input.vsdx";
-
-            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page of the diagram
+            Page page = diagram.Pages[0];
 
             // Define the shape IDs you want to work with
             long[] shapeIds = new long[] { 1, 2, 3 }; // replace with actual IDs
 
-            // Access the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shapes corresponding to the specified IDs
-            Shape[] selectedShapes = new Shape[shapeIds.Length];
-            for (int i = 0; i < shapeIds.Length; i++)
+            // Collect the shapes corresponding to the specified IDs
+            List<Shape> selectedShapes = new List<Shape>();
+            foreach (long id in shapeIds)
             {
-                long id = shapeIds[i];
+                // Retrieve the shape by its ID
                 Shape shape = page.Shapes.GetShape(id);
-                selectedShapes[i] = shape;
-
-                // Example: output basic information about each shape
-                Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
+                if (shape != null)
+                {
+                    selectedShapes.Add(shape);
+                    Console.WriteLine($"Selected shape ID {id}, NameU: {shape.NameU}");
+                }
+                else
+                {
+                    Console.WriteLine($"Shape with ID {id} not found on the page.");
+                }
             }
 
-            // At this point you can apply custom spacing adjustments to the selected shapes.
-            // For example, you might modify shape.XForm.PinX, shape.XForm.PinY, etc.,
-            // or later use page.AutoSpaceShapes(page.Shapes, options) with a filtered collection.
+            // At this point you have a collection (selectedShapes) ready for any custom spacing adjustments.
+            // Example placeholder: adjust positions, spacing, etc.
 
-            // Save the diagram (optional, if you made changes)
+            // Save the modified diagram to a new file
             string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 

@@ -10,22 +10,29 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Set up PDF save options with compression
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            // Desired PDF output path
+            string outputPath = "output.pdf";
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Compress text and other content streams (Flate = ZIP compression)
-                TextCompression = PdfTextCompression.Flate,
-                // Reduce JPEG image quality to lower file size while keeping acceptable visual quality
-                JpegQuality = 80,
-                // Use default PDF compliance (PDF 1.5)
-                Compliance = PdfCompliance.Pdf15
-            };
+                // Configure PDF save options with compression
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Save the diagram as a compressed PDF
-            diagram.Save("output.pdf", pdfOptions);
+                // Use Flate compression for text streams (reduces size while preserving quality)
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
+
+                // Adjust JPEG quality for images inside the PDF (optional, maintains visual quality)
+                pdfOptions.JpegQuality = 90;
+
+                // Save the diagram as PDF with the specified options
+                diagram.Save(outputPath, pdfOptions);
+            }
+
+            Console.WriteLine($"PDF exported successfully to: {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

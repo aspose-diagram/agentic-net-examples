@@ -1,33 +1,34 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+                // Load an existing Visio diagram.
+                // Replace "input.vsdx" with the path to your source file.
+                Diagram diagram = new Diagram("input.vsdx");
 
-            // Create HTML save options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                // Configure HTML export options.
+                // Setting SaveAsSingleFile to true embeds all resources (including CSS) into the HTML,
+                // preventing the generation of external CSS files and using inline style definitions.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    SaveAsSingleFile = true
+                };
 
-            // Set to save as a single HTML file.
-            // This embeds CSS and other resources directly into the HTML,
-            // preventing generation of external CSS files.
-            htmlOptions.SaveAsSingleFile = true;
+                // Export the diagram to HTML with the configured options.
+                // The output will be a single HTML file with inline styles.
+                diagram.Save("output.html", htmlOptions);
 
-            // Save the diagram as HTML with the configured options
-            diagram.Save("output.html", htmlOptions);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -12,60 +13,72 @@ class Program
                 // Create a new empty diagram
                 Diagram diagram = new Diagram();
 
-                // Add a new page (the diagram starts with one page by default)
+                // Get the first (and only) page
                 Page page = diagram.Pages[0];
 
                 // -------------------------------------------------
-                // 1. Draw a triangle using DrawPolyline.
-                //    The points are defined in a flat double array.
-                //    The triangle is closed by repeating the first point.
+                // 1. Draw a triangle using DrawPolyline
                 // -------------------------------------------------
-                double[] trianglePoints = new double[]
+                // Coordinates (in inches) for the three vertices
+                double x1 = 2.0, y1 = 2.0;
+                double x2 = 4.0, y2 = 2.0;
+                double x3 = 3.0, y3 = 4.0;
+
+                // Close the polygon by repeating the first point at the end
+                long triangleId = page.DrawPolyline(new double[]
                 {
-                    2.0, 2.0,   // Point 1 (PinX, PinY)
-                    5.0, 2.0,   // Point 2
-                    3.5, 5.0,   // Point 3
-                    2.0, 2.0    // Close the polygon
-                };
-                long triangleId = page.DrawPolyline(trianglePoints);
+                    x1, y1,
+                    x2, y2,
+                    x3, y3,
+                    x1, y1
+                });
+
+                // Retrieve the triangle shape object
                 Shape triangleShape = page.Shapes.GetShape(triangleId);
 
-                // -------------------------------------------------
-                // 2. Insert an image as a shape.
-                //    The image file is read into a FileStream and added to the page.
-                // -------------------------------------------------
-                const string imagePath = "image.png"; // Ensure this file exists in the working directory
-                if (!File.Exists(imagePath))
-                    throw new FileNotFoundException($"Image file not found: {imagePath}");
+                // Optional: give the triangle a name for easier debugging
+                triangleShape.Name = "MyTriangle";
 
-                // Position and size for the image shape (in inches)
-                double imgPinX = 4.0;
-                double imgPinY = 3.0;
-                double imgWidth = 3.0;
+                // -------------------------------------------------
+                // 2. Insert an image onto the page
+                // -------------------------------------------------
+                // Path to the image file (ensure the file exists)
+                string imagePath = "sample.png";
+
+                // Define where the image will be placed and its size
+                double imgPinX = 2.5;   // center X
+                double imgPinY = 2.5;   // center Y
+                double imgWidth = 2.0;
                 double imgHeight = 2.0;
 
+                // Add the image as a foreign shape using a FileStream
                 long imageId;
-                using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
                 {
-                    imageId = page.AddShape(imgPinX, imgPinY, imgWidth, imgHeight, imgStream);
+                    // The overload AddShape(pinX, pinY, width, height, Stream) inserts the image
+                    imageId = page.AddShape(imgPinX, imgPinY, imgWidth, imgHeight, fs);
                 }
+
+                // Retrieve the image shape object
                 Shape imageShape = page.Shapes.GetShape(imageId);
+                imageShape.Name = "MyImage";
 
                 // -------------------------------------------------
-                // 3. Group the triangle and the image so they move together.
+                // 3. Group the triangle and the image together
                 // -------------------------------------------------
+                // The Group method expects an array of Shape objects
                 Shape groupShape = page.Shapes.Group(new Shape[] { triangleShape, imageShape });
 
-                // Optional: move the whole group to a new location
-                groupShape.Move(1.0, 1.0); // Move 1 inch right and 1 inch up
+                // Optional: give the group a name
+                groupShape.Name = "TriangleImageGroup";
 
                 // -------------------------------------------------
-                // 4. Save the diagram to a VSDX file.
+                // 4. Save the diagram to a VSDX file
                 // -------------------------------------------------
                 string outputPath = "GroupedDiagram.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+                Console.WriteLine($"Diagram saved to '{outputPath}'. The triangle and image are now grouped.");
 
             }
             catch (System.IO.FileNotFoundException ex)

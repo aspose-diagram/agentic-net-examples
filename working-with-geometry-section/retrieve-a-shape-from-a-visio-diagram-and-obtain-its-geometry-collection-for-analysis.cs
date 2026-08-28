@@ -9,40 +9,43 @@ class Program
         try
         {
 
-            // Path to the Visio file (replace with actual file path)
-            string filePath = "input.vsdx";
+            // Path to the Visio file
+            string filePath = "sample.vsdx";
 
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // Access the first page (you can also retrieve by name)
-            Page page = diagram.Pages[0];
-
-            // Example: retrieve a shape by its ID (replace with actual ID)
-            int shapeId = 1;
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            if (shape == null)
+            // Load the diagram (ensure the file exists at the specified location)
+            using (Diagram diagram = new Diagram(filePath))
             {
-                Console.WriteLine($"Shape with ID {shapeId} not found.");
-                return;
-            }
+                // Access the first page of the diagram
+                Page page = diagram.Pages[0];
 
-            // Obtain the geometry collection of the shape
-            GeomCollection geoms = shape.Geoms;
-            Console.WriteLine($"Shape ID {shapeId} contains {geoms.Count} geometry sections.");
+                // Define the ID of the shape you want to retrieve
+                int shapeId = 1; // Change this to the actual shape ID you need
 
-            // Iterate through each geometry section
-            for (int i = 0; i < geoms.Count; i++)
-            {
-                Geom geom = (Geom)geoms[i];
-                Console.WriteLine($"Geometry {i} has {geom.CoordinateCol.Count} coordinate entries.");
-
-                // Iterate through each coordinate (MoveTo, LineTo, etc.)
-                for (int j = 0; j < geom.CoordinateCol.Count; j++)
+                // Retrieve the shape from the page's shape collection
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
                 {
-                    Aspose.Diagram.Coordinate coord = (Aspose.Diagram.Coordinate)geom.CoordinateCol[j];
-                    Console.WriteLine($"  Coordinate {j} type: {coord.GetType().Name}");
+                    throw new Exception($"Shape with ID {shapeId} was not found on page '{page.Name}'.");
+                }
+
+                // Output basic shape information
+                Console.WriteLine($"Shape ID: {shape.ID}");
+                Console.WriteLine($"Shape Name: {shape.Name}");
+                Console.WriteLine($"Number of geometry sections (Geoms): {shape.Geoms.Count}");
+
+                // Iterate through each geometry (Geom) in the shape
+                for (int i = 0; i < shape.Geoms.Count; i++)
+                {
+                    Aspose.Diagram.Geom geom = (Aspose.Diagram.Geom)shape.Geoms[i];
+                    Console.WriteLine($"  Geom {i} contains {geom.CoordinateCol.Count} coordinate entries.");
+
+                    // Iterate through each coordinate entry within the geometry
+                    for (int j = 0; j < geom.CoordinateCol.Count; j++)
+                    {
+                        // Each entry can be a MoveTo, LineTo, ArcTo, etc.
+                        object coordinate = geom.CoordinateCol[j];
+                        Console.WriteLine($"    Coordinate {j}: Type = {coordinate.GetType().Name}");
+                    }
                 }
             }
 

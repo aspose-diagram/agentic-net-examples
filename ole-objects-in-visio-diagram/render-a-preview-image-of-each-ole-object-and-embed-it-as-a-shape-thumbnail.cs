@@ -1,79 +1,48 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class OlePreviewGenerator
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load existing Visio diagram (uses provided load rule)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file (adjust the path as needed)
-                string inputPath = "input.vsdx";
-
-                // Output Visio file with OLE thumbnails embedded
-                string outputPath = "output_with_thumbnails.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Collect OLE shapes first to avoid modifying the collection while iterating
-                    List<Shape> oleShapes = new List<Shape>();
-
-                    foreach (Shape shape in page.Shapes)
+                    // Identify OLE objects: they have ForeignData with non‑empty ObjectData
+                    if (shape.ForeignData != null &&
+                        shape.ForeignData.ObjectData != null &&
+                        shape.ForeignData.ObjectData.Length > 0)
                     {
-                        // Verify the shape is an OLE object
-                        if (shape.Type == TypeValue.Foreign &&
-                            shape.ForeignData != null &&
-                            shape.ForeignData.ObjectData != null &&
-                            shape.ForeignData.ForeignType == ForeignType.Object)
-                        {
-                            oleShapes.Add(shape);
-                        }
-                    }
-
-                    // Process each OLE shape
-                    foreach (Shape oleShape in oleShapes)
-                    {
-                        // Preserve original geometry
-                        double pinX = oleShape.XForm.PinX.Value;
-                        double pinY = oleShape.XForm.PinY.Value;
-                        double width = oleShape.XForm.Width.Value;
-                        double height = oleShape.XForm.Height.Value;
-
-                        // Render the OLE object to a PNG image in memory
-                        using (MemoryStream imageStream = new MemoryStream())
+                        // Render the shape to an image (PNG) using ToImage overload with stream
+                        using (MemoryStream imgStream = new MemoryStream())
                         {
                             ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                            oleShape.ToImage(imageStream, imgOptions);
-                            imageStream.Position = 0; // Reset stream for reading
+                            shape.ToImage(imgStream, imgOptions);
 
-                            // Add a new shape that uses the rendered image as its picture
-                            long newShapeId = page.AddShape(pinX, pinY, width, height, imageStream);
-                            Shape newShape = page.Shapes.GetShape(newShapeId);
-
-                            // Optionally copy the original shape's name for reference
-                            newShape.Name = oleShape.Name;
+                            // Store the generated preview bytes back into the shape's ForeignData.ImageData
+                            shape.ForeignData.ImageData = imgStream.ToArray();
                         }
-
-                        // Remove the original OLE shape from the page
-                        page.Shapes.Remove(oleShape);
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram (uses provided save rule)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

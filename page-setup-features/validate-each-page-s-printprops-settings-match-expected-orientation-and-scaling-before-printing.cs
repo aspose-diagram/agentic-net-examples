@@ -1,62 +1,55 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Printing;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the Visio file to be processed
-            string inputPath = "input.vsdx";
-
-            // Expected print settings for every page
-            PrintPageOrientationValue expectedOrientation = PrintPageOrientationValue.Landscape; // or Portrait
-            double expectedScaleX = 1.0; // 100% scaling
-            double expectedScaleY = 1.0; // 100% scaling
-
-            // Load the diagram inside a using block to ensure proper disposal
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                // Iterate over all pages in the diagram
+
+                // Path to the Visio diagram file
+                string diagramPath = "input.vsdx";
+
+                // Expected print settings
+                PrintPageOrientationValue expectedOrientation = PrintPageOrientationValue.Landscape;
+                double expectedScaleX = 0.75; // 75% scaling
+                double expectedScaleY = 0.75; // 75% scaling
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Iterate through each page and validate its PrintProps
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the print properties of the current page
-                    PrintProps printProps = page.PageSheet.PrintProps;
+                    var printProps = page.PageSheet.PrintProps;
 
-                    // Validate page orientation
+                    // Validate orientation
                     if (printProps.PrintPageOrientation.Value != expectedOrientation)
                     {
-                        Console.WriteLine($"[Error] Page '{page.Name}' orientation mismatch. Expected: {expectedOrientation}, Actual: {printProps.PrintPageOrientation.Value}");
-                        throw new Exception("Print orientation validation failed.");
+                        throw new Exception(
+                            $"Page '{page.Name}' orientation mismatch. Expected: {expectedOrientation}, Actual: {printProps.PrintPageOrientation.Value}");
                     }
 
-                    // Validate page scaling factors
-                    double actualScaleX = printProps.ScaleX.Value;
-                    double actualScaleY = printProps.ScaleY.Value;
-
-                    if (Math.Abs(actualScaleX - expectedScaleX) > 0.0001 || Math.Abs(actualScaleY - expectedScaleY) > 0.0001)
+                    // Validate scaling (allow a tiny tolerance for floating‑point comparison)
+                    if (Math.Abs(printProps.ScaleX.Value - expectedScaleX) > 0.0001 ||
+                        Math.Abs(printProps.ScaleY.Value - expectedScaleY) > 0.0001)
                     {
-                        Console.WriteLine($"[Error] Page '{page.Name}' scaling mismatch. Expected: {expectedScaleX}/{expectedScaleY}, Actual: {actualScaleX}/{actualScaleY}");
-                        throw new Exception("Print scaling validation failed.");
+                        throw new Exception(
+                            $"Page '{page.Name}' scaling mismatch. Expected ScaleX/Y: {expectedScaleX}, Actual ScaleX: {printProps.ScaleX.Value}, ScaleY: {printProps.ScaleY.Value}");
                     }
 
-                    // If both checks pass, report success for this page
                     Console.WriteLine($"Page '{page.Name}' passed print settings validation.");
                 }
 
-                // After successful validation you may print the diagram.
-                // Uncomment the following line if actual printing is required.
-                // diagram.Print();
-            }
+                // Clean up
+                diagram.Dispose();
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

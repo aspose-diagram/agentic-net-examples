@@ -1,69 +1,45 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
-class Program
+class VerifyShapeAngles
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file (provide as first argument or modify the literal)
-                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Define the intended rotation angles (in degrees) for shapes identified by their universal name.
-                // Adjust this dictionary to match your expected values.
-                var expectedAnglesDeg = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
+                foreach (Shape shape in page.Shapes)
                 {
-                    { "Rectangle", 45.0 },
-                    { "Process", 90.0 },
-                    { "Decision", 0.0 } // example entries
-                };
+                    // Current rotation angle of the shape (radians)
+                    double currentAngle = shape.XForm.Angle.Value;
 
-                // Tolerance for floating‑point comparison (in radians)
-                const double toleranceRad = 0.0001;
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
+                    // Consider a shape rotated if its angle is not effectively zero
+                    if (Math.Abs(currentAngle) > 1e-6)
                     {
-                        // Skip shapes that have no expected entry
-                        if (!expectedAnglesDeg.TryGetValue(shape.NameU, out double expectedDeg))
-                            continue;
+                        // Intended rotation value – using the 3‑D Z‑axis rotation as the reference
+                        double intendedAngle = shape.ThreeDFormat?.RotationZAngle?.Value ?? 0.0;
 
-                        // Retrieve the actual rotation angle (stored in radians)
-                        double actualRad = shape.XForm.Angle.Value;
+                        // Verify that the angles match within a small tolerance
+                        bool isMatch = Math.Abs(currentAngle - intendedAngle) < 1e-6;
 
-                        // Convert expected degrees to radians for comparison
-                        double expectedRad = expectedDeg * Math.PI / 180.0;
-
-                        // Compare with tolerance
-                        if (Math.Abs(actualRad - expectedRad) > toleranceRad)
-                        {
-                            // Report mismatch and abort
-                            throw new Exception(
-                                $"Shape '{shape.NameU}' (ID={shape.ID}) has angle {actualRad * 180.0 / Math.PI:F2}°, " +
-                                $"expected {expectedDeg:F2}°.");
-                        }
-                        else
-                        {
-                            Console.WriteLine(
-                                $"Shape '{shape.NameU}' (ID={shape.ID}) rotation verified: {expectedDeg:F2}°.");
-                        }
+                        Console.WriteLine(
+                            $"Shape ID {shape.ID} on Page {page.ID}: " +
+                            $"CurrentAngle={currentAngle} rad, IntendedAngle={intendedAngle} rad, Match={isMatch}");
                     }
                 }
-
-                Console.WriteLine("All specified shape rotations match the intended values.");
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

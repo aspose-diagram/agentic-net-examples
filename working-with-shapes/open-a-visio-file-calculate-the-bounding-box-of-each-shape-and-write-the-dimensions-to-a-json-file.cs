@@ -6,12 +6,11 @@ using Aspose.Diagram;
 
 namespace VisioBoundingBoxExporter
 {
-    // Represents the bounding box information for a shape.
-    public class ShapeBoundingBox
+    // Simple DTO to hold shape dimensions
+    public class ShapeInfo
     {
-        public string PageName { get; set; }
-        public long ShapeId { get; set; }
-        public string ShapeName { get; set; }
+        public long Id { get; set; }
+        public string Name { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }
         public double PinX { get; set; }
@@ -20,71 +19,67 @@ namespace VisioBoundingBoxExporter
 
     public class Program
     {
-        public static void Main()
+        public static void Main(string[] args)
         {
-            try
+            // Determine input and output paths
+            string inputPath;
+            string outputPath;
+
+            if (args.Length >= 2)
             {
+                inputPath = args[0];
+                outputPath = args[1];
+            }
+            else
+            {
+                Console.Write("Enter path to Visio file: ");
+                inputPath = Console.ReadLine();
 
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
+                Console.Write("Enter path for output JSON file: ");
+                outputPath = Console.ReadLine();
+            }
 
-                // Output JSON file path
-                string outputPath = "shape_bounding_boxes.json";
+            // Validate input file existence
+            if (!File.Exists(inputPath))
+            {
+                throw new FileNotFoundException($"Visio file not found: {inputPath}");
+            }
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // List to hold bounding box data for all shapes
-                List<ShapeBoundingBox> boxes = new List<ShapeBoundingBox>();
+            // Collect shape information
+            List<ShapeInfo> shapesInfo = new List<ShapeInfo>();
 
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through each shape on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip shapes marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    ShapeInfo info = new ShapeInfo
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        Id = shape.ID,
+                        Name = shape.NameU,
+                        Width = shape.XForm.Width.Value,
+                        Height = shape.XForm.Height.Value,
+                        PinX = shape.XForm.PinX.Value,
+                        PinY = shape.XForm.PinY.Value
+                    };
 
-                        // Retrieve width and height from the shape's XForm cell collection
-                        double width = shape.XForm.Width.Value;
-                        double height = shape.XForm.Height.Value;
-
-                        // Retrieve the pin (center) coordinates
-                        double pinX = shape.XForm.PinX.Value;
-                        double pinY = shape.XForm.PinY.Value;
-
-                        // Create a bounding box record
-                        ShapeBoundingBox box = new ShapeBoundingBox
-                        {
-                            PageName = page.Name,
-                            ShapeId = shape.ID,
-                            ShapeName = shape.Name,
-                            Width = width,
-                            Height = height,
-                            PinX = pinX,
-                            PinY = pinY
-                        };
-
-                        boxes.Add(box);
-                    }
+                    shapesInfo.Add(info);
                 }
-
-                // Serialize the list to JSON with indentation for readability
-                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                string json = JsonSerializer.Serialize(boxes, jsonOptions);
-
-                // Write JSON to the output file
-                File.WriteAllText(outputPath, json);
-
-                Console.WriteLine($"Bounding box data for {boxes.Count} shapes written to '{outputPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Serialize to JSON with indentation for readability
+            string json = JsonSerializer.Serialize(shapesInfo, new JsonSerializerOptions { WriteIndented = true });
+
+            // Write JSON to the specified file
+            File.WriteAllText(outputPath, json);
+
+            Console.WriteLine($"Bounding box data for {shapesInfo.Count} shapes written to {outputPath}");
+        }
     }
 }

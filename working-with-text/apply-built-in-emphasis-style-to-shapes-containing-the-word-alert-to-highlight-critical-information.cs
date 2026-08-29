@@ -2,9 +2,9 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+public class Program
 {
-    static void Main(string[] args)
+    public static void Main()
     {
         try
         {
@@ -16,7 +16,7 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the built‑in "Emphasis" style sheet (if it exists)
+            // Locate the built‑in "Emphasis" style sheet
             StyleSheet emphasisStyle = null;
             foreach (StyleSheet ss in diagram.StyleSheets)
             {
@@ -27,28 +27,30 @@ class Program
                 }
             }
 
-            // If the style is not found, no styling will be applied
-            if (emphasisStyle != null)
+            if (emphasisStyle == null)
             {
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                Console.WriteLine("Emphasis style not found in the document.");
+                return;
+            }
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Retrieve plain text of the shape
+                    string shapeText = shape.Text.Value.Text;
+
+                    // Apply the Emphasis style to shapes containing the word "Alert"
+                    if (!string.IsNullOrEmpty(shapeText) && shapeText.Contains("Alert"))
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Get the plain text of the shape
-                        string shapeText = shape.Text.Value.Text ?? string.Empty;
-
-                        // Apply the Emphasis style to shapes containing the word "Alert"
-                        if (shapeText.IndexOf("Alert", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            shape.TextStyle = emphasisStyle;
-                            shape.FillStyle = emphasisStyle;
-                            shape.LineStyle = emphasisStyle;
-                        }
+                        shape.TextStyle = emphasisStyle;
+                        shape.FillStyle = emphasisStyle;
+                        shape.LineStyle = emphasisStyle;
                     }
                 }
             }

@@ -10,24 +10,21 @@ class Program
         try
         {
 
-            // Paths to the input Visio file and the output PDF file
-            string inputPath = "input.vsdx";
-            string outputPath = "output.pdf";
+            // Load the Visio diagram from a file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Configure PDF save options to reduce file size
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                // Lower JPEG quality for embedded images (range 0‑100)
+                JpegQuality = 75,
 
-            // Configure PDF save options with compression to reduce file size
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Use Flate (ZIP) compression for text streams
-            pdfOptions.TextCompression = PdfTextCompression.Flate;
-            // Explicitly set the save format
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            // Set a default font to avoid missing‑font issues
-            pdfOptions.DefaultFont = "Arial";
+                // Use Flate compression for text streams (default, set explicitly)
+                TextCompression = Aspose.Diagram.Saving.PdfTextCompression.Flate
+            };
 
             // Export the diagram to PDF using the configured options
-            diagram.Save(outputPath, pdfOptions);
+            diagram.Save("output.pdf", pdfOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

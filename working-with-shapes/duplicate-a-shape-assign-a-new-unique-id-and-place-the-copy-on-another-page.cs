@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,36 +10,61 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            const string inputPath = "input.vsdx";
+            const string outputPath = "output.vsdx";
 
-            // Indices of the source page (where the original shape resides) 
-            // and the target page (where the copy will be placed)
-            int sourcePageIndex = 0;
-            int targetPageIndex = 1;
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Ensure there are at least two pages (source and target)
+                Page sourcePage = diagram.Pages[0];
 
-            // ID of the shape to duplicate on the source page
-            long shapeIdToCopy = 1; // replace with the actual shape ID
+                // Create a target page if it does not exist
+                Page targetPage;
+                if (diagram.Pages.Count > 1)
+                {
+                    targetPage = diagram.Pages[1];
+                }
+                else
+                {
+                    // Determine a unique page ID
+                    int maxPageId = 0;
+                    foreach (Page p in diagram.Pages)
+                    {
+                        if (p.ID > maxPageId)
+                            maxPageId = p.ID;
+                    }
 
-            // Retrieve the source page and the shape to be copied
-            Page sourcePage = diagram.Pages[sourcePageIndex];
-            Shape sourceShape = sourcePage.Shapes.GetShape(shapeIdToCopy);
+                    targetPage = new Page(maxPageId + 1);
+                    diagram.Pages.Add(targetPage);
+                }
 
-            // Create a new Shape instance and copy all properties from the source shape
-            Shape copiedShape = new Shape();
-            copiedShape.Copy(sourceShape);
+                // Retrieve a shape to duplicate (first shape on the source page)
+                // Adjust the index as needed for your specific diagram
+                Shape sourceShape = sourcePage.Shapes.GetShape(0);
+                if (sourceShape == null)
+                    throw new Exception("No shape found on the source page to duplicate.");
 
-            // Determine the master name of the source shape (required by AddShape)
-            string masterName = sourceShape.MasterShape?.Name ?? string.Empty;
+                // Add a new shape on the target page using the same master as the source shape
+                // Position it at the same coordinates as the source shape (you can offset if desired)
+                long newShapeId = targetPage.AddShape(
+                    sourceShape.XForm.PinX.Value,
+                    sourceShape.XForm.PinY.Value,
+                    sourceShape.Master.Name);
 
-            // Add the copied shape to the target page; AddShape returns a new unique ID
-            long newShapeId = diagram.AddShape(copiedShape, masterName, targetPageIndex);
+                // Retrieve the newly added shape instance
+                Shape newShape = targetPage.Shapes.GetShape(newShapeId);
+                if (newShape == null)
+                    throw new Exception("Failed to retrieve the newly added shape.");
 
-            // Optional: bring the new shape to the front of the Z‑order on the target page
-            diagram.Pages[targetPageIndex].BringToFront(newShapeId);
+                // Copy all properties (geometry, text, formatting, etc.) from the source shape to the new shape
+                sourceShape.Copy(newShape);
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine("Shape duplicated successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

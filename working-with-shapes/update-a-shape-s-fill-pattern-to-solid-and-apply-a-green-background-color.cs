@@ -1,38 +1,49 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // Add a rectangle shape on the first page (page index 0)
-            // PinX = 2.0, PinY = 2.0 (in inches)
-            long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+                // Get the first page of the diagram
+                Page page = diagram.Pages[0];
 
-            // Retrieve the shape from the page's shape collection
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes.GetShape(shapeId);
+                // Retrieve the first shape on the page
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    targetShape = shape;
+                    break; // only need the first shape
+                }
 
-            // Set the fill pattern to solid (value 1)
-            shape.Fill.FillPattern.Value = 1;
+                if (targetShape == null)
+                {
+                    Console.WriteLine("No shapes found on the first page.");
+                    return;
+                }
 
-            // Apply a green foreground fill color (hex code)
-            shape.Fill.FillForegnd.Value = "#00FF00";
+                // Set fill pattern to solid (value 1) and background color to green (#00FF00)
+                targetShape.Fill.FillPattern.Value = 1;          // Solid fill
+                targetShape.Fill.FillForegnd.Value = "#00FF00"; // Green foreground color
 
-            // Save the diagram to VSDX format
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+                Console.WriteLine($"Shape fill updated and diagram saved to '{outputPath}'.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

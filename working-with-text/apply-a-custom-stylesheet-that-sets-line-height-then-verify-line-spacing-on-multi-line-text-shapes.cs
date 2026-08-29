@@ -1,72 +1,98 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Expect the first argument to be the input Visio file path.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Verify that the input file exists before proceeding.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Define the output file path (original name with suffix).
+        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", 
+                                         Path.GetFileNameWithoutExtension(inputPath) + "_styled.vsdx");
+
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+            // Create a new stylesheet that will define the desired line spacing.
+            StyleSheet style = new StyleSheet();
+            // Assign a unique ID based on the current count of stylesheets.
+            style.ID = diagram.StyleSheets.Count + 1;
 
-            // Draw a rectangle shape (returns the shape ID)
-            // Use float literals as DrawRectangle expects float parameters
-            long rectShapeId = page.DrawRectangle(pinX: 2.0f, pinY: 2.0f, width: 4.0f, height: 2.0f);
+            // Configure paragraph formatting: set line spacing (SpLine) to 0.2 inches.
+            // SpLine.Value represents the line spacing multiplier; 0.2 is a typical value.
+            Aspose.Diagram.Para para = new Aspose.Diagram.Para();
+            para.SpLine.Value = 0.2; // 0.2 inches line spacing
+            style.Paras.Add(para);
 
-            // Retrieve the shape instance using the returned ID
-            Shape rectShape = page.Shapes.GetShape(rectShapeId);
+            // Add the stylesheet to the diagram's collection.
+            diagram.StyleSheets.Add(style);
 
-            // Add multi‑line text to the shape
-            rectShape.Text.Value.Clear();
-            rectShape.Text.Value.Add(new Txt("Line 1\nLine 2\nLine 3"));
+            // Apply the stylesheet to all shapes on each page.
+            foreach (Page page in diagram.Pages)
+            {
+                // Apply the style to the page; the three parameters are style IDs for
+                // character, line, and fill styles respectively. Using the same ID for all.
+                page.ApplyStyle(style.ID, style.ID, style.ID);
+            }
 
-            // Create a custom stylesheet (ID must be unique)
-            StyleSheet customStyle = new StyleSheet();
-            customStyle.ID = diagram.StyleSheets.Count + 1;
-
-            // Example character formatting (optional)
-            Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
-            charFormat.IX = 0;
-            charFormat.FontName.Value = "Calibri";
-            charFormat.Size.Value = 12.0 / 72.0; // 12 pt in inches
-            charFormat.Color.Value = "#000000";
-            customStyle.Chars.Add(charFormat);
-
-            // Add the stylesheet to the diagram
-            diagram.StyleSheets.Add(customStyle);
-
-            // Apply the stylesheet to the page (apply to shape, line, and fill)
-            page.ApplyStyle(customStyle.ID, customStyle.ID, customStyle.ID);
-
-            // Set line spacing (SpLine) for the first paragraph of the shape
-            // SpLine is measured in inches; here we set it to 0.2 inches
+            // Expected line spacing value for verification.
             double expectedLineSpacing = 0.2;
-            rectShape.Paras[0].SpLine.Value = expectedLineSpacing;
 
-            // Verify that the line spacing was applied correctly
-            double actualLineSpacing = rectShape.Paras[0].SpLine.Value;
-            if (Math.Abs(actualLineSpacing - expectedLineSpacing) > 0.0001)
+            // Verify that each shape containing multi‑line text respects the line spacing.
+            foreach (Page page in diagram.Pages)
             {
-                throw new Exception($"Line spacing verification failed. Expected: {expectedLineSpacing}, Actual: {actualLineSpacing}");
-            }
-            else
-            {
-                Console.WriteLine($"Line spacing verified successfully: {actualLineSpacing} inches.");
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Retrieve the plain text of the shape.
+                    string plainText = shape.Text.Value.Text;
+
+                    // Check if the shape contains more than one line (i.e., newline characters).
+                    if (!string.IsNullOrEmpty(plainText) && plainText.Contains("\n"))
+                    {
+                        // Ensure the shape has at least one paragraph to inspect.
+                        if (shape.Paras.Count > 0)
+                        {
+                            // Get the line spacing from the first paragraph.
+                            double actualSpacing = shape.Paras[0].SpLine.Value;
+
+                            // Compare the actual spacing with the expected value (tolerance 0.001).
+                            if (Math.Abs(actualSpacing - expectedLineSpacing) < 0.001)
+                            {
+                                Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' passes line spacing verification.");
+                            }
+                            else
+                            {
+                                Console.Error.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' fails verification. Expected {expectedLineSpacing}, found {actualSpacing}.");
+                            }
+                        }
+                        else
+                        {
+                            Console.Error.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' has no paragraphs to verify.");
+                        }
+                    }
+                }
             }
 
-            // Save the diagram to a VSDX file
-            diagram.Save("LineHeightDemo.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved as LineHeightDemo.vsdx");
+            // Save the modified diagram to the output path using VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Styled diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Output any unexpected errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

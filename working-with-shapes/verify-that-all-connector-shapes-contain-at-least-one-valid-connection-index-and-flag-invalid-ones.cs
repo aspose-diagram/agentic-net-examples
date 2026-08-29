@@ -3,76 +3,64 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the Visio file to be validated.
-                // Replace with the actual file path as needed.
-                string filePath = "input.vsdx";
+                // Path to the Visio file; can be passed as a command‑line argument.
+                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
 
                 // Load the diagram.
-                Diagram diagram = new Diagram(filePath);
+                Diagram diagram = new Diagram(diagramPath);
 
-                bool anyInvalid = false;
+                int invalidConnectorCount = 0;
 
-                // Iterate through each page in the diagram.
+                // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Collect IDs of all connector shapes (1‑D shapes) on the current page.
-                    var connectorIds = new System.Collections.Generic.HashSet<long>();
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        if (shape.OneD) // Connector shapes are 1‑D.
+                        // Identify connector shapes (1‑D shapes).
+                        if (shape.OneD)
                         {
-                            connectorIds.Add(shape.ID);
-                        }
-                    }
+                            bool hasConnection = false;
 
-                    // Count how many connections each connector participates in.
-                    var connectionCount = new System.Collections.Generic.Dictionary<long, int>();
-                    foreach (Connect conn in page.Connects)
-                    {
-                        long from = conn.FromSheet;
-                        long to = conn.ToSheet;
+                            // Examine the page's Connect collection to see if the connector participates in any connection.
+                            foreach (Connect conn in page.Connects)
+                            {
+                                if (conn.FromSheet == shape.ID || conn.ToSheet == shape.ID)
+                                {
+                                    hasConnection = true;
+                                    break;
+                                }
+                            }
 
-                        if (connectorIds.Contains(from))
-                        {
-                            if (!connectionCount.ContainsKey(from))
-                                connectionCount[from] = 0;
-                            connectionCount[from]++;
-                        }
-
-                        if (connectorIds.Contains(to))
-                        {
-                            if (!connectionCount.ContainsKey(to))
-                                connectionCount[to] = 0;
-                            connectionCount[to]++;
-                        }
-                    }
-
-                    // Flag connectors that have zero connections.
-                    foreach (long connectorId in connectorIds)
-                    {
-                        int count = connectionCount.ContainsKey(connectorId) ? connectionCount[connectorId] : 0;
-                        if (count == 0)
-                        {
-                            anyInvalid = true;
-                            Console.WriteLine($"Invalid connector shape ID {connectorId} on page '{page.Name}' (no connections).");
+                            // If no connection is found, flag the connector as invalid.
+                            if (!hasConnection)
+                            {
+                                invalidConnectorCount++;
+                                Console.WriteLine($"Invalid connector found: Shape ID {shape.ID} on page \"{page.Name}\" has no connections.");
+                            }
                         }
                     }
                 }
 
-                if (!anyInvalid)
+                // Summary output.
+                if (invalidConnectorCount == 0)
                 {
                     Console.WriteLine("All connector shapes have at least one valid connection.");
                 }
+                else
+                {
+                    Console.WriteLine($"Total invalid connectors: {invalidConnectorCount}");
+                }
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

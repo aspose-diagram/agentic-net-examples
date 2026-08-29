@@ -10,34 +10,42 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Select the first page (or any specific page you need)
+            // Select the page to process (e.g., the first page)
             Page page = diagram.Pages[0];
 
-            // List to store paragraph texts from all shapes on the page
+            // List to store individual paragraph texts from all shapes
             List<string> paragraphTexts = new List<string>();
 
-            // Iterate through each shape on the page
+            // Iterate through each shape on the selected page
             foreach (Shape shape in page.Shapes)
             {
-                // Retrieve the plain text of the shape (includes all paragraphs)
+                // Retrieve the combined text of the shape (all paragraphs)
                 string pureText = shape.GetPureText();
 
-                // If the shape contains text, add it to the collection
+                // If the shape contains text, split it into separate paragraphs
                 if (!string.IsNullOrEmpty(pureText))
                 {
-                    paragraphTexts.Add(pureText);
+                    // Visio paragraphs are typically separated by line breaks
+                    string[] paragraphs = pureText.Split(
+                        new[] { "\r\n", "\n" },
+                        StringSplitOptions.RemoveEmptyEntries);
+
+                    // Add each paragraph to the collection
+                    paragraphTexts.AddRange(paragraphs);
                 }
             }
 
-            // Example reporting: output the collected paragraph texts
-            Console.WriteLine("Collected Paragraph Texts:");
-            foreach (string text in paragraphTexts)
+            // Example reporting: output collected paragraphs to the console
+            foreach (string paragraph in paragraphTexts)
             {
-                Console.WriteLine("- " + text);
+                Console.WriteLine(paragraph);
             }
+
+            // Optionally save the diagram after processing
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

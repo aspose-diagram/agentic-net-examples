@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,63 +9,52 @@ class Program
             try
             {
 
-                // Path to the Visio file (adjust as needed)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Path to the Visio file to be analyzed.
+                // Adjust the file path as needed.
+                string diagramPath = "input.vsdx";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Load the diagram.
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Iterate through all pages
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes
+                        // Skip shapes that are marked as deleted.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Determine if fill properties are inherited
-                        bool fillInherited = false;
-                        if (shape.InheritFill != null && shape.Fill != null)
-                        {
-                            // Compare foreground color and fill pattern as representative inheritance flags
-                            fillInherited =
-                                shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value &&
-                                shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value;
-                        }
+                        // Determine if fill properties are inherited from the parent style/master.
+                        bool fillInherited =
+                            shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value &&
+                            shape.Fill.FillBkgnd.Value == shape.InheritFill.FillBkgnd.Value &&
+                            shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value;
 
-                        // Determine if line properties are inherited
-                        bool lineInherited = false;
-                        if (shape.InheritLine != null && shape.Line != null)
-                        {
-                            // Compare line color and line pattern as representative inheritance flags
-                            lineInherited =
-                                shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value &&
-                                shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value;
-                        }
+                        // Determine if line properties are inherited from the parent style/master.
+                        bool lineInherited =
+                            shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value &&
+                            shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value &&
+                            shape.Line.LineWeight.Value == shape.InheritLine.LineWeight.Value;
 
-                        // Log shapes where fill and line inheritance flags are inconsistent
+                        // Log shapes where fill inheritance flag differs from line inheritance flag.
                         if (fillInherited != lineInherited)
                         {
-                            Console.WriteLine($"Inconsistent inheritance detected:");
-                            Console.WriteLine($"  Page Name: {page.Name}");
-                            Console.WriteLine($"  Shape ID: {shape.ID}");
-                            Console.WriteLine($"  Shape Name: {shape.Name}");
+                            Console.WriteLine($"Shape ID {shape.ID} (NameU: {shape.NameU}) has inconsistent inheritance:");
                             Console.WriteLine($"  Fill Inherited: {fillInherited}");
                             Console.WriteLine($"  Line Inherited: {lineInherited}");
                         }
                     }
                 }
 
-                // Optionally save the diagram unchanged (demonstrates save usage)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Optionally, save the diagram after analysis (no changes made here).
+                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

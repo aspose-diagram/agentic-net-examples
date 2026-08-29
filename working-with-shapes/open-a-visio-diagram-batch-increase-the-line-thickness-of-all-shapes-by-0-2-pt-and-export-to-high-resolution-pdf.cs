@@ -1,56 +1,52 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths to the source Visio file and the output PDF
+            string inputPath = "input.vsdx";
+            string outputPath = "output.pdf";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Increment to add to each shape's line weight (0.2 pt = 0.2/72 inches)
+            double incrementInches = 0.2 / 72.0;
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
-                // Output PDF file path
-                string outputPath = "output.pdf";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Increment value for line weight: 0.2 pt = 0.2 / 72 inches
-                double incrementInInches = 0.2 / 72.0;
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Ensure the LineWeight cell exists
-                        if (shape.Line != null && shape.Line.LineWeight != null)
-                        {
-                            // Increase line thickness
-                            shape.Line.LineWeight.Value += incrementInInches;
-                        }
-                    }
+                    // Increase line thickness
+                    shape.Line.LineWeight.Value += incrementInches;
                 }
-
-                // Configure PDF save options (high‑resolution defaults)
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial"; // fallback font
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-                // Save the modified diagram as a PDF
-                diagram.Save(outputPath, pdfOptions);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Configure PDF save options (default font set for safety)
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+
+            // Save the modified diagram as a high‑resolution PDF
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine("Diagram processing complete. PDF saved to: " + outputPath);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

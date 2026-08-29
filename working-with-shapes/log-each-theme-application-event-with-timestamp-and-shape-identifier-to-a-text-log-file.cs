@@ -2,39 +2,41 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class ThemeLogger
+class ThemeApplicationLogger
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram(@"input.vsdx");
+            // Paths for the source diagram and the log file
+            string diagramPath = "input.vsdx";
+            string logPath = "ThemeApplicationLog.txt";
 
-            // Path to the log file
-            string logFilePath = @"theme_log.txt";
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Open the log file for appending
-            using (StreamWriter logWriter = new StreamWriter(logFilePath, true))
+            // Ensure the log file is empty before starting
+            File.WriteAllText(logPath, string.Empty);
+
+            // Iterate through all pages and shapes in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Apply a preset theme to the shape (choose any theme you need)
-                        shape.PresetTheme = PresetThemeValue.Office;
+                    // Apply a preset theme to the shape (example: Office theme)
+                    shape.PresetTheme = PresetThemeValue.Office;
 
-                        // Log the event: timestamp (ISO 8601) and shape identifier
-                        string logEntry = $"{DateTime.UtcNow:O}\tShapeID:{shape.ID}";
-                        logWriter.WriteLine(logEntry);
-                    }
+                    // Build log entry with timestamp and shape identifier (ID)
+                    string logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\tPage:{page.ID}\tShapeID:{shape.ID}\tTheme:Office";
+
+                    // Append the log entry to the text file
+                    File.AppendAllText(logPath, logEntry + Environment.NewLine);
                 }
             }
 
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save(@"output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram (optional, if you want to keep changes)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

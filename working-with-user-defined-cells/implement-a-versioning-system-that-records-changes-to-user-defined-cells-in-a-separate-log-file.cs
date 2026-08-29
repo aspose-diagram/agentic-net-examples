@@ -1,86 +1,106 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramVersioning
+{
+    // Helper class for logging changes to a file
+    public static class VersionLogger
     {
-        static void Main(string[] args)
+        // Appends a log entry with timestamp to the specified log file
+        public static void LogChange(string logFilePath, string entry)
         {
-            // Validate arguments
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramVersioning <inputDiagramPath> <outputDiagramPath> [logFilePath]");
-                return;
-            }
+            string timestampedEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {entry}{Environment.NewLine}";
+            File.AppendAllText(logFilePath, timestampedEntry);
+        }
+    }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-            string logPath = args.Length >= 3 ? args[2] : "UserCellChanges.log";
-
-            // Load the diagram
-            Diagram diagram;
+    public class Program
+    {
+        // Entry point
+        public static void Main(string[] args)
+        {
             try
             {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
 
-            // Open log file for appending
-            using (StreamWriter logWriter = new StreamWriter(logPath, append: true))
-            {
-                // Write header for this session
-                logWriter.WriteLine($"--- Change Log Session: {DateTime.Now:yyyy-MM-dd HH:mm:ss} ---");
+                // Paths (adjust as needed)
+                string inputDiagramPath = "input.vsdx";
+                string outputDiagramPath = "output.vsdx";
+                string logFilePath = "cell_changes.log";
 
-                // Iterate through all pages and shapes
+                // Load the diagram (using the standard constructor)
+                Diagram diagram = new Diagram(inputDiagramPath);
+
+                // Store original user-defined cell values: key = (shape ID, cell name)
+                var originalValues = new Dictionary<(long, string), string>();
+
+                // First pass: capture current values
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through user-defined cells (Users collection)
-                        foreach (User userCell in shape.Users)
+                        if (shape.Users != null)
                         {
-                            // Example rule: if a user cell named "Version" exists, increment its numeric value
-                            if (string.Equals(userCell.Name, "Version", StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(userCell.NameU, "Version", StringComparison.OrdinalIgnoreCase))
+                            foreach (User userCell in shape.Users)
                             {
-                                string oldValue = userCell.Value.Val ?? string.Empty;
-                                int numericValue;
-                                string newValue = oldValue; // default to old if parsing fails
-
-                                if (int.TryParse(oldValue, out numericValue))
-                                {
-                                    numericValue++;
-                                    newValue = numericValue.ToString();
-                                    // Update the cell with the new value
-                                    userCell.Value.Val = newValue;
-                                }
-
-                                // Log the change (or attempted change)
-                                logWriter.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | ShapeID: {shape.ID} | Cell: {userCell.Name} | Old: {oldValue} | New: {newValue}");
+                                // Use shape ID and cell name as unique identifier
+                                var key = (shape.ID, userCell.Name);
+                                originalValues[key] = userCell.Value?.Val ?? string.Empty;
                             }
                         }
                     }
                 }
 
-                logWriter.WriteLine($"--- End of Session ---");
-                logWriter.WriteLine();
-            }
+                // Simulate modifications to user-defined cells
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.Users != null)
+                        {
+                            foreach (User userCell in shape.Users)
+                            {
+                                // Example modification: append a version suffix
+                                string currentValue = userCell.Value?.Val ?? string.Empty;
+                                string newValue = currentValue + "_v2";
+                                userCell.Value.Val = newValue;
+                            }
+                        }
+                    }
+                }
 
-            // Save the modified diagram
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to {outputPath}");
-                Console.WriteLine($"Change log written to {logPath}");
+                // Second pass: detect changes and log them
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.Users != null)
+                        {
+                            foreach (User userCell in shape.Users)
+                            {
+                                var key = (shape.ID, userCell.Name);
+                                string original = originalValues.ContainsKey(key) ? originalValues[key] : string.Empty;
+                                string current = userCell.Value?.Val ?? string.Empty;
+
+                                if (!string.Equals(original, current, StringComparison.Ordinal))
+                                {
+                                    string logEntry = $"ShapeID={shape.ID}, CellName='{userCell.Name}', OldValue='{original}', NewValue='{current}'";
+                                    VersionLogger.LogChange(logFilePath, logEntry);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
     }
+    }
+}

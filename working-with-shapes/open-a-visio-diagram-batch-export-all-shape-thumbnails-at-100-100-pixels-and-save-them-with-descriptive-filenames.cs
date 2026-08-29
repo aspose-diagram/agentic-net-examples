@@ -5,66 +5,75 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file and output folder.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputFolder>");
+            return;
+        }
+
+        // Assign input file path and guard its existence.
+        string inputPath = args[0];
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Assign output folder path and ensure it exists.
+        string outputFolder = args[1];
+        if (!Directory.Exists(outputFolder))
+        {
+            Directory.CreateDirectory(outputFolder);
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = @"C:\Diagrams\sample.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Prepare image save options with a fixed 100x100 pixel size
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Set the physical size of the exported image (width, height) in pixels
-            imgOptions.PageSize = new PageSize(100f, 100f);
-            // Do not export hidden pages (optional)
-            imgOptions.ExportHiddenPage = false;
-
-            // Base output folder
-            string outputFolder = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "ShapeThumbnails");
-            Directory.CreateDirectory(outputFolder);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            // Iterate over each page in the diagram.
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                // Iterate over each shape on the current page.
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip shapes that are marked as deleted.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Build a descriptive filename
-                    string shapeName = !string.IsNullOrWhiteSpace(shape.NameU) ? shape.NameU : shape.Name;
-                    string safeShapeName = SanitizeFileName(shapeName);
-                    string fileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_Page{page.ID}_Shape{shape.ID}_{safeShapeName}.png";
+                    // Build a descriptive filename using the shape's universal name (if any) and its ID.
+                    string baseName = string.IsNullOrWhiteSpace(shape.NameU) ? $"Shape_{shape.ID}" : shape.NameU;
+                    // Replace any invalid filename characters with an underscore.
+                    foreach (char c in Path.GetInvalidFileNameChars())
+                        baseName = baseName.Replace(c, '_');
+                    // Append the shape ID to guarantee uniqueness.
+                    string fileName = $"{baseName}_{shape.ID}.png";
                     string outputPath = Path.Combine(outputFolder, fileName);
 
-                    // Export the shape thumbnail
-                    shape.ToImage(outputPath, imgOptions);
-                    Console.WriteLine($"Exported shape ID {shape.ID} to {outputPath}");
+                    try
+                    {
+                        // Configure image export options: PNG format with a 100×100 pixel page size.
+                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                        imgOptions.PageSize = new PageSize(100f, 100f); // Width, Height in pixels.
+
+                        // Export the shape thumbnail to the output file.
+                        shape.ToImage(outputPath, imgOptions);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log any errors that occur while exporting an individual shape.
+                        Console.Error.WriteLine($"Error exporting shape ID {shape.ID}: {ex.Message}");
+                    }
                 }
             }
-
-            Console.WriteLine("All shape thumbnails have been exported.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during diagram loading or overall processing.
+            Console.Error.WriteLine($"Processing failed: {ex.Message}");
         }
-    }
-
-    // Removes characters that are invalid in file names
-    private static string SanitizeFileName(string name)
-    {
-        foreach (char c in Path.GetInvalidFileNameChars())
-        {
-            name = name.Replace(c, '_');
-        }
-        return name;
     }
 }

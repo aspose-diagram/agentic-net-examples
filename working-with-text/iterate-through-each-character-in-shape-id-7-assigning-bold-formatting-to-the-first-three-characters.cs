@@ -10,38 +10,51 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Retrieve the shape with ID 7 from the first page
-            long shapeId = 7;
-            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+            // Access the first page (adjust index if needed)
+            Page page = diagram.Pages[0];
 
-            // Ensure the shape and its character collection are valid
-            if (shape != null && shape.Chars != null)
+            // Retrieve the shape with ID 7
+            Shape shape = page.Shapes.GetShape(7);
+            if (shape == null)
             {
-                int index = 0;
-                // Iterate through each character formatting entry
-                foreach (Aspose.Diagram.Char ch in shape.Chars)
-                {
-                    // Apply bold style to the first three characters
-                    if (index < 3)
-                    {
-                        ch.Style.Value = StyleValue.Bold;
-                    }
-                    index++;
-                }
+                throw new Exception("Shape with ID 7 not found.");
             }
-            else
+
+            // Get the plain text of the shape
+            string plainText = shape.Text.Value.Text;
+            if (string.IsNullOrEmpty(plainText))
             {
-                Console.WriteLine("Shape with ID 7 not found or has no character data.");
+                throw new Exception("Shape with ID 7 contains no text.");
+            }
+
+            // Clear any existing character formatting runs
+            shape.Chars.Clear();
+
+            // Iterate through each character and apply bold to the first three
+            for (int i = 0; i < plainText.Length; i++)
+            {
+                Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+                ch.IX = i; // character index
+
+                if (i < 3)
+                {
+                    // Apply bold style
+                    ch.Style.Value = StyleValue.Bold;
+                }
+                else
+                {
+                    // No special style (undefined)
+                    ch.Style.Value = StyleValue.Undefined;
+                }
+
+                shape.Chars.Add(ch);
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved to " + outputPath);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

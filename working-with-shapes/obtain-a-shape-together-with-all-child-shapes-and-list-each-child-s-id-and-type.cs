@@ -12,35 +12,22 @@ class Program
             // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Identify the shape you want to inspect (replace with the actual ID or name)
-            int targetShapeId = 1; // example ID
-            Shape targetShape = diagram.Pages[0].Shapes.GetShapeIncludingChild(targetShapeId);
+            // Identify the parent shape (by ID or name). Here we use an example ID = 1.
+            int parentShapeId = 1;
 
-            // Output the target shape's ID and type
-            Console.WriteLine($"Shape ID: {targetShape.ID}, Type: {targetShape.Type}");
+            // Get the shape together with its child shapes.
+            Shape parentShape = diagram.Pages[0].Shapes.GetShapeIncludingChild(parentShapeId);
 
-            // Recursively list all child shapes with their IDs and types
-            ListChildShapes(targetShape);
+            // Iterate through all child shapes and output their ID and Type.
+            foreach (Shape child in parentShape.Shapes)
+            {
+                Console.WriteLine($"Child ID: {child.ID}, Type: {child.Type}");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    static void ListChildShapes(Shape parentShape)
-    {
-        // Iterate through direct child shapes
-        foreach (Shape child in parentShape.Shapes)
-        {
-            Console.WriteLine($"Child Shape ID: {child.ID}, Type: {child.Type}");
-
-            // If the child itself contains further children, process them recursively
-            if (child.Shapes.Count > 0)
-            {
-                ListChildShapes(child);
-            }
         }
     }
 }

@@ -15,14 +15,14 @@ class Program
             // Load the Visio diagram using the constructor that accepts a file name
             Diagram diagram = new Diagram(filePath);
 
-            // Verify successful initialization by checking the object and page collection
-            if (diagram != null && diagram.Pages.Count > 0)
+            // Verify successful initialization by checking the Pages collection
+            if (diagram != null && diagram.Pages != null && diagram.Pages.Count > 0)
             {
                 Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
             }
             else
             {
-                Console.WriteLine("Failed to load diagram or diagram contains no pages.");
+                Console.WriteLine("Failed to load diagram.");
             }
 
             // Clean up resources

@@ -4,7 +4,7 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
@@ -14,39 +14,41 @@ class Program
                 // Output Visio file path
                 string outputPath = "output.vsdx";
 
-                // The fill color to match (hex string, case-insensitive)
-                const string targetFillColor = "#FF0000"; // Red
-
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages
+                // Define the target fill color (hex string, case‑insensitive)
+                const string targetFillColor = "#FF0000"; // Red
+
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Get the foreground fill color (hex string). May be null.
-                        string fillColor = shape.Fill?.FillForegnd?.Value;
+                        // Ensure the Fill and FillForegnd cells exist
+                        if (shape.Fill == null || shape.Fill.FillForegnd == null)
+                            continue;
 
-                        // Compare ignoring case
-                        if (!string.IsNullOrEmpty(fillColor) && 
-                            string.Equals(fillColor, targetFillColor, StringComparison.OrdinalIgnoreCase))
+                        string currentFill = shape.Fill.FillForegnd.Value;
+                        if (string.IsNullOrEmpty(currentFill))
+                            continue;
+
+                        // Apply theme only when the fill color matches the target color
+                        if (string.Equals(currentFill, targetFillColor, StringComparison.OrdinalIgnoreCase))
                         {
                             // Apply a preset theme to the shape
                             shape.PresetTheme = PresetThemeValue.Bubble;
                             shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                            // Optionally set a quick style
-                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
                         }
                     }
                 }
 
-                // Save the modified diagram in VSDX format
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

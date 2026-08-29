@@ -1,42 +1,42 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main()
     {
-        // Create a new diagram (empty) or load an existing one.
-        Diagram diagram = new Diagram();
-
-        // Ensure the diagram has at least one page.
-        if (diagram.Pages.Count == 0)
+        try
         {
-            diagram.Pages.Add(new Page());
-        }
 
-        // Add a numbered text shape to each page.
-        int pageNumber = 0;
-        foreach (Page page in diagram.Pages)
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Loop through all pages in the diagram
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                Page page = diagram.Pages[i];
+
+                // Position (in inches) where the text will be placed on each page
+                double pinX = 1.0;   // X coordinate
+                double pinY = 1.0;   // Y coordinate
+                double width = 2.0; // Width of the text box
+                double height = 0.5; // Height of the text box
+
+                // Text to display – using the page index (1‑based) as the label
+                string text = $"Page {i + 1}";
+
+                // Add the text shape to the current page
+                page.AddText(pinX, pinY, width, height, text);
+            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
         {
-            pageNumber++; // 1‑based page index for labeling
-
-            // Get page dimensions (in inches).
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-            // Position the text shape near the top‑left corner.
-            double pinX = 1.0;
-            double pinY = pageHeight - 1.0; // offset from top edge
-
-            // Add the text shape with the label "Page {index}".
-            page.AddText(pinX, pinY, 2.0, 0.5, $"Page {pageNumber}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-
-        // Save the diagram to a VSDX file.
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        // Release resources.
-        diagram.Dispose();
     }
 }

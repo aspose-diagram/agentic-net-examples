@@ -1,48 +1,53 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+                // Load an existing Visio diagram (replace with your file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (index 0)
-            Page page = diagram.Pages[0];
+                // Access the first page
+                Page page = diagram.Pages[0];
 
-            // Retrieve a shape; index 1 typically skips the page background shape
-            Shape shape = page.Shapes[1];
+                // Retrieve the first shape on the page
+                Shape targetShape = null;
+                foreach (Shape shp in page.Shapes)
+                {
+                    targetShape = shp;
+                    break;
+                }
 
-            // Define new absolute coordinates for the shape's pin
-            double newPinX = 5.0; // example X coordinate
-            double newPinY = 3.0; // example Y coordinate
+                if (targetShape == null)
+                {
+                    throw new Exception("No shape found on the first page.");
+                }
 
-            // Move the shape to the new position
-            shape.MoveTo(newPinX, newPinY);
+                // Define new absolute coordinates
+                double newPinX = 5.0; // inches
+                double newPinY = 5.0; // inches
 
-            // Refresh shape data to ensure internal values are updated
-            shape.RefreshData();
+                // Move the shape to the new absolute position
+                targetShape.MoveTo(newPinX, newPinY);
 
-            // Retrieve the updated PinX and PinY values from the shape's XForm
-            double pinX = shape.XForm.PinX.Value;
-            double pinY = shape.XForm.PinY.Value;
+                // Retrieve the updated PinX and PinY values
+                double actualPinX = targetShape.XForm.PinX.Value;
+                double actualPinY = targetShape.XForm.PinY.Value;
 
-            // Output the coordinates to verify the move
-            Console.WriteLine($"Updated PinX: {pinX}");
-            Console.WriteLine($"Updated PinY: {pinY}");
+                // Output the coordinates to confirm the move
+                Console.WriteLine($"Shape ID {targetShape.ID} moved to:");
+                Console.WriteLine($"PinX = {actualPinX} inches");
+                Console.WriteLine($"PinY = {actualPinY} inches");
 
-            // Save the modified diagram (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

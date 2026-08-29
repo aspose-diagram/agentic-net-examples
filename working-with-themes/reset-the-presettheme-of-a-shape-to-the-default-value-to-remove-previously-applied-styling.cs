@@ -4,20 +4,23 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the existing Visio diagram
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the target shape (example: first shape on the first page)
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
-
-            // Reset the shape's preset theme to the default (no theme)
-            shape.PresetTheme = PresetThemeValue.NoTheme;
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Reset the shape's preset theme to the default (NoTheme)
+                    shape.PresetTheme = PresetThemeValue.NoTheme;
+                }
+            }
 
             // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);

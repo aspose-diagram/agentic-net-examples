@@ -8,49 +8,52 @@ class Program
             try
             {
 
-                // Create a new empty diagram
+                // Create a new empty diagram (contains a default page)
                 Diagram diagram = new Diagram();
 
-                // Add a rectangle shape to the first page (page index 0)
-                // PinX = 2, PinY = 2, master name = "Rectangle"
+                // Add a rectangle shape on the first page (page index 0)
+                // Parameters: PinX, PinY, master name, page index
                 long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+
+                // Retrieve the shape instance from the page's shape collection
                 Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
                 // Add a new connection point to the shape
+                // The X and Y values are expressed as fractions of the shape's width/height
                 Connection newConn = new Connection();
-                // Position the connection point at the center of the shape
-                newConn.X.Ufe.F = "Width*0.5";
-                newConn.Y.Ufe.F = "Height*0.5";
+                newConn.X.Value = 0.5; // middle of the shape width
+                newConn.Y.Value = 0.0; // top edge
                 shape.Connections.Add(newConn);
 
-                // Verify that all connection points exist and have valid X/Y values
+                // Verify that all connection points exist and are of the correct type
                 foreach (Connection conn in shape.Connections)
                 {
-                    // X and Y should not be null
-                    if (conn.X == null)
+                    if (conn == null)
                     {
-                        throw new Exception("Connection point missing X coordinate.");
-                    }
-                    if (conn.Y == null)
-                    {
-                        throw new Exception("Connection point missing Y coordinate.");
+                        throw new Exception("Connection point is null.");
                     }
 
-                    // The formula strings should not be empty
-                    string xFormula = conn.X.Ufe.F;
-                    string yFormula = conn.Y.Ufe.F;
-
-                    if (string.IsNullOrWhiteSpace(xFormula))
+                    // X and Y should be DoubleValue instances
+                    if (!(conn.X is DoubleValue))
                     {
-                        throw new Exception("Connection point X coordinate has an empty formula.");
-                    }
-                    if (string.IsNullOrWhiteSpace(yFormula))
-                    {
-                        throw new Exception("Connection point Y coordinate has an empty formula.");
+                        throw new Exception("Connection X is not a DoubleValue.");
                     }
 
-                    // Optionally, output the verified connection point
-                    Console.WriteLine($"Verified connection point: X = {xFormula}, Y = {yFormula}");
+                    if (!(conn.Y is DoubleValue))
+                    {
+                        throw new Exception("Connection Y is not a DoubleValue.");
+                    }
+
+                    // Optionally, check that the values are within the expected range [0,1]
+                    double xVal = conn.X.Value;
+                    double yVal = conn.Y.Value;
+
+                    if (xVal < 0.0 || xVal > 1.0 || yVal < 0.0 || yVal > 1.0)
+                    {
+                        throw new Exception($"Connection point has out-of-range coordinates: X={xVal}, Y={yVal}");
+                    }
+
+                    Console.WriteLine($"Connection point verified: X={xVal}, Y={yVal}");
                 }
 
                 // Save the diagram to verify that the changes persist

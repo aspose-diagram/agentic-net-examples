@@ -1,77 +1,68 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Cells;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths – adjust as needed
+            string visioPath = "input.vsdx";
+            string excelPath = "data.xlsx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
+
+            // Load the Excel workbook
+            Workbook workbook = new Workbook(excelPath);
+            Worksheet sheet = workbook.Worksheets[0];
+
+            // Build a map: Shape NameU -> Data value (assumes column A = shape name, column B = value)
+            var shapeData = new System.Collections.Generic.Dictionary<string, string>();
+            int lastRow = sheet.Cells.MaxDataRow;
+            for (int i = 1; i <= lastRow; i++) // start at 1 to skip header row
             {
+                string shapeName = sheet.Cells[i, 0].StringValue?.Trim();
+                string value = sheet.Cells[i, 1].StringValue?.Trim();
 
-                // Paths to the Visio file and the Excel data source
-                string visioPath = "input.vsdx";
-                string excelPath = "data.xlsx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Load the Excel workbook
-                Workbook workbook = new Workbook(excelPath);
-                Worksheet sheet = workbook.Worksheets[0];
-                Cells cells = sheet.Cells;
-
-                // Build a map of column header (shape name) to column index
-                Dictionary<string, int> headerMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                int maxColumn = cells.MaxColumn + 1; // columns are zero‑based
-                for (int col = 0; col < maxColumn; col++)
+                if (!string.IsNullOrEmpty(shapeName))
                 {
-                    string header = cells[0, col].StringValue?.Trim();
-                    if (!string.IsNullOrEmpty(header) && !headerMap.ContainsKey(header))
-                    {
-                        headerMap[header] = col;
-                    }
+                    shapeData[shapeName] = value ?? string.Empty;
                 }
+            }
 
-                // Assume data starts from the second row (index 1)
-                int dataRowIndex = 1;
-
-                // Process shapes on the first page
-                Page page = diagram.Pages[0];
+            // Apply data graphics: set Data1 of each matching shape
+            foreach (Page page in diagram.Pages)
+            {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip logically deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Use the universal name of the shape to find matching Excel column
-                    string shapeName = shape.NameU?.Trim();
-                    if (string.IsNullOrEmpty(shapeName))
-                        continue;
-
-                    if (headerMap.TryGetValue(shapeName, out int colIndex))
+                    // If the shape's universal name exists in the Excel map, assign the value
+                    if (shapeData.TryGetValue(shape.NameU, out string val))
                     {
-                        // Retrieve the cell value from the Excel sheet
-                        string cellValue = cells[dataRowIndex, colIndex].StringValue ?? string.Empty;
-
-                        // Assign the value to the shape's Data1 field (you can also use Data2/Data3 as needed)
-                        shape.Data1 = cellValue;
-
-                        Console.WriteLine($"Shape '{shapeName}' (ID {shape.ID}) updated with value '{cellValue}'.");
+                        shape.Data1 = val; // Direct assignment, no .Value
+                        Console.WriteLine($"Data applied to shape '{shape.NameU}' (ID {shape.ID})");
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

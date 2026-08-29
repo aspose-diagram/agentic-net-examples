@@ -10,31 +10,33 @@ class Program
         {
 
             // Path to the source Visio file
-            string inputPath = @"C:\Diagrams\Sample.vsdx";
+            string inputPath = @"C:\Diagrams\SampleDiagram.vsdx";
 
-            // Path for the resulting PDF file
-            string outputPdf = @"C:\Diagrams\Sample_renamed.pdf";
+            // Load the diagram using the provided constructor rule
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a prefix from the file name (without extension)
+            // Create a prefix from the file name (without extension) followed by an underscore
             string prefix = Path.GetFileNameWithoutExtension(inputPath) + "_";
 
-            // Load the diagram using the Diagram(string) constructor
-            using (Diagram diagram = new Diagram(inputPath))
+            // Iterate through all pages and their shapes to rename them
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate over all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate over all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Rename the shape by adding the derived prefix
-                        shape.Name = prefix + shape.Name;
-                    }
+                    // Preserve the original name and prepend the prefix
+                    string originalName = shape.NameU;
+                    shape.NameU = prefix + originalName;
                 }
-
-                // Export the modified diagram to PDF using the Save method with SaveFileFormat.Pdf
-                diagram.Save(outputPdf, SaveFileFormat.Pdf);
             }
+
+            // Define the output PDF file path (same folder, same base name, .pdf extension)
+            string outputPdfPath = Path.ChangeExtension(inputPath, ".pdf");
+
+            // Export the modified diagram to PDF using the provided Save method rule
+            diagram.Save(outputPdfPath, SaveFileFormat.Pdf);
+
+            // Clean up resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,67 +1,80 @@
 using System;
-using System.IO;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
-
-            // Iterate through all pages and shapes
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            try
             {
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+
+                // Path to the Visio file to process
+                string inputPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the shape has an XForm object (required for position data)
-                    if (shape.XForm == null)
-                        continue; // Skip shapes without transformation data
+                    Console.WriteLine($"Processing Page: {page.NameU}");
 
-                    // Check that both LocPinX and LocPinY cells are present
-                    // If either is missing, the shape cannot provide absolute coordinates
-                    if (shape.XForm.LocPinX == null || shape.XForm.LocPinY == null)
-                        continue; // Skip this shape safely
-
-                    try
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the shape's PinX and PinY (position of the shape's pin on the page)
-                        double pinX = shape.XForm.PinX.Value;
-                        double pinY = shape.XForm.PinY.Value;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Retrieve the local pin offsets (relative to the shape's origin)
-                        double locPinX = shape.XForm.LocPinX.Value;
-                        double locPinY = shape.XForm.LocPinY.Value;
+                        // Ensure LocPinX and LocPinY cells are present
+                        if (shape.XForm.LocPinX == null || shape.XForm.LocPinY == null)
+                        {
+                            Console.WriteLine($"Shape ID {shape.ID} ('{shape.NameU}') lacks LocPinX/Y cells. Skipping.");
+                            continue;
+                        }
 
-                        // Calculate absolute coordinates of the shape's origin
-                        double absoluteX = pinX - locPinX;
-                        double absoluteY = pinY - locPinY;
+                        try
+                        {
+                            // Retrieve necessary values
+                            double pinX = shape.XForm.PinX.Value;
+                            double pinY = shape.XForm.PinY.Value;
+                            double locPinX = shape.XForm.LocPinX.Value;
+                            double locPinY = shape.XForm.LocPinY.Value;
+                            double angleDeg = shape.XForm.Angle.Value; // Angle is in degrees
 
-                        // Example operation: move the shape to a new absolute position (offset by +1 inch)
-                        shape.MoveTo(absoluteX + 1.0, absoluteY + 1.0);
+                            // Convert angle to radians for trigonometric calculations
+                            double angleRad = angleDeg * Math.PI / 180.0;
 
-                        // Refresh shape data after moving
-                        shape.RefreshData();
-                    }
-                    catch (Exception ex)
-                    {
-                        // If any unexpected error occurs (e.g., formula evaluation failure),
-                        // skip the shape and continue processing the rest.
-                        // Logging can be added here if needed.
-                        continue;
+                            // Calculate absolute coordinates considering the local pin offset and rotation
+                            double offsetX = -locPinX;
+                            double offsetY = -locPinY;
+
+                            double cos = Math.Cos(angleRad);
+                            double sin = Math.Sin(angleRad);
+
+                            double absoluteX = pinX + (offsetX * cos - offsetY * sin);
+                            double absoluteY = pinY + (offsetX * sin + offsetY * cos);
+
+                            Console.WriteLine($"Shape ID {shape.ID} ('{shape.NameU}'): Absolute X = {absoluteX:F3}, Y = {absoluteY:F3}");
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log the error and continue with the next shape
+                            Console.WriteLine($"Error processing Shape ID {shape.ID}: {ex.Message}. Skipping.");
+                        }
                     }
                 }
+
+                // Optionally save the diagram after processing (no changes made here)
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to {outputPath}");
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

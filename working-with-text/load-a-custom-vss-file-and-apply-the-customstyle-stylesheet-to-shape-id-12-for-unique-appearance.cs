@@ -1,66 +1,52 @@
 using System;
+using System.IO;
+
+// Load the main Visio diagram (replace with your actual file path)
 using Aspose.Diagram;
+using System;
+using System.Linq;
 
-class Program
+class ApplyCustomStyle
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the target diagram that contains the shape with ID 12
+            Diagram diagram = new Diagram("input.vsdx"); // loads VSDX by default
+
+            // Load the custom stencil (.vss) that defines the stylesheet
+            Diagram stencil = new Diagram("custom.vss", LoadFileFormat.Vss);
+
+            // Find the stylesheet named "CustomStyle" in the stencil
+            StyleSheet customStyle = stencil.StyleSheets.FirstOrDefault(s => s.Name == "CustomStyle" || s.NameU == "CustomStyle");
+            if (customStyle == null)
             {
-
-                // Path to the custom stencil file (.vss)
-                string stencilPath = "customStencil.vss";
-
-                // Load the stencil as a Diagram object
-                Diagram diagram = new Diagram(stencilPath);
-
-                // Retrieve the shape with ID 12 from the first page of the stencil
-                // Ensure the page exists and the shape ID is valid
-                if (diagram.Pages.Count == 0)
-                {
-                    throw new Exception("The loaded stencil does not contain any pages.");
-                }
-
-                Page page = diagram.Pages[0];
-                Shape shape = page.Shapes.GetShape(12);
-                if (shape == null)
-                {
-                    throw new Exception("Shape with ID 12 was not found in the stencil.");
-                }
-
-                // Locate the stylesheet named "CustomStyle"
-                StyleSheet customStyle = null;
-                foreach (StyleSheet ss in diagram.StyleSheets)
-                {
-                    if (ss.Name == "CustomStyle")
-                    {
-                        customStyle = ss;
-                        break;
-                    }
-                }
-
-                if (customStyle == null)
-                {
-                    throw new Exception("Stylesheet 'CustomStyle' was not found in the stencil.");
-                }
-
-                // Apply the stylesheet to the shape.
-                // Assign the stylesheet to text, fill, and line style collections.
-                shape.TextStyle = customStyle;
-                shape.FillStyle = customStyle;
-                shape.LineStyle = customStyle;
-
-                // Save the modified stencil (or export to a Visio drawing) to verify the changes.
-                // Here we save as a VSDX file.
-                string outputPath = "StyledStencil.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Stylesheet 'CustomStyle' applied to shape ID 12 and saved to '{outputPath}'.");
-
+                Console.WriteLine("CustomStyle stylesheet not found in the stencil.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Locate the shape with ID 12 in the diagram's active page
+            Shape targetShape = diagram.ActivePage.Shapes.FirstOrDefault(sh => sh.ID == 12);
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("Shape with ID 12 not found in the diagram.");
+                return;
             }
+
+            // Apply the stylesheet to the shape's fill, line, and text formatting
+            targetShape.FillStyle = customStyle;
+            targetShape.LineStyle = customStyle;
+            targetShape.TextStyle = customStyle;
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

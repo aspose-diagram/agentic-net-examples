@@ -1,63 +1,66 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Locate the built‑in "Title" style sheet (if it exists)
-            StyleSheet titleStyle = null;
-            foreach (StyleSheet ss in diagram.StyleSheets)
+            try
             {
-                if (ss.Name == "Title")
+
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Locate the built‑in "Title" style sheet once
+                StyleSheet titleStyle = null;
+                foreach (StyleSheet ss in diagram.StyleSheets)
                 {
-                    titleStyle = ss;
-                    break;
-                }
-            }
-
-            if (titleStyle == null)
-            {
-                Console.WriteLine("The 'Title' style was not found in the diagram's style sheets.");
-                return;
-            }
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Retrieve plain text of the shape
-                    string shapeText = shape.Text.Value.Text ?? string.Empty;
-
-                    // Apply the Title style if text length exceeds 20 characters
-                    if (shapeText.Length > 20)
+                    if (ss.Name == "Title")
                     {
-                        shape.TextStyle = titleStyle;
+                        titleStyle = ss;
+                        break;
                     }
                 }
+
+                // If the "Title" style does not exist, exit early
+                if (titleStyle == null)
+                {
+                    Console.WriteLine("Title style not found in the document.");
+                    return;
+                }
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve plain text of the shape
+                        string plainText = shape.Text.Value.ToString();
+
+                        // Apply the Title style if text length exceeds 20 characters
+                        if (!string.IsNullOrEmpty(plainText) && plainText.Length > 20)
+                        {
+                            shape.TextStyle = titleStyle;
+                        }
+                    }
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to {outputPath}");
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved with Title style applied where needed.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,42 +1,55 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
-class Program
+class DiagramTextExtractor
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output log file path
+            string logPath = "sanitized_text.log";
 
-            // Collect sanitized text from all shapes
-            StringBuilder logBuilder = new StringBuilder();
+            // Load the diagram using the appropriate constructor (load from file)
+            Diagram diagram = new Diagram(inputPath);
 
+            // List to hold sanitized text lines
+            List<string> sanitizedLines = new List<string>();
+
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Get the raw text of the shape
+                    // Get the raw text from the shape
                     string rawText = shape.GetPureText();
 
                     if (!string.IsNullOrEmpty(rawText))
                     {
-                        // Remove all punctuation characters
-                        string sanitized = Regex.Replace(rawText, @"[^\w\s]", string.Empty);
-                        logBuilder.AppendLine(sanitized);
+                        // Remove all punctuation using a regular expression
+                        string sanitized = Regex.Replace(rawText, @"[\p{P}]", string.Empty);
+                        // Optionally trim whitespace
+                        sanitized = sanitized.Trim();
+
+                        if (sanitized.Length > 0)
+                        {
+                            sanitizedLines.Add(sanitized);
+                        }
                     }
                 }
             }
 
-            // Write the sanitized text to a log file
-            File.WriteAllText("sanitized_log.txt", logBuilder.ToString());
+            // Write all sanitized lines to the log file
+            File.WriteAllLines(logPath, sanitizedLines, Encoding.UTF8);
 
-            // Release resources held by the diagram
+            // Clean up resources
             diagram.Dispose();
 
         }

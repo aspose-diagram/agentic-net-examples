@@ -5,36 +5,34 @@ class Program
     {
         static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output file path.
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: FooterExample <inputVisioPath> <outputVisioPath>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputPath = args[1];
+
             try
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
+                // Load the Visio diagram.
                 Diagram diagram = new Diagram(inputPath);
 
-                // Configure the global footer to show the page number dynamically
-                // '&p' is the Visio field code for the current page number
-                diagram.HeaderFooter.FooterRight = "Page: &p";
+                // Set a dynamic footer that shows the page number on the right side.
+                // '&p' is the Visio field code for the current page number.
+                diagram.HeaderFooter.FooterRight = "Page &p";
 
-                // Optional: adjust footer margin (in inches) from the page edge
-                diagram.HeaderFooter.FooterMargin.Value = 0.5;
-
-                // Optional: set footer font properties
-                diagram.HeaderFooter.HeaderFooterFont.FaceName = "Arial";
-                diagram.HeaderFooter.HeaderFooterFont.Height = 12;          // point size
-                diagram.HeaderFooter.HeaderFooterFont.Weight = 700;        // 700 = bold
-                diagram.HeaderFooter.HeaderFooterFont.Underline = BOOL.False;
-
-                // Save the modified diagram
+                // Save the modified diagram in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
+                Console.WriteLine($"Footer added and diagram saved to '{outputPath}'.");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("An error occurred: " + ex.Message);
+                throw;
             }
-    }
+        }
     }

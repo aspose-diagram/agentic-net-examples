@@ -4,84 +4,77 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            // Determine the folder containing diagrams.
-            // If a path is passed as an argument, use it; otherwise use the current directory.
-            string inputFolder = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
 
-            // Get all Visio files (VSDX) in the folder.
-            string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+            // Paths – adjust as needed
+            string inputFolder = @"C:\Diagrams\Input";
+            string outputFolder = @"C:\Diagrams\Output";
+            string styleSheetPath = @"C:\Diagrams\CustomStyle.vss";
 
-            foreach (string filePath in diagramFiles)
+            // Ensure the output directory exists
+            Directory.CreateDirectory(outputFolder);
+
+            // Load the custom stylesheet (stored as a Visio stencil)
+            Diagram styleDiagram = new Diagram(styleSheetPath, LoadFileFormat.Vss);
+
+            // Process each Visio file in the input folder
+            foreach (string filePath in Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly))
             {
-                try
+                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx")
+                    continue; // Skip unsupported files
+
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Apply the custom stylesheet by copying each stylesheet from the stencil
+                foreach (var styleSheet in styleDiagram.StyleSheets)
                 {
-                    // Load the diagram from file.
-                    Diagram diagram = new Diagram(filePath);
-
-                    // -------------------------------------------------
-                    // Create a custom stylesheet.
-                    // -------------------------------------------------
-                    StyleSheet customStyle = new StyleSheet();
-                    // Assign a unique ID.
-                    customStyle.ID = diagram.StyleSheets.Count + 1;
-
-                    // Define character (text) formatting.
-                    Aspose.Diagram.Char textChar = new Aspose.Diagram.Char();
-                    textChar.IX = 0; // first character run
-                    textChar.Color.Value = "#FF0000"; // red text
-                    customStyle.Chars.Add(textChar);
-
-                    // Define fill formatting.
-                    customStyle.Fill.FillForegnd.Value = "#00FF00"; // green fill
-                    customStyle.Fill.FillPattern.Value = 1; // solid fill (pattern index)
-
-                    // Define line formatting.
-                    customStyle.Line.LineColor.Value = "#0000FF"; // blue line
-                    customStyle.Line.LineWeight.Value = 0.02; // line weight in inches
-
-                    // Add the stylesheet to the diagram.
-                    diagram.StyleSheets.Add(customStyle);
-
-                    // -------------------------------------------------
-                    // Apply the custom stylesheet to all shapes on all pages.
-                    // -------------------------------------------------
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip shapes that are marked as deleted.
-                            if (shape.Del == BOOL.True)
-                                continue;
-
-                            // Apply the stylesheet to text, fill, and line.
-                            shape.TextStyle = customStyle;
-                            shape.FillStyle = customStyle;
-                            shape.LineStyle = customStyle;
-                        }
-                    }
-
-                    // -------------------------------------------------
-                    // Save the updated diagram with a new file name.
-                    // -------------------------------------------------
-                    string directory = Path.GetDirectoryName(filePath);
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
-                    string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_updated.vsdx");
-
-                    // Use the Save overload that takes a file name and a SaveFileFormat.
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                    Console.WriteLine($"Processed and saved: {outputPath}");
+                    diagram.StyleSheets.Add(styleSheet);
                 }
-                catch (Exception ex)
-                {
-                    // Log any errors for the current file and continue with the next one.
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
+
+                // Determine the save format based on the original file extension
+                SaveFileFormat saveFormat = GetSaveFormatFromExtension(ext);
+                DiagramSaveOptions saveOptions = new DiagramSaveOptions(saveFormat);
+
+                // Build the output file path
+                string fileName = Path.GetFileNameWithoutExtension(filePath);
+                string outputPath = Path.Combine(outputFolder, fileName + ext);
+
+                // Save the updated diagram
+                diagram.Save(outputPath, saveOptions);
+
+                // Clean up
+                diagram.Dispose();
             }
 
-            Console.WriteLine("Batch processing completed.");
+            // Clean up the stylesheet diagram
+            styleDiagram.Dispose();
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+
+    // Helper to map file extensions to Aspose.Diagram.SaveFileFormat values
+    static SaveFileFormat GetSaveFormatFromExtension(string ext)
+    {
+        switch (ext)
+        {
+            case ".vsdx":
+                return SaveFileFormat.Vsdx;
+            case ".vsd":
+                return SaveFileFormat.Vsd;
+            case ".vdx":
+                return SaveFileFormat.Vdx;
+            default:
+                return SaveFileFormat.Vdx;
+        }
+    }
+}

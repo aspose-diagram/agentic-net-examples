@@ -2,21 +2,21 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class ReplaceDatePlaceholder
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (use the provided load rule)
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the third page (index 2 because collection is zero‑based)
+            // Get the third page (pages are zero‑based indexed)
             Page pageThree = diagram.Pages[2];
 
-            // Current system date as a string (adjust format as needed)
-            string currentDate = DateTime.Now.ToString("yyyy-MM-dd");
+            // Current system date as string (default format)
+            string currentDate = DateTime.Now.ToString();
 
             // Iterate through all shapes on page three
             foreach (Shape shape in pageThree.Shapes)
@@ -28,7 +28,7 @@ class Program
                 shape.RefreshData();
             }
 
-            // Save the modified diagram (use the provided save rule)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

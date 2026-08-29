@@ -3,63 +3,73 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Get folder path from argument or ask the user
+        string folderPath;
+        if (args.Length > 0)
         {
-            // Folder containing the .vsdx files
-            string inputFolder = @"C:\VisioFiles";
-            // Folder to store watermarked files (can be the same as inputFolder)
-            string outputFolder = @"C:\VisioFiles\Watermarked";
-
-            // Ensure output folder exists
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
-
-            // Get all .vsdx files in the input folder
-            string[] files = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
-
-            foreach (string filePath in files)
-            {
-                try
-                {
-                    // Load the Visio diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Add watermark to each page
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Retrieve page dimensions (in inches)
-                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                        // Add a full‑page text watermark.
-                        // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches)
-                        page.AddText(
-                            0,                     // pinX (left edge)
-                            0,                     // pinY (bottom edge)
-                            pageWidth,             // width (full page width)
-                            pageHeight,            // height (full page height)
-                            "CONFIDENTIAL",        // watermark text
-                            "Calibri",             // font name
-                            "#a5a5a5",             // light gray color in hex
-                            0.25);                 // font size (0.25 inches ≈ 18 pt)
-                    }
-
-                    // Build output file name
-                    string fileName = Path.GetFileNameWithoutExtension(filePath);
-                    string outputPath = Path.Combine(outputFolder, $"{fileName}_watermarked.vsdx");
-
-                    // Save the modified diagram back to VSDX format
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                    Console.WriteLine($"Watermarked file saved: {outputPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
-            }
-
-            Console.WriteLine("Batch watermarking completed.");
+            folderPath = args[0];
         }
+        else
+        {
+            Console.Write("Enter the folder path containing .vsdx files: ");
+            folderPath = Console.ReadLine();
+        }
+
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            Console.WriteLine("Invalid folder path.");
+            return;
+        }
+
+        string[] vsdxFiles = Directory.GetFiles(folderPath, "*.vsdx");
+        if (vsdxFiles.Length == 0)
+        {
+            Console.WriteLine("No .vsdx files found in the specified folder.");
+            return;
+        }
+
+        foreach (string filePath in vsdxFiles)
+        {
+            try
+            {
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Add a full‑page watermark to each page
+                foreach (Page page in diagram.Pages)
+                {
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Center of the page (pin position)
+                    double pinX = pageWidth / 2.0;
+                    double pinY = pageHeight / 2.0;
+
+                    // Add watermark text covering the whole page
+                    page.AddText(
+                        pinX,
+                        pinY,
+                        pageWidth,
+                        pageHeight,
+                        "CONFIDENTIAL",   // watermark text
+                        "Calibri",        // font name
+                        "#a5a5a5",        // font color (hex)
+                        0.25);            // font size in inches
+                }
+
+                // Overwrite the original file with the watermarked diagram
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Watermark added to: {Path.GetFileName(filePath)}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
+            }
+        }
+
+        Console.WriteLine("Batch processing completed.");
     }
+}

@@ -1,59 +1,63 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Check if the shape has a custom property (Prop) named "Review"
+                    bool hasReviewTag = false;
+                    foreach (Prop prop in shape.Props)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Determine if the shape is tagged as "Review"
-                        bool isReviewTag = false;
-                        foreach (Prop prop in shape.Props)
+                        if (prop.Name == "Review")
                         {
-                            // Assuming a custom property named "Tag" holds the tag value
-                            if (prop.Name == "Tag" && prop.Value != null && prop.Value.Val == "Review")
-                            {
-                                isReviewTag = true;
-                                break;
-                            }
+                            hasReviewTag = true;
+                            break;
                         }
+                    }
 
-                        // If the shape is tagged, replace "Confidential" with "Public"
-                        if (isReviewTag)
+                    // If the shape is tagged as "Review", replace text occurrences
+                    if (hasReviewTag)
+                    {
+                        // Iterate over each text run within the shape
+                        foreach (var item in shape.Text.Value)
                         {
-                            shape.ReplaceText("Confidential", "Public");
+                            if (item is Txt txt && txt.Text != null)
+                            {
+                                // Replace "Confidential" with "Public"
+                                if (txt.Text.Contains("Confidential"))
+                                {
+                                    txt.Text = txt.Text.Replace("Confidential", "Public");
+                                }
+                            }
                         }
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Replacement completed. Diagram saved to: " + outputPath);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,24 +1,39 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input and output file paths as command‑line arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the source Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the built‑in "Subtitle" style sheet
+            // Locate the built‑in "Subtitle" style sheet (if it exists)
             StyleSheet subtitleStyle = null;
             foreach (StyleSheet ss in diagram.StyleSheets)
             {
+                // Compare style name case‑sensitively as defined in Visio
                 if (ss.Name == "Subtitle")
                 {
                     subtitleStyle = ss;
@@ -26,26 +41,26 @@ class Program
                 }
             }
 
+            // If the style is missing, report but continue without applying it
             if (subtitleStyle == null)
             {
-                Console.WriteLine("Subtitle style not found. No changes will be applied.");
+                Console.Error.WriteLine("Warning: 'Subtitle' style not found in the document. No styles will be applied.");
             }
-            else
+
+            // Iterate over every page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Iterate over every shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Retrieve the plain text of the shape; empty strings are ignored
+                    string plainText = shape.Text.Value.Text;
+
+                    // Check if the text starts with a numeric character (0‑9)
+                    if (!string.IsNullOrWhiteSpace(plainText) && char.IsDigit(plainText[0]))
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve the plain text of the shape
-                        string text = shape.Text.Value.Text;
-
-                        // Apply the style if the text starts with a numeric prefix
-                        if (!string.IsNullOrWhiteSpace(text) && StartsWithNumber(text))
+                        // Apply the "Subtitle" style to the shape's text if the style was found
+                        if (subtitleStyle != null)
                         {
                             shape.TextStyle = subtitleStyle;
                         }
@@ -53,22 +68,13 @@ class Program
                 }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the output path using VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Processing completed. Diagram saved to '{outputPath}'.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
-    }
-
-    // Helper method to determine if a string begins with a digit
-    static bool StartsWithNumber(string text)
-    {
-        text = text.TrimStart();
-        return text.Length > 0 && char.IsDigit(text[0]);
     }
 }

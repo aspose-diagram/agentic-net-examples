@@ -1,67 +1,99 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 using Aspose.Diagram;
 
-class Program
+namespace DiagramLegendUtility
 {
-    static void Main()
+    public static class LegendHelper
     {
-        try
+        /// <summary>
+        /// Adds a legend text shape to the specified page of a Visio diagram.
+        /// </summary>
+        /// <param name="diagram">The loaded Aspose.Diagram.Diagram instance.</param>
+        /// <param name="pageIndex">Zero‑based index of the page where the legend will be placed.</param>
+        /// <param name="legendEntries">Dictionary where the key is the color name/code and the value is its description.</param>
+        /// <param name="pinX">X coordinate (in inches) of the legend shape's pin (center).</param>
+        /// <param name="pinY">Y coordinate (in inches) of the legend shape's pin (center).</param>
+        /// <param name="width">Width of the legend shape (in inches).</param>
+        /// <param name="fontName">Font name for the legend text.</param>
+        /// <param name="fontColor">Font color (e.g., "RGB(0,0,0)").</param>
+        /// <param name="fontSize">Font size (in points).</param>
+        public static void AddLegend(
+            Diagram diagram,
+            int pageIndex,
+            IDictionary<string, string> legendEntries,
+            double pinX,
+            double pinY,
+            double width,
+            string fontName = "Arial",
+            string fontColor = "RGB(0,0,0)",
+            double fontSize = 10)
         {
+            // Validate page index
+            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+                throw new ArgumentOutOfRangeException(nameof(pageIndex), "Invalid page index.");
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Define the legend entries that map color codes to their meanings
-            string[] legendLines = new string[]
+            // Build the legend text with line breaks
+            StringBuilder sb = new StringBuilder();
+            foreach (var kvp in legendEntries)
             {
-                "Color1: Red",
-                "Color2: Green",
-                "Color3: Blue",
-                "Color4: Yellow"
-            };
+                sb.AppendLine($"{kvp.Key}: {kvp.Value}");
+            }
 
-            // Add the legend to the first page at a chosen position
-            LegendUtility.AddLegend(diagram, pinX: 5.0, pinY: 5.0, legendLines);
+            // Retrieve the target page
+            Page page = diagram.Pages[pageIndex];
 
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Add the text shape using the AddText overload that allows font settings
+            // Height is calculated based on number of lines (approx. 0.2 inch per line)
+            double height = legendEntries.Count * 0.2;
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Shape legendShape = page.AddText(pinX, pinY, width, height, sb.ToString(),
+                                             fontName, fontColor, fontSize);
+
+            // Optional: ensure the legend appears on top of other shapes
+            legendShape.BringToFront();
         }
     }
-}
 
-static class LegendUtility
-{
-    /// <summary>
-    /// Adds a text shape that serves as a legend describing color codes.
-    /// </summary>
-    /// <param name="diagram">The Visio diagram.</param>
-    /// <param name="pinX">X‑coordinate of the legend’s pin (center).</param>
-    /// <param name="pinY">Y‑coordinate of the legend’s pin (center).</param>
-    /// <param name="lines">Array of strings, each representing one legend entry.</param>
-    public static void AddLegend(Diagram diagram, double pinX, double pinY, string[] lines)
+    class Program
     {
-        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
-        if (lines == null || lines.Length == 0) return;
+        static void Main()
+        {
+            try
+            {
 
-        // Combine the lines using Visio’s line‑break token (\n)
-        string legendText = string.Join("\\n", lines);
+                // Load an existing Visio diagram (uses the provided load rule)
+                Diagram diagram = new Diagram("input.vsdx");
 
-        // Estimate width and height for the text shape
-        double width = 2.5;                                   // inches
-        double lineHeight = 0.2;                              // approximate height per line (inches)
-        double height = lines.Length * lineHeight + 0.2;      // add a little padding
+                // Define color codes and their descriptions
+                var legend = new Dictionary<string, string>
+                {
+                    { "Color1", "Primary business unit" },
+                    { "Color2", "Secondary business unit" },
+                    { "Color3", "Tertiary business unit" }
+                };
 
-        // Add the text shape to the first page
-        Page page = diagram.Pages[0];
-        Shape legendShape = page.AddText(pinX, pinY, width, height,
-                                         legendText, "Arial", "0,0,0", 0.2);
+                // Add legend to the first page (page index 0)
+                LegendHelper.AddLegend(
+                    diagram,
+                    pageIndex: 0,
+                    legendEntries: legend,
+                    pinX: 5.0,          // position X (in inches)
+                    pinY: 7.0,          // position Y (in inches)
+                    width: 3.0,         // width of the legend box
+                    fontName: "Calibri",
+                    fontColor: "RGB(0,0,0)",
+                    fontSize: 9);
 
-        // Optional: make the legend’s background transparent (no fill)
-        legendShape.Fill.FillPattern.Value = 0; // 0 = no fill
+                // Save the modified diagram (uses the provided save rule)
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

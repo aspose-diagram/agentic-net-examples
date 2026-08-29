@@ -1,41 +1,33 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with actual file path)
-            using (Diagram diagram = new Diagram("input.vsdx"))
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Access page five (zero‑based index 4)
+            Page pageFive = diagram.Pages[4];
+
+            // Rotate text of every shape on this page by -30 degrees
+            foreach (Shape shape in pageFive.Shapes)
             {
-                // Ensure the diagram has at least five pages (page index is zero‑based)
-                if (diagram.Pages.Count < 5)
+                if (shape.TextXForm != null)
                 {
-                    throw new Exception("The diagram does not contain a fifth page.");
+                    shape.TextXForm.TxtAngle.Value = -30;   // set rotation angle
+                    shape.RefreshData();                    // apply changes
                 }
-
-                // Retrieve page five (index 4)
-                Page page = diagram.Pages[4];
-
-                // Rotation angle: -30 degrees converted to radians
-                double angleRad = -Math.PI / 6.0; // -30° = -π/6 rad
-
-                // Rotate the text of each non‑deleted shape on the page
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Del == BOOL.False)
-                    {
-                        shape.TextXForm.TxtAngle.Value = angleRad;
-                    }
-                }
-
-                // Save the modified diagram (replace with desired output path)
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

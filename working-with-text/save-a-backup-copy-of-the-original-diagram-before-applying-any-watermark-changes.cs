@@ -3,7 +3,7 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class DiagramProcessor
 {
     static void Main()
     {
@@ -11,26 +11,24 @@ class Program
         {
 
             // Path to the original Visio diagram
-            string originalFilePath = "diagram.vdx";
+            string originalPath = "original.vdx";
 
-            // Path for the backup copy
-            string backupFilePath = "diagram_backup.vdx";
+            // Path where the backup copy will be saved
+            string backupPath = "original_backup.vdx";
 
             // Load the original diagram
-            using (Diagram diagram = new Diagram(originalFilePath))
-            {
-                // Save a backup copy before any modifications
-                diagram.Save(backupFilePath, SaveFileFormat.Vdx);
+            Diagram diagram = new Diagram(originalPath);
 
-                // -----------------------------------------------------------------
-                // Place watermark modification logic here (e.g., adding shapes,
-                // updating headers/footers, etc.). This section is omitted as the
-                // task focuses on creating the backup.
-                // -----------------------------------------------------------------
+            // Create save options for VDX format (Visio XML)
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
 
-                // Example: after modifications, you might save the updated diagram
-                // diagram.Save(originalFilePath, SaveFileFormat.Vdx);
-            }
+            // Save a backup copy of the original diagram before any modifications
+            diagram.Save(backupPath, saveOptions);
+
+            // -----------------------------------------------------------------
+            // At this point you can apply watermark changes to 'diagram'.
+            // The backup file remains unchanged and can be used for recovery.
+            // -----------------------------------------------------------------
 
         }
         catch (System.IO.FileNotFoundException ex)

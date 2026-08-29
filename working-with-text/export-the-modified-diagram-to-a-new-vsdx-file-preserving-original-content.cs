@@ -9,18 +9,20 @@ class Program
         try
         {
 
-            // Path to the diagram that has been modified earlier in the workflow
-            string inputPath = "input.vsdx";
+            // Load the existing Visio diagram (VS DX format)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Desired path for the exported copy preserving all original content
-            string outputPath = "output_modified.vsdx";
+            // -------------------------------------------------
+            // Place any diagram modifications here.
+            // Example (optional): rename the first page.
+            // if (diagram.Pages.Count > 0)
+            // {
+            //     diagram.Pages[0].Name = "ModifiedPage";
+            // }
+            // -------------------------------------------------
 
-            // Load the existing Visio file using the appropriate LoadFileFormat enum
-            Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vsdx);
-
-            // Export the diagram to a new .vsdx file. The Save method requires a
-            // SaveFileFormat enum value as the second argument.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the diagram to a new VS DX file, preserving all original content
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

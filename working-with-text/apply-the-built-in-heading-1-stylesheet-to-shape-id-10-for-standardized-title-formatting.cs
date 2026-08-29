@@ -9,17 +9,19 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (avoid using ActivePage)
-            Page page = diagram.Pages[0];
+            // Retrieve the shape with ID 10 from the first page
+            long targetShapeId = 10L;
+            Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+            if (shape == null)
+            {
+                throw new Exception($"Shape with ID {targetShapeId} not found.");
+            }
 
-            // Retrieve the shape with ID 10
-            long shapeId = 10L;
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Find the built‑in stylesheet named "Heading 1"
+            // Find the built‑in 'Heading 1' stylesheet
             StyleSheet headingStyle = null;
             foreach (StyleSheet ss in diagram.StyleSheets)
             {
@@ -29,23 +31,19 @@ class Program
                     break;
                 }
             }
+            if (headingStyle == null)
+            {
+                throw new Exception("The 'Heading 1' stylesheet was not found in the diagram.");
+            }
 
-            if (headingStyle != null)
-            {
-                // Apply the stylesheet to the shape's text, fill, and line formatting
-                shape.TextStyle = headingStyle;
-                shape.FillStyle = headingStyle;
-                shape.LineStyle = headingStyle;
-            }
-            else
-            {
-                // If the stylesheet is not found, report the issue
-                Console.WriteLine("Error: 'Heading 1' stylesheet not found in the diagram.");
-                return;
-            }
+            // Apply the stylesheet to the shape (text, fill, and line styles)
+            shape.TextStyle = headingStyle;
+            shape.FillStyle = headingStyle;
+            shape.LineStyle = headingStyle;
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

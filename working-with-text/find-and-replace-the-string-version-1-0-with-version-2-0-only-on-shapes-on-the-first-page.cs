@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -15,16 +16,16 @@ class Program
             // Access the first page (index 0)
             Page firstPage = diagram.Pages[0];
 
-            // Loop through each shape on the first page
+            // Iterate through all shapes on the first page
             foreach (Shape shape in firstPage.Shapes)
             {
-                // Replace the exact text "Version 1.0" with "Version 2.0"
+                // Replace the specific text if it exists
                 shape.ReplaceText("Version 1.0", "Version 2.0");
                 // Refresh shape data after text replacement
                 shape.RefreshData();
             }
 
-            // Save the updated diagram
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

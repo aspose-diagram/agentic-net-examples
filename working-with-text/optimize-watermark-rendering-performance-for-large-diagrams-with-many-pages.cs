@@ -1,59 +1,57 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths for input diagram and output diagram with watermark
+            string inputPath = "input.vsdx";
+            string outputPath = "output_watermarked.vsdx";
+
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Watermark configuration
+            string watermarkText = "CONFIDENTIAL";
+            string fontName = "Arial";
+            string fontColor = "#CCCCCC"; // Light gray color in hex
+            double fontSizePoints = 72;   // Font size in points
+            double fontSizeInches = fontSizePoints / 72.0; // Convert points to inches (required by AddText)
+
+            // Add the watermark to every page
+            foreach (Page page in diagram.Pages)
             {
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Center of the page – used as the pin position for the text shape
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Collect pages into a list for parallel processing
-                List<Page> pages = new List<Page>();
-                foreach (Page page in diagram.Pages)
-                {
-                    pages.Add(page);
-                }
-
-                // Parallelize watermark addition across pages
-                Parallel.ForEach(pages, page =>
-                {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Center position for the watermark
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
-
-                    // Watermark text and style
-                    string watermarkText = "CONFIDENTIAL";
-                    string fontName = "Arial";
-                    string fontColor = "#CCCCCC"; // Light gray
-                    double fontSizeInInches = 0.5; // Approx. 36 points (0.5 inch)
-
-                    // Add full‑page watermark using the AddText overload
-                    // Width and height are set to the full page size
-                    page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                 watermarkText, fontName, fontColor, fontSizeInInches);
-                });
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                // Add a full‑page text shape that acts as a watermark.
+                // Overload: AddText(pinX, pinY, width, height, text, fontName, fontColor, fontSizeInches)
+                page.AddText(pinX, pinY, pageWidth, pageHeight, watermarkText, fontName, fontColor, fontSizeInches);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Configure save options to avoid extra layout processing
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
+            saveOptions.AutoFitPageToDrawingContent = false; // Prevent page resizing during save
+            saveOptions.DefaultFont = "Arial";               // Fallback font for missing glyphs
+
+            // Save the modified diagram
+            diagram.Save(outputPath, saveOptions);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

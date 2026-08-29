@@ -12,32 +12,36 @@ class Program
             // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through every page and shape in the diagram
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the shape's text without formatting
-                    string pureText = shape.GetPureText();
-
-                    // If the shape contains text, replace line breaks with spaces
-                    if (!string.IsNullOrEmpty(pureText))
+                    // Ensure the shape contains text
+                    if (shape.Text != null && shape.Text.Value != null)
                     {
-                        string singleLine = pureText
-                            .Replace("\r\n", " ")
-                            .Replace("\n", " ")
-                            .Replace("\r", " ");
+                        // Get the plain text (without formatting)
+                        string pureText = shape.GetPureText();
 
-                        // Set the modified text back to the shape (no formatting)
-                        shape.Text.Value.SetWholeText(singleLine);
+                        // If the text contains line breaks, replace them with spaces
+                        if (!string.IsNullOrEmpty(pureText) && (pureText.Contains("\r") || pureText.Contains("\n")))
+                        {
+                            string singleLineText = pureText
+                                .Replace("\r\n", " ")
+                                .Replace("\n", " ")
+                                .Replace("\r", " ");
 
-                        // Refresh shape geometry to reflect the text change
-                        shape.RefreshData();
+                            // Set the modified text back to the shape (without formatting)
+                            shape.Text.Value.SetWholeText(singleLineText);
+
+                            // Refresh shape data to reflect the text change
+                            shape.RefreshData();
+                        }
                     }
                 }
             }
 
-            // Save the updated diagram (replace with desired output path)
+            // Save the modified diagram (replace with your desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

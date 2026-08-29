@@ -1,91 +1,105 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            // Input Visio file path (first argument or default)
-            string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-            if (!File.Exists(diagramPath))
+            // Get the diagram file path from command line or prompt the user
+            string diagramPath;
+            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
             {
-                Console.WriteLine($"File not found: {diagramPath}");
+                diagramPath = args[0];
+            }
+            else
+            {
+                Console.Write("Enter the path to the Visio diagram file: ");
+                diagramPath = Console.ReadLine();
+            }
+
+            if (string.IsNullOrWhiteSpace(diagramPath))
+            {
+                Console.WriteLine("No diagram path provided. Exiting.");
                 return;
             }
 
             // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Dictionary to hold word frequencies (case‑insensitive)
-            var wordFreq = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-            // Process each page and its shapes
-            foreach (Page page in diagram.Pages)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Dictionary to hold word frequencies (case‑insensitive)
+                var wordFreq = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                long totalWordCount = 0;
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    ProcessShape(shape, wordFreq);
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve plain text from the shape
+                        string shapeText = shape.Text?.Value?.Text ?? string.Empty;
+
+                        // Remove any non‑letter/digit characters (keep spaces)
+                        string cleaned = Regex.Replace(shapeText, @"[^\w\s]", " ");
+
+                        // Split into words based on whitespace
+                        string[] words = cleaned.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                        foreach (string word in words)
+                        {
+                            // Update total count
+                            totalWordCount++;
+
+                            // Update frequency dictionary
+                            if (wordFreq.ContainsKey(word))
+                                wordFreq[word]++;
+                            else
+                                wordFreq[word] = 1;
+                        }
+                    }
+                }
+
+                // Output results
+                Console.WriteLine($"Total words found: {totalWordCount}");
+                Console.WriteLine();
+                Console.WriteLine("Word Frequency Report (descending order):");
+                Console.WriteLine("----------------------------------------");
+
+                // Sort by frequency descending, then alphabetically
+                foreach (var kvp in SortedByFrequency(wordFreq))
+                {
+                    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
                 }
             }
 
-            // Generate report: sort by descending frequency then alphabetically
-            var reportLines = wordFreq
-                .OrderByDescending(kv => kv.Value)
-                .ThenBy(kv => kv.Key)
-                .Select(kv => $"{kv.Key}: {kv.Value}")
-                .ToList();
-
-            // Output to console
-            Console.WriteLine("Word Frequency Report:");
-            foreach (string line in reportLines)
-            {
-                Console.WriteLine(line);
-            }
-
-            // Optionally write the report to a text file
-            string reportPath = "frequency_report.txt";
-            try
-            {
-                File.WriteAllLines(reportPath, reportLines);
-                Console.WriteLine($"Report saved to {reportPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to write report file: {ex.Message}");
-            }
         }
-
-        // Recursively extracts text from a shape (including group children) and updates the frequency dictionary
-        private static void ProcessShape(Shape shape, Dictionary<string, int> wordFreq)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            // Get plain text from the shape
-            string text = shape.Text.Value.Text;
-
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                // Use regex to match words (alphanumeric sequences)
-                foreach (Match match in Regex.Matches(text, @"\b\w+\b"))
-                {
-                    string word = match.Value.ToLowerInvariant();
-                    if (wordFreq.ContainsKey(word))
-                        wordFreq[word]++;
-                    else
-                        wordFreq[word] = 1;
-                }
-            }
-
-            // If the shape is a group, process its child shapes recursively
-            if (shape.Type == TypeValue.Group && shape.Shapes != null)
-            {
-                foreach (Shape child in shape.Shapes)
-                {
-                    ProcessShape(child, wordFreq);
-                }
-            }
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
+
+    // Helper method to sort the dictionary by frequency descending
+    private static IEnumerable<KeyValuePair<string, int>> SortedByFrequency(Dictionary<string, int> dict)
+    {
+        var list = new List<KeyValuePair<string, int>>(dict);
+        list.Sort((a, b) =>
+        {
+            int cmp = b.Value.CompareTo(a.Value); // descending frequency
+            if (cmp == 0)
+                cmp = string.Compare(a.Key, b.Key, StringComparison.OrdinalIgnoreCase); // alphabetical
+            return cmp;
+        });
+        return list;
+    }
+}

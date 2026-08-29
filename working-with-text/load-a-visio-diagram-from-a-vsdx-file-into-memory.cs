@@ -9,14 +9,14 @@ class Program
         try
         {
 
-            // Path to the Visio .vsdx file
-            string filePath = "sample.vsdx";
+            // Path to the Visio file (.vsdx)
+            string visioFilePath = "example.vsdx";
 
-            // Load the diagram from the file, explicitly specifying the VSDX format
-            Diagram diagram = new Diagram(filePath, LoadFileFormat.Vsdx);
+            // Load the diagram into memory using the constructor that accepts a file name and format
+            Diagram diagram = new Diagram(visioFilePath, LoadFileFormat.Vsdx);
 
-            // The diagram is now loaded into memory and can be manipulated
-            Console.WriteLine($"Diagram loaded. Page count: {diagram.Pages.Count}");
+            // At this point the diagram is loaded and can be manipulated in memory
+            Console.WriteLine($"Diagram loaded. Pages count: {diagram.Pages.Count}");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,50 +1,44 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram from a file.
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Verify that the diagram has at least three pages.
+            if (diagram.Pages.Count < 3)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the modified Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Ensure the diagram has at least three pages (zero‑based index)
-                    if (diagram.Pages.Count < 3)
-                    {
-                        Console.WriteLine("The diagram does not contain a third page.");
-                        return;
-                    }
-
-                    // Retrieve the third page (page index 2)
-                    Page page = diagram.Pages[2];
-
-                    // Rotation angle of 90 degrees expressed in radians
-                    double rotationRadians = Math.PI / 2.0;
-
-                    // Iterate over all shapes on the third page and set their rotation
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Set the shape's rotation angle (radians)
-                        shape.XForm.Angle.Value = rotationRadians;
-                    }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
-                }
-
+                Console.WriteLine("The diagram does not contain a third page.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Retrieve the third page (zero‑based index 2).
+            Page page = diagram.Pages[2];
+
+            // Rotate the text of every shape on this page by 90 degrees.
+            // Text rotation is specified in radians; 90° = π/2.
+            foreach (Shape shape in page.Shapes)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                shape.TextXForm.TxtAngle.Value = Math.PI / 2;
             }
+
+            // Save the modified diagram.
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

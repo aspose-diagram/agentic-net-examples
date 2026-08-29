@@ -2,27 +2,28 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class ReplaceTrademarkSymbol
 {
     static void Main()
     {
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the existing Visio diagram from a file
+            var diagram = new Diagram("input.vsdx");
 
-            // Iterate through every page and shape in the diagram
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Replace all occurrences of the trademark symbol with the word 'Trademark'
+                    // Replace every occurrence of the trademark symbol (™) with the word "Trademark"
                     shape.ReplaceText("™", "Trademark");
                 }
             }
 
-            // Save the updated diagram to a new file
+            // Save the modified diagram to a new file (preserving the original format)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             // Release resources

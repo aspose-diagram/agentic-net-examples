@@ -1,7 +1,6 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,33 +9,21 @@ class Program
         try
         {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+            // Load the existing Visio diagram
+            var diagram = new Diagram("input.vsdx");
 
-            // Path where the modified file will be saved
-            string outputPath = "output.vsdx";
+            // Access the second page (pages are zero‑based indexed)
+            var page = diagram.Pages[1];
 
-            // Load the diagram using the provided constructor (load rule)
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the second page (index 1 because collection is zero‑based)
-            Page pageTwo = diagram.Pages[1];
-
-            // Iterate through all shapes on page two
-            foreach (Shape shape in pageTwo.Shapes)
+            // Iterate through all shapes on that page
+            foreach (Shape shape in page.Shapes)
             {
-                // Replace every occurrence of "Draft" with "Final"
+                // Replace every occurrence of the word "Draft" with "Final"
                 shape.ReplaceText("Draft", "Final");
-
-                // Refresh shape data after text modification
-                shape.RefreshData();
             }
 
-            // Save the updated diagram using the provided save rule
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Clean up resources
-            diagram.Dispose();
+            // Save the modified diagram to a new file
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

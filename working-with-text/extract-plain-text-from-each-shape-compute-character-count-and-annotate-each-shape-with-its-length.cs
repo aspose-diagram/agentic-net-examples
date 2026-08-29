@@ -1,60 +1,46 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
+            Console.WriteLine("Usage: <program> <inputVisioFile> <outputVisioFile>");
+            return;
+        }
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+        // Load the Visio diagram.
+        Diagram diagram = new Diagram(inputPath);
+
+        // Iterate through all pages and shapes.
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Get the plain (unformatted) text of the shape
-                    string plainText = shape.GetPureText();
+                // Skip shapes that are marked as deleted.
+                if (shape.Del == BOOL.True)
+                    continue;
 
-                    // Process only shapes that contain text
-                    if (!string.IsNullOrEmpty(plainText))
-                    {
-                        // Compute character count
-                        int charCount = plainText.Length;
+                // Extract plain text from the shape.
+                string plainText = shape.Text.Value.Text ?? string.Empty;
 
-                        // Prepare annotation text
-                        string annotation = $"Length: {charCount}";
+                // Compute character count.
+                int charCount = plainText.Length;
 
-                        // Use the shape's position as a reference point
-                        double pinX = shape.XForm.PinX.Value;
-                        double pinY = shape.XForm.PinY.Value;
-
-                        // Add a new text shape slightly below the original shape
-                        // Width and height are arbitrary; adjust as needed
-                        double width = 1.0;
-                        double height = 0.2;
-                        double offsetY = 0.5; // vertical offset for the annotation
-
-                        Shape annotationShape = page.AddText(pinX, pinY - offsetY, width, height, annotation);
-
-                        // Refresh the newly added shape so its geometry is calculated correctly
-                        annotationShape.RefreshData();
-                    }
-                }
+                // Append the length annotation to the existing text.
+                // Example: "Original text (12)"
+                shape.Text.Value.Add(new Txt($" ({charCount})"));
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+
+        // Save the modified diagram.
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
 }

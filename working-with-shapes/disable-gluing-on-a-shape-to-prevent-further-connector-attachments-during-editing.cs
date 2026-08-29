@@ -13,15 +13,15 @@ class Program
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes, disabling dynamic glue on each shape
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Prevent the shape from being glued to connectors
-                    shape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
-                }
-            }
+            // Access the first page (adjust index if needed)
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shape you want to modify (example uses shape ID = 1)
+            long shapeId = 1;
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Disable dynamic gluing for this shape to prevent further connector attachments
+            shape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
 
             // Save the modified diagram
             string outputPath = "output.vsdx";

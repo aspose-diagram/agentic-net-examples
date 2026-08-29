@@ -10,13 +10,13 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram from a file
+            // Create and load a diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Save the diagram to a new file (choose desired format)
+            // Save the diagram to a VDX file using the Save method
             diagram.Save("output.vdx", SaveFileFormat.Vdx);
 
-            // Release unmanaged resources held by the Diagram object
+            // Release unmanaged resources by disposing the Diagram object
             diagram.Dispose();
 
         }

@@ -1,64 +1,62 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (replace with your actual file path)
-            string filePath = "sample.vsdx";
-            Diagram diagram = new Diagram(filePath);
-
-            // Ensure the diagram has at least one page
-            if (diagram.Pages.Count == 0)
+            try
             {
-                Console.WriteLine("The diagram contains no pages.");
-                return;
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "sample.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Access the first page (index 0)
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                Page page = diagram.Pages[0];
+
+                // Retrieve a shape by its ID (example uses ID = 1)
+                // Adjust the ID as needed for your diagram
+                Shape shape = page.Shapes.GetShape(1);
+                if (shape == null)
+                {
+                    Console.WriteLine("Shape with ID 1 not found on the first page.");
+                    return;
+                }
+
+                // Access the inherited fill settings
+                var inheritFill = shape.InheritFill;
+                if (inheritFill == null)
+                {
+                    Console.WriteLine("Inherited fill information is unavailable for this shape.");
+                    return;
+                }
+
+                // Retrieve specific inherited fill properties
+                string foregndColor = inheritFill.FillForegnd.Value;   // Foreground fill color (hex string)
+                string bkgndColor = inheritFill.FillBkgnd.Value;      // Background fill color (hex string)
+                int fillPattern = inheritFill.FillPattern.Value;      // Fill pattern index
+                string shadowColor = inheritFill.ShdwForegnd.Value;   // Shadow foreground color
+                int shadowPattern = inheritFill.ShdwPattern.Value;    // Shadow pattern index
+
+                // Output the inherited fill values
+                Console.WriteLine("Inherited Fill Settings for Shape ID 1:");
+                Console.WriteLine($"  Foreground Color : {foregndColor}");
+                Console.WriteLine($"  Background Color : {bkgndColor}");
+                Console.WriteLine($"  Fill Pattern     : {fillPattern}");
+                Console.WriteLine($"  Shadow Color     : {shadowColor}");
+                Console.WriteLine($"  Shadow Pattern   : {shadowPattern}");
+
             }
-
-            // Get the first page
-            Page page = diagram.Pages[0];
-
-            // Ensure the page has at least one shape
-            if (page.Shapes.Count == 0)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("The page contains no shapes.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Retrieve the first shape on the page
-            Shape shape = null;
-            foreach (Shape s in page.Shapes)
-            {
-                shape = s;
-                break;
-            }
-
-            if (shape == null)
-            {
-                Console.WriteLine("Failed to retrieve a shape.");
-                return;
-            }
-
-            // Access inherited fill settings
-            var inheritFill = shape.InheritFill;
-
-            Console.WriteLine("Inherited Fill Settings:");
-            Console.WriteLine($"  Fill Foreground Color: {inheritFill.FillForegnd.Value}");
-            Console.WriteLine($"  Fill Background Color: {inheritFill.FillBkgnd.Value}");
-            Console.WriteLine($"  Fill Pattern: {inheritFill.FillPattern.Value}");
-            Console.WriteLine($"  Shadow Foreground Color: {inheritFill.ShdwForegnd.Value}");
-            Console.WriteLine($"  Shadow Pattern: {inheritFill.ShdwPattern.Value}");
-            Console.WriteLine($"  Shape Shadow Type: {inheritFill.ShapeShdwType.Value}");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 using Aspose.Diagram;
 
 class Program
@@ -13,26 +12,34 @@ class Program
             // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Prepare CSV header
-            StringBuilder report = new StringBuilder();
-            report.AppendLine("ShapeID,Name,InheritFill,InheritLine");
+            // Path for the generated CSV report
+            string reportPath = "ShapeReport.csv";
 
-            // Iterate through all shapes on the first page (adjust if needed)
-            foreach (Shape shape in diagram.Pages[0].Shapes)
+            using (StreamWriter writer = new StreamWriter(reportPath))
             {
-                long id = shape.ID;
-                string name = shape.Name ?? string.Empty;
+                // Write CSV header
+                writer.WriteLine("ShapeID,Name,InheritFill,InheritLine");
 
-                // Determine inheritance status
-                string inheritFill = shape.InheritFill != null ? "True" : "False";
-                string inheritLine = shape.InheritLine != null ? "True" : "False";
+                // Iterate through all pages and their shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Retrieve shape ID and name
+                        long shapeId = shape.ID;
+                        string shapeName = shape.Name ?? string.Empty;
 
-                // Append CSV line (escaping commas and quotes in the name)
-                report.AppendLine($"{id},{EscapeCsv(name)},{inheritFill},{inheritLine}");
+                        // Determine inheritance status for Fill and Line
+                        string inheritFill = shape.InheritFill != null ? "Inherited" : "NotInherited";
+                        string inheritLine = shape.InheritLine != null ? "Inherited" : "NotInherited";
+
+                        // Write a line to the CSV file
+                        writer.WriteLine($"{shapeId},{EscapeCsv(shapeName)},{inheritFill},{inheritLine}");
+                    }
+                }
             }
 
-            // Write the report to a CSV file
-            File.WriteAllText("ShapeReport.csv", report.ToString());
+            Console.WriteLine($"Report generated: {Path.GetFullPath(reportPath)}");
 
         }
         catch (System.IO.FileNotFoundException ex)
@@ -41,10 +48,10 @@ class Program
         }
     }
 
-    // Helper to escape CSV fields containing commas or quotes
+    // Helper method to escape CSV fields containing commas, quotes, or newlines
     static string EscapeCsv(string field)
     {
-        if (field.Contains(",") || field.Contains("\""))
+        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
         {
             field = field.Replace("\"", "\"\"");
             return $"\"{field}\"";

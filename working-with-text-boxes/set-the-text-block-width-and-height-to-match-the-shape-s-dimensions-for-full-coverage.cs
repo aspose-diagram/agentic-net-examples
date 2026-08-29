@@ -1,10 +1,11 @@
+using System;
 using System.IO;
 using Aspose.Diagram;
-using System;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
@@ -12,23 +13,20 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Loop through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Iterate through all shapes on the first page (adjust as needed)
+            foreach (Shape shape in diagram.Pages[0].Shapes)
             {
-                foreach (Shape shape in page.Shapes)
+                // Ensure the shape has a TextXForm (text block) to modify
+                if (shape.TextXForm != null && shape.XForm != null)
                 {
-                    // Verify that the shape has XForm (size) and TextXForm (text block) objects
-                    if (shape.XForm != null && shape.TextXForm != null)
-                    {
-                        // Set the text block width to the shape's width
-                        shape.TextXForm.TxtWidth = shape.XForm.Width;
+                    // Set the text block width to the shape's width
+                    shape.TextXForm.TxtWidth.Value = shape.XForm.Width.Value;
 
-                        // Set the text block height to the shape's height
-                        shape.TextXForm.TxtHeight = shape.XForm.Height;
+                    // Set the text block height to the shape's height
+                    shape.TextXForm.TxtHeight.Value = shape.XForm.Height.Value;
 
-                        // Refresh shape data so the changes take effect
-                        shape.RefreshData();
-                    }
+                    // Refresh shape data so the changes take effect
+                    shape.RefreshData();
                 }
             }
 

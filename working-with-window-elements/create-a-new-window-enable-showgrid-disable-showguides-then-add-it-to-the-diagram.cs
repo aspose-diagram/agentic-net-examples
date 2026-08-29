@@ -9,18 +9,18 @@ class Program
             Diagram diagram = new Diagram();
 
             // Create a new window instance
-            Window window = new Window();
+            Window newWindow = new Window();
 
-            // Enable the grid display
-            window.ShowGrid = BOOL.True;
+            // Enable the grid display in the window
+            newWindow.ShowGrid = BOOL.True;
 
-            // Disable the guides display
-            window.ShowGuides = BOOL.False;
+            // Disable the guides display in the window
+            newWindow.ShowGuides = BOOL.False;
 
             // Add the configured window to the diagram's window collection
-            diagram.Windows.Add(window);
+            diagram.Windows.Add(newWindow);
 
-            // Save the diagram to a VSDX file (optional, demonstrates persistence)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Optional: output confirmation
+            Console.WriteLine("Window added. ShowGrid = " + newWindow.ShowGrid + ", ShowGuides = " + newWindow.ShowGuides);
         }
     }

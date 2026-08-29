@@ -1,93 +1,123 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Cells;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input diagram file path
+        string diagramPath = "input.vsdx";
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Input spreadsheet file path (Excel workbook)
+        string spreadsheetPath = "data.xlsx";
+        if (!File.Exists(spreadsheetPath))
+        {
+            Console.Error.WriteLine($"File not found: {spreadsheetPath}");
+            return;
+        }
+
+        // Output diagram file path
+        string outputPath = "output.vsdx";
+
         try
         {
-
-            // Paths to the source Visio diagram and the Excel spreadsheet
-            string diagramPath = "input.vsdx";
-            string excelPath = "data.xlsx";
-
             // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Load the Excel workbook (first worksheet is used)
-            Workbook workbook = new Workbook(excelPath);
-            Worksheet sheet = workbook.Worksheets[0];
-            Cells cells = sheet.Cells;
+            // Load the Excel workbook
+            Workbook workbook = new Workbook(spreadsheetPath);
+            Worksheet sheet = workbook.Worksheets[0]; // use the first worksheet
 
-            // Assume the first row contains column headers
+            // Read header row to get user-defined cell names (starting from column 1)
             int headerRow = 0;
-            int firstDataRow = 1;
-            int totalColumns = cells.MaxDataColumn + 1;
+            int firstDataRow = 1; // assume data starts after header
+            int totalColumns = sheet.Cells.MaxColumn + 1; // total columns in the sheet
 
-            // Use the first page of the diagram for shape lookup
-            Page page = diagram.Pages[0];
-
-            // Iterate through each data row in the spreadsheet
-            for (int row = firstDataRow; row <= cells.MaxDataRow; row++)
+            // Iterate over each data row
+            for (int row = firstDataRow; row <= sheet.Cells.MaxRow; row++)
             {
-                // First column is expected to contain the Shape ID (numeric)
-                object shapeIdObj = cells[row, 0].Value;
-                if (shapeIdObj == null) continue;
+                // First column contains the shape name (case‑insensitive match)
+                string shapeName = sheet.Cells[row, 0].StringValue?.Trim();
+                if (string.IsNullOrEmpty(shapeName))
+                    continue; // skip rows without a shape identifier
 
-                if (!long.TryParse(shapeIdObj.ToString(), out long shapeIdLong))
-                    continue; // Skip rows with invalid shape IDs
+                // Locate the shape by its universal name across all pages
+                Shape targetShape = null;
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.NameU != null && shape.NameU.Equals(shapeName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            targetShape = shape;
+                            break;
+                        }
+                    }
+                    if (targetShape != null) break;
+                }
 
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(shapeIdLong);
-                if (shape == null) continue; // Shape not found
+                // If the shape is not found, log and continue with next row
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine($"Shape not found for name: {shapeName}");
+                    continue;
+                }
 
-                // Map each remaining column to a user‑defined cell in the shape
+                // Map each column (starting from 1) to a user‑defined cell
                 for (int col = 1; col < totalColumns; col++)
                 {
-                    // Header name becomes the user‑defined cell name
-                    string userCellName = cells[headerRow, col].StringValue;
-                    if (string.IsNullOrWhiteSpace(userCellName)) continue;
+                    // Header cell provides the user‑defined cell name
+                    string userCellName = sheet.Cells[headerRow, col].StringValue?.Trim();
+                    if (string.IsNullOrEmpty(userCellName))
+                        continue; // skip empty headers
 
-                    // Cell value to store
-                    string cellValue = cells[row, col].StringValue ?? string.Empty;
+                    // Data cell provides the value to store
+                    string cellValue = sheet.Cells[row, col].StringValue?.Trim() ?? string.Empty;
 
-                    // Search for an existing user cell with the same name
+                    // Search for an existing user‑defined cell with the same name
                     User existingUser = null;
-                    foreach (User u in shape.Users)
+                    foreach (User user in targetShape.Users)
                     {
-                        if (u.Name == userCellName)
+                        if (user.Name.Equals(userCellName, StringComparison.OrdinalIgnoreCase))
                         {
-                            existingUser = u;
+                            existingUser = user;
                             break;
                         }
                     }
 
                     if (existingUser != null)
                     {
-                        // Update existing user cell
+                        // Update the value of the existing user‑defined cell
                         existingUser.Value.Val = cellValue;
                     }
                     else
                     {
                         // Create a new user‑defined cell and add it to the shape
-                        User newUser = new User();
-                        newUser.Name = userCellName;
-                        newUser.Value.Val = cellValue;
-                        shape.Users.Add(newUser);
+                        User newUser = new User
+                        {
+                            Name = userCellName,
+                            Value = { Val = cellValue }
+                        };
+                        targetShape.Users.Add(newUser);
                     }
                 }
             }
 
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram to the output file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any unexpected errors from Aspose or I/O operations
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

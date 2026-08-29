@@ -1,39 +1,59 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load an existing Visio diagram (lifecycle rule: load)
-            Diagram diagram = new Diagram("input.vsdx");
+                // Create a new empty diagram
+                using (Diagram diagram = new Diagram())
+                {
+                    // Get the first (default) page
+                    Page page = diagram.Pages[0];
 
-            // Get the first page and a shape on it (replace 1 with the actual shape ID)
-            Shape shape = diagram.Pages[0].Shapes.GetShape(1);
+                    // Add a rectangle shape to the page
+                    // Parameters: PinX, PinY, Width, Height, MasterName
+                    double pinX = 5.0;   // center X position (in inches)
+                    double pinY = 5.0;   // center Y position (in inches)
+                    double width = 4.0;  // shape width (in inches)
+                    double height = 2.0; // shape height (in inches)
+                    long shapeId = page.AddShape(pinX, pinY, width, height, "Rectangle");
 
-            // Rotate the text inside the shape by 45 degrees (diagonal effect)
-            shape.TextXForm.TxtAngle.Value = 45;
+                    // Retrieve the shape object using its ID
+                    Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Adjust text margins so the rotated text stays inside the shape boundaries
-            shape.TextBlock.LeftMargin.Value   = 2; // points
-            shape.TextBlock.TopMargin.Value    = 2;
-            shape.TextBlock.RightMargin.Value  = 2;
-            shape.TextBlock.BottomMargin.Value = 2;
+                    // Clear any existing text and add new text
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt("Diagonal Text"));
 
-            // Refresh shape data after modifying text properties (lifecycle rule: refresh)
-            shape.RefreshData();
+                    // Rotate the text inside the shape (45 degrees)
+                    // TextXForm.TxtAngle expects radians
+                    double angleDeg = 45.0;
+                    double angleRad = (Math.PI / 180.0) * angleDeg;
+                    shape.TextXForm.TxtAngle.Value = angleRad;
 
-            // Save the modified diagram (lifecycle rule: save)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                    // Adjust text block margins (in inches)
+                    // Left, Right, Top, Bottom margins set to 0.05 inches
+                    double margin = 0.05;
+                    shape.TextBlock.LeftMargin.Value = margin;
+                    shape.TextBlock.RightMargin.Value = margin;
+                    shape.TextBlock.TopMargin.Value = margin;
+                    shape.TextBlock.BottomMargin.Value = margin;
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                    // Save the diagram to a VSDX file
+                    diagram.Save("DiagonalText.vsdx", SaveFileFormat.Vsdx);
+                }
+
+                Console.WriteLine("Diagram created and saved as DiagonalText.vsdx");
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

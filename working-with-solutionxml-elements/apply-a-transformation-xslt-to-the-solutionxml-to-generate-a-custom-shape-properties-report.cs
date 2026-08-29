@@ -4,49 +4,47 @@ using System.Xml;
 using System.Xml.Xsl;
 using Aspose.Diagram;
 
-class Program
+class ShapePropertiesReportGenerator
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram
+            var diagram = new Diagram("input.vsdx");
 
-            // Locate the SolutionXML that holds the custom shape properties.
-            // Adjust the name filter according to the actual SolutionXML name in your diagram.
-            SolutionXML shapePropsXml = null;
-            foreach (SolutionXML sx in diagram.SolutionXMLs)
+            // Retrieve the first SolutionXML (adjust the index or name as needed)
+            if (diagram.SolutionXMLs.Count == 0)
             {
-                if (sx.Name == "ShapeProperties")
-                {
-                    shapePropsXml = sx;
-                    break;
-                }
-            }
-
-            if (shapePropsXml == null)
-            {
-                Console.WriteLine("SolutionXML named 'ShapeProperties' not found in the diagram.");
+                Console.WriteLine("No SolutionXML data found in the diagram.");
                 return;
             }
 
-            // Load the XSLT that defines the report layout (replace with your XSLT file path)
-            XslCompiledTransform xslt = new XslCompiledTransform();
-            xslt.Load("ShapePropertiesReport.xslt");
+            var solutionXml = diagram.SolutionXMLs[0]; // or locate by Name if required
+            string xmlContent = solutionXml.XmlValue;
 
-            // Prepare the XML source from the SolutionXML's XmlValue
-            XmlDocument sourceXml = new XmlDocument();
-            sourceXml.LoadXml(shapePropsXml.XmlValue);
+            // Load the XSLT transformation
+            var xslt = new XslCompiledTransform();
+            xslt.Load("transform.xslt"); // path to your XSLT file
 
-            // Perform the transformation and write the result to an output file
-            using (FileStream output = new FileStream("ShapePropertiesReport.html", FileMode.Create, FileAccess.Write))
+            // Perform the transformation
+            string report;
+            using (var xmlReader = XmlReader.Create(new StringReader(xmlContent)))
+            using (var resultWriter = new StringWriter())
             {
-                xslt.Transform(sourceXml, null, output);
+                xslt.Transform(xmlReader, null, resultWriter);
+                report = resultWriter.ToString();
             }
 
-            Console.WriteLine("Custom shape properties report generated successfully.");
+            // Save the generated report to an HTML file
+            File.WriteAllText("ShapePropertiesReport.html", report);
+            Console.WriteLine("Report generated: ShapePropertiesReport.html");
+
+            // Optional: store the report back into the diagram as a new SolutionXML entry
+            // var reportSolutionXml = new SolutionXML("ShapePropertiesReport", report);
+            // diagram.SolutionXMLs.Add(reportSolutionXml);
+            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

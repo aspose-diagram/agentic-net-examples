@@ -9,32 +9,37 @@ class Program
             {
 
                 // Load the Visio diagram (replace with your actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
+                string diagramPath = "input.vsdx";
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Access the first page (adjust index if needed)
-                Page page = diagram.Pages[0];
+                // Define the IDs of the two shapes to compare
+                // Replace these IDs with the actual shape IDs you want to compare
+                long shapeId1 = 1;
+                long shapeId2 = 2;
 
-                // Retrieve two shapes by their IDs (replace with actual IDs)
-                long shapeId1 = 1; // Example ID for the first shape
-                long shapeId2 = 2; // Example ID for the second shape
+                // Retrieve the shapes from the first page (index 0)
+                Shape shape1 = diagram.Pages[0].Shapes.GetShape(shapeId1);
+                Shape shape2 = diagram.Pages[0].Shapes.GetShape(shapeId2);
 
-                Shape shape1 = page.Shapes.GetShape(shapeId1);
-                Shape shape2 = page.Shapes.GetShape(shapeId2);
+                // Ensure both shapes were found
+                if (shape1 == null || shape2 == null)
+                {
+                    Console.WriteLine("One or both shapes could not be found.");
+                    return;
+                }
 
-                // Get the fill foreground colors (hex strings, e.g., "#FF0000")
+                // Get the foreground fill color values (hex strings, e.g., "#FF0000")
                 string fillColor1 = shape1.Fill.FillForegnd.Value;
                 string fillColor2 = shape2.Fill.FillForegnd.Value;
 
-                // Compare the colors and log a warning if they differ
+                // Compare the fill colors and log a warning if they differ
                 if (!string.Equals(fillColor1, fillColor2, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine($"Warning: Fill colors differ between shapes.");
-                    Console.WriteLine($"Shape ID {shape1.ID} Fill: {fillColor1}");
-                    Console.WriteLine($"Shape ID {shape2.ID} Fill: {fillColor2}");
+                    Console.WriteLine($"Warning: Shape {shapeId1} fill color ({fillColor1}) differs from shape {shapeId2} fill color ({fillColor2}).");
                 }
                 else
                 {
-                    Console.WriteLine("Fill colors are identical.");
+                    Console.WriteLine($"Shapes {shapeId1} and {shapeId2} have matching fill colors ({fillColor1}).");
                 }
 
             }

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,22 +10,21 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio file (create/load rule)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (index 0)
+            // Get the first page
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape by its ID (replace 1 with the actual shape ID you want to format)
-            Shape shape = page.Shapes.GetShape(1);
+            // Get a shape from the page (skip the background shape with ID 1)
+            Shape shape = page.Shapes[1];
 
-            // Apply a preset theme style matrix to the shape.
-            // Example: use Style2 (row) and Color3 (column) from the preset matrices.
-            shape.SetPresetThemeStyleMatrics(
-                PresetStyleMatricsValue.Style2,
-                PresetColorMatricsValue.Color3);
+            // Apply a preset theme style matrix:
+            //   - Style row: Style3
+            //   - Color column: Color4
+            shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style3, PresetColorMatricsValue.Color4);
 
-            // Save the modified diagram
+            // Save the modified diagram (save rule)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

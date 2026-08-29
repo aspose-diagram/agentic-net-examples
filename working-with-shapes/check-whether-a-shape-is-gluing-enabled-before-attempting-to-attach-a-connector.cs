@@ -10,53 +10,64 @@ class Program
         try
         {
 
-            // Path to the source Visio file
+            // Load an existing Visio diagram
             string inputPath = "input.vsdx";
-
-            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Get the first page (assumes at least one page exists)
+            // Use the first page in the diagram
             Page page = diagram.Pages[0];
 
-            // Ensure there are at least two shapes to connect
-            if (page.Shapes.Count < 2)
+            // Find two shapes to connect (example: first two non‑deleted shapes)
+            Shape shape1 = null;
+            Shape shape2 = null;
+            foreach (Shape shp in page.Shapes)
             {
-                Console.WriteLine("The page does not contain enough shapes to create a connector.");
+                if (shp.Del == BOOL.True) continue; // skip deleted shapes
+
+                if (shape1 == null)
+                    shape1 = shp;
+                else if (shape2 == null)
+                {
+                    shape2 = shp;
+                    break;
+                }
+            }
+
+            if (shape1 == null || shape2 == null)
+            {
+                Console.WriteLine("Not enough shapes to connect.");
                 return;
             }
 
-            // Retrieve the first two shapes on the page
-            Shape sourceShape = page.Shapes[0];
-            Shape targetShape = page.Shapes[1];
+            // Check if both shapes have gluing enabled (AllowDynamicGlue)
+            bool shape1Gluable = shape1.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
+            bool shape2Gluable = shape2.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
 
-            // Check whether each shape allows dynamic glue (gluing-enabled)
-            bool sourceGlueEnabled = sourceShape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
-            bool targetGlueEnabled = targetShape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
-
-            if (!sourceGlueEnabled || !targetGlueEnabled)
+            if (!shape1Gluable || !shape2Gluable)
             {
-                Console.WriteLine("One or both shapes are not gluing-enabled. Connector will not be attached.");
+                Console.WriteLine("One or both shapes are not gluing‑enabled. Connector will not be attached.");
                 return;
             }
 
-            // Add a dynamic connector shape (position will be adjusted after connecting)
-            long connectorId = page.AddShape(0, 0, "Dynamic connector");
+            // Add a dynamic connector shape to the page
+            long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector");
             Shape connector = page.Shapes.GetShape(connectorId);
 
-            // Optional: set a routing style for the connector
+            // Optionally set connector routing style (right‑angle)
             connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
 
-            // Connect the source shape's bottom to the target shape's top using the connector
+            // Connect shape1 to shape2 using the connector
             page.ConnectShapesViaConnector(
-                sourceShape.ID,
+                shape1.ID,
                 ConnectionPointPlace.Bottom,
-                targetShape.ID,
+                shape2.ID,
                 ConnectionPointPlace.Top,
                 connectorId);
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             Console.WriteLine("Connector attached and diagram saved successfully.");
 
         }

@@ -1,11 +1,11 @@
 {
   "category": "working-with-user-defined-cells",
   "display_name": "Working With User Defined Cells",
-  "version": "26.7.0",
+  "version": "26.8.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-07-28",
+  "generated": "2026-08-29",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -30,15 +30,14 @@
       "task": "Apply a custom namespace prefix to all user defined cells when exporting the diagram to xml",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Linq",
-        "System.Xml.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -49,7 +48,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -65,8 +65,8 @@
       "task": "Apply localization by translating user defined cell text values based on the target language settings",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -107,7 +107,7 @@
         "Pages",
         "Save",
         "Shapes",
-        "diagram"
+        "User"
       ]
     },
     {
@@ -118,6 +118,7 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
+        "System.IO",
         "System.Linq"
       ],
       "key_apis": [
@@ -138,11 +139,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "User"
       ]
     },
     {
@@ -151,12 +152,14 @@
       "task": "Create a ui dialog that allows users to edit user defined cell values interactively",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -166,14 +169,14 @@
       "task": "Delete all user defined cells that contain empty values across all pages of a visio document",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -184,13 +187,17 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO",
+        "System.Linq",
+        "System.Xml.Linq"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "SVGSaveOptions",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -223,9 +230,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -235,7 +242,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Text.RegularExpressions"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -286,9 +293,9 @@
       "task": "Implement a rollback mechanism that restores previous user defined cell values if validation fails",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -304,8 +311,8 @@
       "task": "Implement a versioning system that records changes to user defined cells in a separate log file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -322,8 +329,8 @@
       "task": "Implement error handling for missing user defined cells when performing calculations on diagram shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -382,9 +389,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -418,7 +425,7 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "User"
       ]
     },
     {
@@ -427,8 +434,8 @@
       "task": "Synchronize user defined cell values between two diagrams to maintain consistent metadata across files",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -442,7 +449,6 @@
       "task": "Update the formula of a specific user defined cell and save the diagram in vdx format",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -451,7 +457,7 @@
         "Pages",
         "Save",
         "Shapes",
-        "diagram"
+        "User"
       ]
     },
     {
@@ -461,8 +467,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -516,10 +521,8 @@
       "task": "Validate user defined cell data types against a schema before saving the diagram to vsdx",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",

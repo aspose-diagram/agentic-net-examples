@@ -6,55 +6,37 @@ class Program
 {
     static void Main()
     {
-        try
-        {
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-            // Create a new empty Visio diagram
-            Diagram diagram = new Diagram();
+        // Access the first (default) page
+        Page page = diagram.Pages[0];
 
-            // Retrieve the first (default) page
-            Page page = diagram.Pages[0];
+        // Draw a rectangle shape on the page
+        // Parameters: pinX, pinY, width, height (all in inches)
+        long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
 
-            // Parameters for a rectangle shape
-            double pinX = 5.0;      // X coordinate (in inches)
-            double pinY = 5.0;      // Y coordinate (in inches)
-            double width = 2.0;     // Width (in inches)
-            double height = 1.0;    // Height (in inches)
-            string masterName = "Rectangle";
+        // Retrieve the shape object from the returned ID
+        Shape rectShape = page.Shapes.GetShape(rectId);
 
-            // Add the rectangle shape to the diagram on the current page
-            long shapeIdLong = diagram.AddShape(pinX, pinY, width, height, masterName, page.ID);
-            // Convert the long ID to int for GetShape
-            Shape shape = page.Shapes.GetShape((int)shapeIdLong);
+        // Create first user‑defined cell
+        User customInt = new User();
+        customInt.Name = "CustomInt";               // Row name
+        customInt.Value.Val = "123";                // Cell value as string
+        customInt.Prompt.Value = "An integer value"; // Optional description
 
-            // ----- Create user‑defined cells (custom properties) -----
-            // Custom cell 1: CustomWidth
-            User customWidth = new User();
-            customWidth.Name = "CustomWidth";
-            customWidth.Value.Val = "800";                     // Value stored as string
-            customWidth.Prompt.Value = "Custom width in pixels";
+        // Create second user‑defined cell
+        User customString = new User();
+        customString.Name = "CustomString";
+        customString.Value.Val = "SampleText";
+        customString.Prompt.Value = "A string value";
 
-            // Custom cell 2: CustomDescription
-            User customDesc = new User();
-            customDesc.Name = "CustomDescription";
-            customDesc.Value.Val = "Template shape for reuse";
-            customDesc.Prompt.Value = "Description of the shape";
+        // Add the user‑defined cells to the shape's Users collection
+        rectShape.Users.Add(customInt);
+        rectShape.Users.Add(customString);
 
-            // Add the custom cells to the shape's Users collection
-            shape.Users.Add(customWidth);
-            shape.Users.Add(customDesc);
-
-            // Optional: set visible text for the shape
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt("Template Shape"));
-
-            // Save the diagram as a VSDX template file
-            diagram.Save("TemplateDiagram.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+        // Save the diagram as a VSDX template file
+        string outputPath = "TemplateDiagram.vsdx";
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
 }

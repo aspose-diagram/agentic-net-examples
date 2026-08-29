@@ -1,41 +1,56 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ThumbnailGenerator
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // XML representation of the diagram (SolutionXML)
-            string solutionXml = @"<Diagram>...</Diagram>"; // TODO: replace with actual XML content
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output thumbnail image path
+            string outputPath = "thumbnail.png";
 
-            // Load the diagram from the XML string using a memory stream
-            byte[] xmlBytes = System.Text.Encoding.UTF8.GetBytes(solutionXml);
-            using (MemoryStream xmlStream = new MemoryStream(xmlBytes))
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Verify that the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
             {
-                Diagram diagram = new Diagram(xmlStream);
-
-                // Configure image save options for a low‑resolution thumbnail
-                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                imgOptions.PageIndex = 0;          // render the first page (0‑based)
-                imgOptions.PageCount = 1;          // only one page
-                imgOptions.Resolution = 72;        // low DPI for thumbnail
-
-                // Output thumbnail file path
-                string thumbnailPath = "thumbnail.png";
-
-                // Render and save the thumbnail image
-                diagram.Save(thumbnailPath, imgOptions);
+                throw new Exception("The diagram does not contain any pages.");
             }
 
+            // Configure image save options for a low‑resolution thumbnail
+            ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+            options.PageIndex = 0;          // render the first page
+            options.PageCount = 1;          // only one page
+            options.Resolution = 72;        // low DPI
+            options.Scale = 0.5f;           // reduce size to 50%
+
+            // Save the thumbnail image
+            diagram.Save(outputPath, options);
+
+            // Optional: display any SolutionXML entries present in the diagram
+            Console.WriteLine("SolutionXML entries:");
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
+            {
+                Console.WriteLine($"Name: {solXml.Name}");
+                Console.WriteLine($"XmlValue: {solXml.XmlValue}");
+            }
+
+            // Clean up resources
+            diagram.Dispose();
+
+            Console.WriteLine("Thumbnail generated successfully.");
+
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,110 +1,107 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input and output file paths (adjust as needed)
-        string inputPath = "input.vsdx";
-        // Guard against missing input file
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-        string outputPath = "output.vsdx";
+            // Input and output file paths (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-        try
-        {
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = null;
+
+            try
+            {
+                // Load the diagram from file
+                diagram = new Diagram(inputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading diagram: {ex.Message}");
+                return;
+            }
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Attempt to retrieve the user-defined cell named "CustomValue"
-                    string cellValue = GetUserCellValue(shape, "CustomValue");
+                    // Ensure the Users collection is available
+                    if (shape.Users == null)
+                        continue;
 
-                    if (cellValue == null)
+                    // Attempt to find a user-defined cell named "CustomValue"
+                    User customUser = null;
+                    foreach (User user in shape.Users)
                     {
-                        Console.WriteLine($"Shape ID {shape.ID}: Missing user-defined cell 'CustomValue'. Skipping calculation.");
-                        continue; // Skip this shape because the required cell is absent
+                        if (string.Equals(user.Name, "CustomValue", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(user.NameU, "CustomValue", StringComparison.OrdinalIgnoreCase))
+                        {
+                            customUser = user;
+                            break;
+                        }
                     }
 
-                    // Try to parse the cell value as a double for calculation
-                    if (!double.TryParse(cellValue, out double numericValue))
+                    if (customUser == null)
                     {
-                        Console.WriteLine($"Shape ID {shape.ID}: Invalid numeric value '{cellValue}' in 'CustomValue'. Skipping calculation.");
-                        continue; // Skip this shape due to invalid data
+                        // Missing user-defined cell – log and continue
+                        Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' does not contain 'CustomValue' cell.");
+                        continue;
                     }
 
-                    // Perform a simple calculation (e.g., double the value)
-                    double result = numericValue * 2;
+                    // Parse the cell value safely
+                    if (!double.TryParse(customUser.Value.Val, out double customValue))
+                    {
+                        Console.WriteLine($"Invalid numeric value in 'CustomValue' for shape ID {shape.ID}: '{customUser.Value.Val}'.");
+                        continue;
+                    }
 
-                    // Store the result back into a user-defined cell named "Result"
-                    SetOrUpdateUserCell(shape, "Result", result.ToString());
+                    // Perform a sample calculation (e.g., double the value)
+                    double resultValue = customValue * 2;
 
-                    Console.WriteLine($"Shape ID {shape.ID}: Calculated result {result} and stored in 'Result' cell.");
+                    // Store the result in a user-defined cell named "Result"
+                    User resultUser = null;
+                    foreach (User user in shape.Users)
+                    {
+                        if (string.Equals(user.Name, "Result", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(user.NameU, "Result", StringComparison.OrdinalIgnoreCase))
+                        {
+                            resultUser = user;
+                            break;
+                        }
+                    }
+
+                    if (resultUser == null)
+                    {
+                        // Create the cell if it does not exist
+                        resultUser = new User
+                        {
+                            Name = "Result",
+                            Value = { Val = resultValue.ToString() }
+                        };
+                        shape.Users.Add(resultUser);
+                    }
+                    else
+                    {
+                        // Update existing cell
+                        resultUser.Value.Val = resultValue.ToString();
+                    }
+
+                    Console.WriteLine($"Shape ID {shape.ID}: CustomValue={customValue}, Result={resultValue}");
                 }
             }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Write any unexpected errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
-    }
-
-    // Retrieves the value of a user-defined cell; returns null if not found
-    static string GetUserCellValue(Shape shape, string cellName)
-    {
-        if (shape.Users == null)
-            return null;
-
-        foreach (User user in shape.Users)
-        {
-            if (user.Name == cellName || user.NameU == cellName)
+            try
             {
-                // Return the cell's string value (may be null)
-                return user.Value?.Val;
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving diagram: {ex.Message}");
             }
         }
-        return null;
     }
-
-    // Updates an existing user-defined cell or adds a new one if it does not exist
-    static void SetOrUpdateUserCell(Shape shape, string cellName, string value)
-    {
-        if (shape.Users == null)
-        {
-            Console.Error.WriteLine($"Shape ID {shape.ID} has a null Users collection.");
-            return;
-        }
-
-        foreach (User user in shape.Users)
-        {
-            if (user.Name == cellName || user.NameU == cellName)
-            {
-                // Update the existing cell value
-                user.Value.Val = value;
-                return;
-            }
-        }
-
-        // Cell not found; create a new one and add it to the collection
-        User newUser = new User
-        {
-            Name = cellName,
-            // Initialise the Value object and set its Val property
-            Value = { Val = value }
-        };
-        shape.Users.Add(newUser);
-    }
-}

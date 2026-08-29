@@ -2,41 +2,36 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class VerifyShapeGlueAndConnection
 {
     static void Main()
     {
         try
         {
 
-            // Path to the Visio file
-            string diagramPath = "input.vsdx";
+            // Load an existing Visio diagram
+            // Replace "input.vsdx" with the path to your diagram file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // IDs of the two shapes to verify
-            long shapeIdA = 1;
-            long shapeIdB = 2;
+            // IDs of the two shapes to verify.
+            // Set these to the actual shape IDs you want to check.
+            long shapeId1 = 1;   // example ID for the first shape
+            long shapeId2 = 2;   // example ID for the second shape
 
-            // Load the diagram (uses the provided load rule)
-            Diagram diagram = new Diagram(diagramPath);
+            // Retrieve the shapes from the diagram by their IDs
+            Shape shape1 = diagram.Pages[0].Shapes.GetShape(shapeId1);
+            Shape shape2 = diagram.Pages[0].Shapes.GetShape(shapeId2);
 
-            // Assume both shapes are on the first page
-            Page page = diagram.Pages[0];
+            // Verify whether the two shapes are glued
+            bool areGlued = shape1.IsGlued(shape2);
+            // Verify whether the two shapes are connected (e.g., a connector)
+            bool areConnected = shape1.IsConnected(shape2);
 
-            // Retrieve the shapes by their IDs
-            Shape shapeA = page.Shapes.GetShape(shapeIdA);
-            Shape shapeB = page.Shapes.GetShape(shapeIdB);
+            // Output the verification results
+            Console.WriteLine($"Shape {shapeId1} and Shape {shapeId2} glued: {areGlued}");
+            Console.WriteLine($"Shape {shapeId1} and Shape {shapeId2} connected: {areConnected}");
 
-            // Verify if the shapes are glued
-            bool isGlued = shapeA.IsGlued(shapeB);
-
-            // Verify if the shapes are connected
-            bool isConnected = shapeA.IsConnected(shapeB);
-
-            // Output the results
-            Console.WriteLine($"Shapes {shapeIdA} and {shapeIdB} glued: {isGlued}");
-            Console.WriteLine($"Shapes {shapeIdA} and {shapeIdB} connected: {isConnected}");
-
-            // (Optional) Save the diagram if any changes were made, using the provided save rule
+            // Optionally, save the diagram if any changes were made
             // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

@@ -5,38 +5,48 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input Visio file (adjust the path as needed)
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-
-            // Output preview image file
-            string outputPath = "preview.png";
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to modify user-defined cells
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Example: look for a user-defined cell named "CustomWidth" and set its value
-                    foreach (User userCell in shape.Users)
+                    // Look for a user-defined cell named "CustomValue"
+                    bool found = false;
+                    foreach (User user in shape.Users)
                     {
-                        if (userCell.Name == "CustomWidth")
+                        if (user.Name == "CustomValue")
                         {
-                            userCell.Value.Val = "200"; // new value
-                            Console.WriteLine($"Shape ID {shape.ID}: User cell '{userCell.Name}' set to {userCell.Value.Val}");
+                            // Update existing cell value
+                            user.Value.Val = "12345";
+                            found = true;
+                            break;
                         }
+                    }
+
+                    // If the cell does not exist, create it
+                    if (!found)
+                    {
+                        User newUser = new User();
+                        newUser.Name = "CustomValue";
+                        newUser.Value.Val = "12345";
+                        shape.Users.Add(newUser);
                     }
                 }
             }
 
-            // Save the modified diagram as a PNG image for visual preview
+            // Save a visual preview of the modified diagram as a PNG image
+            string outputPath = "preview.png";
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
             diagram.Save(outputPath, saveOptions);
 

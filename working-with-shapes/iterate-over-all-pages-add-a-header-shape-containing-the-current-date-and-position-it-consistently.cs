@@ -1,71 +1,58 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect two arguments: input Visio file path and output Visio file path.
-            if (args.Length < 2)
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Prepare the header text (current date)
+            string headerText = DateTime.Now.ToString("d");
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine("Usage: HeaderShapeExample <input.vsdx> <output.vsdx>");
-                return;
+                // Get page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Define header shape size
+                double headerWidth = 2.0;   // inches
+                double headerHeight = 0.5;  // inches
+
+                // Position the header consistently:
+                // 1 inch from the left edge, and 0.5 inch from the top edge.
+                double pinX = 1.0 + headerWidth / 2.0;          // center X
+                double pinY = pageHeight - 0.5;                 // center Y near top
+
+                // Add a text shape as the header on the current page
+                // Font: Arial, Color: Black, Size: 0.2 inches (~14 pt)
+                Shape headerShape = page.AddText(
+                    pinX,
+                    pinY,
+                    headerWidth,
+                    headerHeight,
+                    headerText,
+                    "Arial",
+                    "#000000",
+                    0.2);
             }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            try
-            {
-                // Load the diagram from the specified file.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Current date string to be placed in the header.
-                string dateText = DateTime.Now.ToString("d"); // e.g., 7/24/2026
-
-                // Iterate over each page and add a header text shape.
-                foreach (Page page in diagram.Pages)
-                {
-                    // Retrieve page dimensions (in inches).
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Define header position: centered horizontally, 0.5 inches from the top edge.
-                    double headerPinX = pageWidth / 2.0;
-                    double headerPinY = pageHeight - 0.5; // Visio origin is bottom-left.
-
-                    // Define size of the header text shape.
-                    double headerWidth = 2.0;   // inches
-                    double headerHeight = 0.5;  // inches
-
-                    // Add the text shape to the page.
-                    // Parameters: pinX, pinY, width, height, text, fontName, fontColor, fontSize(in inches)
-                    Shape headerShape = page.AddText(
-                        headerPinX,
-                        headerPinY,
-                        headerWidth,
-                        headerHeight,
-                        dateText,
-                        "Arial",
-                        "#000000",
-                        0.2); // 0.2 inches ≈ 14.4 points
-
-                    // Optional: ensure the shape is not deleted.
-                    if (headerShape.Del == BOOL.True)
-                    {
-                        headerShape.Del = BOOL.False;
-                    }
-                }
-
-                // Save the modified diagram as VSDX.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

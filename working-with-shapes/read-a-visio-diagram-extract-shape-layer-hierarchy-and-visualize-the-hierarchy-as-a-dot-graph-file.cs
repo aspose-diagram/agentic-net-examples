@@ -1,118 +1,113 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Text;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path – first argument or default.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
         {
-            // Determine input Visio file path
-            string inputPath;
-            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
-            {
-                inputPath = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the path to the Visio file: ");
-                inputPath = Console.ReadLine();
-            }
-
-            if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
-            {
-                Console.WriteLine("Invalid input file path.");
-                return;
-            }
-
-            // Determine output DOT file path
-            string outputPath;
-            if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
-            {
-                outputPath = args[1];
-            }
-            else
-            {
-                outputPath = Path.ChangeExtension(inputPath, ".dot");
-            }
-
-            // Load the Visio diagram
-            using (var diagram = new Diagram(inputPath))
-            {
-                // Prepare DOT content
-                var sb = new StringBuilder();
-                sb.AppendLine("digraph VisioLayers {");
-                sb.AppendLine("    rankdir=LR;"); // left‑to‑right layout for readability
-
-                // Collect layer definitions (index -> name)
-                var layerIndexToName = new Dictionary<int, string>();
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Layer layer in page.PageSheet.Layers)
-                    {
-                        // Layer.IX is the zero‑based index
-                        int ix = layer.IX;
-                        string layerName = layer.Name.Value;
-                        if (!layerIndexToName.ContainsKey(ix))
-                        {
-                            layerIndexToName[ix] = layerName;
-                            // Declare layer node
-                            sb.AppendLine($"    \"{Escape(layerName)}\" [shape=box, style=filled, color=lightgray];");
-                        }
-                    }
-                }
-
-                // Process shapes and create edges to their layers
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Determine a readable shape identifier
-                        string shapeLabel = !string.IsNullOrWhiteSpace(shape.NameU) ? shape.NameU : $"Shape_{shape.ID}";
-
-                        // Declare shape node
-                        sb.AppendLine($"    \"{Escape(shapeLabel)}\" [shape=ellipse];");
-
-                        // Retrieve layer membership string (e.g., "0;2")
-                        string layerMember = shape.LayerMem?.LayerMember?.Value;
-                        if (string.IsNullOrWhiteSpace(layerMember))
-                            continue; // shape not assigned to any layer
-
-                        string[] parts = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                        foreach (string part in parts)
-                        {
-                            if (int.TryParse(part, out int layerIdx) && layerIndexToName.TryGetValue(layerIdx, out string layerName))
-                            {
-                                // Create edge from layer to shape
-                                sb.AppendLine($"    \"{Escape(layerName)}\" -> \"{Escape(shapeLabel)}\";");
-                            }
-                        }
-                    }
-                }
-
-                sb.AppendLine("}"); // end of digraph
-
-                // Write DOT file
-                try
-                {
-                    File.WriteAllText(outputPath, sb.ToString());
-                    Console.WriteLine($"DOT graph successfully written to: {outputPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Failed to write DOT file: {ex.Message}");
-                }
-            }
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
         }
 
-        // Helper to escape double quotes in DOT identifiers
-        private static string Escape(string text)
+        // Output DOT file path – second argument or default.
+        string outputPath = args.Length > 1 ? args[1] : "output.dot";
+        // Guard: ensure the directory for the output file exists.
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
         {
-            return text?.Replace("\"", "\\\"") ?? string.Empty;
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Use the first page for layer extraction (layers are page‑specific).
+            Page page = diagram.Pages[0];
+
+            // Build a map from layer index to its name.
+            var layerNames = new System.Collections.Generic.Dictionary<int, string>();
+            foreach (Layer layer in page.PageSheet.Layers)
+            {
+                // Layer index is stored in the IX property.
+                int idx = layer.IX;
+                // Layer name is a string wrapper; access via .Value.
+                string name = layer.Name.Value;
+                layerNames[idx] = name;
+            }
+
+            // Build a map from layer index to the shapes that belong to it.
+            var layerToShapes = new System.Collections.Generic.Dictionary<int, System.Collections.Generic.List<Shape>>();
+            foreach (Shape shape in page.Shapes)
+            {
+                // Retrieve the semicolon‑separated list of layer indexes for the shape.
+                string memberStr = shape.LayerMem?.LayerMember?.Value ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(memberStr))
+                    continue; // Shape is not assigned to any layer.
+
+                // Split the string and parse each index.
+                string[] parts = memberStr.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string part in parts)
+                {
+                    if (int.TryParse(part, out int layerIdx))
+                    {
+                        if (!layerToShapes.ContainsKey(layerIdx))
+                            layerToShapes[layerIdx] = new System.Collections.Generic.List<Shape>();
+                        layerToShapes[layerIdx].Add(shape);
+                    }
+                }
+            }
+
+            // Begin constructing the DOT graph content.
+            var dotLines = new System.Text.StringBuilder();
+            dotLines.AppendLine("digraph G {");
+            dotLines.AppendLine("    rankdir=LR;"); // Layout left‑to‑right for readability.
+
+            // Create a node for each layer.
+            foreach (var kvp in layerNames)
+            {
+                int layerIdx = kvp.Key;
+                string layerLabel = kvp.Value.Replace("\"", "\\\""); // Escape quotes.
+                string layerNodeId = $"layer_{layerIdx}";
+                dotLines.AppendLine($"    {layerNodeId} [label=\"{layerLabel}\", shape=box, style=filled, fillcolor=lightgray];");
+            }
+
+            // Create nodes for shapes and edges from their layer to the shape.
+            foreach (var kvp in layerToShapes)
+            {
+                int layerIdx = kvp.Key;
+                string layerNodeId = $"layer_{layerIdx}";
+                foreach (Shape shape in kvp.Value)
+                {
+                    // Use shape ID as a unique identifier.
+                    long shapeId = shape.ID;
+                    string shapeNodeId = $"shape_{shapeId}";
+                    // Prefer the universal name; fall back to the numeric ID.
+                    string shapeLabel = !string.IsNullOrWhiteSpace(shape.NameU) ? shape.NameU : shapeId.ToString();
+                    shapeLabel = shapeLabel.Replace("\"", "\\\"");
+                    dotLines.AppendLine($"    {shapeNodeId} [label=\"{shapeLabel}\"];");
+                    dotLines.AppendLine($"    {layerNodeId} -> {shapeNodeId};");
+                }
+            }
+
+            dotLines.AppendLine("}"); // End of graph.
+
+            // Write the DOT content to the output file.
+            File.WriteAllText(outputPath, dotLines.ToString());
+            Console.WriteLine($"DOT graph generated successfully at: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any unexpected errors from Aspose.Diagram or IO operations.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

@@ -4,13 +4,16 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load an existing Visio diagram
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages and shapes
@@ -18,42 +21,41 @@ class Program
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve the custom data field (Data1) – it is a plain string
-                        string dataValue = shape.Data1 ?? string.Empty;
+                        // Use Shape Data fields (Data1, Data2, Data3) to decide the theme
+                        // Example logic:
+                        // - If Data1 equals "BlueTheme", apply Bubble theme with Variant1 and QuickStyle1
+                        // - If Data2 equals "RedTheme", apply Bubble theme with Variant2 and QuickStyle2
+                        // - Otherwise, apply Bubble theme with Variant3 and QuickStyle3
 
-                        // Apply a preset theme based on the Data1 value
-                        // Example mapping:
-                        //   "Red"   -> Theme Variant1
-                        //   "Blue"  -> Theme Variant2
-                        //   "Green" -> Theme Variant3
-                        //   any other value -> no theme change
-                        switch (dataValue.Trim().ToUpperInvariant())
+                        if (!string.IsNullOrEmpty(shape.Data1) && shape.Data1.Equals("BlueTheme", StringComparison.OrdinalIgnoreCase))
                         {
-                            case "RED":
-                                shape.PresetTheme = PresetThemeValue.Bubble;
-                                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                                break;
-                            case "BLUE":
-                                shape.PresetTheme = PresetThemeValue.Bubble;
-                                shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
-                                break;
-                            case "GREEN":
-                                shape.PresetTheme = PresetThemeValue.Bubble;
-                                shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
-                                break;
-                            default:
-                                // No theme change for unrecognized values
-                                break;
+                            // Apply first theme configuration
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+                        }
+                        else if (!string.IsNullOrEmpty(shape.Data2) && shape.Data2.Equals("RedTheme", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Apply second theme configuration
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+                        }
+                        else
+                        {
+                            // Default theme configuration
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3;
                         }
                     }
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

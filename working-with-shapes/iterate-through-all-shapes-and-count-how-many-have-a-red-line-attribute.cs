@@ -1,44 +1,48 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            int redLineCount = 0;
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the Visio file (provide via command line or use default)
+                string filePath = args.Length > 0 ? args[0] : "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                int redLineCount = 0;
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.False)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the line color (hex string) and compare to red
-                        string lineColor = shape.Line.LineColor.Value;
-                        if (!string.IsNullOrEmpty(lineColor) &&
-                            lineColor.Equals("#FF0000", StringComparison.OrdinalIgnoreCase))
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Ensure the line and its color are defined
+                        if (shape.Line?.LineColor?.Value != null)
                         {
-                            redLineCount++;
+                            // Compare the line color to red (hex #FF0000, case‑insensitive)
+                            if (string.Equals(shape.Line.LineColor.Value, "#FF0000", StringComparison.OrdinalIgnoreCase))
+                            {
+                                redLineCount++;
+                            }
                         }
                     }
                 }
+
+                Console.WriteLine($"Number of shapes with a red line: {redLineCount}");
+
             }
-
-            Console.WriteLine($"Number of shapes with a red line: {redLineCount}");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

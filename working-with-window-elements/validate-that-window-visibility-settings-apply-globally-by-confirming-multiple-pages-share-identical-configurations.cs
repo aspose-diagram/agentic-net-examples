@@ -6,65 +6,71 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio diagram file
-        string diagramPath = "sample.vsdx";
+        // Path to the Visio file (replace with actual path)
+        string filePath = "input.vsdx";
 
-        // Guard: ensure the diagram file exists before proceeding
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(filePath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"File not found: {filePath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(filePath);
 
-            // Ensure the diagram contains at least one window definition
+            // ---------- Validate window visibility settings ----------
+            // Ensure the diagram contains at least one Window element
             if (diagram.Windows.Count == 0)
-            {
-                throw new Exception("No windows found in the diagram.");
-            }
+                throw new Exception("The diagram does not contain any Window elements.");
 
-            // Capture visibility settings from the first window as reference values
-            Window referenceWindow = diagram.Windows[0];
-            BOOL refShowGrid = referenceWindow.ShowGrid;
-            BOOL refShowGuides = referenceWindow.ShowGuides;
-            BOOL refShowRulers = referenceWindow.ShowRulers;
-            BOOL refShowPageBreaks = referenceWindow.ShowPageBreaks;
-            BOOL refDynamicGridEnabled = referenceWindow.DynamicGridEnabled;
-            BOOL refShowConnectionPoints = referenceWindow.ShowConnectionPoints;
+            // Capture visibility settings from the first window for comparison
+            Window firstWindow = diagram.Windows[0];
+            BOOL firstDynamicGrid = firstWindow.DynamicGridEnabled;
+            BOOL firstShowConnectionPoints = firstWindow.ShowConnectionPoints;
+            BOOL firstShowGrid = firstWindow.ShowGrid;
+            BOOL firstShowGuides = firstWindow.ShowGuides;
+            BOOL firstShowPageBreaks = firstWindow.ShowPageBreaks;
+            BOOL firstShowRulers = firstWindow.ShowRulers;
 
-            // Validate that all other windows share the same visibility settings
+            // Iterate through remaining windows and compare each setting
             for (int i = 1; i < diagram.Windows.Count; i++)
             {
-                Window win = diagram.Windows[i];
-                if (win.ShowGrid != refShowGrid ||
-                    win.ShowGuides != refShowGuides ||
-                    win.ShowRulers != refShowRulers ||
-                    win.ShowPageBreaks != refShowPageBreaks ||
-                    win.DynamicGridEnabled != refDynamicGridEnabled ||
-                    win.ShowConnectionPoints != refShowConnectionPoints)
+                Window w = diagram.Windows[i];
+
+                if (w.DynamicGridEnabled != firstDynamicGrid ||
+                    w.ShowConnectionPoints != firstShowConnectionPoints ||
+                    w.ShowGrid != firstShowGrid ||
+                    w.ShowGuides != firstShowGuides ||
+                    w.ShowPageBreaks != firstShowPageBreaks ||
+                    w.ShowRulers != firstShowRulers)
                 {
-                    throw new Exception($"Window at index {i} has differing visibility settings.");
+                    throw new Exception($"Window at index {i} has different visibility settings than the first window.");
                 }
             }
 
-            // Capture UI visibility setting from the first page (UIVisibilityValue, not BOOL)
-            UIVisibilityValue firstPageVisibility = diagram.Pages[0].PageSheet.PageProps.UIVisibility.Value;
+            // ---------- Validate that all pages share identical UI visibility ----------
+            // Ensure the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
+                throw new Exception("The diagram does not contain any pages.");
 
-            // Validate that all pages share the same UI visibility configuration
-            for (int p = 1; p < diagram.Pages.Count; p++)
+            // Capture UIVisibility enum value from the first page
+            Page firstPage = diagram.Pages[0];
+            UIVisibilityValue firstUIVisibility = firstPage.PageSheet.PageProps.UIVisibility.Value;
+
+            // Compare UIVisibility of each subsequent page with the first page
+            for (int i = 1; i < diagram.Pages.Count; i++)
             {
-                UIVisibilityValue pageVis = diagram.Pages[p].PageSheet.PageProps.UIVisibility.Value;
-                if (pageVis != firstPageVisibility)
+                Page p = diagram.Pages[i];
+                if (p.PageSheet.PageProps.UIVisibility.Value != firstUIVisibility)
                 {
-                    throw new Exception($"Page at index {p} has a different UI visibility setting.");
+                    throw new Exception($"Page at index {i} has a different UIVisibility setting than the first page.");
                 }
             }
 
-            Console.WriteLine("All window visibility settings are consistent across windows and pages.");
+            Console.WriteLine("All window visibility settings are identical across windows, and all pages share the same UI visibility configuration.");
         }
         catch (Exception ex)
         {

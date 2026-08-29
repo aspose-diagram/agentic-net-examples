@@ -1,56 +1,44 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram (uses the provided load rule)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Identifier of the parent shape (could be name or ID)
+            int parentShapeId = 1; // replace with actual ID or use GetShapeIncludingChild(string)
+
+            // Retrieve the parent shape including its child shapes
+            Shape parentShape = diagram.Pages[0].Shapes.GetShapeIncludingChild(parentShapeId);
+
+            // Collect IDs of all direct child shapes
+            List<long> childShapeIds = new List<long>();
+            foreach (Shape child in parentShape.Shapes)
             {
-
-                // Path to the Visio file (replace with actual file path)
-                string diagramPath = "input.vsdx";
-
-                // ID of the parent shape whose children you want to retrieve (replace with actual ID)
-                long parentShapeId = 1;
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Assume the shape is on the first page; adjust if needed
-                Page page = diagram.Pages[0];
-
-                // Retrieve the parent shape by its ID
-                Shape parentShape = page.Shapes.GetShape(parentShapeId);
-                if (parentShape == null)
-                {
-                    Console.WriteLine($"Parent shape with ID {parentShapeId} not found.");
-                    return;
-                }
-
-                // Collect child shape IDs (if the shape is a group)
-                List<long> childShapeIds = new List<long>();
-                if (parentShape.Shapes != null)
-                {
-                    foreach (Shape child in parentShape.Shapes)
-                    {
-                        childShapeIds.Add(child.ID);
-                    }
-                }
-
-                // Output the collected child IDs
-                Console.WriteLine($"Parent Shape ID: {parentShapeId}");
-                Console.WriteLine("Child Shape IDs:");
-                foreach (long id in childShapeIds)
-                {
-                    Console.WriteLine(id);
-                }
-
+                childShapeIds.Add(child.ID);
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Example usage: output the collected IDs
+            foreach (long id in childShapeIds)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine(id);
             }
+
+            // Save the diagram (uses the provided save rule)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

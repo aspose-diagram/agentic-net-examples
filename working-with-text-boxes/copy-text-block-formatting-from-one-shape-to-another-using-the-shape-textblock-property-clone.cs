@@ -1,75 +1,50 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
-class Program
+class CopyTextBlockFormatting
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output Visio file path
-        string outputPath = "output.vsdx";
-
         try
         {
-            // Load the source diagram
-            Diagram diagram = new Diagram(inputPath);
 
-            // Use the first page (avoid ActivePage)
-            Page page = diagram.Pages[0];
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Locate source and target shapes by name
-            Shape sourceShape = null;
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.Name == "SourceShape")
-                    sourceShape = shape;
-                else if (shape.Name == "TargetShape")
-                    targetShape = shape;
-            }
+            // Identify source and target shapes (by their IDs)
+            // Adjust the page index and shape IDs as needed
+            int pageIndex = 0;
+            long sourceShapeId = 1;   // ID of the shape to copy formatting from
+            long targetShapeId = 2;   // ID of the shape to apply formatting to
 
-            // Validate shape existence
-            if (sourceShape == null)
-                throw new Exception("Source shape not found.");
-            if (targetShape == null)
-                throw new Exception("Target shape not found.");
+            // Retrieve the shapes
+            Shape sourceShape = diagram.Pages[pageIndex].Shapes.GetShape(sourceShapeId);
+            Shape targetShape = diagram.Pages[pageIndex].Shapes.GetShape(targetShapeId);
 
-            // Copy TextBlock formatting property‑by‑property (TextBlock is read‑only)
-            var srcBlock = sourceShape.TextBlock;
-            var tgtBlock = targetShape.TextBlock;
+            // Clone the source shape's TextBlock
+            TextBlock clonedTextBlock = (TextBlock)sourceShape.TextBlock.Clone();
 
-            // Clone margin values
-            tgtBlock.LeftMargin = (DoubleValue)srcBlock.LeftMargin.Clone();
-            tgtBlock.RightMargin = (DoubleValue)srcBlock.RightMargin.Clone();
-            tgtBlock.TopMargin = (DoubleValue)srcBlock.TopMargin.Clone();
-            tgtBlock.BottomMargin = (DoubleValue)srcBlock.BottomMargin.Clone();
+            // Copy each formatting property to the target shape's TextBlock
+            // (Only the properties that define the block's appearance are copied)
+            targetShape.TextBlock.BottomMargin = clonedTextBlock.BottomMargin;
+            targetShape.TextBlock.DefaultTabStop = clonedTextBlock.DefaultTabStop;
+            targetShape.TextBlock.Del = clonedTextBlock.Del;
+            targetShape.TextBlock.LeftMargin = clonedTextBlock.LeftMargin;
+            targetShape.TextBlock.RightMargin = clonedTextBlock.RightMargin;
+            targetShape.TextBlock.TextBkgnd = clonedTextBlock.TextBkgnd;
+            targetShape.TextBlock.TextBkgndTrans = clonedTextBlock.TextBkgndTrans;
+            targetShape.TextBlock.TextDirection = clonedTextBlock.TextDirection;
+            targetShape.TextBlock.TopMargin = clonedTextBlock.TopMargin;
+            targetShape.TextBlock.VerticalAlign = clonedTextBlock.VerticalAlign;
 
-            // Copy text direction and vertical alignment enums
-            tgtBlock.TextDirection.Value = srcBlock.TextDirection.Value;
-            tgtBlock.VerticalAlign.Value = srcBlock.VerticalAlign.Value;
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-            // Clone background color formula (Ufe.F) and transparency
-            tgtBlock.TextBkgnd.Ufe.F = srcBlock.TextBkgnd.Ufe.F;
-            tgtBlock.TextBkgndTrans = (DoubleValue)srcBlock.TextBkgndTrans.Clone();
-
-            // Clone default tab stop
-            tgtBlock.DefaultTabStop = (DoubleValue)srcBlock.DefaultTabStop.Clone();
-
-            // Save the modified diagram using a valid overload
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

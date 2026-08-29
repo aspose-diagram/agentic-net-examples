@@ -1,50 +1,121 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // Required for shape-related operations
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input diagram path, shape ID, output JSON path
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <shapeId> <outputJsonPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string shapeIdArg = args[1];
+        // Guard: parse shape ID to long
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
+        string outputPath = args[2];
+        // Guard: ensure the directory for output exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Retrieve a shape (example: first shape on the first page)
-            Shape shape = diagram.Pages[0].Shapes[0];
-
-            // Access the shape's TextBlock
-            TextBlock textBlock = shape.TextBlock;
-
-            // Collect TextBlock properties into a dictionary for serialization
-            var textBlockData = new Dictionary<string, object>
+            // Locate the shape with the specified ID across all pages
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                { "BottomMargin", textBlock.BottomMargin },
-                { "DefaultTabStop", textBlock.DefaultTabStop },
-                { "Del", textBlock.Del },
-                { "LeftMargin", textBlock.LeftMargin },
-                { "RightMargin", textBlock.RightMargin },
-                { "TextBkgnd", textBlock.TextBkgnd?.ToString() },
-                { "TextBkgndTrans", textBlock.TextBkgndTrans },
-                { "TextDirection", textBlock.TextDirection?.ToString() },
-                { "TopMargin", textBlock.TopMargin },
-                { "VerticalAlign", textBlock.VerticalAlign?.ToString() }
+                // GetShape returns a Shape instance for the given ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape != null)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found in any page.");
+                return;
+            }
+
+            // Extract TextBlock properties from the shape
+            var textBlockInfo = new TextBlockDto
+            {
+                // Margins (points are converted to double values)
+                LeftMargin = targetShape.TextBlock.LeftMargin.Value,
+                RightMargin = targetShape.TextBlock.RightMargin.Value,
+                TopMargin = targetShape.TextBlock.TopMargin.Value,
+                BottomMargin = targetShape.TextBlock.BottomMargin.Value,
+
+                // Text direction (enum to string)
+                TextDirection = targetShape.TextBlock.TextDirection.Value.ToString(),
+
+                // Vertical alignment (enum to string)
+                VerticalAlign = targetShape.TextBlock.VerticalAlign.Value.ToString(),
+
+                // Background color formula (e.g., "RGB(95,108,53)")
+                TextBackground = targetShape.TextBlock.TextBkgnd.Ufe.F,
+
+                // Background transparency (percentage)
+                TextBackgroundTransparency = targetShape.TextBlock.TextBkgndTrans.Value,
+
+                // Default tab stop (in inches)
+                DefaultTabStop = targetShape.TextBlock.DefaultTabStop.Value
             };
 
-            // Serialize the dictionary to formatted JSON
-            string json = JsonSerializer.Serialize(textBlockData, new JsonSerializerOptions { WriteIndented = true });
+            // Serialize the DTO to JSON with indentation
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            string json = JsonSerializer.Serialize(textBlockInfo, jsonOptions);
 
-            // Write the JSON to a file for backup/reuse
-            File.WriteAllText("shape_textblock.json", json);
-
+            // Write JSON to the specified output file
+            File.WriteAllText(outputPath, json);
+            Console.WriteLine($"TextBlock properties saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose or I/O errors
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}
+
+// DTO representing the serializable TextBlock properties
+class TextBlockDto
+{
+    public double LeftMargin { get; set; }
+    public double RightMargin { get; set; }
+    public double TopMargin { get; set; }
+    public double BottomMargin { get; set; }
+    public string TextDirection { get; set; } = string.Empty;
+    public string VerticalAlign { get; set; } = string.Empty;
+    public string TextBackground { get; set; } = string.Empty;
+    public double TextBackgroundTransparency { get; set; }
+    public double DefaultTabStop { get; set; }
 }

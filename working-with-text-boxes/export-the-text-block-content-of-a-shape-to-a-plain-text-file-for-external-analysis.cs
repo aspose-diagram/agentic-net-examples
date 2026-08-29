@@ -2,39 +2,43 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class ExportShapeText
+class ExportShapeTexts
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the Visio file
+            string visioPath = @"C:\Diagrams\sample.vsdx";
 
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram (uses Aspose.Diagram's load rule)
+            Diagram diagram = new Diagram(visioPath);
+
+            // Output text file path
+            string outputPath = @"C:\Diagrams\ShapeTexts.txt";
+
+            // Use a StreamWriter to create/overwrite the output file
+            using (StreamWriter writer = new StreamWriter(outputPath, false))
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve the plain text of the shape
-                    string shapeText = shape.GetPureText();
-
-                    // If the shape contains any text, export it to a .txt file
-                    if (!string.IsNullOrEmpty(shapeText))
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Build a file name that identifies the shape (using its ID)
-                        string fileName = $"Shape_{shape.ID}_Text.txt";
+                        // Get the plain text of the shape
+                        string shapeText = shape.GetPureText();
 
-                        // Write the text to the file (overwrites if the file already exists)
-                        File.WriteAllText(fileName, shapeText);
+                        // Write shape identifier and its text to the file
+                        writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}");
+                        writer.WriteLine(shapeText);
+                        writer.WriteLine(new string('-', 40));
                     }
                 }
             }
 
-            // Optionally, save the diagram if any modifications were made
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine($"Shape texts exported to: {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

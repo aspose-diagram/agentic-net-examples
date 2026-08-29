@@ -1,53 +1,72 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input diagram path, shape ID, output diagram path
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <input.vsdx> <shapeId> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Parse shape ID (long) from the second argument
+        if (!long.TryParse(args[1], out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {args[1]}");
+            return;
+        }
+
+        string outputPath = args[2];
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page
+            // Use the first page (index 0) – adjust if needed for multi‑page diagrams
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape by its ID (adjust the ID as needed)
-            Shape shape = page.Shapes.GetShape(1);
+            // Retrieve the shape by its ID; GetShape accepts a long identifier
+            Shape shape = page.Shapes.GetShape(shapeId);
             if (shape == null)
             {
-                Console.WriteLine("Shape with ID 1 not found.");
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
                 return;
             }
 
-            // Set text rotation angle (degrees -> radians)
-            double angleDeg = 0; // No rotation
-            shape.TextXForm.TxtAngle.Value = (Math.PI / 180) * angleDeg;
-
-            // Position text at the top of the shape
-            // Local pin Y at the top of the text block
+            // ----- Position text at the top of the shape -----
+            // Set the local Y pin of the text block to 0 (top edge of the text block)
             shape.TextXForm.TxtLocPinY.Value = 0;
-            // Pin Y at the shape's height to align the text block with the top edge
+
+            // Align the text block's Y pin to the top edge of the shape (shape height)
             shape.TextXForm.TxtPinY.Value = shape.XForm.Height.Value;
 
-            // Optional: replace existing text with a new string
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt("Top Aligned Text"));
+            // ----- Configure text orientation angle -----
+            // Example: set angle to 0 degrees (no rotation). Convert degrees to radians.
+            double angleDegrees = 0; // modify as needed
+            shape.TextXForm.TxtAngle.Value = (Math.PI / 180) * angleDegrees;
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the output file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved to {outputPath}");
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

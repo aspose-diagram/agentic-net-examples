@@ -1,53 +1,71 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new diagram (using the provided creation rule)
-        Diagram diagram = new Diagram();
+        // Path to the source Visio file (adjust as needed)
+        string inputPath = "input.vsdx";
 
-        // Access the first page (a diagram always has at least one page)
-        Page page = diagram.Pages[0];
+        // Verify that the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
-        // Define initial position for the text shape
-        double pinX = 5.0;   // X coordinate of the text's pin
-        double pinY = 5.0;   // Y coordinate of the text's pin
+        try
+        {
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-        // Add a text shape with default width/height (these will be overridden)
-        Shape textShape = page.AddText(pinX, pinY, 1.0, 1.0, "Custom size text");
+            // Ensure the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram does not contain any pages.");
+                return;
+            }
 
-        // Set custom width and height for the text block
-        double customWidth = 3.0;   // desired width of the text block
-        double customHeight = 2.0;  // desired height of the text block
+            // Access the first page in the diagram
+            Page page = diagram.Pages[0];
 
-        // TxtWidth and TxtHeight are DoubleValue objects; assign the numeric values
-        textShape.TextXForm.TxtWidth.Value = customWidth;
-        textShape.TextXForm.TxtHeight.Value = customHeight;
+            // Ensure the page contains at least one shape
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The page does not contain any shapes.");
+                return;
+            }
 
-        // Refresh shape data so that internal calculations (e.g., geometry) are updated
-        textShape.RefreshData();
+            // Retrieve the first shape on the page
+            Shape shape = page.Shapes[0];
 
-        // Retrieve the shape's pin position (center of rotation)
-        double shapePinX = textShape.XForm.PinX.Value;
-        double shapePinY = textShape.XForm.PinY.Value;
+            // Define custom width and height for the shape's text block (in inches)
+            double customTextWidth = 2.5;   // example width
+            double customTextHeight = 1.0;  // example height
 
-        // Calculate the bounding box of the text block (assuming no rotation)
-        double left   = shapePinX - (textShape.TextXForm.TxtWidth.Value  / 2.0);
-        double right  = shapePinX + (textShape.TextXForm.TxtWidth.Value  / 2.0);
-        double bottom = shapePinY - (textShape.TextXForm.TxtHeight.Value / 2.0);
-        double top    = shapePinY + (textShape.TextXForm.TxtHeight.Value / 2.0);
+            // Apply the custom dimensions to the shape's TextXForm (text block transform)
+            shape.TextXForm.TxtWidth.Value = customTextWidth;
+            shape.TextXForm.TxtHeight.Value = customTextHeight;
 
-        // Output the bounding box coordinates
-        Console.WriteLine("Text Block Bounding Box:");
-        Console.WriteLine($"Left   : {left}");
-        Console.WriteLine($"Right  : {right}");
-        Console.WriteLine($"Bottom : {bottom}");
-        Console.WriteLine($"Top    : {top}");
+            // Retrieve the resulting bounding box dimensions of the text block
+            double boundingBoxWidth = shape.TextXForm.TxtWidth.Value;
+            double boundingBoxHeight = shape.TextXForm.TxtHeight.Value;
 
-        // Save the diagram (using the provided saving rule)
-        diagram.Save("Output.vsdx", SaveFileFormat.Vsdx);
+            // Output the calculated bounding box dimensions to the console
+            Console.WriteLine($"Bounding box width: {boundingBoxWidth} inches");
+            Console.WriteLine($"Bounding box height: {boundingBoxHeight} inches");
+
+            // (Optional) Save the modified diagram to a new file to persist changes
+            string outputPath = "output_modified.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose.Diagram exceptions to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

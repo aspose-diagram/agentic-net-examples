@@ -1,77 +1,105 @@
-using System.IO;
 using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (first argument or default)
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the Visio file to be validated
-            string diagramPath = "input.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(diagramPath);
 
-            // Predefined corporate palette (hex color strings)
-            string[] corporatePalette = new[]
+            // Define the corporate palette as a list of allowed RGB tuples
+            var allowedPalette = new List<(int R, int G, int B)>
             {
-                "#FFFFFF", // White
-                "#FF0000", // Red
-                "#00FF00", // Green
-                "#0000FF"  // Blue
+                (255, 0, 0),   // Red
+                (0, 255, 0),   // Green
+                (0, 0, 255),   // Blue
+                (95, 108, 53)  // Example corporate color
             };
 
-            bool allValid = true;
-
-            // Iterate through all pages and shapes
+            // Iterate through every page in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through every shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the text background color formula (if any)
-                    string bgFormula = shape.TextBlock.TextBkgnd.Ufe.F?.Trim();
+                    // Retrieve the text background color formula (e.g., "RGB(95,108,53)")
+                    string bgFormula = shape.TextBlock?.TextBkgnd?.Ufe?.F;
 
-                    // If no background color is set, skip validation for this shape
-                    if (string.IsNullOrEmpty(bgFormula))
+                    // Skip shapes without a text background definition
+                    if (string.IsNullOrWhiteSpace(bgFormula))
                         continue;
 
-                    // Compare the retrieved value against the corporate palette (case‑insensitive)
-                    bool isAllowed = false;
-                    foreach (string allowedColor in corporatePalette)
+                    // Attempt to parse the RGB values from the formula
+                    (int R, int G, int B) parsedColor = ParseRgbFormula(bgFormula);
+
+                    // If parsing failed, treat the color as invalid
+                    if (parsedColor == (-1, -1, -1))
                     {
-                        if (string.Equals(bgFormula, allowedColor, StringComparison.OrdinalIgnoreCase))
-                        {
-                            isAllowed = true;
-                            break;
-                        }
+                        Console.Error.WriteLine($"Unable to parse background color for Shape ID {shape.ID} on Page \"{page.Name}\". Formula: {bgFormula}");
+                        continue;
                     }
 
-                    // Report any violations
+                    // Check whether the parsed color exists in the allowed palette
+                    bool isAllowed = allowedPalette.Any(c => c.R == parsedColor.R && c.G == parsedColor.G && c.B == parsedColor.B);
+
+                    // Report any shape whose background color is not part of the corporate palette
                     if (!isAllowed)
                     {
-                        allValid = false;
-                        Console.WriteLine($"Invalid text background color on Shape ID {shape.ID} (Page: {page.Name}): {bgFormula}");
+                        Console.WriteLine($"[Violation] Shape ID {shape.ID} on Page \"{page.Name}\" uses disallowed background color {bgFormula}");
                     }
                 }
             }
-
-            // Final result
-            if (allValid)
-            {
-                Console.WriteLine("All shape text background colors conform to the corporate palette.");
-            }
-            else
-            {
-                throw new Exception("One or more shapes have text background colors outside the corporate palette.");
-            }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Parses a string of the form "RGB(r,g,b)" and returns the integer components.
+    /// Returns (-1,-1,-1) if the format is invalid.
+    /// </summary>
+    private static (int R, int G, int B) ParseRgbFormula(string formula)
+    {
+        // Expected format: RGB(95,108,53)
+        if (!formula.StartsWith("RGB(", StringComparison.OrdinalIgnoreCase) || !formula.EndsWith(")"))
+            return (-1, -1, -1);
+
+        // Extract the comma‑separated values inside the parentheses
+        string inner = formula.Substring(4, formula.Length - 5);
+        string[] parts = inner.Split(',');
+
+        // Ensure exactly three components are present
+        if (parts.Length != 3)
+            return (-1, -1, -1);
+
+        // Try parsing each component as an integer
+        bool okR = int.TryParse(parts[0].Trim(), out int r);
+        bool okG = int.TryParse(parts[1].Trim(), out int g);
+        bool okB = int.TryParse(parts[2].Trim(), out int b);
+
+        // Return a sentinel tuple if any component fails to parse
+        if (!okR || !okG || !okB)
+            return (-1, -1, -1);
+
+        return (r, g, b);
     }
 }

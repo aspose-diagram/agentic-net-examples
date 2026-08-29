@@ -1,52 +1,52 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // Expect input and output file paths as command‑line arguments.
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramProcessing <input.vsdx> <output.vsdx>");
+                return;
+            }
 
-            // Load the existing Visio diagram
-            string inputPath = "input.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
+
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
+                    // Skip deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Retrieve the plain text of the shape
-                    string text = shape.Text.Value.Text ?? string.Empty;
+                    // Retrieve plain text of the shape.
+                    string shapeText = shape.Text.Value.Text ?? string.Empty;
 
-                    // Apply transparent background only to shapes containing a warning message
-                    if (text.IndexOf("warning", StringComparison.OrdinalIgnoreCase) >= 0)
+                    // Check if the shape contains a warning message (case‑insensitive).
+                    if (shapeText.IndexOf("warning", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        // Use a solid fill pattern
-                        shape.Fill.FillPattern.Value = 1; // Solid fill
+                        // Apply a solid fill pattern.
+                        shape.Fill.FillPattern.Value = 1; // Solid fill.
 
-                        // Set both foreground and background transparency to 100% (fully transparent)
-                        shape.Fill.FillForegndTrans.Value = 100;
-                        shape.Fill.FillBkgndTrans.Value = 100;
+                        // Set a foreground color (optional, here white).
+                        shape.Fill.FillForegnd.Value = "#FFFFFF";
+
+                        // Make the background fully transparent.
+                        shape.Fill.FillBkgndTrans.Value = 100; // 100 % transparency.
                     }
                 }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
-}

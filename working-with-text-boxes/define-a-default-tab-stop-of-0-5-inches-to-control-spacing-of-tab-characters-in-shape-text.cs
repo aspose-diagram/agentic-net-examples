@@ -1,6 +1,5 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,41 +8,37 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram (replace with your file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+                // Create a new empty Visio diagram
+                Diagram diagram = new Diagram();
 
-                // Access the first page
-                Page page = diagram.Pages[0];
+                // Use the active page to add a rectangle shape
+                // Parameters: PinX, PinY (in inches), master name, isCalculate flag
+                double pinX = 2.0;
+                double pinY = 2.0;
+                string masterName = "Rectangle";
+                bool isCalculate = false;
 
-                // Retrieve the first shape on the page (ensure at least one shape exists)
-                if (page.Shapes.Count > 0)
-                {
-                    // Get the shape by its ID
-                    Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
+                // AddShape returns the shape ID (long)
+                long shapeId = diagram.ActivePage.AddShape(pinX, pinY, masterName, isCalculate);
 
-                    // Set the default tab stop to 0.5 inches (distance between tab stops)
-                    shape.TextBlock.DefaultTabStop.Value = 0.5;
+                // Retrieve the Shape object using the ID
+                Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
 
-                    // Optional: add a text run containing a tab character to demonstrate the effect
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt("First\tSecond\tThird"));
-                }
-                else
-                {
-                    Console.WriteLine("No shapes found on the first page.");
-                }
+                // Set the default tab stop to 0.5 inches for the shape's text block
+                // This controls the spacing of tab characters within the shape's text
+                shape.TextBlock.DefaultTabStop.Value = 0.5;
 
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Optionally add some text containing tabs to demonstrate the effect
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt("Item1\tItem2\tItem3"));
 
-                Console.WriteLine("Diagram saved with default tab stop set to 0.5 inches.");
+                // Save the diagram to a VSDX file
+                diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (System.NullReferenceException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
             }
     }
     }

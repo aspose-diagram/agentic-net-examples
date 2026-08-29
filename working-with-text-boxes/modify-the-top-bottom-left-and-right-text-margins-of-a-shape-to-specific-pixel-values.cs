@@ -1,67 +1,54 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    // Convert pixel value to points (1 pixel = 0.75 point at 96 DPI)
-    static double PixelsToPoints(int pixels) => pixels * 0.75;
-
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Define desired pixel margins
-            int leftPixels = 10;
-            int rightPixels = 10;
-            int topPixels = 5;
-            int bottomPixels = 5;
-
-            // Convert pixel margins to points
-            double leftPoints = PixelsToPoints(leftPixels);
-            double rightPoints = PixelsToPoints(rightPixels);
-            double topPoints = PixelsToPoints(topPixels);
-            double bottomPoints = PixelsToPoints(bottomPixels);
-
-            // Iterate through pages and shapes (example modifies the first shape found)
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Ensure the shape has a TextBlock (all shapes have it, but check for null safety)
-                    if (shape.TextBlock != null)
-                    {
-                        // Set margins using DoubleValue with point units
-                        shape.TextBlock.LeftMargin = new DoubleValue(leftPoints, MeasureConst.PT);
-                        shape.TextBlock.RightMargin = new DoubleValue(rightPoints, MeasureConst.PT);
-                        shape.TextBlock.TopMargin = new DoubleValue(topPoints, MeasureConst.PT);
-                        shape.TextBlock.BottomMargin = new DoubleValue(bottomPoints, MeasureConst.PT);
-                    }
 
-                    // Break after first shape if only one shape needs modification
-                    // Remove the break statement to apply to all shapes
-                    break;
-                }
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
 
-                // Break after first page if only one page needs modification
-                // Remove the break statement to apply to all pages
-                break;
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Choose the page (first page in this example)
+                Page page = diagram.Pages[0];
+
+                // Retrieve the shape to modify.
+                // Here we assume the shape ID is known (e.g., 1). Adjust as needed.
+                long shapeId = 1;
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Desired margins in pixels
+                double leftPixels = 10;
+                double rightPixels = 10;
+                double topPixels = 5;
+                double bottomPixels = 5;
+
+                // Convert pixels to inches (96 pixels = 1 inch)
+                double leftInches = leftPixels / 96.0;
+                double rightInches = rightPixels / 96.0;
+                double topInches = topPixels / 96.0;
+                double bottomInches = bottomPixels / 96.0;
+
+                // Apply the margins to the shape's TextBlock
+                shape.TextBlock.LeftMargin = new DoubleValue(leftInches, MeasureConst.IN);
+                shape.TextBlock.RightMargin = new DoubleValue(rightInches, MeasureConst.IN);
+                shape.TextBlock.TopMargin = new DoubleValue(topInches, MeasureConst.IN);
+                shape.TextBlock.BottomMargin = new DoubleValue(bottomInches, MeasureConst.IN);
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

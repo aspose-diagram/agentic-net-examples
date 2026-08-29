@@ -1,55 +1,50 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram from a file
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page (adjust index if needed)
+            Page page = diagram.Pages[0];
+
+            // Ensure there is at least one shape on the page
+            if (page.Shapes.Count == 0)
             {
+                Console.WriteLine("No shapes found in the diagram.");
+                return;
+            }
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+            // Retrieve the first shape on the page
+            Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
 
-                // Access the first page
-                Page page = diagram.Pages[0];
+            // Center the text vertically within the shape
+            shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
 
-                // Retrieve the first shape on the page
-                Shape shape = null;
-                foreach (Shape s in page.Shapes)
-                {
-                    shape = s;
-                    break;
-                }
-
-                if (shape == null)
-                {
-                    throw new Exception("No shape found on the first page.");
-                }
-
-                // Ensure the shape has at least one paragraph for horizontal alignment
-                if (shape.Paras.Count == 0)
-                {
-                    // Add a default paragraph if none exist
-                    shape.Paras.Add(new Para());
-                }
-
-                // Center text horizontally within the shape
+            // Center the text horizontally within the shape (first paragraph)
+            if (shape.Paras.Count > 0)
+            {
                 shape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
-
-                // Center text vertically within the shape's text block
-                shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Text alignment updated and diagram saved.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

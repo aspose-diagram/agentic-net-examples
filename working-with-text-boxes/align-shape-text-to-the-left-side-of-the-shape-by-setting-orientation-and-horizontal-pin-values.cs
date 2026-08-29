@@ -1,48 +1,49 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Paths to the source and destination Visio files
+                // Load an existing Visio diagram (replace with your actual file path)
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram from the file
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Process only shapes that contain text
-                        string plainText = shape.Text.Value.ToString();
-                        if (string.IsNullOrWhiteSpace(plainText))
-                            continue;
+                // Access the first page of the diagram
+                Page page = diagram.Pages[0];
 
-                        // Ensure the text block is not rotated
-                        shape.TextXForm.TxtAngle.Value = 0; // radians
+                // Retrieve a shape by its ID (replace 1 with the actual shape ID you want to modify)
+                long shapeId = 1;
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-                        // Calculate the left edge X coordinate of the shape
-                        double shapeLeftX = shape.XForm.PinX.Value - (shape.XForm.Width.Value / 2.0);
+                // ------------------------------------------------------------
+                // Align the shape's text to the left side of the shape
+                // ------------------------------------------------------------
 
-                        // Position the text block so its left edge aligns with the shape's left edge
-                        shape.TextXForm.TxtPinX.Value = shapeLeftX;
+                // 1. Ensure the text block has no rotation (orientation = 0 radians)
+                shape.TextXForm.TxtAngle.Value = 0; // 0 radians = 0 degrees
 
-                        // Set the local pin to the width of the text block to achieve left alignment
-                        // (TxtLocPinX equals TxtWidth aligns the left side of the text block)
-                        shape.TextXForm.TxtLocPinX.Value = shape.TextXForm.TxtWidth.Value;
-                    }
-                }
+                // 2. Set the horizontal local pin of the text block to the left edge
+                //    TxtLocPinX = 0 positions the text block's local origin at its left side.
+                shape.TextXForm.TxtLocPinX.Value = 0;
 
-                // Save the modified diagram
+                // 3. Position the text block so that its left edge aligns with the shape's left edge.
+                //    The shape's left edge X coordinate is PinX - (Width / 2).
+                double shapeLeftEdge = shape.XForm.PinX.Value - (shape.XForm.Width.Value / 2);
+                shape.TextXForm.TxtPinX.Value = shapeLeftEdge;
+
+                // 4. (Optional) Vertically center the text within the shape.
+                //    This places the text block's vertical pin at the shape's vertical center.
+                shape.TextXForm.TxtPinY.Value = shape.XForm.PinY.Value;
+
+                // Save the modified diagram to a new file
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Shape text aligned left and diagram saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

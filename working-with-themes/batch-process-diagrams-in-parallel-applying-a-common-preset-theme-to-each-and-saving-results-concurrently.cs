@@ -1,48 +1,51 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class BatchThemeProcessor
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the preset theme diagram (must be a Visio file)
-            string themePath = @"C:\Themes\presetTheme.vsdx";
+            // Path to the preset theme diagram (source of the theme)
+            string themePath = @"C:\Themes\PresetTheme.vsdx";
 
-            // Directory containing source diagrams
-            string inputDirectory = @"C:\Diagrams\Input";
+            // Folder containing diagrams to process
+            string inputFolder = @"C:\Diagrams\Input";
 
-            // Directory where themed diagrams will be saved
-            string outputDirectory = @"C:\Diagrams\Output";
+            // Folder where processed diagrams will be saved
+            string outputFolder = @"C:\Diagrams\Output";
 
-            // Ensure the output directory exists
-            Directory.CreateDirectory(outputDirectory);
-
-            // Load the theme diagram once (shared across all tasks)
-            using (Diagram themeDiagram = new Diagram(themePath))
+            // Load the theme diagram once (read‑only, can be shared across threads)
+            using (var themeDiagram = new Diagram(themePath))
             {
-                // Get all Visio files to process
-                string[] inputFiles = Directory.GetFiles(inputDirectory, "*.vsdx");
+                // Get all diagram files in the input folder (adjust extensions as needed)
+                var diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly)
+                                            .Where(f => f.EndsWith(".vsdx", StringComparison.OrdinalIgnoreCase) ||
+                                                        f.EndsWith(".vsd", StringComparison.OrdinalIgnoreCase) ||
+                                                        f.EndsWith(".vdx", StringComparison.OrdinalIgnoreCase))
+                                            .ToArray();
 
-                // Process each file in parallel
-                Parallel.ForEach(inputFiles, inputFile =>
+                // Process each diagram in parallel
+                Parallel.ForEach(diagramFiles, inputPath =>
                 {
-                    // Determine output file path
-                    string fileName = Path.GetFileNameWithoutExtension(inputFile);
-                    string outputPath = Path.Combine(outputDirectory, $"{fileName}_themed.vsdx");
+                    // Determine output file path (preserve file name)
+                    string fileName = Path.GetFileNameWithoutExtension(inputPath);
+                    string outputPath = Path.Combine(outputFolder, fileName + ".vsdx");
 
                     // Load the source diagram
-                    using (Diagram diagram = new Diagram(inputFile))
+                    using (var diagram = new Diagram(inputPath))
                     {
-                        // Apply the preset theme
+                        // Apply the preset theme from the theme diagram
                         diagram.CopyTheme(themeDiagram);
 
-                        // Save the themed diagram using the standard Save method
-                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                        // Save the modified diagram using the same format as the source
+                        diagram.Save(outputPath, SaveFileFormat.Vdx);
                     }
                 });
             }

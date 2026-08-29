@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
@@ -11,39 +11,42 @@ class Program
             try
             {
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
+                // Paths (replace with actual file locations as needed)
+                string diagramPath = "input.vsdx";
+                string jsonOutputPath = "themeColors.json";
+                string savedDiagramPath = "output_with_theme.vsdx";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(diagramPath);
 
                 // Apply a preset theme to the first page (example: Bubble theme)
                 if (diagram.Pages.Count > 0)
                 {
-                    Page page = diagram.Pages[0];
-                    page.PresetTheme = PresetThemeValue.Bubble;
+                    diagram.Pages[0].PresetTheme = PresetThemeValue.Bubble;
                 }
 
-                // Extract the document's color palette after applying the theme
+                // Extract the document's color palette
                 List<string> palette = new List<string>();
                 foreach (var color in diagram.Colors)
                 {
-                    // Safe string representation of the color entry
+                    // Safe string representation of each color entry
                     palette.Add(color.ToString());
                 }
 
-                // Serialize the palette to JSON with indentation
-                string json = JsonSerializer.Serialize(palette, new JsonSerializerOptions { WriteIndented = true });
+                // Prepare an object for JSON serialization
+                var themeConfig = new
+                {
+                    ThemeColors = palette
+                };
 
-                // Write JSON to a configuration file
-                string outputJsonPath = "themeColors.json";
-                File.WriteAllText(outputJsonPath, json);
+                // Serialize to formatted JSON
+                string json = JsonSerializer.Serialize(themeConfig, new JsonSerializerOptions { WriteIndented = true });
 
-                // Optional: Save the diagram with the applied theme
-                string outputDiagramPath = "output.vsdx";
-                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+                // Write JSON to file
+                File.WriteAllText(jsonOutputPath, json);
 
-                Console.WriteLine("Theme applied, palette extracted to " + outputJsonPath);
+                // Optionally save the diagram with the applied theme
+                diagram.Save(savedDiagramPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

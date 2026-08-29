@@ -1,27 +1,28 @@
 using System;
 using System.IO;
+using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            // Load the source diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Define the preset theme variant you want to apply to every page
-            Aspose.Diagram.PresetThemeVariantValue presetVariant = Aspose.Diagram.PresetThemeVariantValue.Variant2;
+            // Choose the preset theme variant to apply to every page
+            PresetThemeVariantValue variant = PresetThemeVariantValue.Variant2; // change as needed
 
-            // Iterate through all pages in the diagram and set the preset theme variant
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Apply the selected variant to each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                page.PresetThemeVariant = presetVariant;
+                page.PresetThemeVariant = variant;
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            // Save the updated diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

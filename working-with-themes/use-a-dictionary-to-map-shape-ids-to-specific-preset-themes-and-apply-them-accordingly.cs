@@ -1,58 +1,78 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-class ApplyPresetThemes
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (use first argument if provided)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path (use second argument if provided)
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        Diagram diagram;
         try
         {
-
-            // Load an existing Visio diagram
-            // (Replace with your actual file path)
-            Diagram diagram = new Diagram(@"C:\Input\SampleDiagram.vsdx");
-
-            // Dictionary mapping shape IDs to desired preset theme values
-            // Add entries as needed: {shapeId, PresetThemeValue}
-            var shapeThemeMap = new Dictionary<long, PresetThemeValue>
-            {
-                { 5, PresetThemeValue.Office },
-                { 12, PresetThemeValue.Linear },
-                { 23, PresetThemeValue.Zephyr }
-                // Add more mappings here
-            };
-
-            // Iterate through all pages and shapes in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Check if the current shape ID has a preset theme defined
-                    if (shapeThemeMap.TryGetValue(shape.ID, out PresetThemeValue theme))
-                    {
-                        // Apply the preset theme to the shape
-                        shape.PresetTheme = theme;
-
-                        // Optionally, also set a quick style or style matrix if required
-                        // Example: set quick style variant 1
-                        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
-
-                        // Example: set style matrix (row 2, column 3)
-                        shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2, PresetColorMatricsValue.Color3);
-                    }
-                }
-            }
-
-            // Save the modified diagram
-            // (Replace with your desired output path and format)
-            diagram.Save(@"C:\Output\SampleDiagram_Themed.vsdx", SaveFileFormat.Vsdx);
-
+            // Load the diagram from the specified file
+            diagram = new Diagram(inputPath);
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Map of shape IDs to the preset theme that should be applied
+        var themeMap = new Dictionary<long, PresetThemeValue>
+        {
+            // Example mappings – replace with actual IDs and themes as needed
+            { 1, PresetThemeValue.Bubble },
+            { 2, PresetThemeValue.Bubble },
+            { 5, PresetThemeValue.Bubble }
+        };
+
+        // Apply the preset theme to each shape identified in the dictionary
+        foreach (var kvp in themeMap)
+        {
+            long shapeId = kvp.Key;
+            PresetThemeValue theme = kvp.Value;
+
+            try
+            {
+                // Retrieve the shape from the first page (adjust if shapes are on other pages)
+                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+                if (shape == null)
+                {
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found.");
+                    continue;
+                }
+
+                // Apply the preset theme to the shape (write‑only property)
+                shape.PresetTheme = theme;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error processing shape ID {shapeId}: {ex.Message}");
+            }
+        }
+
+        try
+        {
+            // Save the modified diagram to the output file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
         }
     }
 }

@@ -1,66 +1,79 @@
 using System;
 using System.IO;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Threading;
+using System.Threading.Tasks;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Asynchronously loads a Visio diagram from a file path.
-    private static async Task<Diagram> LoadDiagramAsync(string filePath)
+    static void Main(string[] args)
     {
-        // Read the file into a memory stream to avoid keeping the FileStream open.
-        var memoryStream = new MemoryStream();
-        using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
+        // Determine input file path (first argument or default) and guard its existence.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        if (!File.Exists(inputPath))
         {
-            await fileStream.CopyToAsync(memoryStream);
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
         }
 
-        memoryStream.Position = 0; // Reset stream position for reading.
-        // Create the Diagram from the in‑memory stream.
-        return new Diagram(memoryStream);
-    }
+        // Determine output file path (second argument or default) and ensure its directory exists.
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
-    static async Task Main(string[] args)
-    {
+        Diagram diagram = null;
         try
         {
-
-            // Input and output file paths.
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram asynchronously.
-            using (Diagram diagram = await LoadDiagramAsync(inputPath))
-            {
-                // Collect pages into a list for Parallel.ForEach (type inference does not work directly on the collection).
-                List<Page> pages = new List<Page>();
-                foreach (Page p in diagram.Pages)
-                {
-                    pages.Add(p);
-                }
-
-                // Apply a preset theme to each page concurrently.
-                Parallel.ForEach(pages, page =>
-                {
-                    // Example theme: Bubble. Adjust as needed.
-                    page.PresetTheme = PresetThemeValue.Bubble;
-                    // Optionally set a variant.
-                    page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                });
-
-                // Save the modified diagram.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
-
-            Console.WriteLine("Diagram processing completed.");
-
+            // Load the diagram asynchronously using Task.Run to avoid blocking the main thread.
+            Task<Diagram> loadTask = Task.Run(() => new Diagram(inputPath));
+            diagram = loadTask.Result;
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Collect pages into a typed list to enable Parallel.ForEach (type inference does not work directly).
+        List<Page> pages = new List<Page>();
+        foreach (Page p in diagram.Pages)
+        {
+            pages.Add(p);
+        }
+
+        // Apply a preset theme to each page concurrently.
+        Parallel.ForEach(pages, page =>
+        {
+            try
+            {
+                // Set the main theme (Bubble) and a variant (Variant1) for the page.
+                page.PresetTheme = PresetThemeValue.Bubble;
+                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+            }
+            catch (Exception ex)
+            {
+                // Log any errors that occur while processing an individual page.
+                Console.Error.WriteLine($"Error applying theme to page '{page.Name}': {ex.Message}");
+            }
+        });
+
+        try
+        {
+            // Save the modified diagram back to VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+        }
+        finally
+        {
+            // Ensure resources are released.
+            diagram?.Dispose();
         }
     }
 }

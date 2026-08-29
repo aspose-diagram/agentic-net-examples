@@ -1,59 +1,49 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+class ThemeApplicationLogger
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            // (Assuming a rule for loading exists; otherwise using standard API)
+            Diagram diagram = new Diagram(@"C:\Input\sample.vsdx");
+
+            // Define the preset theme to apply
+            PresetThemeValue preset = PresetThemeValue.Office;
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Apply the preset theme to the page
+                page.PresetTheme = preset;
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Log the page theme application
+                Console.WriteLine($"Page '{page.Name}' - Applied PresetTheme: {preset}");
 
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate through each shape on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Define the preset theme and variant to apply
-                    PresetThemeValue presetTheme = PresetThemeValue.Bubble;
-                    PresetThemeVariantValue presetVariant = PresetThemeVariantValue.Variant1;
-                    PresetQuickStyleValue quickStyle = PresetQuickStyleValue.VariantStyle1;
+                    // Apply the preset theme to the shape
+                    shape.PresetTheme = preset;
 
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Apply the preset theme to the page
-                        page.PresetTheme = presetTheme;
-                        page.PresetThemeVariant = presetVariant;
-
-                        // Log the page theme application
-                        Console.WriteLine($"Page '{page.Name}' (ID: {page.ID}) - Applied PresetTheme: {presetTheme}, Variant: {presetVariant}");
-
-                        // Iterate through each shape on the current page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Apply the preset theme to the shape
-                            shape.PresetTheme = presetTheme;
-                            shape.PresetThemeVariant = presetVariant;
-                            shape.PresetThemeQuickStyle = quickStyle;
-
-                            // Log the shape theme application
-                            long shapeId = shape.ID;
-                            Console.WriteLine($"    Shape ID {shapeId} on page '{page.Name}' - Applied PresetTheme: {presetTheme}, Variant: {presetVariant}, QuickStyle: {quickStyle}");
-                        }
-                    }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
+                    // Log the shape theme application
+                    Console.WriteLine($"Page '{page.Name}' | Shape ID {shape.ID} - Applied PresetTheme: {preset}");
                 }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the modified diagram
+            // (Assuming a rule for saving exists; otherwise using standard API)
+            diagram.Save(@"C:\Output\sample_modified.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.DirectoryNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

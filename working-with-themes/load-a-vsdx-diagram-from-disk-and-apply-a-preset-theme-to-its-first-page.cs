@@ -1,35 +1,39 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ApplyThemeExample
+class ApplyPresetTheme
 {
     static void Main()
     {
         try
         {
 
-            // Paths to the source diagram, the theme diagram and the output file
-            string sourceDiagramPath = "input.vsdx";
+            // Path to the diagram that will receive the theme
+            string targetDiagramPath = "input.vsdx";
+
+            // Path to a diagram (or template) that contains the desired preset theme
             string themeDiagramPath = "theme.vsdx";
-            string outputDiagramPath = "output.vsdx";
 
-            // Load the diagram that will receive the theme
-            Diagram targetDiagram = new Diagram(sourceDiagramPath);
+            // Load the target diagram from disk
+            using (Diagram targetDiagram = new Diagram(targetDiagramPath))
+            {
+                // Load the source diagram that holds the preset theme
+                using (Diagram sourceThemeDiagram = new Diagram(themeDiagramPath))
+                {
+                    // Copy the theme from the source diagram to the target diagram
+                    targetDiagram.CopyTheme(sourceThemeDiagram);
+                }
 
-            // Load the diagram that contains the desired preset theme
-            Diagram themeDiagram = new Diagram(themeDiagramPath);
+                // The theme is now applied to the whole document.
+                // If you need to ensure the first page is the active one, you can access it via index:
+                // Page firstPage = targetDiagram.Pages[0];
+                // (ActivePage is read‑only; operations are performed on the diagram as a whole.)
 
-            // Apply the theme from the source diagram to the target diagram
-            targetDiagram.CopyTheme(themeDiagram);
-
-            // Save the modified diagram back to disk (preserving VSDX format)
-            targetDiagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-
-            // Clean up resources
-            targetDiagram.Dispose();
-            themeDiagram.Dispose();
+                // Save the modified diagram back to disk
+                targetDiagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

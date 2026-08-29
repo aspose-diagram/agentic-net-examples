@@ -2,41 +2,34 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class ApplyThemeWithErrorHandling
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing diagram (use the provided load rule)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Assume we work with the first page and first shape
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
+            // Assume we work with the first shape on the first page
+            Shape shape = diagram.Pages[0].Shapes[0];
 
             try
             {
-                // Attempt to apply a preset theme style matrix to the shape
-                // This may throw if the shape lacks style data
+                // Attempt to apply a preset theme style matrix.
+                // This will throw if the shape does not contain style data.
                 shape.SetPresetThemeStyleMatrics(
-                    PresetStyleMatricsValue.Style1,   // style row
-                    PresetColorMatricsValue.Color1   // color column
-                );
-
-                // Optionally, set quick style, theme, or variant directly
-                // shape.PresetThemeQuickStyle = PresetQuickStyleValue.QuickStyle1;
-                // shape.PresetTheme = PresetThemeValue.Theme1;
-                // shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                    PresetStyleMatricsValue.Style1,
+                    PresetColorMatricsValue.Color1);
             }
             catch (Exception ex)
             {
-                // Handle the exception gracefully
+                // Handle the situation where the shape cannot accept a theme.
                 Console.WriteLine($"Error applying theme to shape ID {shape.ID}: {ex.Message}");
             }
 
-            // Save the modified diagram
+            // Save the diagram (use the provided save rule)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

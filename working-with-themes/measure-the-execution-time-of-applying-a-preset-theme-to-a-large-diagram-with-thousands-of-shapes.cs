@@ -3,40 +3,34 @@ using System;
 using System.Diagnostics;
 using Aspose.Diagram;
 
-class ThemeApplicationTimer
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the source diagram (large diagram with thousands of shapes)
-            Diagram diagram = new Diagram("LargeDiagram.vsdx");
+            // Load a diagram that contains the preset theme you want to apply.
+            // This diagram acts as the source for the theme.
+            Diagram sourceDiagram = new Diagram("themeSource.vsdx");
 
-            // Choose the preset theme to apply (e.g., Office theme)
-            PresetThemeValue themeToApply = PresetThemeValue.Office;
+            // Load the large target diagram that has thousands of shapes.
+            Diagram targetDiagram = new Diagram("largeDiagram.vsdx");
 
-            // Start timing
-            Stopwatch sw = Stopwatch.StartNew();
+            // Start measuring the time required to apply the theme.
+            Stopwatch timer = Stopwatch.StartNew();
 
-            // Apply the preset theme to every shape in every page
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Apply the selected preset theme
-                    shape.PresetTheme = themeToApply;
-                }
-            }
+            // Apply the theme from the source diagram to the target diagram.
+            targetDiagram.CopyTheme(sourceDiagram);
 
-            // Stop timing
-            sw.Stop();
+            // Stop the timer.
+            timer.Stop();
 
-            // Output the elapsed time
-            Console.WriteLine($"Applying preset theme '{themeToApply}' to all shapes took: {sw.Elapsed.TotalSeconds} seconds.");
+            // Output the elapsed time in milliseconds.
+            Console.WriteLine($"Theme applied in {timer.ElapsedMilliseconds} ms.");
 
-            // Save the modified diagram (optional)
-            diagram.Save("LargeDiagram_Themed.vsdx", SaveFileFormat.Vsdx);
+            // Save the themed diagram (optional).
+            targetDiagram.Save("largeDiagram_Themed.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

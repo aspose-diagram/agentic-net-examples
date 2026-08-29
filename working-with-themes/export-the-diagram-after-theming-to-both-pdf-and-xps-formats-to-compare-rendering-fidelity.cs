@@ -10,16 +10,20 @@ class Program
         try
         {
 
-            // Load the Visio diagram from file
+            // Load the Visio diagram (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Export the themed diagram to PDF
+            // Export the diagram to PDF format
             diagram.Save("output.pdf", SaveFileFormat.Pdf);
 
-            // Export the same diagram to XPS using XPSSaveOptions
-            XPSSaveOptions xpsOptions = new XPSSaveOptions();
-            // Example option: do not export hidden pages (default is false)
-            xpsOptions.ExportHiddenPage = false;
+            // Prepare XPS save options (customize as needed)
+            XPSSaveOptions xpsOptions = new XPSSaveOptions
+            {
+                // Example: include hidden pages in the XPS output
+                ExportHiddenPage = true
+            };
+
+            // Export the diagram to XPS format using the specified options
             diagram.Save("output.xps", xpsOptions);
 
         }

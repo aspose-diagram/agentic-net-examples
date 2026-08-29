@@ -10,27 +10,26 @@ class Program
         try
         {
 
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram from a file
+            var diagram = new Diagram("input.vsdx");
 
-            // Configure image save options for PNG with 600 DPI resolution
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            imgOptions.Resolution = 600; // DPI setting
+            // Configure image save options for PNG with a DPI of 600
+            var imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            imgOptions.Resolution = 600;               // Set custom DPI
+            imgOptions.SaveFormat = SaveFileFormat.Png; // Ensure PNG format
 
-            // Export each shape on each page to a separate PNG file
+            // Export every shape on every page to a PNG file using the DPI setting
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Create a unique file name for each shape
                     string fileName = $"Page{page.ID}_Shape{shape.ID}.png";
-
-                    // Export the shape using the configured options
                     shape.ToImage(fileName, imgOptions);
                 }
             }
 
-            // No diagram saving required for this operation
+            // Save the (unchanged) diagram back to a file if needed
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

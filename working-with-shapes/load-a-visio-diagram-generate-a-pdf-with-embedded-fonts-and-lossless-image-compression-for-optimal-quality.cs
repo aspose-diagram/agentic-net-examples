@@ -10,39 +10,23 @@ class Program
         try
         {
 
-            // Path to the source Visio file
+            // Paths to the source Visio file and the target PDF file
             string inputPath = "input.vsdx";
-
-            // Path for the generated PDF
             string outputPath = "output.pdf";
 
-            // Configure font folder (required before loading the diagram)
-            // The second argument indicates whether to search sub‑folders recursively.
+            // Configure the folder that contains system fonts (adjust the path as needed)
             FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
 
             // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Prepare PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            Diagram diagram = new Diagram(inputPath);
 
-                // Ensure the format is explicitly set (required to avoid ambiguity)
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";                     // Fallback font if a required font is missing
+            pdfOptions.TextCompression = PdfTextCompression.Flate; // Lossless compression for PDF content streams
 
-                // Set a default fallback font in case a diagram font is missing
-                pdfOptions.DefaultFont = "Arial";
-
-                // Use lossless Flate compression for PDF content streams (including text)
-                pdfOptions.TextCompression = PdfTextCompression.Flate;
-
-                // Do not export hidden pages (optional, improves file size)
-                pdfOptions.ExportHiddenPage = false;
-
-                // Save the diagram as PDF with the configured options
-                diagram.Save(outputPath, pdfOptions);
-            }
-
-            Console.WriteLine("PDF generated successfully at: " + outputPath);
+            // Save the diagram as a PDF with embedded fonts and lossless compression
+            diagram.Save(outputPath, pdfOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

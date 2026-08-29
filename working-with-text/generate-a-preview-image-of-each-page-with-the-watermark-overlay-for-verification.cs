@@ -13,22 +13,19 @@ class Program
                 // Input Visio file path
                 string inputPath = "input.vsdx";
 
-                // Output folder for preview images
-                string outputFolder = "PreviewImages";
+                // Output directory for preview images
+                string outputDir = "output";
+                Directory.CreateDirectory(outputDir);
 
-                // Ensure the output directory exists
-                Directory.CreateDirectory(outputFolder);
-
-                // Load the Visio diagram
+                // Load the diagram
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate through each page in the diagram
-                    for (int i = 0; i < diagram.Pages.Count; i++)
-                    {
-                        // Retrieve the current page
-                        Page page = diagram.Pages[i];
+                    int pageIndex = 0;
 
-                        // Get page dimensions (in inches)
+                    // Iterate through each page in the diagram
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Retrieve page dimensions (in inches)
                         double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                         double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
@@ -36,34 +33,36 @@ class Program
                         double centerX = pageWidth / 2.0;
                         double centerY = pageHeight / 2.0;
 
-                        // Add a semi‑transparent watermark that covers the whole page
-                        // Font size is specified in inches (0.5 inches ≈ 36 points)
+                        // Add watermark text covering the full page
+                        // Font size is specified in inches (0.25 inches ≈ 18 points)
                         page.AddText(
                             centerX,               // PinX (center X)
                             centerY,               // PinY (center Y)
                             pageWidth,             // Width of the text box (full page width)
                             pageHeight,            // Height of the text box (full page height)
                             "CONFIDENTIAL",        // Watermark text
-                            "Arial",               // Font name
-                            "#CCCCCC",             // Font color (light gray)
-                            0.5);                  // Font size in inches
+                            "Calibri",             // Font name
+                            "#a5a5a5",             // Font color (hex)
+                            0.25);                 // Font size in inches
 
-                        // Prepare image save options for PNG export of the current page only
+                        // Configure image save options for PNG export of the current page only
                         ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
                         {
-                            PageIndex = i,   // Export this specific page
-                            PageCount = 1    // Export a single page
+                            PageIndex = pageIndex, // Zero‑based page index
+                            PageCount = 1          // Export a single page
                         };
 
-                        // Define the output image file name
-                        string outputPath = Path.Combine(outputFolder, $"Page_{i + 1}.png");
+                        // Build output file name
+                        string outputPath = Path.Combine(outputDir, $"Page_{pageIndex}_preview.png");
 
-                        // Save the page as an image with the watermark overlay
+                        // Save the page as an image with the watermark applied
                         diagram.Save(outputPath, imgOptions);
+
+                        pageIndex++;
                     }
                 }
 
-                Console.WriteLine("Preview images with watermarks have been generated successfully.");
+                Console.WriteLine("Preview images with watermarks have been generated.");
 
             }
             catch (System.IO.FileNotFoundException ex)

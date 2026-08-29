@@ -3,36 +3,36 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportShapesToHtml
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from file
+            // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
             // Index of the page whose shapes will be exported (0‑based)
-            int pageIndex = 0;
+            int pageIndex = 0; // adjust as needed
 
-            // Get the specified page
+            // Get the target page
             Page page = diagram.Pages[pageIndex];
 
-            // Iterate through all shapes on the page
+            // Export each shape on the page to its own HTML file
             foreach (Shape shape in page.Shapes)
             {
-                // Create HTML save options; default options embed CSS in the output
-                HTMLSaveOptions options = new HTMLSaveOptions();
-
-                // Ensure each shape is saved as a single HTML file (optional but keeps CSS inline)
-                options.SaveAsSingleFile = true;
-
-                // Build a unique file name for the shape (using its ID)
+                // Create a unique file name for the shape (using its ID)
                 string htmlFileName = $"Shape_{shape.ID}.html";
 
-                // Export the shape to an HTML file with the specified options
-                shape.ToHTML(htmlFileName, options);
+                // Configure HTML save options to embed all resources (CSS, images) in a single file
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    SaveAsSingleFile = true   // embeds CSS directly into the HTML
+                };
+
+                // Generate the HTML for the shape
+                shape.ToHTML(htmlFileName, htmlOptions);
             }
 
         }

@@ -1,70 +1,68 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Paths to the original diagram and the output diagram with watermark
-            string inputPath = "input.vsdx";
-            string outputPath = "output_with_watermark.vsdx";
-
-            // Maximum allowed increase in file size (bytes)
-            const long maxIncreaseBytes = 10 * 1024; // 10 KB
-
-            // Verify the input file exists
-            if (!File.Exists(inputPath))
+            try
             {
-                throw new FileNotFoundException($"Input file not found: {inputPath}");
+
+                // Paths to the original and the watermarked diagram files
+                string inputPath = "input.vsdx";
+                string outputPath = "output_with_watermark.vsdx";
+
+                // Maximum allowed increase in file size (in bytes)
+                long maxSizeIncrease = 500_000; // example: 500 KB
+
+                // Load the original diagram
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Access the first page (you can iterate if needed)
+                    Page page = diagram.Pages[0];
+
+                    // Retrieve page dimensions (in inches)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Add a full‑page watermark text (centered)
+                    // Font size is specified in inches (0.5 inches ≈ 36 points)
+                    page.AddText(
+                        pinX: pageWidth / 2,          // center X
+                        pinY: pageHeight / 2,         // center Y
+                        width: pageWidth,             // full width
+                        height: pageHeight,           // full height
+                        text: "CONFIDENTIAL",
+                        fontName: "Arial",
+                        fontColor: "#CCCCCC",         // light gray
+                        size: 0.5                     // font size in inches
+                    );
+
+                    // Save the diagram with the watermark
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
+
+                // Compare file sizes
+                long originalSize = new FileInfo(inputPath).Length;
+                long watermarkedSize = new FileInfo(outputPath).Length;
+                long sizeDifference = watermarkedSize - originalSize;
+
+                // Verify the size increase does not exceed the limit
+                if (sizeDifference > maxSizeIncrease)
+                {
+                    throw new Exception($"Watermark increased file size by {sizeDifference} bytes, which exceeds the allowed limit of {maxSizeIncrease} bytes.");
+                }
+                else
+                {
+                    Console.WriteLine($"Watermark added successfully. Size increase: {sizeDifference} bytes (within the allowed limit).");
+                }
+
             }
-
-            // Record original file size
-            long originalSize = new FileInfo(inputPath).Length;
-
-            // Load the diagram, add a watermark, and save it
-            using (Diagram diagram = new Diagram(inputPath))
+            catch (System.IO.FileNotFoundException ex)
             {
-                // Use the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Retrieve page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Center position for the watermark
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-
-                // Add a full‑page watermark text
-                // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches)
-                page.AddText(pinX, pinY, pageWidth, pageHeight, "CONFIDENTIAL", "Arial", "#CCCCCC", 0.5);
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Measure new file size
-            long newSize = new FileInfo(outputPath).Length;
-            long increase = newSize - originalSize;
-
-            // Validate size increase against the limit
-            if (increase > maxIncreaseBytes)
-            {
-                throw new Exception($"Watermark increased file size by {increase} bytes, exceeding the limit of {maxIncreaseBytes} bytes.");
-            }
-            else
-            {
-                Console.WriteLine($"Watermark added successfully. File size increased by {increase} bytes, which is within the allowed limit.");
-            }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

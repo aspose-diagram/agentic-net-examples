@@ -1,80 +1,72 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect the Visio file path as the first argument
-        if (args.Length == 0)
-        {
-            Console.WriteLine("Usage: AltTextValidator <inputVisioFile>");
-            return;
-        }
+        // Input Visio file path (adjust as needed)
+        string inputPath = "input.vsdx";
 
-        string inputPath = args[0];
-        // Verify the input file exists before proceeding
+        // Guard: ensure the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        var missingEntries = new List<string>();
+        // Output report file path
+        string reportPath = "AltTextReport.txt";
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
+            // Prepare a list to hold report lines
+            List<string> reportLines = new List<string>();
+            reportLines.Add($"Alt Text Validation Report - {DateTime.Now}");
+            reportLines.Add("---------------------------------------------------");
+
+            int missingCount = 0;
+
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip shapes that are marked as deleted
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Alt text is stored in the Comment cell (Misc.Comment) as Str2Value; retrieve its string value
+                    // Alt text is stored in the Misc.Comment property (Str2Value)
                     string altText = shape.Misc.Comment.Value;
 
-                    // If Alt text is missing or whitespace, record the shape information
+                    // If Alt text is empty or whitespace, record the shape as missing
                     if (string.IsNullOrWhiteSpace(altText))
                     {
-                        missingEntries.Add(
-                            $"Page: {page.NameU}, Shape ID: {shape.ID}, NameU: {shape.NameU}");
+                        missingCount++;
+                        string line = $"Page: \"{page.Name}\" (ID={page.ID}), Shape ID={shape.ID}, Name=\"{shape.Name}\" - Missing Alt Text";
+                        reportLines.Add(line);
+                        Console.WriteLine(line);
                     }
                 }
             }
+
+            reportLines.Add("---------------------------------------------------");
+            reportLines.Add($"Total shapes missing Alt Text: {missingCount}");
+
+            // Write the report to a text file
+            File.WriteAllLines(reportPath, reportLines);
+
+            Console.WriteLine($"Report written to: {Path.GetFullPath(reportPath)}");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
+            // Log any Aspose or I/O errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
-        }
-
-        // Output the validation results to the console
-        if (missingEntries.Count == 0)
-        {
-            Console.WriteLine("All shapes contain Alt text.");
-        }
-        else
-        {
-            Console.WriteLine("Shapes missing Alt text:");
-            foreach (string entry in missingEntries)
-            {
-                Console.WriteLine(entry);
-            }
-
-            // Save the report to a text file
-            string reportPath = "AltTextReport.txt";
-            File.WriteAllLines(reportPath, missingEntries);
-            Console.WriteLine($"Report saved to {reportPath}");
         }
     }
 }

@@ -9,20 +9,19 @@ class Program
         try
         {
 
-            // Path to the VSDX file
-            string filePath = "input.vsdx";
+            // Load the Visio diagram (VSDX) from file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram (uses the provided load rule)
-            Diagram diagram = new Diagram(filePath);
+            // Specify the ID of the sub‑shape you want to locate
+            int subShapeId = 5; // replace with the actual ID
 
-            // ID of the sub‑shape whose absolute PinX we want
-            int subShapeId = 123; // replace with the actual ID
-
-            // Retrieve the shape including its children (uses the provided GetShapeIncludingChild rule)
+            // Retrieve the shape, including any child shapes inside groups
             Shape subShape = diagram.Pages[0].Shapes.GetShapeIncludingChild(subShapeId);
 
-            // Calculate the absolute PinX coordinate.
-            // For a shape, XForm.PinX gives the absolute position of the shape's pin on the page.
+            // The XForm.PinX property holds the shape's PinX coordinate.
+            // For a sub‑shape this value is relative to its parent; to obtain the
+            // absolute page coordinate you can add the parent's offset if needed.
+            // Here we assume the shape is not nested deeper, or that PinX is already absolute.
             double absolutePinX = subShape.XForm.PinX.Value;
 
             // Output the result

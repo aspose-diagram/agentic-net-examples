@@ -10,34 +10,28 @@ class Program
         {
 
             // Path to the Visio file to be loaded
-            string filePath = "sample.vsdx";
+            string filePath = @"C:\Path\To\Your\Diagram.vsdx";
 
-            // Load and verify the diagram
-            Diagram diagram = LoadDiagram(filePath);
+            // Load the diagram using the constructor that accepts a file name
+            Diagram diagram = new Diagram(filePath);
 
-            // Diagram is ready for further processing
-            // ...
+            // Verify that the diagram was initialized successfully
+            if (diagram != null && diagram.Pages != null && diagram.Pages.Count > 0)
+            {
+                Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
+            }
+            else
+            {
+                Console.WriteLine("Failed to load diagram or diagram contains no pages.");
+            }
+
+            // Clean up resources
+            diagram.Dispose();
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
-    }
-
-    static Diagram LoadDiagram(string filePath)
-    {
-        // Load the diagram using the constructor that accepts a file path
-        Diagram diagram = new Diagram(filePath);
-
-        // Verify successful initialization:
-        // Ensure the diagram object is not null and contains at least one page
-        if (diagram == null || diagram.Pages == null || diagram.Pages.Count == 0)
-        {
-            throw new InvalidOperationException("Failed to load the Visio diagram or it contains no pages.");
-        }
-
-        Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
-        return diagram;
     }
 }

@@ -1,35 +1,21 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Determine the input Visio file path
-            string filePath;
-            if (args.Length > 0)
-            {
-                filePath = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the path to the Visio file: ");
-                filePath = Console.ReadLine();
-            }
+
+            // Path to the Visio diagram to analyze
+            string diagramPath = "input.vsdx";
 
             // Load the diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(filePath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+            Diagram diagram = new Diagram(diagramPath);
 
-            bool anyFlagged = false;
+            bool foundIssues = false;
 
             // Iterate through all pages
             foreach (Page page in diagram.Pages)
@@ -40,34 +26,29 @@ class Program
                     // Identify connector shapes (1‑D shapes)
                     if (shape.OneD)
                     {
-                        // Access the connector's line jump style
-                        var jumpStyleCell = shape.Layout?.ConLineJumpStyle;
-                        if (jumpStyleCell != null)
+                        // Retrieve the connector's line jump style
+                        var jumpStyle = shape.Layout.ConLineJumpStyle.Value;
+
+                        // If the style is PageDefault or Undefined, it means no explicit definition
+                        if (jumpStyle == ConLineJumpStyleValue.PageDefault ||
+                            jumpStyle == ConLineJumpStyleValue.Undefined)
                         {
-                            var jumpStyle = jumpStyleCell.Value;
-                            // Flag if the style is the default (no explicit definition)
-                            if (jumpStyle == ConLineJumpStyleValue.PageDefault ||
-                                jumpStyle == ConLineJumpStyleValue.Undefined)
-                            {
-                                anyFlagged = true;
-                                Console.WriteLine(
-                                    $"Connector ID {shape.ID} on page '{page.Name}' lacks explicit line jump style (value: {jumpStyle}).");
-                            }
-                        }
-                        else
-                        {
-                            // If the Layout or ConLineJumpStyle cell is missing, treat as undefined
-                            anyFlagged = true;
-                            Console.WriteLine(
-                                $"Connector ID {shape.ID} on page '{page.Name}' lacks explicit line jump style (Layout/ConLineJumpStyle missing).");
+                            foundIssues = true;
+                            Console.WriteLine($"Connector ID {shape.ID} on page \"{page.Name}\" lacks explicit line jump style (Current: {jumpStyle}).");
                         }
                     }
                 }
             }
 
-            if (!anyFlagged)
+            if (!foundIssues)
             {
                 Console.WriteLine("All connectors have explicit line jump style definitions.");
             }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

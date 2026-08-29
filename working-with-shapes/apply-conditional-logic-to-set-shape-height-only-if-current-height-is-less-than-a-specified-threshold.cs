@@ -1,45 +1,49 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Threshold height (in inches) and the height to set when below the threshold
-            double thresholdHeight = 2.0;
-            double newHeight = 3.0;
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Current height of the shape (in drawing units, typically inches)
-                    double currentHeight = shape.XForm.Height.Value;
 
-                    // Apply new height only if the current height is less than the threshold
-                    if (currentHeight < thresholdHeight)
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Height threshold (in inches). Shapes with a height less than this will be updated.
+                double heightThreshold = 2.0;
+
+                // Desired height to set when the condition is met (also in inches)
+                double targetHeight = 2.0;
+
+                // Load the diagram from file
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
                     {
-                        shape.SetHeight(newHeight);
+                        // Retrieve the current height of the shape
+                        double currentHeight = shape.XForm.Height.Value;
+
+                        // Apply conditional logic: set new height only if current height is below the threshold
+                        if (currentHeight < heightThreshold)
+                        {
+                            shape.XForm.Height.Value = targetHeight;
+                        }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

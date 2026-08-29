@@ -4,42 +4,57 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
                 // Path to the source Visio file
-                string inputPath = "input.vsdx";
+                string sourcePath = "input.vsdx";
 
-                // Path where the HTML file will be saved
-                string outputHtmlPath = "shape.html";
+                // Path for the exported HTML file
+                string htmlOutputPath = "exportedShape.html";
 
-                // Identifier of the shape to export (adjust as needed)
-                long shapeId = 1;
+                // Load the diagram
+                Diagram diagram = new Diagram(sourcePath);
 
-                // Load the diagram from the file
-                Diagram diagram = new Diagram(inputPath);
+                // Define the name of the shape to export (case‑sensitive)
+                string targetShapeName = "MyShape";
 
-                // Verify that the diagram contains at least one page
-                if (diagram.Pages.Count == 0)
-                    throw new Exception("The diagram does not contain any pages.");
+                Shape targetShape = null;
 
-                // Use the first page (or select a specific page by name/index)
-                Page page = diagram.Pages[0];
+                // Search for the shape by its universal name across all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                // Retrieve the shape by its ID (cast to int as required by GetShape)
-                Shape shape = page.Shapes.GetShape((int)shapeId);
-                if (shape == null)
-                    throw new Exception($"Shape with ID {shapeId} was not found on page '{page.NameU}'.");
+                        if (shape.NameU == targetShapeName)
+                        {
+                            targetShape = shape;
+                            break;
+                        }
+                    }
 
-                // Configure HTML export options (default settings preserve geometry and style)
+                    if (targetShape != null)
+                        break;
+                }
+
+                // If the shape was not found, abort with an error
+                if (targetShape == null)
+                    throw new Exception($"Shape with NameU '{targetShapeName}' was not found.");
+
+                // Configure HTML export options (optional settings can be added here)
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                htmlOptions.DefaultFont = "Arial";
 
-                // Export the selected shape to HTML
-                shape.ToHTML(outputHtmlPath, htmlOptions);
+                // Export the selected shape to HTML, preserving geometry and style
+                targetShape.ToHTML(htmlOutputPath, htmlOptions);
 
-                Console.WriteLine($"Shape {shapeId} successfully exported to HTML at '{outputHtmlPath}'.");
+                Console.WriteLine($"Shape '{targetShapeName}' exported successfully to '{htmlOutputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

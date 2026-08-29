@@ -1,24 +1,29 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Load an existing Visio diagram (replace with your actual file path)
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the output Visio file after processing
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the LocPinX and LocPinY formula strings
+                        // Retrieve the formula strings for LocPinX and LocPinY
                         string locPinXFormula = shape.XForm.LocPinX.Ufe.F;
                         string locPinYFormula = shape.XForm.LocPinY.Ufe.F;
 
@@ -26,35 +31,22 @@ class Program
                         bool isLocPinXNumeric = double.TryParse(locPinXFormula, out double locPinXValue);
                         bool isLocPinYNumeric = double.TryParse(locPinYFormula, out double locPinYValue);
 
+                        // If either cell does not contain a numeric value, report and skip calculation
                         if (!isLocPinXNumeric || !isLocPinYNumeric)
                         {
-                            // If either value is not numeric, skip calculation for this shape
-                            Console.WriteLine($"Shape ID {shape.ID} has non-numeric LocPin values. Skipping.");
-                            continue;
+                            Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' has non‑numeric LocPin values.");
+                            Console.WriteLine($"  LocPinX: '{locPinXFormula}'  LocPinY: '{locPinYFormula}'");
+                            continue; // Skip absolute pin calculation for this shape
                         }
 
-                        // Perform absolute pin calculation
-                        // Absolute PinX = PinX + LocPinX
-                        // Absolute PinY = PinY + LocPinY
-                        double absolutePinX = shape.XForm.PinX.Value + locPinXValue;
-                        double absolutePinY = shape.XForm.PinY.Value + locPinYValue;
-
-                        // Update the shape's PinX and PinY to the absolute values
-                        shape.XForm.PinX.Value = absolutePinX;
-                        shape.XForm.PinY.Value = absolutePinY;
-
-                        // Reset local pins to zero after conversion
-                        shape.XForm.LocPinX.Value = 0.0;
-                        shape.XForm.LocPinY.Value = 0.0;
-
-                        Console.WriteLine($"Shape ID {shape.ID} pin updated to ({absolutePinX}, {absolutePinY}).");
+                        // Perform absolute pin calculation (example: set PinX/Y to the numeric LocPin values)
+                        shape.XForm.PinX.Value = locPinXValue;
+                        shape.XForm.PinY.Value = locPinYValue;
                     }
                 }
 
-                // Save the modified diagram (replace with your desired output path)
-                string outputPath = "output.vsdx";
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

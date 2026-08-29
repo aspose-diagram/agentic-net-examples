@@ -9,40 +9,39 @@ class BatchThemeApplier
         try
         {
 
-            // Path to the diagram that contains the desired theme (source diagram)
-            string themeDiagramPath = @"C:\Themes\ThemeTemplate.vsdx";
+            // Path to the diagram that contains the desired theme.
+            string themeDiagramPath = @"C:\Themes\ThemeDiagram.vsdx";
 
-            // Folder containing diagrams to which the theme will be applied
+            // Folder containing the diagrams to which the theme will be applied.
             string inputFolder = @"C:\Diagrams\Input";
 
-            // Folder where the themed diagrams will be saved
+            // Folder where the themed diagrams will be saved (can be the same as inputFolder to overwrite).
             string outputFolder = @"C:\Diagrams\Output";
 
-            // Ensure output folder exists
+            // Ensure the output folder exists.
             Directory.CreateDirectory(outputFolder);
 
-            // Load the source diagram that holds the theme
-            Diagram sourceDiagram = new Diagram(themeDiagramPath);
-
-            // Process each diagram file in the input folder
-            foreach (string filePath in Directory.GetFiles(inputFolder, "*.vsdx"))
+            // Load the source diagram that holds the theme once.
+            using (Diagram sourceThemeDiagram = new Diagram(themeDiagramPath))
             {
-                // Load the target diagram
-                Diagram targetDiagram = new Diagram(filePath);
+                // Process each diagram file in the input folder.
+                foreach (string inputFilePath in Directory.GetFiles(inputFolder, "*.vsdx"))
+                {
+                    // Load the target diagram.
+                    using (Diagram targetDiagram = new Diagram(inputFilePath))
+                    {
+                        // Copy the theme from the source diagram to the target diagram.
+                        targetDiagram.CopyTheme(sourceThemeDiagram);
 
-                // Copy the theme from the source diagram to the target diagram
-                targetDiagram.CopyTheme(sourceDiagram);
+                        // Determine the output file path.
+                        string fileName = Path.GetFileName(inputFilePath);
+                        string outputFilePath = Path.Combine(outputFolder, fileName);
 
-                // Build the output file path (overwrite name in output folder)
-                string fileName = Path.GetFileName(filePath);
-                string outputPath = Path.Combine(outputFolder, fileName);
-
-                // Save the themed diagram (preserving original format)
-                targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                        // Save the themed diagram, preserving the original format.
+                        targetDiagram.Save(outputFilePath, SaveFileFormat.Vsdx);
+                    }
+                }
             }
-
-            // Dispose diagrams to release resources
-            sourceDiagram.Dispose();
 
         }
         catch (System.IO.DirectoryNotFoundException ex)

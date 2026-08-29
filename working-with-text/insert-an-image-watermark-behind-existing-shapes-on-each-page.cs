@@ -1,46 +1,52 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class WatermarkExample
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Paths for the source diagram and the watermark image.
+            string diagramPath = "input.vsdx";
+            string watermarkImagePath = "watermark.png";
+            string outputPath = "output.vsdx";
 
-            // Path to the watermark image (PNG, JPG, etc.)
-            string watermarkPath = "watermark.png";
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the existing Visio diagram.
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Open a fresh stream for the image on each iteration
-                using (FileStream imgStream = new FileStream(watermarkPath, FileMode.Open, FileAccess.Read))
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Define position and size for the watermark.
-                    // PinX and PinY represent the center of the shape (in inches).
-                    // Width and Height define the size of the shape (in inches).
-                    // Adjust these values as needed to fit the page.
-                    double pinX = 5.0;    // example center X
-                    double pinY = 5.0;    // example center Y
-                    double width = 10.0; // example width
-                    double height = 7.5; // example height
+                    // Retrieve page dimensions (in inches).
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Add the image as a shape to the current page
-                    long shapeId = page.AddShape(pinX, pinY, width, height, imgStream);
+                    // Center position for the watermark shape.
+                    double pinX = pageWidth / 2.0;
+                    double pinY = pageHeight / 2.0;
 
-                    // Send the newly added shape to the back so it appears behind existing shapes
-                    page.SendToBack(shapeId);
+                    // Add the image as a shape that covers the whole page.
+                    using (FileStream imgStream = new FileStream(watermarkImagePath, FileMode.Open, FileAccess.Read))
+                    {
+                        long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, imgStream);
+                        Shape watermarkShape = page.Shapes.GetShape(shapeId);
+
+                        // Send the image to the back so it appears behind other shapes.
+                        watermarkShape.SendToBack();
+
+                        // Make the watermark non‑selectable.
+                        watermarkShape.Protection.LockSelect.Value = BOOL.True;
+                    }
                 }
+
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Watermark added and diagram saved to: " + outputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

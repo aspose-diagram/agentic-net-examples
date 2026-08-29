@@ -11,31 +11,42 @@ class Program
 
             // Path to the source Visio file
             string inputPath = "input.vsdx";
+            // Path for the modified Visio file
+            string outputPath = "output.vsdx";
 
             // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Name of the master style to match
-            string targetMasterName = "MyMaster";
-
-            // Iterate over all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Define the master name to filter shapes
+                string targetMasterName = "Rectangle"; // change as needed
+
+                // Define the theme, variant, and quickstyle to apply
+                PresetThemeValue theme = PresetThemeValue.Bubble;
+                PresetThemeVariantValue variant = PresetThemeVariantValue.Variant1;
+                PresetQuickStyleValue quickStyle = PresetQuickStyleValue.VariantStyle2;
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the shape has a master and that it matches the target master name
-                    if (shape.Master != null && shape.Master.Name == targetMasterName)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Apply a preset theme quickstyle to the shape
-                        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+                        // Ensure the shape has an associated master
+                        if (shape.Master != null && shape.Master.Name == targetMasterName)
+                        {
+                            // Apply the preset theme, variant, and quickstyle
+                            shape.PresetTheme = theme;
+                            shape.PresetThemeVariant = variant;
+                            shape.PresetThemeQuickStyle = quickStyle;
+                        }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Theme quickstyle applied and diagram saved to: " + outputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,62 +1,56 @@
+using System.IO;
 using System;
-using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the output Visio file (optional, after processing)
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Define the user‑defined cell name pattern to look for
+            string pattern = "CustomCell";
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Define the pattern to match user-defined cell names (e.g., names starting with "MyCell")
-                string pattern = @"^MyCell";
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Check each user‑defined cell (User) for the pattern
+                    foreach (User userCell in shape.Users)
                     {
-                        bool matchesPattern = false;
-
-                        // Check each user-defined cell (User) in the shape
-                        if (shape.Users != null)
+                        // Ensure the cell name is not null before checking
+                        if (!string.IsNullOrEmpty(userCell.Name) && userCell.Name.Contains(pattern))
                         {
-                            foreach (User userCell in shape.Users)
-                            {
-                                // Match against Name or NameU
-                                if (Regex.IsMatch(userCell.Name ?? string.Empty, pattern) ||
-                                    Regex.IsMatch(userCell.NameU ?? string.Empty, pattern))
-                                {
-                                    matchesPattern = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        // Process only shapes that contain a matching user-defined cell
-                        if (matchesPattern)
-                        {
-                            Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}, Page: {page.Name}");
-                            // Additional processing logic for the matched shape can be placed here
+                            // Process the shape – here we simply output its ID and Name
+                            Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}, UserCell: {userCell.Name}");
+                            // Additional processing logic can be placed here
+                            break; // Stop checking other user cells for this shape
                         }
                     }
                 }
-
-                // Optional: Save the diagram if modifications were made
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the diagram (optional – only if modifications were made)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

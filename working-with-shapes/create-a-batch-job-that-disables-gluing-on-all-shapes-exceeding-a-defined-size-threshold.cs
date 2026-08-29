@@ -7,23 +7,31 @@ class Program
         // Size threshold in inches – shapes larger than this will have gluing disabled
         const double SizeThreshold = 2.0;
 
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Input folder containing Visio files
-                string inputFolder = @"C:\Visio\Input";
-                // Output folder for processed files
-                string outputFolder = @"C:\Visio\Output";
+                // Input folder (first argument) and output folder (second argument)
+                string inputFolder = args.Length > 0 ? args[0] : "InputDiagrams";
+                string outputFolder = args.Length > 1 ? args[1] : "OutputDiagrams";
 
                 // Ensure output folder exists
                 if (!Directory.Exists(outputFolder))
                     Directory.CreateDirectory(outputFolder);
 
-                // Process each VSDX file in the input folder
-                foreach (string filePath in Directory.GetFiles(inputFolder, "*.vsdx"))
+                // Get all Visio files in the input folder (VSDX, VSD, VDX, etc.)
+                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+                foreach (string filePath in diagramFiles)
                 {
+                    // Process only supported Visio formats based on file extension
+                    string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                    if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
+                    {
+                        Console.WriteLine($"Skipping unsupported file: {Path.GetFileName(filePath)}");
+                        continue;
+                    }
+
                     try
                     {
                         // Load the diagram
@@ -35,10 +43,6 @@ class Program
                                 // Iterate through all shapes on the page
                                 foreach (Shape shape in page.Shapes)
                                 {
-                                    // Skip deleted shapes
-                                    if (shape.Del == BOOL.True)
-                                        continue;
-
                                     // Retrieve shape dimensions (in inches)
                                     double width = shape.XForm.Width.Value;
                                     double height = shape.XForm.Height.Value;
@@ -46,24 +50,35 @@ class Program
                                     // If either dimension exceeds the threshold, disable dynamic glue
                                     if (width > SizeThreshold || height > SizeThreshold)
                                     {
-                                        shape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
+                                        // Ensure the Misc cell collection is present before setting GlueType
+                                        if (shape.Misc != null && shape.Misc.GlueType != null)
+                                        {
+                                            shape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
+                                        }
                                     }
                                 }
                             }
 
-                            // Build output file path
-                            string fileName = Path.GetFileNameWithoutExtension(filePath);
-                            string outputPath = Path.Combine(outputFolder, $"{fileName}_NoGlue.vsdx");
+                            // Prepare output file path (preserve original file name)
+                            string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
 
-                            // Save the modified diagram
-                            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                            // Save the modified diagram in the same format as the original
+                            // Use the appropriate SaveFileFormat based on extension
+                            SaveFileFormat format = extension switch
+                            {
+                                ".vsdx" => SaveFileFormat.Vsdx,
+                                ".vsd" => SaveFileFormat.Vsd,
+                                ".vdx" => SaveFileFormat.Vdx,
+                                _ => SaveFileFormat.Vsdx // fallback (should not reach here)
+                            };
+
+                            diagram.Save(outputPath, format);
+                            Console.WriteLine($"Processed and saved: {outputPath}");
                         }
-
-                        Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
+                        Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
                     }
                 }
 

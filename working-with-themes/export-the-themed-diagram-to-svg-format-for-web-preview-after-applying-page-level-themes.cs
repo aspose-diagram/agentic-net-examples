@@ -1,39 +1,60 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output SVG file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output.svg";
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram that contains the desired theme
-            Diagram sourceThemeDiagram = new Diagram("themeDiagram.vsdx");
+            // Apply a preset theme to every page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Set the page theme (e.g., Bubble) and a variant
+                page.PresetTheme = PresetThemeValue.Bubble;
+                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+            }
 
-            // Load the diagram to which the theme will be applied
-            Diagram targetDiagram = new Diagram("targetDiagram.vsdx");
-
-            // Apply the theme from the source diagram to the target diagram
-            targetDiagram.CopyTheme(sourceThemeDiagram);
-
-            // Configure SVG save options (e.g., export the first page)
+            // Configure SVG export options
             SVGSaveOptions svgOptions = new SVGSaveOptions
             {
-                PageIndex = 0,               // 0‑based index of the page to render
-                ExportHiddenPage = false,    // Do not export hidden pages
-                ExportGuideShapes = false    // Do not export guide shapes
+                ExportHiddenPage = false,          // Do not export hidden pages
+                ExportGuideShapes = false,         // Skip guide shapes
+                SVGFitToViewPort = true,           // Fit content to viewport
+                ExportElementAsRectTag = true      // Use <rect> for shape elements
             };
 
-            // Save the themed diagram as SVG for web preview
-            targetDiagram.Save("themedDiagram.svg", svgOptions);
-
+            // Save the themed diagram as an SVG file
+            diagram.Save(outputPath, svgOptions);
+            Console.WriteLine($"SVG export completed: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

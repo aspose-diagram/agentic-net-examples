@@ -4,35 +4,32 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Input and output file paths (modify as needed or pass via command line)
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-                // Load the diagram
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
                         // Retrieve plain text of the shape
-                        string plainText = shape.Text.Value.Text;
+                        string plainText = shape.Text.Value.ToString();
 
-                        // Check if the shape contains multiline text (contains a line break)
-                        if (!string.IsNullOrEmpty(plainText) && plainText.Contains("\n"))
+                        // Check if the shape contains multiline text (contains line break)
+                        if (!string.IsNullOrEmpty(plainText) && (plainText.Contains("\n") || plainText.Contains("\r")))
                         {
-                            // Set a larger default tab stop (in inches) for better readability
-                            shape.TextBlock.DefaultTabStop.Value = 0.5; // 0.5 inches
+                            // Set a different default tab stop (e.g., 0.5 inches) for better readability
+                            shape.TextBlock.DefaultTabStop.Value = 0.5;
                         }
                     }
                 }
@@ -41,9 +38,9 @@ class Program
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

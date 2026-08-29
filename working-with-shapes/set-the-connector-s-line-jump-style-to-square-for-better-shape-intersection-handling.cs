@@ -1,46 +1,44 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load an existing Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path to the output Visio file
+                string outputPath = "output.vsdx";
 
-            // Access the first page
-            Page page = diagram.Pages[0];
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Add two rectangle shapes to the page
-            long shapeId1 = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
-            long shapeId2 = diagram.AddShape(5.0, 5.0, "Rectangle", 0);
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Identify connector shapes (1‑D shapes)
+                        if (shape.OneD)
+                        {
+                            // Set the line jump style to Square for better intersection handling
+                            shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Square;
+                        }
+                    }
+                }
 
-            // Retrieve the shape objects
-            Shape shape1 = page.Shapes.GetShape(shapeId1);
-            Shape shape2 = page.Shapes.GetShape(shapeId2);
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Add a dynamic connector shape
-            long connectorId = diagram.AddShape(3.5, 3.5, "Dynamic connector", 0);
-            Shape connector = page.Shapes.GetShape(connectorId);
-
-            // Set the connector's line jump style to Square
-            connector.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Square;
-
-            // (Optional) Connect the shapes using the connector
-            // page.ConnectShapesViaConnector(shapeId1, ConnectionPointPlace.Bottom, shapeId2, ConnectionPointPlace.Top, connectorId);
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

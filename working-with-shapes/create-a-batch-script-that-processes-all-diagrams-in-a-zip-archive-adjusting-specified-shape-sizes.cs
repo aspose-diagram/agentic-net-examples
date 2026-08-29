@@ -1,125 +1,138 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect arguments: zipPath shapeName newWidth newHeight [outputDir]
+        if (args.Length < 4)
         {
-            // Expect two arguments: path to the zip archive and output directory.
-            if (args.Length < 2)
+            Console.Error.WriteLine("Usage: <zipPath> <shapeName> <newWidth> <newHeight> [outputDir]");
+            return;
+        }
+
+        // Parse and validate the zip archive path
+        string zipPath = args[0];
+        if (!File.Exists(zipPath))
+        {
+            Console.Error.WriteLine($"File not found: {zipPath}");
+            return;
+        }
+
+        // Shape name to locate (case‑insensitive)
+        string targetShapeName = args[1];
+
+        // Parse new width and height values (in inches)
+        if (!double.TryParse(args[2], out double newWidth))
+        {
+            Console.Error.WriteLine($"Invalid width: {args[2]}");
+            return;
+        }
+        if (!double.TryParse(args[3], out double newHeight))
+        {
+            Console.Error.WriteLine($"Invalid height: {args[3]}");
+            return;
+        }
+
+        // Determine output directory (default to current directory)
+        string outputDir = args.Length >= 5 ? args[4] : Directory.GetCurrentDirectory();
+        if (!Directory.Exists(outputDir))
+        {
+            // Create the output directory if it does not exist
+            Directory.CreateDirectory(outputDir);
+        }
+
+        // Create a temporary folder for extracting the zip contents
+        string tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempFolder);
+
+        try
+        {
+            // Extract all files from the zip archive into the temporary folder
+            ZipFile.ExtractToDirectory(zipPath, tempFolder);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error extracting zip: {ex.Message}");
+            return;
+        }
+
+        // Define Visio file extensions that Aspose.Diagram can load
+        HashSet<string> visioExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vssx", ".vss", ".vstx", ".vst", ".vstm", ".vsdm", ".vssm"
+        };
+
+        // Collect all diagram files from the extracted folder (recursive)
+        List<string> diagramFiles = new List<string>();
+        foreach (string file in Directory.GetFiles(tempFolder, "*.*", SearchOption.AllDirectories))
+        {
+            if (visioExtensions.Contains(Path.GetExtension(file)))
             {
-                Console.WriteLine("Usage: DiagramBatchProcessor <zipPath> <outputDirectory>");
-                return;
+                diagramFiles.Add(file);
             }
+        }
 
-            string zipPath = args[0];
-            string outputDir = args[1];
-
-            if (!File.Exists(zipPath))
+        // Process each diagram file individually
+        foreach (string diagramPath in diagramFiles)
+        {
+            try
             {
-                Console.WriteLine($"Zip file not found: {zipPath}");
-                return;
-            }
+                // Load the Visio diagram from the file
+                Diagram diagram = new Diagram(diagramPath);
 
-            if (!Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-
-            // Open the zip archive for reading.
-            using (FileStream zipFileStream = new FileStream(zipPath, FileMode.Open, FileAccess.Read))
-            using (ZipArchive archive = new ZipArchive(zipFileStream, ZipArchiveMode.Read))
-            {
-                foreach (ZipArchiveEntry entry in archive.Entries)
+                // Iterate through every page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Process only Visio diagram files based on extension.
-                    string extension = Path.GetExtension(entry.FullName);
-                    if (!IsVisioFile(extension))
+                    // Iterate through every shape on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        continue;
-                    }
-
-                    Console.WriteLine($"Processing: {entry.FullName}");
-
-                    // Load the diagram from the entry stream.
-                    using (Stream entryStream = entry.Open())
-                    using (MemoryStream diagramStream = new MemoryStream())
-                    {
-                        entryStream.CopyTo(diagramStream);
-                        diagramStream.Position = 0;
-
-                        Diagram diagram = new Diagram(diagramStream);
-
-                        // Adjust shape sizes as required.
-                        AdjustShapeSizes(diagram);
-
-                        // Prepare output file path.
-                        string outputPath = Path.Combine(outputDir, Path.GetFileName(entry.FullName));
-
-                        // Save the modified diagram in the same format as the original.
-                        SaveFileFormat format = GetSaveFormatFromExtension(extension);
-                        diagram.Save(outputPath, format);
+                        // Check if the shape's universal name matches the target (ignore case)
+                        if (!string.IsNullOrEmpty(shape.NameU) &&
+                            shape.NameU.Equals(targetShapeName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Update the shape's width and height (values are in inches)
+                            shape.XForm.Width.Value = newWidth;
+                            shape.XForm.Height.Value = newHeight;
+                        }
                     }
                 }
-            }
 
-            Console.WriteLine("Batch processing completed.");
-        }
+                // Compute the relative path of the diagram inside the temp folder
+                string relativePath = Path.GetRelativePath(tempFolder, diagramPath);
 
-        // Determines whether the file extension corresponds to a supported Visio format.
-        private static bool IsVisioFile(string extension)
-        {
-            if (string.IsNullOrEmpty(extension))
-                return false;
-
-            string ext = extension.ToLowerInvariant();
-            return ext == ".vsdx" || ext == ".vsd" || ext == ".vdx" || ext == ".vssx" ||
-                   ext == ".vss" || ext == ".vstx" || ext == ".vst" || ext == ".vtx";
-        }
-
-        // Maps file extension to the appropriate SaveFileFormat enum value.
-        private static SaveFileFormat GetSaveFormatFromExtension(string extension)
-        {
-            string ext = extension.ToLowerInvariant();
-            return ext switch
-            {
-                ".vsdx" => SaveFileFormat.Vsdx,
-                ".vsd" => SaveFileFormat.Vsd,
-                ".vdx" => SaveFileFormat.Vdx,
-                ".vssx" => SaveFileFormat.Vssx,
-                ".vss" => SaveFileFormat.Vss,
-                ".vstx" => SaveFileFormat.Vstx,
-                ".vst" => SaveFileFormat.Vst,
-                ".vtx" => SaveFileFormat.Vtx,
-                _ => SaveFileFormat.Vsdx // Default fallback.
-            };
-        }
-
-        // Adjusts the size of specific shapes within the diagram.
-        private static void AdjustShapeSizes(Diagram diagram)
-        {
-            // Example criteria: adjust all shapes whose universal name is "Rectangle".
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Build the full output path preserving the original folder structure
+                string outputPath = Path.Combine(outputDir, relativePath);
+                string outputFolder = Path.GetDirectoryName(outputPath);
+                if (!Directory.Exists(outputFolder))
                 {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Check shape name (case-insensitive).
-                    if (string.Equals(shape.NameU, "Rectangle", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Set new width and height (in inches).
-                        shape.XForm.Width.Value = 2.0;   // 2 inches wide.
-                        shape.XForm.Height.Value = 1.0;  // 1 inch tall.
-
-                        Console.WriteLine($"Adjusted shape ID {shape.ID} on page '{page.Name}' to 2\" x 1\".");
-                    }
+                    Directory.CreateDirectory(outputFolder);
                 }
+
+                // Save the modified diagram as VSDX (preserves all features)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+            catch (Exception ex)
+            {
+                // Log any errors that occur while processing an individual diagram
+                Console.Error.WriteLine($"Error processing '{diagramPath}': {ex.Message}");
+            }
+        }
+
+        // Clean up the temporary extraction folder
+        try
+        {
+            Directory.Delete(tempFolder, true);
+        }
+        catch (Exception ex)
+        {
+            // Non‑critical cleanup failure; report but do not abort
+            Console.Error.WriteLine($"Warning: could not delete temporary folder: {ex.Message}");
         }
     }
+}

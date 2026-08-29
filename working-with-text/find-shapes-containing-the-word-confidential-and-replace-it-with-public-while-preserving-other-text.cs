@@ -1,6 +1,6 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
 {
@@ -9,24 +9,34 @@ class Program
         try
         {
 
-            // Load the Visio diagram from file
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Loop through every page in the diagram
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Loop through every shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Replace the word "Confidential" with "Public" wherever it appears in the shape's text
-                    shape.ReplaceText("Confidential", "Public");
+                    // Ensure the shape contains a Text object
+                    if (shape.Text != null && shape.Text.Value != null)
+                    {
+                        // Convert the text collection to a string for inspection
+                        string currentText = shape.Text.Value.ToString();
 
-                    // Refresh the shape to recalculate its geometry after the text change
-                    shape.RefreshData();
+                        // Check for the target word
+                        if (currentText.Contains("Confidential"))
+                        {
+                            // Replace only the target word, preserving surrounding text
+                            shape.ReplaceText("Confidential", "Public");
+
+                            // Refresh shape geometry after text change
+                            shape.RefreshData();
+                        }
+                    }
                 }
             }
 
-            // Save the updated diagram to a new file
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

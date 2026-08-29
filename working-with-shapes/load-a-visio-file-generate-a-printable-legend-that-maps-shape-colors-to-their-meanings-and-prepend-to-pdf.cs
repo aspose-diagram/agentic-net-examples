@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,114 +8,96 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output PDF file path
-        if (args.Length != 2)
-        {
-            Console.WriteLine("Usage: DiagramLegendGenerator <inputVisioPath> <outputPdfPath>");
-            return;
-        }
-
-        string inputPath = args[0];
-        // Guard to ensure the input Visio file exists
+        // Input Visio file path (first argument) and output PDF path (second argument)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string outputPdfPath = args[1];
+        string outputPdf = args.Length > 1 ? args[1] : "output.pdf";
 
         try
         {
             // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            var diagram = new Diagram(inputPath);
 
-            // Dictionary to map fill color (hex string) to concatenated shape names
-            var colorMap = new System.Collections.Generic.Dictionary<string, string>();
-
-            // Iterate through all pages and shapes to collect colors
+            // -----------------------------------------------------------------
+            // 1. Collect distinct fill colors used in the diagram (excluding deleted shapes)
+            // -----------------------------------------------------------------
+            var colorSet = new HashSet<string>();
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip logically deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Retrieve the foreground fill color; if empty, skip
+                    // Get the foreground fill color (hex string like "#FF0000")
                     string fillColor = shape.Fill.FillForegnd.Value;
-                    if (string.IsNullOrWhiteSpace(fillColor))
-                        continue;
-
-                    // Use shape's NameU as its meaning; fallback to "Unnamed"
-                    string meaning = !string.IsNullOrWhiteSpace(shape.NameU) ? shape.NameU : "Unnamed";
-
-                    if (colorMap.ContainsKey(fillColor))
-                    {
-                        // Append additional meaning
-                        colorMap[fillColor] += ", " + meaning;
-                    }
-                    else
-                    {
-                        colorMap[fillColor] = meaning;
-                    }
+                    if (!string.IsNullOrWhiteSpace(fillColor))
+                        colorSet.Add(fillColor);
                 }
             }
 
-            // Create a new page for the legend
-            Page legendPage = new Page();
+            // -----------------------------------------------------------------
+            // 2. Create a new legend page and add it to the diagram
+            // -----------------------------------------------------------------
+            var legendPage = new Page();
+            // Add the legend page (will be appended; prepend not supported directly)
             diagram.Pages.Add(legendPage);
 
-            // Set legend page size to match the first page (if any)
-            if (diagram.Pages.Count > 1)
-            {
-                Page firstPage = diagram.Pages[0];
-                legendPage.PageSheet.PageProps.PageWidth.Value = firstPage.PageSheet.PageProps.PageWidth.Value;
-                legendPage.PageSheet.PageProps.PageHeight.Value = firstPage.PageSheet.PageProps.PageHeight.Value;
-            }
+            // Page dimensions (in inches)
+            double pageWidth = legendPage.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = legendPage.PageSheet.PageProps.PageHeight.Value;
 
-            // Layout parameters for legend entries
-            double startX = 1.0;          // inches from left
-            double startY = 1.0;          // inches from top
+            // Layout parameters for the legend entries
+            double startX = 1.0;               // left margin
+            double startY = pageHeight - 1.0;  // start from top, leaving a top margin
+            double entrySpacingY = 0.6;        // vertical space between entries
             double rectWidth = 0.5;
             double rectHeight = 0.3;
-            double verticalSpacing = 0.4;
-            double textOffsetX = 0.6;     // space between rectangle and text
+            double textOffsetX = 0.7;          // distance from rectangle to text
 
-            double currentY = startY;
-
-            // Generate legend entries for each color
-            foreach (var kvp in colorMap)
+            int index = 0;
+            foreach (string colorHex in colorSet)
             {
-                string colorHex = kvp.Key;
-                string description = kvp.Value;
+                double currentY = startY - index * entrySpacingY;
 
+                // -------------------------------------------------------------
                 // Draw a small rectangle filled with the color
+                // -------------------------------------------------------------
                 long rectId = legendPage.DrawRectangle(startX, currentY, rectWidth, rectHeight);
-                Shape rectShape = legendPage.Shapes.GetShape((int)rectId);
-                rectShape.Fill.FillForegnd.Value = colorHex;
-                rectShape.Fill.FillPattern.Value = 1; // solid fill
-                rectShape.Line.LinePattern.Value = 0; // no border
+                Shape rectShape = legendPage.Shapes.GetShape(rectId);
+                rectShape.Fill.FillForegnd.Value = colorHex;   // set fill color
+                rectShape.Fill.FillPattern.Value = 1;         // solid fill
+                rectShape.Line.LinePattern.Value = 0;         // no border
 
-                // Add a text shape next to the rectangle
-                Shape textShape = legendPage.AddText(startX + textOffsetX, currentY, 3.0, rectHeight, $"{colorHex}: {description}");
-                // Ensure text uses a readable font size (in inches)
-                textShape.TextXForm.TxtHeight.Value = 0.2; // approx 14pt
+                // -------------------------------------------------------------
+                // Add a text label next to the rectangle
+                // -------------------------------------------------------------
+                double textPinX = startX + textOffsetX;
+                double textPinY = currentY;
+                double textWidth = pageWidth - textPinX - 1.0; // leave right margin
+                double textHeight = rectHeight;
+                string label = $"Color {colorHex}";
+                legendPage.AddText(textPinX, textPinY, textWidth, textHeight, label);
 
-                // Move to next line
-                currentY += verticalSpacing;
+                index++;
             }
 
-            // Save the diagram as PDF with the legend page prepended
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-            diagram.Save(outputPdfPath, pdfOptions);
-
-            Console.WriteLine($"PDF with legend saved to: {outputPdfPath}");
+            // -----------------------------------------------------------------
+            // 3. Save the diagram (with the legend page) as PDF
+            // -----------------------------------------------------------------
+            var pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial"; // fallback font for missing glyphs
+            diagram.Save(outputPdf, pdfOptions);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any Aspose or I/O errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

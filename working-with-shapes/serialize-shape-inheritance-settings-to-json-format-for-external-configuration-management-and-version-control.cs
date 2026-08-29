@@ -4,75 +4,62 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace ShapeInheritanceExport
+public class ShapeInheritanceInfo
 {
-    // DTO to hold inheritance information for a shape
-    public class ShapeInheritanceInfo
-    {
-        public long ShapeId { get; set; }
-        public string Name { get; set; }
-        public string MasterName { get; set; }
-        public string FillForegnd { get; set; }
-        public string FillBkgnd { get; set; }
-        public string LineColor { get; set; }
-        public string LineWeight { get; set; }
-        public string CharFont { get; set; }
-        public string CharSize { get; set; }
-    }
+    public long ID { get; set; }
+    public string Name { get; set; }
+    public string InheritChars { get; set; }
+    public string InheritFill { get; set; }
+    public string InheritGeoms { get; set; }
+    public string InheritLine { get; set; }
+    public string InheritParas { get; set; }
+    public string InheritProps { get; set; }
+    public string InheritTextBlock { get; set; }
+    public string InheritUsers { get; set; }
+}
 
-    public class Program
+public class Program
+{
+    public static void Main()
     {
-        public static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vdx");
+
+            var inheritanceData = new List<ShapeInheritanceInfo>();
+
+            // Iterate through all shapes on the first page (adjust as needed)
+            foreach (Shape shape in diagram.Pages[0].Shapes)
             {
-
-                // Path to the Visio file to process
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Collect inheritance data for all shapes
-                List<ShapeInheritanceInfo> inheritanceData = new List<ShapeInheritanceInfo>();
-
-                foreach (Page page in diagram.Pages)
+                var info = new ShapeInheritanceInfo
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Build DTO for the current shape
-                        ShapeInheritanceInfo info = new ShapeInheritanceInfo
-                        {
-                            ShapeId = shape.ID,
-                            Name = shape.Name,
-                            MasterName = shape.Master?.Name ?? string.Empty,
-                            FillForegnd = shape.InheritFill?.FillForegnd?.Value,
-                            FillBkgnd = shape.InheritFill?.FillBkgnd?.Value,
-                            LineColor = shape.InheritLine?.LineColor?.Value,
-                            LineWeight = shape.InheritLine?.LineWeight?.Value.ToString(),
-                            // Retrieve first inherited character formatting if available
-                            CharFont = shape.InheritChars?.GetChar(0)?.Font?.Value.ToString(),
-                            CharSize = shape.InheritChars?.GetChar(0)?.Size?.Value.ToString()
-                        };
-
-                        inheritanceData.Add(info);
-                    }
-                }
-
-                // Serialize the collection to JSON with indentation for readability
-                string json = JsonSerializer.Serialize(inheritanceData, new JsonSerializerOptions { WriteIndented = true });
-
-                // Write JSON to a file for external configuration management
-                string outputPath = "shapeInheritance.json";
-                File.WriteAllText(outputPath, json);
-
-                Console.WriteLine($"Shape inheritance data exported to '{outputPath}'.");
-
+                    ID = shape.ID,
+                    Name = shape.Name,
+                    InheritChars = shape.InheritChars?.ToString(),
+                    InheritFill = shape.InheritFill?.ToString(),
+                    InheritGeoms = shape.InheritGeoms?.ToString(),
+                    InheritLine = shape.InheritLine?.ToString(),
+                    InheritParas = shape.InheritParas?.ToString(),
+                    InheritProps = shape.InheritProps?.ToString(),
+                    InheritTextBlock = shape.InheritTextBlock?.ToString(),
+                    InheritUsers = shape.InheritUsers?.ToString()
+                };
+                inheritanceData.Add(info);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Serialize the collected inheritance settings to JSON
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            string json = JsonSerializer.Serialize(inheritanceData, jsonOptions);
+
+            // Save JSON to a file for external configuration management
+            File.WriteAllText("shapeInheritance.json", json);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

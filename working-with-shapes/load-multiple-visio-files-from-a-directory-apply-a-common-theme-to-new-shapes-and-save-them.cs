@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class ApplyCommonTheme
 {
@@ -11,27 +10,37 @@ class ApplyCommonTheme
         {
 
             // Path to the directory containing Visio files to process
-            string inputDirectory = @"C:\VisioFiles";
+            string inputDirectory = @"C:\VisioFiles\Input";
 
-            // Path to the Visio file that holds the desired theme
-            string themeFilePath = @"C:\Theme\theme.vsdx";
+            // Path to the directory where modified files will be saved
+            string outputDirectory = @"C:\VisioFiles\Output";
 
-            // Load the theme diagram once
-            using (Diagram themeDiagram = new Diagram(themeFilePath))
+            // Path to the source diagram that holds the desired theme
+            string themeDiagramPath = @"C:\VisioFiles\Theme\theme.vsdx";
+
+            // Ensure output directory exists
+            Directory.CreateDirectory(outputDirectory);
+
+            // Load the source diagram that contains the theme to be copied
+            using (Diagram themeDiagram = new Diagram(themeDiagramPath))
             {
                 // Get all Visio files (VSDX) in the input directory
                 string[] visioFiles = Directory.GetFiles(inputDirectory, "*.vsdx", SearchOption.TopDirectoryOnly);
 
                 foreach (string filePath in visioFiles)
                 {
-                    // Load the current Visio file
+                    // Load the target diagram
                     using (Diagram targetDiagram = new Diagram(filePath))
                     {
-                        // Apply the common theme from the theme diagram
+                        // Copy the theme from the source diagram to the target diagram
                         targetDiagram.CopyTheme(themeDiagram);
 
-                        // Save the modified diagram, overwriting the original file
-                        targetDiagram.Save(filePath, SaveFileFormat.Vsdx);
+                        // Determine output file path (overwrite original or save to separate folder)
+                        string fileName = Path.GetFileName(filePath);
+                        string outputPath = Path.Combine(outputDirectory, fileName);
+
+                        // Save the modified diagram using the same format (VSDX)
+                        targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
                     }
                 }
             }

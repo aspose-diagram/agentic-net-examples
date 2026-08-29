@@ -6,45 +6,59 @@ using Aspose.Diagram;
 using Aspose.Diagram.Properties;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (default to "input.vsdx" if not provided)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+
+        // Output JSON file path (default to "metadata.json" if not provided)
+        string outputPath = args.Length > 1 ? args[1] : "metadata.json";
+
+        try
         {
-            try
-            {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Path to the Visio file to be processed
-                string inputPath = "input.vsdx";
+            // Prepare a dictionary to hold metadata
+            var metadata = new Dictionary<string, object>();
 
-                // Path where the extracted metadata JSON will be saved
-                string outputPath = "metadata.json";
+            // Built‑in document properties
+            // Title
+            metadata["Title"] = diagram.DocumentProps.Title ?? string.Empty;
 
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Retrieve built‑in document properties
-                    string title = diagram.DocumentProps.Title;
-                    string author = diagram.DocumentProps.Creator;
-                    DateTime creationDate = diagram.DocumentProps.TimeCreated;
+            // Author (use Creator if Author is not available)
+            metadata["Author"] = diagram.DocumentProps.Creator ?? string.Empty;
 
-                    // Assemble metadata into a dictionary
-                    var metadata = new Dictionary<string, object>
-                    {
-                        { "Title", title },
-                        { "Author", author },
-                        { "CreationDate", creationDate }
-                    };
+            // Creation date (ISO 8601 format)
+            DateTime created = diagram.DocumentProps.TimeCreated;
+            metadata["Created"] = created.ToString("o");
 
-                    // Convert the metadata dictionary to a formatted JSON string
-                    string json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+            // Last edited date (ISO 8601 format)
+            DateTime edited = diagram.DocumentProps.TimeEdited;
+            metadata["LastEdited"] = edited.ToString("o");
 
-                    // Write the JSON string to the output file
-                    File.WriteAllText(outputPath, json);
-                }
+            // Build numbers (read‑only system metadata)
+            metadata["BuildNumberCreated"] = diagram.DocumentProps.BuildNumberCreated;
+            metadata["BuildNumberEdited"] = diagram.DocumentProps.BuildNumberEdited;
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Version of the Visio instance that created the file
+            metadata["Version"] = diagram.Version ?? string.Empty;
+
+            // Serialize dictionary to pretty‑printed JSON
+            string json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+
+            // Write JSON to the output file
+            File.WriteAllText(outputPath, json);
+
+            Console.WriteLine($"Metadata extracted to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
+        }
     }
-    }
+}

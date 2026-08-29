@@ -1,53 +1,51 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            var diagram = new Diagram("input.vsdx");
-
-            // Access the first page in the diagram
-            var page = diagram.Pages[0];
-
-            // Locate the first shape that is not marked as deleted
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                if (shape.Del == BOOL.False)
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path where the modified Visio file will be saved
+                string outputPath = "output.vsdx";
+
+                // Load the diagram from the file
+                Diagram diagram = new Diagram(inputPath);
+
+                // Access the first page (you can change the index as needed)
+                Page page = diagram.Pages[0];
+
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    targetShape = shape;
-                    break;
+                    // Example condition: modify the first shape that is not deleted
+                    if (shape.Del == BOOL.False)
+                    {
+                        // Retrieve the current line pattern
+                        LinePatternValue currentPattern = shape.Line.LinePattern.Value;
+                        Console.WriteLine($"Shape ID {shape.ID} current line pattern: {currentPattern}");
+
+                        // Change the line pattern to a dotted style
+                        shape.Line.LinePattern.Value = LinePatternValue.Dot;
+                        Console.WriteLine($"Shape ID {shape.ID} line pattern set to: {shape.Line.LinePattern.Value}");
+
+                        // If you only want to modify a specific shape, break after the change
+                        // break;
+                    }
                 }
-            }
 
-            if (targetShape == null)
+                // Save the modified diagram back to a file using the Vsdx format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram saved successfully.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("No non‑deleted shape found on the page.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Retrieve and display the current line pattern of the shape
-            var currentPattern = targetShape.Line.LinePattern.Value;
-            Console.WriteLine($"Current line pattern: {currentPattern}");
-
-            // Change the line pattern to a dotted style
-            targetShape.Line.LinePattern.Value = LinePatternValue.Dot;
-
-            // Save the modified diagram to a new file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Line pattern updated to dotted and diagram saved as output.vsdx.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

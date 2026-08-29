@@ -9,14 +9,18 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram
+            string diagramPath = "input.vsdx";
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Retrieve the page with the specified name
-            Page page = diagram.Pages.GetPage("Page-1");
+            // Name of the page to retrieve
+            string targetPageName = "Page-1";
 
-            // Example usage: output the page name
-            Console.WriteLine($"Retrieved page name: {page.Name}");
+            // Retrieve the page by its name
+            Page page = diagram.Pages.GetPage(targetPageName);
+
+            // Example usage: display page information
+            Console.WriteLine($"Retrieved page: {page.Name} (ID: {page.ID})");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -4,60 +4,61 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
                 // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-                // Access the first page of the diagram
+                // Access the first page
                 Page page = diagram.Pages[0];
 
-                // Find a shape to modify (example: first shape with NameU "Rectangle")
-                Shape targetShape = null;
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                // Target shape name (adjust as needed)
+                string targetShapeName = "TargetShape";
+
+                // Iterate through shapes to find the target
+                foreach (Shape shape in page.Shapes)
                 {
                     // Skip deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    if (shape.NameU != null && shape.NameU.Equals("Rectangle", StringComparison.OrdinalIgnoreCase))
+                    // Match by universal name
+                    if (shape.NameU != null && shape.NameU.Equals(targetShapeName, StringComparison.OrdinalIgnoreCase))
                     {
-                        targetShape = shape;
+                        // Ensure the shape has text
+                        if (shape.Text != null && !string.IsNullOrEmpty(shape.Text.Value.Text))
+                        {
+                            // Clear existing character formatting
+                            shape.Chars.Clear();
+
+                            // Create a new character formatting entry
+                            Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+                            ch.IX = 0; // Apply to the first character run
+                            ch.FontName.Value = "Calibri";               // Font name
+                            ch.Size.Value = 12.0 / 72.0;                 // Font size in inches (12 pt)
+                            ch.Color.Value = "#FF0000";                  // Red color in HEX
+                            ch.Style.Value = StyleValue.Bold;            // Example: make text bold
+
+                            // Add the character formatting to the shape
+                            shape.Chars.Add(ch);
+                        }
+
+                        // Apply a preset theme to the shape (write‑only properties)
+                        shape.PresetTheme = PresetThemeValue.Bubble;
+                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+                        // No need to continue searching after the target is processed
                         break;
                     }
                 }
 
-                if (targetShape == null)
-                {
-                    Console.WriteLine("Target shape not found.");
-                    return;
-                }
-
-                // Ensure the shape has a text collection
-                if (targetShape.Text == null)
-                    targetShape.Text = new Text();
-
-                // Clear existing text runs (optional)
-                targetShape.Text.Value.Clear();
-
-                // Add new text content
-                targetShape.Text.Value.Add(new Txt("Sample Text"));
-
-                // Create a character formatting entry for the first character run (IX = 0)
-                Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
-                charFormat.IX = 0; // Index of the character run
-                charFormat.FontName.Value = "Calibri";               // Font name
-                charFormat.Size.Value = 12.0 / 72.0;                 // Font size in inches (12 pt)
-                charFormat.Color.Value = "#FF0000";                 // Font color (red) in HEX
-
-                // Add the character formatting to the shape
-                targetShape.Chars.Add(charFormat);
-
                 // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

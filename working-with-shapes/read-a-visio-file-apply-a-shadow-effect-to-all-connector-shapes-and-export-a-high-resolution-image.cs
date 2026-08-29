@@ -7,62 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input Visio file path (first argument or default)
+        // Expect input Visio file path and output image file path.
         string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Guard: ensure the Visio file exists before proceeding
+        // Guard: verify the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Determine output image file path (second argument or default)
         string outputPath = args.Length > 1 ? args[1] : "output.png";
+        // Guard: ensure the directory for the output exists.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram from the specified file
+            // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over all pages in the diagram
+            // Iterate through all pages in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over all shapes on the current page
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify connector shapes: 1‑D shapes have OneD == true
+                    // Identify connector shapes: they are 1‑D shapes (OneD == true).
                     if (shape.OneD)
                     {
-                        // Apply a simple shadow effect to the connector
-                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;   // Enable simple shadow
-                        shape.Fill.ShdwForegnd.Value = "#000000";                     // Shadow color: black
-                        shape.Fill.ShdwForegndTrans.Value = 0.3;                     // 30 % transparency
-                        shape.Fill.ShapeShdwOffsetX.Value = 0.1;                     // Horizontal offset (in inches)
-                        shape.Fill.ShapeShdwOffsetY.Value = 0.1;                     // Vertical offset (in inches)
+                        // Enable a simple shadow for the connector.
+                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+                        // Set shadow color to black.
+                        shape.Fill.ShdwForegnd.Value = "#000000";
+                        // Set shadow transparency (30% transparent).
+                        shape.Fill.ShdwForegndTrans.Value = 0.3;
+                        // Set horizontal and vertical shadow offsets.
+                        shape.Fill.ShapeShdwOffsetX.Value = 0.1;
+                        shape.Fill.ShapeShdwOffsetY.Value = 0.1;
                     }
                 }
             }
 
-            // Configure high‑resolution image export options (PNG format)
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-            {
-                // Set resolution to 300 dpi for high quality
-                Resolution = 300f,
-                // Export the first page (index 0); change if multiple pages are needed
-                PageIndex = 0,
-                // Ensure hidden pages are not exported
-                ExportHiddenPage = false
-            };
+            // Configure high‑resolution image export options.
+            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            imgOptions.Resolution = 300f;               // 300 DPI for high quality.
+            imgOptions.PageIndex = 0;                  // Start from the first page.
+            imgOptions.PageCount = diagram.Pages.Count; // Export all pages (one file per page).
 
-            // Save the diagram as a high‑resolution PNG image
-            diagram.Save(outputPath, saveOptions);
-
-            Console.WriteLine($"Shadow applied to connectors and image saved to: {outputPath}");
+            // Save the diagram as a PNG image using the configured options.
+            diagram.Save(outputPath, imgOptions);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any exception details to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

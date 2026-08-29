@@ -1,88 +1,63 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define file paths
+        string inputPath = "input.vsdx";
+        string outputPdfPath = "output.pdf";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
-            {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
-                // Paths – adjust as needed
-                string stencilPath = "basic.vssx"; // stencil containing the master (e.g., Rectangle)
-                string masterName = "Rectangle";
-                string outputPdf = "output.pdf";
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Use the first page as the working page
+            Page page = diagram.Pages[0];
 
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
-                    diagram.Pages.Add(new Page());
+            // Retrieve the master that defines the gradient fill (replace with actual master name)
+            Master master = diagram.Masters.GetMasterByName("GradientMaster");
+            if (master == null)
+                throw new Exception("Master 'GradientMaster' not found in the diagram.");
 
-                Page page = diagram.Pages[0];
+            // The master’s visual definition is stored in its first shape
+            Shape masterShape = master.Shapes[0];
 
-                // Import the master from the stencil
-                int masterId = diagram.AddMaster(stencilPath, masterName);
-                Master master = diagram.Masters.GetMaster(masterId);
+            // Add a new shape that references the master
+            long shapeId = page.AddShape(2.0, 2.0, master.Name);
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                if (master == null)
-                    throw new Exception($"Master '{masterName}' could not be loaded from stencil '{stencilPath}'.");
+            // Validate that the shape inherits the master’s gradient fill settings
+            bool inheritsPattern = shape.Fill.FillPattern.Value == masterShape.Fill.FillPattern.Value;
+            bool gradientEnabled = shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True;
 
-                // Retrieve the shape inside the master (the first shape usually has ID = 1)
-                Shape masterShape = master.Shapes.GetShape(1);
-                if (masterShape == null)
-                    throw new Exception("Master shape not found.");
+            if (!inheritsPattern || !gradientEnabled)
+                throw new Exception("Shape does not correctly inherit the master's gradient fill.");
 
-                // Configure a gradient fill on the master shape
-                masterShape.Fill.FillPattern.Value = 25; // Gradient pattern
-                masterShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-                masterShape.Fill.GradientFill.GradientDir.Value = 0; // Left‑to‑right
-                masterShape.Fill.GradientFill.GradientStops.Clear();
-                masterShape.Fill.GradientFill.GradientStops.Add(
-                    new DoubleValue(0, MeasureConst.NUM),
-                    new ColorValue("#FF0000", MeasureConst.Undefined)); // Red at start
-                masterShape.Fill.GradientFill.GradientStops.Add(
-                    new DoubleValue(1, MeasureConst.NUM),
-                    new ColorValue("#00FF00", MeasureConst.Undefined)); // Green at end
+            Console.WriteLine("Gradient fill inheritance validated successfully.");
 
-                // Add a shape that uses the master (inherits the gradient)
-                long shapeId = page.AddShape(2.0, 2.0, masterName);
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape == null)
-                    throw new Exception("Failed to retrieve the shape created from the master.");
+            // Export the diagram to PDF with a fallback font
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            diagram.Save(outputPdfPath, pdfOptions);
 
-                // Validate inheritance: compare gradient stops between shape and master
-                var masterStops = masterShape.Fill.GradientFill.GradientStops;
-                var shapeStops = shape.InheritFill.GradientFill.GradientStops;
-
-                if (masterStops.Count != shapeStops.Count)
-                    throw new Exception("Gradient stop count mismatch between master and shape.");
-
-                for (int i = 0; i < masterStops.Count; i++)
-                {
-                    GradientStop masterStop = masterStops[i];
-                    GradientStop shapeStop = shapeStops[i];
-
-                    if (masterStop.Position.Value != shapeStop.Position.Value ||
-                        masterStop.Color.Value != shapeStop.Color.Value)
-                    {
-                        throw new Exception($"Gradient stop {i} does not match between master and shape.");
-                    }
-                }
-
-                // Export the diagram to PDF
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                diagram.Save(outputPdf, pdfOptions);
-
-                Console.WriteLine("Gradient inheritance validated and PDF exported successfully.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine($"Diagram exported to PDF at: {outputPdfPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

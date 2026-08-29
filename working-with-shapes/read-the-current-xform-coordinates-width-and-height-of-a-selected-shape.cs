@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
@@ -9,31 +9,27 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the first page (adjust index as needed)
+            // Choose a shape – here we take the first shape on the first page
             Page page = diagram.Pages[0];
+            Shape shape = page.Shapes[0];
 
-            // Select a shape by its ID (replace 1 with the desired shape ID)
-            Shape shape = page.Shapes.GetShape(1);
+            // Ensure the shape's positioning data is up‑to‑date
+            shape.RefreshData();
 
-            // Access the shape's XForm which holds positioning data
-            XForm xform = shape.XForm;
+            // Read XForm positioning values
+            double pinX = shape.XForm.PinX.Value;      // X coordinate of the shape's pin (center of rotation)
+            double pinY = shape.XForm.PinY.Value;      // Y coordinate of the shape's pin (center of rotation)
+            double width = shape.XForm.Width.Value;    // Width of the shape in drawing units
+            double height = shape.XForm.Height.Value;  // Height of the shape in drawing units
 
-            // Read the X and Y coordinates of the shape's pin (center of rotation)
-            double pinX = xform.PinX.Value;
-            double pinY = xform.PinY.Value;
-
-            // Read the shape's width and height
-            double width = xform.Width.Value;
-            double height = xform.Height.Value;
-
-            // Output the retrieved values
-            Console.WriteLine($"PinX: {pinX}");
-            Console.WriteLine($"PinY: {pinY}");
-            Console.WriteLine($"Width: {width}");
-            Console.WriteLine($"Height: {height}");
+            // Example output
+            System.Console.WriteLine($"PinX: {pinX}");
+            System.Console.WriteLine($"PinY: {pinY}");
+            System.Console.WriteLine($"Width: {width}");
+            System.Console.WriteLine($"Height: {height}");
 
         }
         catch (System.IO.FileNotFoundException ex)

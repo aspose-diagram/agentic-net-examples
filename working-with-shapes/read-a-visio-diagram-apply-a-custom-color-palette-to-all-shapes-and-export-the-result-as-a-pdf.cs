@@ -20,43 +20,45 @@ class Program
                 // Define a custom color palette (hex color strings)
                 string[] palette = new string[]
                 {
-                    "#FF5733", // Red‑orange
-                    "#33FF57", // Green
-                    "#3357FF", // Blue
-                    "#F1C40F", // Yellow
-                    "#9B59B6", // Purple
-                    "#E67E22", // Orange
-                    "#1ABC9C", // Turquoise
-                    "#E74C3C", // Red
-                    "#2ECC71", // Emerald
-                    "#3498DB"  // Light blue
+                    "#FF5733", // reddish
+                    "#33FF57", // greenish
+                    "#3357FF", // bluish
+                    "#FF33A8", // pink
+                    "#A833FF", // purple
+                    "#33FFF5"  // cyan
                 };
 
-                // Apply the palette to every shape in every page
+                // Apply colors to all shapes in all pages
                 int colorIndex = 0;
                 foreach (Page page in diagram.Pages)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Set a solid fill pattern
-                        shape.Fill.FillPattern.Value = 1; // 1 = solid
-
-                        // Assign a fill foreground color from the palette
-                        shape.Fill.FillForegnd.Value = palette[colorIndex % palette.Length];
-                        colorIndex++;
+                        // Ensure the shape has a Fill object
+                        if (shape.Fill != null)
+                        {
+                            // Set solid fill pattern
+                            shape.Fill.FillPattern.Value = 1; // 1 = solid
+                            // Assign a color from the palette
+                            shape.Fill.FillForegnd.Value = palette[colorIndex % palette.Length];
+                            colorIndex++;
+                        }
                     }
                 }
 
                 // Configure PDF save options
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial"; // Fallback font for missing characters
+                pdfOptions.DefaultFont = "Arial";
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the modified diagram as PDF
+                // Save the diagram as PDF
                 diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine("Diagram exported to PDF successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

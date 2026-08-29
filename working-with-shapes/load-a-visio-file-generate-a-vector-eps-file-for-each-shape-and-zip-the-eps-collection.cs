@@ -4,66 +4,68 @@ using System.IO.Compression;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class VisioEpsExporter
 {
+    // Exports each shape of a Visio file to an EPS (vector) file and packs them into a zip archive.
+    public static void ExportShapesToEpsZip(string visioFilePath, string outputZipPath)
+    {
+        // Load the Visio diagram using the Diagram(string) constructor (lifecycle rule).
+        using (Diagram diagram = new Diagram(visioFilePath))
+        {
+            // Prepare a temporary directory to hold the EPS files.
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tempDir);
+
+            // Configure image save options for a vector format (EMF). 
+            // EPS is not directly supported; EMF is a vector format and we save with .eps extension.
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Emf);
+
+            // Iterate through all pages and shapes.
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Build a unique file name for each shape.
+                    string epsFileName = $"Page{page.ID}_Shape{shape.ID}.eps";
+                    string epsFilePath = Path.Combine(tempDir, epsFileName);
+
+                    // Export the shape to an image file using the ToImage method (rule).
+                    shape.ToImage(epsFilePath, saveOptions);
+                }
+            }
+
+            // Create the zip archive containing all EPS files.
+            using (FileStream zipToCreate = new FileStream(outputZipPath, FileMode.Create))
+            using (ZipArchive archive = new ZipArchive(zipToCreate, ZipArchiveMode.Create))
+            {
+                foreach (string filePath in Directory.GetFiles(tempDir, "*.eps"))
+                {
+                    // Add each EPS file to the zip archive.
+                    archive.CreateEntryFromFile(filePath, Path.GetFileName(filePath));
+                }
+            }
+
+            // Clean up temporary files.
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    // Example usage.
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+            string visioPath = @"C:\Input\sample.vsdx";
+            string zipPath   = @"C:\Output\shapes_eps.zip";
 
-            // Folder where individual EPS files will be saved
-            string epsFolder = "eps_output";
-
-            // Path for the final ZIP archive
-            string zipPath = "shapes_eps.zip";
-
-            // Ensure the EPS output folder exists
-            if (!Directory.Exists(epsFolder))
-                Directory.CreateDirectory(epsFolder);
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure image save options to use a vector format (EMF)
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Emf);
-
-            int shapeIndex = 0;
-
-            // Iterate through all pages and their shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Build a unique file name for each shape
-                    string epsFile = Path.Combine(
-                        epsFolder,
-                        $"shape_page{page.ID}_id{shape.ID}_{shapeIndex++}.eps");
-
-                    // Export the shape to an EPS file (using EMF format)
-                    shape.ToImage(epsFile, imgOptions);
-                }
-            }
-
-            // Remove existing ZIP if it exists
-            if (File.Exists(zipPath))
-                File.Delete(zipPath);
-
-            // Create a ZIP archive containing all EPS files
-            ZipFile.CreateFromDirectory(epsFolder, zipPath);
-
-            Console.WriteLine($"Exported {shapeIndex} shapes to EPS files and created archive '{zipPath}'.");
+            ExportShapesToEpsZip(visioPath, zipPath);
+            Console.WriteLine("Export completed.");
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

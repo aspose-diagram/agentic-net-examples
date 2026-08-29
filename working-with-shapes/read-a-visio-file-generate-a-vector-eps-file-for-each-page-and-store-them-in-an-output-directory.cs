@@ -4,52 +4,60 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Directory where EPS files will be saved
-            string outputDir = "output";
-
-            // Ensure the output directory exists
-            Directory.CreateDirectory(outputDir);
-
-            // Load the Visio diagram using the provided constructor
-            using (Diagram diagram = new Diagram(inputPath))
+            // Expect two arguments: input Visio file path and output directory.
+            if (args.Length < 2)
             {
-                // Iterate through each page in the diagram
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    var page = diagram.Pages[i];
-
-                    // Build a safe file name based on the page name
-                    string safePageName = MakeFileNameSafe(page.Name);
-                    string outputPath = Path.Combine(outputDir, $"{safePageName}.eps");
-
-                    // Aspose.Diagram does not have a direct EPS export.
-                    // Save the diagram as SVG (a vector format) and give it an .eps extension.
-                    // This satisfies the requirement of producing a vector file per page.
-                    diagram.Save(outputPath, SaveFileFormat.Svg);
-                }
+                Console.WriteLine("Usage: VisioEpsExport <inputVisioPath> <outputDirectory>");
+                return;
             }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
+            string inputPath = args[0];
+            string outputDir = args[1];
 
-    // Helper method to replace invalid filename characters
-    static string MakeFileNameSafe(string name)
-    {
-        foreach (char c in Path.GetInvalidFileNameChars())
-            name = name.Replace(c, '_');
-        return name;
+            // Verify input file exists.
+            if (!File.Exists(inputPath))
+            {
+                Console.WriteLine($"Input file not found: {inputPath}");
+                return;
+            }
+
+            // Ensure output directory exists.
+            if (!Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            int pageCount = diagram.Pages.Count;
+
+            // Aspose.Diagram does not provide a direct EPS export format.
+            // As a vector alternative, we use EMF (Enhanced Metafile) which is supported.
+            // Each page is saved as an EMF file; you may convert EMF to EPS with external tools if needed.
+            for (int i = 0; i < pageCount; i++)
+            {
+                // Construct output file name for the current page.
+                string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.emf");
+
+                // Configure image save options for EMF format.
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Emf)
+                {
+                    // Export only the current page.
+                    PageIndex = i,
+                    // Do not export hidden pages.
+                    ExportHiddenPage = false
+                };
+
+                // Save the specific page using the configured options.
+                diagram.Save(outputPath, saveOptions);
+
+                Console.WriteLine($"Saved page {i + 1} to {outputPath}");
+            }
+
+            Console.WriteLine("Export completed.");
+        }
     }
-}

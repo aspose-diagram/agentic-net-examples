@@ -2,62 +2,61 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class VisioShapeExtractor
-{
-    static void Main(string[] args)
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Input Visio file path and output CSV file path
-            string visioFilePath = "input.vsdx";
-            string csvOutputPath = "shapes.csv";
-
-            // Load the Visio diagram using the appropriate constructor
-            using (Diagram diagram = new Diagram(visioFilePath))
+            try
             {
-                // Prepare a StreamWriter for CSV output
-                using (StreamWriter writer = new StreamWriter(csvOutputPath))
+
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+                // Output CSV file path
+                string outputCsv = "shapes.csv";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Prepare CSV writer
+                using (StreamWriter writer = new StreamWriter(outputCsv))
                 {
                     // Write CSV header
                     writer.WriteLine("ShapeID,Left,Top,Right,Bottom");
 
-                    // Iterate through all pages in the diagram
+                    // Iterate through all pages
                     foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through all shapes on the current page
+                        // Iterate through all shapes on the page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Retrieve shape ID
-                            long shapeId = shape.ID;
+                            // Skip deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                            // Retrieve positioning information from XForm
-                            // PinX and PinY represent the center of the shape
-                            // Width and Height represent the size of the shape
+                            // Retrieve position and size values (in inches)
                             double pinX = shape.XForm.PinX.Value;
                             double pinY = shape.XForm.PinY.Value;
                             double width = shape.XForm.Width.Value;
                             double height = shape.XForm.Height.Value;
 
-                            // Calculate bounding rectangle coordinates
+                            // Calculate bounding rectangle edges
                             double left = pinX - width / 2.0;
                             double right = pinX + width / 2.0;
                             double top = pinY + height / 2.0;
                             double bottom = pinY - height / 2.0;
 
-                            // Write shape data to CSV
-                            writer.WriteLine($"{shapeId},{left},{top},{right},{bottom}");
+                            // Write shape information to CSV
+                            writer.WriteLine($"{shape.ID},{left},{top},{right},{bottom}");
                         }
                     }
                 }
+
+                Console.WriteLine($"Shape data exported to {outputCsv}");
+
             }
-
-            Console.WriteLine("Shape extraction completed. CSV saved to: " + csvOutputPath);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

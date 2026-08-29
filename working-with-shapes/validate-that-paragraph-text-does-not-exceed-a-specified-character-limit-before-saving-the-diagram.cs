@@ -1,54 +1,55 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Expect: input file, output file, maximum characters per paragraph
+        if (args.Length < 3)
         {
+            Console.WriteLine("Usage: <inputPath> <outputPath> <maxChars>");
+            return;
+        }
 
-            // Define input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Define the maximum allowed characters for any paragraph (shape text)
-            int maxCharacters = 1000;
+        if (!int.TryParse(args[2], out int maxChars))
+        {
+            Console.WriteLine("Invalid maxChars value.");
+            return;
+        }
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+        // Load the Visio diagram
+        Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to validate text length
-            foreach (Page page in diagram.Pages)
+        // Validate paragraph text length before saving
+        ValidateParagraphLengths(diagram, maxChars);
+
+        // Save the diagram (VSDX format)
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        Console.WriteLine("Diagram saved successfully.");
+    }
+
+    // Checks each shape's concatenated text; throws if any exceeds the limit
+    static void ValidateParagraphLengths(Diagram diagram, int maxChars)
+    {
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Retrieve plain text from the shape
-                    string text = shape.Text.Value.Text;
+                // Retrieve plain text of the shape
+                string text = shape.Text.Value.Text;
 
-                    // If the shape contains text and exceeds the limit, raise an error
-                    if (!string.IsNullOrEmpty(text) && text.Length > maxCharacters)
-                    {
-                        throw new Exception(
-                            $"Shape ID {shape.ID} on page \"{page.Name}\" exceeds the character limit " +
-                            $"({text.Length} > {maxCharacters}).");
-                    }
+                if (!string.IsNullOrEmpty(text) && text.Length > maxChars)
+                {
+                    throw new Exception(
+                        $"Shape ID {shape.ID} on page '{page.Name}' exceeds the character limit of {maxChars}. Length: {text.Length}");
                 }
             }
-
-            // Prepare save options (optional: auto‑fit page to drawing content)
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
-            saveOptions.AutoFitPageToDrawingContent = true;
-
-            // Save the diagram after validation
-            diagram.Save(outputPath, saveOptions);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

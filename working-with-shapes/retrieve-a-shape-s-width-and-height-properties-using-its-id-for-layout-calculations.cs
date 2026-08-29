@@ -9,14 +9,14 @@ class Program
         try
         {
 
-            // Path to the Visio file
-            string filePath = "input.vsdx";
+            // Path to the Visio diagram file
+            string diagramPath = "input.vsdx";
+
+            // The ID of the shape whose dimensions are required
+            long shapeId = 5; // replace with the actual shape ID
 
             // Load the diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // ID of the shape whose dimensions are needed
-            long shapeId = 5; // replace with the actual shape ID
+            Diagram diagram = new Diagram(diagramPath);
 
             // Access the first page (adjust if the shape is on a different page)
             Page page = diagram.Pages[0];
@@ -24,14 +24,19 @@ class Program
             // Retrieve the shape by its ID
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Get width and height from the shape's XForm
-            double width = shape.XForm.Width.Value;
-            double height = shape.XForm.Height.Value;
+            // Ensure the shape exists before accessing its properties
+            if (shape != null)
+            {
+                // Width and Height are stored in the XForm cell collection (values are in inches)
+                double width = shape.XForm.Width.Value;
+                double height = shape.XForm.Height.Value;
 
-            // Output the dimensions
-            Console.WriteLine($"Shape ID: {shapeId}");
-            Console.WriteLine($"Width: {width} inches");
-            Console.WriteLine($"Height: {height} inches");
+                Console.WriteLine($"Shape ID {shapeId} - Width: {width} inches, Height: {height} inches");
+            }
+            else
+            {
+                Console.WriteLine($"Shape with ID {shapeId} was not found on page {page.Name}.");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

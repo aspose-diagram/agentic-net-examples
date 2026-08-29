@@ -10,22 +10,22 @@ class Program
         try
         {
 
-            // Paths to the source theme diagram, the diagram to be themed, and the output PDF.
-            string themeDiagramPath = "customTheme.vsdx";
-            string inputDiagramPath = "inputDiagram.vsdx";
-            string outputPdfPath = "themedDiagram.pdf";
+            // Input Visio file, custom theme file, and output PDF path
+            string inputVisioPath = "input.vsdx";
+            string themeVisioPath = "customTheme.vsdx";
+            string outputPdfPath = "themedOutput.pdf";
 
-            // Load the diagram that contains the custom theme.
-            using (Diagram themeDiagram = new Diagram(themeDiagramPath))
-            // Load the diagram that will receive the theme.
-            using (Diagram targetDiagram = new Diagram(inputDiagramPath))
-            {
-                // Apply the custom theme from the source diagram to the target diagram.
-                targetDiagram.CopyTheme(themeDiagram);
+            // Load the original diagram
+            Diagram diagram = new Diagram(inputVisioPath);
 
-                // Save the themed diagram as a PDF file.
-                targetDiagram.Save(outputPdfPath, SaveFileFormat.Pdf);
-            }
+            // Load the diagram that contains the custom theme
+            Diagram themeDiagram = new Diagram(themeVisioPath);
+
+            // Apply the custom theme to the entire diagram (all pages)
+            diagram.CopyTheme(themeDiagram);
+
+            // Save the themed diagram as PDF
+            diagram.Save(outputPdfPath, SaveFileFormat.Pdf);
 
         }
         catch (System.IO.FileNotFoundException ex)

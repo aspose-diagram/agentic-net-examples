@@ -1,58 +1,79 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Path to the source Visio file
+        string diagramPath = "input.vsdx";
+        // Verify the Visio file exists before proceeding
+        if (!File.Exists(diagramPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Path to the CSV output file
+        string csvPath = "glued_shapes.csv";
+
+        // List to collect IDs of all shapes glued to the target master shape
+        List<long> gluedShapeIds = new List<long>();
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Name of the master shape to search for (adjust as needed)
+            const string targetMasterName = "MasterShape";
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio diagram
-                string diagramPath = "input.vsdx";
-
-                // Name of the master shape whose glued shapes we want to list
-                string masterShapeName = "MasterShape";
-
-                // Output CSV file path
-                string csvPath = "glued_shapes.csv";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Prepare the CSV file with a header
-                using (StreamWriter writer = new StreamWriter(csvPath, false))
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    writer.WriteLine("ShapeId");
-
-                    // Iterate through all pages and shapes
-                    foreach (Page page in diagram.Pages)
+                    // Identify shapes that are instances of the desired master
+                    if (shape.Master != null && shape.Master.Name == targetMasterName)
                     {
-                        foreach (Shape shape in page.Shapes)
+                        // Retrieve IDs of shapes glued to this master shape.
+                        // Use GluedShapesAll1D to get all 1‑D (connector) shapes glued to the shape.
+                        long[] ids = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+                        if (ids != null)
                         {
-                            // Identify shapes that are instances of the specified master
-                            if (shape.Master != null && shape.Master.Name == masterShapeName)
-                            {
-                                // Retrieve IDs of all shapes glued to this master shape
-                                long[] gluedIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
-
-                                // Write each glued shape ID to the CSV
-                                foreach (long id in gluedIds)
-                                {
-                                    writer.WriteLine(id);
-                                }
-                            }
+                            gluedShapeIds.AddRange(ids);
                         }
                     }
                 }
-
-                Console.WriteLine($"Glued shape IDs have been written to '{csvPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+        }
+        catch (Exception ex)
+        {
+            // Output any errors that occur during diagram processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // Write the collected IDs to a CSV file (one ID per line)
+            using (StreamWriter writer = new StreamWriter(csvPath))
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                foreach (long id in gluedShapeIds)
+                {
+                    writer.WriteLine(id);
+                }
             }
+
+            Console.WriteLine($"Exported {gluedShapeIds.Count} glued shape IDs to '{csvPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Output any errors that occur while writing the CSV file
+            Console.Error.WriteLine($"Error writing CSV file: {ex.Message}");
+        }
     }
-    }
+}

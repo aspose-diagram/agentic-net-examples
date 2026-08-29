@@ -1,70 +1,75 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
+                // Input diagram and optional theme diagram paths
+                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+                string themePath = args.Length > 1 ? args[1] : null;
 
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
+                // Load the main diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Apply a global theme (optional). Example: copy theme from another diagram.
-                // string themePath = "theme.vsdx";
-                // Diagram themeDiagram = new Diagram(themePath);
-                // diagram.CopyTheme(themeDiagram);
-
-                // Retrieve the default font name configured for the diagram
-                string defaultFont = FontConfigs.DefaultFontName;
-
-                if (string.IsNullOrEmpty(defaultFont))
+                // Apply a global theme if a theme file is provided
+                if (!string.IsNullOrEmpty(themePath))
                 {
-                    Console.WriteLine("Default font is not set. Validation cannot be performed.");
-                    return;
+                    Diagram themeDiagram = new Diagram(themePath);
+                    diagram.CopyTheme(themeDiagram);
                 }
 
-                // Iterate through all pages
+                // Set the default font that the theme should enforce
+                string defaultFont = "Arial";
+                FontConfigs.DefaultFontName = defaultFont;
+
+                bool allValid = true;
+
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Ensure the shape has at least one paragraph and one character run
-                        if (shape.Paras.Count == 0 || shape.Chars.Count == 0)
+                        // Skip shapes without character data (no text)
+                        if (shape.Chars.Count == 0)
                             continue;
 
-                        // Get the font name of the first character (which belongs to the first paragraph)
-                        string firstCharFont = shape.Chars[0].FontName.Value;
+                        // Retrieve the first character (assumed to belong to the first paragraph)
+                        Aspose.Diagram.Char firstChar = shape.Chars[0];
+                        string fontName = firstChar.FontName.Value;
 
-                        // Validate against the default font
-                        if (!string.Equals(firstCharFont, defaultFont, StringComparison.OrdinalIgnoreCase))
+                        // Compare with the default font
+                        if (!string.Equals(fontName, defaultFont, StringComparison.OrdinalIgnoreCase))
                         {
-                            string message = $"Shape ID {shape.ID} on page '{page.Name}' uses font '{firstCharFont}' " +
-                                             $"instead of the default font '{defaultFont}'.";
-                            // Report the mismatch
-                            Console.WriteLine(message);
-                            // Optionally, throw an exception to halt execution
-                            throw new Exception(message);
+                            allValid = false;
+                            Console.WriteLine($"Shape ID {shape.ID} does not use default font '{defaultFont}'. Found '{fontName}'.");
                         }
                     }
                 }
 
-                Console.WriteLine("All shapes' first paragraphs use the default font.");
+                if (allValid)
+                {
+                    Console.WriteLine("All shapes' first paragraph use the default font.");
+                }
+                else
+                {
+                    throw new Exception("Validation failed: some shapes do not use the default font.");
+                }
+
+                // Save the diagram (optional)
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

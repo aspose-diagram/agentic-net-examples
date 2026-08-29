@@ -6,51 +6,43 @@ class Program
 {
     static void Main()
     {
-        try
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
+
+        // Use the first page (a new diagram contains one default page)
+        Page page = diagram.Pages[0];
+
+        // Draw a simple rectangle shape (returns the shape ID)
+        long shapeId = page.DrawRectangle(2.0, 2.0, 4.0, 3.0);
+
+        // Retrieve the shape instance from its ID
+        Shape shape = page.Shapes.GetShape(shapeId);
+
+        // Clear any existing text
+        shape.Text.Value.Clear();
+
+        // Add three separate text runs – each will become a paragraph
+        shape.Text.Value.Add(new Txt("First bullet point"));
+        shape.Text.Value.Add(new Txt("\nSecond bullet point"));
+        shape.Text.Value.Add(new Txt("\nThird bullet point"));
+
+        // Ensure there are three paragraphs (one per line)
+        // Apply bullet formatting and indentation to each paragraph
+        for (int i = 0; i < shape.Paras.Count && i < 3; i++)
         {
+            // Set bullet style (standard solid bullet)
+            shape.Paras[i].Bullet.Value = BulletValue.Style1;
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Optional: set left indentation (in inches)
+            shape.Paras[i].IndLeft.Value = 0.2;   // 0.2 inches from the left margin
+            shape.Paras[i].IndFirst.Value = 0.1; // first line indent
 
-            // Get the first page (active page)
-            Page page = diagram.ActivePage;
-
-            // Add a rectangle shape to the page
-            // Parameters: PinX, PinY, master name
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
-
-            // Retrieve the shape object using the returned ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Clear any existing text
-            shape.Text.Value.Clear();
-
-            // Add text runs (each line ends with a newline character)
-            shape.Text.Value.Add(new Txt("First bullet point"));
-            shape.Text.Value.Add(new Txt("\n"));
-            shape.Text.Value.Add(new Txt("Second bullet point"));
-            shape.Text.Value.Add(new Txt("\n"));
-            shape.Text.Value.Add(new Txt("A normal paragraph without bullet"));
-
-            // Ensure there are enough paragraphs (one per line)
-            // The first paragraph already exists; add two more
-            while (shape.Paras.Count < 3)
-            {
-                shape.Paras.Add(new Para());
-            }
-
-            // Set bullet style for the first two paragraphs
-            shape.Paras[0].Bullet.Value = BulletValue.Style1;      // First bullet
-            shape.Paras[1].Bullet.Value = BulletValue.Style1;      // Second bullet
-            // No bullet for the third paragraph (default)
-
-            // Save the diagram to a VSDX file
-            diagram.Save("MultilineBulletShape.vsdx", SaveFileFormat.Vsdx);
-
+            // Optional: set paragraph spacing
+            shape.Paras[i].SpBefore.Value = 0.05; // space before paragraph
+            shape.Paras[i].SpAfter.Value = 0.05;  // space after paragraph
         }
-        catch (System.NullReferenceException ex)
-        {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-        }
+
+        // Save the diagram to a VSDX file
+        diagram.Save("MultilineBulletShape.vsdx", SaveFileFormat.Vsdx);
     }
 }

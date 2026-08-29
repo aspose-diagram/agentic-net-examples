@@ -5,13 +5,12 @@ using Aspose.Diagram;
 
 class Program
     {
-        // Entry point
         static void Main(string[] args)
         {
-            // Expect three arguments: diagram file path, CSV file path, output diagram path
+            // Expected arguments: [0] input Visio file, [1] CSV file, [2] output Visio file
             if (args.Length != 3)
             {
-                Console.WriteLine("Usage: CsvShapeThemeMapper <diagramPath> <csvPath> <outputPath>");
+                Console.WriteLine("Usage: DiagramCsvThemeMapper <input.vsdx> <data.csv> <output.vsdx>");
                 return;
             }
 
@@ -32,24 +31,23 @@ class Program
             }
 
             // Read CSV data into a dictionary: shapeId -> value
-            var shapeValueMap = new Dictionary<long, string>();
+            var shapeValues = new Dictionary<long, double>();
             try
             {
-                foreach (var line in File.ReadLines(csvPath))
+                foreach (var line in File.ReadAllLines(csvPath))
                 {
                     // Skip empty lines
                     if (string.IsNullOrWhiteSpace(line))
                         continue;
 
-                    // Assume CSV format: ShapeId,Value
                     var parts = line.Split(',');
                     if (parts.Length < 2)
-                        continue; // malformed line
+                        continue; // Invalid line
 
-                    if (long.TryParse(parts[0].Trim(), out long shapeId))
+                    if (long.TryParse(parts[0].Trim(), out long shapeId) &&
+                        double.TryParse(parts[1].Trim(), out double value))
                     {
-                        string value = parts[1].Trim();
-                        shapeValueMap[shapeId] = value;
+                        shapeValues[shapeId] = value;
                     }
                 }
             }
@@ -59,49 +57,57 @@ class Program
                 return;
             }
 
-            // Iterate through all pages and shapes, applying themes based on CSV values
-            foreach (Page page in diagram.Pages)
+            // Process each shape based on CSV values
+            // Assuming we work on the first page; adjust if needed
+            if (diagram.Pages.Count == 0)
             {
-                foreach (Shape shape in page.Shapes)
+                Console.WriteLine("Diagram contains no pages.");
+                return;
+            }
+
+            Page page = diagram.Pages[0];
+
+            foreach (var kvp in shapeValues)
+            {
+                long shapeId = kvp.Key;
+                double value = kvp.Value;
+
+                // Retrieve the shape; GetShape returns null if not found
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
                 {
-                    long id = shape.ID;
-                    if (!shapeValueMap.TryGetValue(id, out string csvValue))
-                        continue; // No mapping for this shape
-
-                    // Apply a preset theme (Bubble) and choose variant based on csvValue
-                    shape.PresetTheme = PresetThemeValue.Bubble;
-
-                    // Determine variant
-                    switch (csvValue)
-                    {
-                        case "1":
-                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
-                            break;
-                        case "2":
-                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
-                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
-                            break;
-                        case "3":
-                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
-                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3;
-                            break;
-                        default:
-                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant4;
-                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle4;
-                            break;
-                    }
-
-                    // Optionally set a style matrix (example uses Style2 and Color3)
-                    shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2, PresetColorMatricsValue.Color3);
+                    Console.WriteLine($"Shape with ID {shapeId} not found.");
+                    continue;
                 }
+
+                // Skip deleted shapes
+                if (shape.Del == BOOL.True)
+                {
+                    Console.WriteLine($"Shape ID {shapeId} is marked as deleted; skipping.");
+                    continue;
+                }
+
+                // Apply a theme based on the value
+                // Example logic: value >= 50 => Variant1, else Variant2
+                if (value >= 50)
+                {
+                    shape.PresetTheme = PresetThemeValue.Bubble;
+                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                }
+                else
+                {
+                    shape.PresetTheme = PresetThemeValue.Bubble;
+                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+                }
+
+                Console.WriteLine($"Applied theme to shape ID {shapeId} based on value {value}.");
             }
 
             // Save the modified diagram
             try
             {
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to {outputPath}");
+                Console.WriteLine($"Diagram saved to {outputPath}");
             }
             catch (Exception ex)
             {

@@ -1,30 +1,30 @@
-using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (or any specific page)
+            // Access the first page (adjust index as needed)
             Page page = diagram.Pages[0];
 
-            // Retrieve the shape you want to move.
-            // Here we get the shape with ID 1; adjust the ID as needed.
+            // Retrieve the shape to move (example: shape with ID 1)
             Shape shape = page.Shapes.GetShape(1);
 
-            // Move the shape 50 units to the right (X) and 30 units down (Y).
-            // The Move method shifts the shape by the specified offsets in inches.
+            // Move the shape 50 units right and 30 units down (units are inches)
             shape.Move(50.0, 30.0);
 
-            // Save the modified diagram (replace with your desired output path)
+            // Refresh shape data after moving
+            shape.RefreshData();
+
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

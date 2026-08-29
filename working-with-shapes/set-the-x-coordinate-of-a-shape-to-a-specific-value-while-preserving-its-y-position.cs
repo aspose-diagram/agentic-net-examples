@@ -1,53 +1,51 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // ID of the shape whose X coordinate we want to change
+            long targetShapeId = 5; // example ID; replace with actual ID
+            // Desired new X coordinate (PinX) in inches
+            double newPinX = 5.0;
+
+            // Access the first page (or specify a different page as needed)
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(targetShapeId);
+            if (shape == null)
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Choose the page (first page in this example)
-                Page page = diagram.Pages[0];
-
-                // Identify the shape to modify (shape with ID = 1 in this example)
-                // Adjust the ID as needed for your specific diagram.
-                long shapeId = 1;
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                if (shape == null)
-                {
-                    Console.WriteLine($"Shape with ID {shapeId} not found.");
-                    return;
-                }
-
-                // Preserve the current Y coordinate (PinY)
-                double currentPinY = shape.XForm.PinY.Value;
-
-                // Set the new X coordinate (PinX) while keeping Y unchanged
-                double newPinX = 5.0; // Desired X coordinate in inches
-                shape.XForm.PinX.Value = newPinX;
-                shape.XForm.PinY.Value = currentPinY; // Explicitly keep Y the same (optional)
-
-                Console.WriteLine($"Shape ID {shapeId} X coordinate set to {newPinX} inches (Y remains {currentPinY} inches).");
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
+                Console.WriteLine($"Shape with ID {targetShapeId} not found.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Preserve the current Y coordinate (PinY)
+            double currentPinY = shape.XForm.PinY.Value;
+
+            // Set the new X coordinate while keeping Y unchanged
+            shape.XForm.PinX.Value = newPinX;
+            shape.XForm.PinY.Value = currentPinY; // optional, reinforces unchanged Y
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Shape X coordinate updated successfully.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

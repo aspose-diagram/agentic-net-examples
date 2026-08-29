@@ -1,63 +1,64 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
+using System;
 
-class ShapeIdConsistencyValidator
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the diagram (using the provided load rule)
+            Diagram diagram = new Diagram("{inputPath}");
 
-            // Assume the shape we want to rename is on the first page and has a known name
-            const string originalShapeName = "OldShapeName";
-            const string newShapeName = "NewShapeName";
+            // Work with the first page
+            Page page = diagram.Pages[0];
+
+            // Define original and new shape names
+            string oldName = "Shape1";
+            string newName = "RenamedShape1";
 
             // Retrieve the shape by its original name
-            Shape originalShape = diagram.Pages[0].Shapes.GetShape(originalShapeName);
-            if (originalShape == null)
+            Shape shape = page.Shapes.GetShape(oldName);
+            if (shape == null)
             {
-                Console.WriteLine($"Shape with name '{originalShapeName}' not found.");
+                Console.WriteLine($"Shape with name '{oldName}' not found.");
                 return;
             }
 
-            // Store the original ID
-            long originalId = originalShape.ID;
+            // Store the original ID for later comparison
+            long originalId = shape.ID;
 
             // Rename the shape
-            originalShape.Name = newShapeName;
+            shape.Name = newName;
+            shape.RefreshData(); // Ensure internal references are updated
 
-            // Refresh shape data to ensure internal references are updated
-            originalShape.RefreshData();
-
-            // Retrieve the shape by its new name
-            Shape renamedShape = diagram.Pages[0].Shapes.GetShape(newShapeName);
+            // Retrieve the shape using the new name
+            Shape renamedShape = page.Shapes.GetShape(newName);
             if (renamedShape == null)
             {
-                Console.WriteLine($"Renamed shape with name '{newShapeName}' not found.");
+                Console.WriteLine($"Renamed shape '{newName}' not found.");
                 return;
             }
 
-            // Validate that the ID has remained the same
+            // Validate that the ID has not changed after renaming
             if (renamedShape.ID == originalId)
             {
-                Console.WriteLine("Success: Shape ID remained consistent after renaming.");
+                Console.WriteLine("Shape ID remains consistent after renaming.");
             }
             else
             {
-                Console.WriteLine($"Failure: Shape ID changed from {originalId} to {renamedShape.ID} after renaming.");
+                Console.WriteLine($"Shape ID changed! Original: {originalId}, After rename: {renamedShape.ID}");
             }
 
-            // Save the modified diagram (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram (using the provided save rule)
+            diagram.Save("{outputPath}", SaveFileFormat.Vsdx);
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

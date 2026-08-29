@@ -9,23 +9,33 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Locate the shape you want to rotate.
-            // Here we assume the shape has ID = 1 on the first page.
-            Shape shape = diagram.Pages[0].Shapes.GetShape(1);
+            // Access the first page (you can change the index as needed)
+            Page page = diagram.Pages[0];
 
-            // Define the desired rotation angle in degrees.
-            double angleInDegrees = 45;
+            // Locate the shape by its universal name (NameU)
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.NameU == "MyShape")
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
 
-            // Convert degrees to radians because SetAngle expects radians.
-            double angleInRadians = angleInDegrees * Math.PI / 180.0;
+            if (targetShape == null)
+            {
+                throw new Exception("Shape with NameU 'MyShape' not found.");
+            }
 
-            // Rotate the shape using the SetAngle method.
-            shape.SetAngle(angleInRadians);
+            // Rotate the shape to the desired angle (degrees)
+            double angleInDegrees = 45.0;
+            targetShape.SetAngle(angleInDegrees);
 
-            // Save the modified diagram (replace with your desired output path).
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

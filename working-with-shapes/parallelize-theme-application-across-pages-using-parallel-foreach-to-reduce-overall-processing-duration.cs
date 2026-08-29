@@ -1,40 +1,47 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the source diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Define the preset quick style to apply to each page
-            PresetQuickStyleValue quickStyle = PresetQuickStyleValue.VariantStyle1;
-
-            // Apply the preset quick style to all pages in parallel
-            Parallel.ForEach(diagram.Pages, page =>
+            try
             {
-                // Set the preset theme quick style for the current page
-                page.PresetThemeQuickStyle = quickStyle;
 
-                // Optionally apply additional style settings (text, line, fill)
-                // Using -1 retains default values; adjust as needed
-                page.ApplyStyle(-1, -1, -1);
-            });
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-            // Save the modified diagram (replace with desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Load the Visio diagram
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Gather all pages into a typed list for Parallel.ForEach
+                    List<Page> pages = new List<Page>();
+                    foreach (Page p in diagram.Pages)
+                    {
+                        pages.Add(p);
+                    }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                    // Apply a preset theme to each page in parallel
+                    Parallel.ForEach(pages, page =>
+                    {
+                        page.PresetTheme = PresetThemeValue.Bubble;
+                        page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                    });
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
+
+                Console.WriteLine("Theme applied to all pages and diagram saved.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

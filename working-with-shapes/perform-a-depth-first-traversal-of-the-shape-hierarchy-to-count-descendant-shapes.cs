@@ -1,25 +1,51 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
+    // Recursively counts all descendant shapes of the given shape using depth‑first traversal.
+    static int CountDescendants(Shape shape)
+    {
+        int count = 0;
+
+        // Iterate through direct child shapes.
+        foreach (Shape child in shape.Shapes)
+        {
+            // Count the child itself.
+            count++;
+
+            // Recursively count the child's descendants.
+            count += CountDescendants(child);
+        }
+
+        return count;
+    }
+
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with actual file path).
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Example: count descendants of the first shape on the first page
-            Shape rootShape = diagram.Pages[0].Shapes[0];
-            int descendantCount = CountDescendants(rootShape);
+            // Iterate over each page in the diagram.
+            foreach (Page page in diagram.Pages)
+            {
+                Console.WriteLine($"Page: {page.Name}");
 
-            Console.WriteLine($"Descendant shapes count: {descendantCount}");
+                // Iterate over top‑level shapes on the page.
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Count all descendants of the current shape.
+                    int descendantCount = CountDescendants(shape);
 
-            // Save the diagram (no modifications made)
+                    Console.WriteLine($"Shape ID {shape.ID} ('{shape.Name}') has {descendantCount} descendant shape(s).");
+                }
+            }
+
+            // Save the diagram if any modifications were made (optional).
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
@@ -27,24 +53,5 @@ class Program
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-    }
-
-    // Performs a depth‑first traversal of the shape hierarchy
-    // and returns the total number of descendant shapes.
-    static int CountDescendants(Shape shape)
-    {
-        int count = 0;
-
-        // Shape.Shapes contains child shapes (e.g., members of a group)
-        foreach (Shape child in shape.Shapes)
-        {
-            // Count the child itself
-            count++;
-
-            // Recursively count the child's descendants
-            count += CountDescendants(child);
-        }
-
-        return count;
     }
 }

@@ -1,87 +1,87 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Input Visio file path
+            // Input Visio file and output PDF paths
             string inputPath = "input.vsdx";
-            // Output PDF file path (will contain the index page as the first page)
-            string outputPdfPath = "output.pdf";
+            string outputPath = "output.pdf";
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Store thumbnails for each page in memory
-            List<MemoryStream> thumbnails = new List<MemoryStream>();
-            int pageCount = diagram.Pages.Count;
-
-            for (int i = 0; i < pageCount; i++)
-            {
-                // Export the i‑th page to a PNG image stored in a MemoryStream
-                ImageSaveOptions imgOpts = new ImageSaveOptions(SaveFileFormat.Png);
-                imgOpts.PageIndex = i;               // zero‑based page index
-                imgOpts.ExportHiddenPage = false;    // ignore hidden pages
-
-                MemoryStream ms = new MemoryStream();
-                diagram.Save(ms, imgOpts);
-                ms.Position = 0;                     // reset stream for reading
-                thumbnails.Add(ms);
-            }
-
             // Create a new page that will serve as the index
             Page indexPage = new Page();
+            indexPage.Name = "Index";
+            indexPage.NameU = "Index";
+
+            // Add the index page to the diagram
             diagram.Pages.Add(indexPage);
-            // Move the index page to the first position (page index 0)
+            // Move it to the first position so it appears before all other pages
             indexPage.MoveTo(0);
 
-            // Layout parameters for thumbnails on the index page
+            // Layout parameters for thumbnails
             double thumbWidth = 2.0;   // inches
             double thumbHeight = 2.0;  // inches
-            double margin = 0.5;       // inches between thumbnails
-            int columns = 3;           // thumbnails per row
+            double marginX = 0.5;      // inches from left
+            double marginY = 0.5;      // inches from top
+            double spacingX = 0.3;     // horizontal spacing between thumbnails
+            double spacingY = 0.3;     // vertical spacing between thumbnails
 
-            int col = 0;
-            int row = 0;
+            // Determine how many columns we want per row
+            int columns = 3;
+            int currentColumn = 0;
+            int currentRow = 0;
 
-            // Add each thumbnail image as a shape on the index page
-            foreach (MemoryStream thumbStream in thumbnails)
+            // Iterate over all pages in the original diagram (excluding the index page we just added)
+            foreach (Page page in diagram.Pages)
             {
-                double pinX = margin + col * (thumbWidth + margin);
-                double pinY = margin + row * (thumbHeight + margin);
+                // Skip the index page itself
+                if (page == indexPage)
+                    continue;
 
-                // AddShape returns the shape ID (long). The shape is automatically created from the image stream.
-                indexPage.AddShape(pinX, pinY, thumbWidth, thumbHeight, thumbStream);
-
-                // Advance grid position
-                col++;
-                if (col >= columns)
+                // Export the current page to a PNG thumbnail in memory
+                using (MemoryStream thumbStream = new MemoryStream())
                 {
-                    col = 0;
-                    row++;
+                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                    imgOptions.PageIndex = page.ID; // Render this specific page
+                    imgOptions.PageSize = new PageSize((float)thumbWidth, (float)thumbHeight);
+                    diagram.Save(thumbStream, imgOptions);
+                    thumbStream.Position = 0;
+
+                    // Calculate position for the thumbnail on the index page
+                    double pinX = marginX + currentColumn * (thumbWidth + spacingX) + thumbWidth / 2.0;
+                    double pinY = marginY + currentRow * (thumbHeight + spacingY) + thumbHeight / 2.0;
+
+                    // Insert the thumbnail image as a foreign shape on the index page
+                    long shapeId = indexPage.AddShape(pinX, pinY, thumbWidth, thumbHeight, thumbStream);
+                    // (Optional) retrieve the shape if further formatting is needed
+                    // Shape thumbShape = indexPage.Shapes.GetShape(shapeId);
+                }
+
+                // Update column/row counters
+                currentColumn++;
+                if (currentColumn >= columns)
+                {
+                    currentColumn = 0;
+                    currentRow++;
                 }
             }
 
-            // Save the final diagram as a PDF; the index page is now the first page.
-            PdfSaveOptions pdfOpts = new PdfSaveOptions();
-            pdfOpts.DefaultFont = "Arial"; // fallback font for missing characters
-            diagram.Save(outputPdfPath, pdfOpts);
+            // Prepare PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial"; // Fallback font for missing characters
+            pdfOptions.ExportHiddenPage = false; // Do not export hidden pages
 
-            // Clean up memory streams
-            foreach (var ms in thumbnails)
-            {
-                ms.Dispose();
-            }
-
-            // No explicit Dispose needed for Diagram (it implements IDisposable but will be collected)
-            Console.WriteLine("PDF with index page generated successfully.");
+            // Save the diagram (including the index page) as a PDF
+            diagram.Save(outputPath, pdfOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

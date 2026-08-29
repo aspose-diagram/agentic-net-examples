@@ -1,36 +1,55 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path to the output Visio file
+                string outputPath = "output.vsdx";
 
-            // Access the first page
-            Page page = diagram.Pages[0];
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first shape on the page
-            // Get the shape's ID first, then obtain the shape via GetShape
-            long firstShapeId = page.Shapes[0].ID;
-            Shape shape = page.Shapes.GetShape(firstShapeId);
+                // Ensure there is at least one page and one shape
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-            // Set the fill pattern to solid (pattern index 1)
-            shape.Fill.FillPattern.Value = 1;
+                Page page = diagram.Pages[0];
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                if (page.Shapes.Count == 0)
+                {
+                    Console.WriteLine("The first page contains no shapes.");
+                    return;
+                }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Retrieve the first shape on the page
+                Shape shape = page.Shapes[0];
+
+                // Set the fill pattern to solid (pattern index = 1)
+                shape.Fill.FillPattern.Value = 1;
+
+                // Optionally, set a foreground color for the solid fill
+                shape.Fill.FillForegnd.Value = "#FF0000"; // Red color
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Shape fill pattern updated and diagram saved to '{outputPath}'.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

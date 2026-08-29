@@ -20,38 +20,14 @@ class Program
             string jsonPath = args[1];
             string outputPdfPath = args[2];
 
-            // Validate input files
-            if (!File.Exists(inputVisioPath))
-                throw new FileNotFoundException($"Visio file not found: {inputVisioPath}");
-            if (!File.Exists(jsonPath))
-                throw new FileNotFoundException($"JSON file not found: {jsonPath}");
-
-            // Load replacement dictionary from JSON (expects {"placeholder":"value", ...})
-            Dictionary<string, string> replacements;
-            try
-            {
-                string jsonContent = File.ReadAllText(jsonPath);
-                replacements = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent);
-                if (replacements == null)
-                    throw new Exception("Failed to deserialize JSON into a dictionary.");
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error reading JSON file: {ex.Message}");
-            }
-
             // Load the Visio diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputVisioPath);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error loading Visio file: {ex.Message}");
-            }
+            Diagram diagram = new Diagram(inputVisioPath);
 
-            // Iterate through all pages and shapes to replace text
+            // Read and deserialize the JSON file into a dictionary
+            string jsonContent = File.ReadAllText(jsonPath);
+            Dictionary<string, string> replacements = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent);
+
+            // Iterate through all pages and shapes to replace placeholder text
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
@@ -60,45 +36,37 @@ class Program
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Get current plain text of the shape
-                    string currentText = shape.Text.Value.Text;
-                    if (string.IsNullOrWhiteSpace(currentText))
+                    // Get the plain text of the shape
+                    string shapeText = shape.Text.Value.Text;
+
+                    if (string.IsNullOrWhiteSpace(shapeText))
                         continue;
 
-                    string newText = currentText;
-
-                    // Perform replacements for each placeholder
+                    // Perform replacements
+                    bool changed = false;
                     foreach (KeyValuePair<string, string> kvp in replacements)
                     {
-                        // Assuming placeholders are in the format {{key}}
-                        string placeholder = $"{{{{{kvp.Key}}}}}";
-                        if (newText.Contains(placeholder))
+                        if (shapeText.Contains(kvp.Key))
                         {
-                            newText = newText.Replace(placeholder, kvp.Value);
+                            shapeText = shapeText.Replace(kvp.Key, kvp.Value);
+                            changed = true;
                         }
                     }
 
-                    // If text changed, update the shape's text
-                    if (newText != currentText)
+                    // If any replacement occurred, update the shape's text
+                    if (changed)
                     {
                         shape.Text.Value.Clear();
-                        shape.Text.Value.Add(new Txt(newText));
+                        shape.Text.Value.Add(new Txt(shapeText));
                     }
                 }
             }
 
-            // Export the modified diagram to PDF
+            // Save the modified diagram as PDF
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial"; // Fallback font
+            pdfOptions.DefaultFont = "Arial";
+            diagram.Save(outputPdfPath, pdfOptions);
 
-            try
-            {
-                diagram.Save(outputPdfPath, pdfOptions);
-                Console.WriteLine($"PDF exported successfully to: {outputPdfPath}");
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error saving PDF: {ex.Message}");
-            }
+            Console.WriteLine("Export completed successfully.");
         }
     }

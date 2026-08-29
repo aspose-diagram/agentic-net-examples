@@ -1,95 +1,118 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Saving; // Required for PDF save options if needed
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input Visio file and output PDF file
-        if (args.Length < 2)
+        // Input Visio file path (first argument or default)
+        string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
+        if (!File.Exists(visioPath))
         {
-            Console.WriteLine("Usage: VisioIndexPdfGenerator <inputVisioPath> <outputPdfPath>");
+            Console.Error.WriteLine($"File not found: {visioPath}");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
+        // Output PDF file path (second argument or default)
+        string outputPdfPath = args.Length > 1 ? args[1] : "output.pdf";
 
-        // Guard for input file existence
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+        // Temporary folder for per‑shape PDFs
+        string tempFolder = Path.Combine(Path.GetTempPath(), "VisioShapePdfs_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempFolder);
 
         try
         {
             // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(visioPath);
 
-            // ------------------------------------------------------------
-            // 1. Create an index page and insert it at the beginning
-            // ------------------------------------------------------------
-            Page indexPage = new Page();                     // new blank page
-            diagram.Pages.Add(indexPage);                     // add to collection
-            indexPage.MoveTo(0);                              // move to first position
-            indexPage.Name = "Index";                         // optional name
-            indexPage.NameU = "Index";
+            // Create the final PDF document (fully qualified Aspose.Pdf types)
+            Aspose.Pdf.Document finalPdf = new Aspose.Pdf.Document();
 
-            // ------------------------------------------------------------
-            // 2. Build the index content (list of shapes with hyperlinks)
-            // ------------------------------------------------------------
-            double startX = 1.0;      // inches from left margin
-            double startY = 1.0;      // inches from top margin
-            double lineHeight = 0.5;  // vertical spacing between entries
-            double boxWidth = 5.0;    // width of the text box
-            double boxHeight = 0.4;   // height of the text box
+            // Add a blank page that will become the index page (pages are 1‑based)
+            finalPdf.Pages.Add();
+            Aspose.Pdf.Page indexPage = finalPdf.Pages[1];
 
-            double currentY = startY;
+            // List to keep track of shape descriptions and their final page numbers
+            var shapeIndex = new System.Collections.Generic.List<(string Description, int PageNumber)>();
 
-            // Iterate over all pages (skip the index page itself)
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                if (page == indexPage) continue; // do not list the index page
-
-                // Iterate over each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Build display text: "PageName - ShapeNameU"
-                    string displayText = $"{page.NameU} - {shape.NameU}";
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True) continue;
 
-                    // Add a rectangle shape on the index page to hold the entry
-                    long idxShapeId = indexPage.AddShape(startX, currentY, boxWidth, boxHeight, "Rectangle", false);
-                    Shape idxShape = indexPage.Shapes.GetShape(idxShapeId);
+                    // Build a simple description for the shape
+                    string shapeDesc = !string.IsNullOrWhiteSpace(shape.NameU) ? shape.NameU : $"Shape_{shape.ID}";
 
-                    // Clear any default text and add our display text
-                    idxShape.Text.Value.Clear();
-                    idxShape.Text.Value.Add(new Txt(displayText));
+                    // Export the shape to a temporary PDF file
+                    string shapePdfPath = Path.Combine(tempFolder, $"shape_{shape.ID}.pdf");
+                    shape.ToPdf(shapePdfPath);
 
-                    // Create a hyperlink that navigates to the target page
-                    Hyperlink link = new Hyperlink();
-                    // SubAddress points to the page name; Visio treats this as an internal link
-                    link.SubAddress.Value = page.NameU;
-                    idxShape.Hyperlinks.Add(link);
+                    // Load the temporary PDF and append its first page to the final document
+                    Aspose.Pdf.Document shapePdf = new Aspose.Pdf.Document(shapePdfPath);
+                    if (shapePdf.Pages.Count > 0)
+                    {
+                        // Append the page (Aspose.Pdf pages are 1‑based)
+                        finalPdf.Pages.Add(shapePdf.Pages[1]);
 
-                    // Move to the next line position
-                    currentY += lineHeight;
+                        // Record the page number (index page is 1, so first shape page is 2)
+                        int pageNumber = finalPdf.Pages.Count;
+                        shapeIndex.Add((shapeDesc, pageNumber));
+                    }
+
+                    // Delete the temporary file to keep the folder clean
+                    File.Delete(shapePdfPath);
                 }
             }
 
-            // ------------------------------------------------------------
-            // 3. Save the updated diagram as a PDF
-            // ------------------------------------------------------------
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial"; // fallback font
-            diagram.Save(outputPath, pdfOptions);
+            // Add entries to the index page (no clickable links to avoid unavailable Action property)
+            const double startX = 50;   // Horizontal start position (points)
+            double currentY = 800;      // Vertical start position (points)
+            const double lineHeight = 20;
+
+            foreach (var entry in shapeIndex)
+            {
+                // Create a text fragment for the index entry
+                Aspose.Pdf.Text.TextFragment tf = new Aspose.Pdf.Text.TextFragment($"{entry.Description} (Page {entry.PageNumber})");
+                tf.TextState.FontSize = 12; // Reasonable font size
+                tf.TextState.Font = Aspose.Pdf.Text.FontRepository.FindFont("Arial"); // Fallback font
+
+                // Position the fragment on the page
+                tf.Position = new Aspose.Pdf.Text.Position(startX, currentY);
+
+                // Add the fragment to the index page
+                indexPage.Paragraphs.Add(tf);
+
+                // Move down for the next entry
+                currentY -= lineHeight;
+            }
+
+            // Save the combined PDF document
+            finalPdf.Save(outputPdfPath);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
+            // Write any unexpected errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            // Clean up the temporary folder if it still exists
+            try
+            {
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+            catch
+            {
+                // Suppress any cleanup errors
+            }
         }
     }
 }

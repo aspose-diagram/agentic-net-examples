@@ -2,56 +2,49 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+class RenameDuplicateShapes
 {
     static void Main()
     {
         try
         {
 
-            // Paths for input and output diagrams
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Load the Visio diagram from a file
+            var diagram = new Diagram("input.vsdx");
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Dictionary to keep track of how many times each shape name appears
+            var nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-            // Dictionary to track occurrences of each shape name (case‑insensitive)
-            Dictionary<string, int> nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-            // Iterate over all pages in the diagram
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over all shapes on the current page
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
+                    // Skip shapes without a name
+                    if (string.IsNullOrEmpty(shape.Name))
                         continue;
 
-                    // Use the universal name (NameU) as the base name; treat null as empty string
-                    string baseName = shape.NameU ?? string.Empty;
-
-                    if (nameCounts.ContainsKey(baseName))
+                    // If the name has been seen before, rename the shape
+                    if (nameCounts.ContainsKey(shape.Name))
                     {
-                        // Duplicate found – increment counter and rename
-                        nameCounts[baseName] += 1;
-                        string newName = $"{baseName}_{nameCounts[baseName]}";
-                        shape.NameU = newName;
-                        shape.Name = newName;
+                        // Increment the occurrence count
+                        nameCounts[shape.Name]++;
+
+                        // Append an incremental number to make the name unique
+                        shape.Name = $"{shape.Name}_{nameCounts[shape.Name]}";
                     }
                     else
                     {
                         // First occurrence of this name
-                        nameCounts[baseName] = 1;
+                        nameCounts[shape.Name] = 1;
                     }
                 }
             }
 
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram to a new file
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

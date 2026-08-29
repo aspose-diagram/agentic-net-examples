@@ -1,43 +1,50 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (index 0)
-            Page page = diagram.Pages[0];
+                // Access the first page
+                Page page = diagram.Pages[0];
 
-            // Retrieve a shape by its ID (example: ID = 1)
-            // Adjust the ID as needed for your diagram
-            Shape shape = page.Shapes.GetShape(1);
+                // Find the first shape on the page
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    targetShape = shape;
+                    break;
+                }
 
-            // Rotate the shape by 90 degrees (angle in radians)
-            double angleRadians = Math.PI / 2; // 90 degrees
-            shape.SetAngle(angleRadians);
+                if (targetShape == null)
+                {
+                    throw new Exception("No shapes found on the first page.");
+                }
 
-            // Disable KeepTextFlat to allow text rotation on the shape
-            shape.ThreeDFormat.KeepTextFlat.Value = BOOL.False;
+                // Rotate the shape (example: 45 degrees)
+                double angleDegrees = 45.0;
+                double angleRadians = Math.PI * angleDegrees / 180.0;
+                targetShape.SetAngle(angleRadians);
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Disable KeepTextFlat to allow text rotation
+                // KeepTextFlat is a BOOL cell; set it to FALSE
+                targetShape.ThreeDFormat.KeepTextFlat.Value = BOOL.False;
 
-            Console.WriteLine("Shape rotated and KeepTextFlat set to false. Diagram saved to " + outputPath);
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

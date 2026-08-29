@@ -10,13 +10,14 @@ class Program
         try
         {
 
-            // Load the original diagram (replace with your source file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the existing Visio diagram (any supported format)
+            var diagram = new Diagram("input.vsdx");
 
-            // TODO: Apply any modifications to the diagram here
+            // Perform any required modifications to the diagram here
+            // ...
 
             // Save the updated diagram to a new VSDX file.
-            // The Save method preserves the original page order.
+            // The Save method with SaveFileFormat.Vsdx preserves the original page order.
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

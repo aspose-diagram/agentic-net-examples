@@ -3,45 +3,60 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
+            // Determine the input Visio file path
+            string inputPath;
+            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
+            {
+                inputPath = args[0];
+            }
+            else
+            {
+                Console.Write("Enter the path to the Visio file: ");
+                inputPath = Console.ReadLine();
+            }
+
+            if (string.IsNullOrWhiteSpace(inputPath))
+            {
+                Console.WriteLine("No file path provided. Exiting.");
+                return;
+            }
+
+            // Load the Visio diagram
+            Diagram diagram;
             try
             {
-
-                // Path to the Visio file (adjust as needed)
-                string inputPath = "input.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Print markdown table header
-                Console.WriteLine("| Shape ID | Comment |");
-                Console.WriteLine("|---|---|");
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    // Annotations (comments) are stored in the page's PageSheet
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
-                    {
-                        // ShapeID is an integer identifying the shape the comment is attached to
-                        int shapeId = annotation.ShapeID;
-
-                        // Comment text is stored in the Comment cell; use .Value to retrieve the string
-                        string commentText = annotation.Comment?.Value ?? string.Empty;
-
-                        // Escape pipe characters to keep markdown table integrity
-                        commentText = commentText.Replace("|", "\\|");
-
-                        // Output a markdown table row
-                        Console.WriteLine($"| {shapeId} | {commentText} |");
-                    }
-                }
-
+                diagram = new Diagram(inputPath);
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
             }
-    }
+
+            // Output markdown table header
+            Console.WriteLine("| Page | Shape ID | Comment |");
+            Console.WriteLine("|------|----------|---------|");
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Access the annotations (comments) collection for the current page
+                foreach (Annotation annotation in page.PageSheet.Annotations)
+                {
+                    // Retrieve the shape ID associated with the comment
+                    int shapeId = annotation.ShapeID;
+
+                    // Retrieve the comment text
+                    string commentText = annotation.Comment.Value ?? string.Empty;
+
+                    // Escape pipe characters in comment to keep markdown table integrity
+                    commentText = commentText.Replace("|", "\\|");
+
+                    // Output a row in the markdown table
+                    Console.WriteLine($"| {page.Name} | {shapeId} | {commentText} |");
+                }
+            }
+        }
     }

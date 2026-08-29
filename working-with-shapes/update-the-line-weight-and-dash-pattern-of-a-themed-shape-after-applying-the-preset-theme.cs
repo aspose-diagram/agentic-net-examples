@@ -1,52 +1,55 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram from the file system
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page of the diagram
+            Page page = diagram.Pages[0];
+
+            // Find the first non‑deleted shape on the page
+            Shape targetShape = null;
+            foreach (Shape s in page.Shapes)
             {
-
-                // Input and output file paths (replace with actual paths as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Retrieve a shape to modify (for example, the first shape on the page)
-                // Ensure the shape collection is not empty
-                if (page.Shapes.Count == 0)
+                if (s.Del == BOOL.False)
                 {
-                    Console.WriteLine("No shapes found on the page.");
-                    return;
+                    targetShape = s;
+                    break;
                 }
-
-                // Get the shape by its ID
-                Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
-
-                // Apply a preset theme to the shape
-                shape.PresetTheme = PresetThemeValue.Bubble;
-                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-
-                // Update line weight (in inches) and dash pattern
-                shape.Line.LineWeight.Value = 0.02;                     // 0.02 inches thick
-                shape.Line.LinePattern.Value = LinePatternValue.Dash; // Dashed line
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Diagram saved successfully.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                throw new Exception("No non‑deleted shape found on the first page.");
             }
+
+            // Apply a preset theme to the shape
+            targetShape.PresetTheme = PresetThemeValue.Bubble;
+            targetShape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+            // Update line weight (in inches) and dash pattern after the theme is applied
+            targetShape.Line.LineWeight.Value = 0.05;               // 0.05 inches thick
+            targetShape.Line.LinePattern.Value = LinePatternValue.Dash; // Dashed line
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

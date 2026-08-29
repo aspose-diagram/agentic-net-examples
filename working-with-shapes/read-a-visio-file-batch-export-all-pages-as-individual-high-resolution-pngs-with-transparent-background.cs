@@ -5,53 +5,62 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Directory where individual page PNGs will be saved
+        string outputDir = "output_pages";
+        // Ensure the output directory exists
+        if (!Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+            // Configure image export options (high‑resolution PNG)
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            saveOptions.Resolution = 300; // DPI
 
-            // Verify the input file exists
-            if (!File.Exists(inputPath))
+            // Export each page as a separate PNG file
+            int pageIndex = 0;
+            foreach (Page page in diagram.Pages)
             {
-                throw new FileNotFoundException($"Visio file not found: {inputPath}");
-            }
+                // Set the page index to render the current page
+                saveOptions.PageIndex = pageIndex;
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Base name for output PNG files
-                string baseName = Path.GetFileNameWithoutExtension(inputPath);
-
-                // Iterate through each page in the diagram
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                // Build a safe file name using the page name (fallback to index if name is empty)
+                string safePageName = string.IsNullOrWhiteSpace(page.Name) ? $"Page_{pageIndex}" : page.Name;
+                foreach (char c in Path.GetInvalidFileNameChars())
                 {
-                    // Configure image export options
-                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png)
-                    {
-                        // Export only the current page
-                        PageIndex = i,
-                        PageCount = 1,
-
-                        // High‑resolution output (300 DPI)
-                        Resolution = 300f
-                    };
-
-                    // Build the output file name (e.g., input_Page1.png)
-                    string outputPath = $"{baseName}_Page{i + 1}.png";
-
-                    // Save the current page as a PNG with transparent background
-                    diagram.Save(outputPath, options);
-                    Console.WriteLine($"Exported page {i + 1} to {outputPath}");
+                    safePageName = safePageName.Replace(c, '_');
                 }
+
+                string outputPath = Path.Combine(outputDir, $"{safePageName}.png");
+
+                // Save the current page as PNG
+                diagram.Save(outputPath, saveOptions);
+
+                pageIndex++;
             }
 
+            Console.WriteLine("All pages have been exported as high‑resolution PNGs.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error during export: {ex.Message}");
         }
     }
 }

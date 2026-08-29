@@ -1,44 +1,50 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect input and output file paths as command‑line arguments.
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: VisioOpacityUpdater <inputVisioPath> <outputVisioPath>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes.
+            // Desired fill transparency (10% transparent => 90% opaque)
+            double transparencyPercent = 10.0;
+
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted.
+                    // Skip shapes that are marked as deleted
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Ensure the Fill object exists before accessing its properties.
-                    if (shape.Fill != null)
-                    {
-                        // Set foreground and background fill transparency to 10%,
-                        // which corresponds to 90% opacity.
-                        shape.Fill.FillForegndTrans.Value = 10; // 10% transparent
-                        shape.Fill.FillBkgndTrans.Value = 10; // 10% transparent
-                    }
+                    // Set foreground fill transparency
+                    shape.Fill.FillForegndTrans.Value = transparencyPercent;
+
+                    // Set background fill transparency
+                    shape.Fill.FillBkgndTrans.Value = transparencyPercent;
                 }
             }
 
-            // Save the updated diagram in VSDX format.
+            // Save the updated diagram (must specify a SaveFileFormat)
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

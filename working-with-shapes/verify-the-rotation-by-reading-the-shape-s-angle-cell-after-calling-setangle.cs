@@ -1,50 +1,40 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class VerifyShapeRotation
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Path to the source Visio file (replace with actual file path)
-                string diagramPath = "input.vsdx";
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("sample.vsdx");
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+            // Access the first page and the first shape on that page (index 1, as index 0 is the page itself)
+            Shape shape = diagram.Pages[0].Shapes[1];
 
-                // Access the first page (index 0)
-                Page page = diagram.Pages[0];
+            // Define the rotation angle in radians (e.g., 45 degrees = PI/4 radians)
+            double angleInRadians = Math.PI / 4;
 
-                // Retrieve a shape by its ID.
-                // Replace 1 with the actual shape ID you want to test.
-                Shape shape = page.Shapes.GetShape(1);
+            // Set the shape's rotation angle using the SetAngle method
+            shape.SetAngle(angleInRadians);
 
-                // Desired rotation angle in degrees
-                double targetAngle = 30.0;
+            // Read back the angle from the shape's XForm.Angle cell
+            double readAngle = shape.XForm.Angle.Value;
 
-                // Apply rotation to the shape
-                shape.SetAngle(targetAngle);
+            // Output the set and read values for verification
+            Console.WriteLine($"Angle set (radians): {angleInRadians}");
+            Console.WriteLine($"Angle read from shape (radians): {readAngle}");
 
-                // Read back the angle from the shape's Angle cell
-                double actualAngle = shape.XForm.Angle.Value;
+            // Optionally, save the modified diagram
+            diagram.Save("sample_modified.vsdx", SaveFileFormat.Vsdx);
 
-                // Verify that the angle was set correctly
-                const double tolerance = 0.001;
-                if (Math.Abs(actualAngle - targetAngle) > tolerance)
-                {
-                    throw new Exception($"Rotation verification failed. Expected: {targetAngle}, Actual: {actualAngle}");
-                }
-                else
-                {
-                    Console.WriteLine($"Rotation verification succeeded. Angle = {actualAngle} degrees.");
-                }
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

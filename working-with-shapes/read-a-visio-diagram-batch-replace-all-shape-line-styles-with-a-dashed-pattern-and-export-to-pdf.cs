@@ -1,58 +1,49 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input Visio file path (first argument) or default.
+            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+            // Output PDF file path (second argument) or default.
+            string outputPath = args.Length > 1 ? args[1] : "output.pdf";
+
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes to set a dashed line pattern.
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output PDF file path
-                string outputPath = "output.pdf";
-
-                try
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Load the Visio diagram
-                    Diagram diagram = new Diagram(inputPath);
+                    // Skip shapes that are marked as deleted.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip deleted shapes
-                            if (shape.Del == BOOL.True)
-                                continue;
-
-                            // Apply dashed line pattern to the shape's line
-                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
-                        }
-                    }
-
-                    // Configure PDF save options (optional: set default font)
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.DefaultFont = "Arial";
-
-                    // Save the modified diagram as PDF
-                    diagram.Save(outputPath, pdfOptions);
-
-                    Console.WriteLine("Diagram processed and saved to PDF successfully.");
+                    // Apply dashed line style.
+                    shape.Line.LinePattern.Value = LinePatternValue.Dash;
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("An error occurred: " + ex.Message);
-                    throw;
-                }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Configure PDF save options.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+            // Save the modified diagram as PDF.
+            diagram.Save(outputPath, pdfOptions);
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

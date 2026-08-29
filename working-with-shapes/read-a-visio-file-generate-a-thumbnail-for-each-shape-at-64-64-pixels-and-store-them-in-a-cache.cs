@@ -5,67 +5,57 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    // In‑memory cache: key = shape ID, value = PNG thumbnail bytes (64 × 64)
-    private static readonly Dictionary<long, byte[]> _thumbnailCache = new Dictionary<long, byte[]>();
-
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file
-            string visioPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            // Iterate all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate all shapes on the page
-                foreach (Shape shape in page.Shapes)
+
+                // Expect the Visio file path as the first argument.
+                if (args.Length == 0)
                 {
-                    // Skip logically deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Console.WriteLine("Usage: VisioThumbnailCache <visio-file-path>");
+                    return;
+                }
 
-                    // Prepare image save options for a 64 × 64 PNG thumbnail
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    imgOptions.PageSize = new PageSize(64f, 64f); // width, height in pixels (as float)
+                string visioPath = args[0];
 
-                    // Export shape to a memory stream
-                    using (MemoryStream ms = new MemoryStream())
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(visioPath);
+
+                // Cache to store thumbnails: key = shape ID, value = PNG byte array.
+                Dictionary<long, byte[]> thumbnailCache = new Dictionary<long, byte[]>();
+
+                // Iterate through all pages and shapes.
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
                     {
-                        shape.ToImage(ms, imgOptions);
-                        // Store the thumbnail bytes in the cache
-                        _thumbnailCache[shape.ID] = ms.ToArray();
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Prepare image save options for a 64×64 PNG thumbnail.
+                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                        imgOptions.PageSize = new PageSize(64, 64);
+                        imgOptions.ExportHiddenPage = false;
+
+                        // Render the shape to a memory stream.
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            shape.ToImage(ms, imgOptions);
+                            thumbnailCache[shape.ID] = ms.ToArray();
+                        }
                     }
                 }
-            }
 
-            // Example usage: write the first cached thumbnail to a file (optional)
-            if (_thumbnailCache.Count > 0)
+                // Example usage: write the number of cached thumbnails.
+                Console.WriteLine($"Generated thumbnails for {thumbnailCache.Count} shapes.");
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                long firstShapeId = 0;
-                foreach (var kvp in _thumbnailCache)
-                {
-                    firstShapeId = kvp.Key;
-                    break;
-                }
-
-                File.WriteAllBytes("thumbnail_" + firstShapeId + ".png", _thumbnailCache[firstShapeId]);
-                Console.WriteLine($"Thumbnail for shape ID {firstShapeId} saved to disk.");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
-            else
-            {
-                Console.WriteLine("No shapes found to generate thumbnails.");
-            }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

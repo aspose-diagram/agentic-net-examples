@@ -3,49 +3,43 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Input and output file paths (adjust as needed)
+                // Input and output file paths
                 string inputPath = "input.vsdx";
-                string outputPath = "output_rotated.vsdx";
-
-                // Index of the page whose group shapes should be rotated (0‑based)
-                int pageIndex = 0;
+                string outputPath = "output.vsdx";
 
                 // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                Diagram diagram = new Diagram(inputPath);
+
+                // Select the specific page (e.g., first page)
+                Page page = diagram.Pages[0];
+
+                // Rotation to apply: 30 degrees expressed in radians
+                double rotationRadians = Math.PI / 6.0;
+
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Validate page index
-                    if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+                    // Identify group shapes
+                    if (shape.Type == TypeValue.Group)
                     {
-                        throw new Exception($"Page index {pageIndex} is out of range.");
+                        // Add 30 degrees to the existing rotation angle
+                        double currentAngle = shape.XForm.Angle.Value;
+                        shape.XForm.Angle.Value = currentAngle + rotationRadians;
                     }
-
-                    // Retrieve the target page
-                    Page page = diagram.Pages[pageIndex];
-
-                    // Iterate over all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Process only group shapes
-                        if (shape.Type == TypeValue.Group)
-                        {
-                            // Get the current rotation angle (degrees)
-                            double currentAngle = shape.XForm.Angle.Value;
-
-                            // Apply an additional 30° rotation
-                            shape.XForm.Angle.Value = currentAngle + 30.0;
-                        }
-                    }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("Rotation completed and diagram saved to: " + outputPath);
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                // Clean up resources
+                diagram.Dispose();
+
+                Console.WriteLine("Rotation applied and diagram saved to: " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

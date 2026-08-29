@@ -10,40 +10,40 @@ class Program
         try
         {
 
-            // Paths to the source Visio file and the resulting PDF.
+            // Input Visio file path
             string inputPath = "input.vsdx";
+
+            // Output PDF file path
             string outputPath = "output.pdf";
 
-            // Load the Visio diagram.
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Desired line thickness for all connectors (in inches).
-                double uniformLineWeight = 0.02; // ~0.5 mm
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Iterate over every page and shape.
-                foreach (Page page in diagram.Pages)
+            // Desired uniform line thickness (in inches)
+            double uniformThickness = 0.02; // Example: 0.02 inches (~0.5 mm)
+
+            // Apply the line thickness to all connector (1‑D) shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Connectors are identified by the OneD property
+                    if (shape.OneD)
                     {
-                        // Identify connector shapes: 1‑D shapes whose master is "Dynamic connector".
-                        if (shape.OneD && shape.Master != null && shape.Master.Name == "Dynamic connector")
-                        {
-                            // Apply the uniform line thickness.
-                            shape.Line.LineWeight.Value = uniformLineWeight;
-                        }
+                        shape.Line.LineWeight.Value = uniformThickness;
                     }
                 }
-
-                // Set up PDF save options.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-                // Export the diagram to PDF.
-                diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine("Export completed successfully.");
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+            // Export the diagram as PDF
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"Diagram successfully saved as PDF to: {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

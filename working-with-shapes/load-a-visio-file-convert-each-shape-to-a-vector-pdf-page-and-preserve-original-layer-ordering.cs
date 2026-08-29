@@ -2,41 +2,49 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class ShapeToPdfConverter
+class VisioToPdfPerShape
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
             // Path to the source Visio file
-            string visioFile = "input.vsdx";
+            string visioPath = @"C:\VisioFiles\input.vsdx";
 
             // Folder where individual shape PDFs will be saved
-            string outputFolder = "ShapePdfPages";
-            Directory.CreateDirectory(outputFolder);
+            string outputFolder = @"C:\VisioFiles\ShapePdfs";
 
-            // Load the Visio diagram (uses Diagram(string) constructor)
-            using (Diagram diagram = new Diagram(visioFile))
+            // Ensure the output directory exists
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
+
+            // Load the Visio diagram (uses the Diagram(string) constructor)
+            using (Diagram diagram = new Diagram(visioPath))
             {
+                int pageIdx = 0;
+
                 // Iterate through each page in the document
                 foreach (Page page in diagram.Pages)
                 {
-                    // Shapes are enumerated in the order they appear on the page,
-                    // which preserves the original layer ordering.
-                    int shapeCounter = 0;
+                    int shapeIdx = 0;
+
+                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Construct a unique PDF file name for the shape
+                        // Build a file name that reflects page and shape order
+                        // This preserves the original layer/shape ordering in the file names
                         string pdfFile = Path.Combine(
                             outputFolder,
-                            $"{page.Name}_Shape{shape.ID}_{shapeCounter}.pdf");
+                            $"Page{pageIdx:D2}_Shape{shapeIdx:D4}.pdf");
 
-                        // Convert the shape to a vector PDF page (uses Shape.ToPdf(string))
+                        // Convert the shape to a vector PDF page
                         shape.ToPdf(pdfFile);
 
-                        shapeCounter++;
+                        shapeIdx++;
                     }
+
+                    pageIdx++;
                 }
             }
 

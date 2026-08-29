@@ -1,16 +1,21 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load an existing Visio diagram
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path to the output Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages
@@ -22,24 +27,22 @@ class Program
                         // Process only connector shapes (1‑D shapes)
                         if (shape.OneD)
                         {
-                            // Approximate bend count by the number of geometry rows
-                            // (each bend typically adds a geometry segment)
+                            // Simple heuristic: count geometry elements as bends
+                            // In Visio, each Geom segment can represent a bend.
                             int bendCount = shape.Geoms.Count;
 
-                            // Apply reroute option only if the connector has more than three bends
+                            // Apply reroute option only if there are more than three bends
                             if (bendCount > 3)
                             {
-                                // ConFixedCode controls connector rerouting.
-                                // The only confirmed value is Undefined; setting it here
-                                // demonstrates applying the option while respecting the API.
+                                // Set the connector reroute option.
+                                // Only ConFixedCodeValue.Undefined is valid in this API version.
                                 shape.Layout.ConFixedCode.Value = ConFixedCodeValue.Undefined;
                             }
                         }
                     }
                 }
 
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
+                // Save the modified diagram using a save format option
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

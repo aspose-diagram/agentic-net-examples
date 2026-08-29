@@ -1,48 +1,40 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio file or create a new diagram
+            Diagram diagram = new Diagram(); // creates an empty diagram
 
-                // Access the first page (index 0)
-                Page page = diagram.Pages[0];
+            // Ensure there is at least one page
+            Page page = diagram.ActivePage;
 
-                // Retrieve a shape by its ID (example: shape with ID 1)
-                // Adjust the ID as needed for your specific diagram
-                long shapeId = 1;
-                Shape shape = page.Shapes.GetShape(shapeId);
+            // Add a rectangle shape to the page (pinX, pinY, width, height, master name)
+            long shapeId = page.AddShape(2.0, 2.0, 1.5, 1.0, "Rectangle");
 
-                // Set the distance from ground to 20 points (1 point = 1/72 inch)
-                // The property expects a double value representing points
-                shape.ThreeDFormat.DistanceFromGround.Value = 20.0;
+            // Retrieve the concrete Shape object using the returned ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Optionally, adjust elevation angle for preview (e.g., rotate around X axis)
-                // Here we set a 30-degree elevation (converted to radians as required by SetAngle)
-                double elevationDegrees = 30.0;
-                double elevationRadians = (Math.PI / 180.0) * elevationDegrees;
-                shape.ThreeDFormat.RotationXAngle.Value = elevationRadians;
+            // Set the distance from ground (elevation) to 20 points
+            shape.ThreeDFormat.DistanceFromGround.Value = 20.0;
 
-                // Refresh the shape to apply 3D changes
-                shape.RefreshData();
+            // Refresh the shape so the change is reflected in the diagram view
+            shape.RefreshData();
 
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the diagram to a VSDX file
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-                Console.WriteLine("DistanceFromGround set to 20 points and elevation preview applied.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+        }
     }
-    }
+}

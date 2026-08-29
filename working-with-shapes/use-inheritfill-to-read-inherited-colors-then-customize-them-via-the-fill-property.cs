@@ -10,17 +10,16 @@ class Program
         try
         {
 
-            // Paths to the source and destination Visio files
+            // Input and output file paths
             string inputPath = "input.vsdx";
             string outputPath = "output.vsdx";
 
-            // Load the diagram from file
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip shapes that are marked as deleted
@@ -28,18 +27,16 @@ class Program
                         continue;
 
                     // Read inherited fill properties
-                    string inheritedForeColor = shape.InheritFill.FillForegnd.Value;
-                    string inheritedBackColor = shape.InheritFill.FillBkgnd.Value;
+                    string inheritedFore = shape.InheritFill.FillForegnd.Value;
+                    string inheritedBack = shape.InheritFill.FillBkgnd.Value;
                     int inheritedPattern = shape.InheritFill.FillPattern.Value;
 
-                    Console.WriteLine($"Shape ID {shape.ID} inherited fill - Foreground: {inheritedForeColor}, Background: {inheritedBackColor}, Pattern: {inheritedPattern}");
+                    Console.WriteLine($"Shape ID {shape.ID}: Inherited Foreground={inheritedFore}, Background={inheritedBack}, Pattern={inheritedPattern}");
 
-                    // Customize the shape's fill:
-                    // 1. Set a solid fill pattern (value 1)
-                    // 2. Assign new foreground and background colors
+                    // Customize the shape's fill
                     shape.Fill.FillPattern.Value = 1;               // Solid fill
-                    shape.Fill.FillForegnd.Value = "#00FF00";       // Green foreground
-                    shape.Fill.FillBkgnd.Value = "#0000FF";         // Blue background
+                    shape.Fill.FillForegnd.Value = "#FF0000";       // Red foreground
+                    shape.Fill.FillBkgnd.Value = "#00FF00";         // Green background
                 }
             }
 

@@ -1,24 +1,23 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Paths for input and output Visio files
+            // Input and output file paths (adjust as needed)
             string inputPath = "input.vsdx";
             string outputPath = "output_corrected.vsdx";
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Default fill color to apply (hex string)
-            const string defaultColor = "#FFCC00";
+            // Default fill color to apply when a shape has no fill
+            const string defaultFillColor = "#FFCC00";
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
@@ -29,21 +28,22 @@ class Program
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Determine if the shape lacks a fill color
-                    bool missingFill = shape.Fill.FillPattern.Value == 0 ||
-                                       string.IsNullOrWhiteSpace(shape.Fill.FillForegnd.Value);
+                    // Retrieve the current fill foreground color
+                    string currentFill = shape.Fill.FillForegnd.Value;
 
-                    if (missingFill)
+                    // If the fill color is missing or empty, assign the default color
+                    if (string.IsNullOrWhiteSpace(currentFill))
                     {
-                        // Set a solid fill pattern and assign the default color
-                        shape.Fill.FillPattern.Value = 1; // Solid fill
-                        shape.Fill.FillForegnd.Value = defaultColor;
+                        shape.Fill.FillForegnd.Value = defaultFillColor;
+                        // Ensure the fill pattern is solid (1 = solid)
+                        shape.Fill.FillPattern.Value = 1;
                     }
                 }
             }
 
             // Save the corrected diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

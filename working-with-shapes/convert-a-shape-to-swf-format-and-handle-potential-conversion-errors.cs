@@ -3,83 +3,41 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ShapeToSwfConverter
 {
     static void Main()
     {
-        string inputPath = "input.vsdx";
-        string outputPath = "shape.swf";
-
         try
         {
-            // Load the source diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the source Visio diagram
+            Diagram sourceDiagram = new Diagram("input.vsd");
 
-            // Access the first page
-            Page page = diagram.Pages[0];
-
-            // Locate the first non‑deleted shape on the page
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.Del == BOOL.False)
-                {
-                    targetShape = shape;
-                    break;
-                }
-            }
-
-            if (targetShape == null)
-            {
-                Console.WriteLine("No suitable shape found in the diagram.");
-                return;
-            }
+            // Retrieve the shape you want to convert (example: first shape on the first page)
+            Shape sourceShape = sourceDiagram.Pages[0].Shapes[0];
 
             // Create a new diagram that will contain only the selected shape
             Diagram singleShapeDiagram = new Diagram();
 
-            // Ensure the master of the target shape exists in the new diagram
-            if (targetShape.Master != null)
-            {
-                singleShapeDiagram.AddMaster(diagram, targetShape.Master.Name);
-            }
+            // Add a new blank page to the new diagram
+            Page newPage = new Page();
+            singleShapeDiagram.Pages.Add(newPage);
 
-            // Add the shape to the new diagram's first page
-            Page newPage = singleShapeDiagram.Pages[0];
-            long newShapeId = newPage.AddShape(
-                targetShape.XForm.PinX.Value,
-                targetShape.XForm.PinY.Value,
-                targetShape.Master?.Name ?? "Rectangle",
-                false);
+            // Determine the master name of the source shape (required for AddShape)
+            string masterName = sourceShape.Master?.Name ?? "Rectangle";
 
-            // Retrieve the newly added shape instance
-            Shape newShape = newPage.Shapes.GetShape(newShapeId);
+            // Add the shape to the new page using the overload that accepts a Shape instance
+            newPage.AddShape(sourceShape, masterName);
 
-            // Copy the text content from the original shape to the new shape
-            newShape.Text.Value.Clear();
-            foreach (var item in targetShape.Text.Value)
-            {
-                if (item is Txt txt)
-                {
-                    newShape.Text.Value.Add(new Txt(txt.Text));
-                }
-            }
+            // Configure SWF save options (default settings are sufficient for basic conversion)
+            SWFSaveOptions swfOptions = new SWFSaveOptions();
 
-            // Configure SWF save options
-            SWFSaveOptions swfOptions = new SWFSaveOptions
-            {
-                DefaultFont = "Arial",
-                ViewerIncluded = true
-            };
-
-            // Save the new diagram (containing only the selected shape) as SWF
-            singleShapeDiagram.Save(outputPath, swfOptions);
-
-            Console.WriteLine($"Shape successfully exported to SWF at '{outputPath}'.");
+            // Save the diagram (which now contains only the selected shape) as SWF
+            singleShapeDiagram.Save("shape.swf", swfOptions);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Conversion failed: {ex.Message}");
+            // Handle any errors that occur during the conversion process
+            Console.WriteLine($"Error converting shape to SWF: {ex.Message}");
         }
     }
 }

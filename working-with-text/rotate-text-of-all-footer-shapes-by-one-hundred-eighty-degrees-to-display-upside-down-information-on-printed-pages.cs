@@ -2,14 +2,14 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+public class Program
 {
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Expect two arguments: input Visio file path and output Visio file path.
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: <inputVisioFile> <outputVisioFile>");
+            Console.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath>");
             return;
         }
 
@@ -19,14 +19,21 @@ class Program
         // Load the Visio diagram.
         Diagram diagram = new Diagram(inputPath);
 
-        // Iterate through every page and every shape on each page.
+        // 180 degrees in radians.
+        double angleRadians = Math.PI;
+
+        // Iterate through all pages and their shapes.
         foreach (Page page in diagram.Pages)
         {
             foreach (Shape shape in page.Shapes)
             {
-                // Rotate the shape's text by 180 degrees.
-                // Text rotation is specified in radians; 180° = π radians.
-                shape.TextXForm.TxtAngle.Value = Math.PI;
+                // Identify footer shapes by name (case‑insensitive contains "Footer").
+                string nameU = shape.NameU ?? string.Empty;
+                if (nameU.IndexOf("Footer", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    // Rotate the text block of the shape by 180°.
+                    shape.TextXForm.TxtAngle.Value = angleRadians;
+                }
             }
         }
 

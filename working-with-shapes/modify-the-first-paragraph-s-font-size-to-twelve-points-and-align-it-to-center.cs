@@ -1,69 +1,63 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        string outputPath = "output.vsdx";
-
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        try
-        {
-            // Load the Visio diagram from the specified file
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                bool modified = false;
 
-                // Iterate through pages and shapes to locate the first shape containing text
-                foreach (Page page in diagram.Pages)
+                // Load an existing Visio diagram
+                // Replace "input.vsdx" with the path to your diagram file
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Get the first page of the diagram
+                Page page = diagram.Pages[0];
+
+                // Retrieve the first shape on the page
+                Shape firstShape = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Verify the shape has non‑empty text
-                        if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.ToString()))
-                        {
-                            // ----- Modify the first paragraph -----
-                            if (shape.Paras.Count > 0)
-                            {
-                                // Align the first paragraph to center (use correct enum member)
-                                shape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
-                            }
-
-                            // ----- Modify the first character (font size) -----
-                            if (shape.Chars.Count > 0)
-                            {
-                                // Set font size to 12 points (12/72 inches)
-                                shape.Chars[0].Size.Value = 12.0 / 72.0;
-                            }
-
-                            modified = true;
-                            break; // Only modify the first shape with text
-                        }
-                    }
-
-                    if (modified)
-                        break;
+                    firstShape = shape;
+                    break;
                 }
 
-                // Save the modified diagram using the appropriate SaveFileFormat enum
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                if (firstShape == null)
+                {
+                    throw new Exception("No shapes found on the first page.");
+                }
+
+                // Ensure the shape contains text and at least one paragraph
+                if (firstShape.Text == null || firstShape.Paras.Count == 0)
+                {
+                    throw new Exception("The first shape does not contain any text paragraphs.");
+                }
+
+                // Align the first paragraph to center
+                // HorzAlignValue.Center is the enum value for center alignment
+                firstShape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+
+                // Set the font size of all characters in the shape to 12 points (12/72 inches)
+                double fontSizeInInches = 12.0 / 72.0;
+                foreach (Aspose.Diagram.Char ch in firstShape.Chars)
+                {
+                    ch.Size.Value = fontSizeInInches;
+                }
+
+                // Save the modified diagram
+                // Replace "output.vsdx" with the desired output path
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+                // Clean up resources
+                diagram.Dispose();
+
+                Console.WriteLine("Paragraph formatting applied and diagram saved successfully.");
+
             }
-        }
-        catch (Exception ex)
-        {
-            // Write any errors encountered during processing to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

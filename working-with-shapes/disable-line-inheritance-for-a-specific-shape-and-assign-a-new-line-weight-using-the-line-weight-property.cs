@@ -4,29 +4,41 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Load an existing Visio diagram (replace with your actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
+                // Define the target shape name (universal name)
+                string targetShapeNameU = "MyShape";
 
-                // Retrieve a specific shape by its ID (replace 1 with the target shape ID)
-                Shape shape = page.Shapes.GetShape(1);
+                // Iterate through all pages to find the shape
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.NameU == targetShapeNameU)
+                        {
+                            // Disable line inheritance by explicitly setting line properties
+                            // Set a new line weight (in inches)
+                            shape.Line.LineWeight.Value = 0.05; // Example weight
 
-                // Disable line inheritance by explicitly setting a line color.
-                // This overrides any inherited line color from the master or style.
-                shape.Line.LineColor.Value = "#FF0000";
+                            // Optionally set a line color to ensure the line is not inherited
+                            shape.Line.LineColor.Value = "#FF0000";
 
-                // Assign a new line weight (thickness) in inches.
-                shape.Line.LineWeight.Value = 0.05; // 0.05 inches
+                            // Break after modifying the first matching shape
+                            break;
+                        }
+                    }
+                }
 
-                // Save the modified diagram to a new file
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

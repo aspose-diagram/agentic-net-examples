@@ -1,40 +1,47 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Prompt user for input and output file paths
-            Console.Write("Enter the path of the Visio diagram to load: ");
-            string inputPath = Console.ReadLine();
 
-            Console.Write("Enter the path where the updated diagram will be saved: ");
-            string outputPath = Console.ReadLine();
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Load the diagram from the specified file
+            // Load the diagram from file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to apply the line style change
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip shapes that are marked as deleted
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Apply new line style
-                    shape.Line.LineColor.Value = "#FF0000";               // Red line color
-                    shape.Line.LineWeight.Value = 0.02;                  // Line weight (in inches)
-                    shape.Line.LinePattern.Value = LinePatternValue.Solid; // Solid line pattern
+                    // Apply a global line style to the shape
+                    shape.Line.LineColor.Value = "#FF0000";          // Red line color
+                    shape.Line.LineWeight.Value = 0.02;             // Line weight (in inches)
+                    shape.Line.LinePattern.Value = LinePatternValue.Dash; // Dashed line pattern
                 }
             }
 
-            // Save the updated diagram in VSDX format
+            // Path for the updated Visio file
+            string outputPath = "output.vsdx";
+
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            Console.WriteLine("Diagram saved successfully.");
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

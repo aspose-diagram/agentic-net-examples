@@ -1,49 +1,91 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Create a new empty diagram (contains a default page)
+        Diagram diagram;
+        try
         {
-            try
-            {
+            diagram = new Diagram(); // default constructor creates a blank VSDX diagram
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create diagram: {ex.Message}");
+            return;
+        }
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+        // Get the first page (index 0) to work with
+        Page page = diagram.Pages[0];
 
-                // Add a rectangle shape to the active page
-                // Parameters: PinX, PinY, master name
-                long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle");
-                Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
+        // Add a rectangle shape to the page; master name "Rectangle" exists in the default stencil
+        long shapeId;
+        try
+        {
+            shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to add shape: {ex.Message}");
+            return;
+        }
 
-                // Apply the first preset theme (Bubble)
-                try
-                {
-                    shape.PresetTheme = PresetThemeValue.Bubble;
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception("Failed to apply first preset theme: " + ex.Message);
-                }
+        // Retrieve the Shape object using the returned ID
+        Shape shape = page.Shapes.GetShape(shapeId);
+        if (shape == null)
+        {
+            Console.Error.WriteLine("Shape retrieval failed.");
+            return;
+        }
 
-                // Apply a different preset theme (Clouds)
-                try
-                {
-                    shape.PresetTheme = PresetThemeValue.Clouds;
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception("Failed to apply second preset theme: " + ex.Message);
-                }
+        // Record the initial fill foreground color (write‑only theme changes will affect this)
+        string initialFill = shape.Fill.FillForegnd.Value;
 
-                // If we reach this point, both theme assignments succeeded,
-                // indicating that the shape's PresetTheme property can be changed.
-                Console.WriteLine("Shape PresetTheme property changed successfully.");
+        // Apply the first preset theme (Bubble) with Variant1
+        try
+        {
+            shape.PresetTheme = PresetThemeValue.Bubble;
+            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to apply first theme: {ex.Message}");
+            return;
+        }
 
-            }
-            catch (System.NullReferenceException ex)
-            {
-                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-            }
+        // Capture fill color after first theme application
+        string fillAfterFirstTheme = shape.Fill.FillForegnd.Value;
+
+        // Apply a different variant of the same theme (Variant2)
+        try
+        {
+            shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to apply second theme variant: {ex.Message}");
+            return;
+        }
+
+        // Capture fill color after second variant application
+        string fillAfterSecondTheme = shape.Fill.FillForegnd.Value;
+
+        // Verify that the fill color changed after applying the first theme
+        if (initialFill == fillAfterFirstTheme)
+        {
+            throw new Exception("PresetTheme did not modify the shape's fill color after first application.");
+        }
+
+        // Verify that the fill color changed again after applying the second variant
+        if (fillAfterFirstTheme == fillAfterSecondTheme)
+        {
+            throw new Exception("PresetThemeVariant did not modify the shape's fill color after second application.");
+        }
+
+        // If we reach this point, the test succeeded
+        Console.WriteLine("Shape PresetTheme property change verified successfully.");
     }
-    }
+}

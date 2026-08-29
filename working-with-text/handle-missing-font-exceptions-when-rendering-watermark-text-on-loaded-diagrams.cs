@@ -1,104 +1,129 @@
 using System;
+using System.IO;
 using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input and output file paths (adjust as needed)
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.pdf";
+
+        // Ensure the system font folder is added for Aspose.Diagram font lookup
+        string systemFontFolder = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+        // The SetFontFolder method requires two parameters: path and recursive flag
+        FontConfigs.SetFontFolder(systemFontFolder, true);
+
+        // Set a default fallback font to avoid missing‑font rendering issues
+        FontConfigs.DefaultFontName = "Arial";
+
+        // Load the diagram
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram from '{inputPath}': {ex.Message}");
+            return;
+        }
+
+        // Validate fonts used in the diagram against installed system fonts
+        // Collect installed font names (case‑insensitive)
+        InstalledFontCollection installedFonts = new InstalledFontCollection();
+        var installedFontNames = installedFonts.Families
+            .Select(f => f.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Iterate over diagram fonts using explicit type (no var)
+        foreach (Aspose.Diagram.Font diagramFont in diagram.Fonts)
+        {
+            string fontName = diagramFont.Name;
+            if (!installedFontNames.Contains(fontName))
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the output PDF
-                string outputPath = "output.pdf";
-
-                // Desired watermark font
-                string desiredFont = "Calibri";
-                // Fallback font to use when the desired font is missing
-                string fallbackFont = "Arial";
-
-                // Configure global default font before loading the diagram
-                FontConfigs.DefaultFontName = fallbackFont;
-
-                // Check if the desired font is installed on the system
-                bool fontAvailable = false;
-                InstalledFontCollection installedFonts = new InstalledFontCollection();
-                foreach (var fontFamily in installedFonts.Families)
-                {
-                    // FontFamily may not have a strongly typed definition; use dynamic property access
-                    try
-                    {
-                        if (string.Equals(fontFamily.Name, desiredFont, StringComparison.OrdinalIgnoreCase))
-                        {
-                            fontAvailable = true;
-                            break;
-                        }
-                    }
-                    catch
-                    {
-                        // Ignore any unexpected property access issues
-                    }
-                }
-
-                // Choose the font to use for the watermark
-                string watermarkFont = fontAvailable ? desiredFont : fallbackFont;
-                if (!fontAvailable)
-                {
-                    Console.WriteLine($"Warning: Desired font \"{desiredFont}\" not found. Using fallback font \"{fallbackFont}\".");
-                }
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page (assumes at least one page exists)
-                Page page = diagram.Pages[0];
-
-                // Retrieve page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Center position for the watermark
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-
-                // Watermark text and styling
-                string watermarkText = "CONFIDENTIAL";
-                string fontColor = "#FF0000"; // Red color in hex
-                double fontSizePoints = 72; // 72 points = 1 inch
-                double fontSizeInches = fontSizePoints / 72.0;
-
-                // Add the watermark text shape covering the full page
-                Shape watermarkShape = page.AddText(
-                    pinX,                // PinX (center X)
-                    pinY,                // PinY (center Y)
-                    pageWidth,           // Width of the text box
-                    pageHeight,          // Height of the text box
-                    watermarkText,       // Text content
-                    watermarkFont,       // Font name
-                    fontColor,           // Font color
-                    fontSizeInches       // Font size in inches
-                );
-
-                // Optional: send the watermark to the back so it doesn't obscure other shapes
-                page.SendToBack(watermarkShape.ID);
-
-                // Configure PDF save options with the same fallback font
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = fallbackFont;
-
-                // Save the diagram as PDF
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine("Diagram saved with watermark to: " + outputPath);
-
+                Console.WriteLine($"Warning: Font '{fontName}' used in diagram is not installed on the system.");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+
+        // Add a watermark text shape to the first page
+        if (diagram.Pages.Count == 0)
+        {
+            Console.Error.WriteLine("The diagram contains no pages.");
+            return;
+        }
+
+        Aspose.Diagram.Page page = diagram.Pages[0];
+
+        // Retrieve page dimensions (in inches)
+        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+        // Center position for the watermark
+        double pinX = pageWidth / 2.0;
+        double pinY = pageHeight / 2.0;
+
+        // Watermark text properties
+        string watermarkText = "CONFIDENTIAL";
+        string watermarkFont = "Arial"; // Fallback font guaranteed to exist
+        string watermarkColor = "#808080"; // Light gray
+        double watermarkSizeInPoints = 36; // 36 pt
+        double watermarkSizeInInches = watermarkSizeInPoints / 72.0; // Convert points to inches
+
+        // Verify the chosen watermark font is installed; otherwise use the default fallback
+        if (!installedFontNames.Contains(watermarkFont))
+        {
+            Console.WriteLine($"Warning: Watermark font '{watermarkFont}' not installed. Using default font '{FontConfigs.DefaultFontName}'.");
+            watermarkFont = FontConfigs.DefaultFontName;
+        }
+
+        // Attempt to add the watermark shape; handle any font‑related exceptions gracefully
+        Shape watermarkShape;
+        try
+        {
+            watermarkShape = page.AddText(
+                pinX,
+                pinY,
+                pageWidth,
+                pageHeight,
+                watermarkText,
+                watermarkFont,
+                watermarkColor,
+                watermarkSizeInInches);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to add watermark shape: {ex.Message}");
+            return;
+        }
+
+        // Optional: rotate the watermark (e.g., 45 degrees). Text rotation uses radians.
+        double rotationDegrees = 45.0;
+        double rotationRadians = (Math.PI / 180.0) * rotationDegrees;
+        watermarkShape.TextXForm.TxtAngle.Value = rotationRadians;
+
+        // Save the diagram to PDF with a default font fallback
+        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+        pdfOptions.DefaultFont = "Arial";
+
+        try
+        {
+            diagram.Save(outputPath, pdfOptions);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram to '{outputPath}': {ex.Message}");
+        }
     }
-    }
+}

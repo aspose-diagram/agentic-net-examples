@@ -9,21 +9,16 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load the Visio diagram
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve document title and version
-            string title = diagram.DocumentProps.Title ?? string.Empty;
-            string version = diagram.Version ?? string.Empty;
+            // Build watermark text using document title and version
+            string title = diagram.DocumentProps.Title ?? "";
+            string version = diagram.Version ?? "";
+            diagram.HeaderFooter.FooterCenter = $"{title} v{version}";
 
-            // Compose footer watermark text
-            string footerText = $"{title} - Version {version}";
-
-            // Assign the watermark to the right side of the footer
-            diagram.HeaderFooter.FooterRight = footerText;
-
-            // Save the updated diagram
+            // Save the diagram with the footer watermark applied
             string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 

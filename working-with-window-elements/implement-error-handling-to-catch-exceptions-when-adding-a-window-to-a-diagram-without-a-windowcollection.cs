@@ -10,38 +10,43 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Create a new Window instance and set basic properties
-            Window newWindow = new Window
-            {
-                WindowType = WindowTypeValue.Drawing,
-                WindowWidth = 800,
-                WindowHeight = 600
-            };
-
+            Diagram diagram = null;
             try
             {
-                // Verify that the diagram actually has a WindowCollection
-                if (diagram.Windows == null)
-                    throw new DiagramException("The diagram does not contain a WindowCollection.");
+                diagram = new Diagram("input.vsdx");
+            }
+            catch (DiagramException loadEx)
+            {
+                Console.WriteLine($"Failed to load diagram: {loadEx.Message}");
+                return;
+            }
 
-                // Add the window to the collection
+            // Ensure the diagram has a Windows collection before adding a new window
+            if (diagram.Windows == null)
+            {
+                Console.WriteLine("The diagram does not contain a Windows collection.");
+                return;
+            }
+
+            // Create a new window instance
+            Window newWindow = new Window
+            {
+                // Example: set the window type to Drawing
+                WindowType = WindowTypeValue.Drawing
+            };
+
+            // Attempt to add the window and handle possible exceptions
+            try
+            {
                 diagram.Windows.Add(newWindow);
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                Console.WriteLine("Window added and diagram saved successfully.");
             }
-            catch (DiagramException dex)
+            catch (DiagramException addEx)
             {
-                // Handle Aspose.Diagram specific errors
-                Console.WriteLine($"DiagramException caught: {dex.Message}");
+                Console.WriteLine($"Error adding window to diagram: {addEx.Message}");
             }
-            catch (Exception ex)
-            {
-                // Handle any other unexpected errors
-                Console.WriteLine($"Unexpected exception: {ex.Message}");
-            }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

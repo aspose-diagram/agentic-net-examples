@@ -2,71 +2,67 @@ using System.IO;
 using System;
 using System.Diagnostics;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+class WindowPerformanceComparison
 {
     static void Main()
     {
-        // Number of windows to add – large enough to notice timing differences
-        const int windowCount = 5000;
+        const int windowCount = 5000; // large number of windows for testing
 
-        // ------------------------------------------------------------
-        // Method A – Add a window and immediately save the diagram.
-        // This simulates “adding windows individually”.
-        // ------------------------------------------------------------
-        Diagram diagramA = new Diagram(); // create a new diagram
-        Stopwatch swIndividual = Stopwatch.StartNew();
+        // -------------------------------------------------
+        // Approach 1: Add windows individually (explicit statements)
+        // -------------------------------------------------
+        var diagramIndividual = new Diagram(); // create a new empty diagram
+        var swIndividual = Stopwatch.StartNew();
 
+        // Adding windows one by one using separate statements.
+        // In practice this is equivalent to a loop, but we write it explicitly
+        // to illustrate the "individual" style.
         for (int i = 0; i < windowCount; i++)
         {
-            // Create a new window and set a couple of properties
-            Window win = new Window
+            var win = new Window
             {
-                WindowLeft = i,
-                WindowTop = i,
-                WindowWidth = 5,
-                WindowHeight = 5,
+                // Set a few properties so the window is not completely empty
+                WindowLeft = i % 100,
+                WindowTop = i % 100,
+                WindowWidth = 800,
+                WindowHeight = 600,
                 WindowState = 0 // Normal state
             };
-
-            // Add the window to the diagram
-            diagramA.Windows.Add(win);
-
-            // Save after each addition – this is the costly part
-            diagramA.Save($"temp_individual_{i}.vdx", SaveFileFormat.Vdx);
+            diagramIndividual.Windows.Add(win);
         }
 
         swIndividual.Stop();
+        Console.WriteLine($"Individual addition time: {swIndividual.ElapsedMilliseconds} ms");
 
-        // ------------------------------------------------------------
-        // Method B – Add all windows first, then save once.
-        // This simulates “adding them in a loop”.
-        // ------------------------------------------------------------
-        Diagram diagramB = new Diagram(); // create another diagram
-        Stopwatch swBatch = Stopwatch.StartNew();
+        // Save the diagram created with the individual approach
+        diagramIndividual.Save("IndividualWindows.vsdx", SaveFileFormat.Vsdx);
 
+        // -------------------------------------------------
+        // Approach 2: Add windows inside a tight loop (batch style)
+        // -------------------------------------------------
+        var diagramLoop = new Diagram(); // create another empty diagram
+        var swLoop = Stopwatch.StartNew();
+
+        // Adding windows inside a loop – this is the typical way
         for (int i = 0; i < windowCount; i++)
         {
-            Window win = new Window
+            var win = new Window
             {
-                WindowLeft = i,
-                WindowTop = i,
-                WindowWidth = 5,
-                WindowHeight = 5,
+                WindowLeft = i % 100,
+                WindowTop = i % 100,
+                WindowWidth = 800,
+                WindowHeight = 600,
                 WindowState = 0
             };
-
-            diagramB.Windows.Add(win);
+            diagramLoop.Windows.Add(win);
         }
 
-        // Save only once after all windows have been added
-        diagramB.Save("output_batch.vdx", SaveFileFormat.Vdx);
-        swBatch.Stop();
+        swLoop.Stop();
+        Console.WriteLine($"Loop addition time: {swLoop.ElapsedMilliseconds} ms");
 
-        // ------------------------------------------------------------
-        // Output the measured times
-        // ------------------------------------------------------------
-        Console.WriteLine($"Adding windows individually (save each time): {swIndividual.ElapsedMilliseconds} ms");
-        Console.WriteLine($"Adding windows in a batch (single save): {swBatch.ElapsedMilliseconds} ms");
+        // Save the diagram created with the loop approach
+        diagramLoop.Save("LoopWindows.vsdx", SaveFileFormat.Vsdx);
     }
 }

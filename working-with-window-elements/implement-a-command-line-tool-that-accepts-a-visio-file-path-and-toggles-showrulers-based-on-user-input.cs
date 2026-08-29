@@ -1,68 +1,82 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments
+        if (args.Length < 2)
         {
-            // Get Visio file path from command‑line argument or prompt the user
-            string filePath;
-            if (args.Length > 0)
+            Console.WriteLine("Usage: <exe> <VisioFilePath> <on|off|toggle>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string command = args[1].Trim().ToLowerInvariant();
+
+        // Load the Visio diagram
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Ensure there is at least one window; create one if none exist
+        if (diagram.Windows.Count == 0)
+        {
+            var newWindow = new Window
             {
-                filePath = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the path to the Visio file: ");
-                filePath = Console.ReadLine()?.Trim();
-            }
+                WindowType = WindowTypeValue.Drawing,
+                WindowState = WindowStateValue.Maximized,
+                WindowWidth = 1100,
+                WindowHeight = 700
+            };
+            diagram.Windows.Add(newWindow);
+        }
 
-            if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
-            {
-                Console.WriteLine("File not found. Exiting.");
-                return;
-            }
+        // Access the first window (global settings are per window)
+        Window win = diagram.Windows[0];
 
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
+        // Determine the desired state
+        BOOL newState;
+        if (command == "on" || command == "true" || command == "1")
+        {
+            newState = BOOL.True;
+        }
+        else if (command == "off" || command == "false" || command == "0")
+        {
+            newState = BOOL.False;
+        }
+        else if (command == "toggle")
+        {
+            newState = (win.ShowRulers == BOOL.True) ? BOOL.False : BOOL.True;
+        }
+        else
+        {
+            Console.WriteLine("Invalid command. Use 'on', 'off', or 'toggle'.");
+            return;
+        }
 
-            // Ensure there is at least one window; if not, create a default drawing window
-            if (diagram.Windows.Count == 0)
-            {
-                Window newWindow = new Window();
-                newWindow.WindowType = WindowTypeValue.Drawing;
-                newWindow.WindowState = WindowStateValue.Maximized;
-                diagram.Windows.Add(newWindow);
-            }
+        // Apply the new ShowRulers setting
+        win.ShowRulers = newState;
+        Console.WriteLine($"ShowRulers set to {(newState == BOOL.True ? "True" : "False")}.");
 
-            // Work with the first window (Visio uses the first window for UI settings)
-            Window window = diagram.Windows[0];
-
-            // Show current ruler state
-            Console.WriteLine($"Current ShowRulers setting: {(window.ShowRulers == BOOL.True ? "On" : "Off")}");
-
-            // Ask user for desired state
-            Console.Write("Enter 'on' to show rulers or 'off' to hide rulers: ");
-            string input = Console.ReadLine()?.Trim().ToLowerInvariant();
-
-            if (input == "on")
-            {
-                window.ShowRulers = BOOL.True;
-                Console.WriteLine("Rulers will be shown.");
-            }
-            else if (input == "off")
-            {
-                window.ShowRulers = BOOL.False;
-                Console.WriteLine("Rulers will be hidden.");
-            }
-            else
-            {
-                Console.WriteLine("Invalid input. No changes made.");
-                return;
-            }
-
-            // Save the diagram back to the same file (using Vsdx format)
-            diagram.Save(filePath, SaveFileFormat.Vsdx);
+        // Save the diagram (overwrite the original file)
+        try
+        {
+            diagram.Save(inputPath, SaveFileFormat.Vsdx);
             Console.WriteLine("Diagram saved successfully.");
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to save diagram: {ex.Message}");
+        }
     }
+}

@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -7,40 +9,50 @@ class Program
     {
         try
         {
-            // Create a new empty diagram instance
+            // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Add first page to the diagram
+            // Add first page and set its name
             Page page1 = new Page();
+            page1.Name = "Page1";
             diagram.Pages.Add(page1);
 
-            // Add second page to the diagram
+            // Add second page and set its name
             Page page2 = new Page();
+            page2.Name = "Page2";
             diagram.Pages.Add(page2);
 
             // Create a window for the first page and enable rulers
-            Window window1 = new Window();
-            window1.WindowType = WindowTypeValue.Drawing;
-            window1.Page = page1;               // associate window with page1 (expects Page, not ID)
-            window1.ShowRulers = BOOL.True;     // enable rulers on this window
-            diagram.Windows.Add(window1);
+            Window win1 = new Window();
+            win1.WindowType = WindowTypeValue.Drawing; // associate with a drawing window
+            win1.Page = page1;                         // link to first page (assign Page object)
+            win1.ShowRulers = BOOL.True;               // show rulers on page 1
+            diagram.Windows.Add(win1);
 
-            // Create a window for the second page without changing rulers (default is FALSE)
-            Window window2 = new Window();
-            window2.WindowType = WindowTypeValue.Drawing;
-            window2.Page = page2;               // associate window with page2
-            // Do NOT modify ShowRulers; it should remain FALSE
-            diagram.Windows.Add(window2);
+            // Create a window for the second page and disable rulers
+            Window win2 = new Window();
+            win2.WindowType = WindowTypeValue.Drawing;
+            win2.Page = page2;                         // link to second page (assign Page object)
+            win2.ShowRulers = BOOL.False;              // hide rulers on page 2
+            diagram.Windows.Add(win2);
 
-            // Verify that ShowRulers on the first window is TRUE
-            if (window1.ShowRulers != BOOL.True)
-                throw new Exception("ShowRulers was not set to TRUE on the first page's window.");
+            // Verify initial settings
+            if (win1.ShowRulers != BOOL.True)
+                throw new Exception("Initial ShowRulers for Page1 is not TRUE.");
+            if (win2.ShowRulers != BOOL.False)
+                throw new Exception("Initial ShowRulers for Page2 is not FALSE.");
 
-            // Verify that ShowRulers on the second window is still FALSE
-            if (window2.ShowRulers == BOOL.True)
-                throw new Exception("ShowRulers on the second page's window was unexpectedly set to TRUE.");
+            // Change ShowRulers on the first page
+            win1.ShowRulers = BOOL.False;
 
-            Console.WriteLine("Verification succeeded: ShowRulers on one page does not affect other pages.");
+            // Verify that the second page's setting remains unchanged
+            if (win2.ShowRulers != BOOL.False)
+                throw new Exception("ShowRulers for Page2 changed unexpectedly when modifying Page1.");
+
+            // Save the diagram (optional, just to have an output file)
+            string outputPath = "ShowRulersTest.vsdx";
+            // No need to check existence for output file; just ensure the directory is writable
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {

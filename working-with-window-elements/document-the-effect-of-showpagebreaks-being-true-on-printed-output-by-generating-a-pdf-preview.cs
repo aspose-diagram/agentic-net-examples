@@ -2,6 +2,7 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
 {
@@ -10,37 +11,37 @@ class Program
         try
         {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Path for the generated PDF preview
-            string outputPdf = "preview.pdf";
-
-            // Load the diagram
+            // Load an existing Visio diagram (replace with your file path)
+            string inputPath = "sample.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one window; otherwise create a default drawing window
+            // Ensure there is at least one window to modify
             if (diagram.Windows.Count == 0)
             {
-                Window win = new Window();
-                win.WindowType = WindowTypeValue.Drawing;
-                win.WindowState = WindowStateValue.Maximized;
-                diagram.Windows.Add(win);
+                Window newWindow = new Window();
+                newWindow.WindowType = WindowTypeValue.Drawing;
+                newWindow.WindowState = WindowStateValue.Maximized;
+                newWindow.WindowWidth = 1100;
+                newWindow.WindowHeight = 700;
+                diagram.Windows.Add(newWindow);
             }
 
-            // Enable the display of page breaks in the window (UI setting)
-            // This setting affects how page breaks are shown in the Visio UI,
-            // but does not change the actual page layout when exporting.
-            diagram.Windows[0].ShowPageBreaks = BOOL.True;
+            // Set ShowPageBreaks to true for the first window
+            // This controls the visibility of page breaks in the UI.
+            // It does NOT affect the actual printed pages, but we document the effect by generating a PDF.
+            Window window = diagram.Windows[0];
+            window.ShowPageBreaks = BOOL.True;
 
-            // Prepare PDF save options
+            // Prepare PDF save options (no special settings needed for page break visibility)
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial"; // fallback font for missing characters
+            pdfOptions.DefaultFont = "Arial";
 
-            // Save the diagram as a PDF file (preview)
-            diagram.Save(outputPdf, pdfOptions);
+            // Save the diagram as PDF – this serves as a preview of the printed output.
+            string outputPath = "output.pdf";
+            diagram.Save(outputPath, pdfOptions);
 
-            Console.WriteLine($"PDF preview saved to '{outputPdf}'. ShowPageBreaks was set to TRUE, which influences UI display of page breaks but does not alter the PDF content.");
+            Console.WriteLine($"PDF preview generated at: {outputPath}");
+            Console.WriteLine("ShowPageBreaks set to TRUE. This setting only affects UI display of page breaks, not the printed PDF.");
 
         }
         catch (System.IO.FileNotFoundException ex)

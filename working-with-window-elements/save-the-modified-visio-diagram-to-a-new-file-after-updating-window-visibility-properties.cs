@@ -1,36 +1,42 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths (adjust as needed)
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                string outputPath = "output_modified.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram from the file
                 Diagram diagram = new Diagram(inputPath);
 
-                // Update visibility properties for all windows in the diagram
-                foreach (Window window in diagram.Windows)
+                // Ensure there is at least one window; create one if none exist
+                if (diagram.Windows.Count == 0)
                 {
-                    // Show or hide UI elements using BOOL enumeration
-                    window.ShowGrid = BOOL.True;                 // Show grid
-                    window.ShowGuides = BOOL.False;              // Hide guides
-                    window.ShowRulers = BOOL.True;               // Show rulers
-                    window.ShowPageBreaks = BOOL.False;          // Hide page breaks
-                    window.ShowConnectionPoints = BOOL.True;     // Show connection points
-                    window.DynamicGridEnabled = BOOL.True;       // Enable dynamic grid
-
-                    // Optionally set the window state (e.g., maximized)
-                    window.WindowState = WindowStateValue.Maximized;
+                    Window newWindow = new Window();
+                    // Set the window type to a drawing window (required for visibility settings)
+                    newWindow.WindowType = WindowTypeValue.Drawing;
+                    diagram.Windows.Add(newWindow);
                 }
 
-                // Save the modified diagram to a new file using the correct overload
+                // Access the first window in the collection
+                Window window = diagram.Windows[0];
+
+                // Update visibility properties using BOOL enum values
+                window.ShowGrid = BOOL.True;                // Show grid
+                window.ShowGuides = BOOL.True;              // Show guides
+                window.ShowRulers = BOOL.True;              // Show rulers
+                window.ShowPageBreaks = BOOL.True;          // Show page breaks
+                window.ShowConnectionPoints = BOOL.True;    // Show connection points
+                window.DynamicGridEnabled = BOOL.True;      // Enable dynamic grid
+
+                // Save the modified diagram to a new file
+                string outputPath = "output_modified.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

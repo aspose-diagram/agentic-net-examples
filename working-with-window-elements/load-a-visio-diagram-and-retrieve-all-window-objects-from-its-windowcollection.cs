@@ -9,20 +9,24 @@ class Program
         try
         {
 
-            // Path to the Visio file
-            string filePath = "input.vsdx";
-
-            // Load the diagram using the provided constructor
-            using (Diagram diagram = new Diagram(filePath))
+            // Load an existing Visio diagram from file.
+            // Replace "input.vsdx" with the actual path to your Visio file.
+            using (Diagram diagram = new Diagram("input.vsdx"))
             {
-                // Retrieve the collection of Window objects
+                // Access the WindowCollection of the diagram.
                 WindowCollection windows = diagram.Windows;
 
-                // Iterate through the collection and output basic information
+                // Iterate through all Window objects.
                 for (int i = 0; i < windows.Count; i++)
                 {
                     Window win = windows[i];
-                    Console.WriteLine($"Window {i}: ID = {win.ID}, Type = {win.WindowType}");
+
+                    // Example: output some key properties of each window.
+                    Console.WriteLine($"Window ID: {win.ID}");
+                    Console.WriteLine($"  Type: {win.WindowType}");
+                    Console.WriteLine($"  Width: {win.WindowWidth}, Height: {win.WindowHeight}");
+                    Console.WriteLine($"  Left: {win.WindowLeft}, Top: {win.WindowTop}");
+                    Console.WriteLine();
                 }
             }
 

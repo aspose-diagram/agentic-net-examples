@@ -1,125 +1,108 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    /// <summary>
+    /// Entry point of the console application.
+    /// Loads a Visio diagram, ensures a window exists, and prints documentation for each Window property.
+    /// </summary>
+    /// <param name="args">Command‑line arguments; expects the first argument to be the diagram file path.</param>
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate that a file path argument was provided.
+        if (args.Length == 0)
         {
-            // Create a new diagram (empty)
-            Diagram diagram = new Diagram();
+            Console.Error.WriteLine("Usage: program <diagram-file-path>");
+            return;
+        }
 
-            // Ensure there is at least one window; create one if none exist
+        // Assign the first argument to a variable and guard its existence.
+        string diagramPath = args[0];
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Ensure the diagram contains at least one Window; if not, create a default one.
             if (diagram.Windows.Count == 0)
             {
-                var newWindow = new Window();
-                ConfigureWindow(newWindow);
-                diagram.Windows.Add(newWindow);
+                // Create a new Window with typical default settings.
+                Window defaultWindow = new Window
+                {
+                    // Set the window type to a drawing window.
+                    WindowType = WindowTypeValue.Drawing,
+                    // Set the window state to maximized for visibility.
+                    WindowState = WindowStateValue.Maximized,
+                    // Define a reasonable default size.
+                    WindowWidth = 1100,
+                    WindowHeight = 700
+                };
+                diagram.Windows.Add(defaultWindow);
             }
-            else
+
+            // Iterate over all windows in the diagram and output their documented properties.
+            foreach (Window window in diagram.Windows)
             {
-                // Configure the first existing window
-                ConfigureWindow(diagram.Windows[0]);
+                PrintWindowInfo(window);
             }
-
-            // Save the diagram (optional demonstration)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
         }
-
-        /// <summary>
-        /// Configures a <see cref="Window"/> instance by setting its properties.
-        /// Each property is accompanied by a comment that explains its purpose.
-        /// </summary>
-        /// <param name="window">The <see cref="Window"/> object to configure.</param>
-        static void ConfigureWindow(Window window)
+        catch (Exception ex)
         {
-            // Unique identifier of the window within its parent collection.
-            window.ID = 1;
-
-            // Determines the kind of UI window (Drawing, Stencil, Sheet, Icon).
-            window.WindowType = WindowTypeValue.Drawing;
-
-            // Controls the visual state of the window (Maximized, Minimized).
-            window.WindowState = WindowStateValue.Maximized;
-
-            // Height of the window rectangle (in inches).
-            window.WindowHeight = 800;
-
-            // Width of the window rectangle (in inches).
-            window.WindowWidth = 1200;
-
-            // Left coordinate of the window rectangle (in inches).
-            window.WindowLeft = 100;
-
-            // Top coordinate of the window rectangle (in inches).
-            window.WindowTop = 50;
-
-            // Shows or hides the grid in the drawing window.
-            window.ShowGrid = BOOL.True;
-
-            // Shows or hides the guide lines in the drawing window.
-            window.ShowGuides = BOOL.True;
-
-            // Shows or hides the rulers in the drawing window.
-            window.ShowRulers = BOOL.True;
-
-            // Shows or hides page break indicators in the window.
-            window.ShowPageBreaks = BOOL.False;
-
-            // Enables or disables the dynamic grid feature for the window.
-            window.DynamicGridEnabled = BOOL.True;
-
-            // Shows or hides connection points for shapes in the window.
-            window.ShowConnectionPoints = BOOL.False;
-
-            // Identifier of the container (Page, Sheet, or Master) that hosts this window.
-            // Relevant when ContainerType is set. Here we leave it at the default (0).
-            window.Container = 0;
-
-            // Specifies the type of container (Document, Page, Master).
-            // Not required for a simple drawing window; left at default.
-
-            // Path to the document displayed in this window (used for stencil windows).
-            // Not required for drawing windows; commented out.
-            // window.Document = "C:\\Stencils\\MyStencil.vssx";
-
-            // Master ID if this window displays a master.
-            // Not required for drawing windows; commented out.
-            // window.Master = 0;
-
-            // Page ID if this window displays a page.
-            // Not required for drawing windows; commented out.
-            // window.Page = 0;
-
-            // Parent window ID when this window is a stencil contained within another window.
-            // Not required for top‑level drawing windows; commented out.
-            // window.ParentWindow = 0;
-
-            // Read‑only flag for stencil windows that are not document stencils.
-            // Not required for drawing windows; commented out.
-            // window.ReadOnly = BOOL.False;
-
-            // Sheet ID if the container is a sheet.
-            // Not required for drawing windows; commented out.
-            // window.Sheet = 0;
-
-            // Group identifier for merged stencil windows.
-            // Not required for drawing windows; commented out.
-            // window.StencilGroup = 0;
-
-            // Position of this stencil within its group.
-            // Not required for drawing windows; commented out.
-            // window.StencilGroupPos = 0;
-
-            // Fraction of total width allocated to the page tab control (0.0‑1.0).
-            window.TabSplitterPos = 0.5;
-
-            // Center point of the view in X coordinate (optional).
-            // window.ViewCenterX = 0.0;
-
-            // Center point of the view in Y coordinate (optional).
-            // window.ViewCenterY = 0.0;
-
-            // Scale factor of the view (optional, 1.0 = 100%).
-            // window.ViewScale = 1.0;
+            // Write any Aspose.Diagram errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Prints detailed information about a <see cref="Window"/> instance.
+    /// Each property is accompanied by a comment describing its purpose within a Visio document.
+    /// </summary>
+    /// <param name="window">The Window object whose properties are to be displayed.</param>
+    static void PrintWindowInfo(Window window)
+    {
+        // Unique identifier of the window within the document.
+        Console.WriteLine($"ID: {window.ID}");
+
+        // Determines the kind of UI element the window represents (e.g., Drawing, Stencil).
+        Console.WriteLine($"WindowType: {window.WindowType}");
+
+        // Height of the window in internal units (typically points).
+        Console.WriteLine($"WindowHeight: {window.WindowHeight}");
+
+        // Width of the window in internal units (typically points).
+        Console.WriteLine($"WindowWidth: {window.WindowWidth}");
+
+        // Current visual state of the window (Maximized, Minimized, or default).
+        Console.WriteLine($"WindowState: {window.WindowState}");
+
+        // Enables or disables the dynamic grid feature for this window.
+        Console.WriteLine($"DynamicGridEnabled: {window.DynamicGridEnabled}");
+
+        // Controls whether connection points are shown when a shape is selected.
+        Console.WriteLine($"ShowConnectionPoints: {window.ShowConnectionPoints}");
+
+        // Toggles the visibility of the grid background in the window.
+        Console.WriteLine($"ShowGrid: {window.ShowGrid}");
+
+        // Toggles the visibility of guide lines in the window.
+        Console.WriteLine($"ShowGuides: {window.ShowGuides}");
+
+        // Toggles the visibility of rulers along the top and left edges of the window.
+        Console.WriteLine($"ShowRulers: {window.ShowRulers}");
+
+        // Determines whether page break indicators are displayed in the window.
+        Console.WriteLine($"ShowPageBreaks: {window.ShowPageBreaks}");
+
+        // Separator for readability between windows.
+        Console.WriteLine(new string('-', 40));
+    }
+}

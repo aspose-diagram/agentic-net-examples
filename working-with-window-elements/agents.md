@@ -4,10 +4,10 @@ display_name: Working With Window Elements
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.7.0
+version: 26.8.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-08-03
+generated: 2026-08-29
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.7.0 |
+| Aspose.Diagram Version | 26.8.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-08-03 |
+| Last Updated | 2026-08-29 |
 
 ## Persona
 
@@ -63,12 +63,13 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 30 | Core diagram API |
 | `System` | 30 | Console, Math, DateTime, Exception |
-| `System.IO` | 17 | File, Stream, Path, Directory operations |
+| `System.IO` | 21 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 7 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 3 | List, Dictionary, HashSet |
 | `System.Diagnostics` | 2 | Supporting utilities |
-| `System.Collections.Generic` | 2 | List, Dictionary, HashSet |
-| `Aspose.Diagram.Saving` | 1 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Linq` | 2 | LINQ queries on collections |
+| `Aspose.Diagram.Printing` | 1 | Supporting utilities |
 | `System.Threading.Tasks` | 1 | Supporting utilities |
-| `System.Linq` | 1 | LINQ queries on collections |
 
 ## Common Code Pattern
 
@@ -115,35 +116,35 @@ Category-specific API rules and gotchas:
 | File | Key APIs | Task |
 |------|----------|------|
 | [add-unit-tests-to-ensure-showpagebreaks-remains-true-after-saving-and-reloading-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/add-unit-tests-to-ensure-showpagebreaks-remains-true-after-saving-and-reloading-the-diagram.cs) | `Diagram`, `Save`, `Window` | Add unit tests to ensure showpagebreaks remains true after saving and reloading the diagram |
-| [compare-performance-of-adding-windows-individually-versus-adding-them-in-a-loop-for-large-diagrams.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/compare-performance-of-adding-windows-individually-versus-adding-them-in-a-loop-for-large-diagrams.cs) | `Diagram`, `Window`, `diagram` | Compare performance of adding windows individually versus adding them in a loop for large diagrams |
+| [compare-performance-of-adding-windows-individually-versus-adding-them-in-a-loop-for-large-diagrams.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/compare-performance-of-adding-windows-individually-versus-adding-them-in-a-loop-for-large-diagrams.cs) | `Diagram`, `Window` | Compare performance of adding windows individually versus adding them in a loop for large diagrams |
 | [create-a-custom-ui-panel-that-reflects-the-current-showgrid-state-of-the-active-window.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/create-a-custom-ui-panel-that-reflects-the-current-showgrid-state-of-the-active-window.cs) | `Diagram`, `Save`, `Window` | Create a custom ui panel that reflects the current showgrid state of the active window |
-| [create-a-new-window-enable-showgrid-disable-showguides-then-add-it-to-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/create-a-new-window-enable-showgrid-disable-showguides-then-add-it-to-the-diagram.cs) | `Diagram`, `Save`, `Window` | Create a new window enable showgrid disable showguides then add it to the diagram |
+| [create-a-new-window-enable-showgrid-disable-showguides-then-add-it-to-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/create-a-new-window-enable-showgrid-disable-showguides-then-add-it-to-the-diagram.cs) | `Diagram`, `Window`, `Windows` | Create a new window enable showgrid disable showguides then add it to the diagram |
 | [create-a-powershell-script-that-iterates-over-a-folder-of-visio-files-and-toggles-showrulers-globally.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/create-a-powershell-script-that-iterates-over-a-folder-of-visio-files-and-toggles-showrulers-globally.cs) | `Diagram`, `Save`, `Window` | Create a powershell script that iterates over a folder of visio files and toggles showrulers globally |
 | [create-a-unit-test-verifying-showpagebreaks-changes-persist-after-diagram-serialization-and-reload.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/create-a-unit-test-verifying-showpagebreaks-changes-persist-after-diagram-serialization-and-reload.cs) | `Diagram`, `Save`, `Window` | Create a unit test verifying showpagebreaks changes persist after diagram serialization and reload |
 | [create-a-visual-diff-tool-that-compares-window-visibility-configurations-between-two-visio-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/create-a-visual-diff-tool-that-compares-window-visibility-configurations-between-two-visio-files.cs) | `Diagram` | Create a visual diff tool that compares window visibility configurations between two visio files |
-| [design-a-configuration-class-encapsulating-showgrid-showguides-showrulers-and-showpagebreaks-options.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/design-a-configuration-class-encapsulating-showgrid-showguides-showrulers-and-showpagebreaks-options.cs) | `Diagram`, `Save`, `Windows` | Design a configuration class encapsulating showgrid showguides showrulers and showpagebreaks options |
+| [design-a-configuration-class-encapsulating-showgrid-showguides-showrulers-and-showpagebreaks-options.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/design-a-configuration-class-encapsulating-showgrid-showguides-showrulers-and-showpagebreaks-options.cs) | `Diagram`, `Save`, `Window` | Design a configuration class encapsulating showgrid showguides showrulers and showpagebreaks options |
 | [develop-a-batch-process-that-loads-several-visio-files-sets-showguides-to-false-and-saves-each-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/develop-a-batch-process-that-loads-several-visio-files-sets-showguides-to-false-and-saves-each-file.cs) | `Diagram`, `Save`, `Windows` | Develop a batch process that loads several visio files sets showguides to false and saves each file |
 | [develop-a-plugin-that-automatically-sets-showguides-to-false-when-a-diagram-exceeds-a-specified-page-count.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/develop-a-plugin-that-automatically-sets-showguides-to-false-when-a-diagram-exceeds-a-specified-page-count.cs) | `Diagram`, `Pages`, `Save` | Develop a plugin that automatically sets showguides to false when a diagram exceeds a specified page count |
 | [develop-a-test-harness-that-randomly-flips-showgrid-and-showguides-flags-to-stress-test-the-api.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/develop-a-test-harness-that-randomly-flips-showgrid-and-showguides-flags-to-stress-test-the-api.cs) | `Diagram`, `Save`, `Window` | Develop a test harness that randomly flips showgrid and showguides flags to stress test the api |
 | [document-the-effect-of-showpagebreaks-being-true-on-printed-output-by-generating-a-pdf-preview.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/document-the-effect-of-showpagebreaks-being-true-on-printed-output-by-generating-a-pdf-preview.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Document the effect of showpagebreaks being true on printed output by generating a pdf preview |
-| [generate-a-diagnostic-report-listing-each-window-s-visibility-settings-and-the-pages-they-apply-to.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/generate-a-diagnostic-report-listing-each-window-s-visibility-settings-and-the-pages-they-apply-to.cs) | `Diagram`, `Windows`, `diagram` | Generate a diagnostic report listing each window s visibility settings and the pages they apply to |
-| [implement-a-caching-mechanism-for-window-settings-to-reduce-redundant-api-calls-during-batch-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/implement-a-caching-mechanism-for-window-settings-to-reduce-redundant-api-calls-during-batch-processing.cs) | `Diagram`, `Pages`, `Save` | Implement a caching mechanism for window settings to reduce redundant api calls during batch processing |
+| [generate-a-diagnostic-report-listing-each-window-s-visibility-settings-and-the-pages-they-apply-to.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/generate-a-diagnostic-report-listing-each-window-s-visibility-settings-and-the-pages-they-apply-to.cs) | `Diagram`, `Pages`, `Windows` | Generate a diagnostic report listing each window s visibility settings and the pages they apply to |
+| [implement-a-caching-mechanism-for-window-settings-to-reduce-redundant-api-calls-during-batch-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/implement-a-caching-mechanism-for-window-settings-to-reduce-redundant-api-calls-during-batch-processing.cs) | `Diagram`, `Save`, `Window` | Implement a caching mechanism for window settings to reduce redundant api calls during batch processing |
 | [implement-a-command-line-tool-that-accepts-a-visio-file-path-and-toggles-showrulers-based-on-user-input.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/implement-a-command-line-tool-that-accepts-a-visio-file-path-and-toggles-showrulers-based-on-user-input.cs) | `Diagram`, `Save`, `Window` | Implement a command line tool that accepts a visio file path and toggles showrulers based on user input |
-| [implement-a-rollback-routine-that-restores-original-window-settings-if-an-error-occurs-during-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/implement-a-rollback-routine-that-restores-original-window-settings-if-an-error-occurs-during-processing.cs) | `Diagram`, `Save`, `Windows` | Implement a rollback routine that restores original window settings if an error occurs during processing |
-| [implement-asynchronous-loading-of-a-visio-file-and-asynchronous-updating-of-its-window-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/implement-asynchronous-loading-of-a-visio-file-and-asynchronous-updating-of-its-window-properties.cs) | `Diagram`, `Save`, `Windows` | Implement asynchronous loading of a visio file and asynchronous updating of its window properties |
+| [implement-a-rollback-routine-that-restores-original-window-settings-if-an-error-occurs-during-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/implement-a-rollback-routine-that-restores-original-window-settings-if-an-error-occurs-during-processing.cs) | `Diagram`, `Save`, `Window` | Implement a rollback routine that restores original window settings if an error occurs during processing |
+| [implement-asynchronous-loading-of-a-visio-file-and-asynchronous-updating-of-its-window-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/implement-asynchronous-loading-of-a-visio-file-and-asynchronous-updating-of-its-window-properties.cs) | `Diagram`, `Save`, `Window` | Implement asynchronous loading of a visio file and asynchronous updating of its window properties |
 | [implement-error-handling-to-catch-exceptions-when-adding-a-window-to-a-diagram-without-a-windowcollection.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/implement-error-handling-to-catch-exceptions-when-adding-a-window-to-a-diagram-without-a-windowcollection.cs) | `Diagram`, `Save`, `Window` | Implement error handling to catch exceptions when adding a window to a diagram without a windowcollection |
 | [iterate-through-each-window-and-log-showgrid-showguides-showrulers-showpagebreaks-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/iterate-through-each-window-and-log-showgrid-showguides-showrulers-showpagebreaks-values.cs) | `Diagram`, `Windows`, `diagram` | Iterate through each window and log showgrid showguides showrulers showpagebreaks values |
 | [load-a-visio-diagram-and-retrieve-all-window-objects-from-its-windowcollection.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/load-a-visio-diagram-and-retrieve-all-window-objects-from-its-windowcollection.cs) | `Diagram`, `Windows`, `diagram` | Load a visio diagram and retrieve all window objects from its windowcollection |
 | [log-before-and-after-states-of-each-window-property-when-applying-bulk-visibility-changes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/log-before-and-after-states-of-each-window-property-when-applying-bulk-visibility-changes.cs) | `Diagram`, `Save`, `Window` | Log before and after states of each window property when applying bulk visibility changes |
 | [measure-memory-usage-when-loading-diagrams-with-many-windows-to-identify-optimization-opportunities.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/measure-memory-usage-when-loading-diagrams-with-many-windows-to-identify-optimization-opportunities.cs) | `Diagram`, `Windows`, `diagram` | Measure memory usage when loading diagrams with many windows to identify optimization opportunities |
-| [save-the-modified-visio-diagram-to-a-new-file-after-updating-window-visibility-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/save-the-modified-visio-diagram-to-a-new-file-after-updating-window-visibility-properties.cs) | `Diagram`, `Save`, `Windows` | Save the modified visio diagram to a new file after updating window visibility properties |
+| [save-the-modified-visio-diagram-to-a-new-file-after-updating-window-visibility-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/save-the-modified-visio-diagram-to-a-new-file-after-updating-window-visibility-properties.cs) | `Diagram`, `Save`, `Window` | Save the modified visio diagram to a new file after updating window visibility properties |
 | [set-showrulers-to-true-and-showpagebreaks-to-false-on-the-first-retrieved-window.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/set-showrulers-to-true-and-showpagebreaks-to-false-on-the-first-retrieved-window.cs) | `Diagram`, `Save`, `Windows` | Set showrulers to true and showpagebreaks to false on the first retrieved window |
 | [use-linq-to-filter-window-objects-where-showrulers-is-false-and-enable-rulers-for-those-windows.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/use-linq-to-filter-window-objects-where-showrulers-is-false-and-enable-rulers-for-those-windows.cs) | `Diagram`, `Save`, `Windows` | Use linq to filter window objects where showrulers is false and enable rulers for those windows |
 | [validate-that-window-visibility-settings-apply-globally-by-confirming-multiple-pages-share-identical-configurations.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/validate-that-window-visibility-settings-apply-globally-by-confirming-multiple-pages-share-identical-configurations.cs) | `Diagram`, `Pages`, `Windows` | Validate that window visibility settings apply globally by confirming multiple pages share identical configurations |
 | [verify-that-changing-showrulers-on-one-page-does-not-affect-other-pages-within-the-same-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/verify-that-changing-showrulers-on-one-page-does-not-affect-other-pages-within-the-same-diagram.cs) | `Diagram`, `Page`, `Pages` | Verify that changing showrulers on one page does not affect other pages within the same diagram |
-| [write-a-function-that-toggles-showgrid-for-all-open-windows-in-a-visio-session.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/write-a-function-that-toggles-showgrid-for-all-open-windows-in-a-visio-session.cs) | `Diagram`, `Save`, `Windows` | Write a function that toggles showgrid for all open windows in a visio session |
+| [write-a-function-that-toggles-showgrid-for-all-open-windows-in-a-visio-session.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/write-a-function-that-toggles-showgrid-for-all-open-windows-in-a-visio-session.cs) | `Diagram`, `Save`, `Window` | Write a function that toggles showgrid for all open windows in a visio session |
 | [write-a-script-that-restores-default-window-settings-grid-guides-rulers-page-breaks-for-a-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/write-a-script-that-restores-default-window-settings-grid-guides-rulers-page-breaks-for-a-diagram.cs) | `Diagram`, `Save`, `Window` | Write a script that restores default window settings grid guides rulers page breaks for a diagram |
-| [write-documentation-comments-explaining-the-purpose-of-each-window-property-used-in-the-project.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/write-documentation-comments-explaining-the-purpose-of-each-window-property-used-in-the-project.cs) | `Diagram`, `Save`, `Window` | Write documentation comments explaining the purpose of each window property used in the project |
+| [write-documentation-comments-explaining-the-purpose-of-each-window-property-used-in-the-project.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-window-elements/write-documentation-comments-explaining-the-purpose-of-each-window-property-used-in-the-project.cs) | `Diagram`, `Window`, `Windows` | Write documentation comments explaining the purpose of each window property used in the project |
 
 ## Command Reference
 
@@ -253,7 +254,7 @@ Frequently asked questions about **Working With Window Elements** in **Aspose.Di
 
 **Q: How do I get started with Working With Window Elements in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.7.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.8.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -284,4 +285,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-08-03 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-08-29 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

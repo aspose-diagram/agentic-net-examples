@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
@@ -9,17 +9,40 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Get the first page (index 0) and a shape by its ID (example ID = 1)
-            Shape shape = diagram.Pages[0].Shapes.GetShape(1);
+            // Access the first page
+            Page page = diagram.Pages[0];
 
-            // Rotate the shape's text block by 45 degrees
-            shape.TextXForm.TxtAngle.Value = 45.0;
+            // Locate the first shape that contains text
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (!string.IsNullOrWhiteSpace(shape.Text.Value.ToString()))
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
+
+            if (targetShape == null)
+            {
+                Console.WriteLine("No shape with text found in the diagram.");
+                return;
+            }
+
+            // Rotate the shape's text by 45 degrees (convert degrees to radians)
+            double angleDeg = 45.0;
+            double angleRad = (Math.PI / 180.0) * angleDeg;
+            targetShape.TextXForm.TxtAngle.Value = angleRad;
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Text rotation applied and diagram saved successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

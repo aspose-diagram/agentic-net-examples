@@ -6,61 +6,37 @@ using Aspose.Diagram;
 public static class DiagramHelper
 {
     /// <summary>
-    /// Returns a dictionary where each key is the ID of a shape that has dynamic glue enabled,
-    /// and the value is the number of connector shapes attached to that shape.
+    /// Returns a dictionary where each key is the ID of a shape that has gluing enabled
+    /// (i.e., has at least one connector glued to it) and the value is the number of
+    /// connectors (1‑D shapes) attached to that shape.
     /// </summary>
-    /// <param name="diagram">The Aspose.Diagram.Diagram instance to analyze.</param>
-    /// <returns>Dictionary mapping shape IDs to connector counts.</returns>
-    public static Dictionary<long, int> GetConnectorCounts(Diagram diagram)
+    /// <param name="diagram">The loaded Aspose.Diagram Diagram instance.</param>
+    /// <returns>Dictionary mapping shape ID to count of attached connectors.</returns>
+    public static Dictionary<long, int> GetConnectorCountsPerGluedShape(Diagram diagram)
     {
-        var result = new Dictionary<long, int>();
+        var connectorCounts = new Dictionary<long, int>();
 
-        // Iterate through all pages in the diagram
+        // Iterate through all pages and shapes in the diagram
         foreach (Page page in diagram.Pages)
         {
-            // Pre‑compute the set of connector shape IDs on this page (OneD shapes)
-            var connectorIds = new HashSet<long>();
             foreach (Shape shape in page.Shapes)
             {
-                if (shape.OneD) // 1‑D shapes are connectors
+                // Retrieve IDs of all 1‑D shapes (connectors) glued to this shape.
+                // Using GluedShapesAll1D returns both incoming and outgoing connectors.
+                long[] gluedConnectorIds = shape.GluedShapes(
+                    GluedShapesFlags.GluedShapesAll1D,   // flag to get all 1‑D glued shapes
+                    null,                               // no category filter
+                    null);                              // no additional shape filter
+
+                // If there are any glued connectors, record the count.
+                if (gluedConnectorIds != null && gluedConnectorIds.Length > 0)
                 {
-                    connectorIds.Add(shape.ID);
+                    connectorCounts[shape.ID] = gluedConnectorIds.Length;
                 }
-            }
-
-            // Examine each non‑connector shape
-            foreach (Shape shape in page.Shapes)
-            {
-                // Skip connector shapes themselves
-                if (shape.OneD)
-                    continue;
-
-                // Determine if the shape allows dynamic glue
-                // GlueTypeValue.AllowDynamicGlue indicates gluing is enabled
-                var glueType = shape.Misc.GlueType.Value;
-                if (glueType != GlueTypeValue.AllowDynamicGlue)
-                    continue;
-
-                int attachedConnectorCount = 0;
-
-                // Count connections where the other end is a connector shape
-                foreach (Connect conn in page.Connects)
-                {
-                    if (conn.FromSheet == shape.ID && connectorIds.Contains(conn.ToSheet))
-                    {
-                        attachedConnectorCount++;
-                    }
-                    else if (conn.ToSheet == shape.ID && connectorIds.Contains(conn.FromSheet))
-                    {
-                        attachedConnectorCount++;
-                    }
-                }
-
-                result[shape.ID] = attachedConnectorCount;
             }
         }
 
-        return result;
+        return connectorCounts;
     }
 }
 

@@ -1,65 +1,71 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Determine input file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Verify the input file exists
+        if (!File.Exists(inputPath))
         {
-            // Expect input and output file paths as command‑line arguments.
-            if (args.Length < 2)
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Determine output file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output_flagged.vsdx";
+
+        // Determine size threshold in inches (third argument or default 2.0)
+        double sizeThreshold = 2.0;
+        if (args.Length > 2 && double.TryParse(args[2], out double parsedThreshold))
+        {
+            sizeThreshold = parsedThreshold;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate over each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine("Usage: VisioShapeFlagger <inputVisioFile> <outputVisioFile>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            // Size threshold in inches (example: shapes larger than 2 inches in width or height will be flagged).
-            const double sizeThreshold = 2.0;
-
-            try
-            {
-                // Load the Visio diagram.
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate over each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all pages.
-                    foreach (Page page in diagram.Pages)
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True) continue;
+
+                    // Retrieve shape width and height (in inches)
+                    double width = shape.XForm.Width.Value;
+                    double height = shape.XForm.Height.Value;
+
+                    // Check if either dimension exceeds the threshold
+                    if (width > sizeThreshold || height > sizeThreshold)
                     {
-                        // Iterate through all shapes on the current page.
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip deleted shapes.
-                            if (shape.Del == BOOL.True)
-                                continue;
+                        // Apply a red border by setting line color to red
+                        shape.Line.LineColor.Value = "#FF0000";
 
-                            // Retrieve shape dimensions.
-                            double width = shape.XForm.Width.Value;
-                            double height = shape.XForm.Height.Value;
+                        // Set a visible line weight (in inches)
+                        shape.Line.LineWeight.Value = 0.03;
 
-                            // Check if the shape exceeds the size threshold.
-                            if (width > sizeThreshold || height > sizeThreshold)
-                            {
-                                // Flag the shape by adding a red border.
-                                shape.Line.LineColor.Value = "#FF0000";          // Red color.
-                                shape.Line.LineWeight.Value = 0.02;             // Reasonable line weight (in inches).
-                                // Optional: ensure a solid line pattern.
-                                // shape.Line.LinePattern.Value = LinePatternValue.Solid;
-                                
-                                Console.WriteLine($"Flagged shape ID {shape.ID} on page '{page.Name}' (Width={width:F2}, Height={height:F2}).");
-                            }
-                        }
+                        // Ensure the line pattern is solid
+                        shape.Line.LinePattern.Value = LinePatternValue.Solid;
                     }
-
-                    // Save the modified diagram.
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing diagram: {ex.Message}");
-                throw;
-            }
+
+            // Save the modified diagram to the output file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Processing complete. Saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

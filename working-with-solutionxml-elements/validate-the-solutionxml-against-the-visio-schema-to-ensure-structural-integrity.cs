@@ -1,57 +1,76 @@
-using System;
 using System.IO;
+using Aspose.Diagram;
+using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Schema;
-using Aspose.Diagram;
 
-class SolutionXmlValidator
+class Program
 {
-    // Path to the Visio diagram file
-    private const string DiagramPath = "input.vsdx";
-
-    // Path to the Visio XSD schema file
-    private const string SchemaPath = "VisioSchema.xsd";
-
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (lifecycle rule)
-            Diagram diagram = new Diagram(DiagramPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Prepare the XML schema set
+            // Path to the Visio XSD schema file
+            string schemaPath = "VisioSchema.xsd";
+
+            // Prepare the schema set
             XmlSchemaSet schemaSet = new XmlSchemaSet();
-            schemaSet.Add(null, SchemaPath);
+            schemaSet.Add(null, schemaPath);
 
-            // Iterate through each SolutionXML in the diagram
-            foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+            // List to collect validation messages
+            List<string> validationMessages = new List<string>();
+
+            // Iterate over each SolutionXML in the diagram
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                Console.WriteLine($"Validating SolutionXML: {solutionXml.Name}");
+                string xmlContent = solXml.XmlValue;
+                if (string.IsNullOrWhiteSpace(xmlContent))
+                    continue; // Skip empty entries
 
                 // Configure XML reader settings for schema validation
                 XmlReaderSettings settings = new XmlReaderSettings
                 {
                     Schemas = schemaSet,
                     ValidationType = ValidationType.Schema,
-                    DtdProcessing = DtdProcessing.Prohibit
+                    ValidationFlags = XmlSchemaValidationFlags.ReportValidationWarnings
                 };
-                settings.ValidationEventHandler += ValidationEventHandler;
+
+                // Capture validation events
+                settings.ValidationEventHandler += (sender, e) =>
+                {
+                    string msg = $"SolutionXML '{solXml.Name}': {e.Severity} - {e.Message}";
+                    validationMessages.Add(msg);
+                };
 
                 // Perform validation
-                using (StringReader stringReader = new StringReader(solutionXml.XmlValue))
-                using (XmlReader xmlReader = XmlReader.Create(stringReader, settings))
+                using (XmlReader reader = XmlReader.Create(new System.IO.StringReader(xmlContent), settings))
                 {
                     try
                     {
-                        while (xmlReader.Read()) { /* reading triggers validation */ }
-                        Console.WriteLine("  Validation succeeded.");
+                        while (reader.Read()) { }
                     }
                     catch (XmlException ex)
                     {
-                        Console.WriteLine($"  XML parsing error: {ex.Message}");
+                        validationMessages.Add($"SolutionXML '{solXml.Name}': XML parsing error - {ex.Message}");
                     }
                 }
+            }
+
+            // Output validation results
+            if (validationMessages.Count == 0)
+            {
+                Console.WriteLine("All SolutionXML entries are valid against the Visio schema.");
+            }
+            else
+            {
+                Console.WriteLine("Validation errors/warnings:");
+                foreach (string msg in validationMessages)
+                    Console.WriteLine(msg);
             }
 
         }
@@ -59,12 +78,5 @@ class SolutionXmlValidator
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-    }
-
-    // Handles validation errors and warnings
-    private static void ValidationEventHandler(object sender, ValidationEventArgs e)
-    {
-        string severity = e.Severity == XmlSeverityType.Error ? "Error" : "Warning";
-        Console.WriteLine($"  {severity}: {e.Message}");
     }
 }

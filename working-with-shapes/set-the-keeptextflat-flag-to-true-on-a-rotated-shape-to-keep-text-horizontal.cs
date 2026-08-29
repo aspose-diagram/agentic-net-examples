@@ -4,41 +4,40 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input and output file paths (adjust as needed)
+            // Load an existing Visio diagram
             string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page and one shape
-            if (diagram.Pages.Count == 0)
-            {
-                throw new Exception("The diagram contains no pages.");
-            }
-
+            // Access the first page
             Page page = diagram.Pages[0];
+
+            // Ensure there is at least one shape on the page
             if (page.Shapes.Count == 0)
             {
-                throw new Exception("The first page contains no shapes.");
+                Console.WriteLine("No shapes found on the page.");
+                return;
             }
 
-            // Get the first shape on the page
+            // Retrieve the first shape
             Shape shape = page.Shapes[0];
 
-            // Rotate the shape (angle in degrees)
-            shape.XForm.Angle.Value = 45; // Rotate 45 degrees
+            // Rotate the shape 45 degrees (convert to radians)
+            double angleDeg = 45;
+            double angleRad = Math.PI * angleDeg / 180.0;
+            shape.SetAngle(angleRad);
 
-            // Keep the text horizontal despite rotation
+            // Set KeepTextFlat to true so the text stays horizontal
             shape.ThreeDFormat.KeepTextFlat.Value = BOOL.True;
 
             // Save the modified diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved with KeepTextFlat enabled.");
 
         }
         catch (System.IO.FileNotFoundException ex)

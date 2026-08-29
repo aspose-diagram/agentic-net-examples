@@ -10,33 +10,36 @@ class Program
         try
         {
 
-            // Load the source Visio diagram
+            // Paths to the source and destination Visio files
             string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Text to search for within shape texts
+            // Define the text to search for (case‑insensitive)
             string searchText = "Target";
 
-            // Iterate through each page in the diagram
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // LINQ query: select shapes whose plain text contains the search text (case‑insensitive)
+                // LINQ query to select shapes whose visible text contains the search string
                 var matchingShapes = page.Shapes
                     .Cast<Shape>()
-                    .Where(s => !string.IsNullOrWhiteSpace(s.Text.Value.ToString()) &&
-                                s.Text.Value.ToString().Contains(searchText, StringComparison.OrdinalIgnoreCase));
+                    .Where(s => s.Del == BOOL.False && 
+                                !string.IsNullOrWhiteSpace(s.Text.Value.ToString()) &&
+                                s.Text.Value.ToString().IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0);
 
-                // Apply the preset theme quickstyle to each matching shape
+                // Apply a preset theme quickstyle to each matching shape
                 foreach (Shape shape in matchingShapes)
                 {
-                    shape.PresetTheme = PresetThemeValue.Bubble;
-                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                    shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+                    shape.PresetTheme = PresetThemeValue.Bubble;                     // Apply the theme
+                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;    // Choose a variant
+                    shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3; // Apply a quickstyle
                 }
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

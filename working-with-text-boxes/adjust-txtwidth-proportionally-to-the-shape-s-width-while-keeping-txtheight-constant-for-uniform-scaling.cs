@@ -1,37 +1,41 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class AdjustTextBlock
+public class Program
 {
-    static void Main()
+    public static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Assume we work with the first page and a specific shape (ID = 1)
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes.GetShape(1);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Example: increase the shape's width by 20%
-            double originalWidth = shape.XForm.Width.Value;
-            double newWidth = originalWidth * 1.20;
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-            // Apply the new width to the shape
-            shape.SetWidth(newWidth);
+                    // Adjust the text block width to match the shape's width.
+                    // TxtHeight is left unchanged to keep uniform scaling.
+                    shape.TextXForm.TxtWidth.Value = shape.XForm.Width.Value;
+                }
+            }
 
-            // Adjust TxtWidth proportionally to the new shape width
-            // Keep TxtHeight unchanged (no modification needed)
-            shape.TextXForm.TxtWidth = new DoubleValue { Value = newWidth };
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Refresh shape data so that Visio recalculates dependent values
-            shape.RefreshData();
-
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("TxtWidth adjusted proportionally to shape width and diagram saved.");
 
         }
         catch (System.IO.FileNotFoundException ex)

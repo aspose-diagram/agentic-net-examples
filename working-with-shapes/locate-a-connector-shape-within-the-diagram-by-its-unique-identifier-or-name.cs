@@ -2,73 +2,75 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+public class Program
 {
-    static void Main()
+    // Entry point of the console application
+    public static void Main(string[] args)
     {
         try
         {
 
-            // Path to the Visio file
-            string diagramPath = "input.vsdx";
+            // Path to the Visio file (adjust as needed)
+            string diagramPath = "sample.vsdx";
 
-            // Load the diagram
+            // Example identifiers to locate the connector
+            long connectorId = 12345;               // Unique shape ID (if known)
+            string connectorName = "Connector 1";   // Universal name or name (if known)
+
+            // Load the diagram from file
             Diagram diagram = new Diagram(diagramPath);
 
-            // Example identifier or name to locate
-            long targetId = 12345;                 // replace with actual ID if known
-            string targetName = "MyConnector";     // replace with actual Name or NameU if known
-
-            Shape connectorShape = null;
-
-            // Search each page for the connector
-            foreach (Page page in diagram.Pages)
-            {
-                // Try to locate by unique ID
-                if (targetId != 0)
-                {
-                    Shape shapeById = page.Shapes.GetShape(targetId);
-                    if (shapeById != null && shapeById.OneD) // OneD indicates a connector
-                    {
-                        connectorShape = shapeById;
-                        break;
-                    }
-                }
-
-                // If not found by ID, search by Name/NameU
-                foreach (Shape shape in page.Shapes)
-                {
-                    bool nameMatches = (!string.IsNullOrEmpty(targetName) &&
-                                        (shape.Name == targetName || shape.NameU == targetName));
-
-                    if (nameMatches && shape.OneD) // ensure it's a connector
-                    {
-                        connectorShape = shape;
-                        break;
-                    }
-                }
-
-                if (connectorShape != null)
-                    break;
-            }
+            // Attempt to find the connector by ID or name
+            Shape connectorShape = FindConnectorShape(diagram, connectorId, connectorName);
 
             // Output the result
-            if (connectorShape != null)
-            {
-                Console.WriteLine("Connector shape found:");
-                Console.WriteLine($"  ID   : {connectorShape.ID}");
-                Console.WriteLine($"  Name : {connectorShape.Name}");
-                Console.WriteLine($"  NameU: {connectorShape.NameU}");
-            }
-            else
-            {
-                Console.WriteLine("Connector shape not found.");
-            }
+            Console.WriteLine($"Connector found: ID = {connectorShape.ID}, NameU = {connectorShape.NameU}");
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Searches all pages for a connector shape that matches the given ID or name.
+    /// </summary>
+    /// <param name="diagram">The loaded Aspose.Diagram.Diagram instance.</param>
+    /// <param name="targetId">The unique shape ID to match (use 0 if not searching by ID).</param>
+    /// <param name="targetName">The shape name (Name or NameU) to match (null or empty if not searching by name).</param>
+    /// <returns>The matching connector Shape.</returns>
+    /// <exception cref="Exception">Thrown when no matching connector is found.</exception>
+    private static Shape FindConnectorShape(Diagram diagram, long targetId, string targetName)
+    {
+        // Iterate through each page in the diagram
+        foreach (Page page in diagram.Pages)
+        {
+            // Iterate through each shape on the current page
+            foreach (Shape shape in page.Shapes)
+            {
+                // Connectors are 1‑D shapes; skip non‑connector shapes
+                if (!shape.OneD)
+                {
+                    continue;
+                }
+
+                // Match by ID if a non‑zero ID is provided
+                if (targetId != 0 && shape.ID == targetId)
+                {
+                    return shape;
+                }
+
+                // Match by name (Name or universal NameU) if a name is provided
+                if (!string.IsNullOrEmpty(targetName) &&
+                    (shape.Name == targetName || shape.NameU == targetName))
+                {
+                    return shape;
+                }
+            }
+        }
+
+        // No matching connector was found
+        throw new Exception("Connector shape not found with the specified identifier or name.");
     }
 }

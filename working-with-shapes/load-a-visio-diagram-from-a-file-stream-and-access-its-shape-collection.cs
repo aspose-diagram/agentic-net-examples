@@ -9,20 +9,31 @@ class Program
         try
         {
 
-            // Open the Visio file as a read‑only stream
-            using (FileStream stream = new FileStream("input.vsdx", FileMode.Open, FileAccess.Read))
-            {
-                // Load the diagram from the stream using the Diagram(Stream) constructor
-                Diagram diagram = new Diagram(stream);
+            // Path to the Visio file to be loaded
+            string filePath = "example.vsdx";
 
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+            // Open the file as a read‑only stream
+            using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                // Load the Visio diagram from the stream using the Diagram(Stream) constructor
+                using (Diagram diagram = new Diagram(stream))
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Ensure the document contains at least one page
+                    if (diagram.Pages.Count > 0)
                     {
-                        // Example operation: output the shape ID
-                        Console.WriteLine($"Page ID: {page.ID}, Shape ID: {shape.ID}");
+                        // Get the first page (you can iterate over all pages if needed)
+                        Page page = diagram.Pages[0];
+
+                        // Iterate through the shapes on the page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Example: output basic shape information
+                            Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("The diagram contains no pages.");
                     }
                 }
             }

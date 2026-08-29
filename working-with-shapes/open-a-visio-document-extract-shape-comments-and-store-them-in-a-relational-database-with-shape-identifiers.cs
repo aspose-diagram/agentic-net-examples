@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Data;
 using System.Data.SqlClient;
 using Aspose.Diagram;
 
@@ -8,103 +7,98 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
+        // Path to the Visio file – replace with your actual file path or pass as argument.
         string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Guard: ensure the Visio file exists
+
+        // Verify that the Visio file exists before proceeding.
         if (!File.Exists(visioPath))
         {
             Console.Error.WriteLine($"File not found: {visioPath}");
             return;
         }
 
-        // Database connection string (second argument or default)
-        string connectionString = args.Length > 1 ? args[1] : "Data Source=.;Initial Catalog=VisioComments;Integrated Security=True";
+        // Connection string for the relational database – adjust to your environment.
+        string connectionString = "Data Source=.;Initial Catalog=VisioComments;Integrated Security=True";
 
-        // Load the Visio document inside a try/catch to capture Aspose errors
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(visioPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading Visio file: {ex.Message}");
-            return;
-        }
+            // Load the Visio document.
+            Diagram diagram = new Diagram(visioPath);
 
-        // Ensure the target table exists (simple schema)
-        try
-        {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            // Ensure the Reviewers collection is not null before using it.
+            var reviewers = diagram.DocumentSheet?.Reviewers;
+
+            // Open a SQL connection once and reuse it for all inserts.
+            using (SqlConnection sqlConn = new SqlConnection(connectionString))
             {
-                conn.Open();
-                string createTableSql = @"
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ShapeComments' AND xtype='U')
-CREATE TABLE ShapeComments (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    DiagramPath NVARCHAR(260),
-    PageName NVARCHAR(100),
-    ShapeId INT,
-    CommentText NVARCHAR(MAX),
-    ReviewerId INT
-);";
-                using (SqlCommand cmd = new SqlCommand(createTableSql, conn))
+                sqlConn.Open();
+
+                // Prepare an INSERT command with parameters to avoid SQL injection.
+                using (SqlCommand cmd = new SqlCommand(
+                    @"INSERT INTO ShapeComments (DiagramPath, PageName, ShapeId, CommentText, ReviewerName)
+                      VALUES (@DiagramPath, @PageName, @ShapeId, @CommentText, @ReviewerName)", sqlConn))
                 {
-                    cmd.ExecuteNonQuery();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Database setup error: {ex.Message}");
-            return;
-        }
+                    // Define parameters once; values will be set inside the loops.
+                    cmd.Parameters.Add("@DiagramPath", System.Data.SqlDbType.NVarChar);
+                    cmd.Parameters.Add("@PageName", System.Data.SqlDbType.NVarChar);
+                    cmd.Parameters.Add("@ShapeId", System.Data.SqlDbType.Int);
+                    cmd.Parameters.Add("@CommentText", System.Data.SqlDbType.NVarChar);
+                    cmd.Parameters.Add("@ReviewerName", System.Data.SqlDbType.NVarChar);
 
-        // Iterate each page and extract annotations (comments)
-        foreach (Page page in diagram.Pages)
-        {
-            // Retrieve the page's universal name for reporting
-            string pageName = page.NameU;
-
-            // Access the collection of annotations via the page's PageSheet
-            foreach (Annotation annotation in page.PageSheet.Annotations)
-            {
-                // Extract the shape identifier the comment is attached to
-                int shapeId = annotation.ShapeID;
-                // Extract the comment text (use .Value to get the string)
-                string commentText = annotation.Comment.Value;
-                // Extract the reviewer identifier (author index)
-                int reviewerId = annotation.ReviewerID.Value;
-
-                // Insert the comment record into the database
-                try
-                {
-                    using (SqlConnection conn = new SqlConnection(connectionString))
+                    // Iterate through each page in the diagram.
+                    foreach (Page page in diagram.Pages)
                     {
-                        conn.Open();
-                        string insertSql = @"
-INSERT INTO ShapeComments (DiagramPath, PageName, ShapeId, CommentText, ReviewerId)
-VALUES (@DiagramPath, @PageName, @ShapeId, @CommentText, @ReviewerId);";
-                        using (SqlCommand cmd = new SqlCommand(insertSql, conn))
+                        // Retrieve the page name; fallback to empty string if null.
+                        string pageName = page.NameU ?? string.Empty;
+
+                        // Access the collection of annotations (comments) on the page.
+                        var annotations = page.PageSheet?.Annotations;
+                        if (annotations == null) continue;
+
+                        // Process each annotation.
+                        foreach (Annotation annotation in annotations)
                         {
-                            // Parameterize to avoid SQL injection and handle special characters
-                            cmd.Parameters.Add("@DiagramPath", SqlDbType.NVarChar, 260).Value = visioPath;
-                            cmd.Parameters.Add("@PageName", SqlDbType.NVarChar, 100).Value = pageName;
-                            cmd.Parameters.Add("@ShapeId", SqlDbType.Int).Value = shapeId;
-                            cmd.Parameters.Add("@CommentText", SqlDbType.NVarChar).Value = commentText;
-                            cmd.Parameters.Add("@ReviewerId", SqlDbType.Int).Value = reviewerId;
+                            // Extract the shape identifier the comment is attached to.
+                            int shapeId = annotation.ShapeID;
+
+                            // Retrieve the comment text.
+                            string commentText = annotation.Comment?.Value ?? string.Empty;
+
+                            // Resolve the reviewer name using the ReviewerID index.
+                            string reviewerName = string.Empty;
+                            if (reviewers != null && annotation.ReviewerID != null)
+                            {
+                                int reviewerIndex = annotation.ReviewerID.Value;
+                                // Reviewer collection is 0‑based; ensure the index is valid.
+                                if (reviewerIndex >= 0 && reviewerIndex < reviewers.Count)
+                                {
+                                    Reviewer reviewer = reviewers[reviewerIndex];
+                                    reviewerName = reviewer?.Name?.Value ?? string.Empty;
+                                }
+                            }
+
+                            // Populate command parameters with current values.
+                            cmd.Parameters["@DiagramPath"].Value = visioPath;
+                            cmd.Parameters["@PageName"].Value = pageName;
+                            cmd.Parameters["@ShapeId"].Value = shapeId;
+                            cmd.Parameters["@CommentText"].Value = commentText;
+                            cmd.Parameters["@ReviewerName"].Value = reviewerName;
+
+                            // Execute the INSERT statement.
                             cmd.ExecuteNonQuery();
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error inserting comment for shape {shapeId} on page '{pageName}': {ex.Message}");
-                    // Continue processing other comments despite the error
-                }
-            }
-        }
 
-        Console.WriteLine("Comment extraction and storage completed successfully.");
+                sqlConn.Close();
+            }
+
+            Console.WriteLine("Comments extraction and database insertion completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during loading, processing, or DB operations.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

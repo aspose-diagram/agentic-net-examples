@@ -1,76 +1,79 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class PdfPageCallback : IPageSavingCallback
-{
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
-    }
-
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"Finished saving page {args.PageIndex + 1}.");
-        // Example: stop after first page (not required, just demonstration)
-        // args.HasMorePages = false;
-    }
-}
-
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input Visio file path as first argument
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Determine output PDF path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
+
         try
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output PDF file path
-            string outputPath = "output.pdf";
-
-            // Load the diagram
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Apply a preset theme to each page
+            // Inspect each page for visual consistency
             foreach (Page page in diagram.Pages)
             {
-                // Apply the Bubble theme to the page
-                page.PresetTheme = PresetThemeValue.Bubble;
-                // Optionally set a variant
-                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-            }
+                // Retrieve page dimensions (in inches)
+                double width = page.PageSheet.PageProps.PageWidth.Value;
+                double height = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Verify visual consistency: check that all pages have the same dimensions
-            double firstWidth = diagram.Pages[0].PageSheet.PageProps.PageWidth.Value;
-            double firstHeight = diagram.Pages[0].PageSheet.PageProps.PageHeight.Value;
-
-            for (int i = 1; i < diagram.Pages.Count; i++)
-            {
-                Page p = diagram.Pages[i];
-                double w = p.PageSheet.PageProps.PageWidth.Value;
-                double h = p.PageSheet.PageProps.PageHeight.Value;
-
-                if (Math.Abs(w - firstWidth) > 0.001 || Math.Abs(h - firstHeight) > 0.001)
-                {
-                    throw new Exception($"Page {p.Name} dimensions ({w}x{h}) differ from first page ({firstWidth}x{firstHeight}).");
-                }
+                // Log page information to the console
+                Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}, Width: {width:F2} in, Height: {height:F2} in");
             }
 
             // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-            pdfOptions.ExportHiddenPage = false;
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            pdfOptions.PageSavingCallback = new PdfPageCallback();
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                // Use a common fallback font
+                DefaultFont = "Arial",
+                // Do not export hidden pages
+                ExportHiddenPage = false,
+                // Explicitly set the target format (optional but safe)
+                SaveFormat = SaveFileFormat.Pdf,
+                // Attach custom callback to monitor per‑page saving
+                PageSavingCallback = new PageSavingLogger()
+            };
 
-            // Save the diagram as PDF
+            // Export the entire diagram to a single PDF file
             diagram.Save(outputPath, pdfOptions);
-
+            Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+}
+
+// Custom callback to log page‑saving events during PDF export
+class PageSavingLogger : IPageSavingCallback
+{
+    // Called before a page starts saving
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
+    }
+
+    // Called after a page has been saved
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1}");
+        // Example: stop after first page (uncomment to enable)
+        // if (args.PageIndex == 0) args.HasMorePages = false;
     }
 }

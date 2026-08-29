@@ -6,45 +6,51 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        string outputPath = "output.vsdx";
-
-        // Guard: ensure the input file exists before proceeding
+        // Expect input Visio file path as first argument
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
+        // Optional output path (second argument) or default to "output.vsdx"
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
         try
         {
-            // Load the Visio diagram from the specified file
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over every page in the diagram
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over every shape on the current page
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Apply a custom solid red fill to the shape's foreground
+                    // Apply a custom fill color (red) to the shape
                     shape.Fill.FillForegnd.Value = "#FF0000";
 
-                    // Validate that the shape now has a non‑empty fill color (ThemeColor does not exist)
+                    // Apply a custom line color (green) to the shape
+                    shape.Line.LineColor.Value = "#00FF00";
+
+                    // Validate that the fill foreground color (used as a theme indicator) is not null or empty
                     if (string.IsNullOrEmpty(shape.Fill.FillForegnd.Value))
                     {
-                        throw new Exception($"Shape ID {shape.ID} has an empty FillForegnd after color assignment.");
+                        // Report validation failure with shape identification details
+                        Console.Error.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' has a null or empty FillForegnd value.");
                     }
                 }
             }
 
             // Save the modified diagram to the output file using VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram processed and saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors encountered during processing to the error stream
+            // Write any Aspose or runtime errors to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

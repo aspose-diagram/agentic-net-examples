@@ -1,36 +1,53 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        // Define a simple schema: user-defined cell name -> expected .NET type
-        private static readonly Dictionary<string, Type> UserCellSchema = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "Cost", typeof(double) },
-            { "Quantity", typeof(int) },
-            { "StartDate", typeof(DateTime) }
-        };
-
         static void Main(string[] args)
         {
             try
             {
 
-                // Input Visio file path
+                // Input and output file paths
                 string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "validated_output.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Define a simple schema: user cell name -> expected .NET type
+                var schema = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Cost", typeof(double) },
+                    { "Quantity", typeof(int) },
+                    { "StartDate", typeof(DateTime) },
+                    { "IsActive", typeof(bool) }
+                };
 
                 // Load the diagram
-                Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vsdx);
+                Diagram diagram = new Diagram(inputPath);
 
-                // Validate user-defined cells against the schema
-                ValidateUserDefinedCells(diagram);
+                // Validate each user-defined cell against the schema
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        foreach (User userCell in shape.Users)
+                        {
+                            if (schema.TryGetValue(userCell.Name, out Type expectedType))
+                            {
+                                string cellValue = userCell.Value?.Val ?? string.Empty;
+                                bool isValid = ValidateValue(cellValue, expectedType);
+                                if (!isValid)
+                                {
+                                    throw new Exception(
+                                        $"Validation failed for shape ID {shape.ID}, user cell '{userCell.Name}'. " +
+                                        $"Expected {expectedType.Name}, got '{cellValue}'.");
+                                }
+                            }
+                        }
+                    }
+                }
 
-                // Save the diagram after successful validation
+                // Save the validated diagram as VSDX
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
@@ -40,37 +57,19 @@ class Program
             }
     }
 
-        private static void ValidateUserDefinedCells(Diagram diagram)
+        // Helper method to validate a string value against an expected .NET type
+        static bool ValidateValue(string value, Type expectedType)
         {
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Iterate over all user-defined cells in the shape
-                    foreach (User userCell in shape.Users)
-                    {
-                        // Check if the cell name is defined in the schema
-                        if (UserCellSchema.TryGetValue(userCell.Name, out Type expectedType))
-                        {
-                            string cellValue = userCell.Value?.Val ?? string.Empty;
+            if (expectedType == typeof(int))
+                return int.TryParse(value, out _);
+            if (expectedType == typeof(double))
+                return double.TryParse(value, out _);
+            if (expectedType == typeof(bool))
+                return bool.TryParse(value, out _);
+            if (expectedType == typeof(DateTime))
+                return DateTime.TryParse(value, out _);
 
-                            bool isValid = expectedType switch
-                            {
-                                Type t when t == typeof(int) => int.TryParse(cellValue, out _),
-                                Type t when t == typeof(double) => double.TryParse(cellValue, out _),
-                                Type t when t == typeof(DateTime) => DateTime.TryParse(cellValue, out _),
-                                _ => true // If type is not specifically handled, consider it valid
-                            };
-
-                            if (!isValid)
-                            {
-                                throw new Exception($"Validation failed for shape ID {shape.ID} on page '{page.Name}'. " +
-                                                    $"User cell '{userCell.Name}' expects a value of type {expectedType.Name} " +
-                                                    $"but got '{cellValue}'.");
-                            }
-                        }
-                    }
-                }
-            }
+            // If the expected type is not one of the above, treat it as a string (always valid)
+            return true;
         }
     }

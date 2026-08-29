@@ -1,53 +1,55 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (adjust as needed)
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-        string outputPath = "output_with_watermark.vsdx";
-
         try
         {
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Get the first page of the diagram
+            // Add a blank page to the diagram
+            diagram.Pages.Add(new Page());
+
+            // Get the first (and only) page
             Page page = diagram.Pages[0];
 
-            // Retrieve page dimensions (in inches)
+            // Ensure the page has standard dimensions (8.5" x 11")
+            page.PageSheet.PageProps.PageWidth.Value = 8.5;
+            page.PageSheet.PageProps.PageHeight.Value = 11.0;
+
+            // Calculate center position for the watermark
+            double pinX = page.PageSheet.PageProps.PageWidth.Value / 2.0;
+            double pinY = page.PageSheet.PageProps.PageHeight.Value / 2.0;
             double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Add a full‑page text shape that will serve as the watermark
-            // Overload uses positional arguments (no named parameters for fontSize)
-            Shape watermark = page.AddText(
-                0,                 // pinX (left)
-                0,                 // pinY (bottom)
-                pageWidth,         // width (full page)
-                pageHeight,        // height (full page)
-                "CONFIDENTIAL",    // text
-                "Calibri",         // font name
-                "#808080",         // font color (light gray, hex)
-                0.5);              // font size in inches (≈36 pt)
+            // Watermark text and styling
+            string watermarkText = "CONFIDENTIAL";
+            string fontName = "Arial";
+            string fontColor = "#CCCCCC"; // Light gray
+            double fontSizeInInches = 1.0; // 72 points = 1 inch
 
-            // Set fill transparency (0‑100, where 100 is fully transparent)
-            watermark.Fill.FillForegndTrans.Value = 80; // 80 % transparent
+            // Add the watermark as a full‑page text shape (returns a Shape object)
+            Shape watermarkShape = page.AddText(pinX, pinY, pageWidth, pageHeight,
+                                               watermarkText, fontName, fontColor, fontSizeInInches);
 
-            // Optionally set line (border) transparency as well
-            watermark.Line.LineColorTrans.Value = 80;
+            // Set line (border) transparency to 30%
+            watermarkShape.Line.LineColorTrans.Value = 30;
 
-            // Save the modified diagram using the correct overload
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Set fill (background) transparency to 30% for a subtle effect
+            watermarkShape.Fill.FillForegndTrans.Value = 30;
+
+            // Save the diagram in VSDX format
+            diagram.Save("WatermarkedDiagram.vsdx", SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

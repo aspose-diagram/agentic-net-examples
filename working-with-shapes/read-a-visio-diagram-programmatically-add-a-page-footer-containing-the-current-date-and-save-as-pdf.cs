@@ -9,27 +9,29 @@ class Program
             try
             {
 
-                // Input Visio file path (adjust as needed)
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
 
-                // Output PDF file path
+                // Path for the resulting PDF file
                 string outputPath = "output.pdf";
 
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Set the footer to display the current date using Visio's date field code (&d)
-                diagram.HeaderFooter.FooterRight = "&d";
+                // Set the footer text to the current date (e.g., "2026-08-26")
+                diagram.HeaderFooter.FooterRight = DateTime.Now.ToString("yyyy-MM-dd");
 
                 // Optional: adjust footer margin (in inches) if needed
                 // diagram.HeaderFooter.FooterMargin.Value = 0.2;
 
-                // Configure PDF save options (e.g., default font for missing fonts)
+                // Configure PDF save options (set a default font to avoid missing glyphs)
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
                 pdfOptions.DefaultFont = "Arial";
 
-                // Save the diagram as PDF with the specified options
+                // Save the diagram as PDF
                 diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine("Diagram saved as PDF with footer date.");
 
             }
             catch (System.IO.FileNotFoundException ex)

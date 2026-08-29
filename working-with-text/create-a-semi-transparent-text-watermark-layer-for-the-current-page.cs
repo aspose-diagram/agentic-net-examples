@@ -6,56 +6,42 @@ class Program
 {
     static void Main()
     {
-        try
+        // Create a new diagram instance
+        using (Diagram diagram = new Diagram())
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Get the first (current) page
+            // Access the first (default) page
             Page page = diagram.Pages[0];
 
             // Retrieve page dimensions (in inches)
             double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Center position for the watermark
-            double pinX = pageWidth / 2.0;
-            double pinY = pageHeight / 2.0;
+            // Center coordinates for the watermark
+            double pinX = pageWidth / 2;
+            double pinY = pageHeight / 2;
 
             // Watermark text and formatting
             string watermarkText = "CONFIDENTIAL";
             string fontName = "Arial";
             string fontColor = "#808080"; // Gray color
-            double fontSizeInInches = 1.0; // 72 points = 1 inch
+            double fontSize = 72.0 / 72.0; // 72 points = 1 inch
 
-            // Add the watermark as a text shape covering the whole page
+            // Add a full‑page text shape that will serve as the watermark
             Shape watermarkShape = page.AddText(
                 pinX,               // PinX (center X)
                 pinY,               // PinY (center Y)
-                pageWidth,          // Width of the text box
-                pageHeight,         // Height of the text box
-                watermarkText,
-                fontName,
-                fontColor,
-                fontSizeInInches);
+                pageWidth,          // Width of the text box (full page)
+                pageHeight,         // Height of the text box (full page)
+                watermarkText,      // Text content
+                fontName,           // Font name
+                fontColor,          // Font color
+                fontSize);          // Font size (in inches)
 
-            // Rotate the watermark (optional, e.g., 45 degrees)
-            watermarkShape.TextXForm.TxtAngle.Value = (float)((Math.PI / 180) * 45);
+            // Apply semi‑transparent fill to the shape (50 % opacity)
+            watermarkShape.Fill.FillForegndTrans.Value = 50;
 
-            // Apply semi‑transparent background to the text block to simulate opacity
-            // 0 = opaque, 100 = fully transparent
-            watermarkShape.TextBlock.TextBkgndTrans.Value = 50; // 50 % transparency
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Save the diagram with the watermark applied
+            diagram.Save("WatermarkedDiagram.vsdx", SaveFileFormat.Vsdx);
         }
     }
 }

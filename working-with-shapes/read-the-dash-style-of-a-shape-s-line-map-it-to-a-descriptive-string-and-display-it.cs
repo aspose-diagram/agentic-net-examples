@@ -1,50 +1,60 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the Visio file (adjust as needed)
+        string inputPath = "input.vsdx";
+
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the Visio file
-            string filePath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // Iterate through all pages and shapes
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Ensure the shape has a line definition (Line may be null for some shapes)
+                    if (shape.Line != null)
+                    {
+                        // Retrieve the line dash pattern enum value from the shape's line cell
+                        LinePatternValue pattern = shape.Line.LinePattern.Value;
 
-                    // Retrieve the dash pattern enum value
-                    LinePatternValue pattern = shape.Line.LinePattern.Value;
+                        // Map the enum to a human‑readable description
+                        string description = GetLinePatternDescription(pattern);
 
-                    // Convert the enum to a readable description
-                    string description = GetDashStyleDescription(pattern);
-
-                    // Output the shape ID and its dash style
-                    Console.WriteLine($"Shape ID {shape.ID} dash style: {description}");
+                        // Display the shape ID and its line dash style description
+                        Console.WriteLine($"Shape ID {shape.ID} – Line dash style: {description}");
+                    }
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
-    // Maps LinePatternValue enum members to descriptive strings
-    static string GetDashStyleDescription(LinePatternValue pattern)
+    /// <summary>
+    /// Converts a LinePatternValue enum to a descriptive string.
+    /// </summary>
+    private static string GetLinePatternDescription(LinePatternValue pattern)
     {
+        // Map known enum values to friendly names; unknown values fall back to "Unknown"
         switch (pattern)
         {
             case LinePatternValue.Solid:
@@ -54,9 +64,13 @@ class Program
             case LinePatternValue.Dot:
                 return "Dot";
             case LinePatternValue.DashDot:
-                return "DashDot";
+                return "Dash‑Dot";
             case LinePatternValue.DashDotDot:
-                return "DashDotDot";
+                return "Dash‑Dot‑Dot";
+            case LinePatternValue.LongDash:
+                return "Long Dash";
+            // The following members may not exist in older Aspose.Diagram versions;
+            // they are omitted to avoid compilation errors.
             default:
                 return "Unknown";
         }

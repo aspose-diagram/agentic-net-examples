@@ -9,53 +9,40 @@ class Program
             try
             {
 
-                // Input Visio file (adjust the path as needed)
+                // Input Visio file path
                 string inputPath = "input.vsdx";
 
-                // Output CSV file
+                // Output CSV file path
                 string outputCsv = "UserDefinedCells.csv";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Create CSV and write header
+                // Create a StreamWriter for the CSV file
                 using (StreamWriter writer = new StreamWriter(outputCsv))
                 {
-                    writer.WriteLine("ShapeID,ShapeName,UserName,UserValue");
+                    // Write CSV header
+                    writer.WriteLine("PageIndex,ShapeID,ShapeName,UserName,UserValue");
 
-                    // Iterate through all pages and shapes
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through all pages
+                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                     {
+                        Page page = diagram.Pages[pageIndex];
+
+                        // Iterate through all shapes on the page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Iterate through user‑defined cells of the shape
-                            foreach (User user in shape.Users)
+                            // Iterate through user-defined cells (Users collection)
+                            foreach (User userCell in shape.Users)
                             {
-                                // Prepare values
-                                string shapeId = shape.ID.ToString();
-                                string shapeName = shape.NameU ?? string.Empty;
-                                string userName = user.NameU ?? string.Empty;
-                                string userValue = user.Value?.Val ?? string.Empty;
-
-                                // Simple CSV escaping for commas and quotes
-                                string Escape(string s)
-                                {
-                                    if (s.Contains("\"") || s.Contains(","))
-                                    {
-                                        s = s.Replace("\"", "\"\"");
-                                        return $"\"{s}\"";
-                                    }
-                                    return s;
-                                }
-
-                                // Write a CSV line
-                                writer.WriteLine($"{Escape(shapeId)},{Escape(shapeName)},{Escape(userName)},{Escape(userValue)}");
+                                // Write a CSV line with shape identifier and user cell data
+                                writer.WriteLine($"{pageIndex},{shape.ID},{shape.NameU},{userCell.Name},{userCell.Value.Val}");
                             }
                         }
                     }
                 }
 
-                Console.WriteLine($"User‑defined cell data exported to '{outputCsv}'.");
+                Console.WriteLine($"User-defined cell data exported to '{outputCsv}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

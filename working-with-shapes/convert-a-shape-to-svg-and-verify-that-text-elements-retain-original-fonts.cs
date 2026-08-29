@@ -1,89 +1,94 @@
 using System;
-using System.IO;
+using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main()
         {
-            // Configure the folder that contains system fonts (recursive search enabled)
-            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
-
-            // Path to the source Visio file
-            string diagramPath = "input.vsdx";
-            // Verify the diagram file exists before attempting to load it
-            if (!File.Exists(diagramPath))
+            try
             {
-                Console.Error.WriteLine($"File not found: {diagramPath}");
-                return;
-            }
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path for the exported SVG file
+                string outputSvgPath = "shape_output.svg";
 
-            // Access the first page of the diagram
-            Page page = diagram.Pages[0];
+                // Configure font folder (required before loading diagram)
+                // Adjust the path to the system fonts folder on the target machine
+                FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
 
-            // Prepare a collection of installed system fonts for validation
-            InstalledFontCollection systemFonts = new InstalledFontCollection();
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            bool shapeProcessed = false; // Tracks whether any shape with text was handled
+                // Get the first page
+                Page page = diagram.Pages[0];
 
-            // Iterate over all shapes on the page
-            foreach (Aspose.Diagram.Shape shape in page.Shapes)
-            {
-                // Ensure the shape actually contains text
-                if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.ToString()))
+                // Find the first shape that contains text
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    shapeProcessed = true;
-
-                    // Validate each character run's font against installed system fonts
-                    foreach (Aspose.Diagram.Char ch in shape.Chars)
+                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
                     {
-                        string fontName = ch.FontName.Value;
-                        bool fontFound = false;
-
-                        // Use implicit typing for system font entries (type may vary across environments)
-                        foreach (var sysFont in systemFonts.Families)
-                        {
-                            // Most font objects expose a Name property; compare case‑insensitively
-                            if (string.Equals(sysFont.Name, fontName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                fontFound = true;
-                                break;
-                            }
-                        }
-
-                        // Throw if the required font is missing on the host system
-                        if (!fontFound)
-                        {
-                            throw new Exception($"Font \"{fontName}\" used in shape ID {shape.ID} is not installed on the system.");
-                        }
+                        targetShape = shape;
+                        break;
                     }
-
-                    // Export the shape to an SVG file
-                    string svgOutputPath = $"shape_{shape.ID}.svg";
-                    SVGSaveOptions svgOptions = new SVGSaveOptions();
-                    shape.ToSvg(svgOutputPath, svgOptions);
-
-                    Console.WriteLine($"Shape ID {shape.ID} exported to SVG successfully: {svgOutputPath}");
                 }
-            }
 
-            // Inform the user if no text‑containing shapes were found
-            if (!shapeProcessed)
-            {
-                Console.WriteLine("No shapes with text were found in the diagram.");
+                if (targetShape == null)
+                {
+                    Console.WriteLine("No shape with text found in the diagram.");
+                    return;
+                }
+
+                // Export the shape to SVG
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+                targetShape.ToSvg(outputSvgPath, svgOptions);
+                Console.WriteLine($"Shape exported to SVG: {outputSvgPath}");
+
+                // Verify that all fonts used in the diagram are installed on the system
+                var installedFonts = new InstalledFontCollection();
+
+                bool allDiagramFontsAvailable = true;
+                foreach (Aspose.Diagram.Font diagramFont in diagram.Fonts)
+                {
+                    bool found = installedFonts.Families.Any(f => f.Name.Equals(diagramFont.Name, StringComparison.OrdinalIgnoreCase));
+                    if (!found)
+                    {
+                        allDiagramFontsAvailable = false;
+                        Console.WriteLine($"Missing diagram font: {diagramFont.Name}");
+                    }
+                }
+
+                // Verify that the fonts used in the shape's text runs are installed
+                bool allShapeFontsAvailable = true;
+                foreach (Aspose.Diagram.Char ch in targetShape.Chars)
+                {
+                    string fontName = ch.FontName.Value;
+                    bool found = installedFonts.Families.Any(f => f.Name.Equals(fontName, StringComparison.OrdinalIgnoreCase));
+                    if (!found)
+                    {
+                        allShapeFontsAvailable = false;
+                        Console.WriteLine($"Missing font in shape text: {fontName}");
+                    }
+                }
+
+                // Report verification result
+                if (allDiagramFontsAvailable && allShapeFontsAvailable)
+                {
+                    Console.WriteLine("All fonts used by the diagram and the shape are available on the system.");
+                }
+                else
+                {
+                    throw new Exception("One or more required fonts are missing. See console output for details.");
+                }
+
             }
-        }
-        catch (Exception ex)
-        {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

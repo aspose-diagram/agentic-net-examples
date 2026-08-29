@@ -1,78 +1,104 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram has at least one page
+            if (diagram.Pages.Count == 0)
             {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+            // Work with the first page (modify as needed for multi‑page docs)
+            Page page = diagram.Pages[0];
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Helper to compute rectangle bounds of a shape
+            static (double left, double right, double top, double bottom) GetBounds(Shape s)
+            {
+                double halfWidth = s.XForm.Width.Value / 2.0;
+                double halfHeight = s.XForm.Height.Value / 2.0;
+                double left = s.XForm.PinX.Value - halfWidth;
+                double right = s.XForm.PinX.Value + halfWidth;
+                double bottom = s.XForm.PinY.Value - halfHeight;
+                double top = s.XForm.PinY.Value + halfHeight;
+                return (left, right, top, bottom);
+            }
 
-                // Process each page in the diagram
-                foreach (Page page in diagram.Pages)
+            // Helper to test rectangle overlap
+            static bool Overlaps(Shape a, Shape b)
+            {
+                var (aL, aR, aT, aB) = GetBounds(a);
+                var (bL, bR, bT, bB) = GetBounds(b);
+                bool horizontal = aL < bR && aR > bL;
+                bool vertical = aB < bT && aT > bB;
+                return horizontal && vertical;
+            }
+
+            // List to keep shapes that have been positioned without overlap
+            var placedShapes = new System.Collections.Generic.List<Shape>();
+
+            // Offset (in inches) to move a shape when overlap is detected
+            const double offset = 0.5;
+
+            // Iterate over all shapes on the page
+            foreach (Shape shape in page.Shapes)
+            {
+                // Skip deleted shapes
+                if (shape.Del == BOOL.True) continue;
+
+                // Skip connectors (1‑D shapes) – they usually don't have text boxes
+                if (shape.OneD) continue;
+
+                // Attempt to place the shape without overlapping previously placed shapes
+                bool moved;
+                do
                 {
-                    // Collect non-deleted shapes on the page
-                    List<Shape> shapes = new List<Shape>();
-                    foreach (Shape shape in page.Shapes)
+                    moved = false;
+                    foreach (Shape placed in placedShapes)
                     {
-                        if (shape.Del == BOOL.False)
+                        if (Overlaps(shape, placed))
                         {
-                            shapes.Add(shape);
+                            // Shift the shape to the right by the offset
+                            shape.XForm.PinX.Value += offset;
+                            moved = true;
+                            // Break to re‑check against all placed shapes after the move
+                            break;
                         }
                     }
+                } while (moved);
 
-                    // Simple pairwise overlap detection and resolution
-                    for (int i = 0; i < shapes.Count; i++)
-                    {
-                        Shape shapeA = shapes[i];
-                        double aLeft = shapeA.XForm.PinX.Value - shapeA.XForm.Width.Value / 2;
-                        double aRight = shapeA.XForm.PinX.Value + shapeA.XForm.Width.Value / 2;
-                        double aTop = shapeA.XForm.PinY.Value + shapeA.XForm.Height.Value / 2;
-                        double aBottom = shapeA.XForm.PinY.Value - shapeA.XForm.Height.Value / 2;
-
-                        for (int j = i + 1; j < shapes.Count; j++)
-                        {
-                            Shape shapeB = shapes[j];
-                            double bLeft = shapeB.XForm.PinX.Value - shapeB.XForm.Width.Value / 2;
-                            double bRight = shapeB.XForm.PinX.Value + shapeB.XForm.Width.Value / 2;
-                            double bTop = shapeB.XForm.PinY.Value + shapeB.XForm.Height.Value / 2;
-                            double bBottom = shapeB.XForm.PinY.Value - shapeB.XForm.Height.Value / 2;
-
-                            // Check for overlap
-                            bool overlap = !(aRight <= bLeft || aLeft >= bRight || aTop <= bBottom || aBottom >= bTop);
-                            if (overlap)
-                            {
-                                // Move shapeB to the right by the width of shapeA plus a small margin
-                                double offset = shapeA.XForm.Width.Value + 0.5;
-                                shapeB.XForm.PinX.Value += offset;
-
-                                // Update bounding values for subsequent checks
-                                bLeft += offset;
-                                bRight += offset;
-
-                                Console.WriteLine($"Adjusted shape ID {shapeB.ID} to avoid overlap with shape ID {shapeA.ID}.");
-                            }
-                        }
-                    }
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved to: " + outputPath);
-
+                // Add the now‑positioned shape to the collection
+                placedShapes.Add(shape);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the adjusted diagram to the output file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

@@ -7,73 +7,52 @@ class Program
 {
     static void Main()
     {
-        try
+        const string watermark = "CONFIDENTIAL";
+        const string outputPath = "watermarked.vsdx";
+
+        // Create a new diagram and add a watermark to each page
+        using (Diagram diagram = new Diagram())
         {
-
-            // Paths – adjust as needed
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-            const string watermarkText = "CONFIDENTIAL";
-
-            // Load the original diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            foreach (Page page in diagram.Pages)
             {
-                // Add watermark to every page
-                foreach (Page page in diagram.Pages)
-                {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Center position for the watermark
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
-
-                    // Font size in inches (e.g., 0.5 inches ≈ 36 points)
-                    double fontSizeInches = 0.5;
-
-                    // Add the watermark text covering the full page area
-                    page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                 watermarkText, "Arial", "#CCCCCC", fontSizeInches);
-                }
-
-                // Save the diagram with watermarks
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Add a full‑page text shape as watermark
+                // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches)
+                page.AddText(0, 0, pageWidth, pageHeight, watermark, "Arial", "#808080", 0.5);
             }
 
-            // Reload the saved diagram to verify watermarks
-            using (Diagram savedDiagram = new Diagram(outputPath))
+            // Save the diagram with the watermark
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+
+        // Load the saved diagram and verify the watermark exists on every page
+        using (Diagram loadedDiagram = new Diagram(outputPath))
+        {
+            foreach (Page page in loadedDiagram.Pages)
             {
-                foreach (Page page in savedDiagram.Pages)
+                bool watermarkFound = false;
+
+                foreach (Shape shape in page.Shapes)
                 {
-                    bool watermarkFound = false;
+                    // Retrieve plain text from the shape
+                    string shapeText = shape.Text.Value.Text;
 
-                    foreach (Shape shape in page.Shapes)
+                    if (!string.IsNullOrEmpty(shapeText) && shapeText == watermark)
                     {
-                        // Get plain text of the shape
-                        string shapeText = shape.Text.Value.Text;
-
-                        if (!string.IsNullOrWhiteSpace(shapeText) &&
-                            shapeText.Contains(watermarkText, StringComparison.OrdinalIgnoreCase))
-                        {
-                            watermarkFound = true;
-                            break;
-                        }
-                    }
-
-                    if (!watermarkFound)
-                    {
-                        throw new Exception($"Watermark not found on page '{page.Name}' (ID: {page.ID}).");
+                        watermarkFound = true;
+                        break;
                     }
                 }
 
-                Console.WriteLine("Validation successful: Watermark appears on every page.");
+                if (!watermarkFound)
+                {
+                    throw new Exception($"Watermark not found on page ID {page.ID}");
+                }
             }
+        }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        Console.WriteLine("Watermark validation passed on all pages.");
     }
 }

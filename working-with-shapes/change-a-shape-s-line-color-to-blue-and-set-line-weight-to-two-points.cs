@@ -9,36 +9,31 @@ class Program
         try
         {
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page
+            // Get the first (default) page
             Page page = diagram.Pages[0];
 
-            // Ensure the page contains at least one shape
-            if (page.Shapes.Count > 0)
-            {
-                // Retrieve the first shape on the page
-                Shape shape = page.Shapes[0];
+            // Add a rectangle shape to the page at position (2,2)
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
 
-                // Set the line color to blue (hex format)
-                shape.Line.LineColor.Value = "#0000FF";
+            // Retrieve the shape instance using its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Set the line weight to two points (2 pt = 2/72 inches)
-                shape.Line.LineWeight.Value = 2.0 / 72.0;
-            }
+            // Set the line color to blue (hex format)
+            shape.Line.LineColor.Value = "#0000FF";
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Set the line weight to two points (2/72 inches)
+            shape.Line.LineWeight.Value = 2.0 / 72.0;
+
+            // Save the diagram as VSDX
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

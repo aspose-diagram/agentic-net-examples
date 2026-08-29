@@ -1,128 +1,152 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-public class SolutionXmlDto
+namespace DiagramVersionControl
 {
-    public string Name { get; set; } = string.Empty;
-    public string XmlValue { get; set; } = string.Empty;
-}
-
-public static class SolutionXmlVersionControl
-{
-    // Load the diagram from a file path
-    public static Diagram LoadDiagram(string diagramPath)
+    // Simple version control for Diagram SolutionXML changes.
+    public class SolutionXmlVersionControl
     {
-        if (!File.Exists(diagramPath))
-            throw new FileNotFoundException($"Diagram file not found: {diagramPath}");
+        private Diagram _diagram;                     // Loaded diagram instance
+        private readonly string _baseDiagramPath;     // Path to the original diagram file
+        private readonly string _diffFolderPath;      // Folder where diff files are stored
+        private int _currentVersion;                  // Incremental version number
 
-        return new Diagram(diagramPath);
-    }
+        // In‑memory list of diffs applied in the current session (for reconstruction if needed)
+        private readonly List<SolutionXML> _pendingDiffs = new List<SolutionXML>();
 
-    // Convert Aspose.Diagram.SolutionXML collection to DTO list for easier processing/serialization
-    public static List<SolutionXmlDto> GetCurrentSolutionXmls(Diagram diagram)
-    {
-        var list = new List<SolutionXmlDto>();
-        foreach (SolutionXML solXml in diagram.SolutionXMLs)
+        public SolutionXmlVersionControl(string baseDiagramPath, string diffFolderPath)
         {
-            list.Add(new SolutionXmlDto
-            {
-                Name = solXml.Name,
-                XmlValue = solXml.XmlValue
-            });
+            _baseDiagramPath = baseDiagramPath;
+            _diffFolderPath = diffFolderPath;
+            _currentVersion = 0;
+
+            // Ensure diff folder exists
+            Directory.CreateDirectory(_diffFolderPath);
         }
-        return list;
-    }
 
-    // Load previously saved snapshot (if any)
-    public static List<SolutionXmlDto> LoadSnapshot(string snapshotPath)
-    {
-        if (!File.Exists(snapshotPath))
-            return new List<SolutionXmlDto>();
-
-        string json = File.ReadAllText(snapshotPath);
-        return JsonSerializer.Deserialize<List<SolutionXmlDto>>(json) ?? new List<SolutionXmlDto>();
-    }
-
-    // Save snapshot for next run
-    public static void SaveSnapshot(string snapshotPath, List<SolutionXmlDto> current)
-    {
-        string json = JsonSerializer.Serialize(current, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(snapshotPath, json);
-    }
-
-    // Write diff files for added or modified SolutionXML entries
-    public static void WriteDiffs(string diffFolder, List<SolutionXmlDto> previous, List<SolutionXmlDto> current)
-    {
-        // Ensure diff folder exists
-        Directory.CreateDirectory(diffFolder);
-
-        // Build lookup for previous entries
-        var prevLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var item in previous)
-            prevLookup[item.Name] = item.XmlValue;
-
-        foreach (var cur in current)
+        // Load the base diagram from file
+        public void Load()
         {
-            bool isNew = !prevLookup.ContainsKey(cur.Name);
-            bool isModified = prevLookup.TryGetValue(cur.Name, out string prevValue) && prevValue != cur.XmlValue;
+            // Aspose.Diagram loads the diagram; no custom create/load rule is required here
+            _diagram = new Diagram(_baseDiagramPath);
+        }
 
-            if (isNew || isModified)
+        // Save the current diagram state back to the original file
+        public void Save()
+        {
+            if (_diagram == null)
+                throw new InvalidOperationException("Diagram not loaded.");
+
+            // Save using VDX format (Visio 2003-2007). Adjust format as needed.
+            _diagram.Save(_baseDiagramPath, SaveFileFormat.Vdx);
+        }
+
+        // Add a new SolutionXML entry to the diagram
+        public void AddSolutionXml(string name, string xmlValue)
+        {
+            if (_diagram == null)
+                throw new InvalidOperationException("Diagram not loaded.");
+
+            var solutionXml = new SolutionXML(name, xmlValue);
+            _diagram.SolutionXMLs.Add(solutionXml);
+            _pendingDiffs.Add(solutionXml); // Track for diff file creation
+        }
+
+        // Commit pending SolutionXML changes as a diff file
+        public void Commit()
+        {
+            if (_pendingDiffs.Count == 0)
+                return; // Nothing to commit
+
+            _currentVersion++;
+
+            // Create a diff file that contains only the newly added SolutionXML entries
+            string diffFilePath = Path.Combine(_diffFolderPath, $"diff_{_currentVersion}.xml");
+
+            using (var writer = new StreamWriter(diffFilePath))
             {
-                string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmssfff");
-                string safeName = string.Join("_", cur.Name.Split(Path.GetInvalidFileNameChars()));
-                string diffFileName = $"{safeName}_{timestamp}.xml";
-                string diffPath = Path.Combine(diffFolder, diffFileName);
-                File.WriteAllText(diffPath, cur.XmlValue);
+                writer.WriteLine("<SolutionXMLDiffs>");
+                foreach (var xml in _pendingDiffs)
+                {
+                    writer.WriteLine("  <SolutionXML>");
+                    writer.WriteLine($"    <Name>{System.Security.SecurityElement.Escape(xml.Name)}</Name>");
+                    writer.WriteLine($"    <XmlValue>{System.Security.SecurityElement.Escape(xml.XmlValue)}</XmlValue>");
+                    writer.WriteLine("  </SolutionXML>");
+                }
+                writer.WriteLine("</SolutionXMLDiffs>");
             }
+
+            // Clear pending diffs after they have been persisted
+            _pendingDiffs.Clear();
         }
+
+        // Reconstruct a diagram at a specific version by applying diffs sequentially
+        public Diagram ReconstructVersion(int targetVersion)
+        {
+            if (targetVersion < 0)
+                throw new ArgumentOutOfRangeException(nameof(targetVersion));
+
+            // Load a fresh copy of the base diagram
+            var reconstructed = new Diagram(_baseDiagramPath);
+
+            // Apply diffs up to the requested version
+            for (int v = 1; v <= targetVersion; v++)
+            {
+                string diffFilePath = Path.Combine(_diffFolderPath, $"diff_{v}.xml");
+                if (!File.Exists(diffFilePath))
+                    break; // No further diffs
+
+                var diffXml = System.Xml.Linq.XDocument.Load(diffFilePath);
+                foreach (var elem in diffXml.Root.Elements("SolutionXML"))
+                {
+                    string name = elem.Element("Name")?.Value ?? string.Empty;
+                    string xmlValue = elem.Element("XmlValue")?.Value ?? string.Empty;
+                    var solutionXml = new SolutionXML(name, xmlValue);
+                    reconstructed.SolutionXMLs.Add(solutionXml);
+                }
+            }
+
+            return reconstructed;
+        }
+
+        // Get the current version number (number of committed diffs)
+        public int CurrentVersion => _currentVersion;
     }
-}
 
-public class Program
-{
-    // Expected arguments:
-    // args[0] - path to the Visio diagram file
-    // args[1] - folder where diff files will be stored
-    // args[2] - path to snapshot file (JSON) that holds previous SolutionXML state
-    public static void Main(string[] args)
+    // Example usage
+    class Program
     {
-        if (args.Length < 3)
+        static void Main()
         {
-            Console.WriteLine("Usage: <program> <diagramPath> <diffFolder> <snapshotPath>");
-            return;
-        }
+            try
+            {
 
-        string diagramPath = args[0];
-        string diffFolder = args[1];
-        string snapshotPath = args[2];
+                string diagramPath = @"C:\Diagrams\sample.vdx";
+                string diffFolder = @"C:\Diagrams\Diffs";
 
-        try
-        {
-            // Load diagram
-            Diagram diagram = SolutionXmlVersionControl.LoadDiagram(diagramPath);
+                var vcs = new SolutionXmlVersionControl(diagramPath, diffFolder);
+                vcs.Load();
 
-            // Get current SolutionXML collection
-            List<SolutionXmlDto> current = SolutionXmlVersionControl.GetCurrentSolutionXmls(diagram);
+                // Add a new SolutionXML entry
+                vcs.AddSolutionXml("CustomData", "<custom><value>123</value></custom>");
 
-            // Load previous snapshot (if any)
-            List<SolutionXmlDto> previous = SolutionXmlVersionControl.LoadSnapshot(snapshotPath);
+                // Commit the change as a diff file
+                vcs.Commit();
 
-            // Write diffs for added/changed entries
-            SolutionXmlVersionControl.WriteDiffs(diffFolder, previous, current);
+                // Save the updated diagram
+                vcs.Save();
 
-            // Update snapshot for next execution
-            SolutionXmlVersionControl.SaveSnapshot(snapshotPath, current);
+                // Reconstruct diagram at version 1
+                Diagram version1Diagram = vcs.ReconstructVersion(1);
+                // version1Diagram can now be saved or inspected as needed
 
-            Console.WriteLine("Version control processing completed successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error: {ex.Message}");
-            // In a real scenario you might want to rethrow or handle differently
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

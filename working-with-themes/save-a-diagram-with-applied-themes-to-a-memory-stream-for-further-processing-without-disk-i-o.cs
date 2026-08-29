@@ -5,8 +5,9 @@ using Aspose.Diagram.Saving;
 
 public class DiagramProcessor
 {
-    // Loads a diagram, applies a theme from another diagram, and returns the result in a memory stream.
-    public MemoryStream GetDiagramWithTheme(string diagramPath, string themePath)
+    // Loads a diagram, applies a theme from another diagram,
+    // and returns the resulting diagram as a memory stream.
+    public MemoryStream GetDiagramWithThemeStream(string diagramPath, string themePath)
     {
         // Load the main diagram from file.
         using (var diagram = new Diagram(diagramPath))
@@ -14,21 +15,22 @@ public class DiagramProcessor
             // Load the diagram that contains the desired theme.
             using (var themeDiagram = new Diagram(themePath))
             {
-                // Apply the theme from the source diagram.
+                // Apply the theme from the theme diagram to the main diagram.
                 diagram.CopyTheme(themeDiagram);
             }
 
             // Prepare a memory stream to hold the saved diagram.
-            var memoryStream = new MemoryStream();
+            var outputStream = new MemoryStream();
 
-            // Save the diagram to the memory stream using a specific format (e.g., VDX).
-            diagram.Save(memoryStream, SaveFileFormat.Vdx);
+            // Save the diagram to the memory stream in VDX format.
+            // The Save method that accepts a Stream and SaveFileFormat is used as per the provided rules.
+            diagram.Save(outputStream, SaveFileFormat.Vdx);
 
-            // Reset the stream position so it can be read from the beginning.
-            memoryStream.Position = 0;
+            // Reset the stream position to the beginning for downstream consumers.
+            outputStream.Position = 0;
 
-            // Return the stream to the caller for further processing.
-            return memoryStream;
+            // Return the memory stream containing the diagram with the applied theme.
+            return outputStream;
         }
     }
 }

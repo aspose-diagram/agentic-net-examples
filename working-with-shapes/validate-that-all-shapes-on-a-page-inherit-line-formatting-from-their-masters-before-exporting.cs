@@ -1,52 +1,53 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
                 // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
-                string outputPath = "validated_output.vsdx";
+                string outputPath = "output.vsdx";
 
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                bool validationFailed = false;
-
-                // Iterate through each page and each shape on the page
+                // Iterate through each page and each shape to validate line inheritance
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Compare line formatting with the inherited values from the master
-                        bool lineColorInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
-                        bool linePatternInherited = shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value;
-                        bool lineWeightInherited = shape.Line.LineWeight.Value == shape.InheritLine.LineWeight.Value;
+                        // Only validate shapes that have a master (i.e., can inherit formatting)
+                        if (shape.Master == null)
+                            continue;
 
-                        if (!lineColorInherited || !linePatternInherited || !lineWeightInherited)
+                        // Ensure InheritLine collection is available
+                        if (shape.InheritLine == null)
+                            continue;
+
+                        bool inheritsLine =
+                            shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value &&
+                            shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value &&
+                            shape.Line.LineWeight.Value == shape.InheritLine.LineWeight.Value &&
+                            shape.Line.BeginArrow.Value == shape.InheritLine.BeginArrow.Value &&
+                            shape.Line.EndArrow.Value == shape.InheritLine.EndArrow.Value;
+
+                        if (!inheritsLine)
                         {
-                            Console.WriteLine($"Validation Warning: Shape ID {shape.ID} on page '{page.Name}' does not fully inherit line formatting.");
-                            validationFailed = true;
+                            throw new Exception(
+                                $"Shape ID {shape.ID} on page ID {page.ID} does not inherit line formatting from its master.");
                         }
                     }
                 }
 
-                if (validationFailed)
-                {
-                    // If any shape failed validation, abort saving
-                    throw new Exception("One or more shapes do not inherit line formatting from their masters. Export aborted.");
-                }
-
-                // Save the diagram after successful validation
+                // All shapes passed validation; save the diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

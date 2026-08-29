@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,33 +10,25 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (lifecycle rule: load)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages and shapes to enforce fill inheritance
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has a Fill element before copying values
-                    if (shape.Fill != null && shape.InheritFill != null)
-                    {
-                        // Copy fill foreground color
-                        shape.InheritFill.FillForegnd = shape.Fill.FillForegnd;
-                        // Copy fill background color
-                        shape.InheritFill.FillBkgnd = shape.Fill.FillBkgnd;
-                        // Copy fill pattern
-                        shape.InheritFill.FillPattern = shape.Fill.FillPattern;
-                        // Copy foreground transparency
-                        shape.InheritFill.FillForegndTrans = shape.Fill.FillForegndTrans;
-                        // Copy background transparency
-                        shape.InheritFill.FillBkgndTrans = shape.Fill.FillBkgndTrans;
-                    }
+                    // Copy current fill properties to the InheritFill object
+                    // This forces the shape to inherit its fill from the parent style/master
+                    shape.InheritFill.FillForegnd = shape.Fill.FillForegnd;
+                    shape.InheritFill.FillForegndTrans = shape.Fill.FillForegndTrans;
+                    shape.InheritFill.FillBkgnd = shape.Fill.FillBkgnd;
+                    shape.InheritFill.FillBkgndTrans = shape.Fill.FillBkgndTrans;
+                    shape.InheritFill.FillPattern = shape.Fill.FillPattern;
                 }
             }
 
-            // Save the modified diagram to a new file
+            // Save the modified diagram (lifecycle rule: save)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

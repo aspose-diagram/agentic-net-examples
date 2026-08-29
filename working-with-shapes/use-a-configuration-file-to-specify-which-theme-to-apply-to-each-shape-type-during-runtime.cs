@@ -1,90 +1,120 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
 namespace DiagramThemeApplier
 {
-    // Configuration model matching the JSON structure
-    public class ShapeThemeConfig
+    // Represents theme settings for a specific shape type
+    public class ThemeConfig
     {
         public string Theme { get; set; }
-        public int Style { get; set; }          // Corresponds to PresetStyleMatricsValue (1‑6)
-        public int Color { get; set; }          // Corresponds to PresetColorMatricsValue (200‑206)
+        public string Variant { get; set; }
+        public string QuickStyle { get; set; }
     }
 
-    class Program
+    public class Program
     {
         static void Main(string[] args)
         {
+            // Expected arguments: <inputVisioPath> <outputVisioPath> <configJsonPath>
+            if (args.Length != 3)
+            {
+                Console.WriteLine("Usage: DiagramThemeApplier <inputVisioPath> <outputVisioPath> <configJsonPath>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputPath = args[1];
+            string configPath = args[2];
+
+            if (!File.Exists(inputPath))
+            {
+                Console.WriteLine($"Input file not found: {inputPath}");
+                return;
+            }
+
+            if (!File.Exists(configPath))
+            {
+                Console.WriteLine($"Config file not found: {configPath}");
+                return;
+            }
+
+            // Load configuration mapping shape master names to theme settings
+            Dictionary<string, ThemeConfig> themeMap;
             try
             {
-
-                // Paths – adjust as needed
-                string diagramPath = "input.vsdx";
-                string configPath = "themeConfig.json";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram (lifecycle rule: load)
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Read and deserialize the configuration file
-                var configJson = File.ReadAllText(configPath);
-                var themeMap = JsonSerializer.Deserialize<Dictionary<string, ShapeThemeConfig>>(configJson);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                string json = File.ReadAllText(configPath);
+                themeMap = JsonSerializer.Deserialize<Dictionary<string, ThemeConfig>>(json);
+                if (themeMap == null)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    Console.WriteLine("Configuration file is empty or invalid.");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to read configuration: {ex.Message}");
+                return;
+            }
+
+            // Load the Visio diagram
+            Diagram diagram;
+            try
+            {
+                diagram = new Diagram(inputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
+
+            // Iterate through all pages and shapes, applying themes based on the configuration
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Ensure the shape has an associated master (i.e., it is not a group or guide)
+                    if (shape.Master == null)
+                        continue;
+
+                    string masterName = shape.Master.Name;
+                    if (string.IsNullOrEmpty(masterName))
+                        continue;
+
+                    if (!themeMap.TryGetValue(masterName, out ThemeConfig cfg))
+                        continue; // No theme defined for this shape type
+
+                    // Parse enum values safely; if parsing fails, skip applying that part
+                    if (Enum.TryParse<PresetThemeValue>(cfg.Theme, true, out var themeValue))
                     {
-                        // Use the shape's universal name (NameU) as the key to look up its theme
-                        if (shape.NameU != null && themeMap.TryGetValue(shape.NameU, out ShapeThemeConfig cfg))
-                        {
-                            // Apply the preset theme
-                            if (Enum.TryParse<PresetThemeValue>(cfg.Theme, out var themeEnum))
-                            {
-                                shape.PresetTheme = themeEnum;
-                            }
+                        shape.PresetTheme = themeValue;
+                    }
 
-                            // Apply the style matrix (style row + color column)
-                            // Convert integer values to the corresponding enum members
-                            PresetStyleMatricsValue styleEnum = cfg.Style switch
-                            {
-                                1 => PresetStyleMatricsValue.Style1,
-                                2 => PresetStyleMatricsValue.Style2,
-                                3 => PresetStyleMatricsValue.Style3,
-                                4 => PresetStyleMatricsValue.Style4,
-                                5 => PresetStyleMatricsValue.Style5,
-                                6 => PresetStyleMatricsValue.Style6,
-                                _ => PresetStyleMatricsValue.Style1
-                            };
+                    if (Enum.TryParse<PresetThemeVariantValue>(cfg.Variant, true, out var variantValue))
+                    {
+                        shape.PresetThemeVariant = variantValue;
+                    }
 
-                            PresetColorMatricsValue colorEnum = cfg.Color switch
-                            {
-                                200 => PresetColorMatricsValue.Color1,
-                                201 => PresetColorMatricsValue.Color2,
-                                202 => PresetColorMatricsValue.Color3,
-                                203 => PresetColorMatricsValue.Color4,
-                                204 => PresetColorMatricsValue.Color5,
-                                205 => PresetColorMatricsValue.Color6,
-                                206 => PresetColorMatricsValue.Color7,
-                                _ => PresetColorMatricsValue.Color1
-                            };
-
-                            shape.SetPresetThemeStyleMatrics(styleEnum, colorEnum);
-                        }
+                    if (Enum.TryParse<PresetQuickStyleValue>(cfg.QuickStyle, true, out var quickStyleValue))
+                    {
+                        shape.PresetThemeQuickStyle = quickStyleValue;
                     }
                 }
-
-                // Save the modified diagram (lifecycle rule: save)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Save the modified diagram
+            try
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
-    }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+            }
+        }
     }
 }

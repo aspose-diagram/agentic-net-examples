@@ -10,11 +10,11 @@ class Program
             try
             {
 
-                // Input Visio file path
+                // Path to the source Visio diagram
                 string inputPath = "input.vsdx";
 
-                // Output text file path (UTF‑8 encoded)
-                string outputPath = "page1_text.txt";
+                // Path to the output text file (UTF‑8 encoded)
+                string outputPath = "output.txt";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
@@ -22,28 +22,23 @@ class Program
                 // Access the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Collect plain text from all non‑deleted shapes on the page
+                // Collect plain text from all shapes on the page
                 StringBuilder textBuilder = new StringBuilder();
 
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.False)
-                    {
-                        // Retrieve plain text; shape.Text may be null
-                        string shapeText = shape.Text?.Value?.Text;
+                    // Retrieve concatenated plain text of the shape
+                    string shapeText = shape.Text.Value.Text;
 
-                        if (!string.IsNullOrWhiteSpace(shapeText))
-                        {
-                            textBuilder.AppendLine(shapeText);
-                        }
+                    // Append non‑empty text lines
+                    if (!string.IsNullOrWhiteSpace(shapeText))
+                    {
+                        textBuilder.AppendLine(shapeText);
                     }
                 }
 
-                // Write the aggregated text to a UTF‑8 file
+                // Write the collected text to a UTF‑8 file
                 File.WriteAllText(outputPath, textBuilder.ToString(), Encoding.UTF8);
-
-                Console.WriteLine($"Extracted text from page 1 has been saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

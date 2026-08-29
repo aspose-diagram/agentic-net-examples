@@ -3,32 +3,42 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public static class DiagramSerializer
-{
-    // Serializes the provided Diagram into a byte array (VDX format) for network transmission.
-    public static byte[] SerializeDiagram(Diagram diagram)
-    {
-        // MemoryStream will hold the diagram data in memory.
-        using (var memoryStream = new MemoryStream())
-        {
-            // Use DiagramSaveOptions to specify the VDX format.
-            var saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
-            // Save the diagram into the memory stream using the provided Save method.
-            diagram.Save(memoryStream, saveOptions);
-
-            // Reset the stream position to the beginning before reading.
-            memoryStream.Position = 0;
-
-            // Extract the byte array from the stream.
-            return memoryStream.ToArray();
-        }
-    }
-}
-
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // See classes above
+        try
+        {
+
+            // Load an existing Visio diagram from a file.
+            // This uses the Diagram(string) constructor (create/load rule).
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // TODO: Apply any modifications to the diagram here.
+            // e.g., diagram.Pages[0].Shapes.Add(...);
+
+            // Serialize the diagram to a byte array.
+            // A MemoryStream is used as the target stream.
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                // Save the diagram into the stream in VDX format.
+                // This follows the Save(Stream, SaveFileFormat) rule.
+                diagram.Save(memoryStream, SaveFileFormat.Vdx);
+
+                // Convert the stream contents to a byte array for transmission.
+                byte[] diagramBytes = memoryStream.ToArray();
+
+                // diagramBytes now contains the serialized diagram data.
+                // It can be sent over a network service as needed.
+            }
+
+            // Release resources held by the diagram.
+            diagram.Dispose();
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

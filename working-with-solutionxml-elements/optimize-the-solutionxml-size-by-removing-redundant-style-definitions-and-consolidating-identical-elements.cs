@@ -1,79 +1,84 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class OptimizeSolutionXml
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (lifecycle rule: use provided load method)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // ------------------------------------------------------------
-            // 1. Remove unused style definitions (feature rule: GetUnusedStyles)
-            // ------------------------------------------------------------
-            // Get the collection of styles that are not referenced anywhere.
-            StyleSheetCollection unusedStyles = diagram.GetUnusedStyles();
-
-            // Iterate over a copy of the collection because we will modify it.
-            // The StyleSheetCollection inherits from Collection, which provides a Remove method.
-            // Remove each unused style from the diagram.
-            foreach (StyleSheet style in new List<StyleSheet>(unusedStyles))
+            try
             {
-                // The StyleSheetCollection does not expose a direct Remove method in the docs,
-                // but it inherits from Collection which provides RemoveAt. Find the index first.
-                int index = unusedStyles.IndexOf(style);
-                if (index >= 0)
+
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "optimized.vsdx";
+
+                // Load the diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    unusedStyles.RemoveAt(index);
+                    // ---------- Remove redundant StyleSheets ----------
+                    // Build a dictionary to keep the first occurrence of each unique style definition.
+                    // For simplicity, styles are considered identical if their Name is the same.
+                    // In a real scenario, you would compare all relevant style properties.
+                    var uniqueStyles = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    var styleIndicesToRemove = new List<int>();
+
+                    for (int i = 0; i < diagram.StyleSheets.Count; i++)
+                    {
+                        var style = diagram.StyleSheets[i];
+                        if (uniqueStyles.ContainsKey(style.Name))
+                        {
+                            // Duplicate found – mark for removal
+                            styleIndicesToRemove.Add(i);
+                        }
+                        else
+                        {
+                            uniqueStyles[style.Name] = i;
+                        }
+                    }
+
+                    // Remove duplicates in reverse order to keep indices valid
+                    for (int i = styleIndicesToRemove.Count - 1; i >= 0; i--)
+                    {
+                        diagram.StyleSheets.RemoveAt(styleIndicesToRemove[i]);
+                    }
+
+                    // ---------- Consolidate identical SolutionXML elements ----------
+                    // Identify SolutionXML entries with the same Name and XmlValue.
+                    var seenSolutionXml = new HashSet<string>();
+                    var solutionXmlIndicesToRemove = new List<int>();
+
+                    for (int i = 0; i < diagram.SolutionXMLs.Count; i++)
+                    {
+                        var solXml = diagram.SolutionXMLs[i];
+                        string key = $"{solXml.Name}|{solXml.XmlValue}";
+                        if (seenSolutionXml.Contains(key))
+                        {
+                            // Duplicate entry – mark for removal
+                            solutionXmlIndicesToRemove.Add(i);
+                        }
+                        else
+                        {
+                            seenSolutionXml.Add(key);
+                        }
+                    }
+
+                    // Remove duplicate SolutionXML entries (reverse order)
+                    for (int i = solutionXmlIndicesToRemove.Count - 1; i >= 0; i--)
+                    {
+                        diagram.SolutionXMLs.RemoveAt(solutionXmlIndicesToRemove[i]);
+                    }
+
+                    // ---------- Save the optimized diagram ----------
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Optimization complete. Saved to '{outputPath}'.");
                 }
+
             }
-
-            // ------------------------------------------------------------
-            // 2. Consolidate identical SolutionXML elements
-            // ------------------------------------------------------------
-            // The diagram may contain multiple SolutionXML entries with the same XML content.
-            // Keep only one instance per unique XmlValue and remove the duplicates.
-            SolutionXMLCollection solXmls = diagram.SolutionXMLs;
-            var seen = new Dictionary<string, SolutionXML>(StringComparer.Ordinal);
-            var duplicates = new List<SolutionXML>();
-
-            // Identify duplicates
-            foreach (SolutionXML solXml in solXmls)
+            catch (System.IO.FileNotFoundException ex)
             {
-                if (solXml == null) continue;
-
-                string key = solXml.XmlValue ?? string.Empty;
-                if (seen.ContainsKey(key))
-                {
-                    // This is a duplicate; mark for removal
-                    duplicates.Add(solXml);
-                }
-                else
-                {
-                    seen[key] = solXml;
-                }
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Remove duplicate SolutionXML entries (lifecycle rule: use provided Remove method)
-            foreach (SolutionXML dup in duplicates)
-            {
-                solXmls.Remove(dup);
-            }
-
-            // ------------------------------------------------------------
-            // Save the optimized diagram (lifecycle rule: use provided save method)
-            // ------------------------------------------------------------
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

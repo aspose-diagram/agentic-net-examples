@@ -2,54 +2,68 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class Program
+// Console application that extracts plain text from each page of a Visio diagram,
+    // concatenates the text, and writes a summary report to a file.
+    class Program
     {
         static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output report file path.
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramTextExtractor <inputVisioPath> <outputReportPath>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputPath = args[1];
+
+            // Validate input file existence.
+            if (!File.Exists(inputPath))
+            {
+                Console.WriteLine($"Error: Input file not found: {inputPath}");
+                return;
+            }
+
             try
             {
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(inputPath);
 
-                // Path to the input Visio file
-                string inputPath = "input.vsdx";
+                // StringBuilder for efficient concatenation.
+                System.Text.StringBuilder reportBuilder = new System.Text.StringBuilder();
 
-                // Path for the generated summary report
-                string reportPath = "summary.txt";
-
-                // Variable to hold concatenated text from all pages
-                string allPagesText = string.Empty;
-
-                // Load the diagram within a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through each shape on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through each shape on the current page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Retrieve plain text from the shape
-                            string shapeText = shape.Text.Value.Text;
+                        // Retrieve the plain text of the shape.
+                        // shape.Text.Value.Text returns the concatenated text of all Txt runs.
+                        string shapeText = shape.Text.Value.Text;
 
-                            // If the shape contains non‑empty text, append it
-                            if (!string.IsNullOrWhiteSpace(shapeText))
-                            {
-                                // Separate entries with a newline for readability
-                                allPagesText += shapeText + Environment.NewLine;
-                            }
-                        }
+                        // Skip empty or whitespace-only text.
+                        if (string.IsNullOrWhiteSpace(shapeText))
+                            continue;
+
+                        // Optional: clean up line breaks and commas.
+                        shapeText = shapeText.Replace("\r\n", " ").Replace("\n", " ").Replace(",", " ");
+
+                        // Append the cleaned text to the report.
+                        reportBuilder.AppendLine(shapeText);
                     }
                 }
 
-                // Write the concatenated text to the summary report file
-                File.WriteAllText(reportPath, allPagesText);
+                // Write the concatenated text to the output report file.
+                File.WriteAllText(outputPath, reportBuilder.ToString());
 
-                // Inform the user that the operation completed
-                Console.WriteLine($"Summary report generated at: {Path.GetFullPath(reportPath)}");
-
+                Console.WriteLine($"Summary report generated successfully at: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Output any errors that occur during processing.
+                Console.WriteLine($"An error occurred: {ex.Message}");
             }
-    }
+        }
     }

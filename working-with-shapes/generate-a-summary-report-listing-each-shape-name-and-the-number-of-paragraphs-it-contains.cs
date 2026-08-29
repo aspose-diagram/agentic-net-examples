@@ -1,6 +1,6 @@
-using Aspose.Diagram;
-using System;
 using System.IO;
+using System;
+using Aspose.Diagram;
 
 class Program
 {
@@ -12,31 +12,21 @@ class Program
             // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Use a StringWriter to build the summary report
-            using (StringWriter report = new StringWriter())
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through each shape on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Retrieve the shape's name; if not set, use its ID as a fallback
-                        string shapeName = !string.IsNullOrEmpty(shape.Name) ? shape.Name : $"Shape_{shape.ID}";
+                    // Get the shape name; if Name is null, use an empty string
+                    string shapeName = shape.Name ?? string.Empty;
 
-                        // Count the number of paragraphs contained in the shape
-                        int paragraphCount = shape.Paras.Count;
+                    // Count the number of paragraphs (Paras) in the shape
+                    int paragraphCount = shape.Paras.Count;
 
-                        // Write the shape name and paragraph count to the report
-                        report.WriteLine($"{shapeName}: {paragraphCount} paragraph(s)");
-                    }
+                    // Output the summary line for this shape
+                    Console.WriteLine($"Shape: {shapeName}, Paragraphs: {paragraphCount}");
                 }
-
-                // Output the report to the console
-                Console.WriteLine(report.ToString());
-
-                // Optionally, save the report to a text file
-                File.WriteAllText("ShapeParagraphReport.txt", report.ToString());
             }
 
         }

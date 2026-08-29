@@ -1,59 +1,39 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Path to the Visio file (adjust as needed)
-                string inputPath = "input.vsdx";
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Retrieve the shape by its name (replace with the actual shape name)
+            Shape shape = diagram.Pages[0].Shapes.GetShape("MyShapeName");
 
-                // Use the first page (index 0) as per guidelines
-                Page page = diagram.Pages[0];
+            // Read the LocPinY value (y‑coordinate of the pin relative to the shape's origin)
+            double locPinY = shape.XForm.LocPinY.Value;
 
-                // Name of the shape to locate
-                string targetShapeName = "MyShape";
+            // Read the PinY value (y‑coordinate of the pin relative to the parent shape/page)
+            double pinY = shape.XForm.PinY.Value;
 
-                // Flag to indicate if the shape was found
-                bool shapeFound = false;
+            // Compute the absolute PinY value.
+            // Assuming the parent is the page, the absolute Y coordinate of the pin is:
+            double absolutePinY = pinY + locPinY;
 
-                // Iterate through all shapes on the page
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
-                {
-                    // Compare the universal name of the shape
-                    if (shape.NameU == targetShapeName)
-                    {
-                        shapeFound = true;
+            // Output the results
+            Console.WriteLine($"LocPinY: {locPinY}");
+            Console.WriteLine($"PinY: {pinY}");
+            Console.WriteLine($"Absolute PinY: {absolutePinY}");
 
-                        // Retrieve LocPinY, PinY and Height values
-                        double locPinY = shape.XForm.LocPinY.Value;
-                        double pinY = shape.XForm.PinY.Value;
-                        double height = shape.XForm.Height.Value;
-
-                        // Compute absolute PinY of the local pin
-                        // Formula: absolutePinY = PinY + (LocPinY - 0.5) * Height
-                        double absolutePinY = pinY + (locPinY - 0.5) * height;
-
-                        Console.WriteLine($"Shape '{targetShapeName}' absolute PinY: {absolutePinY}");
-                        break;
-                    }
-                }
-
-                if (!shapeFound)
-                {
-                    throw new Exception($"Shape with name '{targetShapeName}' was not found on the page.");
-                }
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

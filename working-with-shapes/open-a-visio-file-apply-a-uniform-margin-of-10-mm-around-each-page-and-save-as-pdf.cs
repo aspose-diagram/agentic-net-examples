@@ -5,44 +5,43 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output PDF file path
-            string outputPath = "output.pdf";
-
-            // Margin of 10 mm converted to inches (1 inch = 25.4 mm)
-            double marginInches = 10.0 / 25.4; // ≈0.3937 inches
+            // Input Visio file path (first argument) and output PDF path (second argument)
+            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+            string outputPath = args.Length > 1 ? args[1] : "output.pdf";
 
             // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            Diagram diagram = new Diagram(inputPath);
+
+            // 10 mm = 0.3937007874 inches
+            double marginInches = 10.0 / 25.4;
+
+            // Apply the margin to every page
+            foreach (Page page in diagram.Pages)
             {
-                // Apply the same margin to every page
-                foreach (Page page in diagram.Pages)
-                {
-                    // PrintProps holds page margin settings (values are in inches)
-                    page.PageSheet.PrintProps.PageTopMargin.Value = marginInches;
-                    page.PageSheet.PrintProps.PageBottomMargin.Value = marginInches;
-                    page.PageSheet.PrintProps.PageLeftMargin.Value = marginInches;
-                    page.PageSheet.PrintProps.PageRightMargin.Value = marginInches;
-                }
-
-                // Configure PDF save options (optional: set a default font)
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-
-                // Save the modified diagram as PDF
-                diagram.Save(outputPath, pdfOptions);
+                var printProps = page.PageSheet.PrintProps;
+                printProps.PageTopMargin.Value = marginInches;
+                printProps.PageBottomMargin.Value = marginInches;
+                printProps.PageLeftMargin.Value = marginInches;
+                printProps.PageRightMargin.Value = marginInches;
             }
 
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+            // Save the diagram as PDF
+            diagram.Save(outputPath, pdfOptions);
+
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

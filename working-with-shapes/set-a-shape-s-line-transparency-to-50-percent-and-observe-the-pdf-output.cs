@@ -1,40 +1,45 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        // Load an existing Visio diagram or create a new one
-        // Here we create a new empty diagram
-        Diagram diagram = new Diagram();
+        static void Main()
+        {
+            try
+            {
 
-        // Access the first page (created by default)
-        Page page = diagram.Pages[0];
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
 
-        // Draw a line shape on the page
-        // Parameters: pinX, pinY, width, height, xyArray (relative points)
-        // This creates a simple diagonal line
-        double pinX = 2.0;   // X coordinate of the shape's pin
-        double pinY = 2.0;   // Y coordinate of the shape's pin
-        double width = 4.0;  // Width of the line shape
-        double height = 4.0; // Height of the line shape
-        double[] points = { 0, 0, width, height }; // start (0,0) to end (width,height)
+                // Access the first (default) page
+                Page page = diagram.Pages[0];
 
-        long shapeId = page.DrawLine(pinX, pinY, width, height, points);
+                // Add a rectangle shape to the page at position (2,2) inches
+                // The AddShape method returns the shape's unique ID (long)
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
 
-        // Retrieve the newly created shape by its ID
-        Shape lineShape = page.Shapes.GetShape(shapeId);
+                // Retrieve the Shape object using the returned ID
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-        // Set the line color transparency to 50% (0.5)
-        // LineColorTrans expects a DoubleValue; assign the Value property
-        lineShape.Line.LineColorTrans.Value = 0.5;
+                // Set the line (stroke) transparency to 50 percent
+                // LineColorTrans.Value expects a percentage (0‑100)
+                shape.Line.LineColorTrans.Value = 50;
 
-        // Optionally set a visible line color (e.g., black) to see the effect
-        lineShape.Line.LineColor.Value = "RGB(0,0,0)";
+                // Prepare PDF save options (set a default font to avoid missing‑font issues)
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
 
-        // Save the diagram as PDF to observe the line transparency
-        diagram.Save("LineTransparency.pdf", SaveFileFormat.Pdf);
+                // Save the diagram as a PDF file
+                diagram.Save("output.pdf", pdfOptions);
+
+                // Inform the user that the file has been created
+                Console.WriteLine("Diagram saved to output.pdf with line transparency set to 50%.");
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

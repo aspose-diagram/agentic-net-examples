@@ -4,64 +4,44 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with actual file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // -------------------------------------------------
-            // 1. Create a custom stylesheet (placeholder for text alignment settings)
-            // -------------------------------------------------
-            StyleSheet customStyle = new StyleSheet();
-            customStyle.ID = diagram.StyleSheets.Count + 1;
-            // Optional: give the style a name for identification
-            customStyle.Name = "CustomAlignmentStyle";
+            // Create a custom stylesheet (ID must be unique)
+            StyleSheet centerStyle = new StyleSheet();
+            centerStyle.ID = diagram.StyleSheets.Count + 1;
+            // Optional: give the style a name if the property exists
+            // centerStyle.Name = "CenterStyle";
 
-            // Add the stylesheet to the diagram's collection
-            diagram.StyleSheets.Add(customStyle);
+            // Add the stylesheet to the diagram
+            diagram.StyleSheets.Add(centerStyle);
 
-            // -------------------------------------------------
-            // 2. Apply the stylesheet to page two (index 1)
-            // -------------------------------------------------
-            if (diagram.Pages.Count < 2)
-            {
-                throw new Exception("The diagram does not contain a second page.");
-            }
-
+            // Access the second page (index 1)
             Page pageTwo = diagram.Pages[1];
-            // Apply the style to the page (fill, line, text style IDs are the same here)
-            pageTwo.ApplyStyle(customStyle.ID, customStyle.ID, customStyle.ID);
 
-            // -------------------------------------------------
-            // 3. Align all paragraph texts to center on page two
-            // -------------------------------------------------
+            // Iterate over all shapes on page two
             foreach (Shape shape in pageTwo.Shapes)
             {
-                // Ensure the shape has paragraph collection
-                if (shape.Paras != null && shape.Paras.Count > 0)
+                // Apply the custom stylesheet to the shape's text
+                shape.TextStyle = centerStyle;
+
+                // Align each paragraph's text to center
+                foreach (Para para in shape.Paras)
                 {
-                    for (int i = 0; i < shape.Paras.Count; i++)
-                    {
-                        // Set horizontal alignment to center
-                        shape.Paras[i].HorzAlign.Value = HorzAlignValue.Center;
-                    }
+                    para.HorzAlign.Value = HorzAlignValue.Center;
                 }
             }
 
-            // -------------------------------------------------
-            // 4. Save the modified diagram
-            // -------------------------------------------------
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             // Clean up
             diagram.Dispose();
-
-            Console.WriteLine("Diagram processed and saved to: " + outputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

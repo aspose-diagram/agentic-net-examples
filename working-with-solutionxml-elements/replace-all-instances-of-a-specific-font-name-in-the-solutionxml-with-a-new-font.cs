@@ -1,39 +1,41 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Paths and font names – adjust as needed
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-            string oldFontName = "Arial";
-            string newFontName = "Calibri";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Replace font name in each SolutionXML element
-            foreach (SolutionXML solXml in diagram.SolutionXMLs)
+            try
             {
-                if (!string.IsNullOrEmpty(solXml.XmlValue))
+
+                // Paths to the source and destination Visio files
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Font names to replace
+                string oldFontName = "Arial";
+                string newFontName = "Calibri";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all SolutionXML elements and replace the font name in the XML content
+                foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
                 {
-                    solXml.XmlValue = solXml.XmlValue.Replace(oldFontName, newFontName);
+                    if (!string.IsNullOrEmpty(solutionXml.XmlValue) && solutionXml.XmlValue.Contains(oldFontName))
+                    {
+                        solutionXml.XmlValue = solutionXml.XmlValue.Replace(oldFontName, newFontName);
+                    }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

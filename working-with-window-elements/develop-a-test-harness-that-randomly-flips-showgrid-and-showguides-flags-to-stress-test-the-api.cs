@@ -8,43 +8,44 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Ensure there is at least one window; add a drawing window if none exist
-            if (diagram.Windows.Count == 0)
-            {
-                Window window = new Window();
-                window.WindowType = WindowTypeValue.Drawing;
-                window.WindowState = WindowStateValue.Maximized;
-                window.WindowWidth = 1200;
-                window.WindowHeight = 800;
-                diagram.Windows.Add(window);
-            }
-
-            // Get the first window (the one we will manipulate)
-            Window targetWindow = diagram.Windows[0];
+            // Ensure there is at least one window to work with
+            Window window = new Window();
+            window.WindowType = WindowTypeValue.Drawing;
+            window.WindowState = WindowStateValue.Maximized;
+            window.WindowWidth = 800;
+            window.WindowHeight = 600;
+            diagram.Windows.Add(window);
 
             // Random number generator for flipping flags
             Random rnd = new Random();
 
-            // Number of iterations for stress testing
-            int iterations = 20;
-
-            for (int i = 0; i < iterations; i++)
+            // Perform several random flips and save after each change
+            for (int i = 0; i < 5; i++)
             {
-                // Randomly decide the flag values
-                BOOL showGrid = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
-                BOOL showGuides = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
+                // Randomly set ShowGrid
+                window.ShowGrid = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
 
-                // Apply the random values
-                targetWindow.ShowGrid = showGrid;
-                targetWindow.ShowGuides = showGuides;
+                // Randomly set ShowGuides
+                window.ShowGuides = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
 
-                // Output the current state to the console
-                Console.WriteLine($"Iteration {i + 1}: ShowGrid = {targetWindow.ShowGrid}, ShowGuides = {targetWindow.ShowGuides}");
+                // Output current state to console
+                Console.WriteLine($"Iteration {i + 1}: ShowGrid = {window.ShowGrid}, ShowGuides = {window.ShowGuides}");
+
+                // Save the diagram to a file to verify the changes
+                string outputPath = $"output_{i + 1}.vsdx";
+                try
+                {
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Saved diagram to {outputPath}");
+                }
+                catch (Exception ex)
+                {
+                    // If saving fails, report and stop the test
+                    Console.WriteLine($"Error saving diagram: {ex.Message}");
+                    throw;
+                }
             }
 
-            // Save the resulting diagram to a file for verification
-            string outputPath = "StressTestResult.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            Console.WriteLine("Stress test completed.");
         }
     }

@@ -3,18 +3,18 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ThemeApplier
+public class DiagramThemeProcessor
 {
-    // Loads a Visio diagram from a byte array (memory stream), copies a theme from another diagram,
-    // and returns the themed diagram as a byte array without touching the file system.
-    public static byte[] ApplyTheme(byte[] targetDiagramBytes, byte[] sourceDiagramBytes)
+    // Applies a theme from a source diagram to a target diagram loaded from memory streams.
+    // Returns the themed diagram as a byte array in VDX format.
+    public static byte[] ApplyTheme(byte[] targetDiagramBytes, byte[] sourceThemeBytes)
     {
-        // Load the target diagram (the one that will receive the theme) from memory.
+        // Load the target diagram from the provided byte array.
         using (var targetStream = new MemoryStream(targetDiagramBytes))
         using (var targetDiagram = new Diagram(targetStream))
         {
-            // Load the source diagram (the one that provides the theme) from memory.
-            using (var sourceStream = new MemoryStream(sourceDiagramBytes))
+            // Load the source diagram (containing the desired theme) from its byte array.
+            using (var sourceStream = new MemoryStream(sourceThemeBytes))
             using (var sourceDiagram = new Diagram(sourceStream))
             {
                 // Copy the theme from the source diagram to the target diagram.
@@ -24,10 +24,11 @@ class ThemeApplier
             // Save the themed diagram back to a memory stream.
             using (var resultStream = new MemoryStream())
             {
-                // Choose a save format (e.g., VDX). Adjust as needed.
-                targetDiagram.Save(resultStream, SaveFileFormat.Vdx);
+                // Use DiagramSaveOptions to specify the output format (VDX in this case).
+                var saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
+                targetDiagram.Save(resultStream, saveOptions);
 
-                // Return the resulting bytes.
+                // Return the resulting byte array.
                 return resultStream.ToArray();
             }
         }

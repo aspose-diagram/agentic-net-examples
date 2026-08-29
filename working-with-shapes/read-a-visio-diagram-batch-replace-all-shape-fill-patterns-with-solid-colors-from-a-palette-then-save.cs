@@ -8,14 +8,14 @@ class Program
             try
             {
 
-                // Input and output file paths
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Define a palette of solid colors (hex strings)
+                // Define a palette of solid fill colors (hex strings)
                 string[] palette = new string[]
                 {
                     "#FF0000", // Red
@@ -26,31 +26,25 @@ class Program
                     "#00FFFF"  // Cyan
                 };
 
-                int paletteCount = palette.Length;
-                int colorIndex = 0;
-
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.False)
+                        {
+                            // Set fill pattern to solid (1)
+                            shape.Fill.FillPattern.Value = 1;
 
-                        // Set fill pattern to solid (1)
-                        shape.Fill.FillPattern.Value = 1;
-
-                        // Assign a solid foreground color from the palette (cycle through)
-                        shape.Fill.FillForegnd.Value = palette[colorIndex];
-
-                        // Move to next color in the palette
-                        colorIndex = (colorIndex + 1) % paletteCount;
+                            // Assign a solid fill color from the palette based on shape ID
+                            int colorIndex = (int)(shape.ID % palette.Length);
+                            shape.Fill.FillForegnd.Value = palette[colorIndex];
+                        }
                     }
                 }
 
-                // Save the modified diagram in VSDX format
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

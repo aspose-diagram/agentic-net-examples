@@ -4,7 +4,7 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
@@ -14,10 +14,10 @@ class Program
                 // Path for the exported SVG file
                 string outputPath = "output.svg";
 
-                // Load the diagram from file
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes to make fill inheritance explicit
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
@@ -26,11 +26,24 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Copy inherited fill properties to the shape's own fill cells
-                        // This makes custom colors permanent and not dependent on inheritance
-                        shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
-                        shape.Fill.FillBkgnd.Value = shape.InheritFill.FillBkgnd.Value;
-                        shape.Fill.FillPattern.Value = shape.InheritFill.FillPattern.Value;
+                        // If the shape's fill foreground color is inherited, make it explicit
+                        if (shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value)
+                        {
+                            // Copy the inherited foreground color to the shape's own fill cell
+                            shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
+                        }
+
+                        // If the shape's fill background color is inherited, make it explicit
+                        if (shape.Fill.FillBkgnd.Value == shape.InheritFill.FillBkgnd.Value)
+                        {
+                            shape.Fill.FillBkgnd.Value = shape.InheritFill.FillBkgnd.Value;
+                        }
+
+                        // If the shape's fill pattern is inherited, make it explicit
+                        if (shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value)
+                        {
+                            shape.Fill.FillPattern.Value = shape.InheritFill.FillPattern.Value;
+                        }
                     }
                 }
 
@@ -38,11 +51,15 @@ class Program
                 SVGSaveOptions svgOptions = new SVGSaveOptions
                 {
                     ExportHiddenPage = false,
-                    SVGFitToViewPort = true
+                    ExportGuideShapes = false,
+                    SVGFitToViewPort = true,
+                    ExportElementAsRectTag = true
                 };
 
-                // Save the diagram as SVG using the options
+                // Save the diagram as SVG
                 diagram.Save(outputPath, svgOptions);
+
+                Console.WriteLine($"Diagram exported to SVG successfully: {outputPath}");
 
             }
             catch (System.IO.FileNotFoundException ex)

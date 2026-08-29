@@ -9,41 +9,56 @@ class Program
             // Expect two arguments: input Visio file path and output CSV file path
             if (args.Length < 2)
             {
-                Console.WriteLine("Usage: VisioShapeRotationExtractor <inputVisioPath> <outputCsvPath>");
+                Console.WriteLine("Usage: VisioShapeAnglesExport <inputVisioPath> <outputCsvPath>");
                 return;
             }
 
             string inputPath = args[0];
-            string outputPath = args[1];
+            string outputCsvPath = args[1];
 
             // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prepare to write CSV
-            using (StreamWriter writer = new StreamWriter(outputPath))
+            Diagram diagram;
+            try
             {
-                // Write CSV header
-                writer.WriteLine("ShapeID,AngleDegrees");
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Retrieve the shape's unique ID
-                        long shapeId = shape.ID;
-
-                        // Retrieve the rotation angle (stored in radians) and convert to degrees
-                        double angleRadians = shape.XForm.Angle.Value;
-                        double angleDegrees = angleRadians * (180.0 / Math.PI);
-
-                        // Write the ID and angle to the CSV
-                        writer.WriteLine($"{shapeId},{angleDegrees}");
-                    }
-                }
+                diagram = new Diagram(inputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
             }
 
-            Console.WriteLine($"Shape rotation angles have been exported to '{outputPath}'.");
+            // Open CSV writer
+            try
+            {
+                using (var writer = new StreamWriter(outputCsvPath))
+                {
+                    // Write CSV header
+                    writer.WriteLine("ShapeID,Angle");
+
+                    // Iterate through all pages and shapes
+                    foreach (Page page in diagram.Pages)
+                    {
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Skip shapes that are marked as deleted
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            long shapeId = shape.ID;
+                            double angle = shape.XForm.Angle.Value; // Angle is stored in radians
+
+                            // Write shape ID and angle to CSV
+                            writer.WriteLine($"{shapeId},{angle}");
+                        }
+                    }
+                }
+
+                Console.WriteLine($"CSV file created successfully at: {outputCsvPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to write CSV: {ex.Message}");
+            }
         }
     }

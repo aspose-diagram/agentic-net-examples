@@ -7,53 +7,57 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
+        // Configuration model matching the JSON file structure
+        private class Config
+        {
+            public List<long> RetainFillShapeIds { get; set; } = new();
+        }
+
         static void Main()
         {
             try
             {
 
-                // Paths for input diagram, configuration file and output diagram
+                // Paths – adjust as needed
                 string diagramPath = "input.vsdx";
-                string configPath = "shapeConfig.json";
+                string configPath = "config.json";
                 string outputPath = "output.vsdx";
 
-                // Load the diagram
+                // Load configuration
+                Config config = LoadConfig(configPath);
+
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Read and parse the configuration file (expects JSON: {"retainCustomFill":[1,2,5]})
-                List<long> targetShapeIds = LoadShapeIdsFromConfig(configPath);
-
-                // Process each target shape
-                foreach (long shapeId in targetShapeIds)
+                // Process each page and shape
+                foreach (Page page in diagram.Pages)
                 {
-                    // Attempt to locate the shape on any page
-                    Shape shape = FindShapeById(diagram, shapeId);
-                    if (shape == null)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Console.WriteLine($"Shape with ID {shapeId} not found.");
-                        continue;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // If the shape ID is listed in the config, keep its fill
+                        // and force line properties to inherit from the parent style
+                        if (config.RetainFillShapeIds.Contains(shape.ID))
+                        {
+                            // Inherit line color
+                            shape.Line.LineColor.Value = shape.InheritLine.LineColor.Value;
+
+                            // Inherit line weight
+                            shape.Line.LineWeight.Value = shape.InheritLine.LineWeight.Value;
+
+                            // Inherit line pattern
+                            shape.Line.LinePattern.Value = shape.InheritLine.LinePattern.Value;
+
+                            // Inherit begin arrow
+                            shape.Line.BeginArrow.Value = shape.InheritLine.BeginArrow.Value;
+
+                            // Inherit end arrow
+                            shape.Line.EndArrow.Value = shape.InheritLine.EndArrow.Value;
+                        }
                     }
-
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                    {
-                        Console.WriteLine($"Shape ID {shapeId} is marked as deleted. Skipping.");
-                        continue;
-                    }
-
-                    // Inherit line style from the shape's inherited line values
-                    shape.Line.LineColor.Value = shape.InheritLine.LineColor.Value;
-                    shape.Line.LineWeight.Value = shape.InheritLine.LineWeight.Value;
-                    shape.Line.LinePattern.Value = shape.InheritLine.LinePattern.Value;
-                    shape.Line.BeginArrow.Value = shape.InheritLine.BeginArrow.Value;
-                    shape.Line.EndArrow.Value = shape.InheritLine.EndArrow.Value;
-                    shape.Line.BeginArrowSize.Value = shape.InheritLine.BeginArrowSize.Value;
-                    shape.Line.EndArrowSize.Value = shape.InheritLine.EndArrowSize.Value;
-                    shape.Line.LineCap.Value = shape.InheritLine.LineCap.Value;
-                    shape.Line.Rounding.Value = shape.InheritLine.Rounding.Value;
-                    shape.Line.LineColorTrans.Value = shape.InheritLine.LineColorTrans.Value;
-
-                    Console.WriteLine($"Processed shape ID {shapeId}: custom fill retained, line style inherited.");
                 }
 
                 // Save the modified diagram
@@ -67,56 +71,25 @@ class Program
             }
     }
 
-        // Loads a list of shape IDs from a JSON configuration file
-        private static List<long> LoadShapeIdsFromConfig(string configFilePath)
+        // Helper method to read the JSON configuration file
+        private static Config LoadConfig(string path)
         {
-            var ids = new List<long>();
-
-            if (!File.Exists(configFilePath))
+            if (!File.Exists(path))
             {
-                Console.WriteLine($"Configuration file '{configFilePath}' not found.");
-                return ids;
+                Console.WriteLine($"Configuration file '{path}' not found. Using empty configuration.");
+                return new Config();
             }
 
             try
             {
-                string json = File.ReadAllText(configFilePath);
-                using JsonDocument doc = JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("retainCustomFill", out JsonElement array))
-                {
-                    foreach (JsonElement element in array.EnumerateArray())
-                    {
-                        if (element.TryGetInt64(out long id))
-                        {
-                            ids.Add(id);
-                        }
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Configuration does not contain 'retainCustomFill' array.");
-                }
+                string json = File.ReadAllText(path);
+                Config? cfg = JsonSerializer.Deserialize<Config>(json);
+                return cfg ?? new Config();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error reading configuration: {ex.Message}");
+                Console.WriteLine($"Failed to parse configuration: {ex.Message}");
+                return new Config();
             }
-
-            return ids;
-        }
-
-        // Searches all pages for a shape with the specified ID
-        private static Shape FindShapeById(Diagram diagram, long shapeId)
-        {
-            foreach (Page page in diagram.Pages)
-            {
-                // Shapes.GetShape expects a long ID; it returns null if not found
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape != null)
-                {
-                    return shape;
-                }
-            }
-            return null;
         }
     }

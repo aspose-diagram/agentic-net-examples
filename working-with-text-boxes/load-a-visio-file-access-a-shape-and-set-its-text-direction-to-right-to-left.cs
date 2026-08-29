@@ -1,50 +1,45 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect input and output file paths as command‑line arguments
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: <inputVisioPath> <outputVisioPath>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+            // Path to the Visio file to be processed
+            string inputPath = "input.vsdx";
 
-            // Load the Visio diagram from the specified file
+            // Load the diagram from the file
             Diagram diagram = new Diagram(inputPath);
 
             // Access the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Find the first non‑deleted shape on the page
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            // Retrieve a shape by its ID (example uses ID = 1)
+            // Adjust the ID as needed for your specific diagram
+            Shape shape = page.Shapes.GetShape(1);
+            if (shape == null)
             {
-                if (shape.Del == BOOL.False)
-                {
-                    targetShape = shape;
-                    break;
-                }
-            }
-
-            if (targetShape == null)
-            {
-                Console.WriteLine("No shape found on the first page.");
+                Console.WriteLine("Shape with ID 1 was not found on the page.");
                 return;
             }
 
-            // Set the text direction.
-            // Aspose.Diagram supports Horizontal and Vertical directions.
-            // Right‑to‑left is not a distinct enum value, so we use Vertical as an example.
-            targetShape.TextBlock.TextDirection.Value = TextDirectionValue.Vertical;
+            // Set the text direction of the shape.
+            // The API provides Horizontal and Vertical options; using Vertical as a placeholder for right‑to‑left.
+            shape.TextBlock.TextDirection.Value = TextDirectionValue.Vertical;
+
+            Console.WriteLine("Text direction has been set for the shape.");
 
             // Save the modified diagram to a new file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

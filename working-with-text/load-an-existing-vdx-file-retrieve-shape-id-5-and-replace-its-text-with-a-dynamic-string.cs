@@ -1,41 +1,41 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Path to the source VDX file
-                string inputPath = "input.vdx";
+            // Paths to the source and destination VDX files
+            string inputPath = "input.vdx";
+            string outputPath = "output.vdx";
 
-                // Load the diagram from the file
-                Diagram diagram = new Diagram(inputPath);
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Retrieve the shape with ID 5 from the first page
-                // Shape IDs are of type long
-                long targetShapeId = 5L;
-                Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+            // Access the first page (index 0)
+            Page page = diagram.Pages[0];
 
-                // Prepare the dynamic replacement text
-                string newText = $"Updated at {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+            // Retrieve the shape with ID 5
+            Shape shape = page.Shapes.GetShape(5);
 
-                // Replace the existing text
-                shape.Text.Value.Clear();                     // Remove any existing text runs
-                shape.Text.Value.Add(new Txt(newText));       // Add the new text run
+            // Create a dynamic string (example: current timestamp)
+            string dynamicText = $"Generated on {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
 
-                // Save the modified diagram (optional)
-                string outputPath = "output.vdx";
-                diagram.Save(outputPath, SaveFileFormat.Vdx);
+            // Replace the shape's existing text
+            shape.Text.Value.Clear();                     // Remove old text runs
+            shape.Text.Value.Add(new Txt(dynamicText));   // Add new text run
 
-                Console.WriteLine($"Shape ID {targetShapeId} text replaced and diagram saved to '{outputPath}'.");
+            // Save the modified diagram back to VDX format
+            diagram.Save(outputPath, SaveFileFormat.Vdx);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

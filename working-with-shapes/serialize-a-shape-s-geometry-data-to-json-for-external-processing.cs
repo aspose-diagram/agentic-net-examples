@@ -1,18 +1,22 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 namespace ShapeGeometryExport
 {
-    // DTO for a geometry section
+    // DTO for JSON serialization
+    public class GeometryDto
+    {
+        public List<GeomDto> Geoms { get; set; } = new();
+    }
+
     public class GeomDto
     {
         public List<SegmentDto> Segments { get; set; } = new();
     }
 
-    // DTO for a single segment (MoveTo, LineTo, etc.)
     public class SegmentDto
     {
         public string Type { get; set; } = string.Empty;
@@ -28,63 +32,77 @@ namespace ShapeGeometryExport
             {
 
                 // Load the Visio diagram (replace with your file path)
-                Diagram diagram = new Diagram("input.vsdx");
+                string diagramPath = "input.vsdx";
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Get the first page
+                // Choose the first page
                 Page page = diagram.Pages[0];
 
-                // Retrieve the first shape on the page
-                Shape targetShape = null;
-                foreach (Shape s in page.Shapes)
+                // Choose a shape (for example, the first shape on the page)
+                if (page.Shapes.Count == 0)
                 {
-                    targetShape = s;
-                    break;
-                }
-
-                if (targetShape == null)
-                {
-                    Console.WriteLine("No shape found on the first page.");
+                    Console.WriteLine("No shapes found on the page.");
                     return;
                 }
 
-                // Extract geometry data
-                List<GeomDto> geometry = new();
+                // Retrieve the shape by its ID
+                long shapeId = page.Shapes[0].ID;
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-                foreach (Geom geom in targetShape.Geoms)
+                // Prepare the geometry DTO
+                GeometryDto geometryDto = new GeometryDto();
+
+                // Enumerate geometries explicitly as Geom
+                foreach (Geom geom in shape.Geoms)
                 {
                     GeomDto geomDto = new GeomDto();
 
-                    foreach (object seg in geom.CoordinateCol)
+                    // The CoordinateCol collection is not strongly typed; iterate as object
+                    foreach (object segment in geom.CoordinateCol)
                     {
-                        if (seg is MoveTo move)
+                        SegmentDto segDto = new SegmentDto();
+
+                        // Determine segment type and extract coordinates
+                        if (segment is MoveTo moveTo)
                         {
-                            geomDto.Segments.Add(new SegmentDto
-                            {
-                                Type = "MoveTo",
-                                X = move.X.Value,
-                                Y = move.Y.Value
-                            });
+                            segDto.Type = nameof(MoveTo);
+                            segDto.X = moveTo.X.Value;
+                            segDto.Y = moveTo.Y.Value;
                         }
-                        else if (seg is LineTo line)
+                        else if (segment is LineTo lineTo)
                         {
-                            geomDto.Segments.Add(new SegmentDto
-                            {
-                                Type = "LineTo",
-                                X = line.X.Value,
-                                Y = line.Y.Value
-                            });
+                            segDto.Type = nameof(LineTo);
+                            segDto.X = lineTo.X.Value;
+                            segDto.Y = lineTo.Y.Value;
                         }
-                        // Additional segment types (ArcTo, CubicBezierTo, etc.) can be handled here
+                        else if (segment is ArcTo arcTo)
+                        {
+                            segDto.Type = nameof(ArcTo);
+                            segDto.X = arcTo.X.Value;
+                            segDto.Y = arcTo.Y.Value;
+                        }
+                        else
+                        {
+                            // Fallback for other segment types
+                            segDto.Type = segment.GetType().Name;
+                            // Attempt to read X/Y if they exist via reflection (optional)
+                            // For simplicity, leave X/Y as 0
+                        }
+
+                        geomDto.Segments.Add(segDto);
                     }
 
-                    geometry.Add(geomDto);
+                    geometryDto.Geoms.Add(geomDto);
                 }
 
-                // Serialize to JSON
-                string json = JsonSerializer.Serialize(geometry, new JsonSerializerOptions { WriteIndented = true });
+                // Serialize to JSON with indentation
+                string json = JsonSerializer.Serialize(geometryDto, new JsonSerializerOptions { WriteIndented = true });
 
-                // Output JSON (could be written to a file instead)
-                Console.WriteLine(json);
+                // Output JSON to a file (replace with desired output path)
+                string outputPath = "shape_geometry.json";
+                File.WriteAllText(outputPath, json);
+
+                Console.WriteLine($"Geometry data exported to {outputPath}");
 
             }
             catch (System.IO.FileNotFoundException ex)

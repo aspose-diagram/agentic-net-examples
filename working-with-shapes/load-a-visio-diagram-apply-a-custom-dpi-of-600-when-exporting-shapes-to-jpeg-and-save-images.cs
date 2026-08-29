@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -11,29 +11,34 @@ class ExportShapesWithCustomDpi
         {
 
             // Load the Visio diagram from a file
-            var diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Prepare image save options for JPEG with 600 DPI
-            var imgOptions = new ImageSaveOptions(SaveFileFormat.Jpeg)
-            {
-                Resolution = 600,          // Set custom DPI
-                SaveFormat = SaveFileFormat.Jpeg
-            };
+            // Ensure the output directory exists
+            string outputFolder = "ExportedShapes";
+            Directory.CreateDirectory(outputFolder);
 
-            // Iterate through all pages and shapes
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Build a unique file name for each shape
-                    string fileName = $"Shape_Page{page.ID}_Shape{shape.ID}.jpg";
+                    // Configure image save options for JPEG with 600 DPI
+                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+                    imgOptions.Resolution = 600;          // Set DPI
+                    imgOptions.JpegQuality = 100;        // Optional: maximum quality
 
-                    // Export the shape to JPEG using the specified options
-                    shape.ToImage(fileName, imgOptions);
+                    // Build a unique file name for the shape image
+                    string imagePath = Path.Combine(
+                        outputFolder,
+                        $"Page_{page.ID}_Shape_{shape.ID}.jpg");
+
+                    // Export the shape to a JPEG image using the specified options
+                    shape.ToImage(imagePath, imgOptions);
                 }
             }
 
-            // Dispose the diagram when done
+            // Release resources
             diagram.Dispose();
 
         }

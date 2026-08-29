@@ -1,60 +1,61 @@
 using System;
-using System.IO;
 using System.Diagnostics;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main(string[] args)
+class Program
     {
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: <inputDiagramPath> <outputDiagramPath>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Benchmark scenario: rely on inherited fill (no overrides)
-        Stopwatch inheritTimer = Stopwatch.StartNew();
-        using (Diagram diagram = new Diagram(inputPath))
-        {
-            foreach (Page page in diagram.Pages)
+            // Expect two arguments: input Visio file path and output Visio file path
+            if (args.Length < 2)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Access inherited fill to simulate read operation
-                    string inheritedForegnd = shape.InheritFill.FillForegnd.Value;
-                }
+                Console.WriteLine("Usage: DiagramFillInheritanceBenchmark <input.vsdx> <output.vsdx>");
+                return;
             }
-            inheritTimer.Stop();
 
-            // Save the unchanged diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        Console.WriteLine($"Time with inherited fill (no overrides): {inheritTimer.ElapsedMilliseconds} ms");
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-        // Benchmark scenario: override fill for each shape
-        Stopwatch overrideTimer = Stopwatch.StartNew();
-        using (Diagram diagram = new Diagram(inputPath))
-        {
-            foreach (Page page in diagram.Pages)
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Benchmark: apply an explicit fill color to every shape (break inheritance)
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Override fill foreground color
+                    // Set a solid red fill color
                     shape.Fill.FillForegnd.Value = "#FF0000";
                 }
             }
-            overrideTimer.Stop();
 
-            // Save the diagram with overridden fills
-            string overriddenPath = Path.Combine(
-                Path.GetDirectoryName(outputPath) ?? string.Empty,
-                "overridden_" + Path.GetFileName(outputPath));
-            diagram.Save(overriddenPath, SaveFileFormat.Vsdx);
+            sw.Stop();
+            Console.WriteLine($"Time to set explicit fill on all shapes: {sw.ElapsedMilliseconds} ms");
+
+            // Benchmark: reset fill to the inherited value for every shape (enable inheritance)
+            sw.Restart();
+
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            {
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                {
+                    // Restore the fill color from the inherited fill values
+                    shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
+                }
+            }
+
+            sw.Stop();
+            Console.WriteLine($"Time to reset fill to inherited values on all shapes: {sw.ElapsedMilliseconds} ms");
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            // Clean up
+            diagram.Dispose();
+
+            Console.WriteLine("Processing completed.");
         }
-        Console.WriteLine($"Time with fill overrides: {overrideTimer.ElapsedMilliseconds} ms");
     }
-}

@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -13,35 +12,14 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Ensure there is at least one page and one shape
-            if (diagram.Pages.Count > 0)
-            {
-                Page page = diagram.Pages[0];
-                if (page.Shapes.Count > 0)
-                {
-                    // Get the first shape on the page
-                    Shape shape = page.Shapes.GetShape(1);
+            // Access a shape (example: first shape on the first page)
+            Shape shape = diagram.Pages[0].Shapes[0];
 
-                    // Set the perspective angle to 30 degrees
-                    shape.ThreeDFormat.Perspective.Value = 30.0;
+            // Set the 3‑D perspective angle to 30 degrees
+            shape.ThreeDFormat.Perspective.Value = 30;
 
-                    // Prepare PDF save options (optional: set default font)
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.DefaultFont = "Arial";
-
-                    // Export the diagram to PDF
-                    diagram.Save("output.pdf", pdfOptions);
-                    Console.WriteLine("Diagram exported to PDF with perspective angle set to 30 degrees.");
-                }
-                else
-                {
-                    Console.WriteLine("No shapes found on the first page.");
-                }
-            }
-            else
-            {
-                Console.WriteLine("The diagram contains no pages.");
-            }
+            // Export the shape to a PDF file
+            shape.ToPdf("output.pdf");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,105 +1,80 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram (replace with your actual file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Get the first page of the diagram
+            Page page = diagram.Pages[0];
+
+            // Add a dynamic connector shape at an arbitrary location
+            double connectorPinX = 5.0;
+            double connectorPinY = 5.0;
+            long connectorId = page.AddShape(connectorPinX, connectorPinY, "Dynamic connector");
+            Shape connector = page.Shapes.GetShape(connectorId);
+
+            // Find the nearest shape that allows dynamic glue
+            Shape nearestShape = null;
+            double minDistance = double.MaxValue;
+
+            foreach (Shape shape in page.Shapes)
             {
+                // Skip deleted shapes and connectors (1‑D shapes)
+                if (shape.Del == BOOL.True || shape.OneD)
+                    continue;
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the output Visio file
-                string outputPath = "output.vsdx";
+                // Check if the shape's glue type permits dynamic glue
+                if (shape.Misc.GlueType.Value != GlueTypeValue.AllowDynamicGlue)
+                    continue;
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Compute Euclidean distance between the connector and the candidate shape
+                double dx = connector.XForm.PinX.Value - shape.XForm.PinX.Value;
+                double dy = connector.XForm.PinY.Value - shape.XForm.PinY.Value;
+                double distance = Math.Sqrt(dx * dx + dy * dy);
 
-                // Work with the first page
-                Page page = diagram.Pages[0];
-
-                // Find a source shape (first non‑connector shape)
-                Shape sourceShape = null;
-                foreach (Shape shp in page.Shapes)
+                if (distance < minDistance)
                 {
-                    // Exclude 1‑D connector shapes
-                    if (!shp.OneD)
-                    {
-                        sourceShape = shp;
-                        break;
-                    }
+                    minDistance = distance;
+                    nearestShape = shape;
                 }
+            }
 
-                if (sourceShape == null)
-                {
-                    Console.WriteLine("No suitable source shape found.");
-                    return;
-                }
-
-                // Locate the nearest gluing‑enabled shape (excluding the source)
-                Shape nearestShape = null;
-                double minDistance = double.MaxValue;
-
-                foreach (Shape candidate in page.Shapes)
-                {
-                    // Skip the source shape itself
-                    if (candidate.ID == sourceShape.ID)
-                        continue;
-
-                    // Ensure the shape is not a connector and has gluing enabled
-                    if (candidate.OneD)
-                        continue;
-
-                    if (candidate.Misc == null || candidate.Misc.GlueType == null)
-                        continue;
-
-                    if (candidate.Misc.GlueType.Value != GlueTypeValue.AllowDynamicGlue)
-                        continue;
-
-                    // Compute Euclidean distance between shape centers (PinX, PinY)
-                    double dx = candidate.XForm.PinX.Value - sourceShape.XForm.PinX.Value;
-                    double dy = candidate.XForm.PinY.Value - sourceShape.XForm.PinY.Value;
-                    double distance = Math.Sqrt(dx * dx + dy * dy);
-
-                    if (distance < minDistance)
-                    {
-                        minDistance = distance;
-                        nearestShape = candidate;
-                    }
-                }
-
-                if (nearestShape == null)
-                {
-                    Console.WriteLine("No gluing‑enabled shape found to connect.");
-                    return;
-                }
-
-                // Add a dynamic connector shape at the source position
-                long connectorId = page.AddShape(
-                    sourceShape.XForm.PinX.Value,
-                    sourceShape.XForm.PinY.Value,
-                    "Dynamic connector");
-
-                // Connect the source shape to the nearest shape using the connector
-                // Choose connection points (e.g., Bottom of source, Top of target)
+            if (nearestShape != null)
+            {
+                // Attach the connector's beginning to the nearest shape (using Bottom of connector, Top of target shape)
                 page.ConnectShapesViaConnector(
-                    sourceShape.ID,
+                    connectorId,
                     ConnectionPointPlace.Bottom,
                     nearestShape.ID,
                     ConnectionPointPlace.Top,
                     connectorId);
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Connector attached between shape {sourceShape.ID} and shape {nearestShape.ID}.");
-
+                Console.WriteLine($"Connector (ID={connectorId}) attached to shape (ID={nearestShape.ID}) at distance {minDistance:F2}.");
             }
-            catch (System.IO.FileNotFoundException ex)
+            else
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("No gluing‑enabled shape found to attach the connector.");
             }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

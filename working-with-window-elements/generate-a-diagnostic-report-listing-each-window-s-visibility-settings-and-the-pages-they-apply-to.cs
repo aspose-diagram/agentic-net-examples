@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 
@@ -6,15 +7,15 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect a Visio file path as the first argument.
+        // Expect the Visio file path as the first argument.
         if (args.Length == 0)
         {
-            Console.WriteLine("Usage: DiagramWindowDiagnostics <visio-file-path>");
+            Console.WriteLine("Usage: DiagramWindowDiagnostics <VisioFilePath>");
             return;
         }
 
         string filePath = args[0];
-        // Verify the input file exists before proceeding.
+        // Verify that the specified file exists.
         if (!File.Exists(filePath))
         {
             Console.Error.WriteLine($"File not found: {filePath}");
@@ -23,13 +24,23 @@ class Program
 
         try
         {
-            // Load the diagram from the specified file.
+            // Load the diagram. No special load options are required.
             Diagram diagram = new Diagram(filePath);
 
-            // Iterate through each window in the document.
+            // Build a lookup of page IDs to page names for easy reference.
+            var pageLookup = new Dictionary<int, string>();
+            foreach (Page page in diagram.Pages)
+            {
+                pageLookup[page.ID] = page.Name;
+            }
+
+            // Iterate through each window and output its visibility settings.
+            Console.WriteLine("=== Window Visibility Diagnostic Report ===");
             foreach (Window window in diagram.Windows)
             {
-                // Retrieve visibility settings (BOOL values) and convert to readable strings.
+                Console.WriteLine($"Window ID: {window.ID}");
+
+                // Visibility settings (all are BOOL values).
                 string showGrid = window.ShowGrid == BOOL.True ? "True" : "False";
                 string showGuides = window.ShowGuides == BOOL.True ? "True" : "False";
                 string showRulers = window.ShowRulers == BOOL.True ? "True" : "False";
@@ -37,31 +48,32 @@ class Program
                 string showConnectionPoints = window.ShowConnectionPoints == BOOL.True ? "True" : "False";
                 string dynamicGridEnabled = window.DynamicGridEnabled == BOOL.True ? "True" : "False";
 
-                // Determine the page the window applies to (if any).
-                string pageInfo = "N/A";
-                // The Window.Page property returns a Page object (or null) rather than an integer.
-                if (window.Page != null)
-                {
-                    Page page = window.Page;
-                    pageInfo = $"{page.Name} (ID {page.ID})";
-                }
-
-                // Output the diagnostic information for the current window.
-                Console.WriteLine($"Window ID: {window.ID}");
-                Console.WriteLine($"  Type: {window.WindowType}");
                 Console.WriteLine($"  ShowGrid: {showGrid}");
                 Console.WriteLine($"  ShowGuides: {showGuides}");
                 Console.WriteLine($"  ShowRulers: {showRulers}");
                 Console.WriteLine($"  ShowPageBreaks: {showPageBreaks}");
                 Console.WriteLine($"  ShowConnectionPoints: {showConnectionPoints}");
                 Console.WriteLine($"  DynamicGridEnabled: {dynamicGridEnabled}");
-                Console.WriteLine($"  Applies to Page: {pageInfo}");
-                Console.WriteLine();
+
+                // Determine which page (if any) this window is associated with.
+                // Window.Page returns a Page object; use its ID for lookup.
+                if (window.Page != null && pageLookup.TryGetValue(window.Page.ID, out string pageName))
+                {
+                    Console.WriteLine($"  Associated Page ID: {window.Page.ID} (Name: {pageName})");
+                }
+                else
+                {
+                    Console.WriteLine("  Associated Page: None or unknown");
+                }
+
+                Console.WriteLine(); // Blank line for readability.
             }
+
+            Console.WriteLine("=== End of Report ===");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
+            // Write any Aspose or runtime errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

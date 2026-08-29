@@ -5,63 +5,66 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect three arguments: input Visio file, background image file, output PDF file.
-        if (args.Length < 3)
-        {
-            Console.WriteLine("Usage: <program> <inputVisioPath> <backgroundImagePath> <outputPdfPath>");
-            return;
-        }
-
-        string inputVisioPath = args[0];
-        string backgroundImagePath = args[1];
-        string outputPdfPath = args[2];
-
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputVisioPath);
 
-            // Iterate over all pages and add the background image.
-            foreach (Page page in diagram.Pages)
+            // Paths – adjust as needed
+            string inputVisioPath = "input.vsdx";
+            string backgroundImagePath = "background.png";
+            string outputPdfPath = "output.pdf";
+
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(inputVisioPath))
             {
-                // Retrieve page dimensions (in inches).
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Center coordinates for the shape (pin is at the center).
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-
-                // Insert the image as a shape covering the entire page.
-                using (FileStream imgStream = new FileStream(backgroundImagePath, FileMode.Open, FileAccess.Read))
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, imgStream);
+                    // Retrieve page dimensions (in inches)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Retrieve the created shape.
-                    Shape bgShape = page.Shapes.GetShape(shapeId);
+                    // Center coordinates for the shape (pin is at the center)
+                    double pinX = pageWidth / 2.0;
+                    double pinY = pageHeight / 2.0;
 
-                    // Send the shape to the back so it appears behind other content.
-                    page.SendToBack(shapeId);
+                    // Insert the background image as a shape covering the whole page
+                    using (FileStream imgStream = new FileStream(backgroundImagePath, FileMode.Open, FileAccess.Read))
+                    {
+                        long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, imgStream);
 
-                    // Make the background shape non‑selectable.
-                    bgShape.Protection.LockSelect.Value = BOOL.True;
+                        // Retrieve the created shape
+                        Shape bgShape = page.Shapes.GetShape(shapeId);
+
+                        // Ensure the shape has no outline
+                        bgShape.Line.LinePattern.Value = LinePatternValue.None;
+
+                        // Set fill pattern to solid (required for image shapes)
+                        bgShape.Fill.FillPattern.Value = 1;
+
+                        // Send the shape to the back so it appears behind other content
+                        page.SendToBack(shapeId);
+
+                        // Make the background non‑selectable
+                        bgShape.Protection.LockSelect.Value = BOOL.True;
+                    }
                 }
+
+                // Configure PDF save options (optional: set default font)
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
+
+                // Save the updated diagram as PDF
+                diagram.Save(outputPdfPath, pdfOptions);
             }
 
-            // Configure PDF save options (optional: set default font).
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
+            Console.WriteLine("Diagram processed and saved to PDF successfully.");
 
-            // Save the updated diagram as PDF.
-            diagram.Save(outputPdfPath, pdfOptions);
-
-            Console.WriteLine("Diagram exported to PDF successfully.");
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

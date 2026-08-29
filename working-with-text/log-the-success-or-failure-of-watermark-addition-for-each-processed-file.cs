@@ -3,66 +3,69 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        // Folder containing Visio files to process
-        string inputFolder = @"C:\VisioFiles";
-        // Folder to save processed files
-        string outputFolder = @"C:\VisioFiles\Processed";
-
-        // Ensure output folder exists
-        Directory.CreateDirectory(outputFolder);
-
-        // Get all Visio files (VSDX, VSD, VDX, etc.) in the input folder
-        string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in files)
+        static void Main(string[] args)
         {
-            // Process only supported Visio extensions
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx" && ext != ".vsx" && ext != ".vtx")
-            {
-                continue;
-            }
+            // Input folder containing Visio files
+            string inputFolder = @"C:\VisioFiles";
+            // Output folder for processed files
+            string outputFolder = Path.Combine(inputFolder, "output");
+            Directory.CreateDirectory(outputFolder);
 
-            try
+            // Get all Visio files (VSDX, VSD, VDX, VSSX, etc.)
+            string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (string filePath in files)
             {
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Add watermark to each page
-                foreach (Page page in diagram.Pages)
+                // Process only supported Visio extensions
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx" &&
+                    extension != ".vssx" && extension != ".vstx" && extension != ".vsdm")
                 {
-                    // Retrieve page dimensions
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Center position
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
-
-                    // Watermark parameters
-                    string watermarkText = "CONFIDENTIAL";
-                    string fontName = "Calibri";
-                    string fontColor = "#FF0000"; // Red color in hex
-                    double fontSizeInPoints = 36; // 36 pt
-                    double fontSizeInInches = fontSizeInPoints / 72.0; // Convert points to inches
-
-                    // Add the watermark covering the full page
-                    page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                 watermarkText, fontName, fontColor, fontSizeInInches);
+                    Console.WriteLine($"Skipping unsupported file: {Path.GetFileName(filePath)}");
+                    continue;
                 }
 
-                // Save the modified diagram
-                string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                try
+                {
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
 
-                Console.WriteLine($"SUCCESS: Watermark added to '{filePath}'.");
+                    // Add watermark to each page
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Retrieve page dimensions (in inches)
+                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                        // Center position for the watermark
+                        double pinX = pageWidth / 2.0;
+                        double pinY = pageHeight / 2.0;
+
+                        // Add the watermark text (full‑page size)
+                        page.AddText(
+                            pinX,                     // pinX
+                            pinY,                     // pinY
+                            pageWidth,                // width
+                            pageHeight,               // height
+                            "CONFIDENTIAL",           // text
+                            "Arial",                  // font name
+                            "#CCCCCC",                // font color (hex)
+                            0.5);                     // font size in inches (≈36 pt)
+                    }
+
+                    // Save the modified diagram next to the original with a suffix
+                    string fileName = Path.GetFileNameWithoutExtension(filePath);
+                    string outputPath = Path.Combine(outputFolder, $"{fileName}_watermarked{extension}");
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                    Console.WriteLine($"SUCCESS: Watermark added to '{Path.GetFileName(filePath)}' and saved as '{Path.GetFileName(outputPath)}'.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"FAILURE: Could not process '{Path.GetFileName(filePath)}'. Error: {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"FAILURE: Could not add watermark to '{filePath}'. Error: {ex.Message}");
-            }
+
+            Console.WriteLine("Processing completed.");
         }
     }
-}

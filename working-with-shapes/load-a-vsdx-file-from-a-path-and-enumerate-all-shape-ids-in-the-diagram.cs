@@ -1,36 +1,35 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the VSDX file
-            string filePath = @"C:\Path\To\YourDiagram.vsdx";
-
-            // Load the diagram specifying the VSDX format explicitly
-            using (Diagram diagram = new Diagram(filePath, LoadFileFormat.Vsdx))
+            try
             {
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+
+                // Path to the VSDX file to load
+                string filePath = "input.vsdx";
+
+                // Load the diagram from the specified file
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through each page in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Output the unique identifier of each shape
-                        Console.WriteLine($"Shape ID: {shape.ID}");
+                        // Iterate through each shape on the current page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Output the page ID and the shape ID
+                            Console.WriteLine($"Page {page.ID}, Shape ID: {shape.ID}");
+                        }
                     }
                 }
-            }
 
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

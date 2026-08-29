@@ -3,36 +3,41 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load VSDX file bytes (replace with your actual VSDX data source)
-            byte[] vsdxBytes = File.ReadAllBytes("sample.vsdx");
-
-            // Create a memory stream containing the VSDX data
-            using (MemoryStream memoryStream = new MemoryStream(vsdxBytes))
+            try
             {
-                // Initialize Diagram object from the memory stream
-                Diagram diagram = new Diagram(memoryStream);
 
-                // Confirm parsing succeeded by checking that at least one page is present
-                if (diagram.Pages != null && diagram.Pages.Count > 0)
+                // Path to a VSDX file (replace with an actual file path)
+                string filePath = "sample.vsdx";
+
+                // Read the file into a byte array
+                byte[] vsdxData = File.ReadAllBytes(filePath);
+
+                // Initialize a MemoryStream with the VSDX data
+                using (MemoryStream memoryStream = new MemoryStream(vsdxData))
                 {
-                    Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
+                    // Load the diagram from the memory stream
+                    using (Diagram diagram = new Diagram(memoryStream))
+                    {
+                        // Verify that the diagram was parsed successfully
+                        if (diagram.Pages.Count > 0)
+                        {
+                            Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Diagram loaded, but no pages were found.");
+                            throw new Exception("Parsing failed: diagram contains no pages.");
+                        }
+                    }
                 }
-                else
-                {
-                    Console.WriteLine("Diagram loaded, but no pages were found.");
-                }
+
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

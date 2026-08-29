@@ -1,65 +1,69 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load an existing Visio diagram (replace with your file path)
+                // Input Visio file path
                 string inputPath = "input.vsdx";
+
+                // Output Visio file with watermark
+                string outputPath = "output_with_watermark.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and add a watermark to each page
-                foreach (Page page in diagram.Pages)
-                {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Choose the page to which the watermark will be added (first page in this example)
+                Page page = diagram.Pages[0];
 
-                    // Calculate the center position for the watermark
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Watermark text and styling
-                    string watermarkText = "CONFIDENTIAL";
-                    string fontName = "Calibri";
-                    string fontColor = "#A0A0A0"; // Light gray in hex
-                    double fontSizeInPoints = 72; // 72 pt = 1 inch
-                    double fontSizeInInches = fontSizeInPoints / 72.0;
+                // Calculate center position for the watermark
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
 
-                    // Add the watermark as a text shape that spans the full page
-                    // Width and height are set to the page dimensions so the text can be centered
-                    Shape watermarkShape = page.AddText(
-                        pinX,                // PinX (center X)
-                        pinY,                // PinY (center Y)
-                        pageWidth,           // Width of the text box
-                        pageHeight,          // Height of the text box
-                        watermarkText,       // Text content
-                        fontName,            // Font name
-                        fontColor,           // Font color (hex)
-                        fontSizeInInches);   // Font size in inches
+                // Watermark text and styling
+                string watermarkText = "CONFIDENTIAL";
+                string fontName = "Arial";
+                string fontColor = "#CCCCCC"; // Light gray in hex
+                double fontSizePoints = 72;   // 72 points = 1 inch
+                double fontSizeInches = fontSizePoints / 72.0;
 
-                    // Optional: rotate the watermark for a diagonal effect (45 degrees)
-                    // SetAngle expects radians; 45° = π/4
-                    watermarkShape.SetAngle(Math.PI / 4);
-                }
+                // Add the watermark as a full‑page text shape.
+                // The AddText overload returns a Shape object that can be further customized if needed.
+                Shape watermarkShape = page.AddText(
+                    pinX,                // PinX (center X)
+                    pinY,                // PinY (center Y)
+                    pageWidth,           // Width (cover full page)
+                    pageHeight,          // Height (cover full page)
+                    watermarkText,       // Text content
+                    fontName,            // Font name
+                    fontColor,           // Font color (hex string)
+                    fontSizeInches);     // Font size (in inches)
 
-                // Save the diagram with watermarks to PDF
-                string pdfOutput = "output.pdf";
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    // Ensure missing fonts are substituted with a known font
-                    DefaultFont = "Arial"
-                };
-                diagram.Save(pdfOutput, pdfOptions);
+                // OPTIONAL: Rotate the watermark for a diagonal effect.
+                // Rotation angle is in radians. 45 degrees = Math.PI / 4.
+                watermarkShape.SetAngle(Math.PI / 4);
 
-                // Also save a copy in VSDX format
-                string vsdxOutput = "output_with_watermark.vsdx";
-                diagram.Save(vsdxOutput, SaveFileFormat.Vsdx);
+                // OPTIONAL: Reduce opacity by setting the shape's fill transparency.
+                // Transparency is a percentage (0‑100). Here we set 50% transparency.
+                watermarkShape.Fill.FillForegndTrans.Value = 50;
+
+                // Save the modified diagram back to Visio format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                // Additionally, export the diagram as a PNG image to verify the watermark visually.
+                string pngPath = "output_with_watermark.png";
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                diagram.Save(pngPath, pngOptions);
 
                 Console.WriteLine("Watermark added and files saved successfully.");
 

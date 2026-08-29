@@ -4,47 +4,55 @@ using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ShapeSvgToHtml
 {
     static void Main()
     {
         try
         {
 
-            // Load the diagram (replace with your file path)
+            // Load the diagram file (replace with your actual file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Prepare an HTML document that will hold all SVGs
-            StringBuilder html = new StringBuilder();
-            html.AppendLine("<!DOCTYPE html>");
-            html.AppendLine("<html><head><meta charset=\"UTF-8\"><title>Diagram Shapes</title></head><body>");
+            // Prepare a StringBuilder to build the final HTML document
+            StringBuilder htmlBuilder = new StringBuilder();
+            htmlBuilder.AppendLine("<!DOCTYPE html>");
+            htmlBuilder.AppendLine("<html><head><meta charset=\"UTF-8\"><title>Combined Shapes SVG</title></head><body>");
 
-            // SVG save options (customize if needed)
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            int shapeIndex = 0;
 
-            // Loop through every page and every shape on the page
-            foreach (Page page in diagram.Pages)
+            // Iterate through all shapes on the first page (adjust page index as needed)
+            foreach (Shape shape in diagram.Pages[0].Shapes)
             {
-                foreach (Shape shape in page.Shapes)
+                // Temporary file path for the SVG of the current shape
+                string tempSvgPath = Path.Combine(Path.GetTempPath(), $"shape_{shapeIndex}.svg");
+
+                // Configure SVG save options (customize as required)
+                SVGSaveOptions svgOptions = new SVGSaveOptions
                 {
-                    // Save the shape to a temporary SVG file
-                    string tempSvgPath = Path.GetTempFileName();
-                    shape.ToSvg(tempSvgPath, svgOptions);
+                    ExportElementAsRectTag = true   // example option
+                };
 
-                    // Read the SVG content and embed it into the HTML
-                    string svgContent = File.ReadAllText(tempSvgPath);
-                    html.AppendLine(svgContent);
+                // Save the shape to an SVG file using the provided ToSvg method
+                shape.ToSvg(tempSvgPath, svgOptions);
 
-                    // Clean up the temporary file
-                    File.Delete(tempSvgPath);
-                }
+                // Read the generated SVG content
+                string svgContent = File.ReadAllText(tempSvgPath);
+
+                // Append the SVG markup to the HTML document
+                htmlBuilder.AppendLine(svgContent);
+
+                // Clean up the temporary SVG file
+                File.Delete(tempSvgPath);
+
+                shapeIndex++;
             }
 
-            // Close the HTML document
-            html.AppendLine("</body></html>");
+            // Close the HTML tags
+            htmlBuilder.AppendLine("</body></html>");
 
-            // Write the combined HTML to disk
-            File.WriteAllText("CombinedShapes.html", html.ToString());
+            // Write the combined HTML to a file
+            File.WriteAllText("CombinedShapes.html", htmlBuilder.ToString());
 
         }
         catch (System.IO.FileNotFoundException ex)

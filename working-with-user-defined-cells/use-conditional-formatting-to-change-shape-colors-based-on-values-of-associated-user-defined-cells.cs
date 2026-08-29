@@ -1,69 +1,77 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram (no LoadOptions needed)
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+
+                // Input and output file paths (can be passed as command‑line arguments)
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Look for a user-defined cell named "Status"
-                    foreach (User userCell in shape.Users)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (userCell.Name == "Status")
-                        {
-                            string cellValue = userCell.Value.Val?.Trim();
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                            // Apply conditional color based on the cell value
-                            if (string.Equals(cellValue, "High", StringComparison.OrdinalIgnoreCase))
+                        // Look for a user‑defined cell named "Value"
+                        User userCell = null;
+                        foreach (User user in shape.Users)
+                        {
+                            if (user.Name == "Value")
                             {
-                                // Red for High
-                                shape.Fill.FillForegnd.Value = "#FF0000";
+                                userCell = user;
+                                break;
                             }
-                            else if (string.Equals(cellValue, "Medium", StringComparison.OrdinalIgnoreCase))
+                        }
+
+                        // If the user cell exists, evaluate its value and apply color
+                        if (userCell != null)
+                        {
+                            double numericValue;
+                            // Try to parse the cell value as a double
+                            if (double.TryParse(userCell.Value.Val, out numericValue))
                             {
-                                // Yellow for Medium
-                                shape.Fill.FillForegnd.Value = "#FFFF00";
+                                // Example rule: values > 100 -> red, otherwise -> green
+                                if (numericValue > 100)
+                                {
+                                    // Set fill foreground color to red
+                                    shape.Fill.FillForegnd.Value = "#FF0000";
+                                }
+                                else
+                                {
+                                    // Set fill foreground color to green
+                                    shape.Fill.FillForegnd.Value = "#00FF00";
+                                }
                             }
                             else
                             {
-                                // Green for Low or any other value
-                                shape.Fill.FillForegnd.Value = "#00FF00";
+                                // If parsing fails, you could apply a default color (optional)
+                                shape.Fill.FillForegnd.Value = "#CCCCCC"; // light gray
                             }
-
-                            // Once the relevant user cell is processed, exit the inner loop
-                            break;
                         }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

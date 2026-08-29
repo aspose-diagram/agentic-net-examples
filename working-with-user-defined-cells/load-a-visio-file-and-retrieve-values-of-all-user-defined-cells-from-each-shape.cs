@@ -9,27 +9,28 @@ class Program
         try
         {
 
-            // Path to the Visio file
-            string filePath = "input.vsdx";
+            // Path to the Visio file (VSDX, VSD, etc.)
+            string visioPath = "input.vsdx";
 
             // Load the Visio diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                Console.WriteLine($"Page: {page.Name}");
-
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the document
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
+                    Console.WriteLine($"Page: {page.Name}");
 
-                    // Retrieve all user‑defined cells (User collection) for the shape
-                    foreach (User userCell in shape.Users)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Output the cell name and its value
-                        Console.WriteLine($"    User Cell: {userCell.NameU} = {userCell.Value}");
+                        Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
+
+                        // Retrieve all user‑defined cells (User section) of the shape
+                        foreach (User userCell in shape.Users)
+                        {
+                            // Output the name of the user cell and its evaluated value
+                            Console.WriteLine($"    User Cell - Name: {userCell.Name}, Value: {userCell.Value}");
+                        }
                     }
                 }
             }

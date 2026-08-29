@@ -1,90 +1,84 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Retrieve user-defined cells "Length" and "Width"
+                    double length = 0;
+                    double width = 0;
+                    bool hasLength = false;
+                    bool hasWidth = false;
+
+                    foreach (User user in shape.Users)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve user-defined cells "A" and "B"
-                        double valueA = 0;
-                        double valueB = 0;
-                        bool hasA = false;
-                        bool hasB = false;
-
-                        foreach (User user in shape.Users)
+                        if (user.Name.Equals("Length", StringComparison.OrdinalIgnoreCase))
                         {
-                            if (user.Name.Equals("A", StringComparison.OrdinalIgnoreCase))
-                            {
-                                hasA = double.TryParse(user.Value.Val, out valueA);
-                            }
-                            else if (user.Name.Equals("B", StringComparison.OrdinalIgnoreCase))
-                            {
-                                hasB = double.TryParse(user.Value.Val, out valueB);
-                            }
+                            hasLength = double.TryParse(user.Value.Val, out length);
                         }
-
-                        // If both cells exist and contain numeric values, compute the result
-                        if (hasA && hasB)
+                        else if (user.Name.Equals("Width", StringComparison.OrdinalIgnoreCase))
                         {
-                            double result = valueA + valueB; // Example expression: A + B
-
-                            // Check if a "Result" user-defined cell already exists
-                            User resultUser = null;
-                            foreach (User user in shape.Users)
-                            {
-                                if (user.Name.Equals("Result", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    resultUser = user;
-                                    break;
-                                }
-                            }
-
-                            if (resultUser != null)
-                            {
-                                // Update existing cell
-                                resultUser.Value.Val = result.ToString();
-                            }
-                            else
-                            {
-                                // Create a new user-defined cell named "Result"
-                                User newUser = new User
-                                {
-                                    Name = "Result",
-                                    NameU = "Result",
-                                    Prompt = { Value = "Computed Result" },
-                                    Value = { Val = result.ToString() }
-                                };
-                                shape.Users.Add(newUser);
-                            }
+                            hasWidth = double.TryParse(user.Value.Val, out width);
                         }
                     }
+
+                    // If both cells exist and contain valid numbers, calculate Area
+                    if (hasLength && hasWidth)
+                    {
+                        double area = length * width;
+
+                        // Check if an "Area" user-defined cell already exists
+                        User areaCell = null;
+                        foreach (User user in shape.Users)
+                        {
+                            if (user.Name.Equals("Area", StringComparison.OrdinalIgnoreCase))
+                            {
+                                areaCell = user;
+                                break;
+                            }
+                        }
+
+                        if (areaCell == null)
+                        {
+                            // Create a new user-defined cell for Area
+                            areaCell = new User();
+                            areaCell.Name = "Area";
+                            shape.Users.Add(areaCell);
+                        }
+
+                        // Set the calculated value
+                        areaCell.Value.Val = area.ToString();
+                    }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

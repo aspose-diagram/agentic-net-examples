@@ -5,14 +5,13 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input and output Visio file paths
+            // Path to the Visio file (replace with your actual file path)
             string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
@@ -24,49 +23,35 @@ class Program
                 {
                     foreach (User userCell in shape.Users)
                     {
-                        string formula = userCell.Value.Val; // The formula or value stored in the user cell
-                        double evalResult;
-                        bool success = TryEvaluateFormula(formula, out evalResult);
+                        string cellName = userCell.NameU;
+                        string cellValue = userCell.Value.Val;
 
-                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, User Cell: {userCell.Name}, Formula: \"{formula}\", Result: {(success ? evalResult.ToString() : "Evaluation failed")}");
+                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, User Cell: {cellName}, Value: {cellValue}");
 
-                        // Optionally store the evaluated result back into the cell
-                        if (success)
+                        // If the cell contains a formula (starts with '=') evaluate it
+                        if (!string.IsNullOrEmpty(cellValue) && cellValue.StartsWith("="))
                         {
-                            userCell.Value.Val = evalResult.ToString();
+                            string expression = cellValue.TrimStart('=');
+
+                            try
+                            {
+                                // Simple arithmetic evaluation using DataTable.Compute
+                                object result = new DataTable().Compute(expression, null);
+                                Console.WriteLine($"  Evaluated Result: {result}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"  Evaluation failed: {ex.Message}");
+                            }
                         }
                     }
                 }
             }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    // Simple evaluator for arithmetic expressions using DataTable.Compute
-    static bool TryEvaluateFormula(string expression, out double result)
-    {
-        result = 0;
-        if (string.IsNullOrWhiteSpace(expression))
-            return false;
-
-        try
-        {
-            // DataTable.Compute can evaluate basic arithmetic expressions
-            object eval = new DataTable().Compute(expression, null);
-            result = Convert.ToDouble(eval);
-            return true;
-        }
-        catch
-        {
-            // Evaluation failed (unsupported functions, syntax errors, etc.)
-            return false;
         }
     }
 }

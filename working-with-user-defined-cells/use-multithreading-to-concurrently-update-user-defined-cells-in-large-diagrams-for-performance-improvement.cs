@@ -6,44 +6,41 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Input and output file paths
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Prepare a typed list of pages for parallel processing
+                // Collect pages into a list for Parallel.ForEach (type inference does not work directly on diagram.Pages)
                 List<Page> pages = new List<Page>();
                 foreach (Page p in diagram.Pages)
+                {
                     pages.Add(p);
+                }
 
-                // Parallel update of user-defined cells
+                // Update user-defined cells concurrently
                 Parallel.ForEach(pages, page =>
                 {
-                    // Collect shapes of the current page
-                    List<Shape> shapes = new List<Shape>();
-                    foreach (Shape s in page.Shapes)
-                        shapes.Add(s);
-
-                    // Update each shape's user-defined cells concurrently
-                    Parallel.ForEach(shapes, shape =>
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Example: update a user-defined cell named "CustomValue"
+                        // Iterate over all user-defined cells of the shape
                         foreach (User userCell in shape.Users)
                         {
-                            if (userCell.Name == "CustomValue")
+                            // Example: update a cell named "MyCell"
+                            if (userCell.Name == "MyCell")
                             {
-                                // Set new value based on shape ID (as a string)
-                                userCell.Value.Val = (shape.ID * 10).ToString();
+                                // Set the new value; adjust logic as required
+                                userCell.Value.Val = "UpdatedValue";
                             }
                         }
-                    });
+                    }
                 });
 
                 // Save the modified diagram

@@ -9,41 +9,35 @@ class Program
         try
         {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Load the diagram from the file
-            Diagram diagram = new Diagram(inputPath);
+            // Add a rectangle shape on the first page (page index 0)
+            double pinX = 2.0;
+            double pinY = 2.0;
+            string masterName = "Rectangle";
+            int pageIndex = 0;
+            long shapeId = diagram.AddShape(pinX, pinY, masterName, pageIndex);
 
-            // Get the first page of the diagram
-            Page page = diagram.Pages[0];
+            // Retrieve the shape object from the page
+            Shape shape = diagram.Pages[pageIndex].Shapes.GetShape((int)shapeId);
 
-            // Add a rectangle shape to the page (master name "Rectangle")
-            // The shape is added to the diagram and returns a long ID
-            long shapeIdLong = diagram.AddShape(1.0, 1.0, "Rectangle", 0);
-
-            // Convert the long ID to int as required by GetShape
-            Shape shape = page.Shapes.GetShape((int)shapeIdLong);
-
-            // Create a user‑defined cell (custom property)
+            // Create a user‑defined cell (custom property) and add it to the shape
             User userCell = new User();
-            userCell.Name = "MyCustomProp";
-            userCell.Value.Val = "12345";
-
-            // Add the custom property to the shape
+            userCell.Name = "MyReadOnlyCell";
+            userCell.Value.Val = "123";
             shape.Users.Add(userCell);
 
             // Lock custom properties to make the user‑defined cell read‑only at runtime
             shape.Protection.LockCustProp.Value = BOOL.True;
 
-            // Save the modified diagram to a new file
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the diagram to a VSDX file
+            diagram.Save("ReadOnlyCellDiagram.vsdx", SaveFileFormat.Vsdx);
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

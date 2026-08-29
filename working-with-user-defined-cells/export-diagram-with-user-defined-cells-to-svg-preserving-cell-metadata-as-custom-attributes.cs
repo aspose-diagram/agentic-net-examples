@@ -1,48 +1,76 @@
 using System;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            // Validate input arguments
-            if (args.Length < 2)
+
+            // Input Visio file path (default if not provided)
+            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+            // Desired SVG output path (default if not provided)
+            string outputPath = args.Length > 1 ? args[1] : "output.svg";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Prepare SVG save options
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            svgOptions.ExportHiddenPage = false; // do not export hidden pages
+
+            // Save to a temporary SVG file first
+            string tempSvgPath = Path.ChangeExtension(Path.GetTempFileName(), ".svg");
+            diagram.Save(tempSvgPath, svgOptions);
+
+            // Load the generated SVG as XML
+            XDocument svgDoc = XDocument.Load(tempSvgPath);
+
+            // Iterate all pages and shapes to embed user‑defined cells as custom attributes
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine("Usage: DiagramExportExample <inputVisioFile> <outputSvgFile>");
-                return;
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Find the SVG element that corresponds to this shape (by id attribute)
+                    XElement svgElement = svgDoc.Descendants()
+                                                .FirstOrDefault(e => (string)e.Attribute("id") == shape.ID.ToString());
+
+                    if (svgElement != null)
+                    {
+                        // Add each user‑defined cell as an attribute on the SVG element
+                        foreach (User userCell in shape.Users)
+                        {
+                            // Use the cell's name as attribute name and its value as attribute value
+                            svgElement.SetAttributeValue(userCell.Name, userCell.Value.Val);
+                        }
+                    }
+                }
             }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+            // Save the modified SVG to the final output location
+            svgDoc.Save(outputPath);
 
+            // Clean up the temporary file
             try
             {
-                // Load the Visio diagram from the specified file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Configure SVG export options
-                SVGSaveOptions svgOptions = new SVGSaveOptions
-                {
-                    // Do not export hidden pages
-                    ExportHiddenPage = false,
-                    // Export guide shapes if needed (set to false to omit them)
-                    ExportGuideShapes = false,
-                    // Fit the SVG content to the viewport
-                    SVGFitToViewPort = true,
-                    // Export each shape as a <rect> tag when possible
-                    ExportElementAsRectTag = true
-                };
-
-                // Save the entire diagram as an SVG file with the configured options
-                diagram.Save(outputPath, svgOptions);
-
-                Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
+                File.Delete(tempSvgPath);
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error during export: {ex.Message}");
-                throw;
+                // If deletion fails, ignore – the temp file will be removed later by the OS
             }
+
+            Console.WriteLine($"Diagram exported to SVG with custom attributes at: {outputPath}");
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
+}

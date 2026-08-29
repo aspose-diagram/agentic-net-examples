@@ -1,29 +1,45 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string visioPath = "input.vsdx";
+            // Path where the shape will be saved as PDF
+            string pdfPath = "shape.pdf";
 
-            // Access the first page (adjust index as needed)
+            // Load the diagram from file
+            Diagram diagram = new Diagram(visioPath);
+
+            // Access the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape from the page (e.g., shape with ID 1)
-            Shape shape = page.Shapes.GetShape(1);
+            // Locate the first shape that is not marked as deleted
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.Del == BOOL.False)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
 
-            // Destination PDF file for the shape
-            string pdfFile = "shape.pdf";
+            if (targetShape == null)
+            {
+                Console.WriteLine("No suitable shape found to export.");
+                return;
+            }
 
-            // Convert the shape to PDF using the built‑in ToPdf method
-            shape.ToPdf(pdfFile);
+            // Export the selected shape to a PDF file
+            targetShape.ToPdf(pdfPath);
+            Console.WriteLine($"Shape successfully exported to PDF: {pdfPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

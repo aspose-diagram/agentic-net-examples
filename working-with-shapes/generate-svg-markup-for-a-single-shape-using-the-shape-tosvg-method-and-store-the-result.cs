@@ -1,36 +1,30 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ShapeToSvgExample
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load an existing Visio diagram file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (index 0) and the first shape on that page
+            // Access the first page of the diagram
             Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
 
-            // Configure SVG save options as needed
-            SVGSaveOptions svgOptions = new SVGSaveOptions
-            {
-                // Example option: export rectangle elements as <rect> tags
-                ExportElementAsRectTag = true
-            };
+            // Retrieve a shape from the page (skip the background shape with ID 1)
+            Shape shape = page.Shapes[1];
 
-            // Define the output SVG file path
-            string svgFilePath = "shape.svg";
+            // Configure SVG save options if needed
+            SVGSaveOptions options = new SVGSaveOptions();
+            options.ExportElementAsRectTag = false; // default behavior
 
-            // Save the selected shape to an SVG file
-            shape.ToSvg(svgFilePath, svgOptions);
-
-            Console.WriteLine($"Shape saved as SVG to: {svgFilePath}");
+            // Save the selected shape as an SVG file
+            shape.ToSvg("shape.svg", options);
 
         }
         catch (System.IO.FileNotFoundException ex)

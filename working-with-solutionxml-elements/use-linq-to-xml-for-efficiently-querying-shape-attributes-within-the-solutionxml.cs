@@ -12,48 +12,39 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            var diagram = new Diagram("input.vsdx");
 
-            // Access a specific SolutionXML by its name (replace with your actual name)
-            SolutionXML solutionXml = diagram.SolutionXMLs["MyCustomData"];
+            // Retrieve a specific SolutionXML by its name (adjust the name as needed)
+            var solutionXml = diagram.SolutionXMLs["MySolutionXML"];
             if (solutionXml == null)
             {
-                Console.WriteLine("Specified SolutionXML not found.");
+                Console.WriteLine("SolutionXML with the specified name was not found.");
                 return;
             }
 
-            // Parse the XML stored in the SolutionXML into an XDocument for LINQ querying
+            // Parse the XML content stored in the SolutionXML
             XDocument xmlDoc = XDocument.Parse(solutionXml.XmlValue);
 
-            // Query all Shape elements and retrieve selected attributes (ID, Name, Data1)
-            var shapeAttributes = xmlDoc.Descendants()
-                                        .Where(e => e.Name.LocalName == "Shape")
-                                        .Select(e => new
-                                        {
-                                            Id = (string)e.Attribute("ID"),
-                                            Name = (string)e.Attribute("Name"),
-                                            Data1 = (string)e.Attribute("Data1")
-                                        })
-                                        .ToList();
+            // Example: Query all <Shape> elements and extract selected attributes
+            var shapeAttributes = xmlDoc
+                .Descendants()
+                .Where(e => e.Name.LocalName.Equals("Shape", StringComparison.OrdinalIgnoreCase))
+                .Select(e => new
+                {
+                    Id = (string)e.Attribute("ID"),
+                    Name = (string)e.Attribute("Name"),
+                    Type = (string)e.Attribute("Type")
+                })
+                .ToList();
 
             // Output the queried attributes
             foreach (var shape in shapeAttributes)
             {
-                Console.WriteLine($"ID: {shape.Id}, Name: {shape.Name}, Data1: {shape.Data1}");
+                Console.WriteLine($"Shape ID: {shape.Id}, Name: {shape.Name}, Type: {shape.Type}");
             }
 
-            // Example modification: update Data1 of the first Shape element
-            XElement firstShape = xmlDoc.Descendants()
-                                        .FirstOrDefault(e => e.Name.LocalName == "Shape");
-            if (firstShape != null)
-            {
-                firstShape.SetAttributeValue("Data1", "UpdatedValue");
-                // Write the modified XML back to the SolutionXML collection
-                solutionXml.XmlValue = xmlDoc.ToString();
-            }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Optionally, save changes back to the diagram (if any modifications were made)
+            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

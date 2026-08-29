@@ -1,81 +1,78 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ExportShapeHtml
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Get a shape from the first page (skip background shape with ID 0)
+            Shape shape = null;
+            foreach (Shape s in diagram.Pages[0].Shapes)
             {
-
-                // Paths (adjust as needed)
-                string diagramPath = "input.vsdx";
-                string htmlOutputPath = "shape.html";
-                string cssOutputPath = "style.css";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Get the first page
-                Page page = diagram.Pages[0];
-
-                // Find the first non-deleted shape on the page
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
+                if (s.ID != 0)
                 {
-                    if (shape.Del == BOOL.False)
+                    shape = s;
+                    break;
+                }
+            }
+            if (shape == null) return;
+
+            // Export the shape to HTML using a memory stream
+            using (MemoryStream htmlStream = new MemoryStream())
+            {
+                HTMLSaveOptions options = new HTMLSaveOptions();
+                shape.ToHTML(htmlStream, options); // rule usage
+
+                htmlStream.Position = 0;
+                string html = new StreamReader(htmlStream).ReadToEnd();
+
+                // Prepare containers for CSS generation
+                StringBuilder cssBuilder = new StringBuilder();
+                Dictionary<string, string> styleToClass = new Dictionary<string, string>();
+                int classIndex = 1;
+
+                // Replace inline style attributes with class references
+                string pattern = @"style\s*=\s*""([^""]*)""";
+                string modifiedHtml = Regex.Replace(html, pattern, match =>
+                {
+                    string styleContent = match.Groups[1].Value.Trim();
+
+                    if (!styleToClass.TryGetValue(styleContent, out string className))
                     {
-                        targetShape = shape;
-                        break;
+                        className = $"cls{classIndex++}";
+                        styleToClass[styleContent] = className;
+                        cssBuilder.AppendLine($".{className} {{{styleContent}}}");
                     }
-                }
 
-                if (targetShape == null)
-                {
-                    Console.WriteLine("No suitable shape found on the first page.");
-                    return;
-                }
+                    return $"class=\"{className}\"";
+                }, RegexOptions.IgnoreCase);
 
-                // Export the shape to HTML using default options
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                targetShape.ToHTML(htmlOutputPath, htmlOptions);
-                Console.WriteLine($"Shape exported to HTML: {htmlOutputPath}");
+                // Write the external CSS file
+                File.WriteAllText("shapeStyles.css", cssBuilder.ToString());
 
-                // Read the generated HTML
-                string htmlContent = File.ReadAllText(htmlOutputPath);
+                // Insert a link to the external stylesheet into the HTML head
+                string linkTag = "<link rel=\"stylesheet\" type=\"text/css\" href=\"shapeStyles.css\" />";
+                modifiedHtml = Regex.Replace(modifiedHtml, @"</head>", linkTag + "\n</head>", RegexOptions.IgnoreCase);
 
-                // Extract the first <style>...</style> block (inline CSS)
-                string stylePattern = @"<style[^>]*>(.*?)</style>";
-                Match styleMatch = Regex.Match(htmlContent, stylePattern, RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
-                if (styleMatch.Success)
-                {
-                    string cssContent = styleMatch.Groups[1].Value.Trim();
-
-                    // Write CSS to external file
-                    File.WriteAllText(cssOutputPath, cssContent);
-                    Console.WriteLine($"Extracted CSS written to: {cssOutputPath}");
-
-                    // Replace the inline <style> block with a <link> reference
-                    string linkTag = $"<link rel=\"stylesheet\" type=\"text/css\" href=\"{Path.GetFileName(cssOutputPath)}\" />";
-                    string modifiedHtml = Regex.Replace(htmlContent, stylePattern, linkTag, RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
-                    // Save the modified HTML back to the original file
-                    File.WriteAllText(htmlOutputPath, modifiedHtml);
-                    Console.WriteLine("HTML file updated to reference external stylesheet.");
-                }
-                else
-                {
-                    Console.WriteLine("No inline <style> block found in the exported HTML.");
-                }
-
+                // Save the final HTML file
+                File.WriteAllText("shape.html", modifiedHtml);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

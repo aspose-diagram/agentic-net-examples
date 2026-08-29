@@ -7,60 +7,64 @@ class ShapeInheritanceCsvExporter
 {
     static void Main(string[] args)
     {
-        try
+        // Expect two arguments: input Visio file path and output CSV file path
+        if (args.Length != 2)
         {
+            Console.WriteLine("Usage: ShapeInheritanceCsvExporter <input.vsdx> <output.csv>");
+            return;
+        }
 
-            // Input Visio file path (change as needed)
-            string visioFilePath = "input.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Output CSV file path
-            string csvFilePath = "shape_inheritance_summary.csv";
+        // Load the Visio diagram using Aspose.Diagram
+        Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioFilePath);
+        // Prepare a StringBuilder for CSV content
+        StringBuilder csvBuilder = new StringBuilder();
 
-            // Prepare a StringBuilder for CSV content
-            StringBuilder csvBuilder = new StringBuilder();
+        // Write CSV header
+        csvBuilder.AppendLine("PageName,ShapeID,ShapeNameU,MasterName,InheritPropsCount,HasInheritFill,HasInheritLine,HasInheritTextBlock");
 
-            // Write CSV header
-            csvBuilder.AppendLine("PageName,ShapeID,ShapeName,MasterName,InheritPropsCount,InheritGeomsCount");
-
-            // Iterate through all pages and their shapes
-            foreach (Page page in diagram.Pages)
+        // Iterate through all pages
+        foreach (Page page in diagram.Pages)
+        {
+            // Iterate through all shapes on the page
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Gather required information
-                    string pageName = page.NameU ?? string.Empty;
-                    string shapeId = shape.ID.ToString();
-                    string shapeName = shape.NameU ?? string.Empty;
-                    string masterName = shape.Master != null ? shape.Master.NameU ?? string.Empty : string.Empty;
-                    int inheritPropsCount = shape.InheritProps != null ? shape.InheritProps.Count : 0;
-                    int inheritGeomsCount = shape.InheritGeoms != null ? shape.InheritGeoms.Count : 0;
+                // Basic shape information
+                string pageName = page.NameU ?? string.Empty;
+                string shapeId = shape.ID.ToString();
+                string shapeNameU = shape.NameU ?? string.Empty;
 
-                    // Build CSV line (escape commas if needed)
-                    string csvLine = string.Format("{0},{1},{2},{3},{4},{5}",
-                        EscapeCsv(pageName),
-                        EscapeCsv(shapeId),
-                        EscapeCsv(shapeName),
-                        EscapeCsv(masterName),
-                        inheritPropsCount,
-                        inheritGeomsCount);
+                // Master information (if the shape is based on a master)
+                string masterName = shape.Master != null ? shape.Master.NameU ?? string.Empty : string.Empty;
 
-                    csvBuilder.AppendLine(csvLine);
-                }
+                // Inherited properties count
+                int inheritPropsCount = shape.InheritProps != null ? shape.InheritProps.Count : 0;
+
+                // Flags for other inheritance collections
+                bool hasInheritFill = shape.InheritFill != null;
+                bool hasInheritLine = shape.InheritLine != null;
+                bool hasInheritTextBlock = shape.InheritTextBlock != null;
+
+                // Build CSV line (escape commas if needed)
+                string line = string.Format("{0},{1},{2},{3},{4},{5},{6},{7}",
+                    EscapeCsv(pageName),
+                    EscapeCsv(shapeId),
+                    EscapeCsv(shapeNameU),
+                    EscapeCsv(masterName),
+                    inheritPropsCount,
+                    hasInheritFill,
+                    hasInheritLine,
+                    hasInheritTextBlock);
+
+                csvBuilder.AppendLine(line);
             }
-
-            // Write CSV content to file
-            File.WriteAllText(csvFilePath, csvBuilder.ToString(), Encoding.UTF8);
-
-            Console.WriteLine("CSV summary generated at: " + Path.GetFullPath(csvFilePath));
-
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+
+        // Write CSV content to the output file
+        File.WriteAllText(outputPath, csvBuilder.ToString(), Encoding.UTF8);
     }
 
     // Helper method to escape CSV fields containing commas or quotes

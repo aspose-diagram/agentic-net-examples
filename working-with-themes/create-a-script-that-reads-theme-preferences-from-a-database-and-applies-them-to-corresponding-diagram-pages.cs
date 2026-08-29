@@ -1,70 +1,113 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
+using System.IO;
+using System.Data;
 using System.Data.SqlClient;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input diagram path, output diagram path, and DB connection string.
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputDiagramPath> <connectionString>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input diagram file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+        string connectionString = args[2];
+
+        Diagram diagram = null;
+
         try
         {
-
-            // Load the target diagram using the provided constructor (load rule)
-            Diagram diagram = new Diagram("target.vsdx");
-
-            // Retrieve theme preferences from the database
-            Dictionary<int, int> pageThemeMap = GetPageThemePreferences();
-
-            // Apply the retrieved theme to each corresponding page
-            foreach (Page page in diagram.Pages)
-            {
-                if (pageThemeMap.TryGetValue(page.ID, out int themeInt))
-                {
-                    // Cast the integer value to the PresetQuickStyleValue enum and assign
-                    page.PresetThemeQuickStyle = (PresetQuickStyleValue)themeInt;
-                }
-            }
-
-            // Save the updated diagram using the provided Save method (save rule)
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
-            diagram.Save("target_updated.vdx", saveOptions);
-
+            // Load the Visio diagram from the specified file.
+            diagram = new Diagram(inputPath);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
         }
-    }
 
-    // Reads theme preferences from a database table and returns a mapping of Page ID to theme value
-    static Dictionary<int, int> GetPageThemePreferences()
-    {
-        var map = new Dictionary<int, int>();
-
-        // Replace with your actual connection string
-        string connectionString = "Data Source=SERVER;Initial Catalog=Database;Integrated Security=True";
-
-        // Expected table schema: PageId (int), ThemeValue (int) where ThemeValue matches PresetQuickStyleValue enum
-        string query = "SELECT PageId, ThemeValue FROM PageThemePreferences";
-
+        // Open a SQL connection to read theme preferences.
         using (SqlConnection conn = new SqlConnection(connectionString))
-        using (SqlCommand cmd = new SqlCommand(query, conn))
         {
-            conn.Open();
-            using (SqlDataReader reader = cmd.ExecuteReader())
+            try
             {
-                while (reader.Read())
+                conn.Open();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Database connection failed: {ex.Message}");
+                return;
+            }
+
+            // Query expects a table named PageThemes with columns PageName (string) and ThemeName (string).
+            const string query = "SELECT PageName, ThemeName FROM PageThemes";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                try
                 {
-                    int pageId = reader.GetInt32(0);
-                    int themeValue = reader.GetInt32(1);
-                    map[pageId] = themeValue;
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            // Retrieve page name and desired theme from the current row.
+                            string pageName = reader["PageName"] as string;
+                            string themeName = reader["ThemeName"] as string;
+
+                            if (string.IsNullOrWhiteSpace(pageName) || string.IsNullOrWhiteSpace(themeName))
+                                continue; // Skip incomplete rows.
+
+                            // Attempt to locate the page by its name (case‑sensitive match).
+                            Page page = diagram.Pages.GetPage(pageName);
+                            if (page == null)
+                            {
+                                Console.Error.WriteLine($"Page not found: {pageName}");
+                                continue;
+                            }
+
+                            // Parse the theme name into the PresetThemeValue enum.
+                            if (Enum.TryParse<PresetThemeValue>(themeName, ignoreCase: true, out var themeEnum))
+                            {
+                                // Apply the theme to the page.
+                                page.PresetTheme = themeEnum;
+                            }
+                            else
+                            {
+                                Console.Error.WriteLine($"Invalid theme '{themeName}' for page '{pageName}'.");
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error reading theme data: {ex.Message}");
+                    return;
                 }
             }
         }
 
-        return map;
+        try
+        {
+            // Save the modified diagram to the output path using VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+        }
     }
 }

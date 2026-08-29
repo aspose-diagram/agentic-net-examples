@@ -1,7 +1,6 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,30 +9,29 @@ class Program
         try
         {
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // ID of the shape whose theme we want to change
+            int targetShapeId = 5; // replace with the actual shape ID
 
-            // ID of the shape to modify (replace with actual ID)
-            long targetShapeId = 5;
-
-            // Retrieve the shape from the first page
-            Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
-            if (shape == null)
+            // Iterate through pages and shapes to locate the shape by ID
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine($"Shape with ID {targetShapeId} not found.");
-                return;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.ID == targetShapeId)
+                    {
+                        // Apply a preset theme (e.g., Office) to the shape
+                        shape.PresetTheme = PresetThemeValue.Office;
+                        // If you need a different theme, use another PresetThemeValue enum member
+                        break; // shape found, exit inner loop
+                    }
+                }
             }
 
-            // Apply a preset theme to the shape
-            shape.PresetTheme = PresetThemeValue.Bubble;
-
             // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved with updated shape theme.");
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

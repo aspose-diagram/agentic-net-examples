@@ -1,47 +1,49 @@
+using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram(@"input.vsdx");
+
+            // ID of the shape whose glued shapes we want to enumerate
+            long targetShapeId = 1; // TODO: replace with the actual shape ID
+
+            // Retrieve the shape object from the first page (adjust page index if needed)
+            Shape targetShape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+
+            // Get IDs of all 1‑D shapes glued to the target shape
+            long[] glued1D = targetShape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+
+            // Get IDs of all 2‑D shapes glued to the target shape
+            long[] glued2D = targetShape.GluedShapes(GluedShapesFlags.GluedShapesAll2D, null, null);
+
+            // Combine the results into a single list
+            List<long> allGluedIds = new List<long>();
+            if (glued1D != null) allGluedIds.AddRange(glued1D);
+            if (glued2D != null) allGluedIds.AddRange(glued2D);
+
+            // Output the IDs of the glued shapes
+            Console.WriteLine($"Shapes glued to shape ID {targetShapeId}:");
+            foreach (long id in allGluedIds)
             {
-
-                // Input diagram file path (first argument) or default value
-                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-                // Target shape ID (second argument) or default value
-                long targetShapeId = args.Length > 1 ? long.Parse(args[1]) : 1L;
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Use the first page (adjust if needed)
-                Page page = diagram.Pages[0];
-
-                // Retrieve the shape with the specified ID
-                Shape targetShape = page.Shapes.GetShape(targetShapeId);
-                if (targetShape == null)
-                {
-                    throw new Exception($"Shape with ID {targetShapeId} not found on page {page.ID}.");
-                }
-
-                // Get IDs of all shapes glued to the target shape.
-                // GluedShapesFlags.GluedShapesAll1D retrieves all 1‑D (connector) glued shapes.
-                long[] gluedShapeIds = targetShape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
-
-                // Output the result
-                Console.WriteLine($"Shape ID {targetShapeId} has {gluedShapeIds.Length} glued shape(s):");
-                foreach (long id in gluedShapeIds)
-                {
-                    Console.WriteLine($"- Glued Shape ID: {id}");
-                }
-
+                Console.WriteLine(id);
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+            // If you modify the diagram and need to save it, uncomment the line below
+            // diagram.Save(@"output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

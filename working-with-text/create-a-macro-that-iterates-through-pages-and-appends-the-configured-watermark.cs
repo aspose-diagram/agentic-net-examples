@@ -17,6 +17,13 @@ class Program
                 // Load the diagram
                 using (Diagram diagram = new Diagram(inputPath))
                 {
+                    // Watermark configuration
+                    string watermarkText = "CONFIDENTIAL";
+                    string fontName = "Calibri";
+                    string fontColor = "#A0A0A0"; // Light gray in hex
+                    double fontSizeInPoints = 72; // 1 inch (72 points)
+                    double fontSizeInInches = fontSizeInPoints / 72.0;
+
                     // Iterate through each page in the diagram
                     foreach (Page page in diagram.Pages)
                     {
@@ -28,20 +35,16 @@ class Program
                         double pinX = pageWidth / 2.0;
                         double pinY = pageHeight / 2.0;
 
-                        // Use full page size for the watermark text box
-                        double width = pageWidth;
-                        double height = pageHeight;
-
-                        // Add watermark text to the page
-                        // Font size is specified in inches (0.25 inches ≈ 18 points)
-                        page.AddText(pinX, pinY, width, height, "Watermark", "Calibri", "#a5a5a5", 0.25);
+                        // Add the watermark text shape covering the full page
+                        // Width and height are set to the page size so the text can be centered
+                        page.AddText(pinX, pinY, pageWidth, pageHeight, watermarkText, fontName, fontColor, fontSizeInInches);
                     }
 
                     // Save the modified diagram
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("Watermark added to all pages and diagram saved successfully.");
+                Console.WriteLine("Watermark added to all pages and diagram saved to: " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

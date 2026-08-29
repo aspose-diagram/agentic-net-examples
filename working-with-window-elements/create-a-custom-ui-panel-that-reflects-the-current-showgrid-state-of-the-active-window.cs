@@ -1,29 +1,24 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // Create a new diagram instance
+            Diagram diagram = new Diagram();
 
-            // Path to the Visio diagram file (adjust as needed)
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure there is at least one window; if not, create a default drawing window
+            // Ensure there is at least one window; if not, add a default drawing window
             if (diagram.Windows.Count == 0)
             {
-                Window defaultWindow = new Window();
-                defaultWindow.WindowType = WindowTypeValue.Drawing;
-                defaultWindow.WindowState = WindowStateValue.Maximized;
-                defaultWindow.WindowWidth = 1100;
-                defaultWindow.WindowHeight = 700;
+                Window defaultWindow = new Window
+                {
+                    WindowType = WindowTypeValue.Drawing,
+                    WindowState = WindowStateValue.Maximized,
+                    WindowWidth = 800,
+                    WindowHeight = 600,
+                    ShowGrid = BOOL.True // initial grid visibility
+                };
                 diagram.Windows.Add(defaultWindow);
             }
 
@@ -33,44 +28,32 @@ class Program
             while (true)
             {
                 // Display current ShowGrid state
-                Console.WriteLine($"Current ShowGrid state: {activeWindow.ShowGrid}");
+                Console.WriteLine($"Current ShowGrid state: {(activeWindow.ShowGrid == BOOL.True ? "Enabled" : "Disabled")}");
+                Console.WriteLine("Enter 't' to toggle grid visibility, or any other key to exit.");
 
-                // Simple console UI panel
-                Console.WriteLine("Options:");
-                Console.WriteLine("  T - Toggle ShowGrid");
-                Console.WriteLine("  S - Save diagram");
-                Console.WriteLine("  Q - Quit");
-                Console.Write("Enter choice: ");
-                string choice = Console.ReadLine()?.Trim().ToUpperInvariant();
-
-                if (choice == "T")
-                {
-                    // Toggle between BOOL.True and BOOL.False
-                    activeWindow.ShowGrid = (activeWindow.ShowGrid == BOOL.True) ? BOOL.False : BOOL.True;
-                    Console.WriteLine("ShowGrid state toggled.");
-                }
-                else if (choice == "S")
-                {
-                    // Save the diagram with the updated window settings
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
-                }
-                else if (choice == "Q")
+                string input = Console.ReadLine();
+                if (input == null || input.ToLower() != "t")
                 {
                     break;
                 }
-                else
+
+                // Toggle the ShowGrid property
+                activeWindow.ShowGrid = activeWindow.ShowGrid == BOOL.True ? BOOL.False : BOOL.True;
+
+                // Optionally, save the diagram to reflect the change
+                try
                 {
-                    Console.WriteLine("Invalid option. Please try again.");
+                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                    Console.WriteLine("Diagram saved successfully with updated grid state.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error saving diagram: {ex.Message}");
                 }
 
                 Console.WriteLine(); // Blank line for readability
             }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine("Exiting UI panel.");
         }
     }
-}

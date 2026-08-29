@@ -1,49 +1,49 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Process each page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Process each shape on the current page
-                foreach (Shape shape in page.Shapes)
+
+                // Input and output file paths.
+                // You can replace these with your own paths or pass them via command‑line arguments.
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Get the plain text of the shape
-                    string text = shape.Text.Value.Text;
-
-                    // If the text is longer than 100 characters, truncate it
-                    if (!string.IsNullOrEmpty(text) && text.Length > 100)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        string truncated = text.Substring(0, 100) + "...";
+                        // Retrieve the plain text of the shape.
+                        string fullText = shape.Text.Value.Text;
 
-                        // Replace the shape's text with the truncated version
-                        shape.Text.Value.Clear();
-                        shape.Text.Value.Add(new Txt(truncated));
+                        // If the text exceeds 100 characters, truncate it and add an ellipsis.
+                        if (!string.IsNullOrEmpty(fullText) && fullText.Length > 100)
+                        {
+                            string truncated = fullText.Substring(0, 100) + "…";
+
+                            // Replace the shape's text with the truncated version.
+                            shape.Text.Value.Clear();
+                            shape.Text.Value.Add(new Txt(truncated));
+                        }
                     }
                 }
+
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

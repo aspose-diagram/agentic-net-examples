@@ -1,63 +1,78 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file (adjust as needed)
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through all pages
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    Console.WriteLine($"Page: {page.Name} (ID: {page.ID})");
+
+                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip shapes that are marked as deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve vertical alignment (TextBlock)
-                        var verticalAlign = shape.TextBlock.VerticalAlign.Value;
+                        // Horizontal alignment (from the first paragraph, if any)
+                        string horzAlign = "N/A";
+                        if (shape.Paras != null && shape.Paras.Count > 0)
+                        {
+                            horzAlign = shape.Paras[0].HorzAlign.Value.ToString();
+                        }
 
-                        // Retrieve horizontal alignment (first paragraph, if any)
-                        var horizontalAlign = shape.Paras.Count > 0
-                            ? shape.Paras[0].HorzAlign.Value
-                            : HorzAlignValue.LeftAlign; // default fallback
+                        // Vertical alignment (from TextBlock)
+                        string vertAlign = "N/A";
+                        if (shape.TextBlock != null && shape.TextBlock.VerticalAlign != null)
+                        {
+                            vertAlign = shape.TextBlock.VerticalAlign.Value.ToString();
+                        }
 
-                        // Retrieve text block margins
-                        double leftMargin = shape.TextBlock.LeftMargin.Value;
-                        double rightMargin = shape.TextBlock.RightMargin.Value;
-                        double topMargin = shape.TextBlock.TopMargin.Value;
-                        double bottomMargin = shape.TextBlock.BottomMargin.Value;
+                        // Margin settings (in inches)
+                        string margins = "N/A";
+                        if (shape.TextBlock != null)
+                        {
+                            double left = shape.TextBlock.LeftMargin.Value;
+                            double right = shape.TextBlock.RightMargin.Value;
+                            double top = shape.TextBlock.TopMargin.Value;
+                            double bottom = shape.TextBlock.BottomMargin.Value;
+                            margins = $"L:{left}, R:{right}, T:{top}, B:{bottom}";
+                        }
 
-                        // Retrieve background transparency (0 = opaque, 100 = fully transparent)
-                        double backgroundTransparency = shape.TextBlock.TextBkgndTrans.Value;
+                        // Background transparency (percentage)
+                        string bgTransparency = "N/A";
+                        if (shape.TextBlock != null && shape.TextBlock.TextBkgndTrans != null)
+                        {
+                            bgTransparency = shape.TextBlock.TextBkgndTrans.Value.ToString();
+                        }
 
-                        // Output the information
-                        Console.WriteLine($"Shape ID: {shape.ID}");
-                        Console.WriteLine($"  Vertical Alignment : {verticalAlign}");
-                        Console.WriteLine($"  Horizontal Alignment: {horizontalAlign}");
-                        Console.WriteLine($"  Margins (inches)   : Left={leftMargin}, Right={rightMargin}, Top={topMargin}, Bottom={bottomMargin}");
-                        Console.WriteLine($"  Background Transparency (%): {backgroundTransparency}");
-                        Console.WriteLine();
+                        // Output the collected information
+                        Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
+                        Console.WriteLine($"  Horizontal Alignment: {horzAlign}");
+                        Console.WriteLine($"  Vertical Alignment:   {vertAlign}");
+                        Console.WriteLine($"  Margins (inches):     {margins}");
+                        Console.WriteLine($"  Background Transparency (%): {bgTransparency}");
                     }
                 }
-
-                // Dispose the diagram to release resources
-                diagram.Dispose();
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

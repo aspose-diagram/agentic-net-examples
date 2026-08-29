@@ -9,17 +9,17 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx"); // load rule
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // The unique ID of the shape you want to retrieve
-            long shapeId = 5; // example ID; set to the desired value
+            // Unique ID of the shape to retrieve
+            long shapeId = 12345; // replace with the actual ID
 
-            // Retrieve the shape by its ID from the first page
+            // Retrieve the shape by its ID from the first page (adjust page index if needed)
             Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-            // Output the shape's Name property to the console
-            Console.WriteLine($"Shape ID: {shapeId}, Name: {shape.Name}");
+            // Output the shape's Name property
+            Console.WriteLine($"Shape Name: {shape.Name}");
 
         }
         catch (System.IO.FileNotFoundException ex)

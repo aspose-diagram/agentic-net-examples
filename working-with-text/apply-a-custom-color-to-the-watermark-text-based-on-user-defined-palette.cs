@@ -1,68 +1,75 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        // Define a simple palette mapping names to hex colors
-        var palette = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        static void Main()
         {
-            { "Red", "#FF0000" },
-            { "Green", "#00FF00" },
-            { "Blue", "#0000FF" },
-            { "Gray", "#A5A5A5" }
-        };
+            try
+            {
 
-        // Choose a color key (could be obtained from user input; here we use "Gray")
-        string chosenKey = "Gray";
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output_with_watermark.vsdx";
 
-        // Validate palette entry
-        if (!palette.TryGetValue(chosenKey, out string fontColor))
-        {
-            Console.WriteLine($"Palette does not contain key '{chosenKey}'. Using default color.");
-            fontColor = "#000000"; // fallback to black
-        }
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-        // Create a new diagram
-        Diagram diagram = new Diagram();
+                // Get the first page of the diagram
+                Page page = diagram.Pages[0];
 
-        // Get the first page (a new diagram always contains one page)
-        Page page = diagram.Pages[0];
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-        // Retrieve page dimensions (in inches)
-        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Center position for the watermark
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
 
-        // Define watermark text and appearance
-        string watermarkText = "CONFIDENTIAL";
-        string fontName = "Calibri";
-        double fontSizePoints = 72; // 1 inch
-        double fontSizeInches = fontSizePoints / 72.0;
+                // Define a user‑defined color palette (name -> HEX string)
+                var palette = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Red",   "#FF0000" },
+                    { "Green", "#00FF00" },
+                    { "Blue",  "#0000FF" },
+                    { "Gray",  "#808080" }
+                };
 
-        // Position watermark at page center
-        double pinX = pageWidth / 2.0;
-        double pinY = pageHeight / 2.0;
+                // Ask the user to choose a color name
+                Console.WriteLine("Available colors: Red, Green, Blue, Gray");
+                Console.Write("Enter watermark color name: ");
+                string colorName = Console.ReadLine();
 
-        // Use full page dimensions for the text box so the text is centered
-        double width = pageWidth;
-        double height = pageHeight;
+                // Resolve the color; fall back to Gray if not found
+                if (!palette.TryGetValue(colorName ?? string.Empty, out string colorHex))
+                {
+                    Console.WriteLine("Color not recognized. Using default Gray.");
+                    colorHex = "#808080";
+                }
 
-        // Add the watermark text shape with the selected color
-        Shape watermarkShape = page.AddText(pinX, pinY, width, height, watermarkText, fontName, fontColor, fontSizeInches);
+                // Add the watermark text covering the full page
+                // Font size is specified in inches (e.g., 0.5 inches ≈ 36 points)
+                Shape watermark = page.AddText(
+                    pinX,               // PinX (center X)
+                    pinY,               // PinY (center Y)
+                    pageWidth,          // Width of the text box
+                    pageHeight,         // Height of the text box
+                    "CONFIDENTIAL",    // Watermark text
+                    "Arial",            // Font name
+                    colorHex,           // Font color (hex string)
+                    0.5                 // Font size in inches
+                );
 
-        // Optionally rotate the watermark (e.g., 45 degrees)
-        double rotationDegrees = 45;
-        double rotationRadians = (Math.PI / 180.0) * rotationDegrees;
-        watermarkShape.SetAngle(rotationRadians); // SetAngle expects radians
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        // Save the diagram
-        string outputPath = "WatermarkedDiagram.vsdx";
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Watermark added with color {colorHex}. Diagram saved to '{outputPath}'.");
 
-        Console.WriteLine($"Diagram saved to '{outputPath}' with watermark color {fontColor}.");
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

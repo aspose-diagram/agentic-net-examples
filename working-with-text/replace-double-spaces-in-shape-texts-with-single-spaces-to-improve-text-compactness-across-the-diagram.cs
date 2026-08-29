@@ -1,7 +1,7 @@
-using System;
 using System.IO;
-using Aspose.Diagram;
+using System;
 using System.Text.RegularExpressions;
+using Aspose.Diagram;
 
 class Program
 {
@@ -10,36 +10,37 @@ class Program
         try
         {
 
-            // Load the Visio diagram (load rule)
+            // Load the Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Process each page and shape
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the shape's pure text
+                    // Get the current plain text of the shape
                     string originalText = shape.GetPureText();
 
+                    // Skip shapes without text
                     if (string.IsNullOrEmpty(originalText))
                         continue;
 
-                    // Replace any occurrence of two or more spaces with a single space
+                    // Replace any occurrence of two or more consecutive spaces with a single space
                     string compactText = Regex.Replace(originalText, @" {2,}", " ");
 
-                    // Update the shape only if the text changed
-                    if (compactText != originalText)
+                    // If text was changed, update the shape
+                    if (!compactText.Equals(originalText))
                     {
-                        // Set the new text without formatting
-                        shape.Text.Value.SetWholeText(compactText);
+                        // Replace the old text with the new compacted text
+                        shape.ReplaceText(originalText, compactText);
 
-                        // Refresh shape geometry after text modification
+                        // Refresh shape data so the layout updates correctly
                         shape.RefreshData();
                     }
                 }
             }
 
-            // Save the updated diagram (save rule)
+            // Save the modified diagram (replace with your desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

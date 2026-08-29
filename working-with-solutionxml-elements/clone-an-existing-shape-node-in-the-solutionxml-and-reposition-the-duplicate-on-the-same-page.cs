@@ -1,49 +1,115 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class CloneShapeExample
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments count.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        // Input Visio file path.
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path.
+        string outputPath = args[1];
+
         try
         {
+            // Load the diagram from the input file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Assume we work with the first page
+            // Work with the first page (you can change the index as needed).
             Page page = diagram.Pages[0];
 
-            // Identify the shape to clone (e.g., shape with ID = 1)
-            // Adjust the ID as needed for your specific diagram
-            long sourceShapeId = 1;
-            Shape sourceShape = page.Shapes.GetShape(sourceShapeId);
+            // Ensure the page has at least one shape to clone.
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The page contains no shapes to clone.");
+                return;
+            }
 
-            // Create a new shape on the same page using the same master as the source shape
-            // Position it initially at the same coordinates as the source shape
-            double pinX = sourceShape.XForm.PinX.Value;
-            double pinY = sourceShape.XForm.PinY.Value;
-            string masterName = sourceShape.Master.NameU;
+            // Retrieve the first shape on the page as the source shape.
+            Shape sourceShape = page.Shapes.GetShape(page.Shapes[0].ID);
 
-            long newShapeId = page.AddShape(pinX, pinY, masterName);
-            Shape newShape = page.Shapes.GetShape(newShapeId);
+            // Verify the source shape has an associated master (required for cloning).
+            if (sourceShape.Master == null)
+            {
+                Console.Error.WriteLine("Source shape does not have a master; cannot clone.");
+                return;
+            }
 
-            // Perform a deep copy of the source shape's properties into the new shape
-            newShape.Copy(sourceShape);
+            // Capture the master name to reuse for the duplicate shape.
+            string masterName = sourceShape.Master.Name;
 
-            // Reposition the cloned shape (e.g., offset by 2 inches right and 1 inch down)
-            double offsetX = 2.0; // inches
-            double offsetY = 1.0; // inches
-            newShape.MoveTo(pinX + offsetX, pinY + offsetY);
+            // Capture the original position.
+            double originalPinX = sourceShape.XForm.PinX.Value;
+            double originalPinY = sourceShape.XForm.PinY.Value;
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Define an offset to place the cloned shape (e.g., 2 inches to the right).
+            double offsetX = 2.0;
+            double offsetY = 0.0;
 
+            // Add a new shape on the same page using the same master and offset position.
+            long newShapeId = page.AddShape(originalPinX + offsetX, originalPinY + offsetY, masterName, false);
+
+            // Retrieve the newly added shape instance.
+            Shape clonedShape = page.Shapes.GetShape(newShapeId);
+
+            // ---- Copy visual properties from the source shape to the cloned shape ----
+
+            // Copy text runs.
+            clonedShape.Text.Value.Clear(); // Remove any default placeholder text.
+            foreach (var fmt in sourceShape.Text.Value)
+            {
+                if (fmt is Txt txt)
+                {
+                    // Preserve each text run's content.
+                    clonedShape.Text.Value.Add(new Txt(txt.Text));
+                }
+            }
+
+            // Copy fill foreground color (if set).
+            clonedShape.Fill.FillForegnd.Value = sourceShape.Fill.FillForegnd.Value;
+
+            // Copy line color and weight.
+            clonedShape.Line.LineColor.Value = sourceShape.Line.LineColor.Value;
+            clonedShape.Line.LineWeight.Value = sourceShape.Line.LineWeight.Value;
+
+            // Copy shape width and height.
+            clonedShape.XForm.Width.Value = sourceShape.XForm.Width.Value;
+            clonedShape.XForm.Height.Value = sourceShape.XForm.Height.Value;
+
+            // Optionally copy other properties (e.g., line pattern) as needed.
+            clonedShape.Line.LinePattern.Value = sourceShape.Line.LinePattern.Value;
+
+            // Save the modified diagram to the output path using VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Cloned shape saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

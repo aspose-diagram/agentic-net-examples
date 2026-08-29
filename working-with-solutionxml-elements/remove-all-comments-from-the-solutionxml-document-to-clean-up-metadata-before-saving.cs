@@ -7,60 +7,52 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Paths for input and output diagrams
+        // Define input file path
         string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-        string outputPath = "output.vsdx";
-
-        // Load the diagram from file with error handling
-        Diagram diagram;
-        try
+        // Verify input file exists
+        if (!File.Exists(inputPath))
         {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Iterate through each SolutionXML element and clean its XML content
-        foreach (SolutionXML solXml in diagram.SolutionXMLs)
-        {
-            if (!string.IsNullOrEmpty(solXml.XmlValue))
-            {
-                try
-                {
-                    // Parse the XML string
-                    XDocument xdoc = XDocument.Parse(solXml.XmlValue);
+        // Define output file path
+        string outputPath = "output_cleaned.vsdx";
 
-                    // Remove all comment nodes from the XML
-                    foreach (var comment in xdoc.Descendants().OfType<XComment>().ToList())
-                    {
-                        comment.Remove();
-                    }
-
-                    // Store the cleaned XML back into the SolutionXML element
-                    solXml.XmlValue = xdoc.ToString(System.Xml.Linq.SaveOptions.DisableFormatting);
-                }
-                catch
-                {
-                    // If parsing fails, skip this element
-                }
-            }
-        }
-
-        // Save the modified diagram to the output file with error handling
         try
         {
+            // Load the Visio diagram from the input file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate over each SolutionXML element to clean its XML content
+            foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+            {
+                // Skip if the XML value is null or whitespace
+                if (string.IsNullOrWhiteSpace(solutionXml.XmlValue))
+                    continue;
+
+                // Parse the XML content while preserving whitespace
+                XDocument doc = XDocument.Parse(solutionXml.XmlValue, System.Xml.Linq.LoadOptions.PreserveWhitespace);
+
+                // Remove all comment nodes from the XML document
+                foreach (var comment in doc.DescendantNodes().OfType<XComment>())
+                {
+                    comment.Remove();
+                }
+
+                // Write the cleaned XML back to the SolutionXML element
+                solutionXml.XmlValue = doc.ToString();
+            }
+
+            // Save the cleaned diagram to the output file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

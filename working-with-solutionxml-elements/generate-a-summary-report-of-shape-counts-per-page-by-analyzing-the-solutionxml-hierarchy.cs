@@ -1,35 +1,34 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Count the shapes on the current page
-                int shapeCount = page.Shapes.Count;
 
-                // Output the summary for the page
-                Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) contains {shapeCount} shape(s).");
+                // Load the Visio diagram file (replace with your actual file path)
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Iterate through each page and count the shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    // ShapeCollection provides a Count property
+                    int shapeCount = page.Shapes.Count;
+
+                    // Output the result for the current page
+                    Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) contains {shapeCount} shape(s).");
+                }
+
+                // Optionally, keep the console window open
+                Console.WriteLine("Shape count summary completed.");
+                Console.ReadKey();
+
             }
-
-            // Save the diagram (optional, demonstrates save usage)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

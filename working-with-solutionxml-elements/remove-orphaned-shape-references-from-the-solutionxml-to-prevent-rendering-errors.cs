@@ -1,26 +1,32 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Xml.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using System.Xml.Linq;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output Visio file paths
+        string inputPath = "input.vsdx";
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the cleaned Visio file
-            string outputPath = "output_cleaned.vsdx";
-
-            // Load the diagram
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Build a quick lookup of existing shape IDs across all pages
-            var existingShapeIds = new System.Collections.Generic.HashSet<long>();
+            // Collect all existing shape IDs across all pages
+            HashSet<long> existingShapeIds = new HashSet<long>();
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
@@ -29,60 +35,60 @@ class Program
                 }
             }
 
-            // Iterate through each SolutionXML element
-            for (int i = diagram.SolutionXMLs.Count - 1; i >= 0; i--)
+            // Identify SolutionXML elements that reference non‑existent shapes
+            List<SolutionXML> toRemove = new List<SolutionXML>();
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                SolutionXML solXml = diagram.SolutionXMLs[i];
-                if (string.IsNullOrWhiteSpace(solXml.XmlValue))
-                    continue;
+                bool hasOrphan = false;
 
-                // Parse the XML content
-                XDocument xDoc;
+                // Parse the XML content; if malformed, treat as orphaned
+                XDocument? doc = null;
                 try
                 {
-                    xDoc = XDocument.Parse(solXml.XmlValue);
+                    doc = XDocument.Parse(solXml.XmlValue);
                 }
                 catch
                 {
-                    // If the XML is malformed, skip processing this entry
-                    continue;
+                    hasOrphan = true;
+                    // No need to continue parsing; mark for removal
                 }
 
-                bool modified = false;
-
-                // Find all elements that have a "ShapeID" attribute
-                foreach (var element in xDoc.Descendants())
+                if (!hasOrphan && doc != null)
                 {
-                    XAttribute attr = element.Attribute("ShapeID");
-                    if (attr == null)
-                        continue;
-
-                    // Try to parse the ShapeID value
-                    if (long.TryParse(attr.Value, out long shapeId))
+                    // Look for any attribute named "ShapeID" (common convention)
+                    foreach (XElement elem in doc.Descendants())
                     {
-                        // If the shape does not exist, remove the whole element
-                        if (!existingShapeIds.Contains(shapeId))
+                        XAttribute? attr = elem.Attribute("ShapeID");
+                        if (attr != null && long.TryParse(attr.Value, out long shapeId))
                         {
-                            element.Remove();
-                            modified = true;
+                            if (!existingShapeIds.Contains(shapeId))
+                            {
+                                hasOrphan = true;
+                                break;
+                            }
                         }
                     }
                 }
 
-                // If any orphaned references were removed, update the XML value
-                if (modified)
+                if (hasOrphan)
                 {
-                    solXml.XmlValue = xDoc.ToString();
+                    toRemove.Add(solXml);
                 }
             }
 
-            // Save the cleaned diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Remove the identified orphaned SolutionXML entries
+            foreach (SolutionXML orphan in toRemove)
+            {
+                diagram.SolutionXMLs.Remove(orphan);
+            }
 
+            // Save the cleaned diagram to the output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

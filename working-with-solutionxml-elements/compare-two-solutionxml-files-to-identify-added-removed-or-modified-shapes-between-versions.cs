@@ -1,129 +1,115 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Xml.Linq;
 using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load the two Visio documents (replace with actual file paths)
-                Diagram oldDiagram = new Diagram("oldDiagram.vsdx");
-                Diagram newDiagram = new Diagram("newDiagram.vsdx");
+                // Paths to the two Visio files to compare.
+                // Replace with actual file locations or pass via command‑line arguments.
+                string oldFilePath = args.Length > 0 ? args[0] : "oldDiagram.vsdx";
+                string newFilePath = args.Length > 1 ? args[1] : "newDiagram.vsdx";
 
-                // Retrieve the first SolutionXML from each document (adjust index/name as needed)
-                string oldXml = oldDiagram.SolutionXMLs[0].XmlValue;
-                string newXml = newDiagram.SolutionXMLs[0].XmlValue;
+                // Load the diagrams.
+                Diagram oldDiagram = new Diagram(oldFilePath);
+                Diagram newDiagram = new Diagram(newFilePath);
 
-                // Perform the comparison
-                var result = CompareSolutionXml(oldXml, newXml);
+                // Build dictionaries of shapes from the old diagram.
+                var oldShapes = BuildShapeDictionary(oldDiagram);
+                var newShapes = BuildShapeDictionary(newDiagram);
 
-                // Output the differences
-                Console.WriteLine("Added Shapes:");
-                foreach (var shape in result.Added) Console.WriteLine($"  ID={shape.ID}, NameU={shape.NameU}");
+                // Track IDs that have been processed.
+                var processedIds = new System.Collections.Generic.HashSet<long>();
 
-                Console.WriteLine("\nRemoved Shapes:");
-                foreach (var shape in result.Removed) Console.WriteLine($"  ID={shape.ID}, NameU={shape.NameU}");
+                // Detect added and modified shapes.
+                foreach (var kvp in newShapes)
+                {
+                    long shapeId = kvp.Key;
+                    Shape newShape = kvp.Value;
 
-                Console.WriteLine("\nModified Shapes:");
-                foreach (var mod in result.Modified)
-                    Console.WriteLine($"  ID={mod.ID}, NameU={mod.NameU} (changed)");
+                    if (!oldShapes.TryGetValue(shapeId, out Shape oldShape))
+                    {
+                        Console.WriteLine($"Added Shape: ID={shapeId}, NameU=\"{newShape.NameU}\"");
+                    }
+                    else
+                    {
+                        // Compare selected properties to decide if modified.
+                        if (IsShapeModified(oldShape, newShape))
+                        {
+                            Console.WriteLine($"Modified Shape: ID={shapeId}, NameU=\"{newShape.NameU}\"");
+                        }
+                        processedIds.Add(shapeId);
+                    }
+                }
+
+                // Detect removed shapes.
+                foreach (var kvp in oldShapes)
+                {
+                    long shapeId = kvp.Key;
+                    if (!processedIds.Contains(shapeId) && !newShapes.ContainsKey(shapeId))
+                    {
+                        Shape oldShape = kvp.Value;
+                        Console.WriteLine($"Removed Shape: ID={shapeId}, NameU=\"{oldShape.NameU}\"");
+                    }
+                }
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
 
-        // Holds shape information extracted from the XML
-        private class ShapeInfo
+        // Builds a dictionary of all shapes in a diagram keyed by their unique ID.
+        private static System.Collections.Generic.Dictionary<long, Shape> BuildShapeDictionary(Diagram diagram)
         {
-            public string ID { get; set; }
-            public string NameU { get; set; }
-            public XElement Element { get; set; }
-        }
-
-        // Holds the comparison result
-        private class ComparisonResult
-        {
-            public List<ShapeInfo> Added { get; } = new List<ShapeInfo>();
-            public List<ShapeInfo> Removed { get; } = new List<ShapeInfo>();
-            public List<ShapeInfo> Modified { get; } = new List<ShapeInfo>();
-        }
-
-        // Compares two SolutionXML strings and identifies added, removed, and modified shapes
-        private static ComparisonResult CompareSolutionXml(string oldXml, string newXml)
-        {
-            // Parse the XML strings
-            XDocument oldDoc = XDocument.Parse(oldXml);
-            XDocument newDoc = XDocument.Parse(newXml);
-
-            // Extract shape elements (Visio stores shapes under <Shapes> collection)
-            var oldShapes = ExtractShapes(oldDoc);
-            var newShapes = ExtractShapes(newDoc);
-
-            // Index shapes by their ID for fast lookup
-            var oldDict = oldShapes.ToDictionary(s => s.ID);
-            var newDict = newShapes.ToDictionary(s => s.ID);
-
-            var result = new ComparisonResult();
-
-            // Identify added shapes (present in new, not in old)
-            foreach (var kvp in newDict)
+            var dict = new System.Collections.Generic.Dictionary<long, Shape>();
+            foreach (Page page in diagram.Pages)
             {
-                if (!oldDict.ContainsKey(kvp.Key))
-                    result.Added.Add(kvp.Value);
-            }
-
-            // Identify removed shapes (present in old, not in new)
-            foreach (var kvp in oldDict)
-            {
-                if (!newDict.ContainsKey(kvp.Key))
-                    result.Removed.Add(kvp.Value);
-            }
-
-            // Identify modified shapes (same ID, but differing XML)
-            foreach (var kvp in newDict)
-            {
-                if (oldDict.TryGetValue(kvp.Key, out ShapeInfo oldShape))
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Simple comparison: check if the serialized XML differs
-                    if (!XNode.DeepEquals(oldShape.Element, kvp.Value.Element))
-                        result.Modified.Add(kvp.Value);
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    dict[shape.ID] = shape;
                 }
             }
-
-            return result;
+            return dict;
         }
 
-        // Helper to extract ShapeInfo objects from a Visio SolutionXML document
-        private static List<ShapeInfo> ExtractShapes(XDocument doc)
+        // Determines whether two shapes differ in any of the examined properties.
+        private static bool IsShapeModified(Shape oldShape, Shape newShape)
         {
-            // Visio shape elements are typically under //Shapes/Shape
-            XNamespace ns = doc.Root.GetDefaultNamespace();
-            var shapeElements = doc.Descendants(ns + "Shape");
+            // Compare NameU.
+            if (!string.Equals(oldShape.NameU, newShape.NameU, StringComparison.Ordinal))
+                return true;
 
-            var list = new List<ShapeInfo>();
-            foreach (var elem in shapeElements)
-            {
-                var idAttr = elem.Attribute("ID");
-                var nameUAttr = elem.Attribute("NameU");
+            // Compare plain text.
+            string oldText = oldShape.Text?.Value?.Text ?? string.Empty;
+            string newText = newShape.Text?.Value?.Text ?? string.Empty;
+            if (!string.Equals(oldText, newText, StringComparison.Ordinal))
+                return true;
 
-                // Skip elements without an ID (unlikely but safe)
-                if (idAttr == null) continue;
+            // Compare position (PinX, PinY) with a small tolerance.
+            const double tolerance = 0.0001;
+            if (Math.Abs(oldShape.XForm.PinX.Value - newShape.XForm.PinX.Value) > tolerance ||
+                Math.Abs(oldShape.XForm.PinY.Value - newShape.XForm.PinY.Value) > tolerance)
+                return true;
 
-                list.Add(new ShapeInfo
-                {
-                    ID = idAttr.Value,
-                    NameU = nameUAttr?.Value ?? string.Empty,
-                    Element = elem
-                });
-            }
-            return list;
+            // Compare size (Width, Height) with tolerance.
+            if (Math.Abs(oldShape.XForm.Width.Value - newShape.XForm.Width.Value) > tolerance ||
+                Math.Abs(oldShape.XForm.Height.Value - newShape.XForm.Height.Value) > tolerance)
+                return true;
+
+            // Compare rotation angle (stored in radians).
+            if (Math.Abs(oldShape.XForm.Angle.Value - newShape.XForm.Angle.Value) > tolerance)
+                return true;
+
+            // No differences detected.
+            return false;
         }
     }

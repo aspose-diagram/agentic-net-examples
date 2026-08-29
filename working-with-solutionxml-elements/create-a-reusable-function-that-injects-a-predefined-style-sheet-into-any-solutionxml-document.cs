@@ -1,53 +1,57 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Example XML representing a predefined style sheet
-                string styleXml = "<StyleSheet><Name>CustomStyle</Name></StyleSheet>";
+            // Predefined style sheet XML to be injected
+            string styleSheetXml = @"<StyleSheet name=""MyCustomStyle"">
+            <FillForegnd>#FFCC00</FillForegnd>
+            <LinePattern>1</LinePattern>
+            <LineWeight>0.02</LineWeight>
+            </StyleSheet>";
 
-                // Inject the style sheet and its XML representation into the diagram
-                InjectStyleSheet(diagram, "CustomStyleXML", styleXml);
+            // Inject the style sheet into the diagram's SolutionXML collection
+            InjectStyleSheet(diagram, "CustomStyleSheet", styleSheetXml);
 
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Injects a predefined style sheet into the diagram and stores its XML in a SolutionXML element.
-        /// </summary>
-        /// <param name="diagram">The Aspose.Diagram.Diagram instance to modify.</param>
-        /// <param name="solutionXmlName">The name identifier for the SolutionXML entry.</param>
-        /// <param name="xmlContent">The XML content representing the style sheet.</param>
-        static void InjectStyleSheet(Diagram diagram, string solutionXmlName, string xmlContent)
+        }
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Create a new StyleSheet and assign a name
-            StyleSheet styleSheet = new StyleSheet();
-            styleSheet.Name = "CustomStyle";
-
-            // Add the style sheet to the diagram's collection
-            diagram.StyleSheets.Add(styleSheet);
-
-            // Create a SolutionXML element containing the style sheet XML
-            SolutionXML solutionXml = new SolutionXML();
-            solutionXml.Name = solutionXmlName;
-            solutionXml.XmlValue = xmlContent;
-
-            // Add the SolutionXML element to the diagram
-            diagram.SolutionXMLs.Add(solutionXml);
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Adds a SolutionXML element containing a style sheet definition to the specified diagram.
+    /// </summary>
+    /// <param name="diagram">The Aspose.Diagram.Diagram instance to modify.</param>
+    /// <param name="name">A unique name for the SolutionXML entry.</param>
+    /// <param name="xmlContent">The XML string representing the style sheet.</param>
+    public static void InjectStyleSheet(Diagram diagram, string name, string xmlContent)
+    {
+        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
+        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty.", nameof(name));
+        if (string.IsNullOrEmpty(xmlContent)) throw new ArgumentException("XML content cannot be null or empty.", nameof(xmlContent));
+
+        // Create a new SolutionXML object and set its properties
+        SolutionXML solutionXml = new SolutionXML
+        {
+            Name = name,
+            XmlValue = xmlContent
+        };
+
+        // Add the SolutionXML to the diagram's collection
+        diagram.SolutionXMLs.Add(solutionXml);
+    }
+}

@@ -1,53 +1,58 @@
 using System.IO;
 using System;
-using Aspose.Diagram;
 using System.Xml.Linq;
+using Aspose.Diagram;
 
-class Program
+public class DiagramProcessor
 {
-    static void Main()
+    // Validates that every element in the XML has an explicit namespace.
+    private static void ValidateNamespaces(string xmlContent)
     {
-        try
+        // Parse the XML string into an XDocument.
+        XDocument document = XDocument.Parse(xmlContent);
+
+        // Iterate through all elements and check their namespace.
+        foreach (XElement element in document.Descendants())
         {
-
-            // Load the diagram (uses the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Validate namespaces of all SolutionXML entries before saving
-            foreach (SolutionXML solXml in diagram.SolutionXMLs)
+            if (element.Name.Namespace == XNamespace.None)
             {
-                if (!IsNamespaceValid(solXml.XmlValue))
-                {
-                    Console.WriteLine($"Invalid namespace detected in SolutionXML '{solXml.Name}'.");
-                    throw new InvalidOperationException($"Invalid namespace in SolutionXML '{solXml.Name}'.");
-                }
+                // Throw an exception if an element lacks a namespace.
+                throw new InvalidOperationException(
+                    $"Element '{element.Name}' does not have an explicit XML namespace.");
             }
-
-            // Save the diagram (uses the provided save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 
-    // Third‑party (System.Xml.Linq) based validation of XML namespaces
-    static bool IsNamespaceValid(string xmlContent)
+    // Loads a diagram, validates its SolutionXML namespaces, and saves the diagram.
+    public static void ProcessDiagram(string inputFilePath, string outputFilePath)
+    {
+        // Load the diagram from the specified file.
+        Diagram diagram = new Diagram(inputFilePath);
+
+        // Validate each SolutionXML entry before saving.
+        foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+        {
+            ValidateNamespaces(solutionXml.XmlValue);
+        }
+
+        // Save the diagram to the desired output location.
+        diagram.Save(outputFilePath, SaveFileFormat.Vdx);
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
     {
         try
         {
-            XDocument doc = XDocument.Parse(xmlContent);
-            XNamespace ns = doc.Root.Name.Namespace;
 
-            // Example rule: namespace must start with the expected Aspose Diagram schema URI
-            return ns != null && ns.NamespaceName.StartsWith("http://schemas.aspose.com/diagram");
+            DiagramProcessor.ProcessDiagram("", "");
+
         }
-        catch
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            // Parsing error indicates malformed XML or missing namespace
-            return false;
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

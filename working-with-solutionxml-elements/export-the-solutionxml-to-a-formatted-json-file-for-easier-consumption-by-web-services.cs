@@ -4,58 +4,44 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace DiagramSolutionXmlExport
+class ExportSolutionXmlToJson
 {
-    // Simple DTO to hold SolutionXML data for JSON serialization
-    public class SolutionXmlDto
+    static void Main(string[] args)
     {
-        public string Name { get; set; }
-        public string XmlValue { get; set; }
-    }
-
-    public class Program
-    {
-        public static void Main(string[] args)
+        try
         {
-            // Validate arguments: input VSD file and output JSON file
-            if (args.Length != 2)
-            {
-                Console.WriteLine("Usage: DiagramSolutionXmlExport <input.vsd> <output.json>");
-                return;
-            }
 
-            string inputVsdPath = args[0];
-            string outputJsonPath = args[1];
+            // Path to the source Visio file
+            string inputVisioPath = "input.vsd";
 
-            // Load the Visio diagram (Aspose.Diagram constructor loads the file)
-            Diagram diagram = new Diagram(inputVsdPath);
+            // Path where the formatted JSON will be saved
+            string outputJsonPath = "solutionxml.json";
 
-            // Prepare a list to hold all SolutionXML entries
-            List<SolutionXmlDto> solutionXmlList = new List<SolutionXmlDto>();
+            // Load the Visio diagram (uses Aspose.Diagram's constructor)
+            Diagram diagram = new Diagram(inputVisioPath);
 
-            // Iterate through the SolutionXML collection
+            // Collect each SolutionXML entry (Name and XmlValue) into a list
+            var solutionXmlItems = new List<object>();
             foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                solutionXmlList.Add(new SolutionXmlDto
+                solutionXmlItems.Add(new
                 {
                     Name = solXml.Name,
                     XmlValue = solXml.XmlValue
                 });
             }
 
-            // Configure JSON serializer for formatted (indented) output
-            JsonSerializerOptions jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
+            // Serialize the list to formatted (indented) JSON
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            string jsonContent = JsonSerializer.Serialize(solutionXmlItems, jsonOptions);
 
-            // Serialize the list to JSON
-            string jsonContent = JsonSerializer.Serialize(solutionXmlList, jsonOptions);
-
-            // Write the JSON content to the specified file
+            // Write the JSON string to the output file
             File.WriteAllText(outputJsonPath, jsonContent);
 
-            Console.WriteLine($"SolutionXML data exported to JSON file: {outputJsonPath}");
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

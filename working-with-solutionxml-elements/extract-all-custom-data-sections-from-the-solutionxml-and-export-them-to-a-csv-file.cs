@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 using Aspose.Diagram;
 
 class Program
@@ -10,36 +9,50 @@ class Program
         try
         {
 
-            // Load the Visio diagram (uses Aspose.Diagram's load functionality)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the Visio file
+            string visioPath = "input.vsdx";
 
-            // Path for the CSV output
-            string csvFilePath = "SolutionXmlData.csv";
+            // Path to the output CSV file
+            string csvPath = "solutionxml.csv";
 
-            // Create a StreamWriter for the CSV file
-            using (StreamWriter writer = new StreamWriter(csvFilePath, false, Encoding.UTF8))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
+
+            // Create a CSV file and write the header
+            using (StreamWriter writer = new StreamWriter(csvPath))
             {
-                // Write CSV header
                 writer.WriteLine("Name,XmlValue");
 
-                // Iterate through all SolutionXML entries in the diagram
+                // Iterate through each SolutionXML entry in the diagram
                 foreach (SolutionXML solXml in diagram.SolutionXMLs)
                 {
-                    // Ensure the XML value is not null and escape double quotes
-                    string xmlValue = solXml.XmlValue?.Replace("\"", "\"\"") ?? string.Empty;
+                    // Escape fields to handle commas, quotes, and newlines
+                    string name = EscapeCsv(solXml.Name);
+                    string xml = EscapeCsv(solXml.XmlValue);
 
-                    // Enclose fields in double quotes to handle commas, newlines, etc.
-                    writer.WriteLine($"\"{solXml.Name}\",\"{xmlValue}\"");
+                    // Write a CSV line for the current SolutionXML
+                    writer.WriteLine($"{name},{xml}");
                 }
             }
-
-            // (Optional) Save the diagram if any modifications were made
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    // Helper method to escape CSV fields according to RFC 4180
+    static string EscapeCsv(string field)
+    {
+        if (field == null) return string.Empty;
+
+        bool mustQuote = field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r");
+        if (mustQuote)
+        {
+            field = field.Replace("\"", "\"\"");
+            return $"\"{field}\"";
+        }
+        return field;
     }
 }

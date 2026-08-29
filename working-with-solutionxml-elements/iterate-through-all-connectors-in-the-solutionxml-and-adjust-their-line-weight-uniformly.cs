@@ -1,49 +1,80 @@
+using System.IO;
 using System;
+using System.Xml;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    // Uniform line weight to apply (in inches)
+    const double UniformLineWeight = 0.02;
+
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";   // TODO: replace with actual file path
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each SolutionXML element
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
+                if (string.IsNullOrWhiteSpace(solXml.XmlValue))
+                    continue;
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Parse the XML stored in the SolutionXML
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(solXml.XmlValue);
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Assume connector IDs are stored in elements named <Connector Id="123"/>
+                XmlNodeList connectorNodes = xmlDoc.SelectNodes("//Connector[@Id]");
+                if (connectorNodes == null)
+                    continue;
 
-                // Desired uniform line weight (in inches)
-                double uniformWeight = 0.02;
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (XmlNode node in connectorNodes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    if (long.TryParse(node.Attributes["Id"]?.Value, out long connectorId))
                     {
-                        // Process only connector shapes (1‑D shapes)
-                        if (shape.OneD)
+                        Shape connectorShape = FindShapeById(diagram, connectorId);
+                        if (connectorShape != null && connectorShape.OneD)
                         {
-                            // Ensure the Line object exists before setting the weight
-                            if (shape.Line != null)
-                            {
-                                // Set the line weight uniformly
-                                shape.Line.LineWeight.Value = uniformWeight;
-                            }
+                            // Set the line weight uniformly
+                            connectorShape.Line.LineWeight.Value = UniformLineWeight;
                         }
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx"; // TODO: replace with desired output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
+    }
+
+    // Helper method to locate a shape by its ID across all pages
+    private static Shape FindShapeById(Diagram diagram, long shapeId)
+    {
+        foreach (Page page in diagram.Pages)
+        {
+            try
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // GetShape throws if the ID is not present on the page
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape != null)
+                    return shape;
             }
+            catch
+            {
+                // Ignore and continue searching other pages
+            }
+        }
+        return null;
     }
-    }
+}

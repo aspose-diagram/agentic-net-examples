@@ -10,28 +10,34 @@ class Program
         try
         {
 
+            // Path to the Visio file
+            string visioPath = "input.vsdx";
+            // Path to the CSV output file
+            string csvPath = "node_ids.csv";
+
             // Load the Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram(visioPath);
 
-            var nodeIds = new List<long>();
+            // Collect IDs of shapes whose NameU matches "Node_*"
+            List<long> nodeIds = new List<long>();
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and their shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape name matches the pattern "Node_*"
-                    if (!string.IsNullOrEmpty(shape.Name) && shape.Name.StartsWith("Node_"))
+                    // NameU holds the universal name of the shape
+                    if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.StartsWith("Node_"))
                     {
                         nodeIds.Add(shape.ID);
                     }
                 }
             }
 
-            // Write the collected shape IDs to a CSV file
-            using (var writer = new StreamWriter("node_ids.csv"))
+            // Write the collected IDs to a CSV file (one ID per line)
+            using (StreamWriter writer = new StreamWriter(csvPath))
             {
-                // Header (optional)
+                // Optional header
                 writer.WriteLine("ShapeID");
                 foreach (long id in nodeIds)
                 {
@@ -39,8 +45,7 @@ class Program
                 }
             }
 
-            // If you need to save any changes to the diagram, uncomment the line below
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine($"Extracted {nodeIds.Count} shape IDs to '{csvPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,110 +1,106 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Simple structure to hold shape bounds for overlap checking
-        private struct ShapeBounds
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            public long Id;
-            public double Left;
-            public double Right;
-            public double Bottom;
-            public double Top;
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
         }
 
-        static void Main(string[] args)
+        // Output Visio file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        try
         {
-            // Input and output file paths (provide via command line or prompt)
-            string inputPath;
-            string outputPath;
-
-            if (args.Length >= 2)
-            {
-                inputPath = args[0];
-                outputPath = args[1];
-            }
-            else
-            {
-                Console.Write("Enter path to the Visio file to process: ");
-                inputPath = Console.ReadLine();
-
-                Console.Write("Enter path for the output Visio file: ");
-                outputPath = Console.ReadLine();
-            }
-
-            // Load the diagram
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Process each page in the diagram
+            // Ensure the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Process each page separately
             foreach (Page page in diagram.Pages)
             {
-                // List to keep track of already positioned shapes on this page
-                List<ShapeBounds> placedShapes = new List<ShapeBounds>();
-
-                // Iterate over all shapes on the page
+                // Collect non‑deleted, non‑connector shapes for processing
+                var shapeIds = new System.Collections.Generic.List<long>();
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    if (shape.Del == BOOL.True) continue;
+                    // Skip 1‑D connector shapes
+                    if (shape.OneD) continue;
+                    shapeIds.Add(shape.ID);
+                }
 
-                    // Retrieve current geometry
-                    double pinX = shape.XForm.PinX.Value;
-                    double pinY = shape.XForm.PinY.Value;
-                    double width = shape.XForm.Width.Value;
-                    double height = shape.XForm.Height.Value;
+                // Simple collision resolution: shift overlapping shapes to the right
+                const double margin = 0.5; // extra space in inches between shapes
+                const double step = 0.5;   // incremental move step in inches
 
-                    // Compute bounding box
-                    double left = pinX - width / 2.0;
-                    double right = pinX + width / 2.0;
-                    double bottom = pinY - height / 2.0;
-                    double top = pinY + height / 2.0;
+                // Iterate over shapes in the order they were added
+                for (int i = 0; i < shapeIds.Count; i++)
+                {
+                    Shape shapeI = page.Shapes.GetShape(shapeIds[i]);
 
-                    // Resolve overlaps with previously placed shapes
-                    bool overlapFound;
-                    const double offset = 0.5; // inches to shift when overlap occurs
+                    // Compute bounding box for shapeI
+                    double iLeft = shapeI.XForm.PinX.Value - shapeI.XForm.Width.Value / 2.0;
+                    double iRight = shapeI.XForm.PinX.Value + shapeI.XForm.Width.Value / 2.0;
+                    double iTop = shapeI.XForm.PinY.Value + shapeI.XForm.Height.Value / 2.0;
+                    double iBottom = shapeI.XForm.PinY.Value - shapeI.XForm.Height.Value / 2.0;
 
+                    bool moved;
                     do
                     {
-                        overlapFound = false;
-                        foreach (ShapeBounds other in placedShapes)
+                        moved = false;
+                        // Compare with all previously positioned shapes
+                        for (int j = 0; j < i; j++)
                         {
-                            bool isOverlapping =
-                                left < other.Right && right > other.Left &&
-                                bottom < other.Top && top > other.Bottom;
+                            Shape shapeJ = page.Shapes.GetShape(shapeIds[j]);
 
-                            if (isOverlapping)
+                            // Compute bounding box for shapeJ
+                            double jLeft = shapeJ.XForm.PinX.Value - shapeJ.XForm.Width.Value / 2.0;
+                            double jRight = shapeJ.XForm.PinX.Value + shapeJ.XForm.Width.Value / 2.0;
+                            double jTop = shapeJ.XForm.PinY.Value + shapeJ.XForm.Height.Value / 2.0;
+                            double jBottom = shapeJ.XForm.PinY.Value - shapeJ.XForm.Height.Value / 2.0;
+
+                            // Check for rectangle intersection
+                            bool overlapX = iLeft < jRight && iRight > jLeft;
+                            bool overlapY = iBottom < jTop && iTop > jBottom;
+                            if (overlapX && overlapY)
                             {
-                                // Move the shape to the right by the offset
-                                shape.Move(offset, 0);
-                                // Update bounding box after move
-                                pinX = shape.XForm.PinX.Value;
-                                left = pinX - width / 2.0;
-                                right = pinX + width / 2.0;
-                                // Mark that we need to re‑check against all placed shapes
-                                overlapFound = true;
+                                // Overlap detected – shift shapeI to the right
+                                shapeI.XForm.PinX.Value += step;
+                                // Re‑calculate bounding box after move
+                                iLeft = shapeI.XForm.PinX.Value - shapeI.XForm.Width.Value / 2.0;
+                                iRight = shapeI.XForm.PinX.Value + shapeI.XForm.Width.Value / 2.0;
+                                // Mark that we moved and need to re‑check against earlier shapes
+                                moved = true;
                                 break;
                             }
                         }
-                    } while (overlapFound);
-
-                    // Add the (now non‑overlapping) shape to the list
-                    placedShapes.Add(new ShapeBounds
-                    {
-                        Id = shape.ID,
-                        Left = left,
-                        Right = right,
-                        Bottom = bottom,
-                        Top = top
-                    });
+                    } while (moved);
                 }
             }
 
-            // Save the modified diagram
+            // Save the adjusted diagram to the output file
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Processing complete. Diagram saved to: " + outputPath);
+            Console.WriteLine($"Diagram saved without overlaps to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

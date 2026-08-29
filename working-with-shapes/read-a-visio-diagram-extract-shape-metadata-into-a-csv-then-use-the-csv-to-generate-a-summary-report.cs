@@ -7,224 +7,123 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file, CSV output, and report output can be passed as arguments.
-        string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Guard to ensure the input Visio file exists.
-        if (!File.Exists(visioPath))
+        // Path to the source Visio file – adjust as needed.
+        string inputPath = "input.vsdx";
+        // Verify that the Visio file exists before proceeding.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-        string csvPath = args.Length > 1 ? args[1] : "shapes.csv";
-        string reportPath = args.Length > 2 ? args[2] : "report.txt";
 
+        // Path for the intermediate CSV file that will hold shape metadata.
+        string csvPath = "shapes.csv";
+
+        // --------------------------------------------------------------------
+        // STEP 1: Load the Visio diagram and extract shape metadata into CSV.
+        // --------------------------------------------------------------------
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(visioPath);
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Extract shape metadata and write to CSV.
-            ExtractMetadataToCsv(diagram, csvPath);
-
-            // Generate a summary report from the CSV.
-            GenerateReportFromCsv(csvPath, reportPath);
-        }
-        catch (Exception ex)
-        {
-            // Log any errors that occur during processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
-    }
-
-    private static void ExtractMetadataToCsv(Diagram diagram, string csvFilePath)
-    {
-        try
-        {
-            // Ensure the directory for the CSV exists.
-            string directory = Path.GetDirectoryName(csvFilePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            // Prepare a list to collect CSV lines; the first line is the header.
+            List<string> csvLines = new List<string>
             {
-                Directory.CreateDirectory(directory);
-            }
+                "PageName,ShapeID,ShapeName,ShapeNameU,MasterName,Text,CustomPropsCount"
+            };
 
-            using (StreamWriter writer = new StreamWriter(csvFilePath, false))
+            // Iterate over each page in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                // CSV header.
-                writer.WriteLine("ShapeID,Name,NameU,Master,Text");
-
-                // Iterate through all pages.
-                foreach (Page page in diagram.Pages)
+                // Iterate over each shape on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page.
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Shape ID.
-                        long shapeId = shape.ID;
+                    // Skip shapes that are marked as deleted.
+                    if (shape.Del == BOOL.True) continue;
 
-                        // Shape name and universal name.
-                        string name = shape.Name ?? string.Empty;
-                        string nameU = shape.NameU ?? string.Empty;
+                    // Retrieve basic shape information, handling possible nulls.
+                    string pageName = page.Name ?? string.Empty;
+                    string shapeId = shape.ID.ToString();
+                    string shapeName = shape.Name ?? string.Empty;
+                    string shapeNameU = shape.NameU ?? string.Empty;
+                    string masterName = shape.Master != null ? shape.Master.Name ?? string.Empty : string.Empty;
 
-                        // Master name (if the shape is based on a master).
-                        string masterName = string.Empty;
-                        if (shape.Master != null)
-                        {
-                            masterName = shape.Master.Name ?? string.Empty;
-                        }
+                    // Extract plain text from the shape, sanitising commas and line breaks.
+                    string rawText = shape.Text.Value.Text;
+                    string cleanText = rawText.Replace("\r", " ").Replace("\n", " ").Replace(",", " ");
 
-                        // Plain text of the shape (concatenated).
-                        string text = string.Empty;
-                        if (shape.Text != null && shape.Text.Value != null)
-                        {
-                            // Use the Text property to get plain text.
-                            text = shape.Text.Value.Text ?? string.Empty;
-                        }
+                    // Count the number of custom properties (Props) attached to the shape.
+                    int customPropsCount = shape.Props != null ? shape.Props.Count : 0;
 
-                        // Replace line breaks and commas to keep CSV well‑formed.
-                        text = text.Replace("\r", " ").Replace("\n", " ").Replace(",", " ");
-
-                        // Write CSV line.
-                        writer.WriteLine($"{shapeId},{EscapeCsv(name)},{EscapeCsv(nameU)},{EscapeCsv(masterName)},{EscapeCsv(text)}");
-                    }
+                    // Assemble a CSV line with the collected data.
+                    string csvLine = $"{pageName},{shapeId},{shapeName},{shapeNameU},{masterName},{cleanText},{customPropsCount}";
+                    csvLines.Add(csvLine);
                 }
             }
 
-            Console.WriteLine($"Metadata extracted to CSV: {csvFilePath}");
+            // Write all CSV lines to the output file.
+            File.WriteAllLines(csvPath, csvLines);
         }
         catch (Exception ex)
         {
-            // Log any errors that occur while extracting metadata.
-            Console.Error.WriteLine($"Error extracting metadata: {ex.Message}");
-        }
-    }
-
-    private static string EscapeCsv(string value)
-    {
-        if (value == null)
-            return string.Empty;
-
-        // Enclose in double quotes if the value contains a comma or quote.
-        if (value.Contains(",") || value.Contains("\""))
-        {
-            string escaped = value.Replace("\"", "\"\"");
-            return $"\"{escaped}\"";
-        }
-        return value;
-    }
-
-    private static void GenerateReportFromCsv(string csvFilePath, string reportFilePath)
-    {
-        if (!File.Exists(csvFilePath))
-        {
-            Console.WriteLine($"CSV file not found: {csvFilePath}");
+            // Report any errors that occurred while processing the diagram.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
             return;
         }
 
-        // Dictionaries to hold summary data.
-        int totalShapes = 0;
-        Dictionary<string, int> masterCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-        using (StreamReader reader = new StreamReader(csvFilePath))
+        // --------------------------------------------------------------------
+        // STEP 2: Read the CSV and generate a simple summary report.
+        // --------------------------------------------------------------------
+        try
         {
-            // Read header line.
-            string headerLine = reader.ReadLine();
-            if (headerLine == null)
+            // Read all lines from the CSV file.
+            string[] allLines = File.ReadAllLines(csvPath);
+
+            // Ensure there is data beyond the header.
+            if (allLines.Length <= 1)
             {
-                Console.WriteLine("CSV file is empty.");
+                Console.WriteLine("No shape data found in CSV.");
                 return;
             }
 
-            // Process each data line.
-            string line;
-            while ((line = reader.ReadLine()) != null)
+            // Counters for the summary.
+            int totalShapes = 0;
+            Dictionary<string, int> masterCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            // Process each data line (skip header at index 0).
+            for (int i = 1; i < allLines.Length; i++)
             {
-                // Simple CSV split (assuming no commas inside quoted fields after extraction).
-                // For robustness, a full CSV parser would be needed, but this suffices for the generated file.
-                string[] parts = SplitCsvLine(line);
-                if (parts.Length < 5)
-                    continue; // Skip malformed lines.
+                // Split the CSV line into its constituent fields.
+                string[] fields = allLines[i].Split(',');
+
+                // Guard against malformed lines.
+                if (fields.Length < 7) continue;
 
                 totalShapes++;
 
-                string master = parts[3];
-                if (string.IsNullOrWhiteSpace(master))
-                    master = "(No Master)";
+                // The master name is the fifth column (index 4).
+                string master = fields[4];
 
+                // Tally the occurrence of each master type.
                 if (masterCounts.ContainsKey(master))
                     masterCounts[master]++;
                 else
                     masterCounts[master] = 1;
             }
-        }
 
-        // Build report content.
-        List<string> reportLines = new List<string>();
-        reportLines.Add("Visio Diagram Shape Summary Report");
-        reportLines.Add($"Generated on: {DateTime.Now}");
-        reportLines.Add($"Total shapes processed: {totalShapes}");
-        reportLines.Add(string.Empty);
-        reportLines.Add("Shapes per Master:");
-        foreach (KeyValuePair<string, int> kvp in masterCounts)
-        {
-            reportLines.Add($"- {kvp.Key}: {kvp.Value}");
-        }
-
-        // Write report to console.
-        Console.WriteLine();
-        foreach (string line in reportLines)
-        {
-            Console.WriteLine(line);
-        }
-
-        // Optionally write report to a file.
-        try
-        {
-            File.WriteAllLines(reportFilePath, reportLines);
-            Console.WriteLine($"\nReport saved to: {reportFilePath}");
+            // Output the summary to the console.
+            Console.WriteLine($"Total shapes processed: {totalShapes}");
+            Console.WriteLine("Shapes per master type:");
+            foreach (KeyValuePair<string, int> entry in masterCounts)
+            {
+                Console.WriteLine($"  {entry.Key}: {entry.Value}");
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\nFailed to write report file: {ex.Message}");
+            // Report any errors that occurred while generating the report.
+            Console.Error.WriteLine($"Error generating report: {ex.Message}");
         }
-    }
-
-    private static string[] SplitCsvLine(string line)
-    {
-        // Basic CSV splitter handling quoted fields.
-        List<string> fields = new List<string>();
-        bool inQuotes = false;
-        int start = 0;
-
-        for (int i = 0; i < line.Length; i++)
-        {
-            if (line[i] == '\"')
-            {
-                inQuotes = !inQuotes;
-            }
-            else if (line[i] == ',' && !inQuotes)
-            {
-                fields.Add(UnescapeCsv(line.Substring(start, i - start)));
-                start = i + 1;
-            }
-        }
-
-        // Add the last field.
-        if (start <= line.Length)
-        {
-            fields.Add(UnescapeCsv(line.Substring(start)));
-        }
-
-        return fields.ToArray();
-    }
-
-    private static string UnescapeCsv(string field)
-    {
-        // Remove surrounding quotes if present and unescape double quotes.
-        if (field.StartsWith("\"") && field.EndsWith("\""))
-        {
-            string inner = field.Substring(1, field.Length - 2);
-            return inner.Replace("\"\"", "\"");
-        }
-        return field;
     }
 }

@@ -7,33 +7,39 @@ class Program
 {
     static void Main()
     {
-        // Paths to the original VSDX file and the output file
+        // Paths to the original VSDX file and the output file.
         string inputPath = "original.vsdx";
         string outputPath = "modified.vsdx";
 
-        // Load the diagram from the VSDX package
+        // Load the diagram from the VSDX package.
         Diagram diagram = new Diagram(inputPath);
 
-        // Define the name of the SolutionXML element and the new XML content
-        string solutionXmlName = "CustomData";
-        string newXmlContent = "<root><value>123</value></root>";
+        // Define the name of the SolutionXML entry and the new XML content.
+        string solutionXmlName = "MyCustomData";
+        string newXmlContent = @"<root xmlns=""http://example.com""><value>123</value></root>";
 
-        // Try to locate an existing SolutionXML with the specified name
-        SolutionXML existingXml = diagram.SolutionXMLs[solutionXmlName];
-
-        if (existingXml != null)
+        // Search for an existing SolutionXML with the same name.
+        SolutionXML targetXml = null;
+        foreach (SolutionXML sx in diagram.SolutionXMLs)
         {
-            // Update the XML value of the existing element
-            existingXml.XmlValue = newXmlContent;
+            if (sx.Name == solutionXmlName)
+            {
+                targetXml = sx;
+                break;
+            }
+        }
+
+        // Update the existing entry or add a new one.
+        if (targetXml != null)
+        {
+            targetXml.XmlValue = newXmlContent;
         }
         else
         {
-            // Create a new SolutionXML instance and add it to the collection
-            SolutionXML newSolutionXml = new SolutionXML(solutionXmlName, newXmlContent);
-            diagram.SolutionXMLs.Add(newSolutionXml);
+            diagram.SolutionXMLs.Add(new SolutionXML(solutionXmlName, newXmlContent));
         }
 
-        // Save the diagram back into a VSDX package, preserving all resources
+        // Save the diagram back to a VSDX package, preserving all resources.
         diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
 }

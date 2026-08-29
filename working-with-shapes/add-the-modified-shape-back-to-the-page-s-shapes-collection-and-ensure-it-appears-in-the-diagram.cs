@@ -10,35 +10,45 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio file; if it does not exist, create a new diagram with a blank page.
+            string inputPath = "input.vsdx";
+            Diagram diagram;
+            try
+            {
+                diagram = new Diagram(inputPath);
+            }
+            catch (Exception)
+            {
+                diagram = new Diagram();
+                diagram.Pages.Add(new Page());
+            }
 
-            // Access the first page of the diagram
+            // Access the first page of the diagram.
             Page page = diagram.Pages[0];
 
-            // Add a new rectangle shape to the diagram (master name: "Rectangle")
-            // The AddShape method returns the shape's unique ID (type long)
-            long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+            // Add a new rectangle shape to the page.
+            double pinX = 2.0; // inches
+            double pinY = 2.0; // inches
+            string masterName = "Rectangle";
+            long shapeId = page.AddShape(pinX, pinY, masterName);
 
-            // Retrieve the newly created shape from the page's Shapes collection
+            // Retrieve the shape instance using the returned ID.
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Modify the shape's properties (e.g., text and formatting)
+            // Modify the shape: set its text and fill colour.
             shape.Text.Value.Clear();
             shape.Text.Value.Add(new Txt("Hello Aspose"));
-            shape.Fill.FillForegnd.Value = "#FFCC00";   // Fill color
-            shape.Line.LineColor.Value = "#000000";    // Line color
+            shape.Fill.FillForegnd.Value = "#FFCC00"; // orange fill
 
-            // The shape is already part of the page's Shapes collection because
-            // it was added via diagram.AddShape. No further action is required.
-
-            // Save the diagram to verify that the modified shape appears
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // The shape is already part of the page's Shapes collection.
+            // Save the diagram to a new file.
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

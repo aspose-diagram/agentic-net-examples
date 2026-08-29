@@ -1,64 +1,76 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the source Visio file
+                // Input Visio file path
                 string inputPath = "input.vsdx";
 
+                // Output directory for PDF pages
+                string outputDir = "output";
+                Directory.CreateDirectory(outputDir);
+
                 // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                int pageIndex = 0;
+                foreach (Page page in diagram.Pages)
                 {
-                    int pageIndex = 0;
-
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Apply drop shadow to all picture (foreign) shapes on the current page
-                        foreach (Shape shape in page.Shapes)
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify picture (foreign) shapes
+                        if (shape.Type == TypeValue.Foreign)
                         {
-                            // Picture shapes are identified by TypeValue.Foreign
-                            if (shape.Type == TypeValue.Foreign)
-                            {
-                                // Enable simple shadow
-                                shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-
-                                // Shadow color (black)
-                                shape.Fill.ShdwForegnd.Value = "#000000";
-
-                                // Shadow transparency (30% transparent)
-                                shape.Fill.ShdwForegndTrans.Value = 0.3;
-
-                                // Shadow offset (in inches)
-                                shape.Fill.ShapeShdwOffsetX.Value = 0.1;
-                                shape.Fill.ShapeShdwOffsetY.Value = 0.1;
-                            }
+                            // Enable simple drop shadow
+                            shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+                            // Shadow color (black)
+                            shape.Fill.ShdwForegnd.Value = "#000000";
+                            // Shadow transparency (30%)
+                            shape.Fill.ShdwForegndTrans.Value = 0.3;
+                            // Shadow offset
+                            shape.Fill.ShapeShdwOffsetX.Value = 0.1;
+                            shape.Fill.ShapeShdwOffsetY.Value = 0.1;
                         }
-
-                        // Export the current page as a separate PDF file
-                        string outputPdf = $"Page_{pageIndex + 1}.pdf";
-
-                        PdfSaveOptions pdfOptions = new PdfSaveOptions
-                        {
-                            DefaultFont = "Arial",
-                            PageIndex = pageIndex,   // zero‑based index of the page to render
-                            PageCount = 1,           // render only this page
-                            ExportHiddenPage = false
-                        };
-
-                        diagram.Save(outputPdf, pdfOptions);
-
-                        pageIndex++;
                     }
+
+                    // Prepare PDF save options for the current page
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
+                    {
+                        // Ensure the format is set explicitly
+                        SaveFormat = SaveFileFormat.Pdf,
+                        // Export only the current page
+                        PageIndex = pageIndex,
+                        PageCount = 1,
+                        // Optional: set a default font to avoid missing glyphs
+                        DefaultFont = "Arial"
+                    };
+
+                    // Build output file name (e.g., Page_1.pdf)
+                    string outputPath = Path.Combine(outputDir, $"Page_{pageIndex + 1}.pdf");
+
+                    // Save the diagram page as PDF
+                    diagram.Save(outputPath, pdfOptions);
+
+                    pageIndex++;
                 }
 
-                Console.WriteLine("Processing completed. PDFs generated for each page.");
+                // Cleanup
+                diagram.Dispose();
+
+                Console.WriteLine("Processing completed. PDFs are saved in: " + Path.GetFullPath(outputDir));
 
             }
             catch (System.IO.FileNotFoundException ex)

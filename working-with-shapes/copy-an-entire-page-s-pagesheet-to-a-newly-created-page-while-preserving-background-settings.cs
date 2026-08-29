@@ -1,6 +1,6 @@
-using System;
 using System.IO;
 using Aspose.Diagram;
+using System;
 
 class Program
 {
@@ -12,26 +12,25 @@ class Program
             // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Choose the source page whose PageSheet will be copied (e.g., the first page)
+            // Source page whose PageSheet will be copied (e.g., the first page)
             Page sourcePage = diagram.Pages[0];
 
-            // Add a new page to the diagram
-            Page newPage = new Page();
+            // Create a new page instance
+            Page newPage = new Page(diagram.Pages.Count);
+            // Add the new page to the diagram's page collection
             diagram.Pages.Add(newPage);
 
             // Copy the entire PageSheet from the source page to the new page
             newPage.PageSheet.Copy(sourcePage.PageSheet);
 
-            // Preserve the background flag of the source page
+            // Preserve background settings of the source page
             newPage.Background = sourcePage.Background;
+            newPage.BackPage = sourcePage.BackPage;
 
-            // Preserve the reference to a background page, if the source page has one
-            if (sourcePage.BackPage != null)
-            {
-                newPage.BackPage = sourcePage.BackPage;
-            }
+            // Optionally give the new page a distinct name
+            newPage.Name = "CopiedPage";
 
-            // Save the modified diagram
+            // Save the updated diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

@@ -1,82 +1,67 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect four arguments: input file, output file, first shape name, second shape name
-        if (args.Length < 4)
-        {
-            Console.WriteLine("Usage: <inputVisio> <outputVisio> <shapeName1> <shapeName2>");
-            return;
-        }
-
-        string inputPath = args[0];
-        // Guard: ensure the source Visio file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = args[1];
-        string shapeName1 = args[2];
-        string shapeName2 = args[3];
-
         try
         {
+
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
             // Load the existing diagram
             Diagram diagram = new Diagram(inputPath);
+
+            // Assume the diagram has at least one page
             Page page = diagram.Pages[0];
 
-            // Locate the two shapes by their universal names (NameU)
-            long shapeId1 = -1;
-            long shapeId2 = -1;
-
-            foreach (Shape shape in page.Shapes)
+            // Find the two shapes by their universal names (adjust names as needed)
+            Shape shapeA = null;
+            Shape shapeB = null;
+            foreach (Shape s in page.Shapes)
             {
-                if (shape.NameU == shapeName1)
-                {
-                    shapeId1 = shape.ID;
-                }
-                else if (shape.NameU == shapeName2)
-                {
-                    shapeId2 = shape.ID;
-                }
+                if (s.NameU == "ShapeA")
+                    shapeA = s;
+                else if (s.NameU == "ShapeB")
+                    shapeB = s;
             }
 
-            // Verify both shapes were found
-            if (shapeId1 == -1 || shapeId2 == -1)
+            if (shapeA == null || shapeB == null)
             {
-                Console.Error.WriteLine("Error: One or both shapes not found in the diagram.");
+                Console.WriteLine("One or both shapes not found. Ensure shapes named 'ShapeA' and 'ShapeB' exist.");
                 return;
             }
 
-            // Add a dynamic connector shape (position will be adjusted automatically)
-            long connectorId = diagram.AddShape(0, 0, "Dynamic connector", 0);
+            // Determine the nearest connection points based on horizontal positions
+            // If shapeA is left of shapeB, connect from Right of A to Left of B, otherwise reverse.
+            ConnectionPointPlace placeFrom = shapeA.XForm.PinX.Value < shapeB.XForm.PinX.Value
+                ? ConnectionPointPlace.Right
+                : ConnectionPointPlace.Left;
 
-            // Connect the two shapes using the nearest (center) connection points
-            page.ConnectShapesViaConnector(
-                shapeId1,
-                ConnectionPointPlace.Center,
-                shapeId2,
-                ConnectionPointPlace.Center,
-                connectorId);
+            ConnectionPointPlace placeTo = placeFrom == ConnectionPointPlace.Right
+                ? ConnectionPointPlace.Left
+                : ConnectionPointPlace.Right;
 
-            // Optional: set a right‑angle routing style for the connector
-            Shape connector = page.Shapes.GetShape(connectorId);
-            connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+            // Add a dynamic connector shape (position will be adjusted after connecting)
+            long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
 
-            // Save the modified diagram in VSDX format
+            // Connect the two shapes using the chosen connection points
+            page.ConnectShapesViaConnector(shapeA.ID, placeFrom, shapeB.ID, placeTo, connectorId);
+
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Connector added and diagram saved successfully.");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

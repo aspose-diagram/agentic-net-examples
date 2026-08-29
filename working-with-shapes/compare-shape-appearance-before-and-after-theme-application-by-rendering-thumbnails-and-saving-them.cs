@@ -1,42 +1,40 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ShapeThemeComparison
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the original diagram
-            Diagram originalDiagram = new Diagram("input.vsdx");
+            // Load the diagram that contains the shape to be examined
+            Diagram diagram = new Diagram("original.vsdx");
 
-            // Load a diagram that contains the desired theme
-            Diagram themeDiagram = new Diagram("theme.vsdx");
+            // Access the first page and the first shape on that page
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes[0];
 
-            // Get the first shape on the first page (adjust index as needed)
-            Shape targetShape = originalDiagram.Pages[0].Shapes[0];
+            // Render the shape before any theme changes
+            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            shape.ToImage("shape_before.png", imgOptions);
 
-            // Render the shape before applying the theme
-            string beforeImagePath = "shape_before.png";
-            ImageSaveOptions beforeOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            targetShape.ToImage(beforeImagePath, beforeOptions);
+            // Load a diagram that holds the desired theme
+            Diagram themeSource = new Diagram("theme_source.vsdx");
 
-            // Apply the theme from the theme diagram to the original diagram
-            originalDiagram.CopyTheme(themeDiagram);
+            // Apply the theme from the source diagram to the target diagram
+            diagram.CopyTheme(themeSource);
 
-            // After applying the theme, retrieve the same shape (its ID remains the same)
-            Shape themedShape = originalDiagram.Pages[0].Shapes[0];
+            // Re‑acquire the shape after the theme has been applied (the shape instance may have been refreshed)
+            shape = diagram.Pages[0].Shapes[0];
 
-            // Render the shape after applying the theme
-            string afterImagePath = "shape_after.png";
-            ImageSaveOptions afterOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            themedShape.ToImage(afterImagePath, afterOptions);
+            // Render the shape after the theme has been applied
+            shape.ToImage("shape_after.png", imgOptions);
 
-            // Optionally, save the modified diagram (not required for thumbnail comparison)
-            originalDiagram.Save("output_with_theme.vsdx", SaveFileFormat.Vsdx);
+            // Optionally save the diagram with the new theme applied
+            diagram.Save("original_with_theme.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

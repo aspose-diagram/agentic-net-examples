@@ -1,46 +1,60 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages and their shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Apply a preset theme to each page and its shapes
+                foreach (Page page in diagram.Pages)
                 {
                     try
                     {
-                        // Attempt to apply a preset theme style matrix to the shape.
-                        // Adjust the enum values as needed for your scenario.
-                        shape.SetPresetThemeStyleMatrics(
-                            PresetStyleMatricsValue.Style1,
-                            PresetColorMatricsValue.Color1);
+                        // Apply theme to the page
+                        page.PresetTheme = PresetThemeValue.Bubble;
+                        page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                     }
                     catch (Exception ex)
                     {
-                        // Handle shapes that do not support theme application.
-                        // For example, log the shape ID and continue processing.
-                        Console.WriteLine($"Shape ID {shape.ID} unsupported for theme: {ex.Message}");
+                        Console.WriteLine($"Failed to apply theme to page '{page.Name}': {ex.Message}");
+                    }
+
+                    // Iterate through shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        try
+                        {
+                            // Attempt to apply theme to the shape
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+                        }
+                        catch (Exception ex)
+                        {
+                            // Handle shapes that do not support theme application
+                            Console.WriteLine($"Shape ID {shape.ID} ('{shape.Name}') does not support theme: {ex.Message}");
+                        }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

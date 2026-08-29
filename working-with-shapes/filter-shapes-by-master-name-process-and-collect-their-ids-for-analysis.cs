@@ -22,17 +22,17 @@ class Program
                 // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape is based on a master named "Process"
-                    // shape.Master may be null for shapes without a master
-                    if (shape.Master != null && string.Equals(shape.Master.Name, "Process", StringComparison.OrdinalIgnoreCase))
+                    // Ensure the shape has an associated master and compare its universal name
+                    if (shape.Master != null && 
+                        string.Equals(shape.Master.NameU, "Process", StringComparison.OrdinalIgnoreCase))
                     {
                         processShapeIds.Add(shape.ID);
                     }
                 }
             }
 
-            // Example usage: output the collected IDs
-            Console.WriteLine("Shape IDs with master \"Process\":");
+            // Output the collected IDs (or use them for further analysis)
+            Console.WriteLine("Shape IDs with master name \"Process\":");
             foreach (long id in processShapeIds)
             {
                 Console.WriteLine(id);

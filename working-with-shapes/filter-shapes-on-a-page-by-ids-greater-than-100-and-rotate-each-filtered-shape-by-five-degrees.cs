@@ -4,46 +4,56 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Input and output file paths can be passed as command‑line arguments.
+            // If not provided, default paths are used.
+            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+            string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-            // Load the Visio diagram
+            // Load the Visio diagram.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Get the first page (index 0)
+                // Ensure there is at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Work with the first page (index 0).
                 Page page = diagram.Pages[0];
 
-                // Iterate through all shapes on the page
+                // Iterate all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Process only shapes with an ID greater than 100
+                    // Filter shapes whose ID is greater than 100.
                     if (shape.ID > 100L)
                     {
-                        // Current rotation angle is stored in radians
+                        // Retrieve the current rotation angle (in radians).
                         double currentAngle = shape.XForm.Angle.Value;
 
-                        // Convert 5 degrees to radians
-                        double delta = 5.0 * Math.PI / 180.0;
+                        // Add five degrees (converted to radians) to the current angle.
+                        double newAngle = currentAngle + (5.0 * Math.PI / 180.0);
 
-                        // Apply the additional rotation
-                        shape.XForm.Angle.Value = currentAngle + delta;
+                        // Set the new rotation angle.
+                        shape.XForm.Angle.Value = newAngle;
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
+            Console.WriteLine("Processing completed. Diagram saved to: " + outputPath);
+
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

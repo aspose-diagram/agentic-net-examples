@@ -1,9 +1,9 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ExportShapesAsPng
 {
     static void Main()
     {
@@ -11,39 +11,30 @@ class Program
         {
 
             // Path to the source Visio file
-            string inputPath = "input.vsdx";
+            string sourceFile = "input.vsdx";
 
-            // Folder where individual shape PNGs will be saved
-            string outputFolder = "ShapeImages";
+            // Load the Visio diagram using the constructor that accepts a file path
+            Diagram diagram = new Diagram(sourceFile);
 
-            // Ensure the output directory exists
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.False)
-                    {
-                        // Build a unique file name for each shape
-                        string fileName = $"shape_{shape.ID}.png";
-                        string outPath = Path.Combine(outputFolder, fileName);
+                    // Build a unique file name for the exported PNG
+                    string pngFile = $"shape_page{page.ID}_shape{shape.ID}.png";
 
-                        // Export the shape as a lossless PNG
-                        ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-                        shape.ToImage(outPath, options);
-                    }
+                    // Create image save options for PNG format (lossless by nature)
+                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+
+                    // Export the shape to a PNG file using the ToImage method
+                    shape.ToImage(pngFile, options);
                 }
             }
 
-            // (Optional) Save the diagram back if any modifications were made
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Release resources held by the diagram
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

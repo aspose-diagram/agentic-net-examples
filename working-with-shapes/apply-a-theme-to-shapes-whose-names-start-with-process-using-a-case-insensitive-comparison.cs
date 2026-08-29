@@ -1,36 +1,37 @@
-using System;
 using System.IO;
+using System;
+using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
             // Load an existing Visio diagram
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Iterate through all pages and their shapes
+            foreach (Page page in diagram.Pages)
             {
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape name starts with "Process" (case‑insensitive)
-                    if (!string.IsNullOrEmpty(shape.Name) &&
-                        shape.Name.StartsWith("Process", System.StringComparison.OrdinalIgnoreCase))
+                    // Apply theme only to shapes whose name starts with "Process" (case‑insensitive)
+                    if (!string.IsNullOrEmpty(shape.NameU) &&
+                        shape.NameU.StartsWith("Process", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Apply a preset theme (e.g., Office) to the shape
-                        shape.PresetTheme = Aspose.Diagram.PresetThemeValue.Office;
+                        // Set a preset theme (e.g., Office) for the shape
+                        shape.PresetTheme = PresetThemeValue.Office;
 
-                        // Optionally set a quick style variant
-                        shape.PresetThemeQuickStyle = Aspose.Diagram.PresetQuickStyleValue.VariantStyle1;
+                        // Optionally apply a quick style variant to enhance appearance
+                        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
                     }
                 }
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

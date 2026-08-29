@@ -1,62 +1,66 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load the Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Process each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // First, collect the IDs of all group shapes on the page
+                List<long> groupIds = new List<long>();
+                foreach (Shape shape in page.Shapes)
                 {
-                    // First, collect IDs of all group shapes on the page
-                    List<long> groupShapeIds = new List<long>();
-                    foreach (Shape shape in page.Shapes)
+                    if (shape.Type == TypeValue.Group)
                     {
-                        if (shape.Type == TypeValue.Group)
-                        {
-                            groupShapeIds.Add(shape.ID);
-                        }
-                    }
-
-                    // Expand (ungroup) each group shape to expose its sub‑shapes
-                    foreach (long groupId in groupShapeIds)
-                    {
-                        Shape groupShape = page.Shapes.GetShape(groupId);
-                        if (groupShape != null)
-                        {
-                            groupShape.Ungroup();
-                        }
-                    }
-
-                    // After ungrouping, rotate each non‑connector shape individually
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip connectors (1‑D shapes)
-                        if (shape.OneD)
-                            continue;
-
-                        // Apply a rotation of 30 degrees (Angle cell expects degrees)
-                        shape.XForm.Angle.Value = 30;
+                        groupIds.Add(shape.ID);
                     }
                 }
 
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Process each group shape
+                foreach (long groupId in groupIds)
+                {
+                    // Retrieve the group shape by its ID
+                    Shape groupShape = page.Shapes.GetShape(groupId);
 
+                    // Store the IDs of the sub‑shapes contained in the group
+                    List<long> subShapeIds = new List<long>();
+                    foreach (Shape sub in groupShape.Shapes)
+                    {
+                        subShapeIds.Add(sub.ID);
+                    }
+
+                    // Expand (ungroup) the group shape to expose its members
+                    groupShape.Ungroup();
+
+                    // Apply individual rotation to each now‑exposed sub‑shape
+                    foreach (long subId in subShapeIds)
+                    {
+                        Shape subShape = page.Shapes.GetShape(subId);
+                        double angleDeg = 45.0; // example rotation angle in degrees
+                        double angleRad = Math.PI * angleDeg / 180.0; // convert to radians
+                        subShape.SetAngle(angleRad);
+                    }
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

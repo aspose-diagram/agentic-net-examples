@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,30 +9,39 @@ class Program
             try
             {
 
-                // Load the Visio diagram from a file.
-                // Replace "input.vsdx" with the actual path to your diagram.
-                using (Diagram diagram = new Diagram("input.vsdx"))
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output_rotated.vsdx";
+
+                // Load the Visio diagram
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate through all pages in the diagram.
+                    // Rotation angle: 15 degrees in radians
+                    double angleRadians = 15.0 * Math.PI / 180.0;
+
+                    // Iterate through all pages
                     foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through all shapes on the current page.
+                        // Iterate through all shapes on the current page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Shape IDs are of type long. Rotate only shapes with ID > 50.
+                            // Skip deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            // Rotate shapes with ID greater than 50
                             if (shape.ID > 50)
                             {
-                                // Add 15 degrees to the existing rotation angle.
-                                // The Angle property is used for rotation.
-                                shape.XForm.Angle.Value = shape.XForm.Angle.Value + 15;
+                                shape.XForm.Angle.Value = angleRadians;
                             }
                         }
                     }
 
-                    // Save the modified diagram.
-                    // Replace "output.vsdx" with the desired output path.
-                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
+
+                Console.WriteLine("Rotation completed and diagram saved to: " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -1,53 +1,70 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Manipulation; // Required for ConnectionPointPlace if needed
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect two arguments: input Visio file and output Visio file
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram (replace with your file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Identify connector shapes: they are 1‑D shapes (OneD == true)
+                    if (shape.OneD)
                     {
-                        // Identify connector shapes (1‑D shapes)
-                        if (shape.OneD)
-                        {
-                            // Set the connector line style to dashed
-                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                        // Set the connector routing style to straight lines (optional)
+                        shape.SetConnectorsType(ConnectorsTypeValue.StraightLines);
 
-                            // Optional: adjust line weight for better visibility
-                            shape.Line.LineWeight.Value = 0.02; // inches
+                        // Apply a dashed line pattern to create the visual “dashed” style
+                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
 
-                            // Simulate a glow effect by increasing the line weight slightly
-                            // and applying a bright color. Real glow effects are not directly
-                            // exposed in the Aspose.Diagram API, so this is a common workaround.
-                            shape.Line.LineWeight.Value = 0.04; // thicker line for "glow"
-                            shape.Line.LineColor.Value = "#FFAA00"; // bright orange glow color
+                        // Increase line weight slightly to make the dash more visible
+                        shape.Line.LineWeight.Value = 0.03; // inches
 
-                            // Reduce line transparency to make the glow more pronounced
-                            shape.Line.LineColorTrans.Value = 30; // 30% transparency
-                        }
+                        // Set a bright line color (e.g., light cyan) to simulate a glow effect
+                        shape.Line.LineColor.Value = "#00FFFF";
+
+                        // Note: Aspose.Diagram does not expose a direct Glow or Shadow property.
+                        // The bright line color combined with increased weight and dash pattern
+                        // provides a simple glow-like appearance for connectors.
                     }
                 }
-
-                // Save the modified diagram to a new file
-                string outputPath = "output_with_glow.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the output path using VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

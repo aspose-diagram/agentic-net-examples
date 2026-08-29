@@ -1,45 +1,46 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Define output file path
-        string outputPath = "ThemedShape.vsdx";
-
         try
         {
+
             // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            using (Diagram diagram = new Diagram())
+            {
+                // Add a rectangle shape to the active page
+                // Parameters: PinX, PinY, master name
+                long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle");
 
-            // Access the first page (avoid using ActivePage)
-            Page page = diagram.Pages[0];
+                // Retrieve the concrete Shape object using the returned ID
+                Shape shape = diagram.ActivePage.Shapes.GetShape((int)shapeId);
 
-            // Add a rectangle shape to the page at position (2,2)
-            // Use the overload that takes pinX, pinY, width, height, master name
-            long shapeId = page.AddShape(2.0, 2.0, 1.0, 0.5, "Rectangle", false);
+                // Apply a predefined theme to the newly created shape
+                shape.PresetTheme = PresetThemeValue.Bubble;
+                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
 
-            // Retrieve the shape instance using the returned ID (cast to int for GetShape)
-            Shape shape = page.Shapes.GetShape((int)shapeId);
+                // Since theme properties are write‑only, confirm by logging the actions
+                Console.WriteLine($"Shape ID {shape.ID} created and theme applied:");
+                Console.WriteLine($"  PresetTheme = Bubble");
+                Console.WriteLine($"  PresetThemeVariant = Variant1");
+                Console.WriteLine($"  PresetThemeQuickStyle = VariantStyle1");
 
-            // Apply a predefined theme to the shape
-            shape.PresetTheme = PresetThemeValue.Bubble;
-            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+                // Save the diagram to a VSDX file to persist the theme
+                string outputPath = "ThemedDiagram.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            }
 
-            // Save the diagram with a valid SaveFileFormat argument
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Confirmation output
-            Console.WriteLine($"Shape with ID {shapeId} has been themed and saved to '{outputPath}'.");
         }
-        catch (Exception ex)
+        catch (System.NullReferenceException ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
 }

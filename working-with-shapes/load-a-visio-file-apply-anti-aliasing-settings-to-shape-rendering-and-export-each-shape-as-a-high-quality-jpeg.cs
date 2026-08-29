@@ -1,10 +1,10 @@
 using System;
 using System.IO;
+using System.Drawing.Drawing2D;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using System.Drawing.Drawing2D;
 
-class ExportShapes
+class ExportShapesAsJpeg
 {
     static void Main()
     {
@@ -12,14 +12,15 @@ class ExportShapes
         {
 
             // Path to the source Visio file
-            string visioPath = "input.vsdx";
+            string visioFilePath = "input.vsdx";
 
-            // Folder where the JPEG images will be saved
-            string outputDir = "ShapeImages";
-            Directory.CreateDirectory(outputDir);
+            // Directory where individual shape images will be saved
+            string outputFolder = "ExportedShapes";
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
 
             // Load the Visio diagram
-            using (Diagram diagram = new Diagram(visioPath))
+            using (Diagram diagram = new Diagram(visioFilePath))
             {
                 // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
@@ -28,18 +29,18 @@ class ExportShapes
                     foreach (Shape shape in page.Shapes)
                     {
                         // Configure image save options for high‑quality JPEG with anti‑aliasing
-                        ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Jpeg);
-                        options.SmoothingMode = SmoothingMode.AntiAlias; // enable anti‑aliasing
-                        options.JpegQuality = 100;                       // maximum JPEG quality
-                        options.Resolution = 300;                        // high DPI for better detail
+                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+                        imgOptions.SmoothingMode = SmoothingMode.AntiAlias; // enable anti‑aliasing
+                        imgOptions.JpegQuality = 100;                       // maximum JPEG quality
+                        imgOptions.Resolution = 300;                        // 300 DPI for high resolution
 
-                        // Create a unique file name for the shape image
-                        string fileName = Path.Combine(
-                            outputDir,
-                            $"Page{page.ID}_Shape{shape.ID}.jpg");
+                        // Build a unique file name for the shape image
+                        string shapeFileName = Path.Combine(
+                            outputFolder,
+                            $"Page_{page.ID}_Shape_{shape.ID}.jpg");
 
-                        // Export the shape as a JPEG image using the configured options
-                        shape.ToImage(fileName, options);
+                        // Export the shape to a JPEG file using the specified options
+                        shape.ToImage(shapeFileName, imgOptions);
                     }
                 }
             }

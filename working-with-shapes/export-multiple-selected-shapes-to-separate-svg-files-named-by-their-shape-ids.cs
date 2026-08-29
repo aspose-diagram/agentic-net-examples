@@ -1,43 +1,41 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportSelectedShapesToSvg
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsd");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // List of shape IDs that should be exported
-            List<long> selectedShapeIds = new List<long> { 1, 5, 9 }; // replace with actual IDs
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Optional: configure SVG save options
-            SVGSaveOptions svgOptions = new SVGSaveOptions
+            // Assume we work with the first page
+            Page page = diagram.Pages[0];
+
+            // Iterate over all shapes on the page
+            foreach (Shape shape in page.Shapes)
             {
-                IsSavingImageSeparately = true // example option, adjust as needed
-            };
+                // Skip shapes that are marked as deleted
+                if (shape.Del == BOOL.True)
+                    continue;
 
-            // Iterate through each page and each shape on the page
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Export only the shapes whose IDs are in the selected list
-                    if (selectedShapeIds.Contains(shape.ID))
-                    {
-                        // Create a file name based on the shape ID
-                        string fileName = $"shape_{shape.ID}.svg";
+                // Build the output file name using the shape's ID
+                string outputPath = $"shape_{shape.ID}.svg";
 
-                        // Save the shape as an SVG file
-                        shape.ToSvg(fileName, svgOptions);
-                    }
-                }
+                // Create SVG save options (customize if needed)
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+                // Export the shape to an SVG file
+                shape.ToSvg(outputPath, svgOptions);
+
+                Console.WriteLine($"Exported shape ID {shape.ID} to {outputPath}");
             }
 
         }

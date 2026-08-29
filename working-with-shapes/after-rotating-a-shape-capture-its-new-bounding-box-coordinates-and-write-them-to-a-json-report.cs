@@ -4,75 +4,68 @@ using System.Text.Json;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Input Visio file and output JSON report paths
+            string diagramPath = "input.vsdx";
+            string jsonReportPath = "report.json";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Select the page and shape to rotate (example: first shape on the first page)
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes[0]; // replace with specific shape selection as needed
+
+            // Desired rotation angle in degrees
+            double rotationAngle = 45.0;
+
+            // Apply rotation
+            shape.XForm.Angle.Value = rotationAngle;
+
+            // Refresh shape data so geometry reflects the new rotation
+            shape.RefreshData();
+
+            // Retrieve updated geometry values
+            double pinX = shape.XForm.PinX.Value;      // center X
+            double pinY = shape.XForm.PinY.Value;      // center Y
+            double width = shape.XForm.Width.Value;
+            double height = shape.XForm.Height.Value;
+
+            // Calculate bounding box coordinates (left, top, right, bottom)
+            double left = pinX - width / 2.0;
+            double top = pinY - height / 2.0;
+            double right = left + width;
+            double bottom = top + height;
+
+            // Build a report object
+            var report = new
             {
-
-                // Load the Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first non-deleted shape on the first page
-                Page page = diagram.Pages[0];
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
+                ShapeId = shape.ID,
+                RotationAngle = rotationAngle,
+                BoundingBox = new
                 {
-                    if (shape.Del == BOOL.False)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
+                    Left = left,
+                    Top = top,
+                    Right = right,
+                    Bottom = bottom
                 }
+            };
 
-                if (targetShape == null)
-                {
-                    throw new Exception("No suitable shape found to rotate.");
-                }
+            // Serialize the report to formatted JSON
+            string json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
 
-                // Rotate the shape (angle in degrees)
-                double newAngleDegrees = 45.0;
-                targetShape.XForm.Angle.Value = newAngleDegrees;
+            // Write the JSON report to a file
+            File.WriteAllText(jsonReportPath, json);
 
-                // Refresh shape data to ensure geometry is updated
-                targetShape.RefreshData();
-
-                // Calculate bounding box coordinates
-                double pinX = targetShape.XForm.PinX.Value;
-                double pinY = targetShape.XForm.PinY.Value;
-                double width = targetShape.XForm.Width.Value;
-                double height = targetShape.XForm.Height.Value;
-
-                double left = pinX - width / 2.0;
-                double right = pinX + width / 2.0;
-                double top = pinY + height / 2.0;
-                double bottom = pinY - height / 2.0;
-
-                // Prepare JSON report
-                var report = new
-                {
-                    ShapeId = targetShape.ID,
-                    BoundingBox = new
-                    {
-                        Left = left,
-                        Right = right,
-                        Top = top,
-                        Bottom = bottom
-                    },
-                    RotationDegrees = newAngleDegrees
-                };
-
-                string json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText("bounding_box_report.json", json);
-
-                // Optionally save the modified diagram
-                diagram.Save("rotated_output.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

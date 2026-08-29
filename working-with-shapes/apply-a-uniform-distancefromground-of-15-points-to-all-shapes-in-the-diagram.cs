@@ -1,36 +1,34 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // Input Visio file path
+            Console.Write("Enter the path to the Visio file to process: ");
+            string inputPath = Console.ReadLine();
 
-            // Load the Visio diagram from a file
-            string inputPath = "input.vsdx";
+            // Output Visio file path
+            Console.Write("Enter the path where the modified file should be saved: ");
+            string outputPath = Console.ReadLine();
+
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through every page and every shape on each page
+            // Iterate through all pages and all shapes, applying DistanceFromGround = 15 points
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Set the DistanceFromGround (3‑D format) to 15 points for the shape
+                    // Ensure the ThreeDFormat object exists (it is always instantiated)
                     shape.ThreeDFormat.DistanceFromGround.Value = 15;
                 }
             }
 
-            // Save the updated diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram (preserving the original format)
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine("All shapes have been updated with DistanceFromGround = 15 points.");
         }
     }
-}

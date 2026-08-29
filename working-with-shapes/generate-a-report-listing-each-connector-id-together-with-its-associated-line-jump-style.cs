@@ -3,12 +3,12 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the Visio file (replace with actual file path)
+                // Path to the Visio file (adjust as needed)
                 string diagramPath = "input.vsdx";
 
                 // Load the diagram
@@ -20,16 +20,14 @@ class Program
                     // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Connectors are 1‑D shapes
+                        // Identify connector shapes (1‑D shapes)
                         if (shape.OneD)
                         {
-                            long connectorId = shape.ID;
-
                             // Retrieve the line jump style from the connector's layout
-                            ConLineJumpStyleValue jumpStyle = shape.Layout.ConLineJumpStyle.Value;
+                            var jumpStyle = shape.Layout.ConLineJumpStyle.Value;
 
-                            // Output the connector ID and its line jump style
-                            Console.WriteLine($"Connector ID: {connectorId}, Line Jump Style: {jumpStyle}");
+                            // Output connector ID and its line jump style
+                            Console.WriteLine($"Connector ID: {shape.ID}, Line Jump Style: {jumpStyle}");
                         }
                     }
                 }

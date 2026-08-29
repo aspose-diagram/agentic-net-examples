@@ -1,7 +1,5 @@
-using System.IO;
 using System;
-using System.Linq;
-using Aspose.Diagram;
+using System.IO;
 
 class Program
 {
@@ -10,25 +8,27 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram (assumes a load rule is defined elsewhere)
+            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
 
-            // Name of the shape to find (case‑insensitive)
-            string targetName = "MyShape";
+            // The name of the shape we want to locate (case‑insensitive)
+            string shapeNameToFind = "MyShape";
 
-            // Search the first page (adjust index if needed) for a shape whose Name matches ignoring case
-            Shape foundShape = diagram.Pages[0].Shapes
-                .FirstOrDefault(s => string.Equals(s.Name, targetName, StringComparison.OrdinalIgnoreCase));
+            // Variable that will hold the found shape
+            Aspose.Diagram.Shape foundShape = null;
 
-            // foundShape now holds the matching shape or null if not found
-            if (foundShape != null)
+            // Iterate through all shapes on the first page (adjust page index as needed)
+            foreach (Aspose.Diagram.Shape shape in diagram.Pages[0].Shapes)
             {
-                // Shape was found – you can work with foundShape here
+                // Compare shape names ignoring case
+                if (string.Equals(shape.Name, shapeNameToFind, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    foundShape = shape;
+                    break; // Exit loop once the shape is found
+                }
             }
-            else
-            {
-                // No shape with the specified name exists (ignoring case)
-            }
+
+            // At this point 'foundShape' contains the shape with the specified name (or null if not found)
 
         }
         catch (System.IO.FileNotFoundException ex)

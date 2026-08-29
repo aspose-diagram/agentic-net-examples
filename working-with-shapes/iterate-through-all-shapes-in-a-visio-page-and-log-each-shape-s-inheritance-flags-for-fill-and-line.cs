@@ -9,29 +9,27 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load the Visio diagram from a file
             var diagram = new Diagram("input.vsdx");
 
-            // Get the first page (or any specific page you need)
-            var page = diagram.Pages[0];
-
-            // Iterate through all shapes on the page
-            foreach (Shape shape in page.Shapes)
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Log basic shape identification
-                Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
+                Console.WriteLine($"Page: {page.Name}");
 
-                // Determine whether the shape inherits fill and line formatting
-                bool inheritsFill = shape.InheritFill != null;
-                bool inheritsLine = shape.InheritLine != null;
+                // Iterate through each shape on the current page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Determine whether the shape has inheritance elements for Fill and Line
+                    bool hasInheritFill = shape.InheritFill != null;
+                    bool hasInheritLine = shape.InheritLine != null;
 
-                // Log the inheritance flags
-                Console.WriteLine($"  InheritFill: {inheritsFill}, InheritLine: {inheritsLine}");
+                    // Log the shape ID, name, and inheritance flags
+                    Console.WriteLine(
+                        $"Shape ID: {shape.ID}, Name: {shape.Name}, " +
+                        $"InheritFill: {hasInheritFill}, InheritLine: {hasInheritLine}");
+                }
             }
-
-            // Save the diagram (optional, if you made changes)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

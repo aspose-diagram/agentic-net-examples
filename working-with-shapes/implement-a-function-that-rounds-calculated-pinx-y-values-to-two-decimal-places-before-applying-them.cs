@@ -1,21 +1,20 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-public static class ShapeHelper
+public static class ShapePositionHelper
 {
     /// <summary>
-    /// Rounds the supplied PinX and PinY coordinates to two decimal places
-    /// and moves the shape to the new location.
+    /// Moves the specified shape to a new pin position, rounding the coordinates to two decimal places.
     /// </summary>
-    /// <param name="shape">The shape whose position will be updated.</param>
-    /// <param name="pinX">Calculated X coordinate of the shape's pin.</param>
-    /// <param name="pinY">Calculated Y coordinate of the shape's pin.</param>
-    public static void RoundAndMoveShape(Shape shape, double pinX, double pinY)
+    /// <param name="shape">The shape to move.</param>
+    /// <param name="calculatedPinX">The calculated X coordinate of the pin.</param>
+    /// <param name="calculatedPinY">The calculated Y coordinate of the pin.</param>
+    public static void MoveShapeWithRoundedPin(Shape shape, double calculatedPinX, double calculatedPinY)
     {
-        // Round each coordinate to two decimal places
-        double roundedPinX = Math.Round(pinX, 2);
-        double roundedPinY = Math.Round(pinY, 2);
+        // Round the coordinates to two decimal places
+        double roundedPinX = Math.Round(calculatedPinX, 2);
+        double roundedPinY = Math.Round(calculatedPinY, 2);
 
         // Apply the rounded values using the MoveTo method
         shape.MoveTo(roundedPinX, roundedPinY);
@@ -29,7 +28,7 @@ class Program
         try
         {
 
-            ShapeHelper.RoundAndMoveShape(null, 0, 0);
+            ShapePositionHelper.MoveShapeWithRoundedPin(null, 0, 0);
 
         }
         catch (System.NullReferenceException ex)

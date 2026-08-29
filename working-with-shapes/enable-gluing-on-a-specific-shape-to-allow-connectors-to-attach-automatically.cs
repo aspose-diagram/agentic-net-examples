@@ -1,37 +1,41 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Create a new diagram instance
-            Diagram diagram = new Diagram();
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path to the output Visio file
+                string outputPath = "output.vsdx";
 
-            // Access the first page (a default page is created automatically)
-            Page page = diagram.Pages[0];
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Add a rectangle shape at position (2,2) on the page
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+                // Get the first page (you can change the index as needed)
+                Page page = diagram.Pages[0];
 
-            // Retrieve the shape object using its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+                // Retrieve a shape by its ID (example uses ID = 1)
+                // In a real scenario, locate the shape by name or other criteria
+                Shape shape = page.Shapes.GetShape(1);
 
-            // Enable dynamic glue so connectors can automatically attach to this shape
-            shape.Misc.GlueType.Value = GlueTypeValue.AllowDynamicGlue;
+                // Enable dynamic glue on the shape so connectors can attach automatically
+                // GlueTypeValue.AllowDynamicGlue enables glue; other option is NoAllowDynamicGlue
+                shape.Misc.GlueType.Value = GlueTypeValue.AllowDynamicGlue;
 
-            // Save the diagram to a VSDX file
-            diagram.Save("GluedShape.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+                Console.WriteLine("Glue enabled on shape ID 1 and diagram saved to " + outputPath);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

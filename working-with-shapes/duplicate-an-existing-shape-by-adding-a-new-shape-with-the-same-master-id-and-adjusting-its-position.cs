@@ -8,46 +8,55 @@ class Program
             try
             {
 
-                // Input and output file paths
+                // Input and output file paths (adjust as needed)
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
                 // Load the existing Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Access the first page (adjust index if needed)
+                // Access the first page of the diagram
                 Page page = diagram.Pages[0];
 
-                // ID of the shape to duplicate (example uses shape with ID = 1)
-                long originalShapeId = 1;
+                // Find the first non‑deleted shape on the page
+                Shape originalShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Del == BOOL.False)
+                    {
+                        originalShape = shape;
+                        break;
+                    }
+                }
 
-                // Retrieve the original shape
-                Shape originalShape = page.Shapes.GetShape(originalShapeId);
                 if (originalShape == null)
-                    throw new Exception($"Shape with ID {originalShapeId} not found.");
+                {
+                    throw new Exception("No non‑deleted shape found to duplicate.");
+                }
 
-                // Ensure the shape has an associated master
-                if (originalShape.Master == null)
-                    throw new Exception("The original shape does not have a master to duplicate from.");
+                // Retrieve the master name of the original shape
+                string masterName = originalShape.Master?.Name;
+                if (string.IsNullOrEmpty(masterName))
+                {
+                    throw new Exception("Original shape does not have an associated master.");
+                }
 
-                // Get the master name to use for the new shape
-                string masterName = originalShape.Master.Name;
-
-                // Get original position
+                // Get the original shape's position
                 double originalPinX = originalShape.XForm.PinX.Value;
                 double originalPinY = originalShape.XForm.PinY.Value;
 
-                // Define offset for the duplicated shape
-                double offsetX = 2.0; // inches to the right
-                double offsetY = 2.0; // inches upward
+                // Define an offset for the duplicated shape (e.g., 2 inches right and down)
+                double offsetX = 2.0;
+                double offsetY = 2.0;
 
-                // Add a new shape using the same master and adjusted position
-                long newShapeId = page.AddShape(originalPinX + offsetX, originalPinY + offsetY, masterName);
+                double newPinX = originalPinX + offsetX;
+                double newPinY = originalPinY + offsetY;
 
-                // Optionally retrieve the new shape (e.g., to modify further)
+                // Add a new shape using the same master and the adjusted position
+                long newShapeId = page.AddShape(newPinX, newPinY, masterName);
+
+                // Optionally retrieve the newly added shape (not required for duplication)
                 Shape newShape = page.Shapes.GetShape(newShapeId);
-                if (newShape == null)
-                    throw new Exception("Failed to retrieve the newly added shape.");
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);

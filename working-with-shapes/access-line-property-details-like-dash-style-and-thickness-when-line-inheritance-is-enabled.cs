@@ -1,53 +1,51 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the source Visio file (replace with actual path)
-            string inputPath = "input.vsdx";
-            // Path for the optional output copy
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the Visio file (adjust as needed)
+                string inputPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Get the current line pattern (dash style) and line weight (thickness)
-                    var linePattern = shape.Line.LinePattern.Value;   // enum LinePatternValue
-                    var lineWeight = shape.Line.LineWeight.Value;     // double, inches
+                        // Determine if line properties are inherited from the master/style
+                        bool isColorInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
+                        bool isPatternInherited = shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value;
+                        bool isWeightInherited = shape.Line.LineWeight.Value == shape.InheritLine.LineWeight.Value;
 
-                    // Determine whether each property is inherited from the master/style
-                    bool patternInherited = linePattern == shape.InheritLine.LinePattern.Value;
-                    bool weightInherited = lineWeight == shape.InheritLine.LineWeight.Value;
+                        // Retrieve actual line property values
+                        string lineColor = shape.Line.LineColor.Value;
+                        LinePatternValue dashStyle = shape.Line.LinePattern.Value;
+                        double thickness = shape.Line.LineWeight.Value; // inches
 
-                    // Output the details
-                    Console.WriteLine($"Shape ID {shape.ID} on Page ID {page.ID}:");
-                    Console.WriteLine($"  Line Pattern: {linePattern} (Inherited: {patternInherited})");
-                    Console.WriteLine($"  Line Weight: {lineWeight} inches (Inherited: {weightInherited})");
+                        // Output the details
+                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Name: {shape.Name}");
+                        Console.WriteLine($"  Line Color: {lineColor} (Inherited: {isColorInherited})");
+                        Console.WriteLine($"  Dash Style (Pattern): {dashStyle} (Inherited: {isPatternInherited})");
+                        Console.WriteLine($"  Thickness (Weight): {thickness} inches (Inherited: {isWeightInherited})");
+                    }
                 }
+
             }
-
-            // Save a copy of the diagram (optional)
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

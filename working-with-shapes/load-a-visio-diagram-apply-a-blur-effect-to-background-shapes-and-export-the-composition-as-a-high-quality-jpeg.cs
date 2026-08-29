@@ -1,58 +1,57 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-
-        // Verify the input file exists before proceeding
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            // Load the diagram from the specified file
+
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+
+            // Output JPEG file path
+            string outputPath = "output.jpg";
+
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages to locate background pages
+            // Iterate through all pages to find background pages
             foreach (Page page in diagram.Pages)
             {
-                // Background pages are indicated by BOOL.True
+                // Check if the page is marked as a background page
                 if (page.Background == BOOL.True)
                 {
-                    // Apply a blur effect to each shape that contains an image (foreign) component
+                    // Iterate through all shapes on the background page
                     foreach (Shape shape in page.Shapes)
                     {
-                        if (shape.Image != null)
+                        // Apply blur only to image (foreign) shapes that have an Image object
+                        if (shape.Type == TypeValue.Foreign && shape.Image != null)
                         {
-                            // Set blur amount (range 0.0 – 1.0); adjust as needed
+                            // Set blur intensity (value between 0.0 and 1.0)
                             shape.Image.Blur.Value = 0.25;
                         }
                     }
                 }
             }
 
-            // Configure JPEG export options for high‑quality output
-            ImageSaveOptions jpegOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-            jpegOptions.Resolution = 300f;          // 300 DPI for high quality
-            jpegOptions.JpegQuality = 100;          // Maximum JPEG quality (0‑100)
+            // Configure high‑quality JPEG export options
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+            // Set a high resolution (e.g., 300 DPI) for better quality
+            saveOptions.Resolution = 300f;
+            // Ensure hidden pages are not exported (optional)
+            saveOptions.ExportHiddenPage = false;
 
             // Save the modified diagram as a JPEG image
-            string outputPath = "output.jpg";
-            diagram.Save(outputPath, jpegOptions);
+            diagram.Save(outputPath, saveOptions);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any errors encountered during processing to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

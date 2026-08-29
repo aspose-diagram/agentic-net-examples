@@ -1,53 +1,96 @@
 using System;
-using Aspose.Diagram;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using Aspose.Diagram;
 
-class Program
+namespace DiagramShapeExport
 {
-    static void Main()
+    // DTO for JSON output
+    public class ShapeInfo
     {
-        try
+        public long Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string NameU { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+    }
+
+    public class Program
+    {
+        // Entry point
+        public static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output JSON file path
+            if (args.Length != 2)
+            {
+                Console.WriteLine("Usage: DiagramShapeExport <inputVisioFile> <outputJsonFile>");
+                return;
+            }
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = args[0];
+            // Guard: ensure the input file exists
+            if (!File.Exists(inputPath))
+            {
+                Console.Error.WriteLine($"File not found: {inputPath}");
+                return;
+            }
 
-            // List to hold information about shapes that are not in any group
-            var ungroupedShapes = new List<object>();
+            string outputPath = args[1];
 
-            // Iterate through all pages in the diagram
+            // Load the diagram inside a try/catch to capture loading errors
+            Diagram diagram;
+            try
+            {
+                diagram = new Diagram(inputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
+
+            var ungroupedShapes = new List<ShapeInfo>();
+
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Shape.IsInGroup() returns true if the shape belongs to a group
-                    if (!shape.IsInGroup())
+                    // Skip shapes that belong to a group
+                    if (shape.IsInGroup())
+                        continue;
+
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Collect basic information about the shape
+                    var info = new ShapeInfo
                     {
-                        // Collect desired properties (you can add more if needed)
-                        ungroupedShapes.Add(new
-                        {
-                            PageId = page.ID,
-                            ShapeId = shape.ID,
-                            Name = shape.Name,
-                            Type = shape.Type
-                        });
-                    }
+                        Id = shape.ID,
+                        Name = shape.Name ?? string.Empty,
+                        NameU = shape.NameU ?? string.Empty,
+                        // Type is an enum (TypeValue); convert to string directly
+                        Type = shape.Type.ToString()
+                    };
+                    ungroupedShapes.Add(info);
                 }
             }
 
-            // Serialize the list to formatted JSON
-            string json = JsonSerializer.Serialize(ungroupedShapes, new JsonSerializerOptions { WriteIndented = true });
+            // Serialize the list to JSON with indentation
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            string json = JsonSerializer.Serialize(ungroupedShapes, jsonOptions);
 
-            // Write the JSON output to a file
-            File.WriteAllText("ungrouped_shapes.json", json);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write JSON to the output file inside a try/catch to capture I/O errors
+            try
+            {
+                File.WriteAllText(outputPath, json);
+                Console.WriteLine($"Exported {ungroupedShapes.Count} ungrouped shapes to '{outputPath}'.");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to write JSON file: {ex.Message}");
+            }
         }
     }
 }

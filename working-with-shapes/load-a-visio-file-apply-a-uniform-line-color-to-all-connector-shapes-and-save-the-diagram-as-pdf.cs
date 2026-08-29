@@ -9,42 +9,41 @@ class Program
             try
             {
 
-                // Input Visio file path
+                // Input Visio file path (adjust as needed)
                 string inputPath = "input.vsdx";
+
                 // Output PDF file path
                 string outputPath = "output.pdf";
 
                 // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the desired line color (hex format)
-                const string lineColorHex = "#FF0000"; // Red
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through all pages in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Identify connector shapes (1‑D shapes)
-                        if (shape.OneD)
+                        // Iterate through all shapes on the current page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Apply the uniform line color
-                            shape.Line.LineColor.Value = lineColorHex;
+                            // Identify connector shapes (1‑D shapes)
+                            if (shape.OneD)
+                            {
+                                // Apply a uniform line color (red in this example)
+                                shape.Line.LineColor.Value = "#FF0000";
+                            }
                         }
                     }
+
+                    // Configure PDF save options (optional: set a default font)
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
+                    {
+                        DefaultFont = "Arial"
+                    };
+
+                    // Save the modified diagram as PDF
+                    diagram.Save(outputPath, pdfOptions);
                 }
 
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    // Set a default font to avoid missing‑font issues
-                    DefaultFont = "Arial",
-                    // Explicitly specify the save format
-                    SaveFormat = SaveFileFormat.Pdf
-                };
-
-                // Save the modified diagram as PDF
-                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine("Diagram saved as PDF with updated connector line colors.");
 
             }
             catch (System.IO.FileNotFoundException ex)

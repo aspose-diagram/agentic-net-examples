@@ -6,9 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the input Visio file
-        string inputPath = "input.vsdx";
-        // Guard: ensure the file exists before proceeding
+        // Path to the Visio file (adjust as needed)
+        string inputPath = "sample.vsdx";
+
+        // Guard to ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
@@ -20,23 +21,33 @@ class Program
             // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Ensure both the Line and InheritLine objects are available
+                    if (shape.Line != null && shape.InheritLine != null)
+                    {
+                        // Compare a representative line property (LineColor) with its inherited counterpart
+                        bool isInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
 
-            // Retrieve a shape by its ID (replace with the actual ID you want to check)
-            long shapeId = 1; // example shape ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Determine line inheritance by comparing the shape's line color with its inherited line color
-            // If the values match, the line properties are inherited from the master/style
-            bool isLineInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
-
-            Console.WriteLine($"Shape ID {shapeId} line inheritance status: {(isLineInherited ? "Inherited" : "Not inherited")}");
+                        // Output the inheritance status for the current shape
+                        Console.WriteLine($"Shape ID {shape.ID}: Line inheritance = {isInherited}");
+                    }
+                    else
+                    {
+                        // Inform that line inheritance information is not available for this shape
+                        Console.WriteLine($"Shape ID {shape.ID}: Line inheritance information not available.");
+                    }
+                }
+            }
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

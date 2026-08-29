@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,10 +6,10 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect at least input file path and page index.
-            if (args.Length < 2)
+            // Expect three arguments: input file path, page index (0‑based), output file path
+            if (args.Length != 3)
             {
-                Console.WriteLine("Usage: DiagramCleanup <inputFilePath> <pageIndex> [outputFilePath]");
+                Console.WriteLine("Usage: DiagramCleanup <inputPath> <pageIndex> <outputPath>");
                 return;
             }
 
@@ -20,49 +19,47 @@ class Program
                 Console.WriteLine("Invalid page index.");
                 return;
             }
+            string outputPath = args[2];
 
-            string outputPath = args.Length > 2 ? args[2] : "cleaned_output.vsdx";
-
-            // Load the diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Validate page index.
+            // Validate page index
             if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
             {
-                Console.WriteLine($"Page index {pageIndex} is out of range. Diagram has {diagram.Pages.Count} pages.");
+                Console.WriteLine("Page index out of range.");
                 return;
             }
 
-            // Access the specified page.
+            // Get the specified page
             Page page = diagram.Pages[pageIndex];
 
-            // Iterate through all shapes on the page.
+            // Iterate over all shapes on the page
             foreach (Shape shape in page.Shapes)
             {
-                // Skip deleted shapes.
-                if (shape.Del == BOOL.True)
+                // Retrieve the plain text of the shape
+                string originalText = shape.Text.Value.Text;
+
+                // If there is no text, skip processing
+                if (string.IsNullOrEmpty(originalText))
                     continue;
 
-                // Retrieve the plain text of the shape.
-                string plainText = shape.Text.Value.Text ?? string.Empty;
+                // Split the text into lines, remove empty lines, and re‑join
+                string[] lines = originalText.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+                string cleanedText = string.Join("\r\n", Array.FindAll(lines, line => !string.IsNullOrWhiteSpace(line)));
 
-                // Split the text into lines/paragraphs.
-                string[] lines = plainText.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
-
-                // Filter out empty or whitespace-only paragraphs.
-                string[] nonEmptyLines = lines.Where(l => !string.IsNullOrWhiteSpace(l)).ToArray();
-
-                // If any empty paragraphs were found, rebuild the text without them.
-                if (nonEmptyLines.Length != lines.Length)
+                // If cleaning removed any empty paragraphs, replace the shape's text
+                if (!string.Equals(originalText, cleanedText, StringComparison.Ordinal))
                 {
+                    // Clear existing text runs
                     shape.Text.Value.Clear();
-                    string newText = string.Join("\r\n", nonEmptyLines);
-                    shape.Text.Value.Add(new Txt(newText));
+
+                    // Add the cleaned text as a single Txt run
+                    shape.Text.Value.Add(new Txt(cleanedText));
                 }
             }
 
-            // Save the cleaned diagram.
+            // Save the modified diagram (as VSDX in this example)
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
         }
     }

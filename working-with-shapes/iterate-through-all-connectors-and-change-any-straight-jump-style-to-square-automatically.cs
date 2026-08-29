@@ -9,8 +9,11 @@ class Program
         try
         {
 
-            // Load the Visio diagram
+            // Paths for input and output diagrams
             string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
             // Iterate through all pages and shapes
@@ -18,14 +21,12 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify connector shapes (1‑D objects)
+                    // Process only connector shapes (1‑D objects)
                     if (shape.OneD)
                     {
-                        // Retrieve current line jump style
-                        var currentJump = shape.Layout.ConLineJumpStyle.Value;
-
-                        // If the jump style is the default straight style, change it to square
-                        if (currentJump == ConLineJumpStyleValue.PageDefault)
+                        // If the connector uses the default/straight jump style, change it to Square
+                        if (shape.Layout.ConLineJumpStyle.Value == ConLineJumpStyleValue.PageDefault ||
+                            shape.Layout.ConLineJumpStyle.Value == ConLineJumpStyleValue.Undefined)
                         {
                             shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Square;
                         }
@@ -33,8 +34,7 @@ class Program
                 }
             }
 
-            // Save the updated diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

@@ -1,78 +1,83 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram that contains a group shape.
+            // Replace the path with the actual file location.
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Assume the diagram has at least one page.
+            Page page = diagram.Pages[0];
+
+            // Find the first group shape on the page.
+            Shape groupShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-
-                // Load an existing Visio diagram (replace with actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                if (shape.Type == TypeValue.Group)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Identify group shapes
-                        if (shape.Type == TypeValue.Group)
-                        {
-                            // Initialize bounding box extremes
-                            double minX = double.MaxValue;
-                            double maxX = double.MinValue;
-                            double minY = double.MaxValue;
-                            double maxY = double.MinValue;
-
-                            // Iterate through child shapes of the group
-                            foreach (Shape child in shape.Shapes)
-                            {
-                                // Retrieve child's center position and size
-                                double pinX = child.XForm.PinX.Value;
-                                double pinY = child.XForm.PinY.Value;
-                                double width = child.XForm.Width.Value;
-                                double height = child.XForm.Height.Value;
-
-                                // Calculate child's extents
-                                double left = pinX - width / 2.0;
-                                double right = pinX + width / 2.0;
-                                double top = pinY + height / 2.0;    // Y increases upwards in Visio
-                                double bottom = pinY - height / 2.0;
-
-                                // Update bounding box extremes
-                                if (left < minX) minX = left;
-                                if (right > maxX) maxX = right;
-                                if (bottom < minY) minY = bottom;
-                                if (top > maxY) maxY = top;
-                            }
-
-                            // Compute bounding box dimensions and center
-                            double bboxWidth = maxX - minX;
-                            double bboxHeight = maxY - minY;
-                            double bboxCenterX = (minX + maxX) / 2.0;
-                            double bboxCenterY = (minY + maxY) / 2.0;
-
-                            // Output the results
-                            Console.WriteLine($"Group Shape ID: {shape.ID}");
-                            Console.WriteLine($"Bounding Box Center: ({bboxCenterX}, {bboxCenterY})");
-                            Console.WriteLine($"Bounding Box Width: {bboxWidth}");
-                            Console.WriteLine($"Bounding Box Height: {bboxHeight}");
-                            Console.WriteLine(new string('-', 40));
-                        }
-                    }
+                    groupShape = shape;
+                    break;
                 }
-
-                // Optional: keep console window open when run outside debugger
-                Console.WriteLine("Processing completed. Press any key to exit.");
-                Console.ReadKey();
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (groupShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("No group shape found on the first page.");
+                return;
             }
+
+            // Ensure the group has child shapes.
+            if (groupShape.Shapes == null || groupShape.Shapes.Count == 0)
+            {
+                Console.WriteLine("The group shape does not contain any child shapes.");
+                return;
+            }
+
+            // Initialize bounding box extremes.
+            double minX = double.MaxValue;
+            double minY = double.MaxValue;
+            double maxX = double.MinValue;
+            double maxY = double.MinValue;
+
+            // Iterate over each child shape within the group.
+            foreach (Shape child in groupShape.Shapes)
+            {
+                // Retrieve absolute PinX and PinY values.
+                double pinX = child.XForm.PinX.Value;
+                double pinY = child.XForm.PinY.Value;
+
+                // Update bounding box limits.
+                if (pinX < minX) minX = pinX;
+                if (pinY < minY) minY = pinY;
+                if (pinX > maxX) maxX = pinX;
+                if (pinY > maxY) maxY = pinY;
+            }
+
+            // Calculate width and height of the bounding box.
+            double boundingWidth = maxX - minX;
+            double boundingHeight = maxY - minY;
+
+            // Output the results.
+            Console.WriteLine($"Bounding Box for Group Shape (ID: {groupShape.ID}):");
+            Console.WriteLine($"Min PinX: {minX}");
+            Console.WriteLine($"Min PinY: {minY}");
+            Console.WriteLine($"Max PinX: {maxX}");
+            Console.WriteLine($"Max PinY: {maxY}");
+            Console.WriteLine($"Width : {boundingWidth}");
+            Console.WriteLine($"Height: {boundingHeight}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

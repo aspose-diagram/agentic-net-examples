@@ -1,41 +1,47 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Define the input and output file paths
+                // Define input and output file paths
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
-                // Define the Y‑offset to add (in inches)
-                double yOffset = 2.0;
+                // Define the Y offset to add (in inches)
+                double yOffset = 1.0;
 
-                // Load the Visio diagram
+                // Load the diagram from the file
                 Diagram diagram = new Diagram(inputPath);
 
-                // Work with the first page (index 0)
+                // Ensure there is at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    throw new Exception("The diagram contains no pages.");
+                }
+
+                // Get the first page
                 Page page = diagram.Pages[0];
 
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                // Ensure there is at least one shape on the page
+                if (page.Shapes.Count == 0)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.False)
-                    {
-                        // Add the offset to the current PinY value
-                        shape.XForm.PinY.Value += yOffset;
-                    }
+                    throw new Exception("The page contains no shapes.");
                 }
+
+                // Retrieve the first shape (you can replace this with any shape selection logic)
+                Shape shape = page.Shapes.GetShape(1); // Shape IDs start at 1
+
+                // Adjust the Y coordinate (PinY) by adding the offset
+                shape.XForm.PinY.Value += yOffset;
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Y coordinate of all non‑deleted shapes increased by {yOffset} inches.");
 
             }
             catch (System.IO.FileNotFoundException ex)

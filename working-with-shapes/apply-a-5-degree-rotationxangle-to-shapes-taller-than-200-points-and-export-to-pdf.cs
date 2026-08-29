@@ -6,49 +6,52 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and output PDF file path
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: DiagramRotationExport <inputVisioFile> <outputPdfFile>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+                // Load the Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Height threshold: 200 points = 200/72 inches
+                double heightThresholdInches = 200.0 / 72.0;
 
-            // Threshold: 200 points = 200/72 inches
-            double heightThresholdInches = 200.0 / 72.0;
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Check shape height
-                    double shapeHeight = shape.XForm.Height.Value;
-                    if (shapeHeight > heightThresholdInches)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Apply 5-degree rotation around X axis
-                        shape.ThreeDFormat.RotationXAngle.Value = 5.0;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Check if the shape's height exceeds the threshold
+                        if (shape.XForm.Height.Value > heightThresholdInches)
+                        {
+                            // Ensure the ThreeDFormat object exists before setting the rotation
+                            if (shape.ThreeDFormat != null)
+                            {
+                                // Apply a 5‑degree rotation around the X‑axis
+                                shape.ThreeDFormat.RotationXAngle.Value = 5.0;
+                            }
+                        }
                     }
                 }
+
+                // Prepare PDF save options (set a default font to avoid missing‑font issues)
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
+
+                // Export the modified diagram to PDF
+                string outputPath = "output.pdf";
+                diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine($"Diagram processed and saved to '{outputPath}'.");
+
             }
-
-            // Prepare PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Optional: set a default font to avoid missing font warnings
-            pdfOptions.DefaultFont = "Arial";
-
-            // Save the diagram as PDF
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"Diagram processed and saved to PDF: {outputPath}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }

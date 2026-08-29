@@ -3,41 +3,51 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class SvgConversion
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio file
-            const string inputPath = "input.vsdx";
-            // Desired output SVG file path
-            const string outputPath = "output.svg";
+            string inputFile = "input.vsdx";
+            string outputFile = "output.svg";
 
+            // Load the Visio diagram (uses the Diagram constructor as the load rule)
+            Diagram diagram = null;
             try
             {
-                // Load the Visio diagram using the built‑in constructor (lifecycle rule)
-                using (var diagram = new Diagram(inputPath))
-                {
-                    // Create SVG save options (lifecycle rule)
-                    var svgOptions = new SVGSaveOptions
-                    {
-                        // Example option: fit the generated SVG to the view port
-                        SVGFitToViewPort = true
-                    };
+                diagram = new Diagram(inputFile);
+            }
+            catch (DiagramException loadEx)
+            {
+                // Log loading errors and exit
+                Console.Error.WriteLine($"Error loading diagram: {loadEx.Message}");
+                Console.Error.WriteLine(loadEx.StackTrace);
+                return;
+            }
 
-                    // Save the diagram as SVG using the Save method with SaveOptions (lifecycle rule)
-                    diagram.Save(outputPath, svgOptions);
-                }
+            // Configure SVG save options (uses the SVGSaveOptions class)
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            // Example: set the page index if needed
+            // svgOptions.PageIndex = 0;
 
+            // Attempt to save the diagram as SVG and handle conversion errors
+            try
+            {
+                diagram.Save(outputFile, svgOptions);
                 Console.WriteLine("Diagram successfully converted to SVG.");
             }
-            catch (DiagramException ex)
+            catch (DiagramException svgEx)
             {
-                // Log error details when a DiagramException occurs during conversion
-                Console.Error.WriteLine($"Error converting diagram to SVG: {ex.Message}");
-                Console.Error.WriteLine($"Stack Trace: {ex.StackTrace}");
+                // Log conversion errors
+                Console.Error.WriteLine($"Error during SVG conversion: {svgEx.Message}");
+                Console.Error.WriteLine(svgEx.StackTrace);
+            }
+            finally
+            {
+                // Ensure resources are released
+                diagram?.Dispose();
             }
 
         }

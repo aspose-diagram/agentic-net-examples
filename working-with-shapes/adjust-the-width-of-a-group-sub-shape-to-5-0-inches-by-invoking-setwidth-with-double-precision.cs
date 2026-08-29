@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,14 +9,11 @@ class Program
             try
             {
 
-                // Paths to the source and destination Visio files
+                // Load an existing Visio diagram
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Assume we work with the first page
+                // Access the first page (adjust index if needed)
                 Page page = diagram.Pages[0];
 
                 // Find the first group shape on the page
@@ -30,15 +28,29 @@ class Program
                 }
 
                 if (groupShape == null)
-                    throw new Exception("No group shape found on the page.");
-
-                // Iterate through sub‑shapes of the group and set their width to 5.0 inches
-                foreach (Shape subShape in groupShape.Shapes)
                 {
-                    subShape.SetWidth(5.0);
+                    throw new Exception("No group shape found on the page.");
                 }
 
+                // Retrieve a sub‑shape from the group.
+                // Here we take the first sub‑shape encountered.
+                Shape subShape = null;
+                foreach (Shape inner in groupShape.Shapes)
+                {
+                    subShape = inner;
+                    break;
+                }
+
+                if (subShape == null)
+                {
+                    throw new Exception("The group shape does not contain any sub‑shapes.");
+                }
+
+                // Adjust the width of the sub‑shape to 5.0 inches using SetWidth (double precision)
+                subShape.SetWidth(5.0);
+
                 // Save the modified diagram
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

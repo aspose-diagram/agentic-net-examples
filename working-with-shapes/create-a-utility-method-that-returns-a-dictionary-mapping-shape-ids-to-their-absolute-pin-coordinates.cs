@@ -3,37 +3,38 @@ using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-public static class DiagramUtilities
+public static class DiagramUtils
 {
     /// <summary>
-    /// Retrieves a mapping of shape IDs to their absolute Pin coordinates (PinX, PinY) for all shapes in the diagram.
+    /// Returns a dictionary that maps each shape's unique ID to its absolute Pin coordinates (PinX, PinY).
+    /// Shapes that are marked as deleted (shape.Del == BOOL.True) are ignored.
     /// </summary>
     /// <param name="diagram">The Aspose.Diagram.Diagram instance to inspect.</param>
     /// <returns>
-    /// A dictionary where the key is the shape's unique ID (long) and the value is a tuple containing the PinX and PinY coordinates.
+    /// Dictionary where the key is the shape ID (long) and the value is a tuple containing PinX and PinY (both double).
     /// </returns>
     public static Dictionary<long, (double PinX, double PinY)> GetShapePinCoordinates(Diagram diagram)
     {
-        if (diagram == null)
-            throw new ArgumentNullException(nameof(diagram));
+        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
 
         var result = new Dictionary<long, (double PinX, double PinY)>();
 
-        // Iterate through each page in the diagram
+        // Iterate through all pages in the diagram
         foreach (Page page in diagram.Pages)
         {
-            // Iterate through each shape on the current page
+            // Iterate through all shapes on the current page
             foreach (Shape shape in page.Shapes)
             {
-                // Skip deleted shapes
+                // Skip shapes that are logically deleted
                 if (shape.Del == BOOL.True)
                     continue;
 
-                long shapeId = shape.ID;
+                // Retrieve absolute Pin coordinates from the XForm cell collection
                 double pinX = shape.XForm.PinX.Value;
                 double pinY = shape.XForm.PinY.Value;
 
-                result[shapeId] = (pinX, pinY);
+                // Store in the dictionary using the shape's unique ID
+                result[shape.ID] = (pinX, pinY);
             }
         }
 

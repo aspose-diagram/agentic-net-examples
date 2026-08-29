@@ -1,46 +1,45 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Vba;
 
-class Program
+class FlipFillInheritanceMacro
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Access the ShapePlaceFlip property which controls how the shape is flipped
+                    ShapePlaceFlipValue currentFlip = shape.Layout.ShapePlaceFlip.Value;
 
-                // Path to the source Visio file (must be a format that supports VBA, e.g., .vsdx)
-                string inputPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Add a new VBA procedural module named "FlipFillInheritance"
-                int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "FlipFillInheritance");
-                VbaModule module = diagram.VbaProject.Modules[moduleIndex];
-
-                // VBA code that iterates over the current selection and toggles fill inheritance
-                module.Codes = 
-                @"Sub FlipFillInheritance()
-                Dim shp As Visio.Shape
-                For Each shp In Visio.ActiveWindow.Selection
-                ' Toggle between using the inherited fill color and a local fill color (set to no fill)
-                If shp.CellsU(""FillForegnd"").ResultIU = shp.CellsU(""InheritFill!FillForegnd"").ResultIU Then
-                shp.CellsU(""FillForegnd"").FormulaU = ""0""
-                Else
-                shp.CellsU(""FillForegnd"").FormulaU = ""=InheritFill!FillForegnd""
-                End If
-                Next shp
-                End Sub";
-
-                // Save the diagram as a macro-enabled Visio file
-                diagram.Save("output.vsdm", SaveFileFormat.Vsdm);
-
+                    // Toggle between FlipHorizontal and NoFlip (you can adjust the logic as needed)
+                    if (currentFlip == ShapePlaceFlipValue.FlipHorizontal)
+                    {
+                        shape.Layout.ShapePlaceFlip.Value = ShapePlaceFlipValue.NoFlip;
+                    }
+                    else
+                    {
+                        shape.Layout.ShapePlaceFlip.Value = ShapePlaceFlipValue.FlipHorizontal;
+                    }
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

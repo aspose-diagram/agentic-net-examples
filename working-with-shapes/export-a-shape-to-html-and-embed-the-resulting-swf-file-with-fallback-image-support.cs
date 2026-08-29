@@ -1,7 +1,7 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using System.IO;
 
 class Program
     {
@@ -10,42 +10,54 @@ class Program
             try
             {
 
-                // Load the Visio diagram from file
-                string diagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
+                // Path to the source Visio file
+                string sourcePath = "input.vsdx";
 
-                // Get the first page and the first shape on that page
+                // Load the diagram
+                Diagram diagram = new Diagram(sourcePath);
+
+                // Assume we work with the first page and the first shape on that page
                 Page page = diagram.Pages[0];
-                Shape shape = page.Shapes[0];
+                if (page.Shapes.Count == 0)
+                {
+                    throw new Exception("No shapes found on the first page.");
+                }
 
-                // Export the shape to HTML (this also creates associated SWF and PNG files)
-                string htmlFilePath = "shape.html";
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                shape.ToHTML(htmlFilePath, htmlOptions);
+                // Retrieve the shape (using the first shape's ID)
+                Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
 
-                // Build a custom HTML snippet that embeds the generated SWF with a PNG fallback
-                string swfFileName = Path.GetFileNameWithoutExtension(htmlFilePath) + ".swf";
-                string pngFileName = Path.GetFileNameWithoutExtension(htmlFilePath) + ".png";
+                // Export the shape to a PNG image (fallback image)
+                string pngPath = "shape.png";
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                shape.ToImage(pngPath, pngOptions);
 
-                string embeddedHtml = $@"<!DOCTYPE html>
-                <html>
-                <head>
-                <meta charset=""UTF-8"">
-                <title>Shape Export with SWF Fallback</title>
-                </head>
-                <body>
-                <object data=""{swfFileName}"" type=""application/x-shockwave-flash"" width=""800"" height=""600"">
-                <img src=""{pngFileName}"" alt=""Shape image fallback"" width=""800"" height=""600"" />
-                </object>
-                </body>
-                </html>";
+                // Export the entire diagram to SWF (the SWF will contain the shape)
+                string swfPath = "diagram.swf";
+                diagram.Save(swfPath, SaveFileFormat.Swf);
 
-                // Write the custom HTML to a file
-                string outputHtmlPath = "shape_with_fallback.html";
-                File.WriteAllText(outputHtmlPath, embeddedHtml);
+                // Create an HTML file that embeds the SWF with a fallback PNG image
+                string htmlPath = "shape.html";
+                using (StreamWriter writer = new StreamWriter(htmlPath))
+                {
+                    writer.WriteLine("<!DOCTYPE html>");
+                    writer.WriteLine("<html lang=\"en\">");
+                    writer.WriteLine("<head>");
+                    writer.WriteLine("    <meta charset=\"UTF-8\">");
+                    writer.WriteLine("    <title>Shape Export</title>");
+                    writer.WriteLine("</head>");
+                    writer.WriteLine("<body>");
+                    writer.WriteLine("    <!-- Embed SWF with fallback PNG -->");
+                    writer.WriteLine("    <object data=\"diagram.swf\" type=\"application/x-shockwave-flash\" width=\"800\" height=\"600\">");
+                    writer.WriteLine("        <img src=\"shape.png\" alt=\"Shape fallback image\" width=\"800\" height=\"600\" />");
+                    writer.WriteLine("    </object>");
+                    writer.WriteLine("</body>");
+                    writer.WriteLine("</html>");
+                }
 
-                Console.WriteLine($"Shape exported to HTML: {htmlFilePath}");
-                Console.WriteLine($"Custom HTML with SWF fallback created: {outputHtmlPath}");
+                Console.WriteLine("Export completed:");
+                Console.WriteLine($"  PNG fallback image: {pngPath}");
+                Console.WriteLine($"  SWF file: {swfPath}");
+                Console.WriteLine($"  HTML file: {htmlPath}");
 
             }
             catch (System.IO.FileNotFoundException ex)

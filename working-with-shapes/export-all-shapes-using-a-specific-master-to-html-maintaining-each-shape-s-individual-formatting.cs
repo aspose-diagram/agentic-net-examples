@@ -3,57 +3,57 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ExportShapesByMaster
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Input Visio file
+            string inputFile = @"C:\Visio\sample.vsdx";
+
+            // Folder where individual shape HTML files will be saved
+            string outputFolder = @"C:\Visio\ShapeHtmlExport";
+
+            // Ensure the output folder exists
+            Directory.CreateDirectory(outputFolder);
+
+            // Name of the master whose instances should be exported
+            string targetMasterName = "MyMaster";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputFile);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path
-                string inputPath = @"C:\Diagrams\sample.vsdx";
-
-                // Name of the master whose shapes should be exported
-                string targetMasterName = "Rectangle";
-
-                // Output folder for HTML files
-                string outputFolder = @"C:\Diagrams\ExportedHtml";
-
-                // Ensure the output directory exists
-                if (!Directory.Exists(outputFolder))
-                    Directory.CreateDirectory(outputFolder);
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Check if the shape is an instance of the specified master
+                    if (shape.Master != null && shape.Master.Name == targetMasterName)
                     {
-                        // Check if the shape uses the specified master
-                        if (shape.Master != null && shape.Master.Name == targetMasterName)
-                        {
-                            // Build a unique file name for each shape
-                            string htmlFile = Path.Combine(outputFolder, $"Shape_{shape.ID}.html");
+                        // Prepare HTML save options (default options keep individual formatting)
+                        HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-                            // Use default HTML save options (PNG images are embedded by default)
-                            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                        // Build a unique file name for each shape (using shape ID)
+                        string shapeHtmlPath = Path.Combine(outputFolder,
+                            $"Page{page.ID}_Shape{shape.ID}.html");
 
-                            // Export the shape to HTML while preserving its formatting
-                            shape.ToHTML(htmlFile, htmlOptions);
-
-                            Console.WriteLine($"Exported shape ID {shape.ID} to {htmlFile}");
-                        }
+                        // Export the shape to HTML; this method preserves the shape's formatting
+                        shape.ToHTML(shapeHtmlPath, htmlOptions);
                     }
                 }
-
-                Console.WriteLine("Export completed.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Optional: inform the user that export is complete
+            Console.WriteLine("Export of shapes using master '{0}' completed.", targetMasterName);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

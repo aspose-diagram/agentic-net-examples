@@ -8,67 +8,47 @@ class Program
             try
             {
 
-                // Expect the input Visio file path as the first argument.
-                if (args.Length == 0)
-                {
-                    Console.WriteLine("Please provide the path to the Visio file as an argument.");
-                    return;
-                }
+                // Path to the Visio file (adjust as needed)
+                string diagramPath = "input.vsdx";
 
-                string inputPath = args[0];
-                string outputPath = System.IO.Path.Combine(
-                    System.IO.Path.GetDirectoryName(inputPath) ?? "",
-                    System.IO.Path.GetFileNameWithoutExtension(inputPath) + "_reviewed.vsdx");
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Load the diagram.
-                Diagram diagram = new Diagram(inputPath);
-
-                bool foundIsolated = false;
-
-                // Iterate through all pages.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes.
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve IDs of shapes connected to this shape.
+                        // Retrieve IDs of shapes connected to this shape
                         long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
 
-                        // If there are no connections, flag the shape.
+                        // If no connections found, flag the shape for review
                         if (connectedIds == null || connectedIds.Length == 0)
                         {
-                            Console.WriteLine($"Isolated shape detected - Page: '{page.NameU}', ID: {shape.ID}, NameU: '{shape.NameU}'");
+                            Console.WriteLine($"Shape ID {shape.ID} (NameU: {shape.NameU}) is not connected to any other shape.");
 
-                            // Add a custom property to mark the shape for review.
+                            // Add a custom property to indicate review needed
                             Prop reviewProp = new Prop();
                             reviewProp.Name = "ReviewFlag";
+                            reviewProp.Label.Value = "Review Flag";
                             reviewProp.Value.Val = "True";
                             shape.Props.Add(reviewProp);
-
-                            foundIsolated = true;
                         }
                     }
                 }
 
-                // Save the diagram with the added review flags if any isolated shapes were found.
-                if (foundIsolated)
-                {
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved with review flags to: {outputPath}");
-                }
-                else
-                {
-                    Console.WriteLine("No isolated shapes were found.");
-                }
+                // Optionally, save the diagram with the added flags
+                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

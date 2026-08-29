@@ -1,59 +1,57 @@
 using System;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect two arguments: input Visio file path and output CSV file path
+        if (args.Length < 2)
         {
-            try
+            Console.WriteLine("Usage: DiagramExport <inputVisioFile> <outputCsvFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputCsvPath = args[1];
+
+        // Load the Visio diagram
+        using (Diagram diagram = new Diagram(inputPath))
+        {
+            // Prepare a StringBuilder for CSV content
+            StringBuilder csvBuilder = new StringBuilder();
+
+            // Write CSV header
+            csvBuilder.AppendLine("PageName,PageID,ShapeID,ShapeName,ShapeText");
+
+            // Iterate through each page
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path (replace with actual path)
-                string inputPath = "input.vsdx";
-
-                // Output CSV file path
-                string outputCsv = "output.csv";
-
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate through each shape on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Prepare the CSV file for writing
-                    using (StreamWriter writer = new StreamWriter(outputCsv, false))
-                    {
-                        // Write CSV header
-                        writer.WriteLine("PageName,ShapeID,ShapeName,Text");
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Iterate through each page in the diagram
-                        foreach (Page page in diagram.Pages)
-                        {
-                            // Iterate through each shape on the current page
-                            foreach (Shape shape in page.Shapes)
-                            {
-                                // Retrieve plain text from the shape
-                                string text = shape.Text.Value.Text;
+                    // Retrieve plain text from the shape
+                    string text = shape.Text.Value.Text ?? string.Empty;
 
-                                // Clean the text: replace line breaks and commas to keep CSV format simple
-                                if (!string.IsNullOrEmpty(text))
-                                {
-                                    text = text.Replace("\r\n", " ")
-                                               .Replace("\n", " ")
-                                               .Replace(",", " ");
-                                }
+                    // Escape commas and quotes for CSV compliance
+                    string escapedText = text.Replace("\"", "\"\"");
+                    if (escapedText.Contains(",") || escapedText.Contains("\"") || escapedText.Contains("\n"))
+                        escapedText = $"\"{escapedText}\"";
 
-                                // Write a CSV line with page name, shape ID, shape name, and cleaned text
-                                writer.WriteLine($"{page.Name},{shape.ID},{shape.Name},{text}");
-                            }
-                        }
-                    }
+                    // Append a CSV line with page and shape information
+                    csvBuilder.AppendLine($"{page.Name},{page.ID},{shape.ID},{shape.Name},{escapedText}");
                 }
-
-                Console.WriteLine($"Text extraction completed. CSV saved to: {outputCsv}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Write the CSV content to the specified file
+            File.WriteAllText(outputCsvPath, csvBuilder.ToString(), Encoding.UTF8);
+            Console.WriteLine($"Export completed. CSV saved to: {outputCsvPath}");
+        }
     }
-    }
+}

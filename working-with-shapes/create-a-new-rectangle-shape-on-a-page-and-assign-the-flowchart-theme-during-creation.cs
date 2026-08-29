@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,24 +9,29 @@ class Program
             try
             {
 
-                // Create a new blank diagram
+                // Create a new empty diagram
                 Diagram diagram = new Diagram();
 
-                // Get the first (default) page
-                Page page = diagram.Pages[0];
+                // Add a new page to the diagram
+                Page page = new Page();
+                diagram.Pages.Add(page);
 
-                // Add a rectangle shape at position (2,2) inches
-                // The AddShape overload returns the shape ID (long)
-                long rectShapeId = page.AddShape(2.0, 2.0, "Rectangle");
-
-                // Retrieve the shape object using the returned ID
-                Shape rectShape = page.Shapes.GetShape(rectShapeId);
-
-                // Apply a preset theme.
-                // The Visio "Flowchart" theme is not exposed as a PresetThemeValue enum member,
-                // so we use an available theme (e.g., Bubble) as an example.
-                // Replace with the appropriate enum value if a Flowchart theme becomes available.
+                // Apply a preset theme to the page.
+                // The specific "flowchart" theme is not available in the enum,
+                // so we use a valid theme (Bubble) as an example.
                 page.PresetTheme = PresetThemeValue.Bubble;
+
+                // Define position for the rectangle shape (in inches)
+                double pinX = 2.0;
+                double pinY = 2.0;
+                string masterName = "Rectangle";
+
+                // Add the rectangle shape to the page
+                long shapeId = page.AddShape(pinX, pinY, masterName);
+                Shape rectangle = page.Shapes.GetShape(shapeId);
+
+                // Optionally add some text to the rectangle
+                rectangle.Text.Value.Add(new Txt("Rectangle"));
 
                 // Save the diagram to a VSDX file
                 diagram.Save("output.vsdx", SaveFileFormat.Vsdx);

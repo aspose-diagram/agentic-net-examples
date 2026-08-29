@@ -7,112 +7,68 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and output report file path
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: VisioComplianceChecker <inputVisioPath> <outputReportPath>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string reportPath = args[1];
+                // Input Visio file path (first argument or default)
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-            // Define whitelist of allowed URLs
-            HashSet<string> whitelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "https://example.com",
-                "http://allowed.com"
-                // Add more allowed URLs as needed
-            };
+                // Output compliance report file
+                string reportPath = "ComplianceReport.txt";
 
-            // Counters for reporting
-            int totalPages = 0;
-            int totalShapes = 0;
-            int totalHyperlinks = 0;
-            int compliantCount = 0;
-            int nonCompliantCount = 0;
+                // Define whitelist of allowed URLs
+                HashSet<string> whitelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "https://example.com",
+                    "http://allowed.com"
+                    // Add more allowed URLs as needed
+                };
 
-            // List to store details of non‑compliant hyperlinks
-            List<string> nonCompliantDetails = new List<string>();
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Iterate through each page
+                // Collect report lines
+                List<string> reportLines = new List<string>();
+                reportLines.Add("Visio Hyperlink Compliance Report");
+                reportLines.Add($"Generated on: {DateTime.Now}");
+                reportLines.Add("----------------------------------------------------");
+
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    totalPages++;
-
-                    // Iterate through each shape on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        totalShapes++;
-
-                        // Ensure the Hyperlinks collection is not null
+                        // Ensure the Hyperlinks collection exists
                         if (shape.Hyperlinks != null)
                         {
-                            // Iterate through each hyperlink of the shape
                             foreach (Hyperlink link in shape.Hyperlinks)
                             {
-                                totalHyperlinks++;
-
-                                // Retrieve the address value (URL)
-                                string address = link.Address?.Value ?? string.Empty;
+                                // Retrieve the URL from the hyperlink
+                                string url = link.Address.Value ?? string.Empty;
 
                                 // Validate against whitelist
-                                if (whitelist.Contains(address))
-                                {
-                                    compliantCount++;
-                                }
-                                else
-                                {
-                                    nonCompliantCount++;
-                                    string detail = $"Page: {page.NameU}, Shape ID: {shape.ID}, URL: {address}";
-                                    nonCompliantDetails.Add(detail);
-                                }
+                                bool isAllowed = whitelist.Contains(url);
+                                string status = isAllowed ? "Allowed" : "Blocked";
+
+                                // Build report entry
+                                string line = $"Page: {page.Name}, Shape ID: {shape.ID}, Shape NameU: {shape.NameU}, URL: {url}, Status: {status}";
+                                reportLines.Add(line);
                             }
                         }
                     }
                 }
-            }
 
-            // Build the compliance report
-            using (StreamWriter writer = new StreamWriter(reportPath, false))
+                // Write the report to a text file
+                File.WriteAllLines(reportPath, reportLines);
+
+                // Output summary to console
+                Console.WriteLine($"Compliance report generated: {reportPath}");
+                Console.WriteLine($"Total entries: {reportLines.Count - 3}");
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                writer.WriteLine("Visio Hyperlink Compliance Report");
-                writer.WriteLine("================================");
-                writer.WriteLine($"Input Diagram: {inputPath}");
-                writer.WriteLine($"Generated On : {DateTime.Now}");
-                writer.WriteLine();
-                writer.WriteLine($"Total Pages          : {totalPages}");
-                writer.WriteLine($"Total Shapes         : {totalShapes}");
-                writer.WriteLine($"Total Hyperlinks     : {totalHyperlinks}");
-                writer.WriteLine($"Compliant Hyperlinks : {compliantCount}");
-                writer.WriteLine($"Non‑Compliant Hyperlinks : {nonCompliantCount}");
-                writer.WriteLine();
-
-                if (nonCompliantDetails.Count > 0)
-                {
-                    writer.WriteLine("Non‑Compliant Hyperlink Details:");
-                    writer.WriteLine("---------------------------------");
-                    foreach (string detail in nonCompliantDetails)
-                    {
-                        writer.WriteLine(detail);
-                    }
-                }
-                else
-                {
-                    writer.WriteLine("All hyperlinks are compliant with the whitelist.");
-                }
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
-
-            // Output summary to console
-            Console.WriteLine("Visio Hyperlink Compliance Report generated:");
-            Console.WriteLine($"Report Path: {reportPath}");
-            Console.WriteLine($"Total Pages          : {totalPages}");
-            Console.WriteLine($"Total Shapes         : {totalShapes}");
-            Console.WriteLine($"Total Hyperlinks     : {totalHyperlinks}");
-            Console.WriteLine($"Compliant Hyperlinks : {compliantCount}");
-            Console.WriteLine($"Non‑Compliant Hyperlinks : {nonCompliantCount}");
-        }
+    }
     }

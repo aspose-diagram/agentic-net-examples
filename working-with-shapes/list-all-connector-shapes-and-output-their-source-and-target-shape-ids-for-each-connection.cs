@@ -1,44 +1,86 @@
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Expect the Visio file path as the first argument
-                if (args.Length == 0)
-                {
-                    Console.WriteLine("Please provide the path to a Visio file as an argument.");
-                    return;
-                }
-
-                string filePath = args[0];
+                // Path to the Visio file (adjust as needed)
+                string filePath = "input.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(filePath);
 
-                // Iterate through all pages in the diagram
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    Console.WriteLine($"Page: {page.Name} (ID: {page.ID})");
-
-                    // Iterate through all connections on the page
-                    foreach (Connect connection in page.Connects)
+                    // Collect IDs of all connector shapes (1‑D shapes) on the current page
+                    HashSet<long> connectorIds = new HashSet<long>();
+                    foreach (Shape shape in page.Shapes)
                     {
-                        long sourceId = connection.FromSheet;
-                        long targetId = connection.ToSheet;
+                        if (shape.OneD) // Connector shapes are 1‑D
+                        {
+                            connectorIds.Add(shape.ID);
+                        }
+                    }
 
-                        Console.WriteLine($"Connector from Shape ID {sourceId} to Shape ID {targetId}");
+                    // If there are no connectors on this page, continue to the next page
+                    if (connectorIds.Count == 0)
+                        continue;
+
+                    Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) has {connectorIds.Count} connector(s):");
+
+                    // For each connector, find its connections via the page.Connects collection
+                    foreach (long connectorId in connectorIds)
+                    {
+                        // Gather connections where the connector participates
+                        List<Connect> relatedConnections = new List<Connect>();
+                        foreach (Connect conn in page.Connects)
+                        {
+                            if (conn.FromSheet == connectorId || conn.ToSheet == connectorId)
+                            {
+                                relatedConnections.Add(conn);
+                            }
+                        }
+
+                        // Output source and target shape IDs for each connection of this connector
+                        foreach (Connect conn in relatedConnections)
+                        {
+                            long sourceId = conn.FromSheet == connectorId ? conn.ToSheet : conn.FromSheet;
+                            long targetId = connectorId;
+
+                            // Determine direction: if the connector is the FromSheet, then source is the other shape
+                            // and target is the connector itself; otherwise reverse.
+                            if (conn.FromSheet == connectorId)
+                            {
+                                sourceId = conn.ToSheet;
+                                targetId = conn.FromSheet;
+                            }
+                            else
+                            {
+                                sourceId = conn.FromSheet;
+                                targetId = conn.ToSheet;
+                            }
+
+                            Console.WriteLine($"  Connector ID {connectorId} connects from shape ID {sourceId} to shape ID {targetId}");
+                        }
+
+                        // If a connector has no entries in Connects, note it
+                        if (relatedConnections.Count == 0)
+                        {
+                            Console.WriteLine($"  Connector ID {connectorId} has no glued connections.");
+                        }
                     }
                 }
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

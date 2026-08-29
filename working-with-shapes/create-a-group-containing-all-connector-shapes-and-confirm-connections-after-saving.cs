@@ -1,91 +1,110 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Work with the first page (index 0)
-            Page page = diagram.Pages[0];
-
-            // Add two rectangle shapes
-            long rectId1 = page.AddShape(2.0, 5.0, "Rectangle");
-            long rectId2 = page.AddShape(6.0, 5.0, "Rectangle");
-
-            // Retrieve the rectangle shapes (optional, for further manipulation)
-            Shape rect1 = page.Shapes.GetShape(rectId1);
-            Shape rect2 = page.Shapes.GetShape(rectId2);
-
-            // Add three dynamic connectors
-            long connId1 = page.AddShape(4.0, 5.0, "Dynamic connector");
-            long connId2 = page.AddShape(4.0, 5.0, "Dynamic connector");
-            long connId3 = page.AddShape(4.0, 5.0, "Dynamic connector");
-
-            // Connect the rectangles using the connectors
-            page.ConnectShapesViaConnector(rectId1, ConnectionPointPlace.Bottom, rectId2, ConnectionPointPlace.Top, connId1);
-            page.ConnectShapesViaConnector(rectId1, ConnectionPointPlace.Right, rectId2, ConnectionPointPlace.Left, connId2);
-            page.ConnectShapesViaConnector(rectId1, ConnectionPointPlace.Top, rectId2, ConnectionPointPlace.Bottom, connId3);
-
-            // Collect all connector shapes (OneD == true)
-            var connectorShapes = new System.Collections.Generic.List<Shape>();
-            foreach (Shape shp in page.Shapes)
+            try
             {
-                if (shp.OneD) // connectors are 1‑D shapes
+
+                // Path to a stencil that contains the required masters.
+                // Adjust this path to point to an existing .vssx file on your system.
+                string stencilPath = "basic.vssx";
+
+                // Create a new empty diagram.
+                Diagram diagram = new Diagram();
+
+                // Load masters for rectangles and dynamic connectors from the stencil.
+                diagram.AddMaster(stencilPath, "Rectangle");
+                diagram.AddMaster(stencilPath, "Dynamic connector");
+
+                // Add two rectangle shapes.
+                long rect1Id = diagram.AddShape(2.0, 5.0, "Rectangle", 0);
+                long rect2Id = diagram.AddShape(6.0, 5.0, "Rectangle", 0);
+
+                // Add a dynamic connector shape (position will be adjusted by the glue operation).
+                long connectorId = diagram.AddShape(0.0, 0.0, "Dynamic connector", 0);
+
+                // Retrieve the first page (the diagram always contains at least one page).
+                Page page = diagram.Pages[0];
+
+                // Connect the two rectangles using the connector.
+                page.ConnectShapesViaConnector(
+                    rect1Id,
+                    ConnectionPointPlace.Bottom,
+                    rect2Id,
+                    ConnectionPointPlace.Top,
+                    connectorId);
+
+                // Collect all connector shapes (OneD == true) into an array.
+                var connectorShapes = new System.Collections.Generic.List<Shape>();
+                foreach (Shape shape in page.Shapes)
                 {
-                    connectorShapes.Add(shp);
+                    if (shape.OneD) // OneD is a native bool indicating a connector.
+                    {
+                        connectorShapes.Add(shape);
+                    }
                 }
-            }
 
-            // Group all connector shapes together
-            Shape groupShape = page.Shapes.Group(connectorShapes.ToArray());
-
-            // Save the diagram to a VSDX file
-            string outputPath = "GroupedConnectors.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Reload the saved diagram
-            Diagram loadedDiagram = new Diagram(outputPath);
-            Page loadedPage = loadedDiagram.Pages[0];
-
-            // Verify that all connections are still valid
-            bool allConnectionsValid = true;
-            foreach (Connect conn in loadedPage.Connects)
-            {
-                try
+                // Ensure there is at least one connector to group.
+                if (connectorShapes.Count == 0)
                 {
-                    // Attempt to retrieve the source and target shapes
-                    Shape fromShape = loadedPage.Shapes.GetShape(conn.FromSheet);
-                    Shape toShape = loadedPage.Shapes.GetShape(conn.ToSheet);
-                    // If retrieval succeeds, the connection is considered valid
+                    throw new Exception("No connector shapes were found to group.");
                 }
-                catch (Exception ex)
+
+                // Group all connector shapes.
+                Shape groupShape = page.Shapes.Group(connectorShapes.ToArray());
+
+                // Save the diagram to a VSDX file.
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                // Reload the diagram to verify that connections are preserved.
+                Diagram loadedDiagram = new Diagram(outputPath);
+                Page loadedPage = loadedDiagram.Pages[0];
+
+                // Verify that a connection exists between the two rectangles.
+                bool connectionFound = false;
+                foreach (Connect connect in loadedPage.Connects)
                 {
-                    allConnectionsValid = false;
-                    Console.WriteLine($"Invalid connection detected: FromSheet={conn.FromSheet}, ToSheet={conn.ToSheet}. Error: {ex.Message}");
+                    if ((connect.FromSheet == rect1Id && connect.ToSheet == rect2Id) ||
+                        (connect.FromSheet == rect2Id && connect.ToSheet == rect1Id))
+                    {
+                        connectionFound = true;
+                        break;
+                    }
                 }
-            }
 
-            if (allConnectionsValid)
-            {
-                Console.WriteLine("All connector connections are valid after saving and reloading.");
-            }
-            else
-            {
-                Console.WriteLine("Some connections are invalid after reloading.");
-            }
+                if (!connectionFound)
+                {
+                    throw new Exception("Connection between the rectangles was not preserved after saving.");
+                }
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+                // Verify that the group containing connectors still exists.
+                bool groupExists = false;
+                foreach (Shape shape in loadedPage.Shapes)
+                {
+                    if (shape.ID == groupShape.ID && shape.Type == TypeValue.Group)
+                    {
+                        groupExists = true;
+                        break;
+                    }
+                }
+
+                if (!groupExists)
+                {
+                    throw new Exception("Connector group was not preserved after saving.");
+                }
+
+                Console.WriteLine("Connector grouping and connection verification succeeded.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

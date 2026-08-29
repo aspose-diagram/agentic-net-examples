@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -13,20 +12,19 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Add a shape (e.g., a rectangle) to the first page at position (2, 2)
-            // The fourth argument is the page index (0‑based)
-            long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Retrieve the Shape object using the returned ID (cast to int)
-            Shape shape = diagram.Pages[0].Shapes.GetShape((int)shapeId);
+            // Add a rectangle shape to the page at (2.0, 2.0)
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Create a custom connection point
+            // Create a custom connection point at coordinates (1.2, 3.4)
             Connection customConn = new Connection();
-            // Set absolute coordinates for the connection point (in inches)
             customConn.X.Ufe.F = "1.2";
             customConn.Y.Ufe.F = "3.4";
 
-            // Add the custom connection point to the shape
+            // Add the connection point to the shape
             shape.Connections.Add(customConn);
 
             // Save the diagram to a VSDX file

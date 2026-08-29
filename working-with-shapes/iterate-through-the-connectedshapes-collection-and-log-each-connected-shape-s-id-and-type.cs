@@ -9,29 +9,30 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load an existing Visio diagram (replace the path with your file)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Choose a page (first page in this example)
-            Page page = diagram.Pages[0];
+            // Select a shape to examine – here we take the first shape on the first page
+            Shape shape = diagram.Pages[0].Shapes[0];
 
-            // Choose a shape to inspect (first shape in this example)
-            Shape shape = page.Shapes[0];
-
-            // Retrieve IDs of all shapes connected to the selected shape
-            long[] connectedShapeIds = shape.ConnectedShapes(
-                ConnectedShapesFlags.ConnectedShapesAllNodes,   // include incoming and outgoing connections
-                null                                            // no category filter
-            );
+            // Retrieve IDs of all shapes connected to the selected shape (both incoming and outgoing)
+            long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
 
             // Iterate through each connected shape ID
-            foreach (long id in connectedShapeIds)
+            foreach (long id in connectedIds)
             {
-                // Get the actual Shape object using its ID
-                Shape connectedShape = page.Shapes.GetShape(id);
+                // Locate the actual Shape object by its ID across all pages
+                Shape connectedShape = FindShapeById(diagram, id);
 
-                // Log the ID and the shape type (e.g., "Shape", "Connector", etc.)
-                Console.WriteLine($"Connected Shape ID: {connectedShape.ID}, Type: {connectedShape.Type}");
+                // Log the ID and the shape type (if found)
+                if (connectedShape != null)
+                {
+                    Console.WriteLine($"Connected Shape ID: {id}, Type: {connectedShape.Type}");
+                }
+                else
+                {
+                    Console.WriteLine($"Connected Shape ID: {id}, Type: Not found");
+                }
             }
 
         }
@@ -39,5 +40,19 @@ class Program
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    // Helper method to search for a shape with a given ID in the entire diagram
+    static Shape FindShapeById(Diagram diagram, long id)
+    {
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape s in page.Shapes)
+            {
+                if (s.ID == id)
+                    return s;
+            }
+        }
+        return null;
     }
 }

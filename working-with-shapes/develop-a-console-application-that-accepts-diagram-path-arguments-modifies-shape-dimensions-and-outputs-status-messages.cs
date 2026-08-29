@@ -3,66 +3,59 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length == 0)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: DiagramModifier <inputFilePath> [outputFilePath]");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath;
-
-        if (args.Length > 1)
-        {
-            outputPath = args[1];
-        }
-        else
-        {
-            // Create a default output file name with "_modified" suffix
-            string directory = Path.GetDirectoryName(inputPath) ?? string.Empty;
-            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-            outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_modified.vsdx");
-        }
-
-        // Check that the input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.WriteLine($"Error: Input file '{inputPath}' does not exist.");
-            return;
-        }
-
-        try
-        {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-            Console.WriteLine($"Diagram loaded from '{inputPath}'.");
-
-            // Iterate through all pages and shapes to modify dimensions
-            foreach (Page page in diagram.Pages)
+            // Validate command line arguments
+            if (args.Length < 1)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Set new width and height (in inches)
-                    shape.XForm.Width.Value = 2.0;   // Example width
-                    shape.XForm.Height.Value = 1.0;  // Example height
-                }
+                Console.WriteLine("Usage: DiagramShapeModifier <inputDiagramPath> [outputDiagramPath]");
+                return;
             }
 
-            // Save the modified diagram to the output path
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Modified diagram saved to '{outputPath}'.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            string inputPath = args[0];
+            string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+                Path.GetDirectoryName(inputPath) ?? string.Empty,
+                Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
+
+            // Check if input file exists
+            if (!File.Exists(inputPath))
+            {
+                Console.WriteLine($"Error: Input file not found: {inputPath}");
+                return;
+            }
+
+            try
+            {
+                Console.WriteLine($"Loading diagram from: {inputPath}");
+                Diagram diagram = new Diagram(inputPath);
+
+                // Define new dimensions (in inches)
+                double newWidth = 2.0;
+                double newHeight = 1.0;
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Update width and height
+                        shape.XForm.Width.Value = newWidth;
+                        shape.XForm.Height.Value = newHeight;
+                    }
+                }
+
+                Console.WriteLine($"Saving modified diagram to: {outputPath}");
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram processing completed successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
         }
     }
-}

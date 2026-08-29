@@ -15,36 +15,43 @@ class Program
                 // Get the first (default) page
                 Page page = diagram.Pages[0];
 
-                // Add a rectangle shape (inherits line formatting from its master)
-                long rectId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
-                Shape rectShape = page.Shapes.GetShape(rectId);
+                // Add sample shapes using the built‑in "Rectangle" master
+                long rectId1 = page.AddShape(2.0, 2.0, "Rectangle");
+                long rectId2 = page.AddShape(5.0, 2.0, "Rectangle");
+                long rectId3 = page.AddShape(8.0, 2.0, "Rectangle");
 
-                // Add another rectangle shape and explicitly set its line color
-                // This disables line inheritance for this shape
-                long customRectId = diagram.AddShape(5.0, 2.0, "Rectangle", 0);
-                Shape customRectShape = page.Shapes.GetShape(customRectId);
-                // Disable inheritance by assigning a different line color
-                customRectShape.Line.LineColor.Value = "#00FF00"; // green line
+                // Retrieve the shape objects
+                Shape shape1 = page.Shapes.GetShape(rectId1);
+                Shape shape2 = page.Shapes.GetShape(rectId2);
+                Shape shape3 = page.Shapes.GetShape(rectId3);
 
-                // Iterate all shapes on the page and highlight those with disabled line inheritance
-                foreach (Shape shape in page.Shapes)
+                // For demonstration, explicitly set a custom line color on shape2
+                // This disables line inheritance for that shape
+                shape2.Line.LineColor.Value = "#0000FF"; // Blue line
+
+                // Iterate all shapes on the page
+                foreach (Shape shp in page.Shapes)
                 {
-                    // Compare the shape's line color with its inherited line color
-                    // If they differ, inheritance is disabled
-                    if (shape.Line.LineColor.Value != shape.InheritLine.LineColor.Value)
+                    // Determine if line inheritance is disabled:
+                    // If the shape's line color differs from the inherited line color,
+                    // inheritance is considered disabled.
+                    bool lineInheritanceDisabled = shp.Line.LineColor.Value != shp.InheritLine.LineColor.Value;
+
+                    if (lineInheritanceDisabled)
                     {
-                        // Apply a custom highlight color (red) to the shape's line
-                        shape.Line.LineColor.Value = "#FF0000";
-                        // Optionally, make the line thicker for visibility
-                        shape.Line.LineWeight.Value = 0.05; // inches
+                        // Highlight the shape with a custom color (e.g., bright red)
+                        shp.Line.LineColor.Value = "#FF0000";
+                    }
+                    else
+                    {
+                        // Optionally, set a different color for shapes that inherit lines
+                        shp.Line.LineColor.Value = "#00FF00"; // Green line
                     }
                 }
 
                 // Save the diagram to a VSDX file
-                string outputPath = "HighlightedDiagram.vsdx";
+                string outputPath = "HighlightedInheritance.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Diagram saved to {outputPath}");
 
             }
             catch (Aspose.Diagram.DiagramException ex)

@@ -10,60 +10,101 @@ class Program
         // Path to the original Visio file
         string originalPath = "original.vsdx";
 
-        // Load the original diagram
-        Diagram originalDiagram = new Diagram(originalPath);
-
-        // Clone the diagram by saving to a memory stream and loading back
-        Diagram clonedDiagram;
-        using (MemoryStream ms = new MemoryStream())
+        // Guard: ensure the source file exists
+        if (!File.Exists(originalPath))
         {
-            originalDiagram.Save(ms, SaveFileFormat.Vsdx);
-            ms.Position = 0;
-            clonedDiagram = new Diagram(ms);
+            Console.Error.WriteLine($"File not found: {originalPath}");
+            return;
         }
 
-        // Compare fill inheritance values between original and cloned diagrams
-        CompareFillInheritance(originalDiagram, clonedDiagram);
-
-        Console.WriteLine("Fill inheritance values are consistent between original and cloned diagrams.");
-    }
-
-    static void CompareFillInheritance(Diagram original, Diagram clone)
-    {
-        // Iterate through each page in the original diagram
-        foreach (Page origPage in original.Pages)
+        try
         {
-            // Find the corresponding page in the cloned diagram by ID
-            Page clonedPage = clone.Pages.GetPage(origPage.ID);
-            if (clonedPage == null)
-                throw new Exception($"Cloned diagram is missing page with ID {origPage.ID}.");
+            // Load the original diagram from file
+            Diagram originalDiagram = new Diagram(originalPath);
 
-            // Iterate through each shape on the original page
-            foreach (Shape origShape in origPage.Shapes)
+            // Clone the diagram by saving to a memory stream and re‑loading from it
+            Diagram clonedDiagram;
+            using (MemoryStream ms = new MemoryStream())
             {
-                // Find the corresponding shape in the cloned page by ID
-                Shape clonedShape = clonedPage.Shapes.GetShape(origShape.ID);
-                if (clonedShape == null)
-                    throw new Exception($"Cloned diagram is missing shape with ID {origShape.ID} on page {origPage.ID}.");
+                // Save the original diagram into the stream in VSDX format
+                originalDiagram.Save(ms, SaveFileFormat.Vsdx);
+                ms.Position = 0; // Reset stream for reading
 
-                // Compare FillForegnd inheritance
-                string origForegnd = origShape.InheritFill.FillForegnd.Value;
-                string cloneForegnd = clonedShape.InheritFill.FillForegnd.Value;
-                if (origForegnd != cloneForegnd)
-                    throw new Exception($"FillForegnd inheritance mismatch on shape ID {origShape.ID} (Page {origPage.ID}). Original: {origForegnd}, Clone: {cloneForegnd}");
-
-                // Compare FillBkgnd inheritance
-                string origBkgnd = origShape.InheritFill.FillBkgnd.Value;
-                string cloneBkgnd = clonedShape.InheritFill.FillBkgnd.Value;
-                if (origBkgnd != cloneBkgnd)
-                    throw new Exception($"FillBkgnd inheritance mismatch on shape ID {origShape.ID} (Page {origPage.ID}). Original: {origBkgnd}, Clone: {cloneBkgnd}");
-
-                // Compare FillPattern inheritance
-                int origPattern = origShape.InheritFill.FillPattern.Value;
-                int clonePattern = clonedShape.InheritFill.FillPattern.Value;
-                if (origPattern != clonePattern)
-                    throw new Exception($"FillPattern inheritance mismatch on shape ID {origShape.ID} (Page {origPage.ID}). Original: {origPattern}, Clone: {clonePattern}");
+                // Load a new diagram instance from the same stream
+                clonedDiagram = new Diagram(ms);
             }
+
+            // Verify that both diagrams contain the same number of pages
+            if (originalDiagram.Pages.Count != clonedDiagram.Pages.Count)
+                throw new Exception($"Page count mismatch: original={originalDiagram.Pages.Count}, cloned={clonedDiagram.Pages.Count}");
+
+            // Iterate through each page by index
+            for (int pageIndex = 0; pageIndex < originalDiagram.Pages.Count; pageIndex++)
+            {
+                Page originalPage = originalDiagram.Pages[pageIndex];
+                Page clonedPage = clonedDiagram.Pages[pageIndex];
+
+                // Count only non‑deleted shapes on each page
+                int originalShapeCount = 0;
+                foreach (Shape s in originalPage.Shapes)
+                    if (s.Del == BOOL.False) originalShapeCount++;
+
+                int clonedShapeCount = 0;
+                foreach (Shape s in clonedPage.Shapes)
+                    if (s.Del == BOOL.False) clonedShapeCount++;
+
+                // Compare the non‑deleted shape counts
+                if (originalShapeCount != clonedShapeCount)
+                    throw new Exception($"Shape count mismatch on page '{originalPage.Name}' (index {pageIndex}): original={originalShapeCount}, cloned={clonedShapeCount}");
+
+                // Iterate through each non‑deleted shape in the original page
+                foreach (Shape originalShape in originalPage.Shapes)
+                {
+                    if (originalShape.Del == BOOL.True) continue; // Skip deleted shapes
+
+                    // Retrieve the matching shape in the cloned page by ID
+                    Shape clonedShape = clonedPage.Shapes.GetShape(originalShape.ID);
+                    if (clonedShape == null)
+                        throw new Exception($"Shape with ID {originalShape.ID} not found in cloned page '{clonedPage.Name}'.");
+
+                    // Compare Fill Foreground color
+                    string origForeColor = originalShape.Fill.FillForegnd.Value;
+                    string cloneForeColor = clonedShape.Fill.FillForegnd.Value;
+                    if (!string.Equals(origForeColor, cloneForeColor, StringComparison.OrdinalIgnoreCase))
+                        throw new Exception($"FillForegnd mismatch on shape ID {originalShape.ID} (page '{originalPage.Name}'): original='{origForeColor}', cloned='{cloneForeColor}'.");
+
+                    // Compare Fill Background color
+                    string origBackColor = originalShape.Fill.FillBkgnd.Value;
+                    string cloneBackColor = clonedShape.Fill.FillBkgnd.Value;
+                    if (!string.Equals(origBackColor, cloneBackColor, StringComparison.OrdinalIgnoreCase))
+                        throw new Exception($"FillBkgnd mismatch on shape ID {originalShape.ID} (page '{originalPage.Name}'): original='{origBackColor}', cloned='{cloneBackColor}'.");
+
+                    // Compare Fill Pattern
+                    int origPattern = originalShape.Fill.FillPattern.Value;
+                    int clonePattern = clonedShape.Fill.FillPattern.Value;
+                    if (origPattern != clonePattern)
+                        throw new Exception($"FillPattern mismatch on shape ID {originalShape.ID} (page '{originalPage.Name}'): original={origPattern}, cloned={clonePattern}.");
+
+                    // Compare inherited Fill Foreground color
+                    string origInheritFore = originalShape.InheritFill.FillForegnd.Value;
+                    string cloneInheritFore = clonedShape.InheritFill.FillForegnd.Value;
+                    if (!string.Equals(origInheritFore, cloneInheritFore, StringComparison.OrdinalIgnoreCase))
+                        throw new Exception($"InheritFill.Foregnd mismatch on shape ID {originalShape.ID} (page '{originalPage.Name}'): original='{origInheritFore}', cloned='{cloneInheritFore}'.");
+
+                    // Compare inherited Fill Pattern
+                    int origInheritPattern = originalShape.InheritFill.FillPattern.Value;
+                    int cloneInheritPattern = clonedShape.InheritFill.FillPattern.Value;
+                    if (origInheritPattern != cloneInheritPattern)
+                        throw new Exception($"InheritFill.Pattern mismatch on shape ID {originalShape.ID} (page '{originalPage.Name}'): original={origInheritPattern}, cloned={cloneInheritPattern}.");
+                }
+            }
+
+            Console.WriteLine("All fill inheritance values match between the original and cloned diagrams.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or validation errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -1,78 +1,111 @@
 using System;
 using System.IO;
+using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-namespace WatermarkDemo
+class Program
 {
-    // Simple configuration class to hold user-defined settings
-    public class WatermarkConfig
+    // Configuration model for rotation angle (in degrees)
+    private class Config
     {
-        // Rotation angle in degrees for the watermark text
-        public double RotationAngleDegrees { get; set; } = 45.0;
-
-        // Path to the source Visio file
-        public string InputFilePath { get; set; } = "input.vsdx";
-
-        // Path where the watermarked diagram will be saved
-        public string OutputFilePath { get; set; } = "output.png";
+        public double RotationAngle { get; set; }
     }
 
-    class Program
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect three arguments: input diagram, output diagram, config file
+        if (args.Length != 3)
         {
-            // Load configuration (in a real scenario this could be read from a file or arguments)
-            var config = new WatermarkConfig();
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputDiagramPath> <configJsonPath>");
+            return;
+        }
 
-            // Guard: ensure the input Visio file exists
-            if (!File.Exists(config.InputFilePath))
+        string inputPath = args[0];
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+
+        string outputPath = args[1];
+        // No existence check for outputPath (it will be created)
+
+        string configPath = args[2];
+        if (!File.Exists(configPath)) { Console.Error.WriteLine($"File not found: {configPath}"); return; }
+
+        // Read and deserialize configuration
+        Config config;
+        try
+        {
+            string json = File.ReadAllText(configPath);
+            config = JsonSerializer.Deserialize<Config>(json);
+            if (config == null)
             {
-                Console.Error.WriteLine($"File not found: {config.InputFilePath}");
+                Console.Error.WriteLine("Configuration file is empty or invalid.");
                 return;
             }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading configuration: {ex.Message}");
+            return;
+        }
 
-            try
+        // Load the Visio diagram
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Iterate through all pages and add a rotated text watermark
+        try
+        {
+            foreach (Page page in diagram.Pages)
             {
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(config.InputFilePath);
-
-                // Use the first page (or adjust as needed)
-                Page page = diagram.Pages[0];
-
-                // Determine page dimensions (in inches)
+                // Retrieve page dimensions (in inches)
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Position the watermark at the center of the page
+                // Center position for the watermark
                 double pinX = pageWidth / 2.0;
                 double pinY = pageHeight / 2.0;
 
-                // Add a full‑page text shape that will serve as the watermark
-                // Width and height are set to the page size so the text can be centered
-                Shape watermarkShape = page.AddText(pinX, pinY, pageWidth, pageHeight, "CONFIDENTIAL");
+                // Use full page size for the watermark shape
+                double shapeWidth = pageWidth;
+                double shapeHeight = pageHeight;
 
-                // Convert rotation from degrees to radians (Aspose.Diagram expects radians)
-                double rotationRadians = (Math.PI / 180.0) * config.RotationAngleDegrees;
+                // Add a text shape as watermark (light gray, small font)
+                Shape watermark = page.AddText(
+                    pinX,               // X coordinate (center)
+                    pinY,               // Y coordinate (center)
+                    shapeWidth,         // Width of the shape
+                    shapeHeight,        // Height of the shape
+                    "Watermark",        // Watermark text
+                    "Arial",            // Font name
+                    "#CCCCCC",          // Font color (hex)
+                    0.5);               // Font size (in inches)
 
-                // Apply rotation to the text block
-                watermarkShape.TextXForm.TxtAngle.Value = rotationRadians;
-
-                // Clear any existing text and set the watermark text
-                watermarkShape.Text.Value.Clear();
-                watermarkShape.Text.Value.Add(new Txt("CONFIDENTIAL"));
-
-                // Save the diagram as an image (PNG) with the watermark applied
-                var saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                diagram.Save(config.OutputFilePath, saveOptions);
-
-                Console.WriteLine($"Watermark applied with rotation {config.RotationAngleDegrees}° and saved to '{config.OutputFilePath}'.");
+                // Convert rotation angle from degrees to radians and apply to text
+                double angleRadians = (Math.PI / 180.0) * config.RotationAngle;
+                watermark.TextXForm.TxtAngle.Value = angleRadians;
             }
-            catch (Exception ex)
-            {
-                // Write any Aspose or I/O errors to the error stream
-                Console.Error.WriteLine($"Error: {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error adding watermark: {ex.Message}");
+            return;
+        }
+
+        // Save the modified diagram as PDF (watermark visible)
+        try
+        {
+            diagram.Save(outputPath, SaveFileFormat.Pdf);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
         }
     }
 }

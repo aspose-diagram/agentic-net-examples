@@ -2,34 +2,40 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class ReplaceAmpersand
+class ReplaceAmpersandInShapes
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
+            // Load an existing Visio diagram (replace with your file path)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and shapes in the diagram
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape's text contains '&'
+                    // Get the current plain text of the shape
                     string currentText = shape.GetPureText();
-                    if (!string.IsNullOrEmpty(currentText) && currentText.Contains("&"))
+
+                    // Check if the text contains the ampersand character
+                    if (currentText != null && currentText.Contains("&"))
                     {
-                        // Replace '&' with 'and' in the shape's text
-                        shape.ReplaceText("&", "and");
-                        // Refresh shape geometry after text change
+                        // Replace '&' with the word 'and'
+                        string replacedText = currentText.Replace("&", "and");
+
+                        // Apply the replacement to the shape
+                        shape.ReplaceText(currentText, replacedText);
+
+                        // Refresh shape data to update its geometry after text change
                         shape.RefreshData();
                     }
                 }
             }
 
-            // Save the modified diagram (replace with desired output path)
+            // Save the modified diagram (replace with your desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

@@ -3,35 +3,41 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ExportShapeSvg
 {
     static void Main()
     {
         try
         {
 
-            // Load the diagram file
-            var diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("inputDiagram.vsdx");
 
-            // Retrieve a shape (e.g., the first shape on the first page)
-            var shape = diagram.Pages[0].Shapes[0];
+            // Get the first shape on the first page (adjust indices as needed)
+            Shape shape = diagram.Pages[0].Shapes[0];
 
-            // Create a temporary file path for the intermediate SVG export
-            string tempSvgPath = Path.GetTempFileName();
+            // Temporary file to let Shape.ToSvg save the SVG content
+            string tempSvgPath = Path.Combine(Path.GetTempPath(), "tempShape.svg");
 
-            // Export the shape to SVG using Aspose.Diagram's ToSvg method
-            var svgOptions = new SVGSaveOptions();
-            shape.ToSvg(tempSvgPath, svgOptions);
+            // Save the shape as SVG using the provided ToSvg method and default options
+            shape.ToSvg(tempSvgPath, new SVGSaveOptions());
 
             // Read the generated SVG content into a string
             string svgContent = File.ReadAllText(tempSvgPath);
 
-            // Write the SVG string to the final .svg file using File.WriteAllText
-            string outputSvgPath = "shape.svg";
-            File.WriteAllText(outputSvgPath, svgContent);
+            // Define the final SVG file path
+            string finalSvgPath = "exportedShape.svg";
 
-            // Delete the temporary file
-            File.Delete(tempSvgPath);
+            // Write the SVG string to the final file using File.WriteAllText
+            File.WriteAllText(finalSvgPath, svgContent);
+
+            // Optional: clean up the temporary file
+            if (File.Exists(tempSvgPath))
+            {
+                File.Delete(tempSvgPath);
+            }
+
+            Console.WriteLine($"Shape exported to SVG file: {finalSvgPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

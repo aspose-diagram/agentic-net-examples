@@ -1,37 +1,60 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define the output Visio file path.
+        string outputPath = "output.vsdx";
+
+        // No input file to guard, but ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
         {
-            // Create a new empty diagram
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        try
+        {
+            // Create a new empty diagram (contains a default page).
             Diagram diagram = new Diagram();
 
-            // Add a blank page to the diagram
-            diagram.Pages.Add(new Page());
-
-            // Get the first (and only) page
+            // Access the first page where the circle will be added.
             Page page = diagram.Pages[0];
 
-            // Define the circle radius (in inches)
-            double radius = 1.0;
+            // Define the circle radius (in inches) and compute width/height.
+            double radius = 1.5;                     // Example radius.
+            double diameter = radius * 2.0;           // Width and height for a circle.
 
-            // Calculate the center point (PinX, PinY) and the diameter (width, height)
-            double pinX = radius;               // X coordinate of the circle center
-            double pinY = radius;               // Y coordinate of the circle center
-            double diameter = radius * 2.0;     // Width and height for a perfect circle
+            // Position the circle's lower‑left corner (PinX, PinY). Here we place it at (radius, radius).
+            double pinX = radius;
+            double pinY = radius;
 
-            // Draw the circle using the DrawEllipse method (width == height)
-            long circleShapeId = page.DrawEllipse(pinX, pinY, diameter, diameter);
+            // Add an ellipse (circle) to the page; returns the shape ID.
+            long shapeId = page.DrawEllipse(pinX, pinY, diameter, diameter);
 
-            // Retrieve the created shape from the Shapes collection
-            Shape circleShape = page.Shapes.GetShape(circleShapeId);
+            // Retrieve the newly created shape using its ID.
+            Shape circle = page.Shapes.GetShape(shapeId);
 
-            // Optional: set a name for the shape (useful for later identification)
-            circleShape.Name = "MyCircle";
+            // Set a red fill color for the circle.
+            circle.Fill.FillForegnd.Value = "#FF0000";
 
-            // The diagram now contains a circle shape in its Shapes collection.
-            // (Further processing or saving can be performed here if needed.)
+            // Set a black outline color for the circle.
+            circle.Line.LineColor.Value = "#000000";
+
+            // Save the diagram to a VSDX file.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Circle shape added and diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

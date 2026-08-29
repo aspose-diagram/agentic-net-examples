@@ -2,7 +2,7 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class CircularShapesExample
 {
     static void Main()
     {
@@ -16,27 +16,27 @@ class Program
             Page page = new Page();
             diagram.Pages.Add(page);
 
-            // Parameters for the circular layout
-            double centerX = 5.0;      // Center X coordinate (in inches)
-            double centerY = 5.0;      // Center Y coordinate (in inches)
-            double radius = 3.0;       // Radius of the circle (in inches)
-            string masterName = "Rectangle"; // Master shape to use for each shape
+            // Define center of the circle and radius (in inches)
+            double centerX = 5.0;
+            double centerY = 5.0;
+            double radius = 3.0;
 
-            // Add five shapes positioned evenly around the circle
+            // Masters to use for distinct shapes
+            string[] masters = { "Rectangle", "Ellipse", "Triangle", "Hexagon", "Star" };
+
+            // Place five shapes evenly around the circle
             for (int i = 0; i < 5; i++)
             {
-                double angle = 2 * Math.PI * i / 5; // Angle in radians
+                double angle = 2 * Math.PI * i / 5; // angle in radians
                 double pinX = centerX + radius * Math.Cos(angle);
                 double pinY = centerY + radius * Math.Sin(angle);
 
-                // Use the AddShape method that takes PinX, PinY, and master name
-                page.AddShape(pinX, pinY, masterName);
+                // Add shape using the master name at calculated position
+                page.AddShape(pinX, pinY, masters[i]);
             }
 
-            // Optional: apply Visio's built‑in circular layout (requires LayoutOptions)
-            // LayoutOptions layoutOpts = new LayoutOptions();
-            // layoutOpts.PlaceStyle = PlaceStyleValue.Circular;
-            // page.Layout(layoutOpts);
+            // Optional: center drawing on the page (does not affect relative positions)
+            page.CenterDrawing();
 
             // Save the diagram to a file
             diagram.Save("CircularShapes.vsdx", SaveFileFormat.Vsdx);

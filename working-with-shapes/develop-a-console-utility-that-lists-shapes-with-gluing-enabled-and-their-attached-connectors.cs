@@ -1,21 +1,21 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Expect the Visio file path as the first argument.
-            if (args.Length == 0)
+            // Validate arguments
+            if (args.Length < 1)
             {
-                Console.WriteLine("Usage: DiagramGlueInspector <input-visio-file>");
+                Console.WriteLine("Usage: DiagramGluingUtility <inputVisioFile> [outputVisioFile]");
                 return;
             }
 
             string inputPath = args[0];
+            string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-            // Load the diagram from the specified file.
+            // Load the Visio diagram
             Diagram diagram;
             try
             {
@@ -27,76 +27,46 @@ class Program
                 return;
             }
 
-            // Iterate through all pages in the diagram.
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine($"Page: {page.NameU} (ID: {page.ID})");
-
-                // Build a lookup of shape ID to Shape for quick access.
-                var shapeLookup = new Dictionary<long, Shape>();
-                foreach (Shape shp in page.Shapes)
-                {
-                    shapeLookup[shp.ID] = shp;
-                }
-
-                // Iterate through each shape to find those with gluing enabled.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape allows dynamic glue.
-                    if (shape.Misc.GlueType != null &&
-                        shape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue)
+                    // Check if gluing is enabled for the shape
+                    // GlueTypeValue.AllowDynamicGlue indicates that dynamic glue is allowed
+                    if (shape.Misc.GlueType != null && shape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue)
                     {
-                        Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
+                        Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}, Page: {page.Name}");
 
-                        // Find connectors attached to this shape via the Connects collection.
-                        var attachedConnectors = new List<long>();
-
-                        foreach (Connect conn in page.Connects)
+                        // Retrieve IDs of connectors glued to this shape
+                        long[] connectorIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+                        if (connectorIds != null && connectorIds.Length > 0)
                         {
-                            // If the shape is the source of the connection.
-                            if (conn.FromSheet == shape.ID && IsConnector(shapeLookup, conn.ToSheet))
+                            foreach (long connId in connectorIds)
                             {
-                                attachedConnectors.Add(conn.ToSheet);
+                                // Retrieve the connector shape to obtain its name (if any)
+                                Shape connector = page.Shapes.GetShape(connId);
+                                string connectorName = connector != null ? connector.Name : "Unnamed";
+                                Console.WriteLine($"\tAttached Connector ID: {connId}, Name: {connectorName}");
                             }
-                            // If the shape is the target of the connection.
-                            else if (conn.ToSheet == shape.ID && IsConnector(shapeLookup, conn.FromSheet))
-                            {
-                                attachedConnectors.Add(conn.FromSheet);
-                            }
-                        }
-
-                        // Output attached connector information.
-                        if (attachedConnectors.Count == 0)
-                        {
-                            Console.WriteLine("\tNo attached connectors found.");
                         }
                         else
                         {
-                            foreach (long connectorId in attachedConnectors)
-                            {
-                                if (shapeLookup.TryGetValue(connectorId, out Shape connectorShape))
-                                {
-                                    Console.WriteLine($"\tConnector ID: {connectorId}, NameU: {connectorShape.NameU}");
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"\tConnector ID: {connectorId} (shape not found)");
-                                }
-                            }
+                            Console.WriteLine("\tNo connectors attached.");
                         }
                     }
                 }
             }
-        }
 
-        // Helper method to determine if a shape ID corresponds to a connector (1‑D shape).
-        private static bool IsConnector(Dictionary<long, Shape> lookup, long shapeId)
-        {
-            if (lookup.TryGetValue(shapeId, out Shape shp))
+            // Save the diagram (unchanged) to demonstrate lifecycle usage
+            try
             {
-                // The OneD property is a native bool indicating a connector.
-                return shp.OneD;
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
             }
-            return false;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+            }
         }
     }

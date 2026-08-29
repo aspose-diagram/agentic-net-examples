@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
@@ -9,7 +9,7 @@ class Program
         try
         {
 
-            // Load the Visio document
+            // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
             // Locate the page named "Details"
@@ -23,12 +23,13 @@ class Program
                 }
             }
 
-            // If the page exists, shift all its shapes 20 units right on the X axis
+            // If the page exists, move each shape 20 units to the right (X axis)
             if (detailsPage != null)
             {
                 foreach (Shape shape in detailsPage.Shapes)
                 {
-                    shape.Move(20.0, 0.0); // dX = 20, dY = 0
+                    // Move adds the offset to the current position; Y offset is 0
+                    shape.Move(20.0, 0.0);
                 }
             }
 

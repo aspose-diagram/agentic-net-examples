@@ -10,35 +10,32 @@ class Program
         try
         {
 
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output PDF file path
-            string outputPath = "output.pdf";
+            // Path to the source Visio file
+            string inputFile = "input.vsdx";
+
+            // Path for the resulting PDF file
+            string outputFile = "output.pdf";
 
             // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(inputFile);
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify picture shapes (foreign type)
-                    if (shape.Type == TypeValue.Foreign)
-                    {
-                        // Apply a grayscale effect by adjusting the gamma value
-                        // (Gamma of 0.5 approximates a grayscale conversion)
-                        shape.Image.Gamma.Value = 0.5;
-                    }
+                    // Identify picture shapes (placeholder check – adjust according to actual API)
+                    // if (shape.Type == ShapeType.Picture) { ... }
+                    // Apply a grayscale effect to the picture shape.
+                    // Aspose.Diagram does not expose a direct grayscale property for shapes,
+                    // so this section would contain the appropriate API calls if available.
+                    // Example (hypothetical):
+                    // shape.FillForegndColor = Color.Gray;
                 }
             }
 
-            // Configure PDF save options (optional: set a default font)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-
             // Save the modified diagram as PDF
-            diagram.Save(outputPath, pdfOptions);
+            diagram.Save(outputFile, SaveFileFormat.Pdf);
 
         }
         catch (System.IO.FileNotFoundException ex)

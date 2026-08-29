@@ -1,52 +1,51 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load the diagram using the provided load rule
-            Diagram diagram = LoadDiagram("input.vsdx");
+                // Paths to the source diagram and the output file
+                string inputPath = "input.vsdx";
+                string outputPath = "output_resized.vsdx";
 
-            // Identifier of the shape to resize (example value)
-            long shapeId = 1;
+                // Desired dimensions (in inches)
+                double newWidth = 2.0;
+                double newHeight = 1.0;
 
-            // Desired dimensions in inches
-            double newWidth = 2.5;
-            double newHeight = 1.5;
+                // Load the diagram from file
+                Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the shape from the first page
-            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+                // Access the first page (index 0)
+                Page page = diagram.Pages[0];
 
-            // Resize the shape
-            shape.SetWidth(newWidth);
-            shape.SetHeight(newHeight);
+                // Identify the shape to resize (example shape ID = 1)
+                long shapeId = 1;
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Save the diagram using the provided save rule
-            SaveDiagram(diagram, "output.vsdx");
+                // Verify the shape exists and is not marked as deleted
+                if (shape != null && shape.Del == BOOL.False)
+                {
+                    // Apply new width and height
+                    shape.XForm.Width.Value = newWidth;
+                    shape.XForm.Height.Value = newHeight;
+                    Console.WriteLine($"Resized shape ID {shapeId} to {newWidth} x {newHeight} inches.");
+                }
+                else
+                {
+                    Console.WriteLine($"Shape with ID {shapeId} not found or is deleted.");
+                }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-
-    // Placeholder for the provided load rule
-    static Diagram LoadDiagram(string filePath)
-    {
-        // The actual implementation is supplied by the lifecycle rule
-        return new Diagram(filePath);
     }
-
-    // Placeholder for the provided save rule
-    static void SaveDiagram(Diagram diagram, string filePath)
-    {
-        // The actual implementation is supplied by the lifecycle rule
-        diagram.Save(filePath, SaveFileFormat.Vsdx);
-    }
-}

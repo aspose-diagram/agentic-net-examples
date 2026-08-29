@@ -2,6 +2,8 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
+using Aspose.Diagram.Saving; // Required for shape operations per global rule
+
 class Program
 {
     static void Main()
@@ -10,28 +12,38 @@ class Program
         {
 
             // Path to the Visio file (adjust as needed)
-            string inputPath = "input.vsdx";
+            string diagramPath = "input.vsdx";
 
             // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through all pages
+            // Find a connector shape (1‑D shape). If you know the connector ID, you can retrieve it directly.
+            Shape connector = null;
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify connector shapes: 1-D and using the "Dynamic connector" master
-                    if (shape.OneD && shape.Master != null && shape.Master.Name == "Dynamic connector")
+                    if (shape.OneD) // Connectors are 1‑D shapes
                     {
-                        // Retrieve the line jump style from the shape's layout
-                        var jumpStyle = shape.Layout.ConLineJumpStyle.Value;
-
-                        // Log the connector ID and its line jump style
-                        Console.WriteLine($"Connector ID {shape.ID} has line jump style: {jumpStyle}");
+                        connector = shape;
+                        break;
                     }
                 }
+                if (connector != null)
+                    break;
             }
+
+            if (connector == null)
+            {
+                Console.WriteLine("No connector shape found in the diagram.");
+                return;
+            }
+
+            // Read the current line jump style of the connector
+            var jumpStyle = connector.Layout.ConLineJumpStyle.Value; // ConLineJumpStyleValue enum
+
+            // Log the value
+            Console.WriteLine($"Connector ID {connector.ID} line jump style: {jumpStyle}");
 
         }
         catch (System.IO.FileNotFoundException ex)

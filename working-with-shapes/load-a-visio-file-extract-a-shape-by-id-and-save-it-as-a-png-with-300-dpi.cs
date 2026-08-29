@@ -4,53 +4,46 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Expect: input Visio file, shape ID, output PNG path
-            if (args.Length < 3)
+            try
             {
-                Console.WriteLine("Usage: DiagramShapeExport <inputVisioPath> <shapeId> <outputPngPath>");
-                return;
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+
+                // Identifier of the shape to extract (replace with actual ID)
+                long shapeId = 123;
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Attempt to locate the shape on the first page
+                // Adjust page index if the shape resides on a different page
+                Page page = diagram.Pages[0];
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                if (shape == null)
+                {
+                    throw new Exception($"Shape with ID {shapeId} was not found on page {page.Name}.");
+                }
+
+                // Configure PNG export options with 300 DPI resolution
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                pngOptions.Resolution = 300f; // DPI
+
+                // Output file path for the extracted shape image
+                string outputPath = "shape.png";
+
+                // Export the shape to PNG using the specified options
+                shape.ToImage(outputPath, pngOptions);
+
+                Console.WriteLine($"Shape {shapeId} has been saved as PNG to '{outputPath}' with 300 DPI.");
+
             }
-
-            string inputPath = args[0];
-            string shapeIdStr = args[1];
-            string outputPath = args[2];
-
-            if (!long.TryParse(shapeIdStr, out long shapeId))
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("Invalid shape ID.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure the diagram has at least one page
-            if (diagram.Pages.Count == 0)
-            {
-                Console.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
-            // Access the first page (index 0)
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
-            {
-                Console.WriteLine($"Shape with ID {shapeId} not found on the first page.");
-                return;
-            }
-
-            // Set PNG export options with 300 DPI resolution
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.Resolution = 300; // DPI
-
-            // Export the shape to PNG
-            shape.ToImage(outputPath, saveOptions);
-
-            Console.WriteLine($"Shape {shapeId} exported to PNG at '{outputPath}' with 300 DPI.");
-        }
+    }
     }

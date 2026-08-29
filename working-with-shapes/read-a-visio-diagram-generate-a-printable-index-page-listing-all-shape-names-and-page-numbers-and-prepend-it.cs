@@ -1,65 +1,79 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class VisioIndexGenerator
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Paths to the source and destination Visio files
-            string sourcePath = "input.vsdx";
-            string destinationPath = "output.vsdx";
+            // Input and output file paths
+            string inputPath = @"C:\Diagrams\source.vsdx";
+            string outputPath = @"C:\Diagrams\source_with_index.vsdx";
 
             // Load the existing Visio diagram
-            using (Diagram diagram = new Diagram(sourcePath))
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create a new page that will serve as the index
+            // (Assuming the Pages collection supports Add method)
+            Page indexPage = new Page();
+            diagram.Pages.Add(indexPage);
+
+            // Set a recognizable name for the index page
+            indexPage.Name = "Index";
+
+            // Prepare layout variables for text placement
+            double startX = 1.0;   // inches from left
+            double startY = 9.0;   // top of the page (Visio default height is 11 inches)
+            double lineHeight = 0.3; // vertical spacing between lines
+            double textWidth = 8.0;
+            double textHeight = 0.25;
+
+            // Write header
+            string header = "Shape Index – Name | Page";
+            indexPage.AddText(startX, startY, textWidth, textHeight, header);
+            startY -= lineHeight; // move down for next line
+
+            // Iterate through all pages and their shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Create a new page that will serve as the index
-                Page indexPage = new Page();
-                indexPage.Name = "Index";
+                // Skip the index page itself (it may already be in the collection)
+                if (page == indexPage) continue;
 
-                // Add the index page to the document
-                diagram.Pages.Add(indexPage);
+                // Get the page number (1‑based index in the collection)
+                int pageNumber = diagram.Pages.IndexOf(page) + 1;
 
-                // Move the newly added page to the first position (prepend)
-                // Page indices are zero‑based; MoveTo(0) places it at the front
-                indexPage.MoveTo(0);
-
-                // Add a title text shape to the index page
-                // Parameters: pinX, pinY, width, height, text
-                indexPage.AddText(1.0, 10.0, 5.0, 0.5, "Index of Shapes");
-
-                // Vertical offset for subsequent entries
-                double currentY = 9.0;
-                double lineHeight = 0.4;
-                double startX = 1.0;
-
-                // Iterate through all pages and their shapes to build the index
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Page page = diagram.Pages[pageIndex];
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Retrieve the shape's name (use NameU for universal name)
-                        string shapeName = shape.NameU;
+                    // Use the shape's Name property; fallback to NameU if needed
+                    string shapeName = !string.IsNullOrEmpty(shape.Name) ? shape.Name : shape.NameU;
 
-                        // Compose the index line: "ShapeName - Page N"
-                        string line = $"{shapeName} - Page {pageIndex + 1}";
+                    // Build the line text
+                    string line = $"{shapeName} | {pageNumber}";
 
-                        // Add the line as a text shape on the index page
-                        indexPage.AddText(startX, currentY, 5.0, lineHeight, line);
+                    // Add the line as a text shape on the index page
+                    indexPage.AddText(startX, startY, textWidth, textHeight, line);
 
-                        // Move down for the next entry
-                        currentY -= lineHeight;
-                    }
+                    // Move to next line position
+                    startY -= lineHeight;
+
+                    // If we reach the bottom of the page, stop adding (simple safety)
+                    if (startY < 0.5) break;
                 }
 
-                // Save the modified diagram back to a file (VDX format)
-                diagram.Save(destinationPath, SaveFileFormat.Vdx);
+                // Simple page break handling – add extra space between pages
+                startY -= lineHeight;
             }
+
+            // Move the index page to the first position in the document
+            // (Assuming MoveTo moves the page within the Pages collection)
+            indexPage.MoveTo(0);
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -4,55 +4,50 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace GluedShapesExport
-{
-    // Simple DTO to hold a pair of glued shape identifiers
-    public class GluedPair
-    {
-        public long ShapeId { get; set; }
-        public long GluedShapeId { get; set; }
-    }
-
-    class Program
+class Program
     {
         static void Main(string[] args)
         {
             try
             {
 
-                // Input Visio file path (adjust as needed)
-                string visioFilePath = @"C:\Diagrams\sample.vsdx";
+                // Path to the source Visio file
+                const string inputPath = "input.vsdx";
 
-                // Output JSON file path
-                string jsonOutputPath = @"C:\Diagrams\glued_shapes.json";
+                // Load the Visio diagram (uses Aspose.Diagram's built‑in load functionality)
+                Diagram diagram = new Diagram(inputPath);
 
-                // Load the Visio diagram using Aspose.Diagram (lifecycle rule)
-                Diagram diagram = new Diagram(visioFilePath);
+                // Collection to hold unique glued shape pairs
+                var gluedPairs = new List<GluedPair>();
+                var seenPairs = new HashSet<string>(); // to avoid duplicate entries
 
-                // List to collect all glued shape pairs
-                List<GluedPair> gluedPairs = new List<GluedPair>();
-
-                // Iterate through each page in the diagram
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve IDs of shapes glued to the current shape.
-                        // Using GluedShapesAll2D to capture all 2‑D glue relationships.
+                        // Retrieve IDs of all shapes glued to the current shape (both 1‑D and 2‑D)
                         long[] gluedShapeIds = shape.GluedShapes(
-                            GluedShapesFlags.GluedShapesAll2D,   // flag
-                            null,                               // no category filter
-                            null);                              // no additional shape filter
+                            GluedShapesFlags.GluedShapesAll2D, // all relevant glued shapes
+                            null,                             // no category filter
+                            null);                            // no additional shape filter
 
-                        // Record each glue relationship as a pair (shape -> gluedShape)
                         foreach (long gluedId in gluedShapeIds)
                         {
-                            gluedPairs.Add(new GluedPair
+                            // Build a deterministic key to prevent duplicate (A‑B and B‑A) entries
+                            string key = shape.ID < gluedId
+                                ? $"{shape.ID}-{gluedId}"
+                                : $"{gluedId}-{shape.ID}";
+
+                            if (!seenPairs.Contains(key))
                             {
-                                ShapeId = shape.ID,
-                                GluedShapeId = gluedId
-                            });
+                                seenPairs.Add(key);
+                                gluedPairs.Add(new GluedPair
+                                {
+                                    ShapeId = shape.ID,
+                                    GluedShapeId = gluedId
+                                });
+                            }
                         }
                     }
                 }
@@ -62,10 +57,11 @@ namespace GluedShapesExport
                     gluedPairs,
                     new JsonSerializerOptions { WriteIndented = true });
 
-                // Write JSON to the specified file (save rule)
-                File.WriteAllText(jsonOutputPath, json);
+                // Write the JSON to a file (uses standard .NET file I/O)
+                const string outputPath = "glued_shapes.json";
+                File.WriteAllText(outputPath, json);
 
-                Console.WriteLine($"Exported {gluedPairs.Count} glued shape pairs to '{jsonOutputPath}'.");
+                Console.WriteLine($"Exported {gluedPairs.Count} glued shape pairs to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -73,5 +69,11 @@ namespace GluedShapesExport
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
+
+        // Simple DTO for JSON serialization
+        private class GluedPair
+        {
+            public long ShapeId { get; set; }
+            public long GluedShapeId { get; set; }
+        }
     }
-}

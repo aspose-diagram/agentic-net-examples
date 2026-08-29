@@ -1,9 +1,9 @@
 using System.IO;
 using System;
+using System.Diagnostics;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+class ScaleShapeExample
 {
     static void Main()
     {
@@ -11,38 +11,41 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram(@"C:\Input\sample.vsdx");
 
-            // Access the first page and the first shape on that page
+            // Assume we work with the first shape on the first page
             Page page = diagram.Pages[0];
             Shape shape = page.Shapes[0];
 
-            // Capture original dimensions
+            // Store original dimensions
             double originalWidth = shape.XForm.Width.Value;
             double originalHeight = shape.XForm.Height.Value;
 
-            // Define scaling factor
+            // Scale factor
             double scaleFactor = 0.5;
 
-            // Apply scaling to width and height
-            shape.SetWidth(originalWidth * scaleFactor);
-            shape.SetHeight(originalHeight * scaleFactor);
+            // Calculate new dimensions
+            double newWidth = originalWidth * scaleFactor;
+            double newHeight = originalHeight * scaleFactor;
 
-            // Retrieve new dimensions for verification
-            double newWidth = shape.XForm.Width.Value;
-            double newHeight = shape.XForm.Height.Value;
+            // Apply new dimensions using Shape.SetWidth and Shape.SetHeight
+            shape.SetWidth(newWidth);
+            shape.SetHeight(newHeight);
 
-            // Output verification results
-            Console.WriteLine($"Original Width: {originalWidth}, Scaled Width: {newWidth}");
-            Console.WriteLine($"Original Height: {originalHeight}, Scaled Height: {newHeight}");
+            // Verify that the dimensions were updated correctly
+            double updatedWidth = shape.XForm.Width.Value;
+            double updatedHeight = shape.XForm.Height.Value;
+
+            Debug.Assert(Math.Abs(updatedWidth - newWidth) < 0.0001, "Width scaling failed.");
+            Debug.Assert(Math.Abs(updatedHeight - newHeight) < 0.0001, "Height scaling failed.");
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save(@"C:\Output\sample_scaled.vsdx", SaveFileFormat.Vsdx);
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,60 +1,53 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Collect IDs of shapes that have no child shapes
+                List<long> shapesToDelete = new List<long>();
 
-                // Load the diagram using the provided load rule
-                Diagram diagram = LoadDiagram("input.vsdx");
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Collect shapes that have no child shapes
-                    List<Shape> shapesToRemove = new List<Shape>();
-                    foreach (Shape shape in page.Shapes)
+                    // A shape is considered a parent if it contains child shapes (group shape)
+                    // Non-group shapes or empty groups have a null or empty Shapes collection
+                    if (shape.Shapes == null || shape.Shapes.Count == 0)
                     {
-                        // Shape.Shapes returns the collection of child shapes
-                        if (shape.Shapes.Count == 0)
-                        {
-                            shapesToRemove.Add(shape);
-                        }
-                    }
-
-                    // Remove the collected shapes from the page
-                    foreach (Shape shape in shapesToRemove)
-                    {
-                        // Use RemoveDependsOn to also delete any dependent shapes
-                        page.Shapes.RemoveDependsOn(shape);
+                        shapesToDelete.Add(shape.ID);
                     }
                 }
 
-                // Save the modified diagram using the provided save rule
-                SaveDiagram(diagram, "output.vsdx");
-
+                // Mark the identified shapes as deleted
+                foreach (long shapeId in shapesToDelete)
+                {
+                    Shape s = page.Shapes.GetShape(shapeId);
+                    s.Del = BOOL.True;
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
 
-        // Placeholder for the provided load rule
-        static Diagram LoadDiagram(string path)
-        {
-            // Implementation is supplied by the rule set
-            return new Diagram(path);
+            // Save the modified diagram, preserving only parent (group) shapes
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-
-        // Placeholder for the provided save rule
-        static void SaveDiagram(Diagram diagram, string path)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Implementation is supplied by the rule set
-            diagram.Save(path, SaveFileFormat.Vdx);
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

@@ -1,58 +1,58 @@
 using System;
+using System.Text;
+using System.IO;
 using Aspose.Diagram;
 
-class Program
+class ShapeReport
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            StringBuilder sb = new StringBuilder();
+            // CSV header
+            sb.AppendLine("ShapeID,Name,Width,Height,PinX,PinY");
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Determine the input Visio file path.
-                // If a path is passed as a command‑line argument, use it; otherwise use a default placeholder.
-                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-                // Load the diagram.
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through all pages in the diagram.
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Console.WriteLine($"Page: {page.Name} (ID: {page.ID})");
-                    Console.WriteLine(new string('-', 60));
+                    // Retrieve required properties
+                    long id = shape.ID;
+                    string name = shape.Name ?? string.Empty;
+                    double width = shape.XForm.Width.Value;
+                    double height = shape.XForm.Height.Value;
+                    double pinX = shape.XForm.PinX.Value;
+                    double pinY = shape.XForm.PinY.Value;
 
-                    // Iterate through all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip shapes that are marked as deleted.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve required properties.
-                        long shapeId = shape.ID;
-                        string shapeName = shape.Name;
-                        double width = shape.XForm.Width.Value;
-                        double height = shape.XForm.Height.Value;
-                        double pinX = shape.XForm.PinX.Value;
-                        double pinY = shape.XForm.PinY.Value;
-
-                        // Output the shape information.
-                        Console.WriteLine($"ID: {shapeId}");
-                        Console.WriteLine($"Name: {shapeName}");
-                        Console.WriteLine($"Width: {width} in");
-                        Console.WriteLine($"Height: {height} in");
-                        Console.WriteLine($"PinX (absolute): {pinX} in");
-                        Console.WriteLine($"PinY (absolute): {pinY} in");
-                        Console.WriteLine(new string('-', 30));
-                    }
-
-                    Console.WriteLine(); // Blank line between pages.
+                    // Append a CSV line for the shape
+                    sb.AppendLine($"{id},{EscapeCsv(name)},{width},{height},{pinX},{pinY}");
                 }
+            }
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+            // Save the report to a CSV file
+            File.WriteAllText("ShapeReport.csv", sb.ToString());
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
+
+    // Helper method to escape CSV fields containing commas, quotes, or newlines
+    static string EscapeCsv(string field)
+    {
+        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
+        {
+            field = field.Replace("\"", "\"\"");
+            return $"\"{field}\"";
+        }
+        return field;
     }
+}

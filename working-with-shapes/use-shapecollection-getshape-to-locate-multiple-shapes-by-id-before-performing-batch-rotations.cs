@@ -1,51 +1,52 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // IDs of the shapes that need to be rotated
-            long[] shapeIds = new long[] { 5, 12, 20 };
-
-            // Work with the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
-
-            foreach (long id in shapeIds)
+            try
             {
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(id);
-                if (shape == null)
+
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Define the IDs of the shapes to rotate
+                long[] shapeIds = { 5, 12, 23 }; // example IDs
+
+                // Target rotation angle in radians (e.g., 90 degrees)
+                double rotationAngle = Math.PI / 2;
+
+                // Retrieve each shape by ID and apply the rotation
+                foreach (long id in shapeIds)
                 {
-                    Console.WriteLine($"Shape with ID {id} not found.");
-                    continue;
+                    // Get the shape from the first page (index 0)
+                    Shape shape = diagram.Pages[0].Shapes.GetShape(id);
+
+                    // Ensure the shape exists and is not marked as deleted
+                    if (shape != null && shape.Del == BOOL.False)
+                    {
+                        // Set the rotation angle
+                        shape.XForm.Angle.Value = rotationAngle;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Shape with ID {id} not found or is deleted.");
+                    }
                 }
 
-                // Rotate the shape by adding 45 degrees to its current angle
-                double currentAngle = shape.XForm.Angle.Value;
-                double newAngle = currentAngle + 45.0;
-                shape.XForm.Angle.Value = newAngle;
+                // Save the modified diagram
+                string outputPath = "RotatedDiagram.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                Console.WriteLine($"Rotated shape ID {id} from {currentAngle}° to {newAngle}°.");
+                Console.WriteLine("Batch rotation completed and diagram saved.");
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

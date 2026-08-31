@@ -5,7 +5,7 @@ framework: net8.0
 version: 26.8.0
 total_examples: 1840
 categories: 31
-generated: 2026-08-29
+generated: 2026-08-31
 ---
 
 # Aspose.Diagram for .NET — Agentic Examples
@@ -23,7 +23,7 @@ generated: 2026-08-29
 | Framework | net8.0 |
 | Total Examples | 1840 |
 | Categories | 31 |
-| Last Updated | 2026-08-29 |
+| Last Updated | 2026-08-31 |
 
 ## Persona
 
@@ -187,4 +187,4 @@ Covers all 31 Aspose.Diagram for .NET task categories: basic operations, shapes,
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) | Examples: 1840 | Categories: 31 | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) | Updated: 2026-08-29*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) | Examples: 1840 | Categories: 31 | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) | Updated: 2026-08-31*

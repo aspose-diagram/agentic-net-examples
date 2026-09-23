@@ -1,7 +1,6 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,17 +9,12 @@ class Program
         try
         {
 
-            // Load the source Visio diagram (replace with your actual file path)
+            // Load the Visio diagram (replace with your source file)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create image save options for PNG format
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-
-            // Omit hidden pages (default is true, set to false explicitly)
-            saveOptions.ExportHiddenPage = false;
-
-            // Export the diagram to PNG using the specified options
-            diagram.Save("output.png", saveOptions);
+            // Export the diagram to PNG.
+            // By default Aspose.Diagram omits hidden pages during export.
+            diagram.Save("output.png", SaveFileFormat.Png);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,6 +1,6 @@
+using Aspose.Diagram;
 using System;
 using System.IO;
-using Aspose.Diagram;
 
 class Program
 {
@@ -9,30 +9,28 @@ class Program
         try
         {
 
-            // Load an existing diagram (replace with your actual file)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load the existing diagram (replace with your actual source file)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Define output file and size limit (e.g., 5 MB)
+            // Path where the VSDX file will be saved
             string outputPath = "output.vsdx";
-            long maxSizeBytes = 5 * 1024 * 1024; // 5 MB
 
-            // Save the diagram in VSDX format using the provided Save method
+            // Save the diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Verify that the saved file does not exceed the size limit
+            // Define maximum allowed file size (e.g., 5 MB)
+            const long maxSizeBytes = 5 * 1024 * 1024; // 5 MB
+
+            // Check the size of the saved file
             FileInfo fileInfo = new FileInfo(outputPath);
             if (fileInfo.Length > maxSizeBytes)
             {
-                Console.WriteLine($"Error: File size {fileInfo.Length} bytes exceeds the limit of {maxSizeBytes} bytes.");
+                Console.WriteLine($"File size exceeds limit: {fileInfo.Length} bytes");
             }
             else
             {
-                Console.WriteLine($"Success: File saved as '{outputPath}' with size {fileInfo.Length} bytes.");
+                Console.WriteLine($"File saved successfully. Size: {fileInfo.Length} bytes");
             }
-
-            // Clean up
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

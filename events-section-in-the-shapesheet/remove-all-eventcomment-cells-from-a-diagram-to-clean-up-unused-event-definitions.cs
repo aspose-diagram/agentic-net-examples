@@ -1,65 +1,49 @@
-using System.IO;
 using System;
-using System.Reflection;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output_cleaned.vsdx";
+
         try
         {
-
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output_cleaned.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram from the input file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate over each page in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate over each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Access the Event section of the shape
-                    var eventSection = shape.Event;
-                    if (eventSection == null) continue;
-
-                    // Use reflection to find any property that represents an EventComment cell
-                    PropertyInfo[] eventProps = eventSection.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-                    foreach (PropertyInfo prop in eventProps)
-                    {
-                        if (prop.Name.Contains("EventComment"))
-                        {
-                            // Get the cell object (e.g., shape.Event.EventComment)
-                            object cellObj = prop.GetValue(eventSection);
-                            if (cellObj == null) continue;
-
-                            // The cell should have a Ufe property with an F (formula) member
-                            PropertyInfo ufeProp = cellObj.GetType().GetProperty("Ufe");
-                            if (ufeProp == null) continue;
-
-                            object ufeObj = ufeProp.GetValue(cellObj);
-                            if (ufeObj == null) continue;
-
-                            PropertyInfo formulaProp = ufeObj.GetType().GetProperty("F");
-                            if (formulaProp == null) continue;
-
-                            // Clear the formula to effectively remove the EventComment cell content
-                            formulaProp.SetValue(ufeObj, string.Empty);
-                        }
-                    }
+                    // Clear each supported event cell if it exists.
+                    // Setting the formula to an empty string removes the event definition.
+                    try { shape.Event.EventXFMod.Ufe.F = ""; } catch { }
+                    try { shape.Event.EventDblClick.Ufe.F = ""; } catch { }
+                    try { shape.Event.EventDrop.Ufe.F = ""; } catch { }
+                    try { shape.Event.EventMultiDrop.Ufe.F = ""; } catch { }
+                    try { shape.Event.TheText.Ufe.F = ""; } catch { }
+                    try { shape.Event.TheData.Ufe.F = ""; } catch { }
                 }
             }
 
-            // Save the cleaned diagram
+            // Save the cleaned diagram to the output file using the VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

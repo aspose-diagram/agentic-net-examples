@@ -10,17 +10,23 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (VSD/VSDX)
-            Diagram diagram = new Diagram("input.vsd");
+            // Path to the source Visio file
+            string inputPath = "input.vsd";
+            // Path for the exported PNG image
+            string outputPath = "output.png";
 
-            // Create image save options for PNG format
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Set custom resolution (dots per inch) for the generated PNG image
-            pngOptions.Resolution = 300f; // e.g., 300 DPI
+            // Configure image export options
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Set custom resolution (dots per inch)
+            saveOptions.Resolution = 300f; // 300 DPI
 
-            // Save the diagram as a PNG image using the specified options
-            diagram.Save("output.png", pngOptions);
+            // Save the diagram as a PNG image with the specified resolution
+            diagram.Save(outputPath, saveOptions);
+
+            Console.WriteLine($"Diagram saved to '{outputPath}' with resolution {saveOptions.Resolution} DPI.");
 
         }
         catch (System.IO.FileNotFoundException ex)

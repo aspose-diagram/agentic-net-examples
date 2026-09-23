@@ -1,11 +1,11 @@
 {
   "category": "font-operations",
   "display_name": "Font Operations",
-  "version": "26.8.0",
+  "version": "26.9.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-08-28",
+  "generated": "2026-09-23",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,6 +14,7 @@
       "task": "Apply a bold style to all text shapes that use a particular font within the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -31,14 +32,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -47,8 +49,8 @@
       "task": "Apply kerning adjustments to all text elements using a particular font to improve spacing consistency",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -81,12 +83,15 @@
       "task": "Batch process multiple vsd files substituting a deprecated font with a modern equivalent in each",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Drawing.Text",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -94,37 +99,6 @@
       "slug": "configure-a-custom-font-folder-path-to-load-additional-truetype-fonts-for-diagram-processing",
       "file": "configure-a-custom-font-folder-path-to-load-additional-truetype-fonts-for-diagram-processing.cs",
       "task": "Configure a custom font folder path to load additional truetype fonts for diagram processing",
-      "namespaces": [
-        "Aspose.Diagram",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Save",
-        "diagram"
-      ]
-    },
-    {
-      "slug": "configure-the-library-to-use-a-specific-font-cache-size-to-improve-performance-when-processing-large-diagrams",
-      "file": "configure-the-library-to-use-a-specific-font-cache-size-to-improve-performance-when-processing-large-diagrams.cs",
-      "task": "Configure the library to use a specific font cache size to improve performance when processing large diagrams",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Save",
-        "diagram"
-      ]
-    },
-    {
-      "slug": "convert-a-diagram-to-pdf-while-embedding-only-the-fonts-that-are-actually-used-in-the-document",
-      "file": "convert-a-diagram-to-pdf-while-embedding-only-the-fonts-that-are-actually-used-in-the-document.cs",
-      "task": "Convert a diagram to pdf while embedding only the fonts that are actually used in the document",
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
@@ -139,6 +113,42 @@
       ]
     },
     {
+      "slug": "configure-the-library-to-use-a-specific-font-cache-size-to-improve-performance-when-processing-large-diagrams",
+      "file": "configure-the-library-to-use-a-specific-font-cache-size-to-improve-performance-when-processing-large-diagrams.cs",
+      "task": "Configure the library to use a specific font cache size to improve performance when processing large diagrams",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Reflection"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "convert-a-diagram-to-pdf-while-embedding-only-the-fonts-that-are-actually-used-in-the-document",
+      "file": "convert-a-diagram-to-pdf-while-embedding-only-the-fonts-that-are-actually-used-in-the-document.cs",
+      "task": "Convert a diagram to pdf while embedding only the fonts that are actually used in the document",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
+        "System",
+        "System.IO",
+        "System.Linq"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Fonts",
+        "PdfSaveOptions",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
       "slug": "create-a-custom-font-substitution-map-to-replace-unavailable-fonts-with-user-defined-alternatives-during-rendering",
       "file": "create-a-custom-font-substitution-map-to-replace-unavailable-fonts-with-user-defined-alternatives-during-rendering.cs",
       "task": "Create a custom font substitution map to replace unavailable fonts with user defined alternatives during rendering",
@@ -147,7 +157,7 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
-        "System.Collections.Generic",
+        "System.IO",
         "System.Linq"
       ],
       "key_apis": [
@@ -164,18 +174,17 @@
       "task": "Detect and report any text shapes that use fonts not supported by the target output format",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
         "System.Collections.Generic",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -185,11 +194,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
+        "Fonts",
         "PdfSaveOptions",
         "Save",
         "diagram"
@@ -202,11 +215,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
+        "Fonts",
         "HTMLSaveOptions",
         "Save",
         "diagram"
@@ -251,17 +267,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Drawing.Text",
-        "System",
-        "System.Collections.Generic",
-        "System.IO",
-        "System.Linq"
+        "System"
       ],
       "key_apis": [
         "Diagram",
-        "Fonts",
         "Pages",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -273,6 +286,7 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
+        "System.IO",
         "System.Linq"
       ],
       "key_apis": [
@@ -294,10 +308,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Fonts",
         "Pages",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -307,7 +321,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -324,22 +339,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "Save",
-        "diagram"
-      ]
-    },
-    {
-      "slug": "load-a-diagram-set-the-line-spacing-for-all-paragraphs-using-a-specific-font-and-save-as-docx",
-      "file": "load-a-diagram-set-the-line-spacing-for-all-paragraphs-using-a-specific-font-and-save-as-docx.cs",
-      "task": "Load a diagram set the line spacing for all paragraphs using a specific font and save as docx",
-      "namespaces": [
-        "Aspose.Diagram",
+        "Aspose.Drawing.Text",
         "System",
         "System.IO"
       ],
@@ -352,9 +352,9 @@
       ]
     },
     {
-      "slug": "load-a-visio-diagram-from-a-vsdx-file-and-set-a-custom-default-font-for-rendering",
-      "file": "load-a-visio-diagram-from-a-vsdx-file-and-set-a-custom-default-font-for-rendering.cs",
-      "task": "Load a visio diagram from a vsdx file and set a custom default font for rendering",
+      "slug": "load-a-diagram-set-the-line-spacing-for-all-paragraphs-using-a-specific-font-and-save-as-docx",
+      "file": "load-a-diagram-set-the-line-spacing-for-all-paragraphs-using-a-specific-font-and-save-as-docx.cs",
+      "task": "Load a diagram set the line spacing for all paragraphs using a specific font and save as docx",
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
@@ -363,6 +363,24 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
+        "PdfSaveOptions",
+        "Save",
+        "Shapes"
+      ]
+    },
+    {
+      "slug": "load-a-visio-diagram-from-a-vsdx-file-and-set-a-custom-default-font-for-rendering",
+      "file": "load-a-visio-diagram-from-a-vsdx-file-and-set-a-custom-default-font-for-rendering.cs",
+      "task": "Load a visio diagram from a vsdx file and set a custom default font for rendering",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System"
+      ],
+      "key_apis": [
+        "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -374,14 +392,17 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
+        "Fonts",
         "ImageSaveOptions",
-        "Save",
-        "diagram"
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -396,6 +417,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Save",
         "diagram"
       ]
@@ -407,13 +429,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "Aspose.Drawing.Text",
+        "System"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
+        "PdfSaveOptions",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -425,7 +449,8 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -457,7 +482,6 @@
       "task": "Set the default font for newly created text shapes when programmatically adding annotations to a diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -493,13 +517,12 @@
         "Aspose.Diagram",
         "Aspose.Drawing.Text",
         "System",
-        "System.Collections.Generic",
+        "System.IO",
         "System.Linq"
       ],
       "key_apis": [
         "Diagram",
         "Fonts",
-        "Save",
         "diagram"
       ]
     },
@@ -512,7 +535,7 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",

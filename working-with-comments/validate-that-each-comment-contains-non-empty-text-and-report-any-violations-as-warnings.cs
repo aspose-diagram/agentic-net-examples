@@ -1,40 +1,55 @@
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Path to the Visio file to be validated
-                string diagramPath = "input.vsdx";
+                // Load the Visio diagram (replace with your actual file path)
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+                // List to collect warning messages for empty comments
+                List<string> warnings = new List<string>();
 
                 // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Access the collection of annotations (comments) on the page
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Iterate through all annotations (comments) on the current page
                     foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
                         // Retrieve the comment text
                         string commentText = annotation.Comment.Value;
 
-                        // Check for empty or whitespace-only comments
+                        // Check for empty or whitespace-only comment text
                         if (string.IsNullOrWhiteSpace(commentText))
                         {
-                            // Report a warning with page name and comment identifier
-                            Console.WriteLine(
-                                $"Warning: Empty comment found on page \"{page.Name}\" (Comment ID: {annotation.MarkerIndex.Value}).");
+                            warnings.Add(
+                                $"Warning: Empty comment detected on page {pageIndex + 1}, marker index {annotation.MarkerIndex.Value}.");
                         }
                     }
                 }
 
-                // Optional: indicate validation completed
-                Console.WriteLine("Comment validation completed.");
+                // Output the collected warnings
+                if (warnings.Count > 0)
+                {
+                    foreach (string warning in warnings)
+                    {
+                        Console.WriteLine(warning);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No empty comments found.");
+                }
+
+                // Save the diagram (optional, can be omitted if no changes are made)
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -10,18 +10,42 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Configure PDF save options to export comments as callout annotations
+            // Access the first page
+            Page page = diagram.Pages[0];
+
+            // Find the first non‑deleted shape to attach a comment
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.Del == BOOL.False)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
+
+            if (targetShape == null)
+            {
+                Console.WriteLine("No suitable shape found to attach a comment.");
+                return;
+            }
+
+            // Add a comment (annotation) to the selected shape
+            page.AddComment(targetShape, "Review this shape");
+
+            // Configure PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.IsExportComments = true;
+            pdfOptions.DefaultFont = "Arial";
 
-            // Save the diagram as a PDF file with comments rendered
-            diagram.Save("output.pdf", pdfOptions);
+            // Save the diagram as PDF; comments appear as callout annotations
+            string outputPath = "output.pdf";
+            diagram.Save(outputPath, pdfOptions);
 
-            // Clean up resources
-            diagram.Dispose();
+            Console.WriteLine($"Diagram saved to PDF with comments at '{outputPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

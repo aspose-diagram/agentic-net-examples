@@ -1,69 +1,91 @@
 using System;
 using System.IO;
-using System.Text;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and output CSV file path
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: DiagramCommentExport <inputVisioFile> <outputCsvFile>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputCsvPath = args[1];
+                // Input Visio file path (modify as needed)
+                string diagramPath = "input.vsdx";
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Output CSV file path
+                string csvPath = "comments.csv";
 
-            // Build a lookup of reviewer IDs to reviewer names
-            // Reviewer collection is accessed via diagram.DocumentSheet.Reviewers
-            // Reviewer.Name is a Str2Value, retrieve the string via .Value
-            var reviewerNames = new System.Collections.Generic.List<string>();
-            foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
-            {
-                // Ensure the name is not null
-                string name = reviewer.Name?.Value ?? string.Empty;
-                reviewerNames.Add(name);
-            }
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-            // Prepare the CSV file for writing (UTF-8 without BOM)
-            using (var writer = new StreamWriter(outputCsvPath, false, new UTF8Encoding(false)))
-            {
-                // Write CSV header
-                writer.WriteLine("CommentText,Author");
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Build a map of reviewer IDs to reviewer names
+                Dictionary<int, string> reviewerMap = new Dictionary<int, string>();
+                for (int i = 0; i < diagram.DocumentSheet.Reviewers.Count; i++)
                 {
-                    // Annotations (comments) are stored in the page's PageSheet
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    Reviewer reviewer = diagram.DocumentSheet.Reviewers[i];
+                    // Reviewer.Name is a Str2Value; use .Value to get the string
+                    reviewerMap[i] = reviewer.Name.Value;
+                }
+
+                // Write comments to CSV
+                using (StreamWriter writer = new StreamWriter(csvPath))
+                {
+                    // CSV header
+                    writer.WriteLine("CommentId,Author,Text");
+
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Retrieve comment text
-                        string commentText = annotation.Comment?.Value ?? string.Empty;
-
-                        // Retrieve reviewer ID and map to reviewer name
-                        int reviewerId = annotation.ReviewerID?.Value ?? -1;
-                        string authorName = string.Empty;
-                        if (reviewerId >= 0 && reviewerId < reviewerNames.Count)
+                        // Annotations (comments) are stored in the page's PageSheet
+                        foreach (Annotation annotation in page.PageSheet.Annotations)
                         {
-                            authorName = reviewerNames[reviewerId];
+                            int commentId = annotation.MarkerIndex.Value;
+                            string commentText = annotation.Comment.Value ?? string.Empty;
+
+                            // Retrieve author name using ReviewerID
+                            string author = string.Empty;
+                            int reviewerId = annotation.ReviewerID.Value;
+                            if (reviewerMap.TryGetValue(reviewerId, out string name))
+                            {
+                                author = name;
+                            }
+
+                            // Escape fields for CSV compliance
+                            string escapedAuthor = EscapeCsv(author);
+                            string escapedText = EscapeCsv(commentText);
+
+                            // Write the CSV line
+                            writer.WriteLine($"{commentId},{escapedAuthor},{escapedText}");
                         }
-
-                        // Escape CSV fields (double quotes are escaped by doubling them)
-                        string escapedComment = $"\"{commentText.Replace("\"", "\"\"")}\"";
-                        string escapedAuthor = $"\"{authorName.Replace("\"", "\"\"")}\"";
-
-                        // Write the CSV line
-                        writer.WriteLine($"{escapedComment},{escapedAuthor}");
                     }
                 }
-            }
 
-            Console.WriteLine($"Comments exported successfully to '{outputCsvPath}'.");
+                Console.WriteLine($"Comments exported to '{csvPath}'.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
+
+        // Helper method to escape CSV fields
+        private static string EscapeCsv(string field)
+        {
+            if (field == null)
+                return string.Empty;
+
+            bool containsSpecial = field.Contains("\"") || field.Contains(",") || field.Contains("\n") || field.Contains("\r");
+            if (containsSpecial)
+            {
+                // Escape double quotes by doubling them
+                string escaped = field.Replace("\"", "\"\"");
+                return $"\"{escaped}\"";
+            }
+            else
+            {
+                return field;
+            }
         }
     }

@@ -4,64 +4,99 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace DiagramCommentExporter
+namespace DiagramCommentExport
 {
-    // Model representing a comment for JSON serialization
+    // Model representing a comment with its details
     public class CommentInfo
     {
-        public int PageId { get; set; }
-        public int ShapeId { get; set; }          // 0 if not linked to a shape
-        public double X { get; set; }             // X coordinate of the comment
-        public double Y { get; set; }             // Y coordinate of the comment
-        public string Text { get; set; }
+        public int Id { get; set; }               // Unique identifier of the comment (MarkerIndex)
+        public string Text { get; set; }          // Comment text
+        public int ReviewerId { get; set; }       // Index of the reviewer/author
+        public int ShapeId { get; set; }          // Linked shape identifier (0 if none)
+        public double? PinX { get; set; }         // X coordinate of the linked shape (null if no shape)
+        public double? PinY { get; set; }         // Y coordinate of the linked shape (null if no shape)
     }
 
     public class Program
     {
         public static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and output JSON file path
-            if (args.Length < 2)
+            try
             {
-                Console.WriteLine("Usage: DiagramCommentExporter <input.vsdx> <output.json>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+                // Input Visio file path (adjust as needed)
+                string diagramPath = "input.vsdx";
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Output JSON file path
+                string jsonOutputPath = "comments.json";
 
-            var comments = new List<CommentInfo>();
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
-            {
-                // Annotations (comments) are stored in the PageSheet
-                foreach (Annotation annotation in page.PageSheet.Annotations)
+                // Collection to hold all extracted comments
+                List<CommentInfo> comments = new List<CommentInfo>();
+
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    var comment = new CommentInfo
+                    // Ensure the page has annotations (comments)
+                    if (page.PageSheet != null && page.PageSheet.Annotations != null)
                     {
-                        PageId = page.ID,
-                        ShapeId = annotation.ShapeID,               // primitive int, no .Value
-                        X = annotation.X.Value,                     // X coordinate
-                        Y = annotation.Y.Value,                     // Y coordinate
-                        Text = annotation.Comment.Value            // comment text
-                    };
+                        // Iterate through each annotation on the page
+                        foreach (Annotation ann in page.PageSheet.Annotations)
+                        {
+                            // Basic comment data
+                            int commentId = ann.MarkerIndex.Value;
+                            string commentText = ann.Comment.Value;
+                            int reviewerId = ann.ReviewerID.Value;
+                            int linkedShapeId = ann.ShapeID; // Primitive int, may be 0 if not linked
 
-                    comments.Add(comment);
+                            double? pinX = null;
+                            double? pinY = null;
+
+                            // If the comment is linked to a shape, retrieve its position
+                            if (linkedShapeId != 0)
+                            {
+                                // Retrieve the shape by its ID
+                                Shape linkedShape = page.Shapes.GetShape(linkedShapeId);
+                                if (linkedShape != null)
+                                {
+                                    pinX = linkedShape.XForm.PinX.Value;
+                                    pinY = linkedShape.XForm.PinY.Value;
+                                }
+                            }
+
+                            // Add the comment information to the list
+                            comments.Add(new CommentInfo
+                            {
+                                Id = commentId,
+                                Text = commentText,
+                                ReviewerId = reviewerId,
+                                ShapeId = linkedShapeId,
+                                PinX = pinX,
+                                PinY = pinY
+                            });
+                        }
+                    }
                 }
+
+                // Serialize the comment list to JSON with indentation
+                JsonSerializerOptions jsonOptions = new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
+                string json = JsonSerializer.Serialize(comments, jsonOptions);
+
+                // Write JSON to the output file
+                File.WriteAllText(jsonOutputPath, json);
+
+                Console.WriteLine($"Exported {comments.Count} comments to '{jsonOutputPath}'.");
+
             }
-
-            // Serialize to JSON with indentation for readability
-            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(comments, jsonOptions);
-
-            // Write JSON to the specified file
-            File.WriteAllText(outputPath, json);
-
-            Console.WriteLine($"Exported {comments.Count} comments to '{outputPath}'.");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

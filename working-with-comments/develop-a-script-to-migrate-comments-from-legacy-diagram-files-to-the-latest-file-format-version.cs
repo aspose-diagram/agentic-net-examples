@@ -1,50 +1,41 @@
-using Aspose.Diagram;
-using System;
 using System.IO;
+using System;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class CommentMigration
+class Program
 {
     static void Main(string[] args)
     {
-        try
+        // Expect two arguments: source diagram path (legacy) and output path (latest format)
+        if (args.Length != 2)
         {
-
-            // Path to the legacy diagram file (any supported older format)
-            string legacyFilePath = "legacy.vsd";
-
-            // Path where the migrated diagram will be saved in the latest format (VDX)
-            string migratedFilePath = "migrated.vdx";
-
-            // Determine the appropriate LoadFileFormat based on the legacy file extension
-            LoadFileFormat loadFormat = GetLoadFormat(Path.GetExtension(legacyFilePath));
-
-            // Load the legacy diagram using the constructor that accepts a filename and a LoadFileFormat
-            Diagram diagram = new Diagram(legacyFilePath, loadFormat);
-
-            // Save the diagram in the latest VDX format; comments are preserved automatically
-            diagram.Save(migratedFilePath, SaveFileFormat.Vdx);
-
+            Console.WriteLine("Usage: MigrationTool <sourcePath> <outputPath>");
+            return;
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        string sourcePath = args[0];
+        string outputPath = args[1];
+
+        // Load the legacy diagram
+        Diagram sourceDiagram = new Diagram(sourcePath);
+
+        // Iterate through all pages and list existing comments (annotations)
+        foreach (Page page in sourceDiagram.Pages)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Access annotations via the PageSheet
+            foreach (Annotation annotation in page.PageSheet.Annotations)
+            {
+                // Retrieve comment text using the .Value property
+                string commentText = annotation.Comment.Value;
+                long commentId = annotation.MarkerIndex.Value;
+                Console.WriteLine($"Page \"{page.Name}\" - Comment ID {commentId}: {commentText}");
+            }
         }
-    }
 
-    // Helper method to map file extensions to the corresponding LoadFileFormat enum values
-    static LoadFileFormat GetLoadFormat(string extension)
-    {
-        switch (extension.ToLower())
-        {
-            case ".vsd": return LoadFileFormat.Vsd;
-            case ".vsdx": return LoadFileFormat.Vsdx;
-            case ".vdx": return LoadFileFormat.Vdx;
-            case ".vss": return LoadFileFormat.Vss;
-            case ".vssx": return LoadFileFormat.Vssx;
-            case ".vst": return LoadFileFormat.Vst;
-            case ".vstx": return LoadFileFormat.Vstx;
-            case ".vdw": return LoadFileFormat.Vdw;
-            default: return LoadFileFormat.Vsd; // Default fallback
-        }
+        // Save the diagram in the latest Visio format (VSDX). Comments are preserved automatically.
+        sourceDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        Console.WriteLine($"Diagram migrated and saved to \"{outputPath}\".");
     }
 }

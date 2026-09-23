@@ -1,72 +1,60 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Work with the first page (adjust if needed)
-            Page page = diagram.Pages[0];
-
-            // Desired comment style
-            string fontName = "Calibri";
-            string fontColor = "#FF0000";       // Red text
-            string backgroundColor = "#FFFF00"; // Yellow fill
-
-            // Iterate through all comments (annotations) on the page
-            foreach (Annotation comment in page.PageSheet.Annotations)
+            try
             {
-                // Example selection criteria: apply to every comment.
-                // If you need specific filtering, add conditions here.
 
-                // Retrieve the shape associated with the comment (if any)
-                int shapeId = comment.ShapeID;
-                Shape shape;
-                try
-                {
-                    shape = page.Shapes.GetShape(shapeId);
-                }
-                catch
-                {
-                    // No associated shape; skip this comment
-                    continue;
-                }
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-                // Apply background fill to the shape representing the comment
-                shape.Fill.FillPattern.Value = 1;               // Solid fill
-                shape.Fill.FillForegnd.Value = backgroundColor; // Background color
+                // Get the first page of the diagram
+                Page page = diagram.Pages[0];
 
-                // Replace the shape's text with the comment text
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt(comment.Comment.Value));
+                // Define position and size for a placeholder shape that will represent the comment background
+                double pinX = 2.0;   // X coordinate (in inches)
+                double pinY = 2.0;   // Y coordinate (in inches)
+                double width = 3.0;  // Width (in inches)
+                double height = 1.5; // Height (in inches)
 
-                // Apply font formatting to the first character run
-                shape.Chars.Clear();
+                // Draw a rectangle shape that will serve as the visual background for the comment
+                long shapeId = page.DrawRectangle(pinX, pinY, width, height);
+                Shape commentShape = page.Shapes.GetShape(shapeId);
+
+                // Set the fill pattern to solid and apply a background color (e.g., light yellow)
+                commentShape.Fill.FillPattern.Value = 1;               // Solid fill
+                commentShape.Fill.FillForegnd.Value = "#FFFF99";      // Light yellow background
+
+                // Remove any existing text and add the comment text
+                commentShape.Text.Value.Clear();
+                commentShape.Text.Value.Add(new Txt("Review this item"));
+
+                // Apply character formatting: font, size, color, and bold style
+                commentShape.Chars.Clear();
                 Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-                ch.IX = 0;
-                ch.FontName.Value = fontName;
-                ch.Color.Value = fontColor;
-                ch.Size.Value = 12.0 / 72.0; // 12 pt expressed in inches
-                shape.Chars.Add(ch);
+                ch.IX = 0;                                   // Index of the character run
+                ch.FontName.Value = "Arial";                 // Font name
+                ch.Size.Value = 12.0 / 72.0;                 // Font size in inches (12 pt)
+                ch.Color.Value = "#0000FF";                  // Text color (blue)
+                ch.Style.Value = StyleValue.Bold;            // Bold style
+                commentShape.Chars.Add(ch);
+
+                // Add an annotation (comment) linked to the shape
+                page.AddComment(commentShape, "This is a custom comment with styled background and font.");
+
+                // Save the modified diagram to a new file
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

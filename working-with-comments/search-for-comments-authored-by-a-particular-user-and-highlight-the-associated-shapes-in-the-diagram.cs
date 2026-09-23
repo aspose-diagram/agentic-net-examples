@@ -1,89 +1,69 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
 {
-    static void Main(string[] args)
+    public static void Main()
     {
-        // Expect three arguments: input diagram path, output diagram path, reviewer name to highlight
-        if (args.Length != 3)
+        // Input diagram file path
+        Console.WriteLine("Enter the path to the Visio diagram file:");
+        string inputPath = Console.ReadLine();
+
+        // Input reviewer (author) name to search for
+        Console.WriteLine("Enter the reviewer name whose comments should be highlighted:");
+        string targetReviewer = Console.ReadLine();
+
+        // Load the diagram
+        Diagram diagram = new Diagram(inputPath);
+
+        // Iterate through all pages
+        foreach (Page page in diagram.Pages)
         {
-            Console.WriteLine("Usage: CommentHighlighter <input.vsdx> <output.vsdx> <ReviewerName>");
-            return;
-        }
-
-        string inputPath = args[0];
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = args[1];
-        string targetReviewer = args[2];
-
-        try
-        {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Build a map of reviewer indices to reviewer names (Reviewer.ID does not exist)
-            Dictionary<int, string> reviewerMap = new Dictionary<int, string>();
-            int reviewerIndex = 0;
-            foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
+            // Iterate through all annotations (comments) on the page
+            foreach (Annotation annotation in page.PageSheet.Annotations)
             {
-                // Reviewer.Name is a Str2Value; use .Value to get the string
-                reviewerMap[reviewerIndex] = reviewer.Name.Value;
-                reviewerIndex++;
-            }
+                // Retrieve the reviewer ID from the annotation
+                int reviewerId = annotation.ReviewerID.Value;
 
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                // Access the annotations (comments) on the page
-                foreach (Annotation annotation in page.PageSheet.Annotations)
+                // Get the reviewer name safely
+                string reviewerName = GetReviewerName(diagram, reviewerId);
+
+                // If the reviewer matches the target, highlight the associated shape
+                if (!string.IsNullOrEmpty(reviewerName) && reviewerName.Equals(targetReviewer, StringComparison.OrdinalIgnoreCase))
                 {
-                    // Get the reviewer index for this comment
-                    int reviewerId = annotation.ReviewerID.Value;
+                    // Retrieve the shape referenced by the annotation
+                    Shape shape = page.Shapes.GetShape(annotation.ShapeID);
 
-                    // Resolve the reviewer name from the map
-                    if (reviewerMap.TryGetValue(reviewerId, out string reviewerName))
+                    // Ensure the shape exists and is not deleted
+                    if (shape != null && shape.Del == BOOL.False)
                     {
-                        // Check if this comment is authored by the target reviewer
-                        if (string.Equals(reviewerName, targetReviewer, StringComparison.OrdinalIgnoreCase))
-                        {
-                            // Get the shape ID associated with the comment (0 means no shape)
-                            int shapeId = annotation.ShapeID;
-                            if (shapeId != 0)
-                            {
-                                // Retrieve the shape from the page using its ID
-                                Shape shape = page.Shapes.GetShape((long)shapeId);
-                                if (shape != null)
-                                {
-                                    // Highlight the shape: set a red border and yellow fill
-                                    shape.Line.LineColor.Value = "#FF0000";      // Red border
-                                    shape.Line.LineWeight.Value = 0.03;          // Thicker line
-                                    shape.Fill.FillForegnd.Value = "#FFFF00";    // Yellow fill
-                                    Console.WriteLine($"Highlighted shape ID {shapeId} on page '{page.Name}'.");
-                                }
-                            }
-                        }
+                        // Highlight by setting a bright fill color (yellow)
+                        shape.Fill.FillForegnd.Value = "#FFFF00";
                     }
                 }
             }
+        }
 
-            // Save the modified diagram to the output path using the correct overload
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-        }
-        catch (Exception ex)
+        // Save the modified diagram
+        Console.WriteLine("Enter the output path for the highlighted diagram:");
+        string outputPath = Console.ReadLine();
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        Console.WriteLine("Processing complete. Diagram saved to: " + outputPath);
+    }
+
+    // Helper method to obtain reviewer name by ID
+    private static string GetReviewerName(Diagram diagram, int reviewerId)
+    {
+        // Validate reviewer index
+        if (reviewerId >= 0 && reviewerId < diagram.DocumentSheet.Reviewers.Count)
         {
-            // Write any errors to the error stream for visibility
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Reviewer reviewer = diagram.DocumentSheet.Reviewers[reviewerId];
+            // Reviewer.Name is a Str2Value; use .Value to get the string
+            return reviewer.Name.Value;
         }
+
+        return null;
     }
 }

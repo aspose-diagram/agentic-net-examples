@@ -1,74 +1,59 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
+            // Expect three arguments: input file path, output file path, number of days
+            if (args.Length != 3)
+            {
+                Console.WriteLine("Usage: DiagramCommentCleaner <input.vsdx> <output.vsdx> <days>");
+                return;
+            }
 
-            // Path to the Visio file
-            string inputPath = "input.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
+            if (!int.TryParse(args[2], out int days) || days < 0)
+            {
+                Console.WriteLine("The days argument must be a non‑negative integer.");
+                return;
+            }
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ask user for the age limit (in days)
-            Console.Write("Enter the maximum age of comments (in days): ");
-            string input = Console.ReadLine();
-            if (!int.TryParse(input, out int maxAgeDays) || maxAgeDays < 0)
+            // Determine the cutoff date
+            DateTime cutoffDate = DateTime.Now.AddDays(-days);
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine("Invalid number of days.");
-                return;
-            }
+                // Collect annotations that are older than the cutoff
+                List<Annotation> toRemove = new List<Annotation>();
 
-            // Remove comments older than the specified number of days
-            RemoveOldComments(diagram, maxAgeDays);
-
-            // Save the modified diagram (overwrites the original file)
-            diagram.Save(inputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Old comments removed and diagram saved.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Removes all annotations (comments) that are older than the given number of days.
-    /// </summary>
-    /// <param name="diagram">The diagram to process.</param>
-    /// <param name="days">Comments older than this many days will be removed.</param>
-    static void RemoveOldComments(Diagram diagram, int days)
-    {
-        // Calculate the cutoff date
-        DateTime cutoff = DateTime.Now.AddDays(-days);
-
-        // Iterate through each page in the diagram
-        foreach (Page page in diagram.Pages)
-        {
-            // Access the collection of annotations on the page
-            var annotations = page.PageSheet.Annotations;
-
-            // Iterate backwards so that removal does not affect the index order
-            for (int i = annotations.Count - 1; i >= 0; i--)
-            {
-                var annotation = annotations[i];
-
-                // The Date property holds the creation date of the comment.
-                // It is a DateValue; its .Value returns a DateTime.
-                DateTime commentDate = annotation.Date.Value;
-
-                // If the comment is older than the cutoff, remove it.
-                if (commentDate < cutoff)
+                foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    annotations.RemoveAt(i);
+                    // Annotation.Date is read‑only; its value can be accessed via .Value
+                    // If the date is not set, treat it as the minimum value
+                    DateTime commentDate = annotation.Date?.Value ?? DateTime.MinValue;
+
+                    if (commentDate < cutoffDate)
+                    {
+                        toRemove.Add(annotation);
+                    }
+                }
+
+                // Remove the collected annotations
+                foreach (Annotation oldAnnotation in toRemove)
+                {
+                    page.PageSheet.Annotations.Remove(oldAnnotation);
                 }
             }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Comments older than {days} days have been removed and saved to '{outputPath}'.");
         }
     }
-}

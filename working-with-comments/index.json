@@ -1,11 +1,11 @@
 {
   "category": "working-with-comments",
   "display_name": "Working With Comments",
-  "version": "26.8.0",
+  "version": "26.9.0",
   "framework": "net8.0",
   "total": 35,
   "pass_rate": 100.0,
-  "generated": "2026-08-28",
+  "generated": "2026-09-23",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -31,13 +31,13 @@
       "task": "Add timestamps to comments automatically when they are created using the system s current time zone",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -47,9 +47,7 @@
       "task": "Apply a conditional formatting rule that changes comment background color based on author role",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -65,8 +63,8 @@
       "task": "Apply a custom tag to comments that meet certain criteria enabling later filtered searches",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -82,12 +80,11 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Page",
-        "page"
+        "Diagram"
       ]
     },
     {
@@ -104,7 +101,7 @@
         "Pages",
         "Save",
         "Shapes",
-        "StyleSheet"
+        "diagram"
       ]
     },
     {
@@ -114,7 +111,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -129,17 +126,15 @@
       "task": "Create a report that groups comments by shape type and counts occurrences per group",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -164,9 +159,8 @@
       "task": "Delete comments containing a specific keyword and verify the diagram no longer displays them",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -182,7 +176,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -202,8 +196,7 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -220,7 +213,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "diagram"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -246,7 +241,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Data.SqlClient"
+        "System.Data",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -260,9 +256,9 @@
       "task": "Extract comment text and embed it as hidden metadata within the diagram file for later retrieval",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -278,6 +274,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -298,9 +295,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "PdfSaveOptions",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -340,7 +338,6 @@
       "task": "Implement batch processing to add a standardized disclaimer comment to every diagram in a project directory",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Linq"
@@ -366,6 +363,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -375,9 +373,9 @@
       "task": "Import comments from an xml document assigning them to corresponding shapes based on matching ids",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Linq",
+        "System.Collections.Generic",
         "System.Xml.Linq"
       ],
       "key_apis": [
@@ -411,7 +409,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -516,6 +514,7 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -528,12 +527,12 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
+        "HTMLSaveOptions",
+        "Save",
         "diagram"
       ]
     },
@@ -544,7 +543,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -558,15 +558,11 @@
       "task": "Validate that comment positions stay within page boundaries after diagram scaling operations",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -576,11 +572,13 @@
       "task": "Validate that each comment contains non empty text and report any violations as warnings",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "diagram"
       ]
     }

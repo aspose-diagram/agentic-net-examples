@@ -1,54 +1,52 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Paths to the source and destination Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Load the diagram from the file
-                Diagram diagram = new Diagram(inputPath);
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-                // Get the first page (you can change the index if needed)
-                Page page = diagram.Pages[0];
+            // Add two rectangle shapes to serve as start and end points
+            long shapeId1 = page.AddShape(2.0, 5.0, "Rectangle", false);
+            long shapeId2 = page.AddShape(8.0, 5.0, "Rectangle", false);
 
-                // Find a connector shape on the page.
-                // Connectors are 1‑D shapes (OneD == true) or have the master name "Dynamic connector".
-                Shape connector = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.OneD || (shape.Master != null && shape.Master.Name == "Dynamic connector"))
-                    {
-                        connector = shape;
-                        break;
-                    }
-                }
+            // Retrieve the shape objects (optional, for further modifications)
+            Shape shape1 = page.Shapes.GetShape(shapeId1);
+            Shape shape2 = page.Shapes.GetShape(shapeId2);
 
-                if (connector == null)
-                {
-                    Console.WriteLine("No connector shape was found on the page.");
-                    return;
-                }
+            // Add a dynamic connector shape
+            long connectorId = page.AddShape(5.0, 5.0, "Dynamic connector", false);
+            Shape connectorShape = page.Shapes.GetShape(connectorId);
 
-                // Attach a comment directly to the connector shape.
-                // The comment will be positioned at the shape's default comment location.
-                page.AddComment(connector, "Review this connector segment.");
+            // Connect the two rectangles using the connector
+            page.ConnectShapesViaConnector(
+                shapeId1,
+                ConnectionPointPlace.Bottom,
+                shapeId2,
+                ConnectionPointPlace.Top,
+                connectorId);
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Attach a comment directly to the connector shape
+            page.AddComment(connectorShape, "Review this connector segment");
 
-                Console.WriteLine($"Comment added to connector (ID: {connector.ID}) and diagram saved to '{outputPath}'.");
+            // Save the diagram to a VSDX file
+            diagram.Save("ConnectorWithComment.vsdx", SaveFileFormat.Vsdx);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

@@ -5,33 +5,40 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         // Define input and output file paths
         string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists before proceeding
+        string outputPath = "output.png";
+
+        // Verify that the input Visio file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-        string outputPath = "output.png";
 
         try
         {
             // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Set up image save options for PNG format
+            // Configure PNG export options (export first page)
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            saveOptions.PageIndex = 0;
 
-            // Save the diagram as an image using the configured options
+            // Save the diagram as a PNG image using the configured options
             diagram.Save(outputPath, saveOptions);
         }
-        catch (Exception ex) // Catch any exception thrown by Aspose.Diagram operations
+        // Catch Aspose.Diagram-specific exceptions and add context
+        catch (DiagramException ex)
         {
-            // Rethrow with additional context while preserving the original exception as inner
-            throw new Exception($"Failed to process diagram file '{inputPath}'. See inner exception for details.", ex);
+            throw new Exception($"Error processing Visio file '{inputPath}'.", ex);
+        }
+        // Catch any other unexpected exceptions and add context
+        catch (Exception ex)
+        {
+            throw new Exception($"Unexpected error while handling diagram '{inputPath}'.", ex);
         }
     }
 }

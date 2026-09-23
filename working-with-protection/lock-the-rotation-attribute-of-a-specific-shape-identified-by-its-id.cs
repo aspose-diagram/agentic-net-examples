@@ -1,47 +1,51 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Path for the modified Visio file
+            string outputPath = "output_locked.vsdx";
+
+            // ID of the shape whose rotation should be locked
+            long targetShapeId = 12345; // TODO: replace with the actual shape ID
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Assume the shape is on the first page; adjust if necessary
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(targetShapeId);
+
+            if (shape != null)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-
-                // Path to the output Visio file
-                string outputPath = "output_locked.vsdx";
-
-                // The ID of the shape whose rotation should be locked
-                long targetShapeId = 12345; // replace with the actual shape ID
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Assume the shape is on the first page; adjust if necessary
-                Page page = diagram.Pages[0];
-
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(targetShapeId);
-
-                if (shape == null)
-                {
-                    throw new Exception($"Shape with ID {targetShapeId} not found.");
-                }
-
-                // Lock the rotation attribute of the shape
+                // Lock the rotation attribute
                 shape.Protection.LockRotate.Value = BOOL.True;
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Rotation locked for shape ID {targetShapeId}.");
             }
-            catch (System.IO.FileNotFoundException ex)
+            else
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine($"Shape with ID {targetShapeId} not found.");
             }
+
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -4,50 +4,51 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the source Visio diagram
+                // Input Visio file path
                 string inputPath = "input.vsdx";
-                // Path for the resulting diagram after OLE removal
+                // Output Visio file path
                 string outputPath = "output.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Collect shapes that need to be removed to avoid modifying the collection during iteration
-                    List<Shape> shapesToRemove = new List<Shape>();
+                // List to hold shapes that need to be removed
+                List<Shape> shapesToRemove = new List<Shape>();
 
-                    // Examine each shape on the current page
-                    foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the page
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Ensure the shape is a foreign (OLE) object and has embedded data
-                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ObjectData != null)
+                        // Verify the shape is a foreign (OLE) object and has foreign data
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
                         {
-                            // The source file name (or extension) indicates the embedded object's type
+                            // Get the source name of the embedded object
                             string sourceName = shape.ForeignData.ObjectSourceFullName;
 
+                            // Check if the embedded object is an Excel worksheet (xls or xlsx)
                             if (!string.IsNullOrEmpty(sourceName) &&
                                 (sourceName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase) ||
-                                 sourceName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) ||
-                                 sourceName.EndsWith(".xlsm", StringComparison.OrdinalIgnoreCase)))
+                                 sourceName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase)))
                             {
-                                // This OLE object is an Excel worksheet – mark it for removal
+                                // Mark this shape for removal
                                 shapesToRemove.Add(shape);
                             }
                         }
                     }
 
-                    // Remove the identified OLE shapes from the page
-                    foreach (Shape oleShape in shapesToRemove)
+                    // Remove the marked shapes from the current page
+                    foreach (Aspose.Diagram.Shape s in shapesToRemove)
                     {
-                        page.Shapes.Remove(oleShape);
+                        page.Shapes.Remove(s);
                     }
+                    shapesToRemove.Clear();
                 }
 
                 // Save the modified diagram

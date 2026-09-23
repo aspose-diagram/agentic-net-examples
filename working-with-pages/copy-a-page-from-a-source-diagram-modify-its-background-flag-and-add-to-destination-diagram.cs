@@ -1,73 +1,68 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect three arguments: source diagram path, destination diagram path, output diagram path
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <program> <source.vsdx> <destination.vsdx> <output.vsdx>");
-            return;
-        }
-
-        string sourcePath = args[0];
-        if (!File.Exists(sourcePath))
-        {
-            Console.Error.WriteLine($"File not found: {sourcePath}");
-            return;
-        }
-
-        string destPath = args[1];
-        if (!File.Exists(destPath))
-        {
-            Console.Error.WriteLine($"File not found: {destPath}");
-            return;
-        }
-
-        string outputPath = args[2];
-        // No need to check output existence; it will be created/overwritten.
-
         try
         {
-            // Load the source diagram containing the page to copy
-            Diagram sourceDiagram = new Diagram(sourcePath);
 
-            // Load the destination diagram that will receive the copied page
-            Diagram destDiagram = new Diagram(destPath);
+            // Paths to the source diagram, the existing destination diagram, and the output file
+            string sourcePath = "source.vsdx";
+            string destinationPath = "dest.vsdx";
+            string outputPath = "merged.vsdx";
 
-            // Retrieve the first page from the source diagram (adjust as needed)
-            Page sourcePage = sourceDiagram.Pages[0];
+            // Load the diagrams
+            Diagram srcDiagram = new Diagram(sourcePath);
+            Diagram destDiagram = new Diagram(destinationPath);
 
-            // Create a new page instance for the destination diagram
-            Page newPage = new Page();
+            // Ensure all masters from the source are available in the destination
+            foreach (Master srcMaster in srcDiagram.Masters)
+            {
+                bool exists = false;
+                foreach (Master destMaster in destDiagram.Masters)
+                {
+                    if (destMaster.Name == srcMaster.Name)
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists)
+                {
+                    destDiagram.Masters.Add(srcMaster);
+                }
+            }
 
-            // Copy the content of the source page into the new page
-            newPage.Copy(sourcePage);
+            // Select the page to copy (first page in the source diagram)
+            Page srcPage = srcDiagram.Pages[0];
 
-            // Set the new page as a background page
-            newPage.Background = BOOL.True;
-
-            // Ensure the new page has a unique ID within the destination diagram
-            int maxId = 0;
+            // Determine the next available page ID in the destination diagram
+            int maxPageId = 0;
             foreach (Page p in destDiagram.Pages)
             {
-                if (p.ID > maxId) maxId = p.ID;
+                if (p.ID > maxPageId)
+                    maxPageId = p.ID;
             }
-            newPage.ID = maxId + 1;
 
-            // Add the new background page to the destination diagram
-            destDiagram.Pages.Add(newPage);
+            // Prepare a copy of the source page
+            Page pageCopy = srcPage;
+            pageCopy.ID = maxPageId + 1;                     // Assign a new unique ID
+            pageCopy.Name = srcPage.Name + "_Copy";          // Optional: give it a distinct name
+            pageCopy.Background = BOOL.True;                 // Mark the page as a background page
 
-            // Save the modified destination diagram to the specified output file
+            // Add the copied page to the destination diagram
+            destDiagram.Pages.Add(pageCopy);
+
+            // Save the updated destination diagram
             destDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

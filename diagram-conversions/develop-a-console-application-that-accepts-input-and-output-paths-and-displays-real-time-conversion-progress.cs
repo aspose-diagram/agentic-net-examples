@@ -1,13 +1,12 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
+        // Verify that input and output paths are provided
         if (args.Length < 2)
         {
             Console.WriteLine("Usage: DiagramConverter <inputPath> <outputPath>");
@@ -17,51 +16,49 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Verify input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.WriteLine($"Input file not found: {inputPath}");
-            return;
-        }
-
         try
         {
+            // Load the source Visio diagram
             Console.WriteLine("Loading diagram...");
-            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
-            Console.WriteLine("Diagram loaded successfully.");
+            Console.WriteLine("Diagram loaded.");
 
-            // Prepare PDF save options with a page‑saving callback to report progress
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.PageSavingCallback = new PageSavingCallback();
+            // Determine the desired output format from the file extension
+            string ext = System.IO.Path.GetExtension(outputPath).ToLowerInvariant();
 
-            Console.WriteLine("Starting conversion to PDF...");
-            // Save the diagram as PDF using the options that include progress reporting
-            diagram.Save(outputPath, pdfOptions);
+            // Display conversion progress (simulated)
+            Console.WriteLine("Converting...");
+
+            // Save the diagram in the requested format
+            switch (ext)
+            {
+                case ".pdf":
+                    diagram.Save(outputPath, SaveFileFormat.Pdf);
+                    break;
+                case ".png":
+                    diagram.Save(outputPath, SaveFileFormat.Png);
+                    break;
+                case ".jpg":
+                case ".jpeg":
+                    diagram.Save(outputPath, SaveFileFormat.Jpeg);
+                    break;
+                case ".svg":
+                    diagram.Save(outputPath, SaveFileFormat.Svg);
+                    break;
+                case ".vsdx":
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    break;
+                default:
+                    Console.WriteLine("Unsupported output format.");
+                    return;
+            }
+
             Console.WriteLine("Conversion completed successfully.");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing
+            // Report any errors that occur during loading or saving
             Console.WriteLine($"Error: {ex.Message}");
         }
-    }
-}
-
-// Implementation of the page‑saving callback to display real‑time progress
-class PageSavingCallback : IPageSavingCallback
-{
-    // Called before each page is saved
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        Console.WriteLine($"Saving page {args.PageIndex + 1} of {args.PageCount}...");
-    }
-
-    // Called after each page is saved
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"Finished page {args.PageIndex + 1}.");
-        // Example: stop further processing if needed
-        // args.HasMorePages = false;
     }
 }

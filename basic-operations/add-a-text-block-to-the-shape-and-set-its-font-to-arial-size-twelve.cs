@@ -1,51 +1,48 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
+using Aspose.Diagram.Saving;
 
-namespace DiagramTextBlockExample
+class Program
 {
-    class Program
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Wrap all Aspose operations in a try/catch to capture runtime errors
-            try
+
+            // Create a new diagram
+            using (Diagram diagram = new Diagram())
             {
-                // Create a new empty diagram inside a using block to ensure disposal
-                using (Diagram diagram = new Diagram())
-                {
-                    // Access the first (default) page of the diagram
-                    Page page = diagram.Pages[0];
+                // Access the first page (default page)
+                Page page = diagram.Pages[0];
 
-                    // Add a rectangle shape to the page
-                    // AddShape returns a long shape ID; retrieve the Shape object via Shapes.GetShape
-                    long shapeId = page.AddShape(2.0, 2.0, 2.0, 1.0, "Rectangle", false);
-                    Shape shape = page.Shapes.GetShape(shapeId);
+                // Add a rectangle shape to the page
+                // Parameters: pinX, pinY, master name, isCalculate (bool)
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
 
-                    // Add a text block (plain text) to the shape
-                    shape.Text.Value.Add(new Txt("Sample Text"));
+                // Retrieve the shape instance
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-                    // Create a character formatting entry for the text
-                    Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-                    ch.IX = 0; // Index of the first character run
-                    ch.FontName.Value = "Arial";               // Set font name to Arial
-                    ch.Size.Value = 12.0 / 72.0;                // Set font size to 12 points (in inches)
+                // Add a text block (text run) to the shape
+                shape.Text.Value.Add(new Txt("Sample Text"));
 
-                    // Apply the character formatting to the shape
-                    shape.Chars.Add(ch);
+                // Create a character formatting entry for the text
+                Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+                ch.IX = 0; // Index of the character run
+                ch.FontName.Value = "Arial";               // Set font name
+                ch.Size.Value = 12.0 / 72.0;                // Font size in inches (12 points)
 
-                    // Save the diagram to a VSDX file using the correct SaveFileFormat enum member
-                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-                }
+                // Apply the character formatting to the shape
+                shape.Chars.Add(ch);
 
-                Console.WriteLine("Diagram created with text block using Arial 12pt.");
+                // Save the diagram to a VSDX file
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
-            catch (Exception ex)
-            {
-                // Write any errors to the error stream
-                Console.Error.WriteLine($"Error: {ex.Message}");
-            }
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

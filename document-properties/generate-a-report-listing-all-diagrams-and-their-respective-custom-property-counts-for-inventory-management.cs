@@ -1,69 +1,61 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        // Folder containing Visio diagram files
-        string folderPath = "Diagrams"; // Change this path as needed
-
-        if (!Directory.Exists(folderPath))
+        static void Main(string[] args)
         {
-            Console.WriteLine($"Folder not found: {folderPath}");
-            return;
-        }
+            // Folder containing Visio diagram files (e.g., .vsdx, .vsd, .vdx)
+            string diagramsFolder = @"C:\Diagrams";
 
-        // Retrieve all files in the folder
-        string[] allFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-
-        // Define supported Visio file extensions
-        string[] supportedExtensions = new string[]
-        {
-            ".vsdx", ".vsd", ".vdx",
-            ".vssx", ".vss", ".vtx",
-            ".vstx", ".vst", ".vssm",
-            ".vsdm", ".vstm"
-        };
-
-        // Process each file
-        foreach (string filePath in allFiles)
-        {
-            string extension = Path.GetExtension(filePath);
-            bool isSupported = false;
-
-            // Check if the file has a supported extension
-            foreach (string supExt in supportedExtensions)
+            if (!Directory.Exists(diagramsFolder))
             {
-                if (string.Equals(extension, supExt, StringComparison.OrdinalIgnoreCase))
+                Console.WriteLine($"Folder not found: {diagramsFolder}");
+                return;
+            }
+
+            // Get all supported Visio files in the folder
+            string[] supportedExtensions = new[] { "*.vsdx", "*.vsd", "*.vdx", "*.vsx", "*.vtx", "*.vssx", "*.vstx" };
+            List<string> diagramFiles = new List<string>();
+            foreach (var ext in supportedExtensions)
+            {
+                diagramFiles.AddRange(Directory.GetFiles(diagramsFolder, ext, SearchOption.TopDirectoryOnly));
+            }
+
+            if (diagramFiles.Count == 0)
+            {
+                Console.WriteLine("No diagram files found in the specified folder.");
+                return;
+            }
+
+            Console.WriteLine("Diagram Inventory Report");
+            Console.WriteLine("------------------------");
+            Console.WriteLine($"{"File Name",-40} {"Custom Props Count",15}");
+            Console.WriteLine(new string('-', 58));
+
+            foreach (var filePath in diagramFiles)
+            {
+                try
                 {
-                    isSupported = true;
-                    break;
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Retrieve the count of custom document properties
+                    int customPropCount = diagram.DocumentProps.CustomProps.Count;
+
+                    // Output the result
+                    Console.WriteLine($"{Path.GetFileName(filePath),-40} {customPropCount,15}");
+                }
+                catch (Exception ex)
+                {
+                    // Report any loading errors but continue processing other files
+                    Console.WriteLine($"{Path.GetFileName(filePath),-40} Error: {ex.Message}");
                 }
             }
 
-            if (!isSupported)
-                continue; // Skip unsupported files
-
-            try
-            {
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Count custom document properties
-                int customPropCount = diagram.DocumentProps.CustomProps.Count;
-
-                // Output the result
-                Console.WriteLine($"Diagram: {Path.GetFileName(filePath)} - Custom Properties: {customPropCount}");
-
-                // Dispose the diagram to free resources
-                diagram.Dispose();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing '{Path.GetFileName(filePath)}': {ex.Message}");
-            }
+            Console.WriteLine(new string('-', 58));
+            Console.WriteLine("Report generation completed.");
         }
     }
-}

@@ -1,50 +1,58 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.Printing;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the original Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Modify print settings for each page
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Set orientation to Landscape
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                // Set scaling to 75%
-                page.PageSheet.PrintProps.ScaleX.Value = 0.75;
-                page.PageSheet.PrintProps.ScaleY.Value = 0.75;
+                // Input Visio file path (original diagram)
+                string inputPath = "input.vsdx";
 
-                // Fit the drawing to a single sheet
-                page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
-                page.PageSheet.PrintProps.PagesX.Value = 1;
-                page.PageSheet.PrintProps.PagesY.Value = 1;
+                // Output file path with a different extension (e.g., PDF) to preserve the original file
+                string outputPath = "output.pdf";
 
-                // Set uniform margins (0.5 inches)
-                page.PageSheet.PrintProps.PageTopMargin.Value = 0.5;
-                page.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
-                page.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
-                page.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and modify print settings
+                foreach (Page page in diagram.Pages)
+                {
+                    // Access the print properties of the page
+                    PrintProps printProps = page.PageSheet.PrintProps;
+
+                    // Set orientation to Landscape
+                    printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+
+                    // Set scaling to 75%
+                    printProps.ScaleX.Value = 0.75;
+                    printProps.ScaleY.Value = 0.75;
+
+                    // Enable fit to sheet (print on a single page)
+                    printProps.OnPage.Value = BOOL.True;
+                    printProps.PagesX.Value = 1;
+                    printProps.PagesY.Value = 1;
+
+                    // Set page margins (in inches)
+                    printProps.PageTopMargin.Value = 0.5;
+                    printProps.PageBottomMargin.Value = 0.5;
+                    printProps.PageLeftMargin.Value = 0.5;
+                    printProps.PageRightMargin.Value = 0.5;
+                }
+
+                // Save the modified diagram to a different format (PDF) to keep the original file unchanged
+                diagram.Save(outputPath, SaveFileFormat.Pdf);
+
+                Console.WriteLine("Print settings updated and diagram saved to: " + outputPath);
+
             }
-
-            // Save the modified diagram to a different format (PDF) to preserve the original file
-            string outputPath = "output.pdf";
-            diagram.Save(outputPath, SaveFileFormat.Pdf);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

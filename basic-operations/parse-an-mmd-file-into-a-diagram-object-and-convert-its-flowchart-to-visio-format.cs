@@ -6,133 +6,117 @@ using Aspose.Diagram.Saving;
 using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input MMD file path (adjust as needed)
+        string mmdPath = "flowchart.mmd";
+        if (!File.Exists(mmdPath))
         {
-            // Expect two arguments: input MMD file path and output Visio file path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: MmdToVisio <input.mmd> <output.vsdx>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            if (!File.Exists(inputPath))
-            {
-                Console.WriteLine($"Input file not found: {inputPath}");
-                return;
-            }
-
-            // Read all lines from the MMD file
-            string[] lines = File.ReadAllLines(inputPath);
-
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
-
-            // Dictionaries to keep track of node positions and shape IDs
-            Dictionary<string, long> nodeShapeIds = new Dictionary<string, long>();
-            Dictionary<string, (int col, int row)> nodePositions = new Dictionary<string, (int, int)>();
-
-            int currentCol = 0;
-            int currentRow = 0;
-
-            // Simple parser for Mermaid flowchart connections (e.g., A --> B)
-            foreach (string rawLine in lines)
-            {
-                string line = rawLine.Trim();
-
-                // Skip empty lines and lines that are not connections
-                if (string.IsNullOrEmpty(line) || !line.Contains("-->"))
-                    continue;
-
-                // Split the line into left and right parts
-                string[] parts = line.Split(new string[] { "-->" }, StringSplitOptions.None);
-                if (parts.Length != 2)
-                    continue; // malformed line
-
-                string leftNode = parts[0].Trim();
-                string rightNode = parts[1].Trim();
-
-                // Remove optional labels or brackets (e.g., A[Start] -> B)
-                leftNode = CleanNodeName(leftNode);
-                rightNode = CleanNodeName(rightNode);
-
-                // Ensure left node shape exists
-                if (!nodeShapeIds.ContainsKey(leftNode))
-                {
-                    long shapeId = CreateRectangleShape(page, leftNode, currentCol, currentRow);
-                    nodeShapeIds[leftNode] = shapeId;
-                    nodePositions[leftNode] = (currentCol, currentRow);
-                    currentCol++;
-                }
-
-                // Ensure right node shape exists
-                if (!nodeShapeIds.ContainsKey(rightNode))
-                {
-                    long shapeId = CreateRectangleShape(page, rightNode, currentCol, currentRow);
-                    nodeShapeIds[rightNode] = shapeId;
-                    nodePositions[rightNode] = (currentCol, currentRow);
-                    currentCol++;
-                }
-
-                // Create a connector shape (Dynamic connector)
-                long connectorId = page.AddShape(0, 0, 0, 0, "Dynamic connector");
-                // Connect the two shapes using default connection points (Bottom -> Top)
-                page.ConnectShapesViaConnector(
-                    nodeShapeIds[leftNode],
-                    ConnectionPointPlace.Bottom,
-                    nodeShapeIds[rightNode],
-                    ConnectionPointPlace.Top,
-                    connectorId);
-            }
-
-            // Save the diagram as Visio VSDX
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
+            Console.WriteLine($"MMD file not found: {mmdPath}");
+            return;
         }
 
-        // Helper method to clean node names (remove brackets, labels, etc.)
-        private static string CleanNodeName(string raw)
+        // Read all lines from the MMD file
+        string[] lines = File.ReadAllLines(mmdPath);
+
+        // Simple parser for Mermaid flowchart syntax:
+        //   node1 --> node2
+        //   node2 --> node3
+        // Collect nodes and edges
+        var edges = new List<(string from, string to)>();
+        var nodes = new HashSet<string>();
+
+        foreach (string rawLine in lines)
         {
-            // Remove surrounding brackets if present (e.g., A[Start] -> A)
-            int bracketIndex = raw.IndexOf('[');
-            if (bracketIndex > 0)
-                raw = raw.Substring(0, bracketIndex).Trim();
+            string line = rawLine.Trim();
 
-            // Remove any surrounding quotes
-            raw = raw.Trim('\"', '\'');
+            // Skip empty lines and lines that are not connections
+            if (string.IsNullOrEmpty(line) || !line.Contains("-->"))
+                continue;
 
-            return raw;
+            // Split on the connection operator
+            string[] parts = line.Split(new[] { "-->" }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 2)
+                continue;
+
+            string from = parts[0].Trim();
+            string to = parts[1].Trim();
+
+            nodes.Add(from);
+            nodes.Add(to);
+            edges.Add((from, to));
         }
 
-        // Helper method to create a rectangle shape with text at a grid position
-        private static long CreateRectangleShape(Page page, string text, int col, int row)
+        // Create an empty diagram
+        Diagram diagram = new Diagram();
+
+        // Use the first page (always exists in a new diagram)
+        Page page = diagram.Pages[0];
+
+        // Layout parameters
+        double startX = 1.0;      // inches from left
+        double startY = 1.0;      // inches from top
+        double shapeWidth = 1.5;  // inches
+        double shapeHeight = 0.8; // inches
+        double hSpacing = 2.0;    // horizontal spacing between nodes
+        double vSpacing = 1.5;    // vertical spacing (not used in this simple layout)
+
+        // Assign a position for each node (simple left‑to‑right layout)
+        var nodePositions = new Dictionary<string, (double x, double y)>();
+        int index = 0;
+        foreach (string node in nodes)
         {
-            // Define size of the shape (in inches)
-            double width = 1.5;
-            double height = 0.8;
+            double x = startX + index * hSpacing;
+            double y = startY;
+            nodePositions[node] = (x, y);
+            index++;
+        }
 
-            // Simple grid layout: 2 inches apart horizontally and vertically
-            double pinX = col * 2.0;
-            double pinY = row * 2.0;
+        // Create shapes for each node and store their IDs
+        var nodeShapeIds = new Dictionary<string, long>();
+        foreach (var kvp in nodePositions)
+        {
+            string nodeName = kvp.Key;
+            double pinX = kvp.Value.x;
+            double pinY = kvp.Value.y;
 
-            // Add the rectangle shape using the built‑in "Rectangle" master
-            long shapeId = page.AddShape(pinX, pinY, width, height, "Rectangle");
+            // Draw a rectangle representing the node
+            long shapeId = page.DrawRectangle(pinX, pinY, shapeWidth, shapeHeight);
+            Shape shape = page.Shapes.GetShape((int)shapeId);
 
-            // Retrieve the shape object to set its text
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Add the node label
             shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt(text));
+            shape.Text.Value.Add(new Txt(nodeName));
 
-            // Optional: center the text within the shape
-            shape.TextXForm.TxtLocPinX.Value = 0.5; // center horizontally
-            shape.TextXForm.TxtLocPinY.Value = 0.5; // center vertically
-
-            return shapeId;
+            nodeShapeIds[nodeName] = shapeId;
         }
+
+        // Ensure the "Dynamic connector" master is available.
+        // Most Visio installations include it in the built‑in stencil.
+        // Add a connector shape for each edge and connect the nodes.
+        foreach (var edge in edges)
+        {
+            if (!nodeShapeIds.ContainsKey(edge.from) || !nodeShapeIds.ContainsKey(edge.to))
+                continue;
+
+            long fromId = nodeShapeIds[edge.from];
+            long toId = nodeShapeIds[edge.to];
+
+            // Add a connector shape (dynamic connector)
+            long connectorId = page.AddShape(0, 0, 0, 0, "Dynamic connector", false);
+            // Connect the two shapes via the connector
+            page.ConnectShapesViaConnector(
+                fromId,
+                ConnectionPointPlace.Right,
+                toId,
+                ConnectionPointPlace.Left,
+                connectorId);
+        }
+
+        // Save the diagram as Visio VSDX
+        string outputPath = "flowchart.vsdx";
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        Console.WriteLine($"Diagram saved to {outputPath}");
     }
+}

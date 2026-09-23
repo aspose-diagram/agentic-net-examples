@@ -1,40 +1,27 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-namespace DiagramPageLogging
+namespace DiagramLoggingExample
 {
-    // Custom logger that implements IPageSavingCallback
-    // Writes start/end notifications to a text file.
-    public class PageLogger : IPageSavingCallback, IDisposable
+    // Simple logger that appends messages to a text file
+    public class FileLogger : IDisposable
     {
         private readonly StreamWriter _writer;
 
-        // Constructor receives the path of the log file.
-        public PageLogger(string logFilePath)
+        public FileLogger(string filePath)
         {
-            // Append to existing log file, create if it does not exist.
-            _writer = new StreamWriter(logFilePath, append: true);
+            // Open the file in append mode
+            _writer = new StreamWriter(filePath, append: true);
         }
 
-        // Called when a page starts saving.
-        public void PageStartSaving(PageStartSavingArgs args)
+        // Write a timestamped message
+        public void Log(string message)
         {
-            // Log page index (zero‑based) and total page count.
-            _writer.WriteLine($"Page start: Index={args.PageIndex}, Total={args.PageCount}");
-            _writer.Flush();
+            _writer.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}");
         }
 
-        // Called when a page finishes saving.
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            // Log page index, total count and whether more pages follow.
-            _writer.WriteLine($"Page end: Index={args.PageIndex}, Total={args.PageCount}, HasMorePages={args.HasMorePages}");
-            _writer.Flush();
-        }
-
-        // Dispose the StreamWriter when done.
+        // Ensure the writer is properly closed
         public void Dispose()
         {
             _writer?.Dispose();
@@ -48,22 +35,29 @@ namespace DiagramPageLogging
             try
             {
 
-                // Load the diagram (replace with your actual file).
+                // Load an existing Visio diagram (replace with actual file path)
                 Diagram diagram = new Diagram("input.vsdx");
 
-                // Prepare PDF save options and attach the custom logger.
-                PdfSaveOptions saveOptions = new PdfSaveOptions();
-
-                // Use the logger to capture page start/end events.
-                using (PageLogger logger = new PageLogger("PageSavingLog.txt"))
+                // Initialize the custom logger (replace with desired log file path)
+                using (FileLogger logger = new FileLogger("diagram_log.txt"))
                 {
-                    saveOptions.PageSavingCallback = logger;
+                    // Iterate through each page in the diagram
+                    for (int i = 0; i < diagram.Pages.Count; i++)
+                    {
+                        var page = diagram.Pages[i];
 
-                    // Save the diagram to PDF; the logger will be invoked for each page.
-                    diagram.Save("output.pdf", saveOptions);
+                        // Log page start
+                        logger.Log($"Page {i + 1} (Name: {page.Name}) start");
+
+                        // (Optional) Insert any page‑specific processing here
+
+                        // Log page end
+                        logger.Log($"Page {i + 1} (Name: {page.Name}) end");
+                    }
                 }
 
-                // At this point the logger has been disposed and the log file is complete.
+                // Save the diagram if any changes were made (replace with desired output path)
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

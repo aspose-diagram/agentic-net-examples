@@ -9,14 +9,21 @@ class Program
         try
         {
 
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram("sample.vsdx");
+            // Load the diagram file (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the VBA project and check if it is digitally signed
-            bool isSigned = diagram.VbaProject.IsSigned;
+            // Verify that a VBA project exists and check its digital signature status
+            bool isSigned = diagram.VbaProject != null && diagram.VbaProject.IsSigned;
 
             // Output the result
-            Console.WriteLine($"VBA project signed: {isSigned}");
+            if (isSigned)
+            {
+                Console.WriteLine("The VBA project is digitally signed.");
+            }
+            else
+            {
+                Console.WriteLine("The VBA project is not digitally signed.");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,103 +1,103 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
+using Aspose.Diagram.Properties;
 
-namespace VbaMetadataAuditor
+class Program
 {
-    // DTO classes for JSON serialization
-    public class VbaMetadata
+    static void Main(string[] args)
     {
-        public string ProjectName { get; set; }
-        public bool IsSigned { get; set; }
-        public List<ModuleInfo> Modules { get; set; } = new();
-        public List<ReferenceInfo> References { get; set; } = new();
-    }
-
-    public class ModuleInfo
-    {
-        public string Name { get; set; }
-        public string Type { get; set; }
-        public string Code { get; set; }
-    }
-
-    public class ReferenceInfo
-    {
-        public string Name { get; set; }
-        public string Type { get; set; }
-        public string Libid { get; set; }
-        public string ExtendedLibid { get; set; }
-        public string RelativeLibid { get; set; }
-        public string TwiddledLibid { get; set; }
-    }
-
-    class Program
-    {
-        static void Main(string[] args)
+        // Path to the Visio file (must be macro-enabled to contain VBA)
+        string inputPath = "input.vsdm";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            // Validate arguments: input diagram path and output JSON path
-            if (args.Length != 2)
-            {
-                Console.WriteLine("Usage: VbaMetadataAuditor <input-diagram> <output-json>");
-                return;
-            }
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
-            string diagramPath = args[0];
-            string jsonPath = args[1];
+        // Path for the audit JSON output
+        string outputPath = "audit.json";
 
-            // Load the Visio diagram using Aspose.Diagram (lifecycle rule)
-            Diagram diagram = new Diagram(diagramPath);
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Access the VBA project; may be null if no VBA project exists
+            // Access the VBA project associated with the diagram
             VbaProject vbaProject = diagram.VbaProject;
-            if (vbaProject == null)
-            {
-                Console.WriteLine("No VBA project found in the diagram.");
-                return;
-            }
 
-            // Build metadata object
-            VbaMetadata metadata = new VbaMetadata
-            {
-                ProjectName = vbaProject.Name,
-                IsSigned = vbaProject.IsSigned
-            };
-
-            // Extract modules
+            // Collect VBA module metadata without using LINQ (VbaModuleCollection is not IEnumerable)
+            var vbaModules = new List<object>();
             foreach (VbaModule module in vbaProject.Modules)
             {
-                metadata.Modules.Add(new ModuleInfo
+                vbaModules.Add(new
                 {
                     Name = module.Name,
-                    Type = module.Type.ToString(),
-                    Code = module.Codes // full VBA source code
+                    Code = module.Codes
                 });
             }
 
-            // Extract references
-            foreach (VbaProjectReference reference in vbaProject.References)
+            // Assemble VBA project information
+            var vbaInfo = new
             {
-                metadata.References.Add(new ReferenceInfo
+                ProjectName = vbaProject.Name,
+                IsSigned = vbaProject.IsSigned,
+                Modules = vbaModules
+            };
+
+            // Access document properties
+            DocumentProperties docProps = diagram.DocumentProps;
+
+            // Collect custom document properties without LINQ
+            var customProps = new List<object>();
+            foreach (CustomProp cp in docProps.CustomProps)
+            {
+                customProps.Add(new
                 {
-                    Name = reference.Name,
-                    Type = reference.Type.ToString(),
-                    Libid = reference.Libid,
-                    ExtendedLibid = reference.ExtendedLibid,
-                    RelativeLibid = reference.RelativeLibid,
-                    TwiddledLibid = reference.Twiddledlibid
+                    Name = cp.Name,
+                    Type = cp.PropType.ToString(),
+                    Value = cp.CustomValue?.ValueString
                 });
             }
 
-            // Serialize to JSON with indentation for readability
+            // Assemble built‑in document property information
+            var documentInfo = new
+            {
+                Title = docProps.Title,
+                Subject = docProps.Subject,
+                Creator = docProps.Creator,
+                TimeCreated = docProps.TimeCreated,
+                TimeEdited = docProps.TimeEdited,
+                BuildNumberCreated = docProps.BuildNumberCreated,
+                BuildNumberEdited = docProps.BuildNumberEdited,
+                CustomProperties = customProps
+            };
+
+            // Combine all audit information into a single object
+            var auditData = new
+            {
+                DiagramVersion = diagram.Version,
+                VbaProject = vbaInfo,
+                DocumentProperties = documentInfo
+            };
+
+            // Serialize the audit data to formatted JSON
             var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(metadata, jsonOptions);
+            string json = JsonSerializer.Serialize(auditData, jsonOptions);
 
-            // Write JSON to the specified file
-            File.WriteAllText(jsonPath, json);
+            // Write the JSON output to the specified file
+            File.WriteAllText(outputPath, json);
 
-            Console.WriteLine($"VBA metadata successfully written to '{jsonPath}'.");
+            Console.WriteLine($"Audit data written to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

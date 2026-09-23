@@ -10,16 +10,24 @@ class Program
         try
         {
 
-            // Load the diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the Visio file
+            string inputPath = "input.vsdx";
 
-            // Access the VBA project associated with the diagram
-            VbaProject vbaProject = diagram.VbaProject;
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Enumerate all VBA modules and output their names
-            foreach (VbaModule vbaModule in vbaProject.Modules)
+            // Check if a VBA project and modules exist
+            if (diagram.VbaProject != null && diagram.VbaProject.Modules != null)
             {
-                Console.WriteLine(vbaModule.Name);
+                // Enumerate and list each VBA module name
+                foreach (VbaModule module in diagram.VbaProject.Modules)
+                {
+                    Console.WriteLine(module.Name);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No VBA project or modules found.");
             }
 
         }

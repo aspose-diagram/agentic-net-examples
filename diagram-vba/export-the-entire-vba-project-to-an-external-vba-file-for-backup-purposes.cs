@@ -1,46 +1,45 @@
 using System;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class ExportVbaProject
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsd");
-
-            // Access the VBA project contained in the diagram
-            VbaProject vbaProject = diagram.VbaProject;
-
-            // Define the output .vba file path
-            string outputFile = "VbaBackup.vba";
-
-            // Write all VBA modules to the .vba file
-            using (StreamWriter writer = new StreamWriter(outputFile, false))
+            try
             {
-                foreach (VbaModule module in vbaProject.Modules)
+
+                // Path to the Visio file containing the VBA project
+                string visioPath = "input.vsdm";
+
+                // Path where the exported VBA code will be saved
+                string vbaExportPath = "backup.vba";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(visioPath);
+
+                // Access the VBA project
+                var vbaProject = diagram.VbaProject;
+
+                // Export all VBA modules to a single .vba file
+                using (StreamWriter writer = new StreamWriter(vbaExportPath, false, Encoding.UTF8))
                 {
-                    // Write a header for each module
-                    writer.WriteLine("'-------------------------------------------------");
-                    writer.WriteLine($"' Module Name: {module.Name}");
-                    writer.WriteLine("'-------------------------------------------------");
-
-                    // Write the actual VBA code of the module
-                    writer.WriteLine(module.Codes);
-                    writer.WriteLine(); // Add an empty line between modules
+                    foreach (VbaModule module in vbaProject.Modules)
+                    {
+                        writer.WriteLine($"'--- Module: {module.Name} ---");
+                        writer.WriteLine(module.Codes);
+                        writer.WriteLine(); // Add an empty line between modules
+                    }
                 }
+
+                Console.WriteLine($"VBA project exported successfully to '{vbaExportPath}'.");
+
             }
-
-            Console.WriteLine($"VBA project successfully exported to '{outputFile}'.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

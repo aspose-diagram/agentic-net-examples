@@ -10,52 +10,54 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input Visio file (must be macro-enabled to contain VBA)
+            string inputPath = "input.vsdm";
+            // Output Visio file where the VBA module will be updated
+            string outputPath = "output.vsdm";
 
-            // Access the VBA project within the diagram
-            VbaProject vbaProject = diagram.VbaProject;
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Name of the VBA module to be updated
-            string targetModuleName = "Module1";
+            // Access the VBA project
+            var vbaProject = diagram.VbaProject;
 
-            // Locate the module by name
-            VbaModule module = null;
-            foreach (VbaModule mod in vbaProject.Modules)
+            // Name of the module to update (or create if it does not exist)
+            string targetModuleName = "MyMacroModule";
+
+            // Locate the module index; -1 means not found
+            int moduleIndex = -1;
+            for (int i = 0; i < vbaProject.Modules.Count; i++)
             {
+                var mod = vbaProject.Modules[i];
                 if (mod.Name.Equals(targetModuleName, StringComparison.OrdinalIgnoreCase))
                 {
-                    module = mod;
+                    moduleIndex = i;
                     break;
                 }
             }
 
-            // If the module exists, replace its code; otherwise add a new procedural module
-            if (module != null)
+            // If the module does not exist, add a new procedural module
+            if (moduleIndex == -1)
             {
-                // Replace the existing VBA code with new macro statements
-                module.Codes = @"
-            Sub NewMacro()
-            MsgBox ""Hello from new macro!""
-            End Sub
-            ";
-            }
-            else
-            {
-                // Add a new procedural module with the specified name
-                int index = vbaProject.Modules.Add(VbaModuleType.Procedural, targetModuleName);
-                module = vbaProject.Modules[index];
-
-                // Set the VBA code for the newly added module
-                module.Codes = @"
-            Sub NewMacro()
-            MsgBox ""Hello from new macro!""
-            End Sub
-            ";
+                moduleIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, targetModuleName);
             }
 
-            // Save the updated diagram to a new file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Retrieve the module
+            var module = vbaProject.Modules[moduleIndex];
+
+            // New VBA code to replace the existing content
+            string newVbaCode = @"
+            Attribute VB_Name = ""MyMacroModule""
+            Sub HelloWorld()
+            MsgBox ""Hello from Aspose.Diagram!""
+            End Sub
+            ";
+
+            // Replace the module's code
+            module.Codes = newVbaCode;
+
+            // Save the diagram using a macro-enabled format to preserve VBA
+            diagram.Save(outputPath, SaveFileFormat.Vsdm);
 
         }
         catch (System.IO.FileNotFoundException ex)

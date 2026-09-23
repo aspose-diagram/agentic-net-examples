@@ -1,8 +1,8 @@
-using System;
 using System.IO;
-using System.IO.Compression;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Vba;
 
 class Program
 {
@@ -11,34 +11,27 @@ class Program
         try
         {
 
-            // Paths to the source and destination Visio files
-            string sourcePath = "source.vsdx";
-            string destinationPath = "compressed.vsdx";
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the compressed output file
+            string outputPath = "output_compressed.vsdx";
 
-            // Load the diagram from the source file
-            using (Diagram diagram = new Diagram(sourcePath))
+            try
             {
-                // Retrieve the existing VBA project data (MIME‑encoded byte array)
-                byte[] originalVbData = diagram.VbProjectData;
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // If VBA data exists, compress it to reduce storage size
-                if (originalVbData != null && originalVbData.Length > 0)
-                {
-                    using (MemoryStream compressedStream = new MemoryStream())
-                    {
-                        // GZipStream performs the actual compression
-                        using (GZipStream gzip = new GZipStream(compressedStream, CompressionLevel.Optimal, leaveOpen: true))
-                        {
-                            gzip.Write(originalVbData, 0, originalVbData.Length);
-                        }
+                // Remove the VBA project data to minimize storage size
+                diagram.VbProjectData = null;
 
-                        // Assign the compressed byte array back to the diagram
-                        diagram.VbProjectData = compressedStream.ToArray();
-                    }
-                }
-
-                // Save the modified diagram to the destination file
-                diagram.Save(destinationPath, SaveFileFormat.Vsdx);
+                // Save the diagram (no VBA) in a non‑macro format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram saved with compressed VBA data.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+                throw;
             }
 
         }

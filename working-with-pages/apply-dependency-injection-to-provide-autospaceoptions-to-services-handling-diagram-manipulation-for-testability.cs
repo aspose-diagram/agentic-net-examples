@@ -5,28 +5,22 @@ using Aspose.Diagram.AutoLayout;
 
 namespace DiagramAutoSpaceDemo
 {
-    // Service interface for auto‑spacing a page
+    // Service contract for auto‑spacing operations
     public interface IAutoSpaceService
     {
-        void AutoSpace(Page page);
+        void AutoSpace(Page page, AutoSpaceOptions options);
     }
 
-    // Concrete implementation that receives AutoSpaceOptions via DI
+    // Concrete implementation that performs auto‑spacing on a page
     public class AutoSpaceService : IAutoSpaceService
     {
-        private readonly AutoSpaceOptions _options;
-
-        public AutoSpaceService(AutoSpaceOptions options)
-        {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-        }
-
-        public void AutoSpace(Page page)
+        public void AutoSpace(Page page, AutoSpaceOptions options)
         {
             if (page == null) throw new ArgumentNullException(nameof(page));
+            if (options == null) throw new ArgumentNullException(nameof(options));
 
-            // Apply auto‑spacing using the injected options
-            page.AutoSpaceShapes(page.Shapes, _options);
+            // Apply auto‑spacing to all shapes on the page using the provided options
+            page.AutoSpaceShapes(page.Shapes, options);
         }
     }
 
@@ -37,30 +31,30 @@ namespace DiagramAutoSpaceDemo
             try
             {
 
-                // Path to the source Visio file
+                // Paths to input and output Visio files (adjust as needed)
                 string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Load the diagram (uses the Diagram(string) constructor)
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Configure AutoSpaceOptions (horizontal and vertical distances in inches)
+                // Retrieve the first page (or any target page)
+                Page page = diagram.Pages[0];
+
+                // Configure auto‑spacing options
                 AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions
                 {
-                    DistanceInHorizontal = 2.0,
-                    DistanceInVertical = 2.0
+                    DistanceInHorizontal = 2.0, // horizontal gap in inches
+                    DistanceInVertical = 2.0    // vertical gap in inches
                 };
 
-                // Dependency injection: create the service with the configured options
-                IAutoSpaceService autoSpaceService = new AutoSpaceService(autoSpaceOptions);
+                // Inject the service (manual DI for testability)
+                IAutoSpaceService autoSpaceService = new AutoSpaceService();
 
-                // Apply auto‑spacing to every page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    autoSpaceService.AutoSpace(page);
-                }
+                // Perform auto‑spacing
+                autoSpaceService.AutoSpace(page, autoSpaceOptions);
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

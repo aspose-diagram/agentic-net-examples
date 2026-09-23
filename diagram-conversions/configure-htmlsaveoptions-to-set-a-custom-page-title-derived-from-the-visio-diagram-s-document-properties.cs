@@ -11,26 +11,30 @@ class Program
         try
         {
 
-            // Input Visio file path
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            // Output HTML file path
-            string outputPath = "output.html";
 
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Create HTML save options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            // Derive a custom title from existing document properties
+            // Example: combine the original title with the creation date
+            string originalTitle = diagram.DocumentProps.Title ?? "Untitled";
+            DateTime created = diagram.DocumentProps.TimeCreated;
+            string customTitle = $"{originalTitle} (Created on {created:yyyy-MM-dd})";
 
-            // Set custom title based on document properties (fallback if empty)
-            string title = diagram.DocumentProps.Title;
-            if (string.IsNullOrWhiteSpace(title))
+            // Set the new title; HTML export uses this title for the page
+            diagram.DocumentProps.Title = customTitle;
+
+            // Configure HTML save options
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                title = "Untitled Diagram";
-            }
-            htmlOptions.Title = title;
+                ExportHiddenPage = false,
+                IsExportComments = false
+            };
 
             // Save the diagram as HTML with the custom title
+            string outputPath = "output.html";
             diagram.Save(outputPath, htmlOptions);
 
         }

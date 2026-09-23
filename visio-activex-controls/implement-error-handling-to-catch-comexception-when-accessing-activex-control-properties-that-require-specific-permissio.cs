@@ -10,49 +10,68 @@ class Program
             try
             {
 
-                // Create a new diagram
-                Diagram diagram = new Diagram();
+                // Path to the source Visio diagram
+                string inputPath = "input.vsdx";
+                // Path to the output Visio diagram
+                string outputPath = "output.vsdx";
 
-                // Get the active page where the control will be placed
-                Page page = diagram.ActivePage;
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Add a CommandButton ActiveX control to the page
-                // Parameters: control type, PinX, PinY, width, height (in inches)
-                long shapeId = page.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
-
-                // Retrieve the shape that represents the ActiveX control
-                Shape controlShape = page.Shapes.GetShape(shapeId);
-
-                // Cast the generic ActiveXControl to the specific CommandButton type
-                CommandButtonActiveXControl commandButton = (CommandButtonActiveXControl)controlShape.ActiveXControl;
-
-                // Attempt to set a property that may require elevated permissions
-                try
+                // Iterate through all pages and shapes to find ActiveX controls
+                foreach (Page page in diagram.Pages)
                 {
-                    // Setting the Caption property; this can throw COMException if permissions are insufficient
-                    commandButton.Caption = "Click Me";
-                    Console.WriteLine("Caption set successfully.");
-                }
-                catch (COMException comEx)
-                {
-                    // Handle the COMException gracefully
-                    Console.WriteLine($"COMException caught while setting Caption: {comEx.Message}");
-                    // Additional handling logic can be placed here (e.g., logging, fallback values)
-                }
-                catch (Exception ex)
-                {
-                    // Catch any other unexpected exceptions
-                    Console.WriteLine($"Unexpected error: {ex.Message}");
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Check if the shape contains an ActiveX control
+                        if (shape.ActiveXControl != null)
+                        {
+                            try
+                            {
+                                // Determine the type of the ActiveX control
+                                ControlType ctrlType = shape.ActiveXControl.Type;
+
+                                // Example handling for a CommandButton control
+                                if (ctrlType == ControlType.CommandButton)
+                                {
+                                    CommandButtonActiveXControl button = (CommandButtonActiveXControl)shape.ActiveXControl;
+                                    // Access a property that may require specific permissions
+                                    string caption = button.Caption;
+                                    Console.WriteLine($"CommandButton Caption: {caption}");
+                                }
+                                // Example handling for a CheckBox control
+                                else if (ctrlType == ControlType.CheckBox)
+                                {
+                                    CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
+                                    // Access the Value property (only Checked is valid)
+                                    CheckValueType value = checkBox.Value;
+                                    Console.WriteLine($"CheckBox Value: {value}");
+                                }
+                                // Add handling for other control types as needed
+                            }
+                            catch (COMException comEx)
+                            {
+                                // Handle permission-related COM exceptions
+                                Console.WriteLine($"COMException accessing ActiveX control on shape ID {shape.ID}: {comEx.Message}");
+                                // Optionally, log the error or take alternative actions
+                            }
+                            catch (Exception ex)
+                            {
+                                // Handle any other unexpected exceptions
+                                Console.WriteLine($"Unexpected error on shape ID {shape.ID}: {ex.Message}");
+                            }
+                        }
+                    }
                 }
 
-                // Save the diagram to a VSDX file
-                diagram.Save("ActiveXControlDiagram.vsdx", SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved as ActiveXControlDiagram.vsdx");
+                // Save the diagram after processing
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram processing completed.");
 
             }
-            catch (System.NullReferenceException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

@@ -1,73 +1,36 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Printing;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Validate arguments: input file, output file, optional page index
-        if (args.Length < 2)
+        static void Main()
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath> [pageIndex]");
-            return;
-        }
-
-        string inputPath = args[0];
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = args[1];
-        // Guard: ensure the output directory exists (create if necessary)
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
-
-        // Determine which page to modify (default to first page)
-        int pageIndex = 0;
-        if (args.Length > 2 && !int.TryParse(args[2], out pageIndex))
-        {
-            Console.Error.WriteLine($"Invalid page index: {args[2]}");
-            return;
-        }
-
-        try
-        {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Validate the requested page index against the diagram's page count
-            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+            try
             {
-                Console.Error.WriteLine($"Page index out of range. Diagram contains {diagram.Pages.Count} pages.");
-                return;
+
+                // Paths to the input and output Visio files
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram inside a using block to ensure proper disposal
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Select the first page (index 0). Adjust the index or use GetPage(name) as needed.
+                    Page page = diagram.Pages[0];
+
+                    // Set the page orientation to Landscape
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
+
+                Console.WriteLine("Page orientation set to Landscape and diagram saved successfully.");
+
             }
-
-            // Retrieve the target page
-            Page page = diagram.Pages[pageIndex];
-
-            // Set the print orientation of the page to Landscape
-            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-
-            // Save the modified diagram to the output path in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Dispose the diagram to release resources
-            diagram.Dispose();
-
-            Console.WriteLine($"Page {pageIndex} orientation set to Landscape and saved to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            // Write any unexpected errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

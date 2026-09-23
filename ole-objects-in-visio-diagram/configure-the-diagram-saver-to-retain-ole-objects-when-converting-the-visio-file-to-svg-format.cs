@@ -10,20 +10,23 @@ class Program
         try
         {
 
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+
+            // Output SVG file path
+            string outputPath = "output.svg";
+
             // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram(inputPath);
 
-            // Set up SVG save options
+            // Configure SVG save options.
+            // By default, OLE objects are retained in the SVG output.
             SVGSaveOptions svgOptions = new SVGSaveOptions();
+            // Example: do not export hidden pages (optional)
+            svgOptions.ExportHiddenPage = false;
 
-            // Keep OLE objects embedded in the SVG (do not save them as separate image files)
-            svgOptions.IsSavingImageSeparately = false;
-
-            // Specify that the output format is SVG
-            svgOptions.SaveFormat = SaveFileFormat.Svg;
-
-            // Save the diagram to SVG using the configured options
-            diagram.Save("output.svg", svgOptions);
+            // Save the diagram as SVG using the configured options
+            diagram.Save(outputPath, svgOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

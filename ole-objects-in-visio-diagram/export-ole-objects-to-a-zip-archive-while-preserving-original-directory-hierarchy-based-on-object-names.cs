@@ -3,77 +3,78 @@ using System.IO;
 using System.IO.Compression;
 using Aspose.Diagram;
 
-class ExportOleObjectsToZip
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path
+        string visioPath = "input.vsdx";
+
+        // Guard: ensure the Visio file exists before proceeding
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"File not found: {visioPath}");
+            return;
+        }
+
+        // Output ZIP file path
+        string zipPath = "OleObjects.zip";
+
         try
         {
-
-            // Path to the Visio diagram file
-            string diagramPath = @"C:\Diagrams\sample.vsdx";
-
-            // Path where the resulting zip archive will be saved
-            string zipOutputPath = @"C:\Exports\OleObjects.zip";
-
             // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
+            Diagram diagram = new Diagram(visioPath);
 
-            // Create a memory stream to hold the zip archive
-            using (MemoryStream zipStream = new MemoryStream())
+            // Create or overwrite the ZIP archive
+            using (FileStream zipStream = new FileStream(zipPath, FileMode.Create))
+            using (ZipArchive zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create))
             {
-                // Initialize the zip archive for creation
-                using (ZipArchive zip = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all pages and shapes
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (Shape shape in page.Shapes)
+                        // Verify the shape is a foreign OLE object with binary data
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ForeignType == ForeignType.Object &&
+                            shape.ForeignData.ObjectData != null)
                         {
-                            // Check if the shape contains foreign data (OLE object)
-                            if (shape.ForeignData != null && !string.IsNullOrEmpty(shape.ForeignData.ObjectSourceFullName))
+                            // Determine a name for the OLE object:
+                            // Use the shape's NameU if it is not empty; otherwise fallback to the shape ID
+                            string objectName = !string.IsNullOrWhiteSpace(shape.NameU)
+                                ? shape.NameU
+                                : $"Object_{shape.ID}";
+
+                            // Normalize the name to use forward slashes for ZIP entry paths
+                            string entryPath = objectName.Replace('\\', '/').TrimStart('/');
+
+                            // Ensure the entry path is not empty
+                            if (string.IsNullOrEmpty(entryPath))
                             {
-                                // Full path of the source file for the linked OLE object
-                                string sourceFilePath = shape.ForeignData.ObjectSourceFullName;
+                                entryPath = $"Object_{shape.ID}";
+                            }
 
-                                // Ensure the source file exists before attempting to read it
-                                if (File.Exists(sourceFilePath))
-                                {
-                                    // Read the OLE object's file bytes
-                                    byte[] fileBytes = File.ReadAllBytes(sourceFilePath);
+                            // Create a new entry in the ZIP archive
+                            ZipArchiveEntry entry = zipArchive.CreateEntry(entryPath, CompressionLevel.Optimal);
 
-                                    // Build a hierarchical entry name based on the shape name
-                                    // Replace any invalid path characters to avoid zip entry errors
-                                    string safeShapeName = string.Join("_", shape.Name.Split(Path.GetInvalidFileNameChars()));
-                                    string fileName = Path.GetFileName(sourceFilePath);
-                                    string entryPath = $"{safeShapeName}/{fileName}";
-
-                                    // Create the entry in the zip archive and write the file bytes
-                                    ZipArchiveEntry entry = zip.CreateEntry(entryPath, CompressionLevel.Optimal);
-                                    using (Stream entryStream = entry.Open())
-                                    {
-                                        entryStream.Write(fileBytes, 0, fileBytes.Length);
-                                    }
-                                }
+                            // Write the OLE binary data to the entry
+                            using (Stream entryStream = entry.Open())
+                            {
+                                entryStream.Write(shape.ForeignData.ObjectData, 0, shape.ForeignData.ObjectData.Length);
                             }
                         }
                     }
                 }
-
-                // Write the zip archive from the memory stream to the output file
-                using (FileStream fileStream = new FileStream(zipOutputPath, FileMode.Create, FileAccess.Write))
-                {
-                    zipStream.Seek(0, SeekOrigin.Begin);
-                    zipStream.CopyTo(fileStream);
-                }
             }
 
-            Console.WriteLine($"OLE objects have been exported to '{zipOutputPath}'.");
-
+            Console.WriteLine($"OLE objects have been exported to '{zipPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -2,53 +2,70 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through every page and every shape on each page
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output_compressed.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // If the shape contains embedded OLE object data, compress it
-                    if (shape.ForeignData != null &&
-                        shape.ForeignData.ObjectData != null &&
-                        shape.ForeignData.ObjectData.Length > 0)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        byte[] originalData = shape.ForeignData.ObjectData;
-                        byte[] compressedData;
-
-                        // Compress using ZIP (Deflate) compression
-                        using (MemoryStream compressedStream = new MemoryStream())
+                        // Process only foreign (OLE) shapes that contain object data
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ForeignType == ForeignType.Object &&
+                            shape.ForeignData.ObjectData != null &&
+                            shape.ForeignData.ObjectData.Length > 0)
                         {
-                            using (DeflateStream zipStream = new DeflateStream(compressedStream, CompressionLevel.Optimal, leaveOpen: true))
-                            {
-                                zipStream.Write(originalData, 0, originalData.Length);
-                            }
-                            compressedData = compressedStream.ToArray();
-                        }
+                            // Compress the OLE object data using ZIP
+                            byte[] originalData = shape.ForeignData.ObjectData;
+                            byte[] compressedData;
 
-                        // Replace the original OLE data with the compressed version
-                        shape.ForeignData.ObjectData = compressedData;
+                            using (MemoryStream compressedStream = new MemoryStream())
+                            {
+                                using (ZipArchive zip = new ZipArchive(compressedStream, ZipArchiveMode.Create, true))
+                                {
+                                    // Create a single entry to hold the OLE data
+                                    ZipArchiveEntry entry = zip.CreateEntry("oledata");
+                                    using (Stream entryStream = entry.Open())
+                                    {
+                                        entryStream.Write(originalData, 0, originalData.Length);
+                                    }
+                                }
+
+                                // Get the compressed byte array
+                                compressedData = compressedStream.ToArray();
+                            }
+
+                            // Replace the original OLE data with the compressed version
+                            shape.ForeignData.ObjectData = compressedData;
+                        }
                     }
                 }
+
+                // Save the modified diagram (using VSDX format as an example)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Diagram saved with compressed OLE streams to: " + outputPath);
+
             }
-
-            // Save the diagram with the compressed OLE streams
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

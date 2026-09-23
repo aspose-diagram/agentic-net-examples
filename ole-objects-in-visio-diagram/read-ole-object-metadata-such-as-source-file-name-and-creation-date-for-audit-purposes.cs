@@ -6,54 +6,52 @@ class Program
 {
     static void Main()
     {
+        // Path to the Visio file
+        string diagramPath = "input.vsdx";
+        // Verify the input file exists before proceeding
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Path to the Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Verify the shape is an OLE object
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ForeignType == ForeignType.Object)
+                    // Verify the shape is a foreign (OLE) object and has valid foreign data
+                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null &&
+                        shape.ForeignData.ForeignType == ForeignType.Object)
                     {
-                        // Source file name (full path) of the embedded OLE object
-                        string sourceFile = shape.ForeignData.ObjectSourceFullName ?? "N/A";
+                        // Retrieve the source file name (may include path or extension)
+                        string sourceFileName = shape.ForeignData.ObjectSourceFullName ?? "Unknown";
 
-                        // Attempt to retrieve creation date if the source file exists on disk
-                        string creationInfo;
-                        if (!string.IsNullOrEmpty(sourceFile) && File.Exists(sourceFile))
-                        {
-                            DateTime creationTime = File.GetCreationTime(sourceFile);
-                            creationInfo = creationTime.ToString("u");
-                        }
-                        else
-                        {
-                            creationInfo = "Creation date unavailable (source file not found)";
-                        }
+                        // OLE creation date is not directly exposed by Aspose.Diagram.
+                        // For audit purposes we note that this information is unavailable.
+                        string creationDateInfo = "Creation date not available via Aspose.Diagram API";
 
-                        // Output audit information
-                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}");
-                        Console.WriteLine($"  OLE Source File: {sourceFile}");
-                        Console.WriteLine($"  Creation Date : {creationInfo}");
+                        // Output the metadata; Page.Name is a string, not a cell with .Value
+                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}");
+                        Console.WriteLine($"  Source File: {sourceFileName}");
+                        Console.WriteLine($"  Creation Date: {creationDateInfo}");
+                        Console.WriteLine();
                     }
                 }
             }
 
-            // Optionally save the diagram after any processing (not required for audit)
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // No modifications are made, so saving is optional and omitted.
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

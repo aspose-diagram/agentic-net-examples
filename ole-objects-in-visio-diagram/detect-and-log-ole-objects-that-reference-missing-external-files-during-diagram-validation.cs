@@ -3,47 +3,69 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Ensure the shape contains foreign data (possible OLE object)
-                    if (shape.ForeignData != null)
-                    {
-                        // Check if the foreign data represents a linked OLE object
-                        if ((shape.ForeignData.ObjectType & ObjectType.LinkedObject) == ObjectType.LinkedObject)
-                        {
-                            // Get the external file path referenced by the OLE object
-                            string sourcePath = shape.ForeignData.ObjectSourceFullName;
 
-                            // If the path is set and the file does not exist, log the issue
-                            if (!string.IsNullOrEmpty(sourcePath) && !File.Exists(sourcePath))
+                // Path to the Visio file to be validated
+                string diagramPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Identify OLE (foreign) shapes
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ForeignType == ForeignType.Object)
+                        {
+                            // Check if the OLE object contains embedded data
+                            bool hasEmbeddedData = shape.ForeignData.ObjectData != null &&
+                                                   shape.ForeignData.ObjectData.Length > 0;
+
+                            // Retrieve the external source reference, if any
+                            string externalPath = shape.ForeignData.ObjectSourceFullName;
+
+                            // Determine missing reference conditions
+                            bool missingExternalFile = false;
+
+                            if (!hasEmbeddedData && !string.IsNullOrEmpty(externalPath))
                             {
-                                Console.WriteLine($"Missing OLE file on page '{page.Name}', shape ID {shape.ID}: {sourcePath}");
+                                // The OLE object is linked to an external file; verify its existence
+                                missingExternalFile = !File.Exists(externalPath);
+                            }
+                            else if (!hasEmbeddedData && string.IsNullOrEmpty(externalPath))
+                            {
+                                // No embedded data and no source path – treat as missing
+                                missingExternalFile = true;
+                            }
+
+                            // Log details for any missing external references
+                            if (missingExternalFile)
+                            {
+                                Console.WriteLine($"Missing OLE reference detected:");
+                                Console.WriteLine($"  Page ID   : {page.ID}");
+                                Console.WriteLine($"  Shape ID  : {shape.ID}");
+                                Console.WriteLine($"  Shape Name: {shape.NameU}");
+                                Console.WriteLine($"  Source    : {(string.IsNullOrEmpty(externalPath) ? "(none)" : externalPath)}");
                             }
                         }
                     }
                 }
+
+                // Optionally, save the diagram unchanged (if required by workflow)
+                // diagram.Save("validated_output.vsdx", SaveFileFormat.Vsdx);
+
             }
-
-            // Clean up resources
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

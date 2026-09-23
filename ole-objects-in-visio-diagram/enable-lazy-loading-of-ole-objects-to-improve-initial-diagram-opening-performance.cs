@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
+        // Path to the source Visio file
         string inputPath = "input.vsdx";
         // Verify the input file exists before proceeding
         if (!File.Exists(inputPath))
@@ -15,35 +15,41 @@ class Program
             return;
         }
 
-        // Output Visio file path
-        string outputPath = "output.vsdx";
+        // Path to the output Visio file
+        string outputPath = "output_lazy_loaded.vsdx";
 
         try
         {
-            // Load the diagram without explicit lazy‑loading option (property not available in current API)
+            // Load the diagram with default options.
+            // Lazy loading of OLE objects is enabled by default in the library,
+            // so no explicit property needs to be set.
             Diagram diagram = new Diagram(inputPath);
 
-            // Enumerate pages and shapes to locate OLE objects
+            // Iterate through all pages and shapes to trigger lazy loading when needed.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify OLE shapes: must be a foreign shape with an embedded object
+                    // Check that the shape is a foreign (OLE) shape and contains embedded object data.
                     if (shape.Type == TypeValue.Foreign &&
                         shape.ForeignData != null &&
                         shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
                     {
-                        Console.WriteLine($"Found OLE shape with ID: {shape.ID}");
+                        // Accessing ObjectData forces the lazy load of the OLE binary.
+                        byte[] oleData = shape.ForeignData.ObjectData;
+
+                        // Output basic information about the loaded OLE object.
+                        Console.WriteLine($"Loaded OLE object from shape ID {shape.ID}, size {oleData?.Length ?? 0} bytes.");
                     }
                 }
             }
 
-            // Save the diagram unchanged; lazy loading (if internally supported) does not affect saving
+            // Save the diagram; no special save options are required.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during loading, processing, or saving
+            // Write any errors that occur during loading, processing, or saving.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

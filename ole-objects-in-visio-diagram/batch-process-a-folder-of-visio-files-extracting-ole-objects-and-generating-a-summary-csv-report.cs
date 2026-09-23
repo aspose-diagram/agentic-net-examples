@@ -3,137 +3,77 @@ using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-namespace VisioOleExtractor
-{
-    // Represents a single record in the CSV summary.
-    class OleRecord
-    {
-        public string FileName { get; set; } = string.Empty;
-        public long ShapeId { get; set; }
-        public string ShapeName { get; set; } = string.Empty;
-        public long OleSizeBytes { get; set; }
-    }
-
-    class Program
+class Program
     {
         static void Main(string[] args)
         {
-            // Determine the folder to process.
-            string folderPath;
-            if (args.Length > 0)
+            // Folder containing Visio files (change as needed)
+            string inputFolder = @"C:\VisioFiles";
+            // Output CSV file path
+            string outputCsv = @"C:\VisioOleReport.csv";
+
+            // Prepare list to hold CSV rows
+            List<string> csvLines = new List<string>();
+            // Header
+            csvLines.Add("FileName,PageName,ShapeID,ObjectSourceFullName,DataSizeBytes");
+
+            // Get all Visio files in the folder (supports .vsdx, .vsd, .vdx, etc.)
+            string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (string filePath in visioFiles)
             {
-                folderPath = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the full path of the folder containing Visio files: ");
-                folderPath = Console.ReadLine() ?? string.Empty;
-            }
-
-            if (!Directory.Exists(folderPath))
-            {
-                Console.WriteLine("The specified folder does not exist.");
-                return;
-            }
-
-            // Prepare a list to hold all OLE extraction records.
-            List<OleRecord> records = new List<OleRecord>();
-
-            // Supported Visio extensions.
-            string[] extensions = new[] { ".vsdx", ".vsd", ".vsdm", ".vssx", ".vss", ".vssm", ".vstx", ".vst", ".vstm", ".vdx", ".vtx" };
-
-            // Enumerate all files with the supported extensions.
-            foreach (string filePath in Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly))
-            {
-                if (Array.IndexOf(extensions, Path.GetExtension(filePath).ToLowerInvariant()) < 0)
-                    continue; // Skip non‑Visio files.
-
-                try
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx" && extension != ".vsdm")
                 {
-                    // Load the Visio diagram.
-                    Diagram diagram = new Diagram(filePath);
+                    // Skip non-Visio files
+                    continue;
+                }
 
-                    // Iterate through each page.
-                    foreach (Page page in diagram.Pages)
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Iterate pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Page name may be empty; use index as fallback
+                    string pageName = string.IsNullOrEmpty(page.Name) ? $"Page_{page.ID}" : page.Name;
+
+                    // Iterate shapes
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through each shape on the page.
-                        foreach (Shape shape in page.Shapes)
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Check if shape is a foreign (OLE) shape
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ForeignType == ForeignType.Object)
                         {
-                            // Verify the shape is a foreign (OLE) shape.
-                            if (shape.Type != TypeValue.Foreign)
-                                continue;
-
-                            // Ensure ForeignData is present.
-                            if (shape.ForeignData == null)
-                                continue;
-
-                            // Verify the embedded object type.
-                            if (shape.ForeignData.ObjectType != ObjectType.EmbeddedObject)
-                                continue;
-
-                            // Retrieve the binary OLE data.
+                            // Ensure OLE binary data exists
                             byte[] oleData = shape.ForeignData.ObjectData;
                             if (oleData == null || oleData.Length == 0)
-                                continue; // No data to record.
+                                continue;
 
-                            // Create a record for the CSV.
-                            OleRecord rec = new OleRecord
-                            {
-                                FileName = Path.GetFileName(filePath),
-                                ShapeId = shape.ID,
-                                ShapeName = shape.Name ?? string.Empty,
-                                OleSizeBytes = oleData.Length
-                            };
-                            records.Add(rec);
+                            // Gather information
+                            long shapeId = shape.ID;
+                            string objectSource = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
+                            long dataSize = oleData.Length;
+
+                            // Build CSV line (escape commas if needed)
+                            string csvLine = $"{Path.GetFileName(filePath)},{pageName},{shapeId},{objectSource},{dataSize}";
+                            csvLines.Add(csvLine);
                         }
                     }
                 }
-                catch (Exception ex)
+            }
+
+            // Write all lines to the CSV file
+            using (StreamWriter writer = new StreamWriter(outputCsv, false))
+            {
+                foreach (string line in csvLines)
                 {
-                    // Log loading errors but continue processing other files.
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                    writer.WriteLine(line);
                 }
             }
 
-            // Define the output CSV path.
-            string csvPath = Path.Combine(folderPath, "OleSummaryReport.csv");
-
-            // Write the CSV file.
-            try
-            {
-                using (StreamWriter writer = new StreamWriter(csvPath, false))
-                {
-                    // Write header.
-                    writer.WriteLine("FileName,ShapeId,ShapeName,OleSizeBytes");
-
-                    // Write each record.
-                    foreach (OleRecord rec in records)
-                    {
-                        // Simple CSV escaping.
-                        string fileNameEsc = EscapeCsv(rec.FileName);
-                        string shapeNameEsc = EscapeCsv(rec.ShapeName);
-                        writer.WriteLine($"{fileNameEsc},{rec.ShapeId},{shapeNameEsc},{rec.OleSizeBytes}");
-                    }
-                }
-
-                Console.WriteLine($"OLE extraction summary written to: {csvPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to write CSV report: {ex.Message}");
-            }
-        }
-
-        // Escapes a CSV field by surrounding it with quotes if needed.
-        private static string EscapeCsv(string field)
-        {
-            if (field.Contains("\""))
-                field = field.Replace("\"", "\"\"");
-
-            if (field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r"))
-                return $"\"{field}\"";
-
-            return field;
+            Console.WriteLine($"OLE extraction completed. Report saved to: {outputCsv}");
         }
     }
-}

@@ -2,55 +2,48 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class OleDataValidator
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+
+                // Load the Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Check if the shape contains foreign (OLE) data
-                    ForeignData foreign = shape.ForeignData;
-                    if (foreign == null)
-                        continue; // No foreign data, skip
-
-                    // Determine if the foreign data represents an OLE object
-                    // Typically, OLE objects have a non‑zero ObjectType when ForeignType is "Object"
-                    bool isOleObject = foreign.ObjectType != ObjectType.Undefined && foreign.ObjectType != 0;
-                    if (!isOleObject)
-                        continue; // Not an OLE object, skip
-
-                    // Evaluate embedded OLE data
-                    bool hasEmbeddedData = foreign.ObjectData != null && foreign.ObjectData.Length > 0;
-
-                    // Evaluate linked OLE data (source file name)
-                    bool hasLinkedData = !string.IsNullOrWhiteSpace(foreign.ObjectSourceFullName);
-
-                    // If both embedded and linked data are missing/empty, log a warning
-                    if (!hasEmbeddedData && !hasLinkedData)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Console.WriteLine(
-                            $"Warning: OLE object in shape ID {shape.ID} on page \"{page.Name}\" contains no data.");
+                        // Check if the shape is a foreign (OLE) shape
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
+                        {
+                            // Verify the foreign type is an embedded object
+                            if (shape.ForeignData.ForeignType == ForeignType.Object)
+                            {
+                                byte[] oleData = shape.ForeignData.ObjectData;
+
+                                // Validate that the OLE object contains data
+                                if (oleData == null || oleData.Length == 0)
+                                {
+                                    Console.WriteLine($"Warning: OLE object in shape ID {shape.ID} (NameU: {shape.NameU}) has empty data.");
+                                }
+                            }
+                        }
                     }
                 }
+
+                // Save the diagram (unchanged) to a new file
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the diagram (if any modifications were made; here we just preserve the original)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,43 +1,44 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+
         try
         {
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the source diagram file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Create an interrupt monitor instance
+            // Create an InterruptMonitor instance
             InterruptMonitor monitor = new InterruptMonitor();
 
-            // Start a background task that will trigger an interruption after 5 seconds
-            Task.Run(() =>
+            // Set up a timer that will trigger an interrupt after 5 seconds
+            using (Timer timer = new Timer(_ => monitor.Interrupt(), null, TimeSpan.FromSeconds(5), Timeout.InfiniteTimeSpan))
             {
-                Thread.Sleep(TimeSpan.FromSeconds(5));
-                monitor.Interrupt(); // Request interruption
-            });
+                // Assign the monitor to the diagram to enable interruption during conversion
+                diagram.InterruptMonitor = monitor;
 
-            // Assign the monitor to the diagram before starting the conversion
-            diagram.InterruptMonitor = monitor;
+                // Configure PDF save options (optional settings can be added here)
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
 
-            // Prepare PDF save options (default settings)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-            // Save the diagram as PDF; the operation will be interrupted if it exceeds 5 seconds
-            diagram.Save("output.pdf", pdfOptions);
-
+                // Save the diagram as PDF; the timer will interrupt if the operation exceeds 5 seconds
+                diagram.Save("output.pdf", pdfOptions);
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

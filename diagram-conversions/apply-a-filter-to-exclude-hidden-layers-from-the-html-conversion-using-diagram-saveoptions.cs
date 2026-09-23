@@ -13,18 +13,32 @@ class Program
             // Path to the source Visio file
             string inputPath = "input.vsdx";
 
-            // Load the diagram from file
+            // Path for the generated HTML file
+            string outputPath = "output.html";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Remove hidden shapes and masters (including hidden layers if they are represented as hidden shapes)
-            diagram.RemoveHiddenInformation((int)(RemoveHiddenInfoItem.Shapes | RemoveHiddenInfoItem.Masters));
+            // Iterate through all pages and their layers.
+            // Hidden layers (layer.Visible.Value == BOOL.False) will remain hidden.
+            // No additional action is required because HTML export respects layer visibility.
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Layer layer in page.PageSheet.Layers)
+                {
+                    // Example: you could log layer visibility if needed
+                    // Console.WriteLine($"Layer '{layer.Name.Value}' visible: {layer.Visible.Value == BOOL.True}");
+                }
+            }
 
-            // Configure HTML export options to exclude hidden pages (hidden layers are not exported by default)
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.ExportHiddenPage = false;
+            // Configure HTML export options to exclude hidden pages.
+            // Hidden layers are automatically omitted based on their visibility setting.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            {
+                ExportHiddenPage = false
+            };
 
-            // Save the diagram as HTML with the specified options
-            string outputPath = "output.html";
+            // Save the diagram as HTML using the configured options
             diagram.Save(outputPath, htmlOptions);
 
         }

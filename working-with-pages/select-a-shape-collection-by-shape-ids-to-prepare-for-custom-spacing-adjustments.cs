@@ -1,8 +1,7 @@
 using System.IO;
+using Aspose.Diagram;
 using System;
 using System.Collections.Generic;
-using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,39 +10,40 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file (replace with your actual file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page of the diagram
-            Page page = diagram.Pages[0];
+            // IDs of the shapes you want to work with
+            int[] shapeIds = new int[] { 1, 3, 5 };
 
-            // Define the shape IDs you want to work with
-            long[] shapeIds = new long[] { 1, 2, 3 }; // replace with actual IDs
-
-            // Collect the shapes corresponding to the specified IDs
+            // Collection that will hold the selected shapes
             List<Shape> selectedShapes = new List<Shape>();
-            foreach (long id in shapeIds)
+
+            // Iterate through all pages and shapes to find matches
+            foreach (Page page in diagram.Pages)
             {
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(id);
-                if (shape != null)
+                foreach (Shape shape in page.Shapes)
                 {
-                    selectedShapes.Add(shape);
-                    Console.WriteLine($"Selected shape ID {id}, NameU: {shape.NameU}");
-                }
-                else
-                {
-                    Console.WriteLine($"Shape with ID {id} not found on the page.");
+                    // Check if the current shape's ID is in the target list
+                    if (Array.IndexOf(shapeIds, shape.ID) >= 0)
+                    {
+                        selectedShapes.Add(shape);
+                    }
                 }
             }
 
-            // At this point you have a collection (selectedShapes) ready for any custom spacing adjustments.
-            // Example placeholder: adjust positions, spacing, etc.
+            // At this point 'selectedShapes' contains the shapes with the specified IDs.
+            // You can now apply custom spacing adjustments to these shapes.
 
-            // Save the modified diagram to a new file
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Example: adjust the X and Y positions (custom spacing)
+            // foreach (Shape s in selectedShapes)
+            // {
+            //     s.XForm.PinX.Value += 0.5; // shift right
+            //     s.XForm.PinY.Value += 0.5; // shift down
+            // }
+
+            // Save the diagram after any modifications
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

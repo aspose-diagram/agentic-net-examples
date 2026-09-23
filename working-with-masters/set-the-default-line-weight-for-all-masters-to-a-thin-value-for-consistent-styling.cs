@@ -1,7 +1,6 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,23 +9,27 @@ class Program
         try
         {
 
-            // Load an existing Visio file (create/load rule)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Define a thin line weight (e.g., 0.028 inches)
-            DoubleValue thinWeight = new DoubleValue { Value = 0.028 };
+            // Define a thin line weight (in inches)
+            double thinLineWeight = 0.02; // approx 0.5 mm
 
-            // Set the line weight for every shape in each master
+            // Iterate through all masters in the diagram
             foreach (Master master in diagram.Masters)
             {
+                // Iterate through each shape that belongs to the master
                 foreach (Shape shape in master.Shapes)
                 {
-                    shape.Line.LineWeight = thinWeight;
+                    // Set the line weight for the shape
+                    shape.Line.LineWeight.Value = thinLineWeight;
                 }
             }
 
-            // Save the updated diagram (save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

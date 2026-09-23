@@ -10,15 +10,21 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input Visio file path
+            string inputPath = "input.vsdx";
 
-            // Create SVG save options and explicitly enable exporting hidden pages
+            // Output SVG file path
+            string outputPath = "output.svg";
+
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Set up SVG save options to include hidden pages
             SVGSaveOptions svgOptions = new SVGSaveOptions();
-            svgOptions.ExportHiddenPage = true; // ensure hidden pages are included
+            svgOptions.ExportHiddenPage = true;
 
-            // Save the diagram as an SVG file using the configured options
-            diagram.Save("output.svg", svgOptions);
+            // Export the diagram to SVG using the configured options
+            diagram.Save(outputPath, svgOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

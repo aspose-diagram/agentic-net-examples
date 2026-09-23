@@ -9,28 +9,38 @@ class Program
         try
         {
 
-            // Path to the Visio diagram file (provide via command line or use default)
-            string filePath = args.Length > 0 ? args[0] : "sample.vsdx";
-
-            // Load the diagram using the Diagram constructor (lifecycle rule)
-            using (Diagram diagram = new Diagram(filePath))
+            // Verify that a diagram file path was provided
+            if (args.Length == 0)
             {
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Output the shape's name
-                        Console.WriteLine($"Shape: {shape.Name}");
+                Console.WriteLine("Usage: DiagramHyperlinkScanner <diagram file path>");
+                return;
+            }
 
-                        // If the shape contains hyperlinks, list each URL
-                        if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+            string diagramPath = args[0];
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through each shape on the current page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Output the shape's name
+                    Console.WriteLine($"Shape Name: {shape.Name}");
+
+                    // If the shape contains hyperlinks, list their URLs
+                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                    {
+                        foreach (Hyperlink link in shape.Hyperlinks)
                         {
-                            foreach (Hyperlink link in shape.Hyperlinks)
-                            {
-                                Console.WriteLine($"  Hyperlink: {link.Address}");
-                            }
+                            // Hyperlink address is stored in the Address cell; use .Value to retrieve it
+                            Console.WriteLine($"  Hyperlink URL: {link.Address.Value}");
                         }
                     }
                 }

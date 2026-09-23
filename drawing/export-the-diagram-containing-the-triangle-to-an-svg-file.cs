@@ -7,27 +7,21 @@ class Program
 {
     static void Main()
     {
-        try
-        {
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-            // Load the Visio diagram that contains the triangle shape.
-            // The constructor of Diagram loads the file from the specified path.
-            Diagram diagram = new Diagram("triangle.vsd");
+        // Get the first (default) page
+        Page page = diagram.Pages[0];
 
-            // Create SVG save options. You can customize options here if needed.
-            SVGSaveOptions svgOptions = new SVGSaveOptions
-            {
-                // Render the first page (index 0) of the diagram.
-                PageIndex = 0
-            };
+        // Draw a triangle using a polyline.
+        // The points are: (2,2) -> (4,2) -> (3,4) -> back to (2,2) to close the shape.
+        long triangleId = page.DrawPolyline(new double[] { 2, 2, 4, 2, 3, 4, 2, 2 });
 
-            // Export the diagram to an SVG file using the Save method with SVG options.
-            diagram.Save("triangle.svg", svgOptions);
+        // Optionally retrieve the shape if further modifications are needed
+        // Shape triangle = page.Shapes.GetShape(triangleId);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        // Export the diagram (including the triangle) to SVG format
+        SVGSaveOptions svgOptions = new SVGSaveOptions();
+        diagram.Save("triangle.svg", svgOptions);
     }
 }

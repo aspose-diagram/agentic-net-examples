@@ -7,23 +7,29 @@ class Program
 {
     static void Main()
     {
-        // Create a new empty Visio diagram
+        // Create a new empty diagram
         Diagram diagram = new Diagram();
 
         // Get the first (default) page
         Page page = diagram.Pages[0];
 
-        // Draw an oval (ellipse) at position (5,5) with width 4 inches and height 2 inches
-        long shapeId = page.DrawEllipse(5.0, 5.0, 4.0, 2.0);
+        // Define oval position and size (in inches)
+        double pinX = 5.0;   // center X
+        double pinY = 5.0;   // center Y
+        double width = 4.0;  // horizontal diameter
+        double height = 2.0; // vertical diameter
 
-        // Retrieve the shape object using the returned ID
-        Shape oval = page.Shapes.GetShape((int)shapeId);
+        // Draw the oval (ellipse) on the page
+        long shapeId = page.DrawEllipse(pinX, pinY, width, height);
 
-        // Set the fill pattern to 0 (no fill) to make it transparent
-        oval.Fill.FillPattern.Value = 0;
+        // Retrieve the shape object
+        Shape ovalShape = page.Shapes.GetShape((int)shapeId);
+
+        // Set the fill pattern to 'None' for transparent fill
+        ovalShape.Fill.FillPattern.Value = 0; // 0 = No fill (transparent)
 
         // Export the diagram as a PNG image
         ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-        diagram.Save("oval.png", pngOptions);
+        diagram.Save("output.png", pngOptions);
     }
 }

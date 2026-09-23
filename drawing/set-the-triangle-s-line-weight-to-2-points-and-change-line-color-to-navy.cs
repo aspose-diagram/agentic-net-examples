@@ -6,28 +6,35 @@ class Program
 {
     static void Main()
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        try
+        {
 
-        // Get the first (default) page
-        Page page = diagram.Pages[0];
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-        // Draw a triangle using a closed polyline.
-        // Coordinates are in inches: (PinX, PinY) pairs.
-        // The last point repeats the first to close the shape.
-        double[] trianglePoints = new double[] { 2, 2, 4, 2, 3, 4, 2, 2 };
-        long shapeId = page.DrawPolyline(trianglePoints);
+            // Iterate through all pages and shapes to find the triangle
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Identify triangle shapes by their master name
+                    if (shape.Master != null && shape.Master.Name == "Triangle")
+                    {
+                        // Set line weight to 2 points (2/72 inches)
+                        shape.Line.LineWeight.Value = 2.0 / 72.0;
+                        // Set line color to navy (hex #000080)
+                        shape.Line.LineColor.Value = "#000080";
+                    }
+                }
+            }
 
-        // Retrieve the shape object (GetShape expects an int)
-        Shape triangle = page.Shapes.GetShape((int)shapeId);
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-        // Set line weight to 2 points (2/72 inches)
-        triangle.Line.LineWeight.Value = 2.0 / 72.0;
-
-        // Set line color to navy using a hex string
-        triangle.Line.LineColor.Value = "#000080";
-
-        // Save the diagram to a VSDX file
-        diagram.Save("TriangleDiagram.vsdx", SaveFileFormat.Vsdx);
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

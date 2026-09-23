@@ -1,46 +1,37 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Work with the first page (adjust if needed)
-            Page page = diagram.Pages[0];
-
-            // Locate the circle (ellipse) shape.
-            // Visio uses the master name "Ellipse" for circles; adjust the condition if your shape has a different name.
-            Shape circleShape = null;
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                if (!string.IsNullOrEmpty(shape.NameU) &&
-                    shape.NameU.IndexOf("Ellipse", StringComparison.OrdinalIgnoreCase) >= 0)
+
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Assume the circle shape is on the first page
+                Page page = diagram.Pages[0];
+
+                // Find the first shape whose master name is "Ellipse" (a circle)
+                foreach (Shape shape in page.Shapes)
                 {
-                    circleShape = shape;
-                    break;
+                    if (shape.Master != null && shape.Master.Name == "Ellipse")
+                    {
+                        // Bring this shape to the front of the Z‑order
+                        page.BringToFront(shape.ID);
+                        break; // Circle found and moved; exit loop
+                    }
                 }
-            }
 
-            // If the shape was found, bring it to the front of the Z‑order.
-            if (circleShape != null)
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                circleShape.BringToFront();   // Brings the shape to the front of overlapping shapes
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

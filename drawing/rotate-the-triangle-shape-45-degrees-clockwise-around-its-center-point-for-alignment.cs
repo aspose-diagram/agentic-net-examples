@@ -1,42 +1,48 @@
-using System;
 using System.IO;
+using System;
+using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
             // Load an existing Visio diagram
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Find the triangle shape (assuming its master name is "Triangle")
-            Aspose.Diagram.Shape triangleShape = null;
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Flag to indicate whether a triangle shape was found
+            bool triangleFound = false;
+
+            // Iterate through all pages and shapes to locate the triangle shape
+            foreach (Page page in diagram.Pages)
             {
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Master name "Triangle" identifies the triangle shape
-                    if (shape.Master != null && shape.Master.NameU == "Triangle")
+                    // Check if the shape uses the "Triangle" master
+                    if (shape.Master != null && shape.Master.Name == "Triangle")
                     {
-                        triangleShape = shape;
+                        // Rotate the shape 45 degrees clockwise around its center
+                        shape.XForm.Angle.Value = 45.0;
+
+                        triangleFound = true;
+                        // If multiple triangles need rotation, remove the break statement
                         break;
                     }
                 }
-                if (triangleShape != null) break;
+
+                if (triangleFound)
+                    break;
             }
 
-            // If the triangle shape was found, rotate it 45 degrees clockwise around its center
-            if (triangleShape != null)
+            if (!triangleFound)
             {
-                // Clockwise rotation is negative in radians (Visio uses counter‑clockwise as positive)
-                double angleRadians = -Math.PI / 4; // -45 degrees
-                triangleShape.SetAngle(angleRadians);
+                Console.WriteLine("Triangle shape not found in the diagram.");
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

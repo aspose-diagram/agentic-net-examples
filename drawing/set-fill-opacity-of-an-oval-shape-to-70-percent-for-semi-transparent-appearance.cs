@@ -1,39 +1,32 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
-        {
-            try
-            {
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-                // Create a new empty diagram (contains a default page)
-                Diagram diagram = new Diagram();
+        // Get the first (default) page
+        Page page = diagram.Pages[0];
 
-                // Add an oval (ellipse) shape to the active page
-                // Parameters: pinX, pinY, width, height (all in inches)
-                long ovalId = diagram.ActivePage.DrawEllipse(2.0, 2.0, 4.0, 2.0);
+        // Draw an oval (ellipse) on the page
+        // Parameters: PinX, PinY, Width, Height
+        long ovalId = page.DrawEllipse(2.0, 2.0, 4.0, 2.0);
 
-                // Retrieve the shape instance using the returned ID
-                Shape ovalShape = diagram.ActivePage.Shapes.GetShape(ovalId);
+        // Retrieve the shape object using the returned ID
+        Shape oval = page.Shapes.GetShape((int)ovalId);
 
-                // Set a solid fill pattern
-                ovalShape.Fill.FillPattern.Value = 1; // 1 = solid
+        // Set the fill foreground color (optional, here green)
+        oval.Fill.FillForegnd.Value = "#00FF00";
 
-                // Set the fill foreground color (example: red)
-                ovalShape.Fill.FillForegnd.Value = "#FF0000";
+        // Set fill opacity to 70% (70% transparent)
+        // FillForegndTrans expects a percentage (0 = opaque, 100 = fully transparent)
+        oval.Fill.FillForegndTrans.Value = 70;
 
-                // Set fill opacity to 70% (70 = 70% transparent)
-                ovalShape.Fill.FillForegndTrans.Value = 70.0;
-
-                // Save the diagram to a VSDX file
-                diagram.Save("OvalWithOpacity.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (System.NullReferenceException ex)
-            {
-                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-            }
+        // Save the diagram to a VSDX file
+        diagram.Save("OvalWithOpacity.vsdx", SaveFileFormat.Vsdx);
     }
-    }
+}

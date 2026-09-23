@@ -5,21 +5,30 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio diagram (VSDX, VDX, etc.)
+            string inputPath = "input.vsdx";
 
-            // Configure PDF save options for high‑resolution (print quality) output
+            // Path for the exported PDF file
+            string outputPath = "output.pdf";
+
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure PDF save options for high‑quality print output
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.HorizontalResolution = 300; // 300 DPI horizontal
-            pdfOptions.VerticalResolution = 300;   // 300 DPI vertical (if supported)
+            pdfOptions.DefaultFont = "Arial";                     // Fallback font
+            pdfOptions.Compliance = PdfCompliance.PdfA1b;        // PDF/A‑1b compliance for reliable printing
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;          // Explicitly set the format
 
             // Save the diagram as a PDF using the configured options
-            diagram.Save("output.pdf", pdfOptions);
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine("Diagram exported to PDF successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

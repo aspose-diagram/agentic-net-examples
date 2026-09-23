@@ -1,36 +1,43 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
 {
     static void Main()
     {
-        // Create a new diagram (lifecycle rule)
-        Diagram diagram = new Diagram();
-
-        // Add a new page to the diagram
-        Page page = new Page();
-        diagram.Pages.Add(page);
+        // Coordinates and size in centimeters
+        double cmX = 5.0;      // center X position
+        double cmY = 3.0;      // center Y position
+        double cmWidth = 2.0;  // width of the circle
+        double cmHeight = 2.0; // height of the circle (same as width for a perfect circle)
 
         // Conversion factor from centimeters to inches (Aspose.Diagram uses inches)
         const double cmToInch = 0.393700787;
 
-        // Desired circle parameters in centimeters
-        double centerXcm = 5.0;   // X‑coordinate of the circle centre
-        double centerYcm = 10.0;  // Y‑coordinate of the circle centre
-        double radiusCm = 2.0;    // Radius of the circle
+        // Convert to inches for the API
+        double pinX = cmX * cmToInch;
+        double pinY = cmY * cmToInch;
+        double width = cmWidth * cmToInch;
+        double height = cmHeight * cmToInch;
 
-        // Convert coordinates and size to inches
-        double centerXinch = centerXcm * cmToInch;
-        double centerYinch = centerYcm * cmToInch;
-        double diameterInch = radiusCm * 2 * cmToInch;
+        // Create a new diagram (contains a default page)
+        using (Diagram diagram = new Diagram())
+        {
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-        // Draw a circle (ellipse with equal width and height) at the specified position
-        // DrawEllipse returns the shape ID; it is not needed for further processing here
-        page.DrawEllipse(centerXinch, centerYinch, diameterInch, diameterInch);
+            // Draw an ellipse (circle) at the specified position and size
+            long shapeId = page.DrawEllipse(pinX, pinY, width, height);
 
-        // Save the diagram (lifecycle rule)
-        diagram.Save("CircleDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Retrieve the shape if further modifications are needed
+            Shape circle = page.Shapes.GetShape((int)shapeId);
+
+            // Example: set a fill color (optional)
+            circle.Fill.FillForegnd.Value = "#FF0000"; // red fill
+
+            // Save the diagram to a VSDX file
+            diagram.Save("circle.vsdx", SaveFileFormat.Vsdx);
+        }
     }
 }

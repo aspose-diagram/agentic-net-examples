@@ -1,57 +1,36 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
-        {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-            // -------------------------------------------------
-            // Add a new page that will contain the triangle
-            // -------------------------------------------------
-            // Determine the next available page ID
-            int maxPageId = 0;
-            foreach (Page existingPage in diagram.Pages)
-            {
-                if (existingPage.ID > maxPageId)
-                    maxPageId = existingPage.ID;
-            }
+        // Add a new page that will contain the triangle
+        Page trianglePage = new Page();
+        diagram.Pages.Add(trianglePage);
 
-            // Create and configure the new page
-            Page trianglePage = new Page();
-            trianglePage.ID = maxPageId + 1;               // Unique page ID
-            trianglePage.Name = "TrianglePage";            // Optional friendly name
+        // Get the page we just added (last page in the collection)
+        Page page = diagram.Pages[diagram.Pages.Count - 1];
 
-            // Add the new page to the diagram
-            diagram.Pages.Add(trianglePage);
+        // Define triangle vertices (coordinates are in inches)
+        double x1 = 2.0, y1 = 2.0;
+        double x2 = 4.0, y2 = 2.0;
+        double x3 = 3.0, y3 = 4.0;
 
-            // -------------------------------------------------
-            // Draw a triangle on the newly added page
-            // -------------------------------------------------
-            // Define triangle vertices (in inches) and close the shape by repeating the first point
-            double[] trianglePoints = new double[]
-            {
-                2.0, 2.0,   // Vertex 1 (PinX, PinY)
-                4.0, 2.0,   // Vertex 2
-                3.0, 4.0,   // Vertex 3
-                2.0, 2.0    // Close the polygon back to Vertex 1
-            };
+        // Draw the triangle using a polyline; close the shape by repeating the first point
+        page.DrawPolyline(new double[] { x1, y1, x2, y2, x3, y3, x1, y1 });
 
-            // Draw the polyline (triangle) on the page
-            // The method returns the shape ID (long), which we do not need further here
-            trianglePage.DrawPolyline(trianglePoints);
+        // Configure PDF save options
+        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+        pdfOptions.DefaultFont = "Arial";
 
-            // -------------------------------------------------
-            // Export the diagram to PDF
-            // -------------------------------------------------
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";                     // Fallback font
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;           // Explicitly set format
-
-            // Save the diagram; the triangle will appear on its own page
-            diagram.Save("DiagramWithTriangle.pdf", pdfOptions);
-        }
+        // Export the diagram (including the triangle page) to PDF
+        string outputPath = "DiagramWithTriangle.pdf";
+        diagram.Save(outputPath, pdfOptions);
     }
+}

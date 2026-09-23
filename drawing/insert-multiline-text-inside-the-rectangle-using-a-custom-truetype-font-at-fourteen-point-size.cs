@@ -1,45 +1,44 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
-        {
-            // Optional: configure the folder that contains the custom TrueType font.
-            // The second argument indicates whether to search sub‑folders.
-            // Adjust the path to the location of your .ttf files.
-            FontConfigs.SetFontFolder(@"C:\CustomFonts", true);
-            // Set the default fallback font (used if the specified font is missing).
-            FontConfigs.DefaultFontName = "MyCustomFont";
+        // Configure custom TrueType font folder and set the default font name
+        string fontFolder = @"C:\CustomFonts";
+        FontConfigs.SetFontFolder(fontFolder, true);
+        FontConfigs.DefaultFontName = "MyCustomFont";
 
-            // Create a new empty diagram.
-            Diagram diagram = new Diagram();
+        // Create a new diagram
+        Diagram diagram = new Diagram();
 
-            // Add a new page to the diagram.
-            diagram.Pages.Add(new Page());
-            Page page = diagram.Pages[0];
+        // Access the first page (default page)
+        Page page = diagram.Pages[0];
 
-            // Draw a rectangle shape.
-            // Parameters: pinX, pinY (center of the shape), width, height (all in inches).
-            long rectangleId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
+        // Add a rectangle shape (centered at 5,5 inches, size 4x2 inches)
+        double pinX = 5.0;
+        double pinY = 5.0;
+        double width = 4.0;
+        double height = 2.0;
+        long rectId = page.DrawRectangle(pinX, pinY, width, height);
+        Shape rect = page.Shapes.GetShape(rectId);
 
-            // Retrieve the rectangle shape object.
-            Shape rectangle = page.Shapes.GetShape(rectangleId);
+        // Insert multiline text into the rectangle
+        rect.Text.Value.Clear();
+        rect.Text.Value.Add(new Cp(0));
+        rect.Text.Value.Add(new Txt("First line\nSecond line\nThird line"));
 
-            // Clear any existing text (if any) and add multiline text.
-            rectangle.Text.Value.Clear();
-            rectangle.Text.Value.Add(new Txt("First line\nSecond line\nThird line"));
+        // Apply character formatting: custom font, 14‑point size
+        Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+        ch.IX = 0;
+        ch.FontName.Value = "MyCustomFont";
+        ch.Size.Value = 14.0 / 72.0; // convert points to inches
+        ch.Color.Value = "#000000";
+        rect.Chars.Add(ch);
 
-            // Apply character formatting: custom TrueType font at 14 point size.
-            // Font size in Aspose.Diagram is expressed in inches (points / 72).
-            rectangle.Chars.Clear();
-            Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
-            charFormat.IX = 0; // start index of the character run
-            charFormat.FontName.Value = "MyCustomFont"; // name of the custom TrueType font
-            charFormat.Size.Value = 14.0 / 72.0; // 14 points converted to inches
-            rectangle.Chars.Add(charFormat);
-
-            // Save the diagram to a VSDX file.
-            diagram.Save("RectangleWithMultilineText.vsdx", SaveFileFormat.Vsdx);
-        }
+        // Save the diagram
+        diagram.Save("RectangleWithText.vsdx", SaveFileFormat.Vsdx);
     }
+}

@@ -10,46 +10,63 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string sourcePath = "input.vsdx";
 
-            Page targetPage = null;
-            Shape triangleShape = null;
-
-            // Iterate through pages to find the first one that contains a triangle shape
-            foreach (Page page in diagram.Pages)
+            // Load the diagram
+            using (Diagram diagram = new Diagram(sourcePath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Index of the page that contains a triangle shape
+                int trianglePageIndex = -1;
+
+                // Iterate through pages to find the first page with a triangle shape
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Identify a triangle by its NameU (adjust if needed for your diagram)
-                    if (!string.IsNullOrEmpty(shape.NameU) &&
-                        shape.NameU.Equals("Triangle", StringComparison.OrdinalIgnoreCase))
+                    Page page = diagram.Pages[i];
+                    foreach (Shape shape in page.Shapes)
                     {
-                        targetPage = page;
-                        triangleShape = shape;
-                        break;
+                        // Ensure the shape has a master and check its name
+                        if (shape.Master != null && shape.Master.Name == "Triangle")
+                        {
+                            trianglePageIndex = i;
+                            break;
+                        }
                     }
+
+                    if (trianglePageIndex != -1)
+                        break;
                 }
 
-                if (targetPage != null)
-                    break;
-            }
-
-            if (targetPage != null && triangleShape != null)
-            {
-                // Configure SVG save options
-                SVGSaveOptions svgOptions = new SVGSaveOptions
+                if (trianglePageIndex == -1)
                 {
-                    IsSavingImageSeparately = false,
-                    ExportHiddenPage = false
-                };
+                    Console.WriteLine("No triangle shape found in any page.");
+                    return;
+                }
 
-                // Save the triangle shape (representing the page) as an SVG file
-                triangleShape.ToSvg("FirstTrianglePage.svg", svgOptions);
-            }
-            else
-            {
-                Console.WriteLine("No triangle shape found in any page.");
+                // Create a new diagram containing only the identified page
+                using (Diagram singlePageDiagram = new Diagram())
+                {
+                    // Remove the default empty page
+                    if (singlePageDiagram.Pages.Count > 0)
+                    {
+                        Page defaultPage = singlePageDiagram.Pages[0];
+                        singlePageDiagram.Pages.Remove(defaultPage);
+                    }
+
+                    // Add the page with the triangle to the new diagram
+                    Page trianglePage = diagram.Pages[trianglePageIndex];
+                    singlePageDiagram.Pages.Add(trianglePage);
+
+                    // Prepare SVG save options
+                    SVGSaveOptions svgOptions = new SVGSaveOptions();
+                    svgOptions.SaveFormat = SaveFileFormat.Svg;
+
+                    // Save the new diagram as an SVG file
+                    string outputPath = "triangle_page.svg";
+                    singlePageDiagram.Save(outputPath, svgOptions);
+
+                    Console.WriteLine($"Triangle page saved to '{outputPath}'.");
+                }
             }
 
         }

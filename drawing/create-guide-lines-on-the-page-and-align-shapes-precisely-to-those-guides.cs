@@ -7,61 +7,65 @@ class Program
 {
     static void Main()
     {
-        try
-        {
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+        // Create a new page and set its size (in inches)
+        Page page = new Page();
+        page.PageSheet.PageProps.PageWidth.Value = 11.0;   // Width = 11 inches
+        page.PageSheet.PageProps.PageHeight.Value = 8.5;   // Height = 8.5 inches
 
-            // Add a new page to the diagram
-            Page page = new Page();
-            diagram.Pages.Add(page);
+        // Add the page to the diagram
+        diagram.Pages.Add(page);
 
-            // Define guide positions (in inches)
-            double verticalGuideX = 2.0;   // vertical guide at 2 inches from the left edge
-            double horizontalGuideY = 3.0; // horizontal guide at 3 inches from the top edge
+        // -----------------------------------------------------------------
+        // 1. Create guide lines (using thin polyline shapes as guides)
+        // -----------------------------------------------------------------
+        // Example: vertical guide at X = 3 inches
+        double guideX = 3.0;
+        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+        long verticalGuideId = page.DrawPolyline(new double[] { guideX, 0.0, guideX, pageHeight });
 
-            // -------------------------------------------------
-            // Shape 1: Rectangle centered on both guides
-            // -------------------------------------------------
-            // Add a rectangle master shape and place its center (PinX, PinY) on the guide intersection
-            long rectId = diagram.AddShape(verticalGuideX, horizontalGuideY, "Rectangle", 0);
-            Shape rect = page.Shapes.GetShape(rectId);
+        // Example: horizontal guide at Y = 2 inches
+        double guideY = 2.0;
+        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+        long horizontalGuideId = page.DrawPolyline(new double[] { 0.0, guideY, pageWidth, guideY });
 
-            // Ensure the shape is not marked as deleted
-            if (rect.Del == BOOL.True) rect.Del = BOOL.False;
+        // Optionally, make the guides visually thin (line weight) and a light color
+        Shape verticalGuide = page.Shapes.GetShape(verticalGuideId);
+        verticalGuide.Line.LineWeight.Value = 0.01;               // Thin line
+        verticalGuide.Line.LineColor.Value = "#CCCCCC";           // Light gray
 
-            // Set shape text
-            rect.Text.Value.Clear();
-            rect.Text.Value.Add(new Txt("Aligned Rectangle"));
+        Shape horizontalGuide = page.Shapes.GetShape(horizontalGuideId);
+        horizontalGuide.Line.LineWeight.Value = 0.01;
+        horizontalGuide.Line.LineColor.Value = "#CCCCCC";
 
-            // -------------------------------------------------
-            // Shape 2: Ellipse aligned to the top‑left of the guides
-            // -------------------------------------------------
-            double ellipseWidth = 1.5;   // width in inches
-            double ellipseHeight = 1.0;  // height in inches
+        // -----------------------------------------------------------------
+        // 2. Add a rectangle shape that will be aligned to the guides
+        // -----------------------------------------------------------------
+        // Draw a rectangle (centered at (0,0) initially)
+        double rectWidth = 2.0;   // 2 inches
+        double rectHeight = 1.0;  // 1 inch
+        long rectShapeId = page.DrawRectangle(0.0, 0.0, rectWidth, rectHeight);
+        Shape rectShape = page.Shapes.GetShape(rectShapeId);
 
-            // Calculate PinX/PinY so that the ellipse's top‑left corner touches the guides
-            double ellipsePinX = verticalGuideX + ellipseWidth / 2.0;   // center X
-            double ellipsePinY = horizontalGuideY - ellipseHeight / 2.0; // center Y
+        // Align the rectangle's left edge to the vertical guide
+        // PinX is the center X; to align left edge, subtract half the width
+        rectShape.XForm.PinX.Value = guideX + rectWidth / 2.0;
+        // Align the rectangle's top edge to the horizontal guide
+        // PinY is the center Y; to align top edge, add half the height
+        rectShape.XForm.PinY.Value = guideY - rectHeight / 2.0;
 
-            long ellipseId = diagram.AddShape(ellipsePinX, ellipsePinY, ellipseWidth, ellipseHeight, "Ellipse", 0);
-            Shape ellipse = page.Shapes.GetShape(ellipseId);
+        // Optionally, give the rectangle a fill color
+        rectShape.Fill.FillForegnd.Value = "#FFCC00"; // Orange fill
+        rectShape.Fill.FillPattern.Value = 1;        // Solid fill
 
-            if (ellipse.Del == BOOL.True) ellipse.Del = BOOL.False;
+        // -----------------------------------------------------------------
+        // 3. Save the diagram to a VSDX file
+        // -----------------------------------------------------------------
+        string outputPath = "GuidesAlignedDiagram.vsdx";
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            ellipse.Text.Value.Clear();
-            ellipse.Text.Value.Add(new Txt("Top‑Left Aligned"));
-
-            // -------------------------------------------------
-            // Save the diagram with the aligned shapes
-            // -------------------------------------------------
-            diagram.Save("GuidesAligned.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+        Console.WriteLine($"Diagram saved to '{outputPath}'.");
     }
 }

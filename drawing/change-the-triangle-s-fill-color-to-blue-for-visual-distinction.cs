@@ -10,22 +10,21 @@ class Program
         {
 
             // Load an existing Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (adjust index if needed)
-            var page = diagram.Pages[0];
-
-            // Iterate through all shapes on the page
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all pages and shapes to find triangle shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Identify triangle shapes by their master name
-                if (shape.Master != null && shape.Master.Name == "Triangle")
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Set solid fill pattern
-                    shape.Fill.FillPattern.Value = 1; // 1 = solid
-
-                    // Apply blue fill color (hex format)
-                    shape.Fill.FillForegnd.Value = "#0000FF";
+                    // Identify a triangle by its master name
+                    if (shape.Master != null && shape.Master.Name == "Triangle")
+                    {
+                        // Set solid fill pattern
+                        shape.Fill.FillPattern.Value = 1; // 1 = solid
+                        // Set fill foreground color to blue (hex format)
+                        shape.Fill.FillForegnd.Value = "#0000FF";
+                    }
                 }
             }
 

@@ -1,59 +1,72 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Configure custom font folder and set default font for the diagram
+            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
+            FontConfigs.DefaultFontName = "CustomFont";
 
-            // Use the first page (index 0)
+            // Create a new empty diagram and add a single page
+            Diagram diagram = new Diagram();
+            diagram.Pages.Add(new Page());
             Page page = diagram.Pages[0];
 
-            // Define points for a diamond shape (top, right, bottom, left, back to top)
+            // Define diamond vertices (closed polyline) centered at (5,5) with size 2x2
             double[] diamondPoints = new double[]
             {
-                5.0, 6.0,   // Top
-                6.0, 5.0,   // Right
-                5.0, 4.0,   // Bottom
-                4.0, 5.0,   // Left
-                5.0, 6.0    // Close back to Top
+                5, 4,   // top point
+                6, 5,   // right point
+                5, 6,   // bottom point
+                4, 5,   // left point
+                5, 4    // close back to top
             };
+            // Draw the diamond shape and obtain its ID
+            long diamondId = page.DrawPolyline(diamondPoints);
+            // Retrieve the shape object using the returned ID
+            Shape diamond = page.Shapes.GetShape(diamondId);
 
-            // Draw the diamond using DrawPolyline (returns void)
-            page.DrawPolyline(diamondPoints);
+            // Remove any existing text runs from the shape
+            diamond.Text.Value.Clear();
+            // Add a new centered text run
+            diamond.Text.Value.Add(new Txt("Center Label"));
 
-            // Retrieve the newly created shape (assume it has the highest ID)
-            long maxId = 0;
-            foreach (Shape s in page.Shapes)
+            // Create character formatting for the first text run
+            Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+            ch.IX = 0; // index of the character run
+            ch.FontName.Value = "CustomFont"; // apply custom font
+            ch.Size.Value = 12.0 / 72.0; // 12 pt converted to inches
+            ch.Color.Value = "#000000"; // black color
+            // Attach the character formatting to the shape
+            diamond.Chars.Add(ch);
+
+            // Position the text block at the center of the shape (relative 0‑1 coordinates)
+            diamond.TextXForm.TxtPinX.Value = 0.5;
+            diamond.TextXForm.TxtPinY.Value = 0.5;
+            diamond.TextXForm.TxtLocPinX.Value = 0.5;
+            diamond.TextXForm.TxtLocPinY.Value = 0.5;
+
+            // Ensure vertical alignment is middle
+            diamond.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
+            // If a paragraph exists, set its horizontal alignment to center
+            if (diamond.Paras.Count > 0)
             {
-                if (s.ID > maxId)
-                    maxId = s.ID;
+                diamond.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
             }
 
-            Shape diamondShape = page.Shapes.GetShape(maxId);
-
-            // Add centered text label inside the diamond
-            diamondShape.Text.Value.Clear();
-            diamondShape.Text.Value.Add(new Txt("Custom Label"));
-
-            // Center the text block within the shape
-            diamondShape.TextXForm.TxtPinX.Value = 0.5; // 50% width
-            diamondShape.TextXForm.TxtPinY.Value = 0.5; // 50% height
-
-            // Vertically center the text block
-            diamondShape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
-
-            // Apply custom font to the text via Char collection
-            Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-            ch.IX = 0; // start index
-            ch.FontName.Value = "CustomFontName"; // replace with your font name
-            ch.Size.Value = 12.0 / 72.0; // 12 pt in inches
-            ch.Color.Value = "#000000"; // black text
-            diamondShape.Chars.Add(ch);
-
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram as a VSDX file
+            diagram.Save("DiamondLabel.vsdx", SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Output any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

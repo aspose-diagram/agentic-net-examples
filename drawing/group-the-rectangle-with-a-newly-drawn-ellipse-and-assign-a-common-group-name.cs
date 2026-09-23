@@ -6,46 +6,30 @@ class Program
 {
     static void Main()
     {
-        try
-        {
+        // Create a new blank diagram
+        Diagram diagram = new Diagram();
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram(@"input.vsdx");
+        // Access the first (default) page
+        Page page = diagram.Pages[0];
 
-            // Access the first page
-            Page page = diagram.Pages[0];
+        // Draw a rectangle (pinX, pinY, width, height)
+        long rectId = page.DrawRectangle(2.0, 2.0, 2.0, 1.0);
 
-            // Draw a new ellipse on the page
-            // (pinX, pinY) = center of the ellipse, width and height define its size
-            double pinX = 5.0;
-            double pinY = 5.0;
-            double width = 2.0;
-            double height = 1.0;
-            long ellipseId = page.DrawEllipse(pinX, pinY, width, height);
+        // Draw an ellipse (pinX, pinY, width, height)
+        long ellipseId = page.DrawEllipse(5.0, 2.0, 2.0, 1.0);
 
-            // Retrieve the newly created ellipse shape
-            Shape ellipseShape = page.Shapes.GetShape(ellipseId);
+        // Retrieve the shape objects using their IDs
+        Shape rectShape = page.Shapes.GetShape(rectId);
+        Shape ellipseShape = page.Shapes.GetShape(ellipseId);
 
-            // Retrieve an existing rectangle shape.
-            // Replace 1 with the actual ID of the rectangle you want to group.
-            long rectangleId = 1;
-            Shape rectangleShape = page.Shapes.GetShape(rectangleId);
+        // Group the rectangle and ellipse together
+        Shape groupShape = page.Shapes.Group(new Shape[] { rectShape, ellipseShape });
 
-            // Group the rectangle and the ellipse together
-            Shape[] groupItems = new Shape[] { rectangleShape, ellipseShape };
-            Shape groupShape = page.Shapes.Group(groupItems);
+        // Assign a common name to the group
+        groupShape.NameU = "MyGroup";
+        groupShape.Name = "MyGroup";
 
-            // Assign a common name to the group shape
-            // The Name property is used to identify the shape within the diagram.
-            groupShape.Name = "RectangleEllipseGroup";
-
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save(@"output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        // Save the diagram to a VSDX file
+        diagram.Save("GroupedDiagram.vsdx", SaveFileFormat.Vsdx);
     }
 }

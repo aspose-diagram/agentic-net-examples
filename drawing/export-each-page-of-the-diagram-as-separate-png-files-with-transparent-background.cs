@@ -1,46 +1,50 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportDiagramPages
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+
+        // Verify the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Get total number of pages in the diagram
-            int pageCount = diagram.Pages.Count;
-
-            // Loop through each page and export it as a separate PNG file
-            for (int i = 0; i < pageCount; i++)
+            // Iterate through each page in the diagram
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Configure image save options for PNG format
-                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png)
-                {
-                    // Render only the current page
-                    PageIndex = i,
-                    PageCount = 1,
+                // Configure PNG export options for the current page
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                pngOptions.PageIndex = i;      // zero‑based page index
+                pngOptions.PageCount = 1;      // export only the current page
 
-                    // Ensure PNG format is used
-                    SaveFormat = SaveFileFormat.Png
-                };
+                // NOTE: Transparent background is not directly configurable via ImageSaveOptions
+                // in the current Aspose.Diagram version. PNG export will retain any existing
+                // transparency in the diagram content.
 
-                // Build output file name (e.g., Page_0.png, Page_1.png, ...)
-                string outputFile = $"Page_{i}.png";
+                // Build output file name (e.g., Page_1.png, Page_2.png, ...)
+                string outputPath = $"Page_{i + 1}.png";
 
-                // Save the current page as PNG with the specified options
-                diagram.Save(outputFile, options);
+                // Save the current page as a PNG file using the configured options
+                diagram.Save(outputPath, pngOptions);
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

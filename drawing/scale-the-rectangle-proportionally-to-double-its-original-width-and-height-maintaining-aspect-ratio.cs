@@ -9,44 +9,38 @@ class Program
         try
         {
 
-            // Paths to the input and output Visio files
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
 
-            // Load the diagram from the file
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (adjust if needed)
-            Page page = diagram.Pages[0];
-
-            // Locate the rectangle shape by its master name
-            Shape rectangle = null;
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                if (shape.Master != null && shape.Master.Name == "Rectangle")
+                foreach (Shape shape in page.Shapes)
                 {
-                    rectangle = shape;
-                    break;
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Identify rectangle shapes by their master name
+                    if (shape.Master != null && shape.Master.Name == "Rectangle")
+                    {
+                        // Retrieve original dimensions
+                        double originalWidth = shape.XForm.Width.Value;
+                        double originalHeight = shape.XForm.Height.Value;
+
+                        // Scale width and height proportionally (double size)
+                        shape.XForm.Width.Value = originalWidth * 2;
+                        shape.XForm.Height.Value = originalHeight * 2;
+                    }
                 }
             }
 
-            if (rectangle == null)
-            {
-                Console.WriteLine("Rectangle shape not found.");
-                return;
-            }
-
-            // Retrieve original dimensions
-            double originalWidth = rectangle.XForm.Width.Value;
-            double originalHeight = rectangle.XForm.Height.Value;
-
-            // Scale width and height proportionally (double size)
-            rectangle.XForm.Width.Value = originalWidth * 2;
-            rectangle.XForm.Height.Value = originalHeight * 2;
-
             // Save the modified diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Rectangle scaled and diagram saved successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

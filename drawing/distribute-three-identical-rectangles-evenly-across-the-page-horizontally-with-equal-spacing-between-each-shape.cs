@@ -1,59 +1,45 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        try
+        // Create a new blank diagram
+        using (Diagram diagram = new Diagram())
         {
+            // Access the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Create a new empty diagram
-            using (Diagram diagram = new Diagram())
+            // Retrieve page dimensions (in inches)
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+            // Define rectangle size
+            double rectWidth = 2.0;   // inches
+            double rectHeight = 1.0;  // inches
+
+            // Calculate equal horizontal spacing (including margins)
+            double spacing = (pageWidth - 3 * rectWidth) / 4.0;
+
+            // Vertical center position for all rectangles
+            double pinY = pageHeight / 2.0;
+
+            // Add three rectangles with equal spacing
+            for (int i = 0; i < 3; i++)
             {
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
-                    diagram.Pages.Add(new Page());
+                double pinX = spacing + rectWidth / 2.0 + i * (rectWidth + spacing);
+                long shapeId = page.DrawRectangle(pinX, pinY, rectWidth, rectHeight);
 
-                // Get the first page
-                Page page = diagram.Pages[0];
-
-                // Page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Rectangle size (in inches)
-                double rectWidth = 1.0;
-                double rectHeight = 0.5;
-
-                // Calculate equal horizontal spacing (including margins)
-                double spacing = (pageWidth - 3 * rectWidth) / 4.0;
-
-                // Vertical position (center of the page)
-                double pinY = pageHeight / 2.0;
-
-                // Add three rectangles with equal spacing
-                for (int i = 0; i < 3; i++)
-                {
-                    double pinX = spacing + rectWidth / 2.0 + i * (rectWidth + spacing);
-                    long shapeId = page.AddShape(pinX, pinY, rectWidth, rectHeight, "Rectangle");
-                    // Retrieve the shape if further modifications are needed
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    // Optional: add a label to each rectangle
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt($"Rect {i + 1}"));
-                }
-
-                // Save the diagram as VSDX
-                diagram.Save("ThreeRectangles.vsdx", SaveFileFormat.Vsdx);
+                // Optional: add a label to each rectangle
+                Shape shape = page.Shapes.GetShape(shapeId);
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt($"Rect {i + 1}"));
             }
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Save the diagram to a VSDX file
+            diagram.Save("Rectangles.vsdx", SaveFileFormat.Vsdx);
         }
     }
 }

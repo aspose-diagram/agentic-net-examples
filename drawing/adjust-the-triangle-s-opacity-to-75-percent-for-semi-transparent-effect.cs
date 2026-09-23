@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
@@ -9,19 +9,19 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes to locate the triangle
+            // Iterate through all pages and shapes to locate triangle shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify the triangle shape (by its universal name)
-                    if (shape.NameU == "Triangle")
+                    // Check that the shape has a master and that the master name is "Triangle"
+                    if (shape.Master != null && shape.Master.Name == "Triangle")
                     {
-                        // Set fill background transparency to 0.25 (75% opacity)
-                        shape.Fill.FillBkgndTrans.Value = 0.25;
+                        // Set fill foreground transparency to 0.25 (75% opacity)
+                        shape.Fill.FillForegndTrans.Value = 0.25;
                     }
                 }
             }

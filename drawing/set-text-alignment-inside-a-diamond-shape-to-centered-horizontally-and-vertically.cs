@@ -1,43 +1,60 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
         try
         {
-
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Use the default first page
+            // Add a new page to the diagram and get a reference to it
+            diagram.Pages.Add(new Page());
             Page page = diagram.Pages[0];
 
-            // Add a diamond shape at (5,5) inches
-            long diamondId = page.AddShape(5.0, 5.0, "Diamond");
+            // Define the diamond shape points as a flat double array (x1, y1, x2, y2, ...)
+            double[] diamondPoints = new double[]
+            {
+                2.0, 0.0,   // Top
+                4.0, 2.0,   // Right
+                2.0, 4.0,   // Bottom
+                0.0, 2.0    // Left
+            };
 
-            // Retrieve the shape instance
-            Shape diamond = page.Shapes.GetShape(diamondId);
+            // Draw the diamond shape; the method returns the shape ID
+            long shapeId = page.DrawPolyline(diamondPoints);
 
-            // Set the shape's text
-            diamond.Text.Value.Clear();
-            diamond.Text.Value.Add(new Txt("Centered Text"));
+            // Retrieve the shape object using its ID
+            Shape diamondShape = page.Shapes.GetShape(shapeId);
 
-            // Center text horizontally
-            diamond.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+            // Clear any existing text and add new text to the shape
+            diamondShape.Text.Value.Clear();
+            diamondShape.Text.Value.Add(new Txt("Diamond"));
 
-            // Center text vertically
-            diamond.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
+            // Ensure there is at least one paragraph to set alignment on
+            if (diamondShape.Paras.Count == 0)
+            {
+                // Add a default paragraph if none exist
+                diamondShape.Paras.Add(new Para());
+            }
 
-            // Save the diagram
-            diagram.Save("DiamondAligned.vsdx", SaveFileFormat.Vsdx);
+            // Set horizontal alignment of the paragraph to center
+            diamondShape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
 
+            // Set vertical alignment of the text block to middle
+            diamondShape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
+
+            // Save the diagram to a VSDX file
+            diagram.Save("Diamond.vsdx", SaveFileFormat.Vsdx);
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

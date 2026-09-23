@@ -1,58 +1,52 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-class AlignPentagonToCenter
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            // (Replace with your actual input file path)
-            string inputPath = @"C:\Diagrams\input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Assume the pentagon shape is on the first page
-            Page page = diagram.Pages[0];
-
-            // Find the pentagon shape.
-            // This example searches by shape name; adjust the condition as needed
-            // (e.g., by MasterShape, ShapeID, or other identifying property).
-            Shape pentagonShape = null;
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                // The Name property may contain the shape's text or a custom name.
-                // Replace "Pentagon" with the actual name used in your diagram.
-                if (shape.Name?.Equals("Pentagon", StringComparison.OrdinalIgnoreCase) == true)
+
+                // Load an existing Visio diagram (replace with your file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
+
+                // Get page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Calculate center coordinates
+                double centerX = pageWidth / 2.0;
+                double centerY = pageHeight / 2.0;
+
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    pentagonShape = shape;
-                    break;
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape has a master and that the master name is "Pentagon"
+                    if (shape.Master != null && shape.Master.Name == "Pentagon")
+                    {
+                        // Align the shape's pin (center) to the page center
+                        shape.XForm.PinX.Value = centerX;
+                        shape.XForm.PinY.Value = centerY;
+                    }
                 }
-            }
 
-            if (pentagonShape == null)
+                // Save the modified diagram
+                string outputPath = "output_centered.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("Pentagon shape not found on the first page.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Center the pentagon shape with respect to the page extent.
-            // This moves the shape so its pin (center of rotation) aligns with the page center.
-            pentagonShape.CenterDrawing();
-
-            // Save the modified diagram
-            // (Replace with your desired output file path and format)
-            string outputPath = @"C:\Diagrams\output_centered.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Pentagon shape has been centered and diagram saved.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

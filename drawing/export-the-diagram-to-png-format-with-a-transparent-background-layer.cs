@@ -1,34 +1,36 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
-using System.Drawing; // For Color if needed
-
-class ExportDiagramToPng
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Verify the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+
+        // Path for the exported PNG file
+        string outputPath = "output.png";
+
         try
         {
+            // Load the Visio diagram from the file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Configure image save options for PNG format
+            // Configure PNG export options (transparent background is default for PNG)
             ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            pngOptions.SaveFormat = SaveFileFormat.Png;          // Explicitly set PNG format
-            // If the library exposes a BackgroundColor property, set it to transparent.
-            // Uncomment the following line if such a property exists:
-            // pngOptions.BackgroundColor = Color.Transparent;
 
-            // Save the diagram as a PNG image with the specified options
-            diagram.Save("output.png", pngOptions);
-
+            // Save the diagram as a PNG image using the configured options
+            diagram.Save(outputPath, pngOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

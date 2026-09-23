@@ -1,57 +1,65 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
 
-            // Access the first (default) page
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Get the first (foreground) page
             Page foregroundPage = diagram.Pages[0];
 
-            // Create a background page
+            // Create a new background page
             Page backgroundPage = new Page();
             backgroundPage.Background = BOOL.True; // Mark as background page
             diagram.Pages.Add(backgroundPage);
-
-            // Link the foreground page to the background page
-            foregroundPage.BackPage = backgroundPage;
 
             // Retrieve page dimensions (in inches)
             double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
 
-            // Calculate center coordinates for the rectangle shape
-            double centerX = pageWidth / 2.0;
-            double centerY = pageHeight / 2.0;
+            // Add a rectangle that spans the entire page on the background page
+            // Parameters: pinX, pinY, width, height, master name, isCalculate (bool)
+            long bgShapeId = backgroundPage.AddShape(0, 0, pageWidth, pageHeight, "Rectangle", false);
+            Shape bgShape = backgroundPage.Shapes.GetShape(bgShapeId);
 
-            // Draw a rectangle that covers the entire page on the background page
-            long rectShapeId = backgroundPage.DrawRectangle(centerX, centerY, pageWidth, pageHeight);
-            Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
+            // Set solid fill pattern
+            bgShape.Fill.FillPattern.Value = 1; // Solid fill
+            // Set desired background color (hex string, e.g., light blue)
+            bgShape.Fill.FillForegnd.Value = "#ADD8E6";
 
-            // Set solid fill pattern and desired background color (hex string)
-            rectShape.Fill.FillPattern.Value = 1; // Solid fill
-            rectShape.Fill.FillForegnd.Value = "#ADD8E6"; // Light blue background
+            // Remove outline stroke
+            bgShape.Line.LinePattern.Value = 0; // No line
 
-            // Remove outline by setting line pattern to none and line weight to zero
-            rectShape.Line.LinePattern.Value = (LinePatternValue)0; // No line pattern
-            rectShape.Line.LineWeight.Value = 0.0;
+            // Send the shape to the back so other content appears above it
+            bgShape.SendToBack();
 
-            // Send the rectangle to the back so other shapes appear above it
-            rectShape.SendToBack();
+            // Make the background shape non‑selectable
+            bgShape.Protection.LockSelect.Value = BOOL.True;
+
+            // Link the foreground page to the background page
+            foregroundPage.BackPage = backgroundPage;
 
             // Configure PNG export options
             ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            pngOptions.PageIndex = 0; // Export the first page (foreground page)
-            pngOptions.ExportHiddenPage = false; // Do not export hidden pages
+            // Export the first page (index 0)
+            pngOptions.PageIndex = 0;
 
-            // Save the diagram as a PNG file with the specified background color
-            string outputPath = "ExportedDiagram.png";
-            diagram.Save(outputPath, pngOptions);
+            // Save the diagram as a PNG image with the solid background color
+            diagram.Save("output.png", pngOptions);
 
-            Console.WriteLine($"Diagram exported successfully to '{outputPath}'.");
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

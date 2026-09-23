@@ -5,40 +5,52 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
+        // Define input file path
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Get the first (default) page
+            // Access the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape (master name "Rectangle") at position (5,5) inches with width and height of 4 inches
-            long rectId = page.AddShape(5.0, 5.0, 4.0, 4.0, "Rectangle");
+            // Locate the first rectangle shape by its master name
+            Shape rectangle = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.Master != null && shape.Master.Name == "Rectangle")
+                {
+                    rectangle = shape;
+                    break;
+                }
+            }
 
-            // Retrieve the shape object using its ID
-            Shape rectShape = page.Shapes.GetShape(rectId);
+            if (rectangle == null)
+            {
+                Console.Error.WriteLine("Rectangle shape not found.");
+                return;
+            }
 
-            // Clear any existing text (optional)
-            rectShape.Text.Value.Clear();
+            // NOTE: Aspose.Diagram does not expose a direct Wrap property on TextBlock.
+            // Text wrapping is handled automatically based on the shape's width,
+            // so no explicit property assignment is required.
 
-            // Add a long sentence that should wrap inside the rectangle
-            string longText = "This is a very long sentence that will automatically wrap inside the rectangle shape to improve readability and demonstrate text wrapping functionality.";
-            rectShape.Text.Value.Add(new Txt(longText));
+            // Clear any existing text and add a long sentence to demonstrate wrapping
+            rectangle.Text.Value.Clear();
+            rectangle.Text.Value.Add(new Txt("This is a very long sentence that should automatically wrap inside the rectangle shape to improve readability."));
 
-            // Note: Text wrapping is automatically handled based on shape size; explicit Wrap cell is not exposed in the API.
+            // Define output file path
+            string outputPath = "output.vsdx";
 
-            // Optionally adjust margins so the text does not touch the shape borders
-            rectShape.TextBlock.LeftMargin.Value = 0.1;   // 0.1 inch left margin
-            rectShape.TextBlock.RightMargin.Value = 0.1;  // 0.1 inch right margin
-            rectShape.TextBlock.TopMargin.Value = 0.1;    // 0.1 inch top margin
-            rectShape.TextBlock.BottomMargin.Value = 0.1; // 0.1 inch bottom margin
-
-            // Save the diagram as a PNG image to verify the result
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            diagram.Save("WrappedRectangle.png", saveOptions);
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved with text wrapping enabled.");
         }
         catch (Exception ex)
         {

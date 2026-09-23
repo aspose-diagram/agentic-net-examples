@@ -1,34 +1,41 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main()
     {
-        // Create a new diagram
-        Diagram diagram = new Diagram();
+        // Create a new empty diagram
+        using (Diagram diagram = new Diagram())
+        {
+            // Determine the highest existing page ID (will be 0 for a fresh diagram)
+            int maxPageId = 0;
+            foreach (Page p in diagram.Pages)
+            {
+                if (p.ID > maxPageId)
+                    maxPageId = p.ID;
+            }
 
-        // Add a new page to the diagram
-        Page newPage = new Page();
-        diagram.Pages.Add(newPage);
+            // Add a new page with a unique ID
+            Page newPage = new Page(maxPageId + 1);
+            diagram.Pages.Add(newPage);
 
-        // Coordinates (in inches) where the oval will be placed
-        double pinX = 5.0;   // X‑coordinate of the shape's pin (center)
-        double pinY = 5.0;   // Y‑coordinate of the shape's pin (center)
+            // Define oval (ellipse) position and size in inches
+            double pinX = 2.0;   // center X coordinate
+            double pinY = 3.0;   // center Y coordinate
+            double width = 4.0;  // horizontal diameter
+            double height = 2.0; // vertical diameter
 
-        // Size of the oval (in inches)
-        double width = 2.0;  // Width of the oval
-        double height = 1.0; // Height of the oval
+            // Insert the oval shape onto the new page
+            long shapeId = newPage.DrawEllipse(pinX, pinY, width, height);
 
-        // Draw the oval (ellipse) on the newly added page
-        long shapeId = newPage.DrawEllipse(pinX, pinY, width, height);
+            // Retrieve the shape to set additional properties (optional)
+            Shape oval = newPage.Shapes.GetShape((int)shapeId);
+            oval.Fill.FillForegnd.Value = "#00AAFF"; // light blue fill color
 
-        // Optional: set a name for the created shape
-        Shape ovalShape = newPage.Shapes.GetShape(shapeId);
-        ovalShape.Name = "MyOval";
-
-        // Save the diagram to a file
-        diagram.Save("Output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram to VSDX format
+            diagram.Save("OvalDiagram.vsdx", SaveFileFormat.Vsdx);
+        }
     }
 }

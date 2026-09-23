@@ -10,28 +10,34 @@ class Program
         // Create a new empty diagram
         Diagram diagram = new Diagram();
 
-        // Add a new page to the diagram
-        Page page = new Page();
-        diagram.Pages.Add(page);
+        // Access the first page of the diagram
+        Page page = diagram.Pages[0];
 
-        // Center coordinates for all circles
-        double centerX = 300.0;
-        double centerY = 300.0;
+        // Define circle parameters
+        double startRadius = 0.5;          // initial radius in inches
+        double radiusIncrement = 0.1;      // radius increase per circle
+        double spacing = 0.5;              // extra horizontal spacing between circles
 
-        // Incremental radius step
-        double radiusStep = 5.0;
-
-        // Draw 50 circles with increasing radii
-        for (int i = 1; i <= 50; i++)
+        // Add 50 circles with incremental radii
+        for (int i = 0; i < 50; i++)
         {
-            double radius = i * radiusStep;
-            double diameter = radius * 2.0;
+            double radius = startRadius + i * radiusIncrement;
+            double diameter = radius * 2;
 
-            // DrawEllipse draws an ellipse; using equal width and height creates a circle
-            page.DrawEllipse(centerX, centerY, diameter, diameter);
+            // Position each circle horizontally, keeping a constant vertical position
+            double pinX = i * (diameter + spacing) + radius;
+            double pinY = 5.0; // fixed Y coordinate
+
+            // Draw a circle (ellipse with equal width and height)
+            page.DrawEllipse(pinX, pinY, diameter, diameter);
         }
 
-        // Export the diagram to PDF using the provided Save method
-        diagram.Save("Circles.pdf", SaveFileFormat.Pdf);
+        // Configure PDF save options
+        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+        pdfOptions.DefaultFont = "Arial";
+        pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+        // Export the diagram to PDF
+        diagram.Save("Circles.pdf", pdfOptions);
     }
 }

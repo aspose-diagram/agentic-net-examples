@@ -10,27 +10,57 @@ class Program
         try
         {
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsd");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Assign a CSS class (via the shape name) to each shape on the first page
-            int shapeIndex = 0;
-            foreach (Shape shape in diagram.Pages[0].Shapes)
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Assign a CSS class (as a custom property) to each shape
+            foreach (Page page in diagram.Pages)
             {
-                // Example class name: "shape-0", "shape-1", ...
-                shape.Name = $"shape-{shapeIndex}";
-                shapeIndex++;
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip shapes that are marked for deletion
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Look for an existing "Class" property
+                    bool classFound = false;
+                    foreach (Prop prop in shape.Props)
+                    {
+                        if (prop.Name == "Class")
+                        {
+                            prop.Value.Val = $"shape-{shape.ID}";
+                            classFound = true;
+                            break;
+                        }
+                    }
+
+                    // If not found, create a new custom property named "Class"
+                    if (!classFound)
+                    {
+                        Prop classProp = new Prop();
+                        classProp.Name = "Class";
+                        classProp.Value.Val = $"shape-{shape.ID}";
+                        shape.Props.Add(classProp);
+                    }
+                }
             }
 
-            // Configure SVG save options
+            // Configure SVG export options
             SVGSaveOptions svgOptions = new SVGSaveOptions
             {
-                // Make the generated SVG fit the viewport
-                SVGFitToViewPort = true
+                ExportHiddenPage = false,      // Do not export hidden pages
+                ExportGuideShapes = false,     // Do not export guide shapes
+                SVGFitToViewPort = true        // Fit the SVG to the viewport
             };
 
-            // Export the entire diagram to a single SVG file
-            diagram.Save("output.svg", svgOptions);
+            // Path for the exported SVG file
+            string outputPath = "output.svg";
+
+            // Export the diagram to SVG
+            diagram.Save(outputPath, svgOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

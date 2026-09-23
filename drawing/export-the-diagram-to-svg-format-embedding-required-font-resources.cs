@@ -1,7 +1,10 @@
 using System.IO;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing.Text;
 
 class Program
 {
@@ -10,26 +13,44 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsd");
+            // Configure font folder (recursive) and default fallback font
+            string fontsPath = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+            FontConfigs.SetFontFolder(fontsPath, true);
+            FontConfigs.DefaultFontName = "Arial";
 
-            // Create SVG save options
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Set a default font to ensure Unicode characters are rendered correctly
-            svgOptions.DefaultFont = "Arial Unicode MS";
+            // Enumerate fonts used in the diagram and check against installed system fonts
+            var installedFonts = new InstalledFontCollection();
+            var installedNames = installedFonts.Families
+                                                .Select(f => f.Name)
+                                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            // Embed images directly into the SVG (do not save them separately)
-            svgOptions.IsSavingImageSeparately = false;
+            foreach (Font diagramFont in diagram.Fonts)
+            {
+                string fontName = diagramFont.Name;
+                if (!installedNames.Contains(fontName))
+                {
+                    Console.WriteLine($"Missing font: {fontName}");
+                }
+            }
 
-            // Make the generated SVG fit to the viewport
-            svgOptions.SVGFitToViewPort = true;
+            // Prepare SVG save options with font embedding (default font fallback)
+            SVGSaveOptions svgOptions = new SVGSaveOptions
+            {
+                ExportHiddenPage = false,
+                ExportGuideShapes = false,
+                SVGFitToViewPort = true,
+                DefaultFont = "Arial"
+            };
 
-            // Optionally, decide whether hidden pages should be exported
-            svgOptions.ExportHiddenPage = false;
+            // Export diagram to SVG
+            string outputPath = "output.svg";
+            diagram.Save(outputPath, svgOptions);
 
-            // Save the diagram as an SVG file using the configured options
-            diagram.Save("output.svg", svgOptions);
+            Console.WriteLine($"Diagram exported to SVG: {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

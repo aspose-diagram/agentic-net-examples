@@ -1,39 +1,44 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string sourcePath = "input.vsdx";
+
+        // Verify the source file exists before proceeding
+        if (!File.Exists(sourcePath))
+        {
+            Console.Error.WriteLine($"File not found: {sourcePath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(sourcePath);
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Configure HTML export options
+            // Configure HTML export options (zoom controls are enabled by default)
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                // Enable the toolbar which provides interactive zoom controls
-                SaveToolBar = true,
-
-                // Export each page as a separate HTML file (set to true for a single file)
-                SaveAsSingleFile = false,
-
-                // Optional: set resolution, page size, etc., if needed
-                // Resolution = 96,
-                // PageSize = new Size(800, 600)
+                // Export hidden pages if needed (optional)
+                ExportHiddenPage = false
             };
 
-            // Export the diagram to HTML using the configured options
-            diagram.Save("output.html", htmlOptions);
+            // Export the diagram to HTML
+            string outputPath = "output.html";
+            diagram.Save(outputPath, htmlOptions);
 
+            Console.WriteLine($"Diagram exported to HTML with zoom controls at: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error exporting diagram to HTML: {ex.Message}");
         }
     }
 }

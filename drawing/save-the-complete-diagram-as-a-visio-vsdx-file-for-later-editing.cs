@@ -1,17 +1,24 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main()
     {
-        // Create a new Visio diagram (empty)
-        Diagram diagram = new Diagram();
+        try
+        {
 
-        // (Optional) Add pages, masters, shapes, etc. to the diagram here
+            // Load an existing Visio diagram (VSD, VDX, VSDX, etc.)
+            Diagram diagram = new Diagram("input.vsd");
 
-        // Save the diagram in VSDX format for later editing
-        diagram.Save("MyDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Save the complete diagram as a VSDX file for later editing
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

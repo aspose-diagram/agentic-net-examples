@@ -1,31 +1,32 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first page (index 0) of the diagram
-            Page firstPage = diagram.Pages[0];
+            // Access the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Add a triangle shape to the first page at position (4, 5) inches
-            // "Triangle" is the name of the built‑in master shape in Visio
-            firstPage.AddShape(4.0, 5.0, "Triangle");
+            // Define the vertices of a triangle (X1,Y1, X2,Y2, X3,Y3) and close the shape by repeating the first point
+            double[] trianglePoints = new double[] { 2.0, 2.0, 4.0, 2.0, 3.0, 4.0, 2.0, 2.0 };
 
-            // Save the diagram (using the provided Save method)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Draw the triangle on the page; returns the shape ID (long)
+            long triangleId = page.DrawPolyline(trianglePoints);
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Retrieve the shape object using the returned ID
+            Shape triangle = page.Shapes.GetShape(triangleId);
+
+            // Set visual properties for the triangle
+            triangle.Fill.FillForegnd.Value = "#FF0000";      // Red fill
+            triangle.Line.LineColor.Value = "#000000";      // Black outline
+            triangle.Line.LineWeight.Value = 0.02;          // Line thickness (in inches)
+
+            // Save the diagram to a VSDX file
+            diagram.Save("TriangleDiagram.vsdx", SaveFileFormat.Vsdx);
         }
     }
-}

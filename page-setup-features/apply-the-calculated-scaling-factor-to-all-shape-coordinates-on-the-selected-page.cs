@@ -1,57 +1,47 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Select the page to modify (e.g., the first page)
+            Page page = diagram.Pages[0];
+
+            // Define the scaling factor (example: 1.5 means 150% scaling)
+            double scalingFactor = 1.5;
+
+            // Apply scaling to each shape on the selected page
+            foreach (Shape shape in page.Shapes)
             {
+                // Scale position
+                shape.XForm.PinX.Value *= scalingFactor;
+                shape.XForm.PinY.Value *= scalingFactor;
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output_scaled.vsdx";
-                // Scaling factor to apply (e.g., 1.5 for 150% scaling)
-                double scalingFactor = 1.5;
-
-                // Load the diagram using the constructor that accepts a file path
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Select the page to modify – here we use the first page
-                    if (diagram.Pages.Count == 0)
-                    {
-                        Console.WriteLine("The diagram contains no pages.");
-                        return;
-                    }
-
-                    Page page = diagram.Pages[0];
-
-                    // Iterate over all shapes on the selected page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Scale position (PinX, PinY)
-                        shape.XForm.PinX.Value *= scalingFactor;
-                        shape.XForm.PinY.Value *= scalingFactor;
-
-                        // Scale size (Width, Height)
-                        shape.XForm.Width.Value *= scalingFactor;
-                        shape.XForm.Height.Value *= scalingFactor;
-                    }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved to '{outputPath}' with scaling factor {scalingFactor} applied.");
-                }
-
+                // Scale size
+                shape.XForm.Width.Value *= scalingFactor;
+                shape.XForm.Height.Value *= scalingFactor;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            string outputPath = "output_scaled.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

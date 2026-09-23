@@ -1,41 +1,34 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Diagram.Vba;
 
 class Program
 {
     static void Main()
     {
-        try
+        // Create a new diagram (empty Visio document)
+        Diagram diagram = new Diagram();
+
+        // Add a VBA procedural module to the diagram
+        int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "MyModule");
+        var vbaModule = diagram.VbaProject.Modules[moduleIndex];
+        vbaModule.Codes = @"
+Attribute VB_Name = ""MyModule""
+Sub HelloWorld()
+    MsgBox ""Hello from VBA!""
+End Sub
+";
+
+        // Save the diagram (with macros) to a memory stream in macro-enabled format
+        using (MemoryStream memoryStream = new MemoryStream())
         {
+            diagram.Save(memoryStream, SaveFileFormat.Vsdm);
+            memoryStream.Position = 0; // Reset stream position for reading/transmission
 
-            // Load the Visio diagram that contains VBA macros.
-            // VSDM is the macro‑enabled Visio format.
-            Diagram diagram = new Diagram("input.vsdm");
-
-            // Create a memory stream that will hold the diagram data for transmission.
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                // Save the diagram (including its macros) into the memory stream.
-                // The Save method with a Stream and SaveFileFormat preserves all macro data.
-                diagram.Save(memoryStream, SaveFileFormat.Vsdm);
-
-                // Reset the stream position to the beginning if the data will be read afterwards.
-                memoryStream.Position = 0;
-
-                // Example: obtain the byte array to send over a network.
-                byte[] diagramBytes = memoryStream.ToArray();
-
-                // Network transmission logic would go here, using diagramBytes.
-            }
-
-            // Clean up resources.
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Example usage: output the size of the generated stream
+            Console.WriteLine($"Saved diagram to memory stream. Size: {memoryStream.Length} bytes.");
         }
     }
 }

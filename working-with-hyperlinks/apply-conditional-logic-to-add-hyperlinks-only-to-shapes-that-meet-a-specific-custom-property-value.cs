@@ -9,48 +9,54 @@ class Program
             try
             {
 
-                // Input and output file paths
+                // Load an existing Visio diagram
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Define the custom property name and the value that qualifies a shape for hyperlink addition
                 const string targetPropName = "Category";
                 const string targetPropValue = "ExternalLink";
 
-                // Iterate through all pages in the diagram
+                // Define the hyperlink details to be added
+                const string hyperlinkAddress = "https://www.example.com";
+                const string hyperlinkDescription = "Visit Example";
+
+                // Iterate through all pages and their shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has a Props collection
-                        if (shape.Props == null) continue;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        bool qualifies = false;
+                        // Ensure the shape has custom properties
+                        if (shape.Props == null)
+                            continue;
 
-                        // Search for the custom property with the specified name and value
+                        // Look for the target custom property
+                        bool matches = false;
                         foreach (Prop prop in shape.Props)
                         {
                             if (prop.Name == targetPropName && prop.Value.Val == targetPropValue)
                             {
-                                qualifies = true;
+                                matches = true;
                                 break;
                             }
                         }
 
                         // If the shape meets the condition, add a hyperlink
-                        if (qualifies)
+                        if (matches)
                         {
-                            // Ensure the Hyperlinks collection is available
-                            if (shape.Hyperlinks == null) continue;
+                            // Ensure the Hyperlinks collection exists
+                            if (shape.Hyperlinks == null)
+                                continue; // Should not happen, but safety check
 
-                            // Create a new hyperlink instance
+                            // Create and configure the hyperlink
                             Hyperlink link = new Hyperlink();
-                            link.Name = "ExternalWebsite";
-                            link.Address.Value = "https://www.example.com";
+                            link.Name = "AutoLink";
+                            link.Address.Value = hyperlinkAddress;
+                            link.Description.Value = hyperlinkDescription;
 
                             // Add the hyperlink to the shape
                             shape.Hyperlinks.Add(link);
@@ -59,6 +65,7 @@ class Program
                 }
 
                 // Save the modified diagram
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

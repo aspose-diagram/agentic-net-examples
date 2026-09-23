@@ -3,48 +3,38 @@ using System.IO;
 using System.Xml;
 using System.Xml.Schema;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+class DiagramToHtmlValidator
 {
+    // Path to the input Visio diagram
+    private const string InputDiagramPath = "input.vsdx";
+
+    // Path where the HTML output will be saved
+    private const string OutputHtmlPath = "output.html";
+
+    // Path to the HTML5 XSD schema file
+    private const string Html5SchemaPath = "html5.xsd";
+
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram using Aspose.Diagram
+            Diagram diagram = new Diagram(InputDiagramPath);
 
-            // Set HTML save options (optional customizations)
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-            {
-                // Save the whole diagram as a single HTML file
-                SaveAsSingleFile = true,
-                // Include toolbar in the generated HTML (default is true)
-                SaveToolBar = true
-            };
+            // Save the diagram as HTML
+            diagram.Save(OutputHtmlPath, SaveFileFormat.Html);
 
-            // Convert the diagram to HTML and save it to disk
-            diagram.Save("output.html", htmlOptions);
+            // Read the generated HTML content
+            string htmlContent = File.ReadAllText(OutputHtmlPath);
 
-            // Path to the HTML5 schema (XSD) used for validation
-            string htmlSchemaPath = "html5.xsd";
+            // Validate the HTML against the HTML5 schema
+            bool isValid = ValidateHtml(htmlContent, Html5SchemaPath);
 
-            // Configure XML reader settings for schema validation
-            XmlReaderSettings settings = new XmlReaderSettings
-            {
-                ValidationType = ValidationType.Schema
-            };
-            settings.Schemas.Add(null, htmlSchemaPath);
-            settings.ValidationEventHandler += ValidationEventHandler;
-
-            // Validate the generated HTML (assumed to be well‑formed XHTML)
-            using (XmlReader reader = XmlReader.Create("output.html", settings))
-            {
-                while (reader.Read()) { /* reading triggers validation */ }
-            }
-
-            Console.WriteLine("HTML validation completed.");
+            Console.WriteLine(isValid
+                ? "HTML validation succeeded."
+                : "HTML validation failed. See errors above.");
 
         }
         catch (System.IO.FileNotFoundException ex)
@@ -53,9 +43,51 @@ class Program
         }
     }
 
-    // Handles validation warnings and errors
-    private static void ValidationEventHandler(object sender, ValidationEventArgs e)
+    /// <summary>
+    /// Validates an HTML string against an XSD schema.
+    /// </summary>
+    /// <param name="html">The HTML markup to validate.</param>
+    /// <param name="schemaPath">Path to the XSD schema file.</param>
+    /// <returns>True if validation succeeds; otherwise false.</returns>
+    private static bool ValidateHtml(string html, string schemaPath)
     {
-        Console.WriteLine($"{e.Severity}: {e.Message}");
+        bool isValid = true;
+
+        // Set up XML reader settings with schema validation
+        XmlReaderSettings settings = new XmlReaderSettings
+        {
+            ValidationType = ValidationType.Schema,
+            DtdProcessing = DtdProcessing.Prohibit,
+            XmlResolver = null
+        };
+
+        // Attach the HTML5 schema
+        settings.Schemas.Add(null, schemaPath);
+
+        // Capture validation errors
+        settings.ValidationEventHandler += (sender, args) =>
+        {
+            isValid = false;
+            Console.WriteLine($"Validation {args.Severity}: {args.Message}");
+        };
+
+        // Use a StringReader to feed the HTML content to the XmlReader
+        using (StringReader stringReader = new StringReader(html))
+        using (XmlReader reader = XmlReader.Create(stringReader, settings))
+        {
+            try
+            {
+                // Parse the entire document; validation occurs during reading
+                while (reader.Read()) { }
+            }
+            catch (XmlException ex)
+            {
+                // Parsing errors (e.g., not well-formed XML) are treated as validation failures
+                isValid = false;
+                Console.WriteLine($"XML parsing error: {ex.Message}");
+            }
+        }
+
+        return isValid;
     }
 }

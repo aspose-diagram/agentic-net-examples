@@ -1,107 +1,71 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths to the source Visio file and the output file
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // IDs of the source shape (containing the hyperlink) and the target shape
+            long sourceShapeId = 1; // replace with actual ID
+            long targetShapeId = 2; // replace with actual ID
+
+            // Retrieve the source shape
+            Shape sourceShape = diagram.Pages[0].Shapes.GetShape(sourceShapeId);
+            if (sourceShape == null)
             {
-
-                // Input and output file paths (provide via command‑line or use defaults)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the names of the source shape (contains the hyperlink to copy)
-                // and the target shape (where the cloned hyperlink will be attached)
-                string sourceShapeName = "SourceShape";
-                string targetShapeName = "TargetShape";
-
-                // Locate the source shape
-                Shape sourceShape = null;
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.NameU == sourceShapeName)
-                        {
-                            sourceShape = shape;
-                            break;
-                        }
-                    }
-                    if (sourceShape != null) break;
-                }
-
-                if (sourceShape == null)
-                {
-                    throw new Exception($"Source shape \"{sourceShapeName}\" not found.");
-                }
-
-                // Ensure the source shape has at least one hyperlink
-                if (sourceShape.Hyperlinks == null || sourceShape.Hyperlinks.Count == 0)
-                {
-                    throw new Exception($"Source shape \"{sourceShapeName}\" does not contain any hyperlinks.");
-                }
-
-                // Clone the first hyperlink from the source shape
-                Hyperlink originalLink = sourceShape.Hyperlinks[0];
-                Hyperlink clonedLink = new Hyperlink();
-
-                // Copy address and sub‑address (if any)
-                clonedLink.Address.Value = originalLink.Address.Value;
-                clonedLink.SubAddress.Value = originalLink.SubAddress.Value;
-
-                // Modify the description as required
-                clonedLink.Description.Value = "Cloned hyperlink with updated description";
-
-                // Optionally copy the name (identifier) of the hyperlink
-                clonedLink.Name = originalLink.Name;
-
-                // Locate the target shape
-                Shape targetShape = null;
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.NameU == targetShapeName)
-                        {
-                            targetShape = shape;
-                            break;
-                        }
-                    }
-                    if (targetShape != null) break;
-                }
-
-                if (targetShape == null)
-                {
-                    throw new Exception($"Target shape \"{targetShapeName}\" not found.");
-                }
-
-                // Ensure the target shape's Hyperlinks collection is initialized
-                if (targetShape.Hyperlinks == null)
-                {
-                    // The Hyperlinks collection is always instantiated by Aspose.Diagram,
-                    // but this check guards against unexpected null references.
-                    throw new Exception("Target shape's Hyperlinks collection is null.");
-                }
-
-                // Add the cloned hyperlink to the target shape
-                targetShape.Hyperlinks.Add(clonedLink);
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Hyperlink cloned from \"{sourceShapeName}\" and attached to \"{targetShapeName}\".");
-                Console.WriteLine($"Diagram saved to \"{outputPath}\".");
-
+                Console.WriteLine("Source shape not found.");
+                return;
             }
-            catch (Aspose.Diagram.DiagramException ex)
+
+            // Ensure the source shape has at least one hyperlink
+            if (sourceShape.Hyperlinks == null || sourceShape.Hyperlinks.Count == 0)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.WriteLine("Source shape does not contain any hyperlinks.");
+                return;
             }
+
+            // Clone the first hyperlink from the source shape
+            Hyperlink originalLink = sourceShape.Hyperlinks[0];
+            Hyperlink clonedLink = new Hyperlink();
+
+            // Copy hyperlink properties
+            clonedLink.Address.Value = originalLink.Address.Value;
+            clonedLink.SubAddress.Value = originalLink.SubAddress.Value;
+            clonedLink.Name = originalLink.Name; // optional: preserve the name
+
+            // Modify the description as required
+            clonedLink.Description.Value = "Modified description";
+
+            // Retrieve the target shape
+            Shape targetShape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+            if (targetShape == null)
+            {
+                Console.WriteLine("Target shape not found.");
+                return;
+            }
+
+            // Attach the cloned hyperlink to the target shape
+            targetShape.Hyperlinks.Add(clonedLink);
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Hyperlink cloned and attached successfully.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

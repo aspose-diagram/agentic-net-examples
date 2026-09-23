@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.AutoLayout;
 
 class Program
 {
@@ -9,35 +10,29 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through each page in the diagram
+            // Configure auto-space options
+            AutoSpaceOptions options = new AutoSpaceOptions();
+            options.DistanceInHorizontal = 2;
+            options.DistanceInVertical = 2;
+
+            // Apply auto-spacing to each page with exception handling
             foreach (Page page in diagram.Pages)
             {
-                // Get all shapes on the current page
-                ShapeCollection shapes = page.Shapes;
-
-                // Set up autospace options (custom distances in inches)
-                AutoSpaceOptions options = new AutoSpaceOptions
-                {
-                    DistanceInHorizontal = 0.5, // horizontal spacing
-                    DistanceInVertical = 0.5    // vertical spacing
-                };
-
                 try
                 {
-                    // Attempt to auto‑space the shapes on the page
-                    page.AutoSpaceShapes(shapes, options);
+                    page.AutoSpaceShapes(page.Shapes, options);
+                    Console.WriteLine($"Auto-spacing applied successfully on page '{page.Name}'.");
                 }
                 catch (Exception ex)
                 {
-                    // Log any errors that occur during auto‑spacing
-                    Console.Error.WriteLine($"Auto‑spacing failed on page {page.ID}: {ex.Message}");
+                    Console.WriteLine($"Error during auto-spacing on page '{page.Name}': {ex.Message}");
                 }
             }
 
-            // Save the modified diagram (replace with your desired output path)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

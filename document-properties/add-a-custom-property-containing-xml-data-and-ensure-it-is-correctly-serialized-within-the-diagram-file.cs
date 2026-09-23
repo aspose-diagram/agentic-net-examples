@@ -1,29 +1,42 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            // Create a new empty Visio diagram
-            Diagram diagram = new Diagram();
 
-            // Create a custom property to hold XML data
-            CustomProp xmlProp = new CustomProp
-            {
-                Name = "MyXmlData",               // Property name
-                PropType = PropType.String,       // Data type of the property
-                // Store the XML string in the custom value field
-                CustomValue = { ValueString = "<root><item>Value</item></root>" }
-            };
+            // Input Visio file (must exist)
+            string inputPath = "input.vsdx";
+            // Output file with the custom XML property
+            string outputPath = "output_with_customprop.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // XML data to store in the custom property
+            string xmlData = "<root><item id=\"1\">Value</item></root>";
+
+            // Create a new custom property
+            CustomProp customProp = new CustomProp();
+            customProp.Name = "XmlData";
+            customProp.PropType = PropType.String;
+            customProp.CustomValue.ValueString = xmlData;
 
             // Add the custom property to the document's custom properties collection
-            diagram.DocumentProps.CustomProps.Add(xmlProp);
+            diagram.DocumentProps.CustomProps.Add(customProp);
 
-            // Save the diagram to a VSDX file; the custom property will be serialized with the file
-            string outputPath = "DiagramWithXmlProp.vsdx";
+            // Save the diagram, ensuring the custom property is serialized
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            Console.WriteLine($"Diagram saved to '{outputPath}' with custom XML property.");
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

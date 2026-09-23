@@ -5,79 +5,70 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input Visio file and placeholder image path
+            string visioPath = "input.vsdx";
+            string placeholderImagePath = "placeholder.png";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
+                // Collect shapes that are PowerPoint OLE objects
+                List<Shape> shapesToReplace = new List<Shape>();
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output.vsdx";
-                // Placeholder image file path (must exist)
-                string placeholderImagePath = "placeholder.png";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page in the diagram
-                foreach (Aspose.Diagram.Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Collect IDs of PowerPoint OLE shapes to replace
-                    List<long> oleShapeIds = new List<long>();
-
-                    // Enumerate shapes on the page
-                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    // Ensure the shape is a foreign (OLE) shape and has foreign data
+                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
                     {
-                        // Verify the shape is an OLE foreign object
-                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ObjectSourceFullName != null)
+                        // Check if the OLE source is a PowerPoint file
+                        string source = shape.ForeignData.ObjectSourceFullName;
+                        if (!string.IsNullOrEmpty(source) &&
+                            (source.EndsWith(".ppt", StringComparison.OrdinalIgnoreCase) ||
+                             source.EndsWith(".pptx", StringComparison.OrdinalIgnoreCase)))
                         {
-                            string sourceName = shape.ForeignData.ObjectSourceFullName;
-                            // Check if the OLE object is a PowerPoint file
-                            if (sourceName.EndsWith(".ppt", StringComparison.OrdinalIgnoreCase) ||
-                                sourceName.EndsWith(".pptx", StringComparison.OrdinalIgnoreCase))
-                            {
-                                oleShapeIds.Add(shape.ID);
-                            }
-                        }
-                    }
-
-                    // Replace each identified OLE shape with a placeholder image
-                    foreach (long shapeId in oleShapeIds)
-                    {
-                        // Retrieve the original OLE shape
-                        Aspose.Diagram.Shape oleShape = page.Shapes.GetShape(shapeId);
-
-                        // Preserve position and size
-                        double pinX = oleShape.XForm.PinX.Value;
-                        double pinY = oleShape.XForm.PinY.Value;
-                        double width = oleShape.XForm.Width.Value;
-                        double height = oleShape.XForm.Height.Value;
-
-                        // Remove the OLE shape from the page
-                        page.Shapes.Remove(oleShape);
-
-                        // Add a new shape containing the placeholder image
-                        using (FileStream imgStream = new FileStream(placeholderImagePath, FileMode.Open, FileAccess.Read))
-                        {
-                            long newShapeId = page.AddShape(pinX, pinY, width, height, imgStream);
-                            Aspose.Diagram.Shape placeholderShape = page.Shapes.GetShape(newShapeId);
-
-                            // Optionally add a caption indicating replacement
-                            placeholderShape.Text.Value.Clear();
-                            placeholderShape.Text.Value.Add(new Txt("PowerPoint Placeholder"));
+                            shapesToReplace.Add(shape);
                         }
                     }
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Replace each identified OLE shape with the placeholder image
+                foreach (Shape oleShape in shapesToReplace)
+                {
+                    // Preserve original geometry
+                    double pinX = oleShape.XForm.PinX.Value;
+                    double pinY = oleShape.XForm.PinY.Value;
+                    double width = oleShape.XForm.Width.Value;
+                    double height = oleShape.XForm.Height.Value;
 
+                    // Remove the OLE shape from the page
+                    page.Shapes.Remove(oleShape);
+
+                    // Insert the placeholder image at the same location and size
+                    using (FileStream imgStream = new FileStream(placeholderImagePath, FileMode.Open, FileAccess.Read))
+                    {
+                        // AddShape expects center coordinates (PinX, PinY) and dimensions
+                        page.AddShape(pinX, pinY, width, height, imgStream);
+                    }
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

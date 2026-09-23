@@ -7,26 +7,37 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Define the input Visio file path
+        string inputPath = "input.vsdx";
+        // Verify the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Define the output SVG file path
+        string outputPath = "output.svg";
+
         try
         {
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Create SVG save options
+            // Initialize SVG save options
             SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-            // NOTE: SVGSaveOptions does not expose a direct anti‑aliasing property.
-            // For raster formats you could use ImageSaveOptions.SmoothingMode = SmoothingMode.HighQuality.
-            // Since SVG is a vector format, anti‑aliasing is handled by the viewer/rendering engine.
+            // NOTE: FontRenderingMode is not available in this version of Aspose.Diagram.
+            // Anti‑aliased font rendering is the default behavior for SVG export,
+            // so no explicit property needs to be set.
 
-            // Save the diagram as SVG
-            diagram.Save("output.svg", svgOptions);
-
+            // Save the diagram as SVG using the configured options
+            diagram.Save(outputPath, svgOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during loading or saving
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

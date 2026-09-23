@@ -1,40 +1,60 @@
 using System.IO;
 using System;
+using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing.Text;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Path to the source Visio diagram
-            string sourceFile = "input.vsdx";
+            // Input Visio file path (change as needed)
+            string inputPath = "input.vsdx";
+            // Output TIFF file path
+            string outputPath = "output.tiff";
 
-            // Path for the high‑resolution TIFF output
-            string outputFile = "output.tiff";
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram (create/load lifecycle)
-            Diagram diagram = new Diagram(sourceFile);
+            // Configure font folder(s) – required before rendering
+            // Example uses the Windows fonts folder; adjust the path as appropriate for your environment
+            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
+            // Set a fallback default font
+            FontConfigs.DefaultFontName = "Arial";
 
-            // Configure image save options for TIFF
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff)
+            // Validate that all fonts used in the diagram are installed on the system
+            InstalledFontCollection installedFonts = new InstalledFontCollection();
+            var installedFamilies = installedFonts.Families; // dynamic collection, type not strongly typed
+
+            foreach (Font font in diagram.Fonts)
             {
-                // Set a high DPI resolution (e.g., 300 DPI)
-                Resolution = 300,
+                bool isInstalled = installedFamilies
+                    .Cast<object>()
+                    .Any(f => f.GetType().GetProperty("Name")?.GetValue(f)?.ToString()
+                              .Equals(font.Name, StringComparison.OrdinalIgnoreCase) == true);
 
-                // Preserve original fonts (default behavior). 
-                // If needed, you can specify a fallback font:
-                // DefaultFont = "Arial",
+                if (!isInstalled)
+                {
+                    Console.WriteLine($"Warning: Font \"{font.Name}\" used in the diagram is not installed. It will be substituted with the default font.");
+                }
+            }
 
-                // Optional: use LZW compression for TIFF
-                TiffCompression = TiffCompression.Lzw
-            };
+            // Prepare high‑resolution TIFF export options
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
+            saveOptions.Resolution = 300f;               // 300 DPI for high quality
+            saveOptions.DefaultFont = "Arial";           // Ensure fallback font is set
+            // Export all pages; adjust PageIndex/PageCount if only a subset is needed
+            saveOptions.PageIndex = 0;
+            saveOptions.PageCount = diagram.Pages.Count;
 
-            // Render and save the diagram as a TIFF image (save lifecycle)
-            diagram.Save(outputFile, saveOptions);
+            // Save the diagram as a TIFF image
+            diagram.Save(outputPath, saveOptions);
+
+            Console.WriteLine($"Diagram successfully rendered to high‑resolution TIFF at \"{outputPath}\".");
 
         }
         catch (System.IO.FileNotFoundException ex)

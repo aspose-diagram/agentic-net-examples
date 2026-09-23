@@ -1,69 +1,61 @@
-using System;
 using System.IO;
+using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main()
     {
-        // Define input file path
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Define output file path
-        string outputPath = "output.vsdx";
-
         try
         {
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page of the diagram
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Access the first page
             Page page = diagram.Pages[0];
 
-            // Ensure there is at least one shape on the page
-            if (page.Shapes.Count == 0)
-            {
-                Console.WriteLine("No shapes found on the page.");
-                return;
-            }
+            // Retrieve a shape (example: shape with ID 1)
+            // Adjust the ID as needed for your diagram
+            Shape shape = page.Shapes.GetShape(1);
 
-            // Retrieve the first shape (or replace with a specific shape ID)
-            Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
-
-            // Enable gradient fill on the shape (required before manipulating gradient stops)
-            shape.Fill.FillPattern.Value = 25;               // Gradient fill pattern
+            // Ensure gradient fill is enabled
             shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Access the gradient stops collection
-            var gradientStops = shape.Fill.GradientFill.GradientStops;
-
-            // Verify that at least one gradient stop exists
-            if (gradientStops.Count == 0)
+            // Store existing gradient stops
+            List<GradientStop> existingStops = new List<GradientStop>();
+            foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
             {
-                Console.WriteLine("The shape does not contain any gradient stops.");
-                return;
+                existingStops.Add(stop);
             }
 
-            // Change the position of the gradient stop at index 0 to 0.0 (start of the gradient)
-            GradientStop firstStop = gradientStops[0];
-            // Assign a new DoubleValue (position 0, using MeasureConst.NUM unit)
-            firstStop.Position = new DoubleValue(0, MeasureConst.NUM);
+            // Clear current stops
+            shape.Fill.GradientFill.GradientStops.Clear();
 
-            // Save the modified diagram to the output path
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Re‑add stops, modifying the position of the first stop to 0.0 (start)
+            for (int i = 0; i < existingStops.Count; i++)
+            {
+                GradientStop original = existingStops[i];
+                DoubleValue position = original.Position;
+                ColorValue color = original.Color;
 
-            Console.WriteLine("Gradient stop position updated and diagram saved successfully.");
+                if (i == 0)
+                {
+                    // Set position to the start of the gradient (0.0)
+                    position = new DoubleValue(0.0, MeasureConst.NUM);
+                }
+
+                shape.Fill.GradientFill.GradientStops.Add(position, color);
+            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

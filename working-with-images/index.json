@@ -1,11 +1,11 @@
 {
   "category": "working-with-images",
   "display_name": "Working With Images",
-  "version": "26.8.0",
+  "version": "26.9.0",
   "framework": "net8.0",
   "total": 38,
   "pass_rate": 100.0,
-  "generated": "2026-08-28",
+  "generated": "2026-09-23",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -15,7 +15,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -96,7 +97,7 @@
         "ImageSaveOptions",
         "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -112,6 +113,7 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -123,12 +125,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "Aspose.Drawing",
+        "Aspose.Drawing.Imaging",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
         "Pages",
+        "PdfSaveOptions",
         "Save",
         "Shapes"
       ]
@@ -139,12 +144,16 @@
       "task": "Batch convert multiple vsd files to png images using parallel processing to improve performance",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO",
         "System.Threading.Tasks"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -172,6 +181,7 @@
       "task": "Batch replace a specific placeholder image across multiple vsdx files using a single source png",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -207,8 +217,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -225,7 +234,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -247,6 +256,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "SVGSaveOptions",
         "Save",
         "diagram"
@@ -260,6 +270,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -285,7 +296,7 @@
         "ImageSaveOptions",
         "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -319,6 +330,7 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -348,8 +360,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -371,6 +382,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "PdfSaveOptions",
         "Save",
         "diagram"
@@ -399,6 +411,7 @@
       "task": "Extract image metadata such as dimensions and color depth from each shape in a vdx diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Drawing",
         "System",
         "System.IO"
       ],
@@ -418,6 +431,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -436,6 +450,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "Aspose.Drawing",
+        "Aspose.Drawing.Drawing2D",
         "Aspose.Drawing.Imaging",
         "System",
         "System.Collections.Generic",
@@ -479,6 +494,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Save",
         "diagram"
       ]
@@ -490,15 +506,18 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
+        "Aspose.Drawing.Drawing2D",
+        "Aspose.Drawing.Imaging",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "ImageSaveOptions",
         "Pages",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -507,7 +526,6 @@
       "task": "Replace a placeholder shape image in a vsd diagram with a new png file loaded from memory",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -526,7 +544,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "Aspose.Drawing.Imaging",
         "System",
         "System.IO"
       ],
@@ -544,6 +561,8 @@
       "task": "Replace all low resolution images in a diagram with high resolution versions sourced from a specified folder",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
         "System",
         "System.IO"
       ],
@@ -561,8 +580,8 @@
       "task": "Replace background images in a vsdx diagram with a solid color fill to simplify visual layout",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.Collections.Generic"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -579,6 +598,9 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
+        "Aspose.Drawing.Drawing2D",
+        "Aspose.Drawing.Imaging",
         "System",
         "System.IO"
       ],
@@ -596,7 +618,6 @@
       "task": "Resize an imported bitmap image within a visio shape to fit the shape s dimensions proportionally",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Drawing",
         "System",
         "System.IO"
       ],
@@ -634,6 +655,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -674,8 +696,8 @@
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
         "Pages",
+        "PdfSaveOptions",
         "Save",
         "Shapes"
       ]

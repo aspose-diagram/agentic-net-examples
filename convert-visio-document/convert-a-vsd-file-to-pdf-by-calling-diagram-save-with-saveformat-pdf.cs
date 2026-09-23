@@ -1,7 +1,6 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,12 +9,11 @@ class Program
         try
         {
 
-            // Load the source VSD file
-            using (var diagram = new Diagram("input.vsd"))
-            {
-                // Save the diagram as PDF using the Save method with SaveFileFormat.Pdf
-                diagram.Save("output.pdf", SaveFileFormat.Pdf);
-            }
+            // Load the VSD file
+            Diagram diagram = new Diagram("input.vsd");
+
+            // Save the diagram as PDF
+            diagram.Save("output.pdf", SaveFileFormat.Pdf);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,93 +1,76 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Drawing;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Get the folder path from command line or ask the user
-        string folderPath = args.Length > 0 ? args[0] : PromptFolderPath();
-
-        // Verify the folder exists before proceeding
-        if (!Directory.Exists(folderPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
-            return;
-        }
-
-        // Define supported Visio file extensions
-        string[] supportedExtensions = new[] { ".vsdx", ".vsd", ".vsdm", ".vssx", ".vstx", ".vssm", ".vstm", ".vsx", ".vtx" };
-        var files = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (var file in files)
-        {
-            // Guard: ensure the file actually exists before processing
-            if (!File.Exists(file))
+            // Determine the folder to process
+            string folderPath;
+            if (args.Length > 0)
             {
-                Console.Error.WriteLine($"File not found: {file}");
-                continue;
+                folderPath = args[0];
+            }
+            else
+            {
+                Console.Write("Enter the full path of the folder containing Visio files: ");
+                folderPath = Console.ReadLine();
             }
 
-            string ext = Path.GetExtension(file);
-            // Skip files with unsupported extensions
-            if (Array.IndexOf(supportedExtensions, ext.ToLower()) < 0)
-                continue;
-
-            try
+            if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
             {
-                // Load the diagram from the file
-                Diagram diagram = new Diagram(file);
-
-                // Access the global header/footer settings
-                var headerFooter = diagram.HeaderFooter;
-                var font = headerFooter.HeaderFooterFont;
-
-                // Apply uniform font settings: Arial, Bold (weight 700), 12pt size (Height = -16), not italic, not underlined
-                font.FaceName = "Arial";
-                font.Weight = 700;          // 700 = Bold, 400 = Regular
-                font.Height = -16;          // -16 corresponds to 12pt (approx)
-                font.Italic = BOOL.False;
-                font.Underline = BOOL.False;
-
-                // Determine the appropriate save format based on the file extension
-                SaveFileFormat format = GetSaveFormat(ext);
-                // Save the diagram back to the original file using the determined format
-                diagram.Save(file, format);
-
-                Console.WriteLine($"Processed: {Path.GetFileName(file)}");
+                Console.WriteLine("Invalid folder path.");
+                return;
             }
-            catch (Exception ex)
+
+            // Supported Visio extensions
+            string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm" };
+
+            // Process each file
+            foreach (string filePath in Directory.GetFiles(folderPath))
             {
-                // Report any errors that occur during processing of the current file
-                Console.Error.WriteLine($"Error processing file '{file}': {ex.Message}");
+                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                if (Array.IndexOf(extensions, ext) < 0)
+                    continue; // Skip non‑Visio files
+
+                try
+                {
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Apply uniform header/footer font settings
+                    HeaderFooter headerFooter = diagram.HeaderFooter;
+                    HeaderFooterFont hfFont = headerFooter.HeaderFooterFont;
+
+                    // Font family
+                    hfFont.FaceName = "Arial";
+
+                    // Bold weight (700 = Bold, 400 = Regular)
+                    hfFont.Weight = 700;
+
+                    // Point size 12pt -> Height = -16 (12 * -1.333 ≈ -16)
+                    hfFont.Height = -16;
+
+                    // Italic and underline flags
+                    hfFont.Italic = BOOL.False;
+                    hfFont.Underline = BOOL.False;
+
+                    // Text color (black)
+                    headerFooter.HeaderFooterColor = Color.Black;
+
+                    // Save back in the same format (using Vsdx as a safe default)
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
+
+                    Console.WriteLine($"Updated header/footer fonts for: {Path.GetFileName(filePath)}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
+                }
             }
-        }
 
-        Console.WriteLine("Batch processing completed.");
-    }
-
-    // Prompt the user for a folder path if not supplied via arguments
-    private static string PromptFolderPath()
-    {
-        Console.Write("Enter the full path of the folder containing Visio diagrams: ");
-        return Console.ReadLine()?.Trim() ?? string.Empty;
-    }
-
-    // Map file extensions to the appropriate SaveFileFormat enum value
-    private static SaveFileFormat GetSaveFormat(string extension)
-    {
-        switch (extension.ToLower())
-        {
-            case ".vsdx": return SaveFileFormat.Vsdx;
-            case ".vsd":  return SaveFileFormat.Vsd;
-            case ".vsdm": return SaveFileFormat.Vsdm;
-            case ".vsx":  return SaveFileFormat.Vsx;
-            case ".vtx":  return SaveFileFormat.Vtx;
-            case ".vssx": return SaveFileFormat.Vssx;
-            case ".vssm": return SaveFileFormat.Vssm;
-            case ".vstx": return SaveFileFormat.Vstx;
-            case ".vstm": return SaveFileFormat.Vstm;
-            default:      return SaveFileFormat.Vsdx; // fallback
+            Console.WriteLine("Batch processing completed.");
         }
     }
-}

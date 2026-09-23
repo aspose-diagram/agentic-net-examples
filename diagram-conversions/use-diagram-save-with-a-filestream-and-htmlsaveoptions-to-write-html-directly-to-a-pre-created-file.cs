@@ -7,27 +7,28 @@ class Program
 {
     static void Main()
     {
-        try
+        // Create a new diagram (or load an existing one)
+        Diagram diagram = new Diagram();
+
+        // Example: add a simple rectangle shape so the HTML has content
+        // (optional, can be omitted if not needed)
+        // long shapeId = diagram.AddShape(2.0, 2.0, 4.0, 2.0, "Rectangle", 0);
+        // Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+        // shape.Text.Value.Add(new Txt("Sample Shape"));
+
+        // Configure HTML export options
+        HTMLSaveOptions htmlOptions = new HTMLSaveOptions
         {
+            ExportHiddenPage = false
+        };
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Configure HTML save options (customize as needed)
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            // Example: htmlOptions.SaveAsSingleFile = true;
-
-            // Open a FileStream for the pre‑created output HTML file
-            using (FileStream fileStream = new FileStream("output.html", FileMode.Create, FileAccess.Write))
-            {
-                // Save the diagram as HTML directly to the stream
-                diagram.Save(fileStream, htmlOptions);
-            }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
+        // Pre‑create the output file stream
+        using (FileStream fileStream = new FileStream("output.html", FileMode.Create, FileAccess.Write))
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Save the diagram as HTML directly to the stream
+            diagram.Save(fileStream, htmlOptions);
         }
+
+        Console.WriteLine("Diagram has been saved to output.html");
     }
 }

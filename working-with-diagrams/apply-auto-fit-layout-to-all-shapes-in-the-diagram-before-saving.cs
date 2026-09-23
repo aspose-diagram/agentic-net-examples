@@ -1,7 +1,6 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.AutoLayout;
 using Aspose.Diagram.Saving;
 
 class Program
@@ -11,26 +10,17 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Set layout options to enlarge the page so it fits all drawing content
-            LayoutOptions layoutOptions = new LayoutOptions
-            {
-                EnlargePage = true
-            };
+            // Configure save options to auto‑fit the page to the drawing content
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions();
+            saveOptions.AutoFitPageToDrawingContent = true;
 
-            // Apply the layout (auto‑fit) to all pages in the diagram
-            diagram.Layout(layoutOptions);
-
-            // Prepare save options that also enforce auto‑fit when saving
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions
-            {
-                AutoFitPageToDrawingContent = true
-            };
-
-            // Save the diagram with the auto‑fit layout applied
-            diagram.Save("output.vdx", saveOptions);
+            // Save the diagram; the auto‑fit layout is applied during saving
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

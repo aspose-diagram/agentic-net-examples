@@ -1,55 +1,55 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
-                {
-                    throw new Exception("Diagram has no pages.");
-                }
+            // Add a new page to the diagram
+            Page page = new Page();
+            diagram.Pages.Add(page);
 
-                // Get the first page
-                Page page = diagram.Pages[0];
+            // Define shape dimensions and position
+            double pinX = 5.0;   // X coordinate (inches)
+            double pinY = 5.0;   // Y coordinate (inches)
+            double width = 2.0;  // Width (inches)
+            double height = 1.0; // Height (inches)
 
-                // Add a rectangle shape to the page
-                // Parameters: pinX, pinY, width, height, master name, page index
-                long shapeId = diagram.AddShape(2.0, 2.0, 2.0, 1.0, "Rectangle", 0);
+            // Add a rectangle shape to the page
+            // The last parameter 'false' indicates that the shape size is not calculated automatically
+            long shapeId = page.AddShape(pinX, pinY, width, height, "Rectangle", false);
 
-                // Retrieve the shape object using the returned ID
-                Shape shape = page.Shapes.GetShape((int)shapeId);
+            // Retrieve the shape object using the returned ID
+            Shape shape = page.Shapes.GetShape((int)shapeId);
 
-                // Add some visible text to the shape
-                shape.Text.Value.Add(new Txt("Click here for Aspose"));
+            // Create a hyperlink that points to an external URL
+            Hyperlink link = new Hyperlink();
+            link.Address.Value = "https://example.com";
 
-                // Create a new hyperlink and set its address and description
-                Hyperlink link = new Hyperlink();
-                link.Name = "AsposeLink";
-                link.Address.Value = "https://www.aspose.com";
-                link.Description.Value = "Visit Aspose website";
+            // Optionally set a description (tooltip) for the hyperlink
+            link.Description.Value = "Visit Example.com";
 
-                // Add the hyperlink to the shape's Hyperlinks collection
-                shape.Hyperlinks.Add(link);
+            // Add the hyperlink to the shape's Hyperlinks collection
+            shape.Hyperlinks.Add(link);
 
-                // Configure PDF save options (no special settings needed for hyperlinks)
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Prepare PDF save options (default options are sufficient for hyperlinks)
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-                // Save the diagram as a PDF; hyperlinks will be active in the output file
-                diagram.Save("HyperlinkedDiagram.pdf", pdfOptions);
+            // Export the diagram to PDF; the hyperlink will be clickable in the resulting file
+            diagram.Save("output.pdf", pdfOptions);
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

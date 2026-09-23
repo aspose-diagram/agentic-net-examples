@@ -2,31 +2,48 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.AutoLayout;
 
-class ExportDiagramToXps
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram (auto‑spaced diagram) from a file
-            Diagram diagram = new Diagram("input.vsd");
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output XPS file path
+            string outputPath = "output.xps";
 
-            // Create XPS save options – can customize if needed
-            XPSSaveOptions xpsOptions = new XPSSaveOptions
+            try
             {
-                // Example: do not export hidden pages
-                ExportHiddenPage = false,
-                // Export all pages (default)
-                PageIndex = 0,
-                PageCount = int.MaxValue,
-                // Save only foreground pages (default)
-                SaveForegroundPagesOnly = true
-            };
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Save the diagram to XPS format using the specified options
-            diagram.Save("output.xps", xpsOptions);
+                // Apply auto-space to each page
+                foreach (Page page in diagram.Pages)
+                {
+                    AutoSpaceOptions autoSpace = new AutoSpaceOptions();
+                    autoSpace.DistanceInHorizontal = 2; // horizontal spacing
+                    autoSpace.DistanceInVertical = 2;   // vertical spacing
+
+                    // Auto-space the shapes on the page
+                    page.AutoSpaceShapes(page.Shapes, autoSpace);
+                }
+
+                // Configure XPS save options
+                XPSSaveOptions xpsOptions = new XPSSaveOptions();
+                xpsOptions.ExportHiddenPage = false;
+
+                // Save the diagram as XPS
+                diagram.Save(outputPath, xpsOptions);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                throw;
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

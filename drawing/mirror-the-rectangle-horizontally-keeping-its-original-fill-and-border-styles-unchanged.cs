@@ -11,29 +11,37 @@ class Program
 
             // Path to the source Visio file
             string inputPath = "input.vsdx";
+            // Path for the output Visio file
+            string outputPath = "output.vsdx";
 
-            // Load the diagram from file
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (or adjust index as needed)
+            // Get the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Iterate through all shapes on the page
+            // Find the first rectangle shape on the page
+            Shape rectangle = null;
             foreach (Shape shape in page.Shapes)
             {
-                // Identify rectangle shapes by their master name
+                // Ensure the shape has a master and check its name
                 if (shape.Master != null && shape.Master.Name == "Rectangle")
                 {
-                    // Mirror the shape horizontally.
-                    // FlipX is a BoolValue; set its .Value to BOOL.True.
-                    shape.XForm.FlipX.Value = BOOL.True;
-
-                    // Fill and line styles are unchanged automatically.
+                    rectangle = shape;
+                    break;
                 }
             }
 
+            if (rectangle == null)
+            {
+                throw new Exception("No rectangle shape found on the first page.");
+            }
+
+            // Mirror the rectangle horizontally by setting FlipX to True
+            // This operation does not affect fill or line styles
+            rectangle.XForm.FlipX.Value = BOOL.True;
+
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

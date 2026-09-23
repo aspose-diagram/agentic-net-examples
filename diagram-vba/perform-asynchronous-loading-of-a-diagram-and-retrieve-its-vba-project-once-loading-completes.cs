@@ -1,50 +1,56 @@
-using System;
 using System.IO;
+using System;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-public class DiagramHelper
-{
-    // Asynchronously loads a Visio diagram and returns its VBA project.
-    public async Task<VbaProject> LoadDiagramAndGetVbaProjectAsync(string filePath)
-    {
-        return await Task.Run(() =>
-        {
-            // Prepare load options; set format based on file extension if needed.
-            var loadOptions = new LoadOptions
-            {
-                LoadFormat = Path.GetExtension(filePath).ToLower() switch
-                {
-                    ".vsdx" => LoadFileFormat.Vsdx,
-                    ".vsdm" => LoadFileFormat.Vsdm,
-                    ".vsd"  => LoadFileFormat.Vsd,
-                    ".vdx"  => LoadFileFormat.Vdx,
-                    ".vtx"  => LoadFileFormat.Vtx,
-                    ".vst"  => LoadFileFormat.Vst,
-                    ".vdw"  => LoadFileFormat.Vdw,
-                    ".vss"  => LoadFileFormat.Vss,
-                    ".vssx" => LoadFileFormat.Vssx,
-                    ".vstx" => LoadFileFormat.Vstx,
-                    ".vstm" => LoadFileFormat.Vstm,
-                    ".vssm" => LoadFileFormat.Vssm,
-                    _       => LoadFileFormat.Vsd // default fallback
-                }
-            };
-
-            // Load the diagram using the constructor that accepts a file name and LoadOptions.
-            var diagram = new Diagram(filePath, loadOptions);
-
-            // Retrieve and return the VBA project associated with the loaded diagram.
-            return diagram.VbaProject;
-        });
-    }
-}
-
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
-        // See classes above
+        try
+        {
+
+            if (args.Length == 0)
+            {
+                Console.WriteLine("Please provide the diagram file path as an argument.");
+                return;
+            }
+
+            string diagramPath = args[0];
+
+            // Asynchronously load the diagram
+            Diagram diagram = await LoadDiagramAsync(diagramPath);
+
+            // Retrieve the VBA project from the loaded diagram
+            VbaProject vbaProject = diagram.VbaProject;
+
+            // Output basic information about the VBA project
+            Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
+            Console.WriteLine($"Is Signed: {vbaProject.IsSigned}");
+            Console.WriteLine($"Number of Modules: {vbaProject.Modules.Count}");
+
+            // List each module's name and code length
+            for (int i = 0; i < vbaProject.Modules.Count; i++)
+            {
+                var module = vbaProject.Modules[i];
+                int codeLength = module.Codes != null ? module.Codes.Length : 0;
+                Console.WriteLine($"Module {i}: Name = {module.Name}, Code Length = {codeLength}");
+            }
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
+    }
+
+    private static Task<Diagram> LoadDiagramAsync(string path)
+    {
+        return Task.Run(() =>
+        {
+            // Load the diagram synchronously within a background task
+            return new Diagram(path);
+        });
     }
 }

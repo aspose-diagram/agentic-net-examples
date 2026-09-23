@@ -4,61 +4,63 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Create a new empty diagram
+            // Create a new blank diagram (contains one default page)
             Diagram diagram = new Diagram();
 
-            // Get the first page (use Pages collection, not ActivePage)
+            // Access the first page (avoid using ActivePage)
             Page page = diagram.Pages[0];
 
             // Define circle parameters
-            int circleCount = 5;
-            double startX = 2.0;      // starting X position (in inches)
-            double startY = 5.0;      // Y position for all circles
-            double spacing = 3.0;     // horizontal spacing between circles
-            double radius = 1.0;      // radius of each circle (in inches)
+            int circleCount = 6;
+            double radius = 1.0;               // inches
+            double startX = 2.0;                // starting X position (center)
+            double spacing = 3.0;               // horizontal spacing between circles
+            double pinY = 5.0;                  // Y position (center)
 
-            // Define a set of colors (hex strings) to use based on index
+            // Define a set of colors (hex strings) to apply based on index
             string[] colors = new string[]
             {
                 "#FF0000", // Red
                 "#00FF00", // Green
                 "#0000FF", // Blue
                 "#FFFF00", // Yellow
-                "#FF00FF"  // Magenta
+                "#FF00FF", // Magenta
+                "#00FFFF"  // Cyan
             };
 
+            // Draw circles and assign colors
             for (int i = 0; i < circleCount; i++)
             {
-                // Calculate center position for the current circle
                 double pinX = startX + i * spacing;
-                double pinY = startY;
 
-                // Width and height are diameters (2 * radius)
-                double diameter = radius * 2.0;
+                // Draw an ellipse with equal width and height (a circle)
+                long shapeId = page.DrawEllipse(pinX, pinY, radius * 2, radius * 2);
 
-                // Draw the circle (ellipse with equal width and height)
-                long shapeId = page.DrawEllipse(pinX, pinY, diameter, diameter);
+                // Retrieve the shape object to modify its properties
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Retrieve the shape object (GetShape expects an int)
-                Shape shape = page.Shapes.GetShape((int)shapeId);
-
-                // Apply solid fill pattern
+                // Set a solid fill pattern
                 shape.Fill.FillPattern.Value = 1; // 1 = solid
 
-                // Set fill color based on index (cycle if more circles than colors)
-                string fillColor = colors[i % colors.Length];
-                shape.Fill.FillForegnd.Value = fillColor;
+                // Assign fill color based on the index
+                shape.Fill.FillForegnd.Value = colors[i % colors.Length];
 
-                // Optional: remove outline by setting line pattern to 0 (no line)
-                shape.Line.LinePattern.Value = 0;
+                // Optional: set line color to black
+                shape.Line.LineColor.Value = "#000000";
+                shape.Line.LineWeight.Value = 0.02; // thin line
             }
 
             // Configure PNG export options
             ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Example: set resolution (dpi) if needed
+            pngOptions.Resolution = 300f;
 
             // Save the diagram as a PNG image
-            diagram.Save("circles.png", pngOptions);
+            string outputPath = "Circles.png";
+            diagram.Save(outputPath, pngOptions);
+
+            Console.WriteLine($"Diagram with {circleCount} circles saved to '{outputPath}'.");
         }
     }

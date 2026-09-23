@@ -1,98 +1,104 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two file paths: first diagram, second diagram
+        if (args.Length < 2)
         {
-            try
-            {
+            Console.WriteLine("Usage: DiffVba <DiagramPath1> <DiagramPath2>");
+            return;
+        }
 
-                // Paths to the two Visio files to compare
-                string firstDiagramPath = "Diagram1.vsdm";
-                string secondDiagramPath = "Diagram2.vsdm";
+        string path1 = args[0];
+        string path2 = args[1];
 
-                // Load the diagrams
-                Diagram firstDiagram = new Diagram(firstDiagramPath);
-                Diagram secondDiagram = new Diagram(secondDiagramPath);
+        Diagram diagram1;
+        Diagram diagram2;
 
-                // Build dictionaries of module name -> code for each diagram
-                var firstModules = GetVbaModules(firstDiagram);
-                var secondModules = GetVbaModules(secondDiagram);
-
-                // Report differences
-                Console.WriteLine("=== VBA Modules Comparison Report ===");
-
-                // Modules present only in the first diagram
-                foreach (var kvp in firstModules)
-                {
-                    if (!secondModules.ContainsKey(kvp.Key))
-                    {
-                        Console.WriteLine($"Module only in first diagram: {kvp.Key}");
-                    }
-                }
-
-                // Modules present only in the second diagram
-                foreach (var kvp in secondModules)
-                {
-                    if (!firstModules.ContainsKey(kvp.Key))
-                    {
-                        Console.WriteLine($"Module only in second diagram: {kvp.Key}");
-                    }
-                }
-
-                // Modules with the same name but different code
-                foreach (var kvp in firstModules)
-                {
-                    if (secondModules.TryGetValue(kvp.Key, out string secondCode))
-                    {
-                        string firstCode = kvp.Value;
-                        if (!string.Equals(firstCode, secondCode, StringComparison.Ordinal))
-                        {
-                            Console.WriteLine($"Module '{kvp.Key}' differs between diagrams.");
-                            Console.WriteLine("--- First Diagram Code ---");
-                            Console.WriteLine(firstCode);
-                            Console.WriteLine("--- Second Diagram Code ---");
-                            Console.WriteLine(secondCode);
-                            Console.WriteLine("---------------------------");
-                        }
-                    }
-                }
-
-                Console.WriteLine("=== End of Report ===");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Extracts VBA modules from a diagram into a dictionary (module name -> code)
-        private static Dictionary<string, string> GetVbaModules(Diagram diagram)
+        try
         {
-            var modules = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            diagram1 = new Diagram(path1);
+            diagram2 = new Diagram(path2);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading diagrams: {ex.Message}");
+            return;
+        }
 
-            // Ensure the diagram actually contains a VBA project
-            if (diagram.VbaProject == null)
+        // Ensure VBA projects exist
+        if (diagram1.VbaProject == null || diagram2.VbaProject == null)
+        {
+            Console.WriteLine("One of the diagrams does not contain a VBA project.");
+            return;
+        }
+
+        // Build dictionaries of module name -> code
+        var modules1 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (VbaModule mod in diagram1.VbaProject.Modules)
+        {
+            modules1[mod.Name] = mod.Codes ?? string.Empty;
+        }
+
+        var modules2 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (VbaModule mod in diagram2.VbaProject.Modules)
+        {
+            modules2[mod.Name] = mod.Codes ?? string.Empty;
+        }
+
+        // Union of all module names
+        var allModuleNames = new HashSet<string>(modules1.Keys, StringComparer.OrdinalIgnoreCase);
+        allModuleNames.UnionWith(modules2.Keys);
+
+        bool anyDifferences = false;
+
+        foreach (string moduleName in allModuleNames)
+        {
+            modules1.TryGetValue(moduleName, out string code1);
+            modules2.TryGetValue(moduleName, out string code2);
+
+            // Normalize nulls
+            code1 ??= string.Empty;
+            code2 ??= string.Empty;
+
+            if (code1 == code2)
             {
-                return modules;
+                // No difference for this module
+                continue;
             }
 
-            // Iterate through all modules in the VBA project
-            foreach (VbaModule module in diagram.VbaProject.Modules)
+            anyDifferences = true;
+            Console.WriteLine($"--- Differences in module: {moduleName} ---");
+
+            string[] lines1 = code1.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            string[] lines2 = code2.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            int maxLines = Math.Max(lines1.Length, lines2.Length);
+
+            for (int i = 0; i < maxLines; i++)
             {
-                // Use the module's name as the key and its source code as the value
-                string name = module.Name ?? string.Empty;
-                string code = module.Codes ?? string.Empty;
-                if (!modules.ContainsKey(name))
+                string line1 = i < lines1.Length ? lines1[i] : string.Empty;
+                string line2 = i < lines2.Length ? lines2[i] : string.Empty;
+
+                if (line1 != line2)
                 {
-                    modules.Add(name, code);
+                    Console.WriteLine($"Line {i + 1}:");
+                    Console.WriteLine($"  Diagram 1: {line1}");
+                    Console.WriteLine($"  Diagram 2: {line2}");
                 }
             }
 
-            return modules;
+            Console.WriteLine(); // Blank line between modules
+        }
+
+        if (!anyDifferences)
+        {
+            Console.WriteLine("No differences found between the VBA modules of the two diagrams.");
         }
     }
+}

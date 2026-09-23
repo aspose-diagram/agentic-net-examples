@@ -9,37 +9,38 @@ class Program
         try
         {
 
-            // Create a new empty diagram
+            // Create a new blank diagram
             Diagram diagram = new Diagram();
 
-            // Use the active page of the diagram
-            Page page = diagram.ActivePage;
+            // Get the first page of the diagram
+            Page page = diagram.Pages[0];
 
-            // Add a rectangle shape at position (5,5) inches
-            long rectId = page.AddShape(5.0, 5.0, "Rectangle");
+            // Add a rectangle shape to the page
+            // Parameters: pinX, pinY, master name, isCalculate (bool)
+            long rectId = page.AddShape(5.0, 5.0, "Rectangle", false);
 
-            // Retrieve the shape object using its ID
+            // Retrieve the shape object using the returned ID
             Shape rectShape = page.Shapes.GetShape((int)rectId);
 
-            // Set the visible text of the rectangle
+            // Clear any existing text and add new display text
             rectShape.Text.Value.Clear();
-            rectShape.Text.Value.Add(new Txt("Visit Example.com"));
+            rectShape.Text.Value.Add(new Txt("Visit Aspose"));
 
             // Create a hyperlink that points to the desired website
             Hyperlink link = new Hyperlink();
-            link.Name = "ExampleLink";
-            link.Address.Value = "https://www.example.com";
+            link.Name = "AsposeLink";
+            link.Address.Value = "https://www.aspose.com";
 
-            // Attach the hyperlink to the rectangle shape
+            // Add the hyperlink to the shape's Hyperlinks collection
             rectShape.Hyperlinks.Add(link);
 
             // Save the diagram to a VSDX file
-            diagram.Save("RectangleWithLink.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save("RectangleWithHyperlink.vsdx", SaveFileFormat.Vsdx);
 
         }
-        catch (System.NullReferenceException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

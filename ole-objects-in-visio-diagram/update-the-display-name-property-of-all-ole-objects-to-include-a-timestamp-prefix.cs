@@ -9,10 +9,13 @@ class Program
         try
         {
 
-            // Load the Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Create a timestamp prefix (e.g., 20230820153045)
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create a timestamp prefix (e.g., 20230921153045)
             string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
 
             // Iterate through all pages and shapes
@@ -20,20 +23,23 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // OLE objects are represented as shapes with ForeignData
-                    if (shape.ForeignData != null)
+                    // Identify OLE objects: must be a foreign shape with Object foreign type
+                    if (shape.Type == TypeValue.Foreign &&
+                        shape.ForeignData != null &&
+                        shape.ForeignData.ForeignType == ForeignType.Object)
                     {
-                        // Preserve the existing display name (using the Shape's Name property)
+                        // Preserve the original display name
                         string originalName = shape.Name;
 
-                        // Update the display name to include the timestamp prefix
+                        // Update the display name with the timestamp prefix
                         shape.Name = $"{timestamp}_{originalName}";
                     }
                 }
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

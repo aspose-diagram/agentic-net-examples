@@ -1,59 +1,89 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Create a new diagram and add a page
-        Diagram diagram = new Diagram();
-        diagram.Pages.Add(new Page());
+        try
+        {
 
-        // Access the first page
-        Page page = diagram.Pages[0];
+            // Paths for the input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-        // Modify print properties
-        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-        page.PageSheet.PrintProps.ScaleX.Value = 0.75;
-        page.PageSheet.PrintProps.ScaleY.Value = 0.75;
-        page.PageSheet.PrintProps.PageTopMargin.Value = 0.5;    // inches
-        page.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
-        page.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
-        page.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
-        page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
-        page.PageSheet.PrintProps.PagesX.Value = 1;
-        page.PageSheet.PrintProps.PagesY.Value = 1;
+            // Load the original diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Save the diagram to a file
-        string outputPath = "modified.vsdx";
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            if (diagram.Pages.Count == 0)
+                throw new Exception("The diagram contains no pages.");
 
-        // Reload the diagram
-        Diagram loadedDiagram = new Diagram(outputPath);
-        Page loadedPage = loadedDiagram.Pages[0];
+            // Modify PrintProps of the first page
+            Page page = diagram.Pages[0];
+            PrintProps printProps = page.PageSheet.PrintProps;
 
-        // Validate that the print properties were retained
-        if (loadedPage.PageSheet.PrintProps.PrintPageOrientation.Value != PrintPageOrientationValue.Landscape)
-            throw new Exception("PrintPageOrientation was not retained.");
+            // Set orientation to Landscape
+            printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-        if (Math.Abs(loadedPage.PageSheet.PrintProps.ScaleX.Value - 0.75) > 0.0001 ||
-            Math.Abs(loadedPage.PageSheet.PrintProps.ScaleY.Value - 0.75) > 0.0001)
-            throw new Exception("Scale values were not retained.");
+            // Set scaling to 80%
+            printProps.ScaleX.Value = 0.8;
+            printProps.ScaleY.Value = 0.8;
 
-        if (Math.Abs(loadedPage.PageSheet.PrintProps.PageTopMargin.Value - 0.5) > 0.0001 ||
-            Math.Abs(loadedPage.PageSheet.PrintProps.PageBottomMargin.Value - 0.5) > 0.0001 ||
-            Math.Abs(loadedPage.PageSheet.PrintProps.PageLeftMargin.Value - 0.5) > 0.0001 ||
-            Math.Abs(loadedPage.PageSheet.PrintProps.PageRightMargin.Value - 0.5) > 0.0001)
-            throw new Exception("Margin values were not retained.");
+            // Enable fit to sheet (OnPage) and set pages to 1x1
+            printProps.OnPage.Value = BOOL.True;
+            printProps.PagesX.Value = 1;
+            printProps.PagesY.Value = 1;
 
-        if (loadedPage.PageSheet.PrintProps.OnPage.Value != BOOL.True)
-            throw new Exception("OnPage flag was not retained.");
+            // Set margins (in inches)
+            printProps.PageTopMargin.Value = 0.5;
+            printProps.PageBottomMargin.Value = 0.5;
+            printProps.PageLeftMargin.Value = 0.5;
+            printProps.PageRightMargin.Value = 0.5;
 
-        if (loadedPage.PageSheet.PrintProps.PagesX.Value != 1 ||
-            loadedPage.PageSheet.PrintProps.PagesY.Value != 1)
-            throw new Exception("PagesX/PagesY values were not retained.");
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        Console.WriteLine("All modified PrintProps were successfully retained after saving and reloading.");
+            // Reload the saved diagram
+            Diagram reloadedDiagram = new Diagram(outputPath);
+
+            if (reloadedDiagram.Pages.Count == 0)
+                throw new Exception("The reloaded diagram contains no pages.");
+
+            // Retrieve PrintProps from the reloaded diagram
+            Page reloadedPage = reloadedDiagram.Pages[0];
+            PrintProps reloadedPrintProps = reloadedPage.PageSheet.PrintProps;
+
+            // Validate that the properties were retained
+            const double tolerance = 0.0001;
+
+            if (reloadedPrintProps.PrintPageOrientation.Value != PrintPageOrientationValue.Landscape)
+                throw new Exception("PrintPageOrientation was not retained.");
+
+            if (Math.Abs(reloadedPrintProps.ScaleX.Value - 0.8) > tolerance ||
+                Math.Abs(reloadedPrintProps.ScaleY.Value - 0.8) > tolerance)
+                throw new Exception("Scale values were not retained.");
+
+            if (reloadedPrintProps.OnPage.Value != BOOL.True)
+                throw new Exception("OnPage flag was not retained.");
+
+            if (reloadedPrintProps.PagesX.Value != 1 || reloadedPrintProps.PagesY.Value != 1)
+                throw new Exception("PagesX/Y values were not retained.");
+
+            if (Math.Abs(reloadedPrintProps.PageTopMargin.Value - 0.5) > tolerance ||
+                Math.Abs(reloadedPrintProps.PageBottomMargin.Value - 0.5) > tolerance ||
+                Math.Abs(reloadedPrintProps.PageLeftMargin.Value - 0.5) > tolerance ||
+                Math.Abs(reloadedPrintProps.PageRightMargin.Value - 0.5) > tolerance)
+                throw new Exception("Margin values were not retained.");
+
+            Console.WriteLine("PrintProps retained successfully after saving and reloading.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

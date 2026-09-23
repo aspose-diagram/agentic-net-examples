@@ -1,78 +1,56 @@
 using System;
-using System.Collections.Generic;
+using System.Data;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Simulated external database: a DataTable with ShapeId -> Tooltip mapping
+                DataTable tooltipTable = new DataTable();
+                tooltipTable.Columns.Add("ShapeId", typeof(int));
+                tooltipTable.Columns.Add("Tooltip", typeof(string));
 
-                // Simulated external database: mapping shape IDs to tooltip text
-                // In a real scenario, replace this with actual DB calls.
-                Dictionary<long, string> tooltipData = new Dictionary<long, string>
-                {
-                    { 1, "Start Process" },
-                    { 2, "Decision Point" },
-                    { 3, "End Process" }
-                    // Add more mappings as required
-                };
+                // Sample data rows (in a real scenario, fill this table from a database)
+                tooltipTable.Rows.Add(1, "Start process");
+                tooltipTable.Rows.Add(2, "Decision point");
+                tooltipTable.Rows.Add(3, "End process");
 
-                // Iterate through all pages and shapes
+                // Iterate through all pages and shapes to assign tooltips
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Convert shape ID to int for lookup
+                        int shapeId = (int)shape.ID;
 
-                        // Determine tooltip text for the current shape
-                        string tooltip;
-                        if (!tooltipData.TryGetValue(shape.ID, out tooltip))
-                        {
-                            // If no specific tooltip, use a default or skip
-                            tooltip = "No description available";
-                        }
+                        // Find matching tooltip text
+                        DataRow[] rows = tooltipTable.Select($"ShapeId = {shapeId}");
+                        if (rows.Length == 0)
+                            continue; // No tooltip defined for this shape
 
-                        // Ensure the Hyperlinks collection exists
-                        if (shape.Hyperlinks == null)
-                        {
-                            // The collection is always instantiated by Aspose.Diagram,
-                            // but guard against null for safety.
-                            continue;
-                        }
+                        string tooltipText = rows[0]["Tooltip"].ToString();
 
-                        // If the shape already has hyperlinks, update the first one's description.
-                        // Otherwise, create a new hyperlink.
-                        if (shape.Hyperlinks.Count > 0)
-                        {
-                            // Update description of the first hyperlink
-                            shape.Hyperlinks[0].Description.Value = tooltip;
-                        }
-                        else
-                        {
-                            // Create a new hyperlink and set its description as the tooltip
-                            Hyperlink link = new Hyperlink();
-                            link.Description.Value = tooltip;
-                            shape.Hyperlinks.Add(link);
-                        }
+                        // Create a new hyperlink to hold the tooltip (address can be empty)
+                        Hyperlink link = new Hyperlink();
+                        link.Name = $"Tooltip_{shapeId}";
+                        link.Address.Value = ""; // No navigation target
+                        link.Description.Value = tooltipText;
+
+                        // Add the hyperlink to the shape's collection
+                        shape.Hyperlinks.Add(link);
                     }
                 }
 
-                // Save the updated diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Diagram tooltips have been updated and saved to: " + outputPath);
+                // Save the updated diagram with tooltips
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

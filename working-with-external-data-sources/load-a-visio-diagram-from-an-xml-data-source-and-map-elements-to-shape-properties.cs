@@ -1,66 +1,77 @@
 using System.IO;
 using System;
-using System.Xml;
+using System.Collections.Generic;
 using System.Xml.Linq;
-using System.Linq;
 using Aspose.Diagram;
 
-class Program
+public class Program
 {
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
         try
         {
 
-            // Paths to the Visio file and the XML mapping file
+            // Paths to the Visio file, the XML data source, and the output file
             string diagramPath = "input.vsdx";
-            string xmlPath = "mapping.xml";
+            string xmlPath = "data.xml";
+            string outputPath = "output.vsdx";
 
             // Load the Visio diagram
-            using (Diagram diagram = new Diagram(diagramPath))
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Load the XML data source
+            XDocument xmlDoc = XDocument.Load(xmlPath);
+            IEnumerable<XElement> shapeElements = xmlDoc.Root?.Elements("Shape");
+
+            if (shapeElements != null)
             {
-                // Load the XML mapping document
-                XDocument xdoc = XDocument.Load(xmlPath);
-
-                // Build a dictionary: shape ID -> data values
-                var mappings = xdoc.Root?
-                    .Elements("Shape")
-                    .Select(e => new
-                    {
-                        Id = (long?) (int?) e.Attribute("id") ?? 0,
-                        Data1 = (string) e.Attribute("data1"),
-                        Data2 = (string) e.Attribute("data2")
-                    })
-                    .Where(m => m.Id != 0)
-                    .ToDictionary(m => m.Id);
-
-                if (mappings != null && mappings.Count > 0)
+                // Iterate through all pages and shapes in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all pages and shapes, applying the mapping
-                    foreach (Page page in diagram.Pages)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (Shape shape in page.Shapes)
+                        // Find a matching XML element based on the shape's universal name (NameU)
+                        XElement matchingElement = FindShapeElement(shapeElements, shape.NameU);
+                        if (matchingElement != null)
                         {
-                            if (mappings.TryGetValue(shape.ID, out var map))
+                            // Update the shape's text
+                            string newText = matchingElement.Element("Text")?.Value ?? string.Empty;
+                            shape.Text.Value.Clear();
+                            shape.Text.Value.Add(new Txt(newText));
+
+                            // Optionally update the shape's fill color if provided in XML
+                            XAttribute fillAttr = matchingElement.Attribute("FillColor");
+                            if (fillAttr != null)
                             {
-                                if (map.Data1 != null)
-                                    shape.Data1 = map.Data1;   // Shape data properties are simple strings
-                                if (map.Data2 != null)
-                                    shape.Data2 = map.Data2;
+                                // Expecting a hex color string like "#FF0000"
+                                shape.Fill.FillForegnd.Value = fillAttr.Value;
                             }
                         }
                     }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    // Helper method to locate an XML element that matches a shape's NameU
+    private static XElement FindShapeElement(IEnumerable<XElement> elements, string nameU)
+    {
+        foreach (XElement element in elements)
+        {
+            XAttribute nameAttr = element.Attribute("Name");
+            if (nameAttr != null && nameAttr.Value == nameU)
+            {
+                return element;
+            }
+        }
+        return null;
     }
 }

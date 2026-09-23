@@ -1,40 +1,38 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        // Entry point
         static void Main()
         {
             try
             {
 
-                // Sample hierarchical JSON (could be read from a file)
+                // Sample hierarchical JSON
                 string json = @"
-                [
-                    {
-                        ""name"": ""RootGroup"",
-                        ""children"": [
-                            { ""name"": ""ChildShape1"" },
-                            {
-                                ""name"": ""SubGroup"",
-                                ""children"": [
-                                    { ""name"": ""GrandChildShape1"" },
-                                    { ""name"": ""GrandChildShape2"" }
-                                ]
-                            },
-                            { ""name"": ""ChildShape2"" }
-                        ]
-                    }
-                ]";
+                {
+                    ""name"": ""Root"",
+                    ""children"": [
+                        {
+                            ""name"": ""Child 1"",
+                            ""children"": [
+                                { ""name"": ""Grandchild 1"", ""children"": [] },
+                                { ""name"": ""Grandchild 2"", ""children"": [] }
+                            ]
+                        },
+                        {
+                            ""name"": ""Child 2"",
+                            ""children"": []
+                        }
+                    ]
+                }";
 
                 // Parse JSON
                 JsonDocument doc = JsonDocument.Parse(json);
-                JsonElement rootArray = doc.RootElement;
+                JsonElement rootElement = doc.RootElement;
 
                 // Create a new empty diagram
                 Diagram diagram = new Diagram();
@@ -42,25 +40,13 @@ class Program
                 // Ensure there is at least one page
                 Page page = diagram.Pages[0];
 
-                // Starting coordinates for the first root group
-                double startX = 2.0;
-                double startY = 2.0;
-                double horizontalSpacing = 3.0;
-                double verticalSpacing = 2.5;
+                // Build groups recursively starting at (2,2) coordinates
+                long rootGroupId = CreateGroupRecursive(rootElement, page, 2.0, 2.0, 0);
 
-                // Process each top‑level element
-                int index = 0;
-                foreach (JsonElement element in rootArray.EnumerateArray())
-                {
-                    double offsetX = startX + index * horizontalSpacing;
-                    double offsetY = startY;
+                // Optionally you can retrieve the root group shape for further processing
+                Shape rootGroupShape = page.Shapes.GetShape((int)rootGroupId);
 
-                    // Recursively create shapes/groups
-                    CreateNode(page, element, offsetX, offsetY, horizontalSpacing, verticalSpacing);
-                    index++;
-                }
-
-                // Save the diagram as VSDX
+                // Save the diagram
                 diagram.Save("HierarchicalDiagram.vsdx", SaveFileFormat.Vsdx);
 
             }
@@ -70,50 +56,58 @@ class Program
             }
     }
 
-        // Recursively creates a shape (rectangle) for the current node,
-        // creates child shapes, and groups them together.
-        // Returns the ID of the created group (or the shape itself if no children).
-        static long CreateNode(Page page, JsonElement node, double posX, double posY,
-                               double hSpacing, double vSpacing)
+        // Recursive method to create a shape for the current node, its children, and group them
+        private static long CreateGroupRecursive(JsonElement element, Page page, double baseX, double baseY, int level)
         {
-            // Create a rectangle shape representing this node
-            // Width and height are fixed for simplicity
-            double shapeWidth = 1.5;
-            double shapeHeight = 0.8;
-            long shapeId = page.AddShape(posX, posY, shapeWidth, shapeHeight, "Rectangle");
-            Shape shape = page.Shapes.GetShape(shapeId);
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt(node.GetProperty("name").GetString() ?? "Unnamed"));
+            // Determine a simple offset based on hierarchy level to avoid overlap
+            double offsetX = baseX + level * 2.0;
+            double offsetY = baseY + level * 2.0;
 
-            // Check for children
-            if (node.TryGetProperty("children", out JsonElement children) && children.ValueKind == JsonValueKind.Array)
+            // Create a rectangle shape representing the current node
+            long parentShapeId = page.AddShape(offsetX, offsetY, "Rectangle", false);
+            Shape parentShape = page.Shapes.GetShape((int)parentShapeId);
+            // Set the shape's text to the node's name
+            if (element.TryGetProperty("name", out JsonElement nameProp))
             {
-                List<Shape> childShapes = new List<Shape>();
-                int childIndex = 0;
-                foreach (JsonElement child in children.EnumerateArray())
-                {
-                    // Position children below the parent, offset horizontally
-                    double childX = posX + childIndex * hSpacing;
-                    double childY = posY + vSpacing;
-
-                    long childId = CreateNode(page, child, childX, childY, hSpacing, vSpacing);
-                    Shape childShape = page.Shapes.GetShape(childId);
-                    childShapes.Add(childShape);
-                    childIndex++;
-                }
-
-                // Include the parent shape in the group
-                List<Shape> groupMembers = new List<Shape> { shape };
-                groupMembers.AddRange(childShapes);
-
-                // Create the group
-                Shape groupShape = page.Shapes.Group(groupMembers.ToArray());
-
-                // Return the group's ID
-                return groupShape.ID;
+                string nodeName = nameProp.GetString() ?? string.Empty;
+                parentShape.Text.Value.Clear();
+                parentShape.Text.Value.Add(new Txt(nodeName));
             }
 
-            // No children – return the shape's ID
-            return shapeId;
+            // Collect child shapes
+            List<Shape> childShapes = new List<Shape>();
+            if (element.TryGetProperty("children", out JsonElement childrenProp) && childrenProp.ValueKind == JsonValueKind.Array)
+            {
+                int childIndex = 0;
+                foreach (JsonElement child in childrenProp.EnumerateArray())
+                {
+                    // Recursively create groups for each child
+                    long childGroupId = CreateGroupRecursive(child, page, offsetX + 2.0, offsetY + 2.0, level + 1);
+                    Shape childGroupShape = page.Shapes.GetShape((int)childGroupId);
+                    childShapes.Add(childGroupShape);
+                    childIndex++;
+                }
+            }
+
+            // If there are child shapes, group them together with the parent shape
+            if (childShapes.Count > 0)
+            {
+                // Prepare array of shapes to group (parent + children)
+                Shape[] groupMembers = new Shape[childShapes.Count + 1];
+                groupMembers[0] = parentShape;
+                for (int i = 0; i < childShapes.Count; i++)
+                {
+                    groupMembers[i + 1] = childShapes[i];
+                }
+
+                // Create the group; the method returns the new group shape
+                Shape groupShape = page.Shapes.Group(groupMembers);
+                return groupShape.ID;
+            }
+            else
+            {
+                // No children – the parent shape itself acts as the group
+                return parentShape.ID;
+            }
         }
     }

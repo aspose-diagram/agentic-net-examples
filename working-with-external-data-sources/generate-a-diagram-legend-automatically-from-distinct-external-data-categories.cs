@@ -1,58 +1,54 @@
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main()
         {
-            // Distinct external data categories to be displayed in the legend
-            string[] categories = new string[]
+            // Define distinct categories and their associated colors (hex strings)
+            var categories = new List<(string Name, string Color)>
             {
-                "Category A",
-                "Category B",
-                "Category C",
-                "Category D"
+                ("Category A", "#FF0000"), // Red
+                ("Category B", "#00FF00"), // Green
+                ("Category C", "#0000FF")  // Blue
             };
 
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Access the first (default) page
+            // Use the first (default) page
             Page page = diagram.Pages[0];
 
-            // Define legend box dimensions
-            double legendX = 1.0; // left position (in inches)
-            double legendY = 1.0; // top position (in inches)
-            double legendWidth = 2.5; // width of the legend box
-            double lineHeight = 0.3; // vertical space for each category entry
-            double legendHeight = 0.2 + categories.Length * lineHeight; // total height including padding
+            // Legend layout parameters (in inches)
+            double startX = 1.0;               // Left margin
+            double startY = 1.0;               // Top margin
+            double boxWidth = 0.5;             // Width of color box
+            double boxHeight = 0.5;            // Height of color box
+            double verticalSpacing = 0.2;      // Space between entries
+            double textOffsetX = 0.2;          // Space between box and text
+            double textWidth = 3.0;            // Width of text shape
+            double textHeight = 0.5;           // Height of text shape
 
-            // Draw the legend background rectangle
-            long rectId = page.DrawRectangle(legendX, legendY, legendWidth, legendHeight);
-            Shape rectShape = page.Shapes.GetShape(rectId);
-
-            // Set rectangle fill (white) and border (black)
-            rectShape.Fill.FillForegnd.Value = "#FFFFFF";
-            rectShape.Line.LineColor.Value = "#000000";
-
-            // Add a text entry for each category inside the legend box
-            for (int i = 0; i < categories.Length; i++)
+            // Iterate over categories and create legend entries
+            for (int i = 0; i < categories.Count; i++)
             {
-                double textX = legendX + 0.1; // small left padding
-                double textY = legendY + 0.1 + i * lineHeight; // position each line vertically
-                double textW = legendWidth - 0.2; // width minus horizontal padding
-                double textH = 0.25; // height of the text shape
+                double currentY = startY + i * (boxHeight + verticalSpacing);
 
-                // AddText creates a shape with the specified text
-                Shape txtShape = page.AddText(textX, textY, textW, textH, categories[i]);
+                // Draw a filled rectangle as the color marker
+                long rectId = page.DrawRectangle(startX, currentY, boxWidth, boxHeight);
+                Shape rectShape = page.Shapes.GetShape(rectId);
+                rectShape.Fill.FillForegnd.Value = categories[i].Color;
 
-                // Optional: set text color (black) if needed
-                txtShape.Text.Value.Clear();
-                txtShape.Text.Value.Add(new Txt(categories[i]));
-                txtShape.Line.LineColor.Value = "#000000";
+                // Add a text shape next to the rectangle
+                double textX = startX + boxWidth + textOffsetX;
+                Shape textShape = page.AddText(textX, currentY, textWidth, textHeight, categories[i].Name);
+                // Optional: set text color (black) and ensure no background fill
+                textShape.Fill.FillForegnd.Value = "#000000";
+                textShape.Fill.FillBkgnd.Value = "#FFFFFF";
             }
 
-            // Save the diagram with the legend to a VSDX file
+            // Save the diagram with the legend
             diagram.Save("LegendDiagram.vsdx", SaveFileFormat.Vsdx);
         }
     }

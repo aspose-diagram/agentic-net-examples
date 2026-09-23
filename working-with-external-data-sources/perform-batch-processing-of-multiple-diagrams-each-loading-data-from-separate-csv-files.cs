@@ -1,94 +1,99 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            // Folder containing diagram files (e.g., .vsdx) and matching CSV files
+            string diagramsFolder = @"C:\Diagrams";
+            string outputFolder = @"C:\ProcessedDiagrams";
 
-            // Folder containing the source Visio diagrams
-            string diagramsFolder = "Diagrams";
-            // Folder containing CSV files with the same base names as the diagrams
-            string csvFolder = "CsvData";
-            // Folder where the processed diagrams will be saved
-            string outputFolder = "Output";
-
-            // Ensure the output directory exists
+            // Ensure output folder exists
             if (!Directory.Exists(outputFolder))
-            {
                 Directory.CreateDirectory(outputFolder);
-            }
 
-            // Get all Visio files (e.g., .vsdx) in the diagrams folder
+            // Get all diagram files in the folder
             string[] diagramFiles = Directory.GetFiles(diagramsFolder, "*.vsdx");
 
             foreach (string diagramPath in diagramFiles)
             {
-                // Determine the matching CSV file based on the diagram file name
-                string baseName = Path.GetFileNameWithoutExtension(diagramPath);
-                string csvPath = Path.Combine(csvFolder, baseName + ".csv");
-
-                if (!File.Exists(csvPath))
-                {
-                    Console.WriteLine($"CSV file not found for diagram '{baseName}'. Skipping.");
-                    continue;
-                }
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
-
                 try
                 {
-                    // Read all lines from the CSV file
-                    string[] csvLines = File.ReadAllLines(csvPath);
-                    if (csvLines.Length == 0)
+                    // Derive CSV file name (same base name, .csv extension)
+                    string csvPath = Path.ChangeExtension(diagramPath, ".csv");
+                    if (!File.Exists(csvPath))
                     {
-                        Console.WriteLine($"CSV file '{csvPath}' is empty. Skipping.");
+                        Console.WriteLine($"CSV file not found for diagram: {Path.GetFileName(diagramPath)}. Skipping.");
                         continue;
                     }
 
-                    // Use the first line of the CSV as the new text for the first shape
-                    string newText = csvLines[0];
+                    // Load the diagram
+                    Diagram diagram = new Diagram(diagramPath);
 
-                    // Access the first page of the diagram
-                    Page page = diagram.Pages[0];
+                    // Read CSV data into a dictionary: ShapeName -> NewText
+                    Dictionary<string, string> updates = LoadCsvUpdates(csvPath);
 
-                    // Find the first shape on the page
-                    Aspose.Diagram.Shape firstShape = null;
-                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    // Apply updates to shapes on each page
+                    foreach (Page page in diagram.Pages)
                     {
-                        firstShape = shape;
-                        break;
-                    }
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Only process shapes that have a name and are not deleted
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                    if (firstShape != null)
-                    {
-                        // Replace the shape's text
-                        firstShape.Text.Value.Clear();
-                        firstShape.Text.Value.Add(new Txt(newText));
-                        Console.WriteLine($"Updated shape ID {firstShape.ID} in diagram '{baseName}'.");
+                            string shapeName = shape.NameU;
+                            if (updates.TryGetValue(shapeName, out string newText))
+                            {
+                                // Clear existing text and add new text
+                                shape.Text.Value.Clear();
+                                shape.Text.Value.Add(new Txt(newText));
+                            }
+                        }
                     }
 
                     // Save the updated diagram to the output folder
-                    string outputPath = Path.Combine(outputFolder, baseName + "_updated.vsdx");
+                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(diagramPath));
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Saved updated diagram to '{outputPath}'.");
+                    Console.WriteLine($"Processed and saved: {outputPath}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing diagram '{diagramPath}': {ex.Message}");
+                    Console.WriteLine($"Error processing file '{Path.GetFileName(diagramPath)}': {ex.Message}");
                 }
             }
-
-            Console.WriteLine("Batch processing completed.");
-
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+
+        // Reads a CSV file where each line has: ShapeName,NewText
+        // Returns a dictionary mapping shape names to the new text value.
+        private static Dictionary<string, string> LoadCsvUpdates(string csvFilePath)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            using (var reader = new StreamReader(csvFilePath))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    // Skip empty lines
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    // Split by comma (basic CSV, no quoted commas handling)
+                    string[] parts = line.Split(',');
+                    if (parts.Length < 2)
+                        continue; // Invalid line, ignore
+
+                    string shapeName = parts[0].Trim();
+                    string newText = parts[1].Trim();
+
+                    if (!string.IsNullOrEmpty(shapeName))
+                        dict[shapeName] = newText;
+                }
+            }
+            return dict;
         }
     }
-}

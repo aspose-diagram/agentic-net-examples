@@ -1,80 +1,55 @@
+using System.IO;
 using System;
+using System.Data;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Simulated external data source (e.g., from a CSV or API)
+            DataTable externalData = new DataTable();
+            externalData.Columns.Add("ShapeId", typeof(long));
+            externalData.Columns.Add("EmployeeID", typeof(string));
+            externalData.Columns.Add("Name", typeof(string));
+            externalData.Columns.Add("Department", typeof(string));
+
+            // Example rows – in real scenarios this would be populated dynamically
+            externalData.Rows.Add(1L, "E001", "Alice", "HR");
+            externalData.Rows.Add(2L, "E002", "Bob", "IT");
+
+            // Map external fields to shape data fields (Data1, Data2, Data3)
+            foreach (DataRow row in externalData.Rows)
             {
+                long shapeId = (long)row["ShapeId"];
+                // Assuming shapes are on the first page; adjust if needed
+                Page page = diagram.Pages[0];
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
+                    continue; // Skip if shape not found
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output.vsdx";
-
-                // Define mapping: external field name -> shape data field (Data1, Data2, Data3)
-                var fieldMapping = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    { "CustomerID", "Data1" },
-                    { "OrderNumber", "Data2" },
-                    { "Status", "Data3" }
-                };
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Example: assume external data is stored in shape.NameU as "CustomerID=123;OrderNumber=456;Status=Open"
-                        // Parse the name string into key/value pairs
-                        if (string.IsNullOrWhiteSpace(shape.NameU))
-                            continue;
-
-                        var pairs = shape.NameU.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                        foreach (var pair in pairs)
-                        {
-                            var kv = pair.Split(new[] { '=' }, 2);
-                            if (kv.Length != 2)
-                                continue;
-
-                            string externalName = kv[0].Trim();
-                            string externalValue = kv[1].Trim();
-
-                            if (fieldMapping.TryGetValue(externalName, out string targetDataField))
-                            {
-                                // Assign the value to the appropriate Data field
-                                switch (targetDataField)
-                                {
-                                    case "Data1":
-                                        shape.Data1 = externalValue;
-                                        break;
-                                    case "Data2":
-                                        shape.Data2 = externalValue;
-                                        break;
-                                    case "Data3":
-                                        shape.Data3 = externalValue;
-                                        break;
-                                    default:
-                                        // If an unsupported field is specified, ignore it
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                // Assign values to the shape's custom data fields
+                shape.Data1 = row["EmployeeID"].ToString();
+                shape.Data2 = row["Name"].ToString();
+                shape.Data3 = row["Department"].ToString();
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

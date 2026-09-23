@@ -1,46 +1,39 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.Data;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Paths – adjust as needed
-                string diagramPath = "input.vsdx";
-                string csvPath = "shapeCategories.csv";
-                string outputPath = "output.vsdx";
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
+                // Simulate external data source (e.g., a database or CSV)
+                // Here we create a DataTable with Category and Color columns
+                DataTable categoryTable = new DataTable();
+                categoryTable.Columns.Add("Category", typeof(string));
+                categoryTable.Columns.Add("ColorHex", typeof(string));
+                categoryTable.Rows.Add("Finance", "#FF5733");   // orange
+                categoryTable.Rows.Add("HR", "#33FF57");       // green
+                categoryTable.Rows.Add("IT", "#3357FF");       // blue
 
-                // Read external CSV data (format: ShapeName,Category)
-                // Example line: Process,High
-                var shapeCategoryMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var line in File.ReadAllLines(csvPath))
+                // Build a lookup dictionary from the DataTable
+                Dictionary<string, string> categoryColorMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (DataRow row in categoryTable.Rows)
                 {
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-                    var parts = line.Split(',');
-                    if (parts.Length >= 2)
+                    string cat = row["Category"]?.ToString() ?? string.Empty;
+                    string color = row["ColorHex"]?.ToString() ?? "#FFFFFF";
+                    if (!string.IsNullOrEmpty(cat))
                     {
-                        string shapeName = parts[0].Trim();
-                        string category = parts[1].Trim();
-                        shapeCategoryMap[shapeName] = category;
+                        categoryColorMap[cat] = color;
                     }
                 }
-
-                // Define category‑to‑color mapping (hex strings)
-                var categoryColorMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    { "High",   "#FF0000" }, // Red
-                    { "Medium", "#FFFF00" }, // Yellow
-                    { "Low",    "#00FF00" }  // Green
-                };
 
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
@@ -48,24 +41,37 @@ class Program
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
-                        if (shape.Del == BOOL.True) continue;
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Determine if the shape name exists in the CSV map
-                        if (shape.NameU != null && shapeCategoryMap.TryGetValue(shape.NameU, out string category))
+                        // Ensure the shape has custom properties (Props) collection
+                        if (shape.Props == null)
+                            continue;
+
+                        // Find a custom property named "Category"
+                        string shapeCategory = null;
+                        foreach (Prop prop in shape.Props)
                         {
-                            // Find the corresponding color for the category
-                            if (categoryColorMap.TryGetValue(category, out string hexColor))
+                            if (prop.Name.Equals("Category", StringComparison.OrdinalIgnoreCase))
                             {
-                                // Apply solid fill pattern and set foreground color
-                                shape.Fill.FillPattern.Value = 1; // Solid fill
-                                shape.Fill.FillForegnd.Value = hexColor;
+                                shapeCategory = prop.Value.Val;
+                                break;
                             }
+                        }
+
+                        // If the shape has a category and a matching color, apply the fill
+                        if (!string.IsNullOrEmpty(shapeCategory) && categoryColorMap.TryGetValue(shapeCategory, out string fillColor))
+                        {
+                            // Set solid fill pattern
+                            shape.Fill.FillPattern.Value = 1; // Solid
+                            // Apply the foreground fill color (hex string)
+                            shape.Fill.FillForegnd.Value = fillColor;
                         }
                     }
                 }
 
                 // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Csv);
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

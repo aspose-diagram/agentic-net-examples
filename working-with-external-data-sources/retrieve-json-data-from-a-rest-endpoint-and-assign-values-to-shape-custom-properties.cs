@@ -1,118 +1,83 @@
-using System;
 using System.IO;
-using System.Collections.Generic;
+using System;
 using System.Net.Http;
 using System.Text.Json;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main()
     {
-        // REST endpoint returning JSON in the form {"ShapeNameU":"PropertyValue", ...}
-        string endpoint = "https://example.com/api/data";
-
-        // Retrieve JSON data with error handling
-        string json;
         try
         {
-            using var httpClient = new HttpClient();
-            // Synchronously wait for the async call to avoid async Main (classic style)
-            json = httpClient.GetStringAsync(endpoint).GetAwaiter().GetResult();
-        }
-        catch (Exception ex)
-        {
-            // Log HTTP errors and abort execution
-            Console.Error.WriteLine($"Error retrieving JSON from endpoint: {ex.Message}");
-            return;
-        }
 
-        // Deserialize to a dictionary for easy lookup
-        var data = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-        if (data == null)
-        {
-            Console.Error.WriteLine("Failed to deserialize JSON data.");
-            return;
-        }
+            // Load an existing Visio diagram
+            string diagramPath = "input.vsdx";
+            Diagram diagram = new Diagram(diagramPath);
 
-        // Path to the input Visio diagram
-        string inputPath = "input.vsdx";
-        // Guard to ensure the file exists before loading
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+            // REST endpoint that returns JSON data
+            string url = "https://example.com/api/data";
 
-        // Load the diagram inside a try/catch to capture Aspose errors
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+            // Retrieve JSON from the endpoint
+            using HttpClient client = new HttpClient();
+            string json = await client.GetStringAsync(url);
 
-        // Iterate through all pages and shapes, updating/adding custom properties
-        try
-        {
+            // Deserialize JSON into a dictionary of string key/value pairs
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            if (data == null)
+            {
+                Console.WriteLine("Failed to parse JSON data.");
+                return;
+            }
+
+            // Iterate through all pages and shapes to assign custom properties
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Use the universal shape name (NameU) as the key to find matching data
-                    if (data.TryGetValue(shape.NameU, out string propValue))
+                    // For each key/value pair from the JSON, create or update a custom property on the shape
+                    foreach (KeyValuePair<string, string> kvp in data)
                     {
-                        // Search for an existing custom property named "CustomData"
+                        // Check if the property already exists on the shape
                         Prop existingProp = null;
                         foreach (Prop p in shape.Props)
                         {
-                            if (p.Name == "CustomData")
+                            if (p.Name == kvp.Key)
                             {
                                 existingProp = p;
                                 break;
                             }
                         }
 
-                        if (existingProp == null)
+                        if (existingProp != null)
                         {
-                            // Create a new custom property and add it to the shape
-                            var newProp = new Prop();
-                            newProp.Name = "CustomData";
-                            newProp.Label.Value = "Custom Data";
-                            newProp.Value.Val = propValue;
-                            shape.Props.Add(newProp);
-                            Console.WriteLine($"Added CustomData to shape '{shape.NameU}' with value '{propValue}'.");
+                            // Update existing property value
+                            existingProp.Value.Val = kvp.Value;
                         }
                         else
                         {
-                            // Update the existing property's value
-                            existingProp.Value.Val = propValue;
-                            Console.WriteLine($"Updated CustomData on shape '{shape.NameU}' to '{propValue}'.");
+                            // Create a new custom property
+                            Prop newProp = new Prop();
+                            newProp.Name = kvp.Key;                     // Property name
+                            newProp.Label.Value = kvp.Key;              // Display label
+                            newProp.Type.Value = TypePropValue.String;  // Data type
+                            newProp.Value.Val = kvp.Value;              // Property value
+                            shape.Props.Add(newProp);
                         }
                     }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing diagram shapes: {ex.Message}");
-            return;
-        }
 
-        // Save the modified diagram with error handling
-        try
-        {
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved as output.vsdx");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,77 +1,69 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
-{
-    static void Main()
+// Simple POCO representing the OData entity
+    public class ShapeData
     {
-        try
+        public string ShapeId { get; set; }   // Corresponds to shape's NameU or ID
+        public string DataField { get; set; } // Value to store in shape's data field
+    }
+
+    class Program
+    {
+        static async System.Threading.Tasks.Task Main(string[] args)
         {
+            // Load existing diagram (lifecycle rule)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Path to the Visio diagram file to be updated
-            string diagramPath = "input.vsdx";
+            // Retrieve external data from OData feed (free‑form implementation)
+            List<ShapeData> externalData = await GetODataShapeDataAsync("https://example.com/odata/Shapes");
 
-            // OData service endpoint returning JSON data (adjust URL as needed)
-            string odataUrl = "https://example.com/odata/Items";
-
-            // Load the existing diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Retrieve OData JSON payload
-            using (HttpClient httpClient = new HttpClient())
+            // Synchronize external data with diagram shape data fields
+            foreach (ShapeData item in externalData)
             {
-                string json = httpClient.GetStringAsync(odataUrl).Result;
-
-                // Deserialize JSON into an array of items (Id and Value fields expected)
-                var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                Item[] items = JsonSerializer.Deserialize<Item[]>(json, jsonOptions);
-
-                // Build a lookup dictionary keyed by Id for fast access
-                var lookup = new System.Collections.Generic.Dictionary<string, string>();
-                if (items != null)
+                // Find shape by its NameU (or you could use ID)
+                Shape shape = FindShapeByName(diagram, item.ShapeId);
+                if (shape != null)
                 {
-                    foreach (Item item in items)
-                    {
-                        if (!string.IsNullOrEmpty(item.Id))
-                        {
-                            lookup[item.Id] = item.Value ?? string.Empty;
-                        }
-                    }
-                }
-
-                // Iterate through all pages and shapes in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Use the universal shape name (NameU) as the key to match OData records
-                        string key = shape.NameU;
-                        if (lookup.TryGetValue(key, out string value))
-                        {
-                            // Synchronize external data into shape's custom data fields
-                            shape.Data1 = value;                                 // Store external value
-                            shape.Data2 = DateTime.Now.ToString("yyyy-MM-dd");   // Example: store sync timestamp
-                        }
-                    }
+                    // Set the first custom data field (Data1) – adjust as needed
+                    shape.Data1 = item.DataField;
                 }
             }
 
-            // Save the updated diagram
+            // Save the updated diagram (lifecycle rule)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Helper: fetch OData feed and deserialize to a list of ShapeData
+        private static async System.Threading.Tasks.Task<List<ShapeData>> GetODataShapeDataAsync(string requestUri)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            using HttpClient client = new HttpClient();
+            HttpResponseMessage response = await client.GetAsync(requestUri);
+            response.EnsureSuccessStatusCode();
+
+            string json = await response.Content.ReadAsStringAsync();
+
+            // Assuming OData returns an array of objects with properties matching ShapeData
+            return JsonSerializer.Deserialize<List<ShapeData>>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+
+        // Helper: locate a shape by its NameU property
+        private static Shape FindShapeByName(Diagram diagram, string nameU)
+        {
+            foreach (Shape shape in diagram.Pages[0].Shapes)
+            {
+                if (string.Equals(shape.NameU, nameU, StringComparison.OrdinalIgnoreCase))
+                {
+                    return shape;
+                }
+            }
+            return null;
         }
     }
-
-    // Helper class representing the expected OData JSON structure
-    private class Item
-    {
-        public string Id { get; set; }
-        public string Value { get; set; }
-    }
-}

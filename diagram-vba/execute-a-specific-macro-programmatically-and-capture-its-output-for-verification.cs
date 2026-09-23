@@ -1,7 +1,5 @@
-using System;
 using System.IO;
-using System.Diagnostics;
-using System.Text;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
@@ -12,86 +10,40 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio file
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Access the VBA project embedded in the diagram
-            VbaProject vbaProject = diagram.VbaProject;
+            // Access the VBA project
+            var vbaProject = diagram.VbaProject;
 
-            // Locate the module that contains the macro named "MyMacro"
-            VbaModule macroModule = null;
-            foreach (VbaModule module in vbaProject.Modules)
-            {
-                if (!string.IsNullOrEmpty(module.Codes) && module.Codes.Contains("Sub MyMacro"))
-                {
-                    macroModule = module;
-                    break;
-                }
-            }
+            // Add a new procedural VBA module
+            int moduleIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, "TestModule");
+            var module = vbaProject.Modules[moduleIndex];
 
-            if (macroModule == null)
-            {
-                Console.WriteLine("Macro 'MyMacro' not found in the diagram.");
-                return;
-            }
+            // Define the macro code
+            string macroCode = @"
+            Attribute VB_Name = ""TestModule""
+            Sub TestMacro()
+            MsgBox ""Hello from macro""
+            End Sub
+            ";
 
-            // Retrieve the VBA code of the macro
-            string vbaCode = macroModule.Codes;
+            // Set the macro code in the module
+            module.Codes = macroCode;
 
-            // Convert the VBA code to VBScript (basic conversion for demonstration)
-            string vbScriptCode = ConvertVbaToVbs(vbaCode);
+            // Save the diagram in a macro‑enabled format
+            string outputPath = "output.vsdm";
+            diagram.Save(outputPath, SaveFileFormat.Vsdm);
 
-            // Write the VBScript to a temporary file
-            string tempVbsPath = Path.Combine(Path.GetTempPath(), "tempMacro.vbs");
-            File.WriteAllText(tempVbsPath, vbScriptCode, Encoding.UTF8);
-
-            // Execute the VBScript using Windows Script Host and capture its output
-            ProcessStartInfo psi = new ProcessStartInfo
-            {
-                FileName = "cscript",
-                Arguments = $"//NoLogo \"{tempVbsPath}\"",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using (Process proc = Process.Start(psi))
-            {
-                string output = proc.StandardOutput.ReadToEnd();
-                proc.WaitForExit();
-
-                // Display the captured output for verification
-                Console.WriteLine("Macro Output:");
-                Console.WriteLine(output);
-            }
-
-            // Clean up the temporary script file
-            File.Delete(tempVbsPath);
+            // Capture and display the macro code for verification
+            Console.WriteLine("Macro code added to the document:");
+            Console.WriteLine(module.Codes);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-    }
-
-    // Very simple conversion: removes Sub/Function declarations and End statements
-    static string ConvertVbaToVbs(string vbaCode)
-    {
-        var sb = new StringBuilder();
-        string[] lines = vbaCode.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-        foreach (string line in lines)
-        {
-            string trimmed = line.Trim();
-            if (trimmed.StartsWith("Sub ", StringComparison.OrdinalIgnoreCase) ||
-                trimmed.StartsWith("Function ", StringComparison.OrdinalIgnoreCase) ||
-                trimmed.Equals("End Sub", StringComparison.OrdinalIgnoreCase) ||
-                trimmed.Equals("End Function", StringComparison.OrdinalIgnoreCase))
-            {
-                continue; // Skip declaration and termination lines
-            }
-            sb.AppendLine(line);
-        }
-        return sb.ToString();
     }
 }

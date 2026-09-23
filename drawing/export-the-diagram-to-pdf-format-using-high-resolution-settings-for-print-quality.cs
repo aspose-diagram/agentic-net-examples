@@ -1,30 +1,37 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsd");
+                // Path to the source Visio diagram
+                string inputPath = "input.vsdx";
 
-            // Create PDF save options with high‑resolution settings for print quality
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.HorizontalResolution = 300; // 300 DPI horizontal
-            pdfOptions.VerticalResolution = 300;   // 300 DPI vertical
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Save the diagram as a PDF using the configured options
-            diagram.Save("output.pdf", pdfOptions);
+                // Configure PDF save options for high‑resolution print quality
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Use a common font as fallback for any missing fonts
+                pdfOptions.DefaultFont = "Arial";
+                // Do not include hidden pages in the PDF
+                pdfOptions.ExportHiddenPage = false;
+                // Set PDF/A compliance for reliable printing
+                pdfOptions.Compliance = PdfCompliance.PdfA1b;
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Export the diagram to PDF
+                string outputPath = "output.pdf";
+                diagram.Save(outputPath, pdfOptions);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

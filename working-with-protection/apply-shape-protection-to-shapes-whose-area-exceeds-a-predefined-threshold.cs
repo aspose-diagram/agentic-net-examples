@@ -3,18 +3,16 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Path to the source Visio file
+                // Input and output Visio file paths
                 string inputPath = "input.vsdx";
-
-                // Path for the protected output file
                 string outputPath = "output_protected.vsdx";
 
-                // Define the area threshold (in square inches)
+                // Area threshold (in square inches) – shapes larger than this will be protected
                 double areaThreshold = 5.0;
 
                 // Load the diagram
@@ -29,11 +27,9 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve width and height (in inches)
+                        // Calculate shape area using width and height (both in inches)
                         double width = shape.XForm.Width.Value;
                         double height = shape.XForm.Height.Value;
-
-                        // Calculate area
                         double area = width * height;
 
                         // Apply protection if area exceeds the threshold

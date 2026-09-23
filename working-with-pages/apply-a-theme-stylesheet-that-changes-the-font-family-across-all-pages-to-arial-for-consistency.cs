@@ -1,68 +1,45 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Input Visio file path – replace with your actual file location.
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding.
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output Visio file path where the themed diagram will be saved.
-        string outputPath = "output.vsdx";
-
         try
         {
-            // Load the diagram from the specified file.
+
+            // Load the existing Visio diagram
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Set the global default font to Arial for any missing font references.
-            FontConfigs.DefaultFontName = "Arial";
+            // Create a stylesheet that sets the font family to Arial
+            StyleSheet arialStyle = new StyleSheet();
+            arialStyle.ID = diagram.StyleSheets.Count + 1;
+            arialStyle.Name = "ArialFontStyle";
 
-            // Iterate over each page in the diagram.
+            Aspose.Diagram.Char fontChar = new Aspose.Diagram.Char();
+            fontChar.IX = 0; // character index
+            fontChar.FontName.Value = "Arial";
+            arialStyle.Chars.Add(fontChar);
+
+            // Add the stylesheet to the diagram
+            diagram.StyleSheets.Add(arialStyle);
+
+            // Apply the stylesheet to every page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over each shape on the current page.
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
-                {
-                    // If the shape contains character formatting, update each character's font.
-                    foreach (Aspose.Diagram.Char ch in shape.Chars)
-                    {
-                        // Assign Arial as the font name for the character.
-                        ch.FontName.Value = "Arial";
-                    }
-
-                    // If the shape has no explicit characters but contains text, ensure the default font is applied.
-                    if (shape.Text != null && !string.IsNullOrEmpty(shape.Text.Value.Text))
-                    {
-                        // Add a character run covering the existing text with Arial font.
-                        // Clear existing character formatting to avoid conflicts.
-                        shape.Chars.Clear();
-
-                        // Create a new character entry starting at index 0.
-                        Aspose.Diagram.Char newChar = new Aspose.Diagram.Char();
-                        newChar.IX = 0; // Position index for the character run.
-                        newChar.FontName.Value = "Arial";
-                        shape.Chars.Add(newChar);
-                    }
-                }
+                page.ApplyStyle(arialStyle.ID, arialStyle.ID, arialStyle.ID);
             }
 
-            // Save the modified diagram using the VSDX format.
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any exception details to the error console.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

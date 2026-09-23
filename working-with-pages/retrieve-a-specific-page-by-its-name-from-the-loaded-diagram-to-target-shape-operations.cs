@@ -9,31 +9,31 @@ class Program
         try
         {
 
-            // Path to the Visio file to load
-            string inputPath = "input.vsdx";
+            // Path to the Visio file
+            string inputPath = "example.vsdx";
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Name of the page you want to retrieve
-            string targetPageName = "MyPage";
+            // Name of the page you want to work with
+            string pageName = "TargetPage";
 
             // Retrieve the page by its name
-            Page page = diagram.Pages.GetPage(targetPageName);
+            Page page = diagram.Pages.GetPage(pageName);
 
-            // Validate that the page exists
             if (page == null)
             {
-                throw new Exception($"Page '{targetPageName}' not found in the diagram.");
+                Console.WriteLine($"Page '{pageName}' was not found in the diagram.");
+                return;
             }
 
-            // Output basic page information
-            Console.WriteLine($"Page found: ID = {page.ID}, Name = {page.Name}, NameU = {page.NameU}");
+            Console.WriteLine($"Page '{pageName}' retrieved successfully.");
+            Console.WriteLine($"Number of shapes on the page: {page.Shapes.Count}");
 
-            // Example: iterate over shapes on the retrieved page
+            // Example: iterate through shapes on the retrieved page
             foreach (Shape shape in page.Shapes)
             {
-                Console.WriteLine($"Shape ID = {shape.ID}, Name = {shape.Name}");
+                Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
             }
 
         }

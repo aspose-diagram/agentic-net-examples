@@ -10,29 +10,46 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file.
-            // Replace "input.vsdx" with the actual path to your diagram.
-            using (Diagram diagram = new Diagram("input.vsdx"))
+            // Load the Visio diagram (replace with your actual file path)
+            string inputPath = "input.vsdx";
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Define the output formats and their corresponding save options.
-                var outputs = new (string Extension, SaveOptions Options)[]
+                // Define output formats and corresponding save actions
+                var formats = new (string Extension, Action<string> SaveAction)[]
                 {
-                    // HTML export with hidden pages included.
-                    ("html", new HTMLSaveOptions { ExportHiddenPage = true }),
-
-                    // PNG image export with hidden pages included.
-                    ("png", new ImageSaveOptions(SaveFileFormat.Png) { ExportHiddenPage = true }),
-
-                    // SVG vector export with hidden pages included.
-                    ("svg", new SVGSaveOptions { ExportHiddenPage = true })
+                    ("html", outputPath =>
+                    {
+                        var htmlOptions = new HTMLSaveOptions();
+                        htmlOptions.ExportHiddenPage = true;
+                        diagram.Save(outputPath, htmlOptions);
+                    }),
+                    ("png", outputPath =>
+                    {
+                        var imageOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                        imageOptions.ExportHiddenPage = true;
+                        diagram.Save(outputPath, imageOptions);
+                    }),
+                    ("svg", outputPath =>
+                    {
+                        var svgOptions = new SVGSaveOptions();
+                        svgOptions.ExportHiddenPage = true;
+                        diagram.Save(outputPath, svgOptions);
+                    })
                 };
 
-                // Loop through each format and save the diagram.
-                foreach (var output in outputs)
+                // Export the diagram in each format
+                foreach (var (extension, saveAction) in formats)
                 {
-                    string outputPath = $"output.{output.Extension}";
-                    diagram.Save(outputPath, output.Options);
-                    Console.WriteLine($"Saved {outputPath}");
+                    string outputPath = $"output.{extension}";
+                    try
+                    {
+                        saveAction(outputPath);
+                        Console.WriteLine($"Saved {outputPath} with ExportHiddenPage = true.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to save {outputPath}: {ex.Message}");
+                    }
                 }
             }
 

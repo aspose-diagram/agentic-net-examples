@@ -3,92 +3,101 @@ using System.IO;
 using System.Diagnostics;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         // Folder containing Visio files to benchmark
-        string inputFolder = @"C:\VisioDiagrams";
-        // Output folder for modified diagrams
-        string outputFolder = @"C:\VisioDiagrams\Modified";
+        string inputFolder = @"C:\VisioFiles";
+        // Folder to save modified files
+        string outputFolder = @"C:\VisioFiles\Modified";
 
         if (!Directory.Exists(outputFolder))
             Directory.CreateDirectory(outputFolder);
 
-        // Process each .vsdx file in the folder
-        foreach (string filePath in Directory.GetFiles(inputFolder, "*.vsdx"))
+        string[] files = Directory.GetFiles(inputFolder, "*.vsdx");
+        foreach (string filePath in files)
         {
-            try
-            {
-                TimeSpan duration = ProcessDiagram(filePath, outputFolder);
-                Console.WriteLine($"File: {Path.GetFileName(filePath)} - Time elapsed: {duration.TotalMilliseconds} ms");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
-            }
+            Console.WriteLine($"Processing: {Path.GetFileName(filePath)}");
+            ProcessDiagram(filePath, outputFolder);
         }
 
         Console.WriteLine("Benchmark completed.");
     }
 
-    /// <summary>
-    /// Loads a diagram, retrieves all ActiveX controls, modifies a property, saves the diagram,
-    /// and returns the time taken for the retrieve‑modify operation.
-    /// </summary>
-    static TimeSpan ProcessDiagram(string inputPath, string outputFolder)
+    static void ProcessDiagram(string filePath, string outputFolder)
     {
-        // Load the diagram from file
-        Diagram diagram = new Diagram(inputPath);
+        // Load diagram
+        Diagram diagram = new Diagram(filePath);
 
-        Stopwatch sw = Stopwatch.StartNew();
+        // Stopwatch for retrieval
+        Stopwatch retrievalSw = Stopwatch.StartNew();
 
-        // Iterate through all pages
+        // Collect all shapes that contain ActiveX controls
+        var activeXShapes = new System.Collections.Generic.List<Shape>();
         foreach (Page page in diagram.Pages)
         {
-            // Iterate through all shapes on the page
             foreach (Shape shape in page.Shapes)
             {
-                // Check if the shape contains an ActiveX control
                 if (shape.ActiveXControl != null)
                 {
-                    // Determine the control type
-                    ControlType ctrlType = shape.ActiveXControl.Type;
-
-                    // Example modification for CommandButton controls
-                    if (ctrlType == ControlType.CommandButton)
-                    {
-                        CommandButtonActiveXControl btn = (CommandButtonActiveXControl)shape.ActiveXControl;
-                        // Update the caption to indicate modification
-                        btn.Caption = $"Modified {DateTime.Now:HHmmss}";
-                    }
-                    // Example modification for CheckBox controls
-                    else if (ctrlType == ControlType.CheckBox)
-                    {
-                        CheckBoxActiveXControl chk = (CheckBoxActiveXControl)shape.ActiveXControl;
-                        // Toggle the checked state
-                        chk.Value = chk.Value == CheckValueType.Checked ? (CheckValueType)0 : CheckValueType.Checked;
-                    }
-                    // Example modification for TextBox controls
-                    else if (ctrlType == ControlType.TextBox)
-                    {
-                        TextBoxActiveXControl txt = (TextBoxActiveXControl)shape.ActiveXControl;
-                        txt.Text = $"Updated at {DateTime.Now}";
-                    }
-                    // Add other control types as needed
+                    activeXShapes.Add(shape);
                 }
             }
         }
 
-        sw.Stop();
+        retrievalSw.Stop();
+        Console.WriteLine($"  Retrieval time: {retrievalSw.ElapsedMilliseconds} ms (found {activeXShapes.Count} controls)");
 
-        // Save the modified diagram with a new name
-        string fileName = Path.GetFileNameWithoutExtension(inputPath);
-        string outputPath = Path.Combine(outputFolder, $"{fileName}_modified.vsdx");
+        // Stopwatch for modification
+        Stopwatch modifySw = Stopwatch.StartNew();
+
+        foreach (Shape shape in activeXShapes)
+        {
+            // Determine control type and modify a representative property
+            switch (shape.ActiveXControl.Type)
+            {
+                case ControlType.CommandButton:
+                    var cmdBtn = (CommandButtonActiveXControl)shape.ActiveXControl;
+                    cmdBtn.Caption = "Modified";
+                    break;
+
+                case ControlType.CheckBox:
+                    var chkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
+                    chkBox.Value = CheckValueType.Checked;
+                    break;
+
+                case ControlType.TextBox:
+                    var txtBox = (TextBoxActiveXControl)shape.ActiveXControl;
+                    txtBox.Text = "Modified";
+                    break;
+
+                case ControlType.SpinButton:
+                    var spinBtn = (SpinButtonActiveXControl)shape.ActiveXControl;
+                    spinBtn.Position = 10;
+                    break;
+
+                case ControlType.Image:
+                    var imgCtrl = (ImageActiveXControl)shape.ActiveXControl;
+                    // Example: clear image data (set empty byte array)
+                    imgCtrl.Picture = new byte[0];
+                    break;
+
+                // Add other control types as needed
+                default:
+                    // No modification for unhandled types
+                    break;
+            }
+        }
+
+        modifySw.Stop();
+        Console.WriteLine($"  Modification time: {modifySw.ElapsedMilliseconds} ms");
+
+        // Save modified diagram
+        string outputPath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(filePath) + "_mod.vsdx");
         diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        // No explicit disposal needed; Diagram implements IDisposable but disposal is optional in this context
-        return sw.Elapsed;
+        Console.WriteLine($"  Saved modified diagram to: {outputPath}");
     }
 }

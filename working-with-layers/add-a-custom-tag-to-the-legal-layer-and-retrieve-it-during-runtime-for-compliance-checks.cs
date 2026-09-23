@@ -1,35 +1,30 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Paths to the input and output Visio files
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+            // Path to save the modified Visio file
             string outputPath = "output.vsdx";
 
-            // The custom compliance tag to store on the 'Legal' layer
-            string customTag = "Confidential";
-
-            // Load the diagram from file
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Work with the first page (adjust if needed)
+            // Assume the diagram has at least one page
             Page page = diagram.Pages[0];
 
-            // Locate the 'Legal' layer; the layer name may already contain a tag
+            // Find the 'Legal' layer (case‑sensitive)
             Layer legalLayer = null;
             foreach (Layer layer in page.PageSheet.Layers)
             {
-                // Extract the base name before any delimiter
-                string baseName = layer.Name.Value.Split(';')[0];
-                if (baseName == "Legal")
+                if (layer.Name.Value == "Legal")
                 {
                     legalLayer = layer;
                     break;
@@ -42,63 +37,61 @@ class Program
                 legalLayer = new Layer();
                 legalLayer.Name.Value = "Legal";
                 legalLayer.Visible.Value = BOOL.True;
-                legalLayer.IsColorChecked = BOOL.True; // Direct BOOL assignment, no .Value
                 page.PageSheet.Layers.Add(legalLayer);
             }
 
-            // Add or update the custom tag in the layer's name using a semicolon delimiter
-            string[] nameParts = legalLayer.Name.Value.Split(';');
-            bool tagUpdated = false;
-            for (int i = 0; i < nameParts.Length; i++)
+            // ----- Add a custom tag to the layer -----
+            // Since Aspose.Diagram does not support a Tag collection,
+            // we embed the tag in the layer name using a delimiter.
+            // Example format: "Legal|Tag=ComplianceCheck"
+            const string tagKey = "Tag";
+            const string tagValue = "ComplianceCheck";
+
+            // Check if the tag is already present
+            string[] parts = legalLayer.Name.Value.Split('|');
+            bool tagExists = false;
+            foreach (string part in parts)
             {
-                if (nameParts[i].StartsWith("Tag="))
+                if (part.StartsWith(tagKey + "=", StringComparison.Ordinal))
                 {
-                    nameParts[i] = "Tag=" + customTag;
-                    tagUpdated = true;
+                    tagExists = true;
                     break;
                 }
             }
-            if (!tagUpdated)
+
+            // Append the tag if it is missing
+            if (!tagExists)
             {
-                var temp = new List<string>(nameParts) { "Tag=" + customTag };
-                nameParts = temp.ToArray();
+                // Preserve existing name (first part) and add the tag
+                string baseName = parts[0]; // should be "Legal"
+                legalLayer.Name.Value = $"{baseName}|{tagKey}={tagValue}";
             }
-            legalLayer.Name.Value = string.Join(";", nameParts);
+
+            // ----- Retrieve the custom tag at runtime -----
+            // Parse the layer name to extract the tag value
+            string retrievedTag = null;
+            parts = legalLayer.Name.Value.Split('|');
+            foreach (string part in parts)
+            {
+                if (part.StartsWith(tagKey + "=", StringComparison.Ordinal))
+                {
+                    retrievedTag = part.Substring(tagKey.Length + 1); // value after "Tag="
+                    break;
+                }
+            }
+
+            // Perform a simple compliance check
+            if (retrievedTag == tagValue)
+            {
+                Console.WriteLine("Compliance tag found on 'Legal' layer: " + retrievedTag);
+            }
+            else
+            {
+                throw new Exception("Compliance tag missing or incorrect on 'Legal' layer.");
+            }
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // ----- Retrieval & compliance check -----
-            string retrievedTag = null;
-            foreach (Layer layer in page.PageSheet.Layers)
-            {
-                string baseName = layer.Name.Value.Split(';')[0];
-                if (baseName == "Legal")
-                {
-                    foreach (string part in layer.Name.Value.Split(';'))
-                    {
-                        if (part.StartsWith("Tag="))
-                        {
-                            retrievedTag = part.Substring("Tag=".Length);
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            if (retrievedTag == null)
-            {
-                throw new Exception("Compliance tag not found on the 'Legal' layer.");
-            }
-
-            Console.WriteLine($"Compliance tag on 'Legal' layer: {retrievedTag}");
-
-            // Example compliance validation
-            if (retrievedTag != "Confidential")
-            {
-                throw new Exception("Compliance check failed: unexpected tag value.");
-            }
 
         }
         catch (System.IO.FileNotFoundException ex)

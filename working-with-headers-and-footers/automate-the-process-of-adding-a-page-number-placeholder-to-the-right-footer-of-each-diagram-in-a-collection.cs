@@ -4,43 +4,53 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Determine the folder containing the diagrams.
-        string folderPath = args.Length > 0 ? args[0] : "Diagrams";
-
-        if (!Directory.Exists(folderPath))
+        static void Main(string[] args)
         {
-            Console.WriteLine($"Folder not found: {folderPath}");
-            return;
-        }
-
-        // Retrieve all Visio files in the folder.
-        string[] files = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string file in files)
-        {
-            string ext = Path.GetExtension(file).ToLowerInvariant();
-            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx")
-                continue; // Skip non‑Visio files.
-
             try
             {
-                // Load the diagram.
-                Diagram diagram = new Diagram(file);
 
-                // Add page number placeholder to the right footer.
-                diagram.HeaderFooter.FooterRight = "Page: &p";
+                // Folder containing the Visio diagrams to process
+                string inputFolder = @"C:\Diagrams\Input";
+                // Folder where the updated diagrams will be saved
+                string outputFolder = @"C:\Diagrams\Output";
 
-                // Save the diagram (overwrites the original file).
-                diagram.Save(file, SaveFileFormat.Vsdx);
+                // Ensure the output directory exists
+                if (!Directory.Exists(outputFolder))
+                {
+                    Directory.CreateDirectory(outputFolder);
+                }
 
-                Console.WriteLine($"Processed: {Path.GetFileName(file)}");
+                // Process each .vsdx file in the input folder
+                foreach (string filePath in Directory.GetFiles(inputFolder, "*.vsdx"))
+                {
+                    try
+                    {
+                        // Load the diagram from file
+                        Diagram diagram = new Diagram(filePath);
+
+                        // Set the right footer to display the page number placeholder
+                        diagram.HeaderFooter.FooterRight = "Page: &p";
+
+                        // Determine output file path (same file name in the output folder)
+                        string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+
+                        // Save the updated diagram in VSDX format
+                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log any errors for the current file
+                        Console.WriteLine($"Error processing '{filePath}': {ex.Message}");
+                    }
+                }
+
+                Console.WriteLine("Footer update completed.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.DirectoryNotFoundException ex)
             {
-                Console.WriteLine($"Error processing {Path.GetFileName(file)}: {ex.Message}");
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
             }
-        }
     }
-}
+    }

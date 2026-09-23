@@ -1,47 +1,63 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+                // Path to the source Visio file
+                string sourcePath = "input.vsdx";
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Load the diagram
+                Diagram diagram = new Diagram(sourcePath);
 
-            // Access the first page of the diagram
-            Page page = diagram.Pages[0];
+                // Access the first page (ensure at least one page exists)
+                Page page = diagram.Pages[0];
 
-            // Add a CommandButton ActiveX control to the page
-            // Parameters: ControlType, PinX, PinY, Width, Height (all in inches)
-            long controlId = page.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
+                // -------------------------------------------------
+                // Add a CommandButton ActiveX control to the page
+                // Parameters: ControlType, pinX, pinY, width, height
+                // -------------------------------------------------
+                long cmdButtonShapeId = page.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
+                Shape cmdButtonShape = page.Shapes.GetShape(cmdButtonShapeId);
 
-            // Retrieve the shape that represents the newly added control
-            Shape controlShape = page.Shapes.GetShape(controlId);
+                // Cast the generic ActiveXControl to the specific type
+                CommandButtonActiveXControl cmdButton = (CommandButtonActiveXControl)cmdButtonShape.ActiveXControl;
 
-            // Cast the generic ActiveXControl to the specific CommandButton type
-            CommandButtonActiveXControl button = (CommandButtonActiveXControl)controlShape.ActiveXControl;
+                // Update properties of the command button
+                cmdButton.Caption = "Submit";
+                cmdButton.Width = 1.5;   // width in inches
+                cmdButton.Height = 0.5;  // height in inches
 
-            // Update properties of the ActiveX control
-            button.Caption = "Submit";                     // Set the button caption
-            controlShape.XForm.Width.Value = 2.0;          // Adjust width (in inches)
-            controlShape.XForm.Height.Value = 0.5;         // Adjust height (in inches)
+                // -------------------------------------------------
+                // Add a TextBox ActiveX control to the page
+                // -------------------------------------------------
+                long textBoxShapeId = page.AddActiveXControl(ControlType.TextBox, 4.0, 2.0, 2.0, 0.5);
+                Shape textBoxShape = page.Shapes.GetShape(textBoxShapeId);
 
-            // Save the modified diagram to a new file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Cast to TextBoxActiveXControl
+                TextBoxActiveXControl textBox = (TextBoxActiveXControl)textBoxShape.ActiveXControl;
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Update properties of the text box
+                textBox.Text = "Enter name here";
+
+                // -------------------------------------------------
+                // Save the modified diagram to a new file
+                // -------------------------------------------------
+                string outputPath = "output_modified.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Diagram saved successfully to: " + outputPath);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

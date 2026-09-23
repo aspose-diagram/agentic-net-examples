@@ -1,77 +1,76 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page (you can change the index as needed)
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape you want to clone.
-            // Here we simply take the first shape on the page.
-            // In a real scenario you might locate the shape by ID, NameU, etc.
-            Shape originalShape = page.Shapes[0];
-
-            // Get the master name of the original shape (used to create a shape of the same type)
-            string masterName = originalShape.Master?.Name ?? throw new Exception("Original shape has no master.");
-
-            // Add a new shape on the same page using the same master.
-            // Position it slightly offset so it does not overlap the original.
-            double offsetX = 1.0; // inches
-            double offsetY = 1.0; // inches
-            long newShapeId = page.AddShape(
-                originalShape.XForm.PinX.Value + offsetX,
-                originalShape.XForm.PinY.Value + offsetY,
-                masterName);
-
-            // Retrieve the newly created shape instance
-            Shape newShape = page.Shapes.GetShape(newShapeId);
-
-            // Copy all text fields from the original shape to the new shape
-            foreach (Field originalField in originalShape.Fields)
+            try
             {
-                // Create a new field and copy its core properties
-                Field clonedField = new Field();
 
-                // Copy the displayed value
-                clonedField.Value.Val = originalField.Value.Val;
+                // Path to the source Visio file
+                string inputPath = "source.vsdx";
+                // Path to the output Visio file
+                string outputPath = "cloned_output.vsdx";
 
-                // Copy the format string (if any)
-                clonedField.Format.Val = originalField.Format.Val;
+                // Load the existing diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Copy the field type (e.g., date, time, string)
-                clonedField.Type.Value = originalField.Type.Value;
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
 
-                // Copy the calendar setting (if present)
-                clonedField.Calendar.Value = originalField.Calendar.Value;
+                // Find the shape to clone (for example, the shape with ID 1)
+                // Adjust the ID as needed for your scenario
+                long originalShapeId = 1;
+                Shape originalShape = page.Shapes.GetShape(originalShapeId);
 
-                // Copy the deletion flag (preserve metadata about hidden fields)
-                clonedField.Del = originalField.Del;
+                // Retrieve master name from the original shape
+                string masterName = originalShape.Master?.Name;
+                if (string.IsNullOrEmpty(masterName))
+                {
+                    throw new Exception("Original shape does not have an associated master.");
+                }
 
-                // Add the cloned field to the new shape
-                newShape.Fields.Add(clonedField);
+                // Use the same position as the original shape for the cloned shape
+                double pinX = originalShape.XForm.PinX.Value;
+                double pinY = originalShape.XForm.PinY.Value;
+
+                // Add a new shape using the same master; the fourth parameter isCalculate must be a bool
+                long newShapeId = page.AddShape(pinX + 1.0, pinY + 1.0, masterName, false); // offset slightly to avoid overlap
+                Shape clonedShape = page.Shapes.GetShape(newShapeId);
+
+                // Copy all fields (metadata) from the original shape to the cloned shape
+                foreach (Field originalField in originalShape.Fields)
+                {
+                    Field newField = new Field();
+
+                    // Copy field value
+                    newField.Value.Val = originalField.Value.Val;
+
+                    // Copy field format
+                    newField.Format.Val = originalField.Format.Val;
+
+                    // Copy field type
+                    newField.Type.Value = originalField.Type.Value;
+
+                    // Copy field calendar (if any)
+                    newField.Calendar.Value = originalField.Calendar.Value;
+
+                    // Copy deletion flag
+                    newField.Del = originalField.Del;
+
+                    // Add the new field to the cloned shape
+                    clonedShape.Fields.Add(newField);
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Optionally, copy other metadata such as custom properties, user-defined cells, etc.
-            // For brevity, only fields are cloned in this example.
-
-            // Save the modified diagram to a new file
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

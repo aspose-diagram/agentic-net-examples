@@ -6,19 +6,25 @@ class Program
 {
     static void Main()
     {
-        // Create a new diagram instance
-        Diagram diagram = new Diagram();
+        try
+        {
 
-        // Ensure there is at least one page in the diagram
-        diagram.Pages.Add(new Page());
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-        // Insert automatic page numbering aligned to the right margin
-        diagram.HeaderFooter.FooterRight = "Page: &p";
+            // Insert a footer with automatic page numbering aligned to the right margin
+            diagram.HeaderFooter.FooterRight = "Page: &p";
 
-        // Optional: set the distance of the footer from the page edge (in inches)
-        diagram.HeaderFooter.FooterMargin.Value = 0.5;
+            // Optional: set the distance of the footer from the page edge (in inches)
+            diagram.HeaderFooter.FooterMargin.Value = 0.5;
 
-        // Save the diagram (VSDX format)
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

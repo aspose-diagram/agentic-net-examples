@@ -1,105 +1,91 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
-using System.IO; // Required for Path and File operations
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Input Visio file path
-        string inputPath;
-        if (args.Length > 0)
-        {
-            inputPath = args[0];
-        }
-        else
-        {
-            Console.Write("Enter the path to the Visio file: ");
-            inputPath = Console.ReadLine();
-        }
-
-        // Guard to ensure the file exists before proceeding
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Verify the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(inputPath))
-        {
-            Console.WriteLine("No file path provided. Exiting.");
-            return;
-        }
-
-        // Load the diagram
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(inputPath);
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Preserve original visibility of all layers on this page
+                var originalVisibilities = new Dictionary<Layer, BOOL>();
+                foreach (Layer l in page.PageSheet.Layers)
+                {
+                    originalVisibilities[l] = l.Visible.Value;
+                }
+
+                // Process each visible layer individually
+                foreach (Layer layer in page.PageSheet.Layers)
+                {
+                    // Skip layers that are not visible in the original document
+                    if (layer.Visible.Value != BOOL.True)
+                        continue;
+
+                    // Hide all layers on the current page
+                    foreach (Layer l in page.PageSheet.Layers)
+                    {
+                        l.Visible.Value = BOOL.False;
+                    }
+
+                    // Show only the current layer
+                    layer.Visible.Value = BOOL.True;
+
+                    // Prepare a safe file name for the layer
+                    string safeLayerName = SanitizeFileName(layer.Name.Value);
+                    string outputDir = Path.Combine("output");
+                    Directory.CreateDirectory(outputDir);
+                    // Use page.ID (unique numeric identifier) instead of non‑existent Index property
+                    string outputPath = Path.Combine(outputDir, $"{safeLayerName}_Page{page.ID}.pdf");
+
+                    // Configure PDF save options to export only the current page
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
+                    {
+                        PageIndex = page.ID // Export the current page only
+                    };
+
+                    // Save the diagram as PDF; only the current layer will be visible
+                    diagram.Save(outputPath, pdfOptions);
+                }
+
+                // Restore original layer visibility for the page
+                foreach (var kvp in originalVisibilities)
+                {
+                    kvp.Key.Visible.Value = kvp.Value;
+                }
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
+            // Write any runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
 
-        // Assume processing the first page (adjust if needed)
-        if (diagram.Pages.Count == 0)
+    // Helper to replace invalid filename characters with underscore
+    private static string SanitizeFileName(string name)
+    {
+        foreach (char c in Path.GetInvalidFileNameChars())
         {
-            Console.WriteLine("The diagram contains no pages.");
-            return;
+            name = name.Replace(c, '_');
         }
-
-        Page page = diagram.Pages[0];
-
-        // Store original visibility of each layer
-        var originalVisibility = new Dictionary<Layer, BOOL>();
-        foreach (Layer layer in page.PageSheet.Layers)
-        {
-            originalVisibility[layer] = layer.Visible.Value;
-        }
-
-        // Iterate over layers and export each visible layer as a separate PDF
-        foreach (Layer layer in page.PageSheet.Layers)
-        {
-            if (layer.Visible.Value != BOOL.True)
-                continue; // Skip invisible layers
-
-            // Hide all layers
-            foreach (Layer l in page.PageSheet.Layers)
-            {
-                l.Visible.Value = BOOL.False;
-            }
-
-            // Show only the current layer
-            layer.Visible.Value = BOOL.True;
-
-            // Prepare output file name (use layer name, replace invalid path chars)
-            string safeLayerName = string.Join("_", layer.Name.Value.Split(Path.GetInvalidFileNameChars()));
-            string outputPath = $"{safeLayerName}.pdf";
-
-            // Save the diagram as PDF with the current layer visible
-            var pdfOptions = new PdfSaveOptions();
-            try
-            {
-                diagram.Save(outputPath, pdfOptions);
-                Console.WriteLine($"Exported layer '{layer.Name.Value}' to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to export layer '{layer.Name.Value}': {ex.Message}");
-            }
-
-            // Restore original visibility for all layers before next iteration
-            foreach (Layer l in page.PageSheet.Layers)
-            {
-                l.Visible.Value = originalVisibility[l];
-            }
-        }
-
-        // Cleanup
-        diagram.Dispose();
+        return name;
     }
 }

@@ -1,44 +1,43 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        try
         {
-            try
+
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output_locked.vsdx";
+
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and lock the layer named "Architecture"
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio diagram
-                string inputPath = "input.vsdx";
-
-                // Path for the locked diagram output
-                string outputPath = "output_locked.vsdx";
-
-                // Load the diagram from file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and their layers
-                foreach (Page page in diagram.Pages)
+                // Access the collection of layers on the current page
+                foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    foreach (Layer layer in page.PageSheet.Layers)
+                    // Compare the layer name (case‑sensitive) with the target name
+                    if (layer.Name.Value == "Architecture")
                     {
-                        // Find the layer named "Architecture"
-                        if (layer.Name.Value == "Architecture")
-                        {
-                            // Hide the layer to effectively prevent editing
-                            // (Visio does not expose a direct lock flag for layers)
-                            layer.Visible.Value = BOOL.False;
-                        }
+                        // Prevent edits by making the layer invisible (Visio treats invisible layers as locked)
+                        layer.Visible.Value = BOOL.False;
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram preserving the VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

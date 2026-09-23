@@ -5,41 +5,44 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect input Visio file and output PDF file paths as arguments
-        if (args.Length < 2)
+        try
         {
-            Console.WriteLine("Usage: <inputVisioFile> <outputPdfFile>");
-            return;
-        }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output PDF file path
+            string outputPath = "output.pdf";
 
-        // Load the diagram from the specified file
-        Diagram diagram = new Diagram(inputPath);
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Hide the layer named "Details" on every page
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Layer layer in page.PageSheet.Layers)
+            // Hide the layer named "Details" on all pages
+            foreach (Page page in diagram.Pages)
             {
-                if (layer.Name.Value == "Details")
+                foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    layer.Visible.Value = BOOL.False;
+                    if (layer.Name.Value == "Details")
+                    {
+                        layer.Visible.Value = BOOL.False;
+                    }
                 }
             }
+
+            // Set up PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.ExportHiddenPage = false;
+            pdfOptions.DefaultFont = "Arial";
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+            // Export the diagram to PDF
+            diagram.Save(outputPath, pdfOptions);
+
         }
-
-        // Configure PDF save options to exclude hidden pages/layers
-        PdfSaveOptions pdfOptions = new PdfSaveOptions
+        catch (System.IO.FileNotFoundException ex)
         {
-            ExportHiddenPage = false,
-            DefaultFont = "Arial"
-        };
-
-        // Export the diagram to PDF
-        diagram.Save(outputPath, pdfOptions);
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

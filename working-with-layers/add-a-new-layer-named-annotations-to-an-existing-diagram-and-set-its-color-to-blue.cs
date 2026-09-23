@@ -10,35 +10,25 @@ class Program
         try
         {
 
-            // Path to the existing Visio diagram
+            // Load an existing Visio diagram
             string inputPath = "input.vsdx";
-            // Path where the modified diagram will be saved
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and add the new layer
-            foreach (Page page in diagram.Pages)
-            {
-                // Create a new layer instance
-                Layer layer = new Layer();
+            // Access the first page (layers are stored per page)
+            Page page = diagram.Pages[0];
 
-                // Set the layer name
-                layer.Name.Value = "Annotations";
+            // Create a new layer named "Annotations"
+            Layer layer = new Layer();
+            layer.Name.Value = "Annotations";
+            layer.Visible.Value = BOOL.True;          // Make the layer visible
+            layer.IsColorChecked = BOOL.True;         // Enable color for the layer
+            layer.Color.Value = "#0000FF";            // Set layer color to blue (hex)
 
-                // Enable the color for the layer
-                layer.IsColorChecked = BOOL.True;
-
-                // Set the layer color to blue (hex format)
-                layer.Color.Value = "#0000FF";
-
-                // Add the layer to the page's layer collection
-                page.PageSheet.Layers.Add(layer);
-            }
+            // Add the new layer to the page's layer collection
+            page.PageSheet.Layers.Add(layer);
 
             // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -2,6 +2,7 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
 {
@@ -10,37 +11,40 @@ class Program
         try
         {
 
-            // Paths to the source Visio file and the output PDF
+            // Input Visio file path
             string inputPath = "input.vsdx";
+
+            // Output PDF file path
             string outputPath = "output.pdf";
 
             // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Set print visibility of the "Confidential" layer to false on every page
-            foreach (Page page in diagram.Pages)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Layer layer in page.PageSheet.Layers)
+                // Iterate through all pages to locate the "Confidential" layer
+                foreach (Page page in diagram.Pages)
                 {
-                    if (layer.Name.Value == "Confidential")
+                    foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        layer.Print.Value = BOOL.False;
+                        // Compare layer name (Str2Value) with the target name
+                        if (layer.Name.Value == "Confidential")
+                        {
+                            // Set the layer's print visibility to false
+                            layer.Print.Value = BOOL.False;
+                        }
                     }
                 }
+
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Optional: exclude hidden pages from the PDF
+                pdfOptions.ExportHiddenPage = false;
+
+                // Save the diagram as a PDF
+                diagram.Save(outputPath, pdfOptions);
             }
 
-            // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            pdfOptions.ExportHiddenPage = false;
-
-            // Save the diagram as a PDF
-            diagram.Save(outputPath, pdfOptions);
-
-            // Clean up
-            diagram.Dispose();
-
-            Console.WriteLine("Print‑ready PDF generated successfully.");
+            Console.WriteLine("PDF generated successfully with 'Confidential' layer hidden from printing.");
 
         }
         catch (System.IO.FileNotFoundException ex)

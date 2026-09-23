@@ -1,54 +1,39 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through all pages and shapes to find the triangle shape
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                bool triangleFound = false;
-
-                // Iterate through all pages and shapes to locate a triangle shape
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Ensure the shape has a master and that the master name is "Triangle"
+                    if (shape.Master != null && shape.Master.Name == "Triangle")
                     {
-                        // Identify the triangle by its master name (e.g., "Triangle")
-                        if (shape.Master != null && shape.Master.Name == "Triangle")
-                        {
-                            // Apply a solid fill pattern
-                            shape.Fill.FillPattern.Value = 1; // 1 = solid
-                            // Set the foreground fill color to solid red
-                            shape.Fill.FillForegnd.Value = "#FF0000";
-
-                            triangleFound = true;
-                            // If multiple triangles need to be colored, remove the break statement
-                            break;
-                        }
+                        // Apply a solid fill pattern (value 1) and set the foreground color to solid red
+                        shape.Fill.FillPattern.Value = 1;               // Solid fill
+                        shape.Fill.FillForegnd.Value = "#FF0000";       // Red color in HEX
                     }
-
-                    if (triangleFound)
-                        break;
                 }
-
-                if (!triangleFound)
-                    throw new Exception("Triangle shape not found in the diagram.");
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

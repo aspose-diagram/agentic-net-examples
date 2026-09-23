@@ -3,31 +3,42 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.ActiveXControls;
 
-namespace VisioActiveXUpdater
+namespace VisioActiveXConfigurator
 {
-    // DTO representing a control configuration entry in the JSON file
+    // DTO for JSON configuration
+    public class ConfigRoot
+    {
+        public List<ControlConfig> Controls { get; set; } = new();
+    }
+
     public class ControlConfig
     {
-        public long ShapeId { get; set; }               // ID of the shape containing the ActiveX control
-        public string ControlType { get; set; }         // e.g., "CommandButton", "Image", "CheckBox"
-        public string Caption { get; set; }             // For CommandButton
-        public double Width { get; set; }               // Desired width (in inches)
-        public double Height { get; set; }              // Desired height (in inches)
-        public string ImagePath { get; set; }           // Path to image file for ImageActiveXControl
-        public string CheckValue { get; set; }          // "Checked" or "Unchecked" for CheckBoxActiveXControl
+        public long ShapeId { get; set; }
+
+        // Common properties
+        public string? Caption { get; set; }
+        public double? Width { get; set; }
+        public double? Height { get; set; }
+
+        // TextBox specific
+        public string? Text { get; set; }
+
+        // CheckBox specific
+        public CheckValueType? CheckValue { get; set; }
+
+        // SpinButton specific
+        public int? Position { get; set; }
     }
 
     public class Program
     {
-        public static void Main(string[] args)
+        static void Main(string[] args)
         {
-            // Expected arguments: [0] Visio file path, [1] JSON config path, [2] output Visio file path
-            if (args.Length != 3)
+            if (args.Length < 3)
             {
-                Console.WriteLine("Usage: VisioActiveXUpdater <inputVisio> <configJson> <outputVisio>");
+                Console.WriteLine("Usage: VisioActiveXConfigurator <inputVisioPath> <configJsonPath> <outputVisioPath>");
                 return;
             }
 
@@ -35,149 +46,102 @@ namespace VisioActiveXUpdater
             string jsonPath = args[1];
             string outputPath = args[2];
 
-            // Load JSON configuration
-            List<ControlConfig> configs;
-            try
-            {
-                string jsonContent = File.ReadAllText(jsonPath);
-                configs = JsonSerializer.Deserialize<List<ControlConfig>>(jsonContent);
-                if (configs == null)
-                {
-                    Console.WriteLine("Failed to deserialize JSON configuration.");
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error reading JSON configuration: {ex.Message}");
-                return;
-            }
-
             // Load the Visio diagram
-            Diagram diagram;
-            try
+            Diagram diagram = new Diagram(visioPath);
+
+            // Read and deserialize JSON configuration
+            string jsonContent = File.ReadAllText(jsonPath);
+            ConfigRoot config = JsonSerializer.Deserialize<ConfigRoot>(jsonContent);
+            if (config == null || config.Controls == null)
             {
-                diagram = new Diagram(visioPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading Visio file: {ex.Message}");
+                Console.WriteLine("Invalid or empty configuration.");
                 return;
             }
 
-            // Apply each configuration entry to the corresponding shape
-            foreach (var cfg in configs)
+            // Apply configuration to each specified ActiveX control
+            foreach (ControlConfig ctrlCfg in config.Controls)
             {
-                // Locate the shape by ID across all pages
-                Shape targetShape = null;
-                foreach (Page page in diagram.Pages)
+                Shape shape = FindShapeById(diagram, ctrlCfg.ShapeId);
+                if (shape == null)
                 {
-                    try
-                    {
-                        // GetShape throws if the ID does not exist on this page; catch and continue
-                        targetShape = page.Shapes.GetShape(cfg.ShapeId);
-                        if (targetShape != null)
-                            break;
-                    }
-                    catch
-                    {
-                        // Ignore and continue searching other pages
-                    }
-                }
-
-                if (targetShape == null)
-                {
-                    Console.WriteLine($"Shape with ID {cfg.ShapeId} not found.");
+                    Console.WriteLine($"Shape with ID {ctrlCfg.ShapeId} not found.");
                     continue;
                 }
 
-                // Ensure the shape actually hosts an ActiveX control
-                if (targetShape.ActiveXControl == null)
+                if (shape.ActiveXControl == null)
                 {
-                    Console.WriteLine($"Shape ID {cfg.ShapeId} does not contain an ActiveX control.");
+                    Console.WriteLine($"Shape ID {ctrlCfg.ShapeId} does not contain an ActiveX control.");
                     continue;
                 }
 
-                // Determine control type and apply properties
-                ControlType actualType = targetShape.ActiveXControl.Type;
+                var axControl = shape.ActiveXControl;
 
-                // Use the string from JSON to match the enum (case‑insensitive)
-                if (!Enum.TryParse<ControlType>(cfg.ControlType, true, out ControlType expectedType))
-                {
-                    Console.WriteLine($"Invalid ControlType '{cfg.ControlType}' in configuration.");
-                    continue;
-                }
-
-                if (actualType != expectedType)
-                {
-                    Console.WriteLine($"Shape ID {cfg.ShapeId} control type mismatch (expected {expectedType}, found {actualType}).");
-                    continue;
-                }
-
-                // Apply properties based on specific control class
-                switch (actualType)
+                // Apply properties based on control type
+                switch (axControl.Type)
                 {
                     case ControlType.CommandButton:
-                        {
-                            var btn = (CommandButtonActiveXControl)targetShape.ActiveXControl;
-                            if (!string.IsNullOrEmpty(cfg.Caption))
-                                btn.Caption = cfg.Caption;
-                            btn.Width = cfg.Width;
-                            btn.Height = cfg.Height;
-                            break;
-                        }
-                    case ControlType.Image:
-                        {
-                            var imgCtrl = (ImageActiveXControl)targetShape.ActiveXControl;
-                            if (!string.IsNullOrEmpty(cfg.ImagePath) && File.Exists(cfg.ImagePath))
-                            {
-                                imgCtrl.Picture = File.ReadAllBytes(cfg.ImagePath);
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Image file '{cfg.ImagePath}' not found for shape ID {cfg.ShapeId}.");
-                            }
-                            imgCtrl.Width = cfg.Width;
-                            imgCtrl.Height = cfg.Height;
-                            break;
-                        }
+                        var btn = (CommandButtonActiveXControl)axControl;
+                        if (ctrlCfg.Caption != null) btn.Caption = ctrlCfg.Caption;
+                        if (ctrlCfg.Width.HasValue) btn.Width = ctrlCfg.Width.Value;
+                        if (ctrlCfg.Height.HasValue) btn.Height = ctrlCfg.Height.Value;
+                        break;
+
+                    case ControlType.TextBox:
+                        var txtBox = (TextBoxActiveXControl)axControl;
+                        if (ctrlCfg.Text != null) txtBox.Text = ctrlCfg.Text;
+                        if (ctrlCfg.Width.HasValue) txtBox.Width = ctrlCfg.Width.Value;
+                        if (ctrlCfg.Height.HasValue) txtBox.Height = ctrlCfg.Height.Value;
+                        break;
+
                     case ControlType.CheckBox:
-                        {
-                            var chkBox = (CheckBoxActiveXControl)targetShape.ActiveXControl;
-                            // Set checked/unchecked state
-                            if (string.Equals(cfg.CheckValue, "Checked", StringComparison.OrdinalIgnoreCase))
-                            {
-                                chkBox.Value = CheckValueType.Checked;
-                            }
-                            else if (string.Equals(cfg.CheckValue, "Unchecked", StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Unchecked is represented by the integer value 0
-                                chkBox.Value = (CheckValueType)0;
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Invalid CheckValue '{cfg.CheckValue}' for shape ID {cfg.ShapeId}.");
-                            }
-                            chkBox.Width = cfg.Width;
-                            chkBox.Height = cfg.Height;
-                            break;
-                        }
+                        var chkBox = (CheckBoxActiveXControl)axControl;
+                        if (ctrlCfg.CheckValue.HasValue) chkBox.Value = ctrlCfg.CheckValue.Value;
+                        if (ctrlCfg.Width.HasValue) chkBox.Width = ctrlCfg.Width.Value;
+                        if (ctrlCfg.Height.HasValue) chkBox.Height = ctrlCfg.Height.Value;
+                        break;
+
+                    case ControlType.SpinButton:
+                        var spin = (SpinButtonActiveXControl)axControl;
+                        if (ctrlCfg.Position.HasValue) spin.Position = ctrlCfg.Position.Value;
+                        if (ctrlCfg.Width.HasValue) spin.Width = ctrlCfg.Width.Value;
+                        if (ctrlCfg.Height.HasValue) spin.Height = ctrlCfg.Height.Value;
+                        break;
+
+                    case ControlType.Image:
+                        // ImageActiveXControl uses the Picture property (byte[]). Example placeholder:
+                        // if (ctrlCfg.ImagePath != null) imgCtrl.Picture = File.ReadAllBytes(ctrlCfg.ImagePath);
+                        // No direct properties defined in the current config schema.
+                        break;
+
                     default:
-                        Console.WriteLine($"Control type {actualType} is not handled by this utility.");
+                        Console.WriteLine($"Unsupported ActiveX control type on shape ID {ctrlCfg.ShapeId}.");
                         break;
                 }
             }
 
             // Save the modified diagram
-            try
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+        }
+
+        // Helper to locate a shape by its unique ID across all pages
+        private static Shape FindShapeById(Diagram diagram, long shapeId)
+        {
+            foreach (Page page in diagram.Pages)
             {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+                // Shapes.GetShape accepts a long ID
+                try
+                {
+                    Shape shape = page.Shapes.GetShape(shapeId);
+                    if (shape != null)
+                        return shape;
+                }
+                catch
+                {
+                    // Ignore and continue searching
+                }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error saving diagram: {ex.Message}");
-            }
+            return null;
         }
     }
 }

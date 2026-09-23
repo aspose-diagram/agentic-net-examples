@@ -9,8 +9,8 @@ class Program
         try
         {
 
-            // Relative path to the source VSD file
-            string relativePath = @"Diagrams\sample.vsd";
+            // Example relative path to a VSD diagram
+            string relativePath = @"Diagrams\SampleDiagram.vsd";
 
             // Resolve the relative path to an absolute path
             string absolutePath = Path.GetFullPath(relativePath);
@@ -18,20 +18,12 @@ class Program
             // Load the diagram using the absolute path
             Diagram diagram = new Diagram(absolutePath);
 
-            // Example operation: modify the diagram (placeholder for actual logic)
+            // Perform any required operations on the diagram here
             // ...
 
-            // Define the output path (saving in the same directory with a new name)
-            string outputPath = Path.Combine(Path.GetDirectoryName(absolutePath) ?? string.Empty, "sample_output.vsd");
-
-            // Save the diagram using the absolute output path
+            // Example: save the diagram to a new file (optional)
+            string outputPath = Path.Combine(Path.GetDirectoryName(absolutePath), "SampleDiagram_Processed.vsd");
             diagram.Save(outputPath, SaveFileFormat.Vsd);
-
-            // Clean up resources
-            diagram.Dispose();
-
-            Console.WriteLine("Diagram loaded from: " + absolutePath);
-            Console.WriteLine("Diagram saved to: " + outputPath);
 
         }
         catch (System.IO.DirectoryNotFoundException ex)

@@ -3,35 +3,48 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ProgressStreamProvider : IStreamProvider
+class ConsoleProgressStreamProvider : IStreamProvider
 {
-    private readonly int _total;
-    private int _current;
+    private int _currentCount = 0;
+    private readonly int _expectedCount;
 
-    public ProgressStreamProvider(int total)
+    public ConsoleProgressStreamProvider(int expectedCount)
     {
-        _total = total;
-        _current = 0;
+        _expectedCount = expectedCount > 0 ? expectedCount : 1;
     }
 
-    // Called by Aspose.Diagram when it needs a stream for a part of the export
+    // Called by Aspose.Diagram when a new stream is required (e.g., for an image file during HTML export)
     public void InitStream(StreamProviderOptions options)
     {
-        // Update progress counter
-        _current++;
+        _currentCount++;
+        DrawProgress(_currentCount, _expectedCount);
 
-        // Simple console progress bar
-        Console.Write($"\rSaving streams: {_current}/{_total}");
-
-        // Provide a stream for the exporter (using MemoryStream here)
+        // Provide a writable stream for the resource. Using MemoryStream as a placeholder.
         options.Stream = new MemoryStream();
     }
 
-    // Called when the exporter finishes writing to the stream
+    // Called after the stream has been written.
     public void CloseStream(StreamProviderOptions options)
     {
-        // Dispose the stream to release resources
+        // Ensure the stream is properly disposed.
         options.Stream?.Dispose();
+    }
+
+    private void DrawProgress(int current, int total)
+    {
+        const int barWidth = 50;
+        double ratio = (double)current / total;
+        int filled = (int)(barWidth * ratio);
+
+        Console.Write("\r[");
+        Console.Write(new string('#', filled));
+        Console.Write(new string('-', barWidth - filled));
+        Console.Write($"] {current}/{total}");
+
+        if (current >= total)
+        {
+            Console.WriteLine();
+        }
     }
 }
 
@@ -42,23 +55,17 @@ class Program
         try
         {
 
-            // Load an existing diagram
+            // Load an existing Visio diagram.
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Determine how many streams will be requested (e.g., one per page)
-            int totalStreams = diagram.Pages.Count;
+            // Prepare HTML export options and attach the custom stream provider.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            // Estimate the number of resources (images, CSS files, etc.) that will be generated.
+            // Adjust this number based on the actual diagram complexity.
+            htmlOptions.StreamProvider = new ConsoleProgressStreamProvider(expectedCount: 10);
 
-            // Configure HTML save options with the custom progress stream provider
-            HTMLSaveOptions saveOptions = new HTMLSaveOptions
-            {
-                StreamProvider = new ProgressStreamProvider(totalStreams)
-            };
-
-            // Save the diagram to HTML; the progress bar updates on each stream request
-            diagram.Save("output.html", saveOptions);
-
-            // Move to the next line after progress output
-            Console.WriteLine();
+            // Export the diagram to HTML. The progress bar updates each time a stream is requested.
+            diagram.Save("output.html", htmlOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

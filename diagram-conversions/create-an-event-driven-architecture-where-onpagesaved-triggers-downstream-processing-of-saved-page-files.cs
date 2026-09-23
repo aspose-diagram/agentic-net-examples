@@ -3,97 +3,83 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramPageSaveEventDemo
+namespace DiagramPageProcessing
 {
-    // Implements the page saving callback for PDF export.
-    // PageStartSaving is called before a page is rendered.
-    // PageEndSaving is called after a page has been rendered.
-    public class MyPageSavingCallback : IPageSavingCallback
+    // Callback that is invoked after each page is saved during PDF export.
+    class PageSavedCallback : IPageSavingCallback
     {
-        // Store the output PDF path so we can reference it in the callback.
-        private readonly string _outputPdfPath;
+        private readonly string _outputDirectory;
+        private readonly string _baseFileName;
 
-        // Constructor receives the PDF output path from the caller.
-        public MyPageSavingCallback(string outputPdfPath)
+        public PageSavedCallback(string outputDirectory, string baseFileName)
         {
-            _outputPdfPath = outputPdfPath;
+            _outputDirectory = outputDirectory;
+            _baseFileName = baseFileName;
         }
 
+        // Called before a page starts saving – not used here.
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            // Log the start of page rendering.
-            Console.WriteLine($"[Info] Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+            // No pre‑processing required.
         }
 
+        // Called after a page has been saved.
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            // Log the completion of page rendering.
-            Console.WriteLine($"[Info] Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+            int pageIndex = args.PageIndex; // zero‑based index
+            int totalPages = args.PageCount;
 
-            // Example downstream processing: copy the generated PDF to a backup folder.
-            try
-            {
-                // Use the stored PDF path (the whole document contains all pages).
-                string sourcePdf = _outputPdfPath;
-                // Build a backup folder next to the PDF.
-                string backupFolder = Path.Combine(Path.GetDirectoryName(sourcePdf) ?? string.Empty, "Backup");
-                Directory.CreateDirectory(backupFolder);
+            // Example downstream processing: log and define a per‑page file name.
+            string pageFileName = $"{_baseFileName}_Page{pageIndex + 1}.pdf";
+            string pageFilePath = Path.Combine(_outputDirectory, pageFileName);
 
-                // Create a backup file name that includes the page number for illustration.
-                string backupFile = Path.Combine(backupFolder,
-                    $"Page_{args.PageIndex + 1}_{Path.GetFileName(sourcePdf)}");
+            Console.WriteLine($"Page {pageIndex + 1}/{totalPages} saved. Downstream processing can use: {pageFilePath}");
 
-                // Copy the whole PDF as a placeholder for per‑page handling.
-                File.Copy(sourcePdf, backupFile, overwrite: true);
-                Console.WriteLine($"[Info] Backup created: {backupFile}");
-            }
-            catch (Exception ex)
-            {
-                // Log any errors that occur during downstream processing.
-                Console.WriteLine($"[Error] Downstream processing failed: {ex.Message}");
-            }
+            // Insert custom downstream logic here (e.g., move the file, upload, etc.).
         }
     }
 
-    public class Program
+    class Program
     {
-        public static void Main()
+        static void Main(string[] args)
         {
-            // Input Visio file (replace with actual path).
-            string inputPath = "input.vsdx";
-            // Guard: ensure the input file exists before proceeding.
-            if (!File.Exists(inputPath))
-            {
-                Console.Error.WriteLine($"File not found: {inputPath}");
-                return;
-            }
-
-            // Output PDF file.
-            string outputPath = "output.pdf";
-
             try
             {
-                // Load the diagram from the input file.
+
+                // Input Visio file path (adjust as needed).
+                string inputPath = "input.vsdx";
+
+                // Directory where downstream files will be referenced.
+                string outputDir = "ProcessedPages";
+                Directory.CreateDirectory(outputDir);
+
+                // Output PDF file that contains the whole diagram.
+                string outputPdfPath = Path.Combine(outputDir, "FullDiagram.pdf");
+
+                // Load the diagram.
                 using (Diagram diagram = new Diagram(inputPath))
                 {
                     // Configure PDF save options.
                     PdfSaveOptions pdfOptions = new PdfSaveOptions
                     {
-                        DefaultFont = "Arial",
-                        // Assign the custom callback to handle per‑page events.
-                        PageSavingCallback = new MyPageSavingCallback(outputPath)
+                        // Example: set a default font to avoid missing font warnings.
+                        DefaultFont = "Arial"
                     };
 
-                    // Save the diagram as PDF; the callback will be invoked for each page.
-                    diagram.Save(outputPath, pdfOptions);
-                    Console.WriteLine($"[Info] Diagram saved to {outputPath}");
+                    // Attach the page‑saved callback.
+                    pdfOptions.PageSavingCallback = new PageSavedCallback(outputDir, "FullDiagram");
+
+                    // Save the diagram as PDF; the callback will be invoked per page.
+                    diagram.Save(outputPdfPath, pdfOptions);
                 }
+
+                Console.WriteLine("Diagram export completed.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                // Log any errors that occur during loading or saving.
-                Console.Error.WriteLine($"[Error] Operation failed: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
+    }
     }
 }

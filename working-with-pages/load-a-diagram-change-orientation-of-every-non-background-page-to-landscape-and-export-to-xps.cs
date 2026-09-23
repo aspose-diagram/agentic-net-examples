@@ -5,31 +5,34 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
             // Input Visio file path
             string inputPath = "input.vsdx";
+
             // Output XPS file path
             string outputPath = "output.xps";
 
-            // Load the diagram from file
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Change orientation to Landscape for every non‑background page
+            // Set orientation of every non‑background page to Landscape
             foreach (Page page in diagram.Pages)
             {
-                if (page.Background == BOOL.False)
+                if (page.Background != BOOL.True)
                 {
                     page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                 }
             }
 
-            // Export the diagram to XPS
+            // Configure XPS save options (do not export hidden pages)
             XPSSaveOptions options = new XPSSaveOptions();
-            options.ExportHiddenPage = false; // export only foreground pages
+            options.ExportHiddenPage = false;
+
+            // Save the diagram as XPS
             diagram.Save(outputPath, options);
 
         }

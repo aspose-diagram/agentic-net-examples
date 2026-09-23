@@ -9,36 +9,42 @@ class Program
         try
         {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path to the output Visio file
-            string outputPath = "output.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Flag to indicate whether the 'Security' layer was found
+            bool securityLayerFound = false;
 
-            // Define the metadata to attach
-            string metadataKey = "CustomMeta";
-            string metadataValue = "DownstreamProcessing";
-
-            // Iterate through all pages to find the 'Security' layer
+            // Iterate through all pages and their layers to locate the 'Security' layer
             foreach (Page page in diagram.Pages)
             {
-                // Access the layer collection via the page's sheet
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Compare the layer name (Str2Value) with the target name
                     if (layer.Name.Value == "Security")
                     {
-                        // Append metadata to the layer name using a delimiter
-                        // Example format: Security|CustomMeta=DownstreamProcessing
-                        layer.Name.Value = $"Security|{metadataKey}={metadataValue}";
+                        securityLayerFound = true;
+                        // The layer exists – you can perform additional layer-specific actions here
+                        // (e.g., change visibility, print info, etc.)
                     }
                 }
             }
 
+            if (!securityLayerFound)
+            {
+                throw new Exception("Layer named 'Security' was not found in the diagram.");
+            }
+
+            // Add a custom metadata property to the diagram that references the Security layer
+            var customProp = new CustomProp
+            {
+                Name = "SecurityLayerMetadata",
+                PropType = PropType.String,
+                CustomValue = { ValueString = "Processed" }
+            };
+            diagram.DocumentProps.CustomProps.Add(customProp);
+
             // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,43 +1,50 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.AutoLayout;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Get the first page (or any specific page)
-            Page page = diagram.Pages[0];
-
-            // Configure autospace options
-            AutoSpaceOptions options = new AutoSpaceOptions();
-            options.DistanceInHorizontal = 0.5; // horizontal spacing in inches
-            options.DistanceInVertical = 0.5;   // vertical spacing in inches
-
             try
             {
-                // Auto‑space all shapes on the page using the specified options
-                page.AutoSpaceShapes(page.Shapes, options);
+
+                // Paths for input and output diagrams
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Get the first page (or any specific page you need)
+                Page page = diagram.Pages[0];
+
+                // Configure auto-space options
+                AutoSpaceOptions options = new AutoSpaceOptions
+                {
+                    DistanceInHorizontal = 2,
+                    DistanceInVertical = 2
+                };
+
+                // Attempt to auto-space shapes and handle any runtime errors gracefully
+                try
+                {
+                    page.AutoSpaceShapes(page.Shapes, options);
+                    Console.WriteLine("Auto-spacing completed successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Auto-spacing failed: {ex.Message}");
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                // Gracefully handle any runtime errors that occur during auto‑spacing
-                Console.WriteLine($"Auto‑spacing failed: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

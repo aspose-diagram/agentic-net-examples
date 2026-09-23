@@ -10,77 +10,65 @@ class Program
             try
             {
 
-                // Input Visio file containing shapes with hyperlinks
-                string inputPath = "input.vsdx";
-                // Output image file that will contain the visual map
-                string outputPath = "hyperlink_map.png";
+                // Path to the source Visio file
+                string sourcePath = "input.vsdx";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Load the source diagram
+                Diagram diagram = new Diagram(sourcePath);
 
-                // Iterate through each page in the diagram
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Use the first page for processing
+                Page page = diagram.Pages[0];
+
+                // Iterate all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    // Skip shapes without hyperlinks
+                    if (shape.Hyperlinks == null || shape.Hyperlinks.Count == 0)
+                        continue;
 
-                    // Collect all shapes on the page for quick lookup by NameU
-                    var shapeLookup = new System.Collections.Generic.Dictionary<string, Shape>();
-                    foreach (Shape shp in page.Shapes)
+                    // Process each hyperlink attached to the shape
+                    foreach (Hyperlink link in shape.Hyperlinks)
                     {
-                        if (!string.IsNullOrEmpty(shp.NameU))
+                        // Only handle internal links (SubAddress) that point to another shape
+                        string subAddress = link.SubAddress?.Value;
+                        if (string.IsNullOrEmpty(subAddress))
+                            continue; // external URL – ignore for visual map
+
+                        // Attempt to locate the target shape by its universal name (NameU)
+                        Shape targetShape = null;
+                        foreach (Shape candidate in page.Shapes)
                         {
-                            shapeLookup[shp.NameU] = shp;
+                            if (candidate.NameU == subAddress)
+                            {
+                                targetShape = candidate;
+                                break;
+                            }
                         }
-                    }
 
-                    // Iterate again to process hyperlinks
-                    foreach (Shape sourceShape in page.Shapes)
-                    {
-                        if (sourceShape.Hyperlinks == null)
+                        // If target not found, skip this link
+                        if (targetShape == null)
                             continue;
 
-                        foreach (Hyperlink link in sourceShape.Hyperlinks)
-                        {
-                            // Consider only internal hyperlinks (SubAddress)
-                            string subAddr = link.SubAddress?.Value;
-                            if (string.IsNullOrEmpty(subAddr))
-                                continue;
+                        // Create a dynamic connector shape (master name "Dynamic connector")
+                        long connectorId = diagram.AddShape(0, 0, "Dynamic connector", 0);
+                        Shape connector = page.Shapes.GetShape(connectorId);
 
-                            // SubAddress may be in the form "PageName!ShapeName" or just "ShapeName"
-                            string targetShapeName = subAddr;
-                            if (subAddr.Contains("!"))
-                            {
-                                // Split and ignore page part for this simple example
-                                var parts = subAddr.Split('!');
-                                if (parts.Length == 2)
-                                    targetShapeName = parts[1];
-                            }
-
-                            // Find the target shape on the same page
-                            if (!shapeLookup.TryGetValue(targetShapeName, out Shape targetShape))
-                            {
-                                Console.WriteLine($"Target shape '{targetShapeName}' not found on page '{page.Name}'.");
-                                continue;
-                            }
-
-                            // Add a connector shape (Dynamic connector) to the page
-                            long connectorId = diagram.AddShape(0, 0, "Dynamic connector", pageIndex);
-                            // Connect source shape to target shape using the connector
-                            page.ConnectShapesViaConnector(
-                                sourceShape.ID,
-                                ConnectionPointPlace.Bottom,
-                                targetShape.ID,
-                                ConnectionPointPlace.Top,
-                                connectorId);
-                        }
+                        // Connect the source shape to the target shape using the connector
+                        // Use right side of source and left side of target as connection points
+                        page.ConnectShapesViaConnector(
+                            shape.ID,
+                            ConnectionPointPlace.Right,
+                            targetShape.ID,
+                            ConnectionPointPlace.Left,
+                            connectorId);
                     }
                 }
 
-                // Export the diagram (with added connectors) as a PNG image
+                // Export the resulting diagram (with connectors) as a PNG image
                 ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                diagram.Save(outputPath, saveOptions);
+                diagram.Save("hyperlink_map.png", saveOptions);
 
-                Console.WriteLine($"Hyperlink connection map saved to '{outputPath}'.");
+                Console.WriteLine("Hyperlink connection map has been generated and saved as 'hyperlink_map.png'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

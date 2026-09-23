@@ -1,81 +1,79 @@
+using System.IO;
 using System;
+using System.Data;
 using Aspose.Diagram;
-using System.Data.SqlClient;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file (adjust as needed)
+            string visioPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(visioPath);
+
+            // Create an in‑memory table that mimics a relational database table for comments
+            DataTable commentTable = new DataTable("Comments");
+            commentTable.Columns.Add("CommentId", typeof(int));
+            commentTable.Columns.Add("ShapeId", typeof(int));
+            commentTable.Columns.Add("CommentText", typeof(string));
+            commentTable.Columns.Add("ReviewerId", typeof(int));
+
+            // Iterate through all pages and extract comment (annotation) data
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file to be processed
-                string visioFilePath = @"C:\Path\To\YourDiagram.vsdx";
-
-                // Connection string to the relational database (replace with actual values)
-                string connectionString = @"Server=YOUR_SERVER;Database=YOUR_DATABASE;Trusted_Connection=True;";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioFilePath);
-
-                // Open a SQL connection
-                using (SqlConnection sqlConnection = new SqlConnection(connectionString))
+                // Annotations are stored at the page level
+                foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    sqlConnection.Open();
+                    int commentId = annotation.MarkerIndex.Value;   // Unique identifier of the comment
+                    int shapeId = annotation.ShapeID;               // ID of the shape the comment is attached to
+                    string text = annotation.Comment.Value;        // Comment text
+                    int reviewerId = annotation.ReviewerID.Value;  // Index of the reviewer who created the comment
 
-                    // Prepare an INSERT command with parameters
-                    string insertCommandText = @"
-                        INSERT INTO DiagramComments (ShapeId, CommentText, MarkerIndex)
-                        VALUES (@ShapeId, @CommentText, @MarkerIndex)";
-
-                    using (SqlCommand insertCommand = new SqlCommand(insertCommandText, sqlConnection))
-                    {
-                        // Define parameters
-                        insertCommand.Parameters.Add("@ShapeId", System.Data.SqlDbType.Int);
-                        insertCommand.Parameters.Add("@CommentText", System.Data.SqlDbType.NVarChar, -1);
-                        insertCommand.Parameters.Add("@MarkerIndex", System.Data.SqlDbType.Int);
-
-                        // Iterate through all pages in the diagram
-                        foreach (Page page in diagram.Pages)
-                        {
-                            // Access the collection of annotations (comments) on the page
-                            foreach (Annotation annotation in page.PageSheet.Annotations)
-                            {
-                                // Retrieve comment text and associated shape ID
-                                string commentText = annotation.Comment.Value;
-                                int shapeId = annotation.ShapeID; // Primitive int, no .Value needed
-                                int markerIndex = annotation.MarkerIndex.Value; // Unique identifier for the comment
-
-                                // Assign values to parameters
-                                insertCommand.Parameters["@ShapeId"].Value = shapeId;
-                                insertCommand.Parameters["@CommentText"].Value = commentText;
-                                insertCommand.Parameters["@MarkerIndex"].Value = markerIndex;
-
-                                // Execute the INSERT command
-                                int rowsAffected = insertCommand.ExecuteNonQuery();
-
-                                if (rowsAffected != 1)
-                                {
-                                    Console.WriteLine($"Warning: Expected to insert 1 row, but inserted {rowsAffected} rows for ShapeID {shapeId}.");
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"Inserted comment for ShapeID {shapeId}: \"{commentText}\"");
-                                }
-                            }
-                        }
-                    }
-
-                    sqlConnection.Close();
+                    // Add a row to the simulated table
+                    commentTable.Rows.Add(commentId, shapeId, text, reviewerId);
                 }
-
-                // Optionally, save the diagram if any modifications were made (not required for export)
-                // diagram.Save("ExportedDiagram.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.DirectoryNotFoundException ex)
+
+            // Output the extracted data (simulating a DB insert)
+            Console.WriteLine("Exported Comments:");
+            foreach (DataRow row in commentTable.Rows)
             {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                Console.WriteLine($"CommentId: {row["CommentId"]}, ShapeId: {row["ShapeId"]}, Text: {row["CommentText"]}, ReviewerId: {row["ReviewerId"]}");
             }
+
+            // -----------------------------------------------------------------
+            // Real database insertion would use ADO.NET (e.g., SqlConnection).
+            // The following is a placeholder illustrating how it could be done.
+            // -----------------------------------------------------------------
+            /*
+            string connectionString = "your_connection_string";
+            using (var connection = new System.Data.SqlClient.SqlConnection(connectionString))
+            {
+                connection.Open();
+                foreach (DataRow row in commentTable.Rows)
+                {
+                    using (var command = new System.Data.SqlClient.SqlCommand(
+                        "INSERT INTO Comments (CommentId, ShapeId, CommentText, ReviewerId) VALUES (@CommentId, @ShapeId, @CommentText, @ReviewerId)", connection))
+                    {
+                        command.Parameters.AddWithValue("@CommentId", row["CommentId"]);
+                        command.Parameters.AddWithValue("@ShapeId", row["ShapeId"]);
+                        command.Parameters.AddWithValue("@CommentText", row["CommentText"]);
+                        command.Parameters.AddWithValue("@ReviewerId", row["ReviewerId"]);
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            */
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

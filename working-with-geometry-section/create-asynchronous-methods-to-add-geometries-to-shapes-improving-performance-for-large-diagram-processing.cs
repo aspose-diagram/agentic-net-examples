@@ -2,23 +2,127 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramGeometryAsync
+{
+    // Helper class for geometry operations
+    public static class GeometryHelper
     {
-        static void Main(string[] args)
+        // Adds a polyline geometry to the specified shape.
+        // points: flat array of coordinates [x1, y1, x2, y2, ...]
+        public static Task AddPolylineAsync(Shape shape, double[] points)
+        {
+            if (shape == null) throw new ArgumentNullException(nameof(shape));
+            if (points == null) throw new ArgumentNullException(nameof(points));
+            if (points.Length < 4 || points.Length % 2 != 0)
+                throw new ArgumentException("Points array must contain an even number of values (at least two points).");
+
+            // Geometry creation can be CPU‑bound; run it on a background thread.
+            return Task.Run(() =>
+            {
+                // Create a new geometry section for the shape.
+                Geom geom = new Geom();
+                shape.Geoms.Add(geom);
+
+                // First point – MoveTo
+                MoveTo move = new MoveTo
+                {
+                    X = { Value = points[0] },
+                    Y = { Value = points[1] }
+                };
+                geom.CoordinateCol.Add(move);
+
+                // Remaining points – LineTo
+                for (int i = 2; i < points.Length; i += 2)
+                {
+                    LineTo line = new LineTo
+                    {
+                        X = { Value = points[i] },
+                        Y = { Value = points[i + 1] }
+                    };
+                    geom.CoordinateCol.Add(line);
+                }
+            });
+        }
+    }
+
+    // Processor that handles bulk geometry additions asynchronously
+    public class DiagramProcessor
+    {
+        private readonly Diagram _diagram;
+
+        public DiagramProcessor(Diagram diagram)
+        {
+            _diagram = diagram ?? throw new ArgumentNullException(nameof(diagram));
+        }
+
+        // Adds the same polyline geometry to a collection of shape IDs on a given page.
+        public async Task AddGeometryToShapesAsync(int pageIndex, IEnumerable<long> shapeIds, double[] polylinePoints)
+        {
+            if (shapeIds == null) throw new ArgumentNullException(nameof(shapeIds));
+            if (polylinePoints == null) throw new ArgumentNullException(nameof(polylinePoints));
+
+            Page page = _diagram.Pages[pageIndex];
+            var tasks = new List<Task>();
+
+            foreach (long shapeId in shapeIds)
+            {
+                // Retrieve the shape instance.
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null) continue; // Skip missing shapes.
+
+                // Queue geometry addition.
+                tasks.Add(GeometryHelper.AddPolylineAsync(shape, polylinePoints));
+            }
+
+            // Await all geometry operations.
+            await Task.WhenAll(tasks);
+        }
+    }
+
+    class Program
+    {
+        // Entry point – async Main is supported in .NET 8.0 console apps.
+        static async Task Main(string[] args)
         {
             try
             {
 
-                // Input and output file paths
+                // Example file paths – replace with actual locations.
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
-                // Run the asynchronous processing synchronously for console entry point
-                ProcessDiagramAsync(inputPath, outputPath).GetAwaiter().GetResult();
+                // Load the diagram.
+                Diagram diagram = new Diagram(inputPath);
 
-                Console.WriteLine("Diagram processing completed.");
+                // Prepare a list of shape IDs to which we want to add geometry.
+                // In a real scenario, populate this list based on your criteria.
+                List<long> targetShapeIds = new List<long>();
+                Page firstPage = diagram.Pages[0];
+                foreach (Shape shape in firstPage.Shapes)
+                {
+                    // Example filter: only non‑deleted shapes.
+                    if (shape.Del == BOOL.False)
+                    {
+                        targetShapeIds.Add(shape.ID);
+                    }
+                }
+
+                // Define a simple triangle polyline (closed shape).
+                double[] trianglePoints = new double[]
+                {
+                    1.0, 1.0,   // Point A
+                    3.0, 1.0,   // Point B
+                    2.0, 3.0,   // Point C
+                    1.0, 1.0    // Close back to A
+                };
+
+                // Process geometry additions asynchronously.
+                DiagramProcessor processor = new DiagramProcessor(diagram);
+                await processor.AddGeometryToShapesAsync(0, targetShapeIds, trianglePoints);
+
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -26,82 +130,5 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
-
-        // Asynchronous wrapper that loads the diagram, processes shapes, and saves the result
-        private static async Task ProcessDiagramAsync(string inputPath, string outputPath)
-        {
-            // Load the diagram from file
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Assume processing the first page; adjust as needed
-                Page page = diagram.Pages[0];
-
-                // Prepare a list to hold all geometry addition tasks
-                List<Task> geometryTasks = new List<Task>();
-
-                // Iterate over each shape on the page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Example geometry: a simple triangle
-                    var points = new List<(double X, double Y)>
-                    {
-                        (shape.XForm.PinX.Value, shape.XForm.PinY.Value),          // Starting point at shape's current position
-                        (shape.XForm.PinX.Value + 1.0, shape.XForm.PinY.Value),    // Right
-                        (shape.XForm.PinX.Value + 0.5, shape.XForm.PinY.Value + 1.0) // Top
-                    };
-
-                    // Queue the geometry addition without blocking the loop
-                    geometryTasks.Add(AddGeometryAsync(page, shape.ID, points));
-                }
-
-                // Await completion of all geometry additions
-                await Task.WhenAll(geometryTasks);
-
-                // Save the modified diagram using a valid SaveFileFormat enum value
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
-        }
-
-        // Asynchronously adds a custom geometry (polyline) to a shape identified by shapeId
-        private static async Task AddGeometryAsync(Page page, long shapeId, List<(double X, double Y)> points)
-        {
-            // Offload the geometry creation to a background thread to avoid blocking
-            await Task.Run(() =>
-            {
-                // Retrieve the shape instance from the page
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Create a new Geom object which will hold the coordinate collection
-                Geom geom = new Geom();
-
-                // Ensure there is at least one point to define the geometry
-                if (points == null || points.Count == 0)
-                    return;
-
-                // Add a MoveTo segment for the first point (starting position)
-                MoveTo move = new MoveTo();
-                move.X.Value = points[0].X;
-                move.Y.Value = points[0].Y;
-                geom.CoordinateCol.Add(move);
-
-                // Add LineTo segments for each subsequent point
-                for (int i = 1; i < points.Count; i++)
-                {
-                    LineTo line = new LineTo();
-                    line.X.Value = points[i].X;
-                    line.Y.Value = points[i].Y;
-                    geom.CoordinateCol.Add(line);
-                }
-
-                // Optionally close the shape by returning to the first point
-                // Uncomment the following lines if a closed polygon is desired
-                //LineTo close = new LineTo();
-                //close.X.Value = points[0].X;
-                //close.Y.Value = points[0].Y;
-                //geom.CoordinateCol.Add(close);
-
-                // Append the new geometry to the shape's Geoms collection
-                shape.Geoms.Add(geom);
-            });
-        }
     }
+}

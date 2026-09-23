@@ -3,29 +3,30 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading.Tasks;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        // Entry point
+        static async Task Main(string[] args)
         {
             try
             {
 
-                // Path to the source Visio diagram
+                // Input diagram file path
                 string diagramPath = @"C:\Diagrams\sample.vsdx";
 
-                // SharePoint site and target folder (e.g., Site Pages library)
-                string sharepointSiteUrl = "https://contoso.sharepoint.com/sites/YourSite";
-                string targetFolderRelativeUrl = "/sites/YourSite/SitePages";
-                string targetFileName = "sampleDiagram.html";
+                // SharePoint site and page details
+                string sharepointSiteUrl = "https://contoso.sharepoint.com/sites/ProjectSite";
+                string pageServerRelativeUrl = "/sites/ProjectSite/SitePages/DiagramPage.aspx";
+                string accessToken = "YOUR_ACCESS_TOKEN"; // Obtain via Azure AD/OAuth
 
-                // Access token for SharePoint REST API (obtain via Azure AD or other auth flow)
-                string accessToken = "<YOUR_ACCESS_TOKEN>";
+                // Convert diagram to HTML string
+                string htmlContent = ConvertDiagramToHtml(diagramPath);
 
-                // Convert diagram to HTML and upload
-                ConvertDiagramToHtmlAndUpload(diagramPath, sharepointSiteUrl, targetFolderRelativeUrl, targetFileName, accessToken);
+                // Embed HTML into SharePoint page
+                await UpdateSharePointPageAsync(sharepointSiteUrl, pageServerRelativeUrl, htmlContent, accessToken);
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -34,66 +35,98 @@ class Program
             }
     }
 
-        static void ConvertDiagramToHtmlAndUpload(string diagramFilePath, string siteUrl, string folderRelativeUrl, string fileName, string accessToken)
+        // Converts a Visio diagram to an HTML string using Aspose.Diagram
+        private static string ConvertDiagramToHtml(string diagramFilePath)
         {
-            // Load the Visio diagram using Aspose.Diagram constructor (lifecycle rule)
-            using (Diagram diagram = new Diagram(diagramFilePath))
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramFilePath);
+
+            // Save to a memory stream in HTML format
+            using (MemoryStream htmlStream = new MemoryStream())
             {
-                // Prepare HTML save options (rule-provided class)
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                diagram.Save(htmlStream, SaveFileFormat.Html);
+                htmlStream.Position = 0;
+                using (StreamReader reader = new StreamReader(htmlStream))
                 {
-                    // Example: save as a single HTML file
-                    SaveAsSingleFile = true,
-                    // Optional: set title
-                    Title = Path.GetFileNameWithoutExtension(diagramFilePath)
-                };
-
-                // Save the diagram to a memory stream as HTML (using provided Save method)
-                using (MemoryStream htmlStream = new MemoryStream())
-                {
-                    diagram.Save(htmlStream, htmlOptions);
-                    htmlStream.Position = 0; // Reset stream position for reading
-
-                    // Read the HTML content as a byte array
-                    byte[] htmlBytes = htmlStream.ToArray();
-
-                    // Upload the HTML to SharePoint via REST API
-                    UploadFileToSharePoint(siteUrl, folderRelativeUrl, fileName, htmlBytes, accessToken);
+                    // Return the HTML content as a string
+                    return reader.ReadToEnd();
                 }
             }
         }
 
-        static void UploadFileToSharePoint(string siteUrl, string folderRelativeUrl, string fileName, byte[] fileContent, string accessToken)
+        // Updates the SharePoint page's CanvasContent1 field with the provided HTML
+        private static async Task UpdateSharePointPageAsync(string siteUrl, string pageRelativeUrl, string html, string bearerToken)
         {
-            // Construct the REST endpoint for adding a file to a folder
-            string requestUri = $"{siteUrl}/_api/web/GetFolderByServerRelativeUrl('{folderRelativeUrl}')/Files/add(url='{fileName}',overwrite=true)";
+            // Build the REST endpoint for the page's ListItem
+            string requestUrl = $"{siteUrl}/_api/web/GetFileByServerRelativeUrl('{pageRelativeUrl}')/ListItemAllFields";
 
-            using (HttpClient httpClient = new HttpClient())
+            // Prepare the JSON payload to update CanvasContent1
+            string payload = $"{{ '__metadata': {{ 'type': 'SP.Data.SitePagesItem' }}, 'CanvasContent1': '{EscapeForJson(html)}' }}";
+
+            using (HttpClient client = new HttpClient())
             {
-                // Set authentication header (Bearer token)
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                // Set authentication header
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+                // Set Accept header
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json;odata=verbose"));
+                // Set X-RequestDigest header (required for POST). In production, retrieve it via /_api/contextinfo.
+                client.DefaultRequestHeaders.Add("X-RequestDigest", await GetFormDigestAsync(siteUrl, bearerToken));
 
-                // Accept JSON response
-                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json;odata=verbose"));
+                // Prepare the request content
+                HttpContent content = new StringContent(payload, Encoding.UTF8, "application/json;odata=verbose");
 
-                // Prepare the content of the request (HTML file)
-                using (ByteArrayContent content = new ByteArrayContent(fileContent))
+                // Use MERGE method to update existing fields
+                HttpRequestMessage request = new HttpRequestMessage(new HttpMethod("MERGE"), requestUrl)
                 {
-                    content.Headers.ContentType = new MediaTypeHeaderValue("text/html");
+                    Content = content
+                };
+                request.Headers.Add("IF-MATCH", "*"); // Overwrite regardless of version
 
-                    // POST the file content
-                    HttpResponseMessage response = httpClient.PostAsync(requestUri, content).Result;
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        Console.WriteLine("HTML file uploaded successfully to SharePoint.");
-                    }
-                    else
-                    {
-                        string responseBody = response.Content.ReadAsStringAsync().Result;
-                        Console.WriteLine($"Failed to upload file. Status: {response.StatusCode}. Details: {responseBody}");
-                    }
-                }
+                // Send the request
+                HttpResponseMessage response = await client.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+                Console.WriteLine("SharePoint page updated successfully.");
             }
+        }
+
+        // Retrieves the FormDigestValue required for POST/MERGE operations
+        private static async Task<string> GetFormDigestAsync(string siteUrl, string bearerToken)
+        {
+            string contextInfoUrl = $"{siteUrl}/_api/contextinfo";
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json;odata=verbose"));
+
+                HttpResponseMessage response = await client.PostAsync(contextInfoUrl, null);
+                response.EnsureSuccessStatusCode();
+
+                string json = await response.Content.ReadAsStringAsync();
+
+                // Simple extraction of FormDigestValue from the JSON response
+                // In production, use a proper JSON parser like Newtonsoft.Json or System.Text.Json
+                const string tokenKey = "\"FormDigestValue\":\"";
+                int start = json.IndexOf(tokenKey) + tokenKey.Length;
+                int end = json.IndexOf("\"", start);
+                return json.Substring(start, end - start);
+            }
+        }
+
+        // Escapes single quotes and line breaks for JSON string value
+        private static string EscapeForJson(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return string.Empty;
+
+            // Replace backslashes first
+            string escaped = input.Replace("\\", "\\\\");
+            // Escape double quotes
+            escaped = escaped.Replace("\"", "\\\"");
+            // Escape newlines
+            escaped = escaped.Replace("\r", "").Replace("\n", "\\n");
+            // Escape single quotes (required for SharePoint JSON payload)
+            escaped = escaped.Replace("'", "''");
+            return escaped;
         }
     }

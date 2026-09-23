@@ -1,75 +1,92 @@
 using System;
 using System.IO;
+using System.Threading;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.Printing;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Folder containing diagrams; can be passed as a command‑line argument
-        string folderPath = args.Length > 0 ? args[0] : "Diagrams";
+        // Folder containing diagrams to process
+        private static readonly string InputFolder = @"C:\Diagrams\Input";
+        // Folder to save processed diagrams
+        private static readonly string OutputFolder = @"C:\Diagrams\Output";
 
-        if (!Directory.Exists(folderPath))
+        // Corporate print standards
+        private const double ScaleFactor = 0.75;          // 75% scaling
+        private const double MarginInches = 0.5;          // 0.5 inch margins
+        private const PrintPageOrientationValue Orientation = PrintPageOrientationValue.Landscape;
+
+        static void Main(string[] args)
         {
-            Console.WriteLine($"Folder not found: {folderPath}");
-            return;
+            // Ensure output folder exists
+            Directory.CreateDirectory(OutputFolder);
+
+            // Run immediately and then every 7 days
+            Timer timer = new Timer(_ => RunBatch(), null, TimeSpan.Zero, TimeSpan.FromDays(7));
+
+            // Keep the application running
+            using (ManualResetEvent waitHandle = new ManualResetEvent(false))
+            {
+                waitHandle.WaitOne();
+            }
         }
 
-        // Process all Visio files (VSDX, VDX, VSD) recursively
-        string[] files = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories);
-        foreach (string file in files)
+        private static void RunBatch()
         {
-            string ext = Path.GetExtension(file).ToLowerInvariant();
-            if (ext != ".vsdx" && ext != ".vdx" && ext != ".vsd")
-                continue;
-
             try
             {
-                // Load diagram
-                using (Diagram diagram = new Diagram(file))
+                string[] diagramFiles = Directory.GetFiles(InputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
+                foreach (string filePath in diagramFiles)
                 {
-                    // Update print settings for each page to meet corporate standards
-                    foreach (Page page in diagram.Pages)
-                    {
-                        if (page.PageSheet?.PrintProps == null)
-                        {
-                            Console.WriteLine($"Page '{page.Name}' missing PrintProps; skipping.");
-                            continue;
-                        }
-
-                        // Orientation: Landscape
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-
-                        // Scaling: 100%
-                        page.PageSheet.PrintProps.ScaleX.Value = 1.0;
-                        page.PageSheet.PrintProps.ScaleY.Value = 1.0;
-
-                        // Fit to a single sheet
-                        page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
-                        page.PageSheet.PrintProps.PagesX.Value = 1;
-                        page.PageSheet.PrintProps.PagesY.Value = 1;
-
-                        // Margins: 0.5 inches on all sides
-                        double marginInches = 0.5;
-                        page.PageSheet.PrintProps.PageTopMargin.Value = marginInches;
-                        page.PageSheet.PrintProps.PageBottomMargin.Value = marginInches;
-                        page.PageSheet.PrintProps.PageLeftMargin.Value = marginInches;
-                        page.PageSheet.PrintProps.PageRightMargin.Value = marginInches;
-                    }
-
-                    // Overwrite the original file with updated settings
-                    diagram.Save(file, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Processed and saved: {file}");
+                    ProcessDiagram(filePath);
                 }
+
+                Console.WriteLine($"Batch processing completed at {DateTime.Now}.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error processing '{file}': {ex.Message}");
+                Console.WriteLine($"Error during batch processing: {ex.Message}");
             }
         }
 
-        Console.WriteLine("Weekly diagram reprocessing completed.");
+        private static void ProcessDiagram(string filePath)
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
+
+            // Update print settings for each page
+            foreach (Page page in diagram.Pages)
+            {
+                // Access print properties
+                PrintProps printProps = page.PageSheet.PrintProps;
+
+                // Set orientation
+                printProps.PrintPageOrientation.Value = Orientation;
+
+                // Set scaling
+                printProps.ScaleX.Value = ScaleFactor;
+                printProps.ScaleY.Value = ScaleFactor;
+
+                // Enable fit to sheet (print on a single sheet)
+                printProps.OnPage.Value = BOOL.True;
+                printProps.PagesX.Value = 1;
+                printProps.PagesY.Value = 1;
+
+                // Set margins (values are in inches)
+                printProps.PageTopMargin.Value = MarginInches;
+                printProps.PageBottomMargin.Value = MarginInches;
+                printProps.PageLeftMargin.Value = MarginInches;
+                printProps.PageRightMargin.Value = MarginInches;
+            }
+
+            // Determine output path (overwrite original or save to output folder)
+            string fileName = Path.GetFileName(filePath);
+            string outputPath = Path.Combine(OutputFolder, fileName);
+
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Processed diagram: {fileName}");
+        }
     }
-}

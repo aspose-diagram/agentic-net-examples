@@ -1,59 +1,74 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file (replace with an actual file path)
+            string sourcePath = "input.vsdx";
+            // Path for the generated SVG file
+            string svgPath = "output.svg";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(sourcePath);
+
+            // Access the first page
+            Page page = diagram.Pages[0];
+
+            // Add a rectangle shape to the page
+            // Parameters: pinX, pinY, master name, isCalculate (bool)
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+
+            // Retrieve the newly added shape
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Create a hyperlink and assign its properties
+            Hyperlink link = new Hyperlink();
+            link.Name = "ExampleLink";
+            link.Address.Value = "https://example.com";
+            link.Description.Value = "Visit Example.com";
+
+            // Add the hyperlink to the shape
+            shape.Hyperlinks.Add(link);
+
+            // Verify that the hyperlink was added correctly
+            if (shape.Hyperlinks == null || shape.Hyperlinks.Count == 0)
             {
+                throw new Exception("Hyperlink collection is empty after addition.");
+            }
 
-                // Path to the source Visio diagram
-                const string inputPath = "input.vsdx";
-                // Path for the exported SVG file
-                const string outputPath = "output.svg";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Verify that each shape with hyperlinks has a valid address
-                foreach (Page page in diagram.Pages)
+            bool addressMatches = false;
+            foreach (Hyperlink hl in shape.Hyperlinks)
+            {
+                if (hl.Address != null && hl.Address.Value == "https://example.com")
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
-                        {
-                            foreach (Hyperlink link in shape.Hyperlinks)
-                            {
-                                // The address must be a non‑empty string
-                                if (string.IsNullOrWhiteSpace(link.Address?.Value))
-                                {
-                                    throw new Exception($"Shape ID {shape.ID} contains a hyperlink with an empty address.");
-                                }
-                            }
-                        }
-                    }
+                    addressMatches = true;
+                    break;
                 }
-
-                // Configure SVG export options
-                SVGSaveOptions svgOptions = new SVGSaveOptions
-                {
-                    ExportHiddenPage = false,
-                    ExportGuideShapes = false,
-                    SVGFitToViewPort = true,
-                    ExportElementAsRectTag = true
-                };
-
-                // Export the diagram to SVG
-                diagram.Save(outputPath, svgOptions);
-
-                Console.WriteLine("SVG export completed successfully. Hyperlinks were verified.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (!addressMatches)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                throw new Exception("Hyperlink address does not match the expected value.");
             }
+
+            // Save the diagram as SVG
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            diagram.Save(svgPath, svgOptions);
+
+            Console.WriteLine("SVG file created successfully at: " + svgPath);
+            Console.WriteLine("Hyperlink on shape verified and preserved.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

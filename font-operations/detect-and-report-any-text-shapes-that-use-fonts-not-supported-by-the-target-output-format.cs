@@ -1,86 +1,86 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Path to the Visio file to be analyzed
+        string diagramPath = "input.vsdx";
+
+        // Verify the input file exists before proceeding
+        if (!File.Exists(diagramPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Build a set of installed system font names using Aspose.Drawing.Text
+            InstalledFontCollection installedFonts = new InstalledFontCollection();
+            HashSet<string> installedFontNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // FontFamily type is not strongly typed; use implicit typing for iteration
+            foreach (var family in installedFonts.Families)
             {
+                // The family name property is typically 'Name'
+                installedFontNames.Add(family.Name);
+            }
 
-                // Path to the Visio file to be analyzed
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Retrieve installed system fonts using Aspose.Drawing.Text
-                InstalledFontCollection installedFonts = new InstalledFontCollection();
-
-                // Build a set of installed font names for fast lookup
-                HashSet<string> installedFontNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var family in installedFonts.Families)
+            // Iterate through all pages and shapes to find text shapes with unsupported fonts
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    // FontFamily.Name provides the font name
-                    installedFontNames.Add(family.Name);
-                }
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
+                    // Check if the shape contains any visible text
+                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.ToString()))
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Check if the shape contains any text
-                        if (shape.Text == null || string.IsNullOrWhiteSpace(shape.Text.Value.Text))
-                            continue;
-
-                        // Flag to indicate if the shape uses any unsupported fonts
-                        bool hasUnsupportedFont = false;
-
-                        // Iterate over character formatting runs
+                        // Collect fonts used in character formatting
+                        HashSet<string> shapeFonts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                         foreach (Aspose.Diagram.Char ch in shape.Chars)
                         {
-                            // Font name is stored in the FontName cell
-                            string fontName = ch.FontName.Value;
-
-                            // If the font name is empty, skip
-                            if (string.IsNullOrWhiteSpace(fontName))
-                                continue;
-
-                            // Verify the font is installed on the system
-                            if (!installedFontNames.Contains(fontName))
+                            if (ch.FontName != null && !string.IsNullOrWhiteSpace(ch.FontName.Value))
                             {
-                                hasUnsupportedFont = true;
-                                Console.WriteLine($"Shape ID {shape.ID} (NameU: {shape.NameU}) uses missing font: {fontName}");
+                                shapeFonts.Add(ch.FontName.Value);
                             }
                         }
 
-                        // If the shape has text but no Char entries (e.g., default font), check the default font
-                        if (!hasUnsupportedFont && shape.Chars.Count == 0)
+                        // Determine which fonts are not installed on the system
+                        List<string> missingFonts = new List<string>();
+                        foreach (string fontName in shapeFonts)
                         {
-                            // Attempt to get the default font from the shape's text style (if any)
-                            // Note: This is a fallback; many shapes rely on the document's default font.
-                            // Here we simply report that the shape has text but no explicit font information.
-                            Console.WriteLine($"Shape ID {shape.ID} (NameU: {shape.NameU}) contains text but no explicit font information.");
+                            if (!installedFontNames.Contains(fontName))
+                            {
+                                missingFonts.Add(fontName);
+                            }
+                        }
+
+                        // Report shapes that use unsupported fonts
+                        if (missingFonts.Count > 0)
+                        {
+                            Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
+                            Console.WriteLine("  Missing Fonts:");
+                            foreach (string missing in missingFonts)
+                            {
+                                Console.WriteLine($"    {missing}");
+                            }
                         }
                     }
                 }
-
-                // Optional: Save the diagram after validation (no changes made)
-                // diagram.Save("validated_output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("Font validation completed.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose.Diagram related errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

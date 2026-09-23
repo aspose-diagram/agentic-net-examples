@@ -10,24 +10,30 @@ class Program
         try
         {
 
-            // Load the diagrams to be merged
-            Diagram diagram1 = new Diagram("Diagram1.vsdx");
-            Diagram diagram2 = new Diagram("Diagram2.vsdx");
+            // Paths of the diagrams to be merged.
+            string[] diagramPaths = { "Diagram1.vsdx", "Diagram2.vsdx", "Diagram3.vsdx" };
 
-            // Merge the second diagram into the first one
-            diagram1.Combine(diagram2);
+            // Load the first diagram – it will become the target diagram.
+            Diagram mergedDiagram = new Diagram(diagramPaths[0]);
 
-            // Prepare image save options for a PNG thumbnail of the first page
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            imgOptions.PageIndex = 0;   // first page (0‑based index)
-            imgOptions.PageCount = 1;   // render only this page
+            // Load each subsequent diagram and combine it into the target.
+            for (int i = 1; i < diagramPaths.Length; i++)
+            {
+                Diagram sourceDiagram = new Diagram(diagramPaths[i]);
+                mergedDiagram.Combine(sourceDiagram);
+            }
 
-            // Save the thumbnail image
-            diagram1.Save("Thumbnail.png", imgOptions);
+            // Optional: save the merged diagram for later use.
+            mergedDiagram.Save("MergedDiagram.vsdx", SaveFileFormat.Vsdx);
 
-            // Clean up resources
-            diagram1.Dispose();
-            diagram2.Dispose();
+            // Create image save options for PNG thumbnail.
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            pngOptions.PageIndex = 0;      // Export only the first page.
+            pngOptions.PageCount = 1;      // Ensure a single page is rendered.
+            pngOptions.Scale = 0.5f;       // Scale down to create a thumbnail (adjust as needed).
+
+            // Save the thumbnail of the first page as PNG.
+            mergedDiagram.Save("Thumbnail.png", pngOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

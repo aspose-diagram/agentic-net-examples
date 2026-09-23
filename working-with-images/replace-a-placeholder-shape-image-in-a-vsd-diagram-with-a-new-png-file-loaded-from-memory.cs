@@ -1,88 +1,64 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expected arguments:
-            // args[0] - input Visio file path (e.g., "input.vsdx")
-            // args[1] - output Visio file path (e.g., "output.vsdx")
-            // args[2] - placeholder shape name to replace (e.g., "PlaceholderImage")
-            // args[3] - path to the new PNG image (will be loaded into memory)
 
-            if (args.Length < 4)
-            {
-                Console.WriteLine("Usage: ReplaceShapeImage <inputVisio> <outputVisio> <placeholderShapeName> <pngImagePath>");
-                return;
-            }
+            // Paths to the source Visio file and the output file.
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-            string placeholderName = args[2];
-            string pngPath = args[3];
+            // Load the existing diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the PNG image into a byte array (memory)
-            byte[] pngBytes;
-            try
-            {
-                pngBytes = File.ReadAllBytes(pngPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to read PNG file: {ex.Message}");
-                return;
-            }
+            // Load the new PNG image into a byte array (memory source).
+            // In a real scenario, the byte[] could come from any source (e.g., a database, network stream, etc.).
+            byte[] newImageBytes = File.ReadAllBytes("newImage.png");
 
-            // Load the Visio diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load Visio file: {ex.Message}");
-                return;
-            }
+            // Flag to indicate whether a placeholder image was replaced.
+            bool replaced = false;
 
-            bool replacementMade = false;
-
-            // Iterate through all pages and shapes to find the placeholder
+            // Iterate through all pages and shapes to locate a placeholder image.
+            // Here we assume the placeholder is a foreign shape (image) with a specific name.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify foreign (image) shapes by TypeValue.Foreign
-                    if (shape.Type == TypeValue.Foreign && shape.Name == placeholderName)
+                    // Identify foreign (image) shapes.
+                    if (shape.Type == TypeValue.Foreign)
                     {
-                        // Replace the embedded image data
-                        shape.ForeignData.Value = pngBytes;
-
-                        // Optionally adjust the shape size to match the image dimensions.
-                        // Here we simply keep the existing size; adjust as needed.
-                        replacementMade = true;
-                        Console.WriteLine($"Replaced image in shape ID {shape.ID} on page '{page.Name}'.");
+                        // Example condition: shape name contains "Placeholder".
+                        // Adjust the condition as needed for your specific diagram.
+                        if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.IndexOf("Placeholder", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            // Replace the embedded image data.
+                            shape.ForeignData.Value = newImageBytes;
+                            replaced = true;
+                            // If only one placeholder should be replaced, exit loops.
+                            break;
+                        }
                     }
                 }
+                if (replaced) break;
             }
 
-            if (!replacementMade)
+            if (!replaced)
             {
-                Console.WriteLine($"No shape named '{placeholderName}' with TypeValue.Foreign was found.");
+                throw new Exception("Placeholder image shape not found in the diagram.");
             }
 
-            // Save the modified diagram
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save Visio file: {ex.Message}");
-            }
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

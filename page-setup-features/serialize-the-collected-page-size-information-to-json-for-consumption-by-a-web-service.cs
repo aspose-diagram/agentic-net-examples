@@ -4,58 +4,62 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-public class PageInfo
+namespace PageSizeExport
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public double Width { get; set; }
-    public double Height { get; set; }
-}
-
-public class Program
-{
-    static void Main()
+    // DTO for JSON serialization
+    public class PageInfo
     {
-        try
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public double WidthInches { get; set; }
+        public double HeightInches { get; set; }
+    }
+
+    public class Program
+    {
+        public static void Main()
         {
-
-            // Path to the Visio file to be processed
-            string inputPath = "input.vsdx";
-
-            // Path where the JSON output will be written
-            string outputPath = "pages.json";
-
-            // Load the diagram using Aspose.Diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
-                var pagesInfo = new List<PageInfo>();
 
-                // Iterate through each page and collect size information
+                // Path to the Visio file
+                string diagramPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Collect page size information
+                List<PageInfo> pages = new List<PageInfo>();
                 foreach (Page page in diagram.Pages)
                 {
-                    var info = new PageInfo
+                    PageInfo info = new PageInfo
                     {
                         Id = page.ID,
                         Name = page.Name,
-                        Width = page.PageSheet.PageProps.PageWidth.Value,
-                        Height = page.PageSheet.PageProps.PageHeight.Value
+                        WidthInches = page.PageSheet.PageProps.PageWidth.Value,
+                        HeightInches = page.PageSheet.PageProps.PageHeight.Value
                     };
-                    pagesInfo.Add(info);
+                    pages.Add(info);
                 }
 
-                // Serialize the list of page information to JSON
-                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                string json = JsonSerializer.Serialize(pagesInfo, jsonOptions);
+                // Serialize to JSON
+                JsonSerializerOptions options = new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
+                string json = JsonSerializer.Serialize(pages, options);
 
-                // Write the JSON string to the output file
+                // Output JSON to a file
+                string outputPath = "pageSizes.json";
                 File.WriteAllText(outputPath, json);
-                Console.WriteLine($"Page size information has been saved to '{outputPath}'.");
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                Console.WriteLine($"Page size information has been written to {outputPath}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

@@ -2,45 +2,47 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class UpdateHyperlinks
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Define old and new domain strings
-            const string oldDomain = "oldexample.com";
-            const string newDomain = "newexample.com";
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Domains to replace
+            string oldDomain = "oldexample.com";
+            string newDomain = "newexample.com";
 
-            // Iterate through all pages in the diagram
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Each shape may contain a collection of hyperlinks
-                    foreach (Hyperlink hyperlink in shape.Hyperlinks)
+                    // Ensure the shape has a Hyperlinks collection
+                    if (shape.Hyperlinks != null)
                     {
-                        // The Address property returns a Str2Value object; its Value holds the URL string
-                        string address = hyperlink.Address?.Value;
-
-                        // If the address contains the old domain, replace it with the new domain
-                        if (!string.IsNullOrEmpty(address) && address.Contains(oldDomain))
+                        // Iterate through each hyperlink in the shape
+                        foreach (Hyperlink link in shape.Hyperlinks)
                         {
-                            string updatedAddress = address.Replace(oldDomain, newDomain);
-                            // Update the hyperlink's address
-                            hyperlink.Address.Value = updatedAddress;
+                            // Replace the old domain with the new one in the hyperlink address
+                            if (!string.IsNullOrEmpty(link.Address?.Value) && link.Address.Value.Contains(oldDomain))
+                            {
+                                link.Address.Value = link.Address.Value.Replace(oldDomain, newDomain);
+                            }
                         }
                     }
                 }
             }
 
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

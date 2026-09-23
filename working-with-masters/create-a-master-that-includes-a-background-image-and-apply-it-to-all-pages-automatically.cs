@@ -5,83 +5,80 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect two arguments: path to the Visio diagram and path to the background image.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <imagePath>");
-            return;
-        }
-
-        string diagramPath = args[0];
-        string imagePath = args[1];
-
-        // Guard: ensure the diagram file exists.
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
-
-        // Guard: ensure the image file exists.
-        if (!File.Exists(imagePath))
-        {
-            Console.Error.WriteLine($"File not found: {imagePath}");
-            return;
-        }
-
         try
         {
-            // Load the existing Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
 
-            // Read the image bytes once; reuse the same byte array for all pages.
-            byte[] imageBytes = File.ReadAllBytes(imagePath);
+            // Path to the background image file (PNG, JPG, etc.)
+            string imagePath = "background.png";
+            // Output Visio file
+            string outputPath = "result.vsdx";
 
-            // Iterate over each page in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Create a new diagram instance
+            using (Diagram diagram = new Diagram())
             {
-                // Retrieve page dimensions (in inches).
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Calculate the center position for the background shape.
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-
-                // Insert the image as a shape that spans the whole page.
-                // The AddShape overload expects a stream containing the image data.
-                using (MemoryStream ms = new MemoryStream(imageBytes))
+                // Ensure at least one foreground page exists
+                if (diagram.Pages.Count == 0)
                 {
-                    // AddShape returns the shape ID (long).
-                    long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, ms);
-                    // Retrieve the shape object for further configuration.
-                    Shape bgShape = page.Shapes.GetShape(shapeId);
+                    diagram.Pages.Add(new Page());
+                }
 
-                    // Ensure the shape fills the page with the image (no additional fill pattern).
-                    bgShape.Fill.FillPattern.Value = 1; // Solid fill.
+                // Use the first page to obtain page dimensions (in inches)
+                Page referencePage = diagram.Pages[0];
+                double pageWidth = referencePage.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = referencePage.PageSheet.PageProps.PageHeight.Value;
 
-                    // Send the shape to the back so it appears behind other content.
+                // Find the highest existing page ID to generate a unique ID for the background page
+                int maxId = 0;
+                foreach (Page p in diagram.Pages)
+                {
+                    if (p.ID > maxId) maxId = p.ID;
+                }
+
+                // Create a new background page
+                Page backgroundPage = new Page(maxId + 1);
+                backgroundPage.Name = "Background";
+                backgroundPage.Background = BOOL.True;
+                // Apply the same dimensions as other pages
+                backgroundPage.PageSheet.PageProps.PageWidth.Value = pageWidth;
+                backgroundPage.PageSheet.PageProps.PageHeight.Value = pageHeight;
+
+                // Insert the background image covering the entire page area
+                using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                {
+                    long shapeId = backgroundPage.AddShape(0, 0, pageWidth, pageHeight, imgStream);
+                    Shape bgShape = backgroundPage.Shapes.GetShape(shapeId);
+                    // Solid fill (pattern 1) and no outline (pattern 0)
+                    bgShape.Fill.FillPattern.Value = 1;
+                    bgShape.Line.LinePattern.Value = 0;
+                    // Ensure the image stays behind other content and cannot be selected
                     bgShape.SendToBack();
-
-                    // Lock the shape to prevent selection/editing in the UI.
                     bgShape.Protection.LockSelect.Value = BOOL.True;
                 }
+
+                // Add the background page to the diagram
+                diagram.Pages.Add(backgroundPage);
+
+                // Assign the background page to every foreground page
+                foreach (Page pg in diagram.Pages)
+                {
+                    if (pg.Background == BOOL.False)
+                    {
+                        pg.BackPage = backgroundPage;
+                    }
+                }
+
+                // Save the diagram with the background applied to all pages
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram back to a new file.
-            string outputPath = Path.Combine(
-                Path.GetDirectoryName(diagramPath) ?? string.Empty,
-                Path.GetFileNameWithoutExtension(diagramPath) + "_WithBackground.vsdx");
+            Console.WriteLine("Diagram saved successfully with background image applied to all pages.");
 
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with background image: {outputPath}");
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

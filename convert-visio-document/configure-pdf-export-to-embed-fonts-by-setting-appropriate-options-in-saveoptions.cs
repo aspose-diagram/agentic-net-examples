@@ -10,16 +10,21 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create PDF save options
+            // Configure PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Set the default font; this ensures that the font is embedded in the PDF
+            // Set a default font to be used when a required font is missing.
+            // Aspose.Diagram does not provide a direct option to embed fonts,
+            // but specifying a default font ensures that text is rendered correctly.
             pdfOptions.DefaultFont = "Arial";
 
-            // Save the diagram as PDF using the configured options
+            // Optional: set PDF/A compliance if needed
+            // pdfOptions.Compliance = PdfCompliance.PdfA1b;
+
+            // Save the diagram as PDF with the configured options
             diagram.Save("output.pdf", pdfOptions);
 
         }

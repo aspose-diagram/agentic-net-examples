@@ -1,7 +1,6 @@
-using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System;
 
 class Program
 {
@@ -13,7 +12,7 @@ class Program
             // Load the VSD diagram from file
             Diagram diagram = new Diagram("input.vsd");
 
-            // Export the diagram to SVG format using SaveFormat.Svg
+            // Export the diagram to SVG format
             diagram.Save("output.svg", SaveFileFormat.Svg);
 
         }

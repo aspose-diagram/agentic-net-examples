@@ -8,31 +8,30 @@ class Program
     {
         // Retrieve source and destination directories from environment variables
         string sourceDir = Environment.GetEnvironmentVariable("SOURCE_DIR");
-        string destDir = Environment.GetEnvironmentVariable("DEST_DIR");
+        string destDir   = Environment.GetEnvironmentVariable("DEST_DIR");
 
-        // Validate that the required environment variables are set
-        if (string.IsNullOrWhiteSpace(sourceDir) || string.IsNullOrWhiteSpace(destDir))
+        // Validate that the environment variables are set
+        if (string.IsNullOrEmpty(sourceDir) || string.IsNullOrEmpty(destDir))
         {
-            Console.WriteLine("Please set both SOURCE_DIR and DEST_DIR environment variables.");
+            Console.WriteLine("Please set SOURCE_DIR and DEST_DIR environment variables.");
             return;
         }
 
-        // Build full file paths (adjust file names as needed)
-        string sourceFile = Path.Combine(sourceDir, "input.vsdx");
-        string destFile   = Path.Combine(destDir,   "output.vsdx");
+        // Define the diagram file name (adjust as needed)
+        string diagramFileName = "example.vdx";
 
-        // Load the diagram from the source file
-        Diagram diagram = new Diagram(sourceFile);
+        // Build full paths
+        string sourcePath = Path.Combine(sourceDir, diagramFileName);
+        string destPath   = Path.Combine(destDir, diagramFileName);
 
-        // Optional: configure a custom fonts folder if FONT_DIR is provided
-        string fontDir = Environment.GetEnvironmentVariable("FONT_DIR");
-        if (!string.IsNullOrWhiteSpace(fontDir))
-        {
-            // Set the fonts folder for the diagram (non‑recursive scan)
-            diagram.FontDirs = new[] { fontDir };
-        }
+        // Load the diagram from the source directory (using Aspose.Diagram load rule)
+        Diagram diagram = new Diagram(sourcePath);
 
-        // Save the diagram to the destination path
-        diagram.Save(destFile, SaveFileFormat.Vsdx);
+        // Perform any processing on the diagram here (if required)
+
+        // Save the diagram to the destination directory (using Aspose.Diagram save rule)
+        diagram.Save(destPath, SaveFileFormat.Vdx);
+
+        Console.WriteLine($"Diagram successfully copied from '{sourcePath}' to '{destPath}'.");
     }
 }

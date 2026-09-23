@@ -3,85 +3,66 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Variables to hold the input and output folder paths
-        string inputFolder = null;
-        string outputFolder = null;
-
-        // Simple command‑line parsing
-        for (int i = 0; i < args.Length; i++)
+        static void Main(string[] args)
         {
-            switch (args[i].ToLower())
+            // Expect exactly two arguments: input folder and output folder
+            if (args.Length != 2)
             {
-                case "-i":
-                case "--input":
-                    if (i + 1 < args.Length)
-                    {
-                        inputFolder = args[++i];
-                    }
-                    break;
-
-                case "-o":
-                case "--output":
-                    if (i + 1 < args.Length)
-                    {
-                        outputFolder = args[++i];
-                    }
-                    break;
+                Console.WriteLine("Usage: DiagramConverter <inputFolder> <outputFolder>");
+                return;
             }
-        }
 
-        // Validate arguments
-        if (string.IsNullOrWhiteSpace(inputFolder) || string.IsNullOrWhiteSpace(outputFolder))
-        {
-            Console.WriteLine("Usage: app -i <inputFolder> -o <outputFolder>");
-            return;
-        }
+            // Parse command line arguments
+            string inputFolder = args[0];
+            string outputFolder = args[1];
 
-        if (!Directory.Exists(inputFolder))
-        {
-            Console.WriteLine($"Input folder does not exist: {inputFolder}");
-            return;
-        }
-
-        // Ensure the output folder exists
-        if (!Directory.Exists(outputFolder))
-        {
-            Directory.CreateDirectory(outputFolder);
-        }
-
-        // Optional: set custom font folders if required
-        // FontConfigs.SetFontFolders(new[] { @"C:\Windows\Fonts" }, true);
-
-        // Process each Visio file in the input folder
-        string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in files)
-        {
-            // Filter supported Visio extensions
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (ext != ".vsd" && ext != ".vsdx" && ext != ".vss" && ext != ".vssx")
-                continue;
-
-            try
+            // Validate input folder
+            if (!Directory.Exists(inputFolder))
             {
-                // Load the diagram using default LoadOptions
-                Diagram diagram = new Diagram(filePath, new LoadOptions());
-
-                // Define the output file name (convert to PDF in this example)
-                string outputFileName = Path.GetFileNameWithoutExtension(filePath) + ".pdf";
-                string outputPath = Path.Combine(outputFolder, outputFileName);
-
-                // Save the diagram to the desired format
-                diagram.Save(outputPath, SaveFileFormat.Pdf);
-
-                Console.WriteLine($"Converted: {filePath} -> {outputPath}");
+                Console.WriteLine($"Error: Input folder \"{inputFolder}\" does not exist.");
+                return;
             }
-            catch (Exception ex)
+
+            // Ensure output folder exists; create if it does not
+            if (!Directory.Exists(outputFolder))
             {
-                Console.WriteLine($"Failed to convert '{filePath}': {ex.Message}");
+                try
+                {
+                    Directory.CreateDirectory(outputFolder);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error: Could not create output folder \"{outputFolder}\". {ex.Message}");
+                    return;
+                }
             }
+
+            // Example conversion loop (placeholder for actual conversion logic)
+            // This demonstrates loading each Visio file from the input folder and saving it to the output folder.
+            string[] visioFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+            foreach (string filePath in visioFiles)
+            {
+                try
+                {
+                    // Load the Visio diagram using Aspose.Diagram
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Determine output file path (same name with .pdf extension as an example)
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                    string outputFilePath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
+
+                    // Save the diagram to PDF (or any other supported format)
+                    diagram.Save(outputFilePath, SaveFileFormat.Pdf);
+
+                    Console.WriteLine($"Converted: {Path.GetFileName(filePath)} -> {Path.GetFileName(outputFilePath)}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to convert \"{filePath}\": {ex.Message}");
+                }
+            }
+
+            Console.WriteLine("Conversion process completed.");
         }
     }
-}

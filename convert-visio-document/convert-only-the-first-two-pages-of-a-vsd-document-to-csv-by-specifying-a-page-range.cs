@@ -1,38 +1,46 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Paths to the source VSD file and the CSV output
-            string inputPath = "input.vsd";
+            // Paths for input Visio file and output CSV file
+            string inputPath = "input.vsdx";
             string outputPath = "output.csv";
 
-            // Load the original diagram
+            // Load the source diagram
             using (Diagram sourceDiagram = new Diagram(inputPath))
             {
-                // Ensure there are at least two pages to export
-                if (sourceDiagram.Pages.Count < 2)
-                    throw new Exception("The source diagram must contain at least two pages.");
-
-                // Create a new empty diagram that will hold only the desired pages
-                using (Diagram subsetDiagram = new Diagram())
+                // Create a new empty diagram
+                using (Diagram newDiagram = new Diagram())
                 {
-                    // Remove the default blank page created by the empty constructor
-                    Page blankPage = subsetDiagram.Pages[0];
-                    subsetDiagram.Pages.Remove(blankPage);
+                    // Remove the automatically created empty page from the new diagram
+                    if (newDiagram.Pages.Count > 0)
+                    {
+                        Page defaultPage = newDiagram.Pages[0];
+                        newDiagram.Pages.Remove(defaultPage);
+                    }
 
-                    // Add the first two pages from the source diagram
-                    subsetDiagram.Pages.Add(sourceDiagram.Pages[0]);
-                    subsetDiagram.Pages.Add(sourceDiagram.Pages[1]);
+                    // Verify that the source diagram has at least two pages
+                    if (sourceDiagram.Pages.Count < 2)
+                    {
+                        Console.WriteLine("The source diagram does not contain two pages.");
+                        return;
+                    }
 
-                    // Save the new diagram as CSV; only the added pages are exported
-                    subsetDiagram.Save(outputPath, SaveFileFormat.Csv);
+                    // Add the first two pages from the source diagram to the new diagram
+                    newDiagram.Pages.Add(sourceDiagram.Pages[0]);
+                    newDiagram.Pages.Add(sourceDiagram.Pages[1]);
+
+                    // Save the new diagram as CSV (only the added pages will be exported)
+                    newDiagram.Save(outputPath, SaveFileFormat.Csv);
+                    Console.WriteLine($"First two pages exported to CSV at: {outputPath}");
                 }
             }
 

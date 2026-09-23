@@ -1,67 +1,43 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        try
-        {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+        // Access the first page of the diagram
+        Page page = diagram.Pages[0];
 
-            // Define triangle vertices (in inches)
-            double x1 = 2.0, y1 = 2.0;
-            double x2 = 4.0, y2 = 2.0;
-            double x3 = 3.0, y3 = 4.0;
+        // Define the vertices of the triangle (x1,y1, x2,y2, x3,y3, back to x1,y1)
+        double[] trianglePoints = new double[] { 2, 2, 5, 2, 3.5, 5, 2, 2 };
 
-            // Draw the triangle using a closed polyline (repeat first point at the end)
-            long triangleId = page.DrawPolyline(new double[]
-            {
-                x1, y1,
-                x2, y2,
-                x3, y3,
-                x1, y1
-            });
+        // Draw the triangle shape; returns the shape ID as a long
+        long shapeId = page.DrawPolyline(trianglePoints);
 
-            // Retrieve the shape object (GetShape expects an int)
-            Shape triangle = page.Shapes.GetShape((int)triangleId);
+        // Retrieve the shape object using the ID (cast to int as required by GetShape)
+        Shape triangle = page.Shapes.GetShape((int)shapeId);
 
-            // Apply a linear gradient fill from red to yellow
-            // Set fill pattern to gradient (value 25)
-            triangle.Fill.FillPattern.Value = 25;
+        // Apply a linear gradient fill from red to yellow
+        triangle.Fill.FillPattern.Value = 25; // Gradient fill pattern
+        triangle.Fill.GradientFill.GradientEnabled.Value = BOOL.True; // Enable gradient
+        triangle.Fill.GradientFill.GradientDir.Value = 0; // Left‑to‑right direction
+        triangle.Fill.GradientFill.GradientStops.Clear(); // Remove any existing stops
 
-            // Enable gradient fill
-            triangle.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+        // Add gradient stop at position 0 (red)
+        triangle.Fill.GradientFill.GradientStops.Add(
+            new DoubleValue(0, MeasureConst.NUM),
+            new ColorValue("#FF0000", MeasureConst.Undefined));
 
-            // Set gradient direction to linear (cast enum to int for the cell value)
-            triangle.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.Linear;
+        // Add gradient stop at position 1 (yellow)
+        triangle.Fill.GradientFill.GradientStops.Add(
+            new DoubleValue(1, MeasureConst.NUM),
+            new ColorValue("#FFFF00", MeasureConst.Undefined));
 
-            // Clear any existing gradient stops
-            triangle.Fill.GradientFill.GradientStops.Clear();
-
-            // Add gradient stop at position 0 (red)
-            triangle.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(0, MeasureConst.NUM),
-                new ColorValue("#FF0000", MeasureConst.Undefined));
-
-            // Add gradient stop at position 1 (yellow)
-            triangle.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(1, MeasureConst.NUM),
-                new ColorValue("#FFFF00", MeasureConst.Undefined));
-
-            // Save the diagram to a VSDX file
-            diagram.Save("Triangle.vsdx", SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+        // Save the diagram to a VSDX file
+        diagram.Save("TriangleGradient.vsdx", SaveFileFormat.Vsdx);
     }
 }

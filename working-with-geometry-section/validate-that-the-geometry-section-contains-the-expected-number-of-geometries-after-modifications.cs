@@ -9,39 +9,73 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Access a shape to work with (first shape on the first page)
-            // Shape IDs start at 1, so we use index 1
-            Shape shape = diagram.Pages[0].Shapes[1];
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Define the expected number of Geom objects after modifications
-            int expectedGeomCount = 3;
-
-            // OPTIONAL: Clear existing geometries to start from a known state
-            shape.Geoms.Clear();
-
-            // Add the expected number of Geom objects to the shape's Geometry collection
-            for (int i = 0; i < expectedGeomCount; i++)
+            // Ensure there is at least one page
+            if (diagram.Pages.Count == 0)
             {
-                Geom newGeom = new Geom();          // Create a new Geom instance
-                shape.Geoms.Add(newGeom);           // Add it to the collection
+                throw new Exception("The diagram contains no pages.");
             }
 
-            // Validate that the Geometry collection now contains the expected count
-            int actualGeomCount = shape.Geoms.Count;
-            if (actualGeomCount == expectedGeomCount)
+            // Work with the first page
+            Page page = diagram.Pages[0];
+
+            // Retrieve the first shape on the page
+            Shape shape = null;
+            foreach (Shape s in page.Shapes)
             {
-                Console.WriteLine($"Validation succeeded: Geometry count is {actualGeomCount} as expected.");
+                shape = s;
+                break;
+            }
+
+            if (shape == null)
+            {
+                throw new Exception("No shapes found on the first page.");
+            }
+
+            // Record the original number of geometries
+            int originalGeomCount = shape.Geoms.Count;
+
+            // ----- Begin geometry modification -----
+            // Create a new geometry (Geom) and add a simple line segment
+            Geom newGeom = new Geom();
+
+            // Start point (MoveTo)
+            MoveTo move = new MoveTo();
+            move.X.Value = 0.0;
+            move.Y.Value = 0.0;
+            newGeom.CoordinateCol.Add(move);
+
+            // End point (LineTo)
+            LineTo line = new LineTo();
+            line.X.Value = 2.0;
+            line.Y.Value = 2.0;
+            newGeom.CoordinateCol.Add(line);
+
+            // Append the new geometry to the shape's geometry collection
+            shape.Geoms.Add(newGeom);
+            // ----- End geometry modification -----
+
+            // Expected geometry count after adding one geometry
+            int expectedGeomCount = originalGeomCount + 1;
+
+            // Validate the geometry count
+            if (shape.Geoms.Count != expectedGeomCount)
+            {
+                throw new Exception($"Geometry count mismatch. Expected: {expectedGeomCount}, Actual: {shape.Geoms.Count}");
             }
             else
             {
-                Console.WriteLine($"Validation failed: Geometry count is {actualGeomCount}, expected {expectedGeomCount}.");
+                Console.WriteLine($"Geometry count validation passed. Count = {shape.Geoms.Count}");
             }
 
-            // Save the modified diagram (replace with desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Optionally, save the modified diagram
+            // string outputPath = "output.vsdx";
+            // diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

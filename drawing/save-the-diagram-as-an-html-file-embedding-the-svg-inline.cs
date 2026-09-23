@@ -1,7 +1,19 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+
+class InlineSvgProvider : IStreamProvider
+{
+    public void InitStream(StreamProviderOptions options)
+    {
+        // No custom stream handling required for inline SVG export.
+    }
+
+    public void CloseStream(StreamProviderOptions options)
+    {
+        // No resources to release.
+    }
+}
 
 class Program
 {
@@ -10,18 +22,19 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            // (Assumes the file "input.vsdx" exists in the working directory)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram.
+            string inputPath = "input.vsdx"; // replace with your diagram file path
+            Diagram diagram = new Diagram(inputPath);
 
-            // Configure HTML save options to embed all resources (including SVG) into a single file
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-            {
-                SaveAsSingleFile = true   // Embed images/SVG inline rather than creating separate files
-            };
+            // Set up HTML save options and assign the custom stream provider.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = new InlineSvgProvider();
 
-            // Save the diagram as an HTML file with inline SVG
-            diagram.Save("output.html", htmlOptions);
+            // Save the diagram as an HTML file with SVG content embedded inline.
+            string outputPath = "output.html";
+            diagram.Save(outputPath, htmlOptions);
+
+            Console.WriteLine($"Diagram successfully saved to {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,25 +1,24 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ExportDiagram
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsd");
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Create image save options for PNG format
-            ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-            // Set the resolution to 300 DPI (high‑resolution)
-            options.Resolution = 300f;
+            // Configure image save options for high‑resolution PNG (300 DPI)
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            pngOptions.Resolution = 300; // DPI
 
-            // Export the diagram to a high‑resolution PNG image
-            diagram.Save("output.png", options);
+            // Export the diagram to PNG using the specified options
+            diagram.Save("output.png", pngOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

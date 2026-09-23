@@ -5,62 +5,61 @@ using Aspose.Diagram.ActiveXControls;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Path to the input Visio diagram
-        string diagramPath = "input.vsdx";
-        // Guard to ensure the file exists before proceeding
-        if (!File.Exists(diagramPath))
+        // Path to the Visio file containing the ActiveX control
+        string inputPath = "input.vsdx";
+        // Verify the input file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
         try
         {
             // Load the diagram from the specified file
-            Diagram diagram = new Diagram(diagramPath);
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to locate SpinButton (used as Slider) controls
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that do not contain an ActiveX control
+                    // Skip shapes that do not host an ActiveX control
                     if (shape.ActiveXControl == null)
                         continue;
 
-                    // Identify SpinButton controls (the closest representation of a slider)
+                    // Process only SpinButton (used as a Slider) controls
                     if (shape.ActiveXControl.Type == ControlType.SpinButton)
                     {
-                        // Cast the generic control to its specific SpinButton type
+                        // Cast the generic control to its specific type
                         SpinButtonActiveXControl spinCtrl = (SpinButtonActiveXControl)shape.ActiveXControl;
 
-                        // The SpinButtonActiveXControl does not expose Minimum/Maximum properties.
-                        // Use a reasonable default range for validation (e.g., 0 to 100).
-                        double min = 0;
-                        double max = 100;
+                        // Retrieve the defined range using the correct property names (Min/Max)
+                        double min = spinCtrl.Min;      // Minimum value of the slider
+                        double max = spinCtrl.Max;      // Maximum value of the slider
+                        double current = spinCtrl.Position; // Current slider value
 
-                        // Retrieve the current position/value of the control
-                        double current = spinCtrl.Position;
-
-                        // Validate that the current value lies within the expected range
+                        // Validate that the current value lies within the defined range
                         if (current < min || current > max)
                         {
-                            string msg = $"Shape ID {shape.ID} has a SpinButton value {current} outside the range [{min}, {max}].";
+                            string msg = $"Shape ID {shape.ID} on page {page.ID} has an out-of-range value. " +
+                                         $"Position={current}, Minimum={min}, Maximum={max}.";
                             // Throw an exception to indicate validation failure
                             throw new Exception(msg);
                         }
                         else
                         {
-                            Console.WriteLine($"Shape ID {shape.ID}: SpinButton value {current} is within the range [{min}, {max}].");
+                            Console.WriteLine($"Shape ID {shape.ID} on page {page.ID} is valid. " +
+                                              $"Position={current} within [{min}, {max}].");
                         }
                     }
                 }
             }
 
-            // Save the diagram after validation (no modifications made)
-            diagram.Save("validated_output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Validation completed successfully.");
         }
         catch (Exception ex)
         {

@@ -1,68 +1,50 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
-public class Program
+class Program
 {
-    public static void Main(string[] args)
+    static void Main(string[] args)
     {
-        // Get the input file path from command‑line arguments or ask the user.
-        string inputPath;
-        if (args.Length > 0)
-        {
-            inputPath = args[0];
-        }
-        else
-        {
-            Console.Write("Enter the full path to the Visio file: ");
-            inputPath = Console.ReadLine();
-        }
+        // Path to the Visio file that contains ActiveX controls
+        string inputPath = "input.vsdx";
 
-        if (string.IsNullOrWhiteSpace(inputPath))
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            Console.WriteLine("No file path was provided. Exiting.");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Load the diagram. Wrap in a using block to ensure resources are released.
         try
         {
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine($"Scanning '{inputPath}' for shapes that contain ActiveX controls...");
-
-                bool foundAny = false;
-
-                // Iterate over each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate over each shape on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // If the shape embeds an ActiveX control, ActiveXControl will not be null
+                    if (shape.ActiveXControl != null)
                     {
-                        // The ActiveXControl property is null when the shape does not embed a control.
-                        if (shape.ActiveXControl != null)
-                        {
-                            foundAny = true;
-                            ControlType ctrlType = shape.ActiveXControl.Type;
-
-                            Console.WriteLine(
-                                $"Page: {page.NameU} (ID: {page.ID}) | " +
-                                $"Shape ID: {shape.ID} | NameU: {shape.NameU} | " +
-                                $"ActiveX Control Type: {ctrlType}");
-                        }
+                        // Output relevant information about the shape and its ActiveX control
+                        Console.WriteLine(
+                            $"Page: {page.NameU}, " +               // Page name (string)
+                            $"Shape ID: {shape.ID}, " +            // Unique shape identifier
+                            $"Shape Name: {shape.NameU}, " +       // Shape name (string)
+                            $"Control Type: {shape.ActiveXControl.Type}");
                     }
-                }
-
-                if (!foundAny)
-                {
-                    Console.WriteLine("No shapes with ActiveX controls were found in the document.");
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

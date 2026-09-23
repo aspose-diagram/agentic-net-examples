@@ -1,41 +1,69 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.ActiveXControls;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Verify the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages in the diagram
+            // Iterate over each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Iterate over each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
                     // Process only shapes that contain an ActiveX control
                     if (shape.ActiveXControl != null)
                     {
-                        // Example processing: output shape ID and the type of the ActiveX control
-                        Console.WriteLine($"Shape ID {shape.ID} contains ActiveX control of type {shape.ActiveXControl.Type}");
+                        // Output basic shape information (ID and universal name)
+                        Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
 
-                        // Place additional logic here (e.g., modify properties, collect data, etc.)
+                        // Retrieve the control type of the ActiveX control
+                        ControlType ctrlType = shape.ActiveXControl.Type;
+                        Console.WriteLine($"ActiveX Control Type: {ctrlType}");
+
+                        // Example handling based on specific control types
+                        if (ctrlType == ControlType.CommandButton)
+                        {
+                            // Cast to the concrete command button control
+                            CommandButtonActiveXControl btn = (CommandButtonActiveXControl)shape.ActiveXControl;
+                            Console.WriteLine($"Button Caption: {btn.Caption}");
+                        }
+                        else if (ctrlType == ControlType.CheckBox)
+                        {
+                            // Cast to the concrete checkbox control
+                            CheckBoxActiveXControl chk = (CheckBoxActiveXControl)shape.ActiveXControl;
+                            string value = chk.Value == CheckValueType.Checked ? "Checked" : "Unchecked";
+                            Console.WriteLine($"CheckBox Value: {value}");
+                        }
+                        // Additional control-specific processing can be added here
                     }
                 }
             }
 
-            // Save the diagram (if any modifications were made)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the diagram after processing (optional)
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors encountered during processing to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

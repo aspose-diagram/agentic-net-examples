@@ -1,71 +1,71 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Locate a shape that contains an ActiveX control
-            Shape targetShape = null;
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Load the Visio diagram
+                string inputPath = "input.vsdx"; // replace with actual file path
+                Diagram diagram = new Diagram(inputPath);
+
+                // Identify the shape that contains the ActiveX control
+                // Replace with the actual shape ID you want to process
+                long shapeId = 5;
+
+                // Retrieve the first page (adjust if needed)
+                Page page = diagram.Pages[0];
+
+                // Get the shape by its ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
                 {
-                    if (shape.ActiveXControl != null)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
+                    Console.WriteLine($"Shape with ID {shapeId} not found.");
+                    return;
                 }
-                if (targetShape != null)
-                    break;
-            }
 
-            if (targetShape == null)
+                // Ensure the shape has an ActiveX control attached
+                if (shape.ActiveXControl == null)
+                {
+                    Console.WriteLine("The selected shape does not contain an ActiveX control.");
+                    return;
+                }
+
+                // Determine the control type and cast accordingly
+                ControlType ctrlType = shape.ActiveXControl.Type;
+                switch (ctrlType)
+                {
+                    case ControlType.CommandButton:
+                        var commandBtn = (CommandButtonActiveXControl)shape.ActiveXControl;
+                        Console.WriteLine($"CommandButton Caption: {commandBtn.Caption}");
+                        break;
+
+                    case ControlType.Image:
+                        var imageCtrl = (ImageActiveXControl)shape.ActiveXControl;
+                        int byteCount = imageCtrl.Picture?.Length ?? 0;
+                        Console.WriteLine($"Image control contains {byteCount} bytes of image data.");
+                        break;
+
+                    case ControlType.CheckBox:
+                        var checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
+                        Console.WriteLine($"CheckBox Value: {checkBox.Value}");
+                        break;
+
+                    default:
+                        Console.WriteLine($"ActiveX control type '{ctrlType}' is not specifically handled.");
+                        break;
+                }
+
+                // Additional processing of the retrieved ActiveX control can be added here
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("No shape with an ActiveX control was found in the diagram.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Retrieve the ActiveX control instance
-            var activeX = targetShape.ActiveXControl;
-
-            // Process the control based on its specific type
-            switch (activeX.Type)
-            {
-                case ControlType.CommandButton:
-                    var commandBtn = (CommandButtonActiveXControl)activeX;
-                    Console.WriteLine($"CommandButton Caption: {commandBtn.Caption}");
-                    break;
-
-                case ControlType.Image:
-                    var imageCtrl = (ImageActiveXControl)activeX;
-                    Console.WriteLine($"Image Control Size: Width={imageCtrl.Width}, Height={imageCtrl.Height}");
-                    break;
-
-                case ControlType.CheckBox:
-                    var checkBox = (CheckBoxActiveXControl)activeX;
-                    Console.WriteLine($"CheckBox Value: {checkBox.Value}");
-                    break;
-
-                default:
-                    Console.WriteLine($"ActiveX control type: {activeX.Type}");
-                    break;
-            }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

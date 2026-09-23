@@ -1,25 +1,36 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.ActiveXControls;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // Input diagram file path (existing Visio file)
+            Console.Write("Enter the path to the source Visio file: ");
+            string sourcePath = Console.ReadLine();
 
-            // Input Visio file (template or existing diagram)
-            string inputPath = "template.vsdx";
-            // Output Visio file after modifications
-            string outputPath = "updated.vsdx";
+            // Validate input
+            if (string.IsNullOrWhiteSpace(sourcePath))
+            {
+                Console.WriteLine("Source path is required.");
+                return;
+            }
 
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram
+            Diagram diagram;
+            try
+            {
+                diagram = new Diagram(sourcePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
 
-            // Ensure there is at least one page to work with
+            // Use the first page (or create one if none exist)
             Page page;
             if (diagram.Pages.Count > 0)
             {
@@ -31,33 +42,72 @@ class Program
                 diagram.Pages.Add(page);
             }
 
-            // Add a CommandButton ActiveX control at (2, 2) inches, size 1.5 x 0.5 inches
-            long btnShapeId = page.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
-            Shape btnShape = page.Shapes.GetShape(btnShapeId);
+            // Prompt user for ActiveX CommandButton properties
+            Console.Write("Enter button caption: ");
+            string caption = Console.ReadLine();
 
-            // Cast to the specific control type and set its caption
-            CommandButtonActiveXControl cmdBtn = (CommandButtonActiveXControl)btnShape.ActiveXControl;
-            cmdBtn.Caption = "Click Me";
+            Console.Write("Enter button X position (in inches): ");
+            double posX = ReadDoubleFromConsole();
 
-            // Example: locate all TextBox ActiveX controls on the page and update their text
-            foreach (Shape shape in page.Shapes)
+            Console.Write("Enter button Y position (in inches): ");
+            double posY = ReadDoubleFromConsole();
+
+            Console.Write("Enter button width (in inches): ");
+            double width = ReadDoubleFromConsole();
+
+            Console.Write("Enter button height (in inches): ");
+            double height = ReadDoubleFromConsole();
+
+            // Add a CommandButton ActiveX control to the page
+            long controlId = page.AddActiveXControl(ControlType.CommandButton, posX, posY, width, height);
+
+            // Retrieve the shape that hosts the ActiveX control
+            Shape controlShape = page.Shapes.GetShape(controlId);
+
+            // Cast the ActiveXControl to the specific type
+            CommandButtonActiveXControl button = (CommandButtonActiveXControl)controlShape.ActiveXControl;
+
+            // Set visual properties
+            button.Caption = caption;
+            button.Width = width;
+            button.Height = height;
+
+            // Optionally, update shape text to reflect the caption
+            controlShape.Text.Value.Clear();
+            controlShape.Text.Value.Add(new Txt(caption));
+
+            // Save the updated diagram
+            Console.Write("Enter the output path for the updated diagram (e.g., output.vsdx): ");
+            string outputPath = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(outputPath))
             {
-                if (shape.ActiveXControl != null && shape.ActiveXControl.Type == ControlType.TextBox)
-                {
-                    TextBoxActiveXControl txtBox = (TextBoxActiveXControl)shape.ActiveXControl;
-                    txtBox.Text = "Updated Text";
-                }
+                Console.WriteLine("Output path is required.");
+                return;
             }
 
-            // Save the diagram with auto‑fit to drawing content enabled
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
-            saveOptions.AutoFitPageToDrawingContent = true;
-            diagram.Save(outputPath, saveOptions);
-
+            try
+            {
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Helper method to read a double value from console with validation
+        private static double ReadDoubleFromConsole()
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            while (true)
+            {
+                string input = Console.ReadLine();
+                if (double.TryParse(input, out double result))
+                {
+                    return result;
+                }
+                Console.Write("Invalid number. Please enter a valid numeric value: ");
+            }
         }
     }
-}

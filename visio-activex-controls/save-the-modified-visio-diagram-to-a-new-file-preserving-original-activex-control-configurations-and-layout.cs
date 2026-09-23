@@ -1,7 +1,6 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,32 +9,13 @@ class Program
         try
         {
 
-            // Path to the original Visio file (could be VSDX, VDX, etc.)
-            string sourceFile = "input.vsdx";
+            // Load the existing Visio diagram (preserves all shapes, ActiveX controls, and layout)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Path for the new file that will contain the saved diagram
-            string destinationFile = "output.vsdx";
+            // No modifications are required; loading retains all ActiveX control configurations and layout
 
-            // Load the existing diagram preserving all its content, including ActiveX controls
-            Diagram diagram = new Diagram(sourceFile);
-
-            // -------------------------------------------------
-            // Perform any required modifications here.
-            // For this task we only need to save the diagram,
-            // so no changes are made to the diagram object.
-            // -------------------------------------------------
-
-            // Configure save options to keep the original layout.
-            // Setting AutoFitPageToDrawingContent to false ensures the page size
-            // is not altered during the save operation, thus preserving layout.
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
-            saveOptions.AutoFitPageToDrawingContent = false;
-
-            // Save the diagram to a new file using the specified options.
-            diagram.Save(destinationFile, saveOptions);
-
-            // Release resources held by the Diagram object.
-            diagram.Dispose();
+            // Save the diagram to a new file while preserving the original content
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

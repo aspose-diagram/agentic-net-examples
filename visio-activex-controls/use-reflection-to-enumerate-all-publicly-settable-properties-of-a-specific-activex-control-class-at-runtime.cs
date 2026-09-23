@@ -1,52 +1,60 @@
 using System;
 using System.Reflection;
-using Aspose.Diagram;
-using Aspose.Diagram.ActiveXControls;
+using System.Collections.Generic;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        // TODO: Replace MyActiveXControl with the actual ActiveX control class you want to inspect.
+        Type activeXType = typeof(MyActiveXControl);
+
+        // Retrieve all publicly settable properties.
+        IEnumerable<PropertyInfo> settableProperties = GetPublicSettableProperties(activeXType);
+
+        // Output the property names and their types.
+        foreach (PropertyInfo prop in settableProperties)
         {
-            try
-            {
-
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
-                // Add a CommandButton ActiveX control to the active page
-                // Parameters: control type, pinX, pinY, width, height (in inches)
-                long shapeId = diagram.ActivePage.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
-
-                // Retrieve the shape that contains the ActiveX control
-                Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
-
-                // Get the ActiveX control instance and cast to its specific type
-                CommandButtonActiveXControl commandButton = shape.ActiveXControl as CommandButtonActiveXControl;
-                if (commandButton == null)
-                {
-                    Console.WriteLine("Failed to retrieve the CommandButton ActiveX control.");
-                    return;
-                }
-
-                // Use reflection to enumerate all publicly settable properties
-                Type controlType = commandButton.GetType();
-                PropertyInfo[] properties = controlType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-
-                Console.WriteLine($"Publicly settable properties of {controlType.Name}:");
-                foreach (PropertyInfo prop in properties)
-                {
-                    // Consider a property settable if it has a public setter
-                    MethodInfo setMethod = prop.GetSetMethod();
-                    if (setMethod != null && setMethod.IsPublic)
-                    {
-                        Console.WriteLine($"- {prop.Name} ({prop.PropertyType.Name})");
-                    }
-                }
-
-            }
-            catch (System.NullReferenceException ex)
-            {
-                Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
-            }
+            Console.WriteLine($"{prop.Name} ({prop.PropertyType.Name})");
+        }
     }
+
+    /// <summary>
+    /// Returns all instance properties of the specified type that have a public setter.
+    /// </summary>
+    /// <param name="type">The type to reflect over.</param>
+    /// <returns>An enumerable of PropertyInfo objects representing publicly settable properties.</returns>
+    static IEnumerable<PropertyInfo> GetPublicSettableProperties(Type type)
+    {
+        // Get all public instance properties.
+        PropertyInfo[] properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+
+        foreach (PropertyInfo prop in properties)
+        {
+            // GetSetMethod(false) returns the setter only if it is public.
+            MethodInfo setMethod = prop.GetSetMethod(false);
+            if (setMethod != null && setMethod.IsPublic)
+            {
+                yield return prop;
+            }
+        }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Example ActiveX control class for demonstration purposes.
+// Replace or remove this class when using a real ActiveX control.
+// ---------------------------------------------------------------------------
+public class MyActiveXControl
+{
+    // Publicly settable properties.
+    public int Width { get; set; }
+    public int Height { get; set; }
+    public bool IsEnabled { get; set; }
+
+    // Not publicly settable (private setter).
+    public string Name { get; private set; }
+
+    // Not public (private property).
+    private int Hidden { get; set; }
+}

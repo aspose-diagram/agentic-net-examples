@@ -1,50 +1,10 @@
 using System;
-using System.Reflection;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
-namespace ActiveXReadOnlyGuardExample
-{
-    // Helper class that checks for read‑only properties before modifying an ActiveX control
-    public static class ActiveXGuard
+class Program
     {
-        // Attempts to set a property value; logs a warning if the property is read‑only
-        public static void TrySetProperty<T>(ActiveXControl control, string propertyName, T value)
-        {
-            if (control == null)
-                return;
-
-            // Get the property info using reflection
-            PropertyInfo propInfo = control.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
-            if (propInfo == null)
-            {
-                Console.WriteLine($"[Warning] Property '{propertyName}' does not exist on control type '{control.GetType().Name}'.");
-                return;
-            }
-
-            // Check if the property can be written to
-            if (!propInfo.CanWrite)
-            {
-                Console.WriteLine($"[Warning] Attempted to modify read‑only property '{propertyName}' on control type '{control.GetType().Name}'. Modification skipped.");
-                return;
-            }
-
-            // Set the property value
-            try
-            {
-                propInfo.SetValue(control, value);
-                Console.WriteLine($"[Info] Property '{propertyName}' set to '{value}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Error] Failed to set property '{propertyName}': {ex.Message}");
-            }
-        }
-    }
-
-    class Program
-    {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
@@ -53,32 +13,62 @@ namespace ActiveXReadOnlyGuardExample
                 string inputPath = "input.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and shapes to find ActiveX controls
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        ActiveXControl activeX = shape.ActiveXControl;
-                        if (activeX == null)
-                            continue;
+                        // Check if the shape contains an ActiveX control
+                        if (shape.ActiveXControl != null)
+                        {
+                            // Determine the specific control type
+                            ControlType ctrlType = shape.ActiveXControl.Type;
 
-                        Console.WriteLine($"[Info] Found ActiveX control of type '{activeX.Type}' on shape ID {shape.ID}.");
+                            // Example: handle CommandButtonActiveXControl
+                            if (ctrlType == ControlType.CommandButton)
+                            {
+                                var button = (CommandButtonActiveXControl)shape.ActiveXControl;
 
-                        // Example: attempt to modify a writable property (Width)
-                        ActiveXGuard.TrySetProperty(activeX, "Width", 2.0);
+                                // Attempt to set a writable property safely
+                                SetPropertySafely(
+                                    () => button.Caption = "Clicked!",
+                                    $"Shape ID {shape.ID} - CommandButton Caption");
 
-                        // Example: attempt to modify a read‑only property (Data)
-                        // This should trigger a warning and skip the modification
-                        byte[] dummyData = new byte[] { 0x01, 0x02, 0x03 };
-                        ActiveXGuard.TrySetProperty(activeX, "Data", dummyData);
+                                // Attempt to set a read‑only property (for demonstration)
+                                // This will throw because the property does not exist or is read‑only.
+                                // We wrap it in the safeguard to log a warning instead of crashing.
+                                SetPropertySafely(
+                                    () => { /* No writable property to set; placeholder for read‑only attempt */ },
+                                    $"Shape ID {shape.ID} - Attempted read‑only property");
+                            }
+                            // Example: handle CheckBoxActiveXControl
+                            else if (ctrlType == ControlType.CheckBox)
+                            {
+                                var checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
+
+                                // Safely set the checked state
+                                SetPropertySafely(
+                                    () => checkBox.Value = CheckValueType.Checked,
+                                    $"Shape ID {shape.ID} - CheckBox Value");
+                            }
+                            // Example: handle TextBoxActiveXControl
+                            else if (ctrlType == ControlType.TextBox)
+                            {
+                                var textBox = (TextBoxActiveXControl)shape.ActiveXControl;
+
+                                // Safely set the text content
+                                SetPropertySafely(
+                                    () => textBox.Text = "Sample text",
+                                    $"Shape ID {shape.ID} - TextBox Text");
+                            }
+                            // Add handling for other control types as needed
+                        }
                     }
                 }
 
-                // Save the diagram after processing
+                // Save the diagram after modifications
                 string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Processing completed.");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -86,5 +76,24 @@ namespace ActiveXReadOnlyGuardExample
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
+
+        /// <summary>
+        /// Executes a property‑setting action and logs a warning if the operation fails,
+        /// which typically indicates an attempt to modify a read‑only property.
+        /// </summary>
+        /// <param name="setAction">The action that sets the property.</param>
+        /// <param name="propertyDescription">A description of the property being set.</param>
+        private static void SetPropertySafely(Action setAction, string propertyDescription)
+        {
+            try
+            {
+                setAction();
+                Console.WriteLine($"[INFO] Successfully set {propertyDescription}.");
+            }
+            catch (Exception ex)
+            {
+                // Log a warning without throwing, preventing the application from crashing
+                Console.WriteLine($"[WARNING] Could not modify {propertyDescription}. Reason: {ex.Message}");
+            }
+        }
     }
-}

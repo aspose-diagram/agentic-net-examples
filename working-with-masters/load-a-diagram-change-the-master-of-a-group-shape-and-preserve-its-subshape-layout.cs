@@ -1,78 +1,65 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, output diagram path, and the target master name.
-        if (args.Length < 3)
+        static void Main()
         {
-            Console.Error.WriteLine("Usage: <program> <inputPath> <outputPath> <newMasterName>");
-            return;
-        }
-
-        string inputPath = args[0];
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = args[1];
-        string newMasterName = args[2];
-
-        try
-        {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Locate the first group shape on the first page.
-            Page page = diagram.Pages[0];
-            Shape? groupShape = null;
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                // Identify a group shape by its TypeValue.
-                if (shape.Type == TypeValue.Group)
+
+                // Paths to the source and destination Visio files
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the existing diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Access the first page (adjust if needed)
+                Page page = diagram.Pages[0];
+
+                // Find the first group shape on the page
+                Shape? groupShape = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    groupShape = shape;
-                    break;
+                    if (shape.Type == TypeValue.Group)
+                    {
+                        groupShape = shape;
+                        break;
+                    }
                 }
-            }
 
-            // Guard: ensure a group shape was found.
-            if (groupShape == null)
+                if (groupShape == null)
+                {
+                    Console.WriteLine("No group shape found on the page.");
+                    return;
+                }
+
+                // Name of the new master to assign to the group shape
+                string newMasterName = "NewGroupMaster";
+
+                // Verify that the master exists in the diagram's master collection
+                if (!diagram.Masters.IsExist(newMasterName))
+                {
+                    Console.WriteLine($"Master \"{newMasterName}\" does not exist in the diagram.");
+                    return;
+                }
+
+                // Retrieve the master object
+                Master newMaster = diagram.Masters.GetMasterByName(newMasterName);
+
+                // Change the master of the group shape while keeping its sub‑shapes intact
+                groupShape.Master = newMaster;
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Diagram saved with updated group master.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine("No group shape found in the diagram.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Verify that the target master exists in the diagram's master collection.
-            Master? targetMaster = diagram.Masters.GetMasterByName(newMasterName);
-            if (targetMaster == null)
-            {
-                Console.Error.WriteLine($"Master \"{newMasterName}\" not found in the diagram.");
-                return;
-            }
-
-            // Preserve the current master name for logging.
-            string oldMasterName = groupShape.Master?.Name ?? "(none)";
-            Console.WriteLine($"Changing master of group shape (ID={groupShape.ID}) from \"{oldMasterName}\" to \"{newMasterName}\".");
-
-            // Assign the new master to the group shape. This operation keeps the sub‑shape layout intact.
-            groupShape.Master = targetMaster;
-
-            // Save the modified diagram to the output path using VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
     }
-}
+    }

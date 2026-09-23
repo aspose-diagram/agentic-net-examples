@@ -10,22 +10,23 @@ class Program
         {
 
             // Path to the Visio file
-            string filePath = "example.vsdx";
+            string filePath = @"C:\Diagrams\sample.vsdx";
 
-            // ID of the shape you want to access
-            long shapeId = 5;
-
-            // Load the diagram from the specified file
+            // Load the diagram from the file
             Diagram diagram = new Diagram(filePath);
 
-            // Get the first page (or use diagram.ActivePage)
+            // Access the first page (index 0)
             Page page = diagram.Pages[0];
+
+            // ID of the shape you want to retrieve
+            long shapeId = 12345; // replace with the actual shape ID
 
             // Retrieve the shape by its ID
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Example usage: print shape details
-            Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
+            // Output some basic information about the shape
+            Console.WriteLine($"Shape ID: {shape.ID}");
+            Console.WriteLine($"Shape NameU: {shape.NameU}");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
@@ -10,48 +9,49 @@ class Program
             {
 
                 // Load an existing Visio diagram
-                var diagram = new Diagram("input.vsdx");
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-                // Access the first page (adjust index as needed)
+                // Access the first page and the first shape on that page
                 Page page = diagram.Pages[0];
+                Shape shape = page.Shapes[0];
 
-                // Retrieve the target shape (example: shape with ID = 1)
-                // Ensure the shape exists before proceeding
-                Shape shape = page.Shapes.GetShape(1);
-                if (shape == null)
-                {
-                    throw new Exception("Shape with ID 1 not found.");
-                }
-
-                // ------------------------------------------------------------
+                // -------------------------------------------------
                 // Remove all existing fields from the shape
-                // ------------------------------------------------------------
-                // Collect fields to remove to avoid modifying the collection while iterating
-                List<Field> fieldsToRemove = new List<Field>();
-                foreach (Field fld in shape.Fields)
+                // -------------------------------------------------
+                var fieldsToRemove = new System.Collections.Generic.List<Field>();
+                foreach (Field f in shape.Fields)
                 {
-                    fieldsToRemove.Add(fld);
+                    fieldsToRemove.Add(f);
                 }
 
-                // Remove each collected field
-                foreach (Field fld in fieldsToRemove)
+                foreach (Field f in fieldsToRemove)
                 {
-                    shape.Fields.Remove(fld);
+                    shape.Fields.Remove(f);
                 }
 
-                // ------------------------------------------------------------
+                // -------------------------------------------------
                 // Add a fresh set of updated fields
-                // ------------------------------------------------------------
-                // Example: add a single custom field with a new value
-                Field newField = new Field();
-                // Set the displayed value of the field
-                newField.Value.Val = "Updated Value";
-                // Optional: clear any formatting string
-                newField.Format.Val = "";
-                // Add the field to the shape's field collection
-                shape.Fields.Add(newField);
+                // -------------------------------------------------
 
-                // Save the modified diagram to a new file
+                // Example Field 1: Current date
+                Field dateField = new Field();
+                dateField.Value.Val = DateTime.Now.ToString("yyyy-MM-dd");
+                // Clear any formatting strings
+                dateField.Format.Val = "";
+                dateField.Format.Ufev.F = "";
+                dateField.Format.Ufev.Unit = MeasureConst.Undefined;
+                shape.Fields.Add(dateField);
+
+                // Example Field 2: Page number (hard‑coded for demonstration)
+                Field pageNumberField = new Field();
+                pageNumberField.Value.Val = "1";
+                pageNumberField.Format.Val = "";
+                pageNumberField.Format.Ufev.F = "";
+                pageNumberField.Format.Ufev.Unit = MeasureConst.Undefined;
+                shape.Fields.Add(pageNumberField);
+
+                // Save the modified diagram
                 diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }

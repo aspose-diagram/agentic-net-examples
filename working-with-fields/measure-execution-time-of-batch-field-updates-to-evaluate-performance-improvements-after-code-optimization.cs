@@ -1,58 +1,61 @@
-using System.IO;
 using System;
 using System.Diagnostics;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the diagram from file
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Start measuring execution time
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            // Perform batch field updates
-            foreach (Page page in diagram.Pages)
+            try
             {
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path to the output Visio file after updates
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
+
+                // Start measuring time
+                Stopwatch sw = Stopwatch.StartNew();
+
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes
+                    // Skip deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Update each text field in the shape
+                    // Iterate through all fields of the shape
                     foreach (Field field in shape.Fields)
                     {
-                        // Set a new value
+                        // Update the field's displayed value
                         field.Value.Val = "Updated";
 
-                        // Clear any existing formatting
-                        field.Format.Val = "";
-                        field.Format.Ufev.F = "";
-                        field.Format.Ufev.Unit = MeasureConst.Undefined;
+                        // Clear any formula or unit to keep it simple
+                        field.Value.Ufev.F = "";
+                        field.Value.Ufev.Unit = MeasureConst.Undefined;
                     }
                 }
+
+                // Stop measuring time
+                sw.Stop();
+
+                // Output the elapsed time
+                Console.WriteLine($"Batch field update completed in {sw.ElapsedMilliseconds} ms.");
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Stop measuring and output the elapsed time
-            stopwatch.Stop();
-            Console.WriteLine($"Batch field update elapsed time: {stopwatch.ElapsedMilliseconds} ms");
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

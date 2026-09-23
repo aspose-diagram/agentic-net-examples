@@ -1,47 +1,43 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Use the first page (a default page is created automatically)
-                Page page = diagram.Pages[0];
+            // Add a rectangle shape to the active page
+            double pinX = 2.0;
+            double pinY = 2.0;
+            string masterName = "Rectangle";
+            long shapeId = diagram.ActivePage.AddShape(pinX, pinY, masterName, false);
+            Shape shape = diagram.ActivePage.Shapes.GetShape((int)shapeId);
 
-                // Add a rectangle shape at position (2,2) inches
-                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+            // Create a field that displays the current system date/time
+            Field dateField = new Field();
 
-                // Retrieve the concrete Shape object
-                Shape shape = page.Shapes.GetShape(shapeId);
+            // Use the Visio formula NOW() to get the current timestamp
+            dateField.Value.Ufev.F = "NOW()";
 
-                // Create a new field that will display the current system timestamp
-                Field dateTimeField = new Field();
+            // Optional: set a display format (e.g., short date)
+            dateField.Format.Val = "Short Date";
 
-                // Set the formula to the Visio NOW() function
-                dateTimeField.Value.Ufev.F = "Now()";
+            // Add the field to the shape
+            shape.Fields.Add(dateField);
 
-                // Use undefined unit (required by the API)
-                dateTimeField.Value.Ufev.Unit = MeasureConst.Undefined;
+            // Save the diagram with the date/time field
+            diagram.Save("DateTimeFieldDiagram.vsdx", SaveFileFormat.Vsdx);
 
-                // Optionally clear any format string
-                dateTimeField.Format.Val = "";
-
-                // Add the field to the shape's Fields collection
-                shape.Fields.Add(dateTimeField);
-
-                // Save the diagram to a VSDX file
-                diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+        }
     }
-    }
+}

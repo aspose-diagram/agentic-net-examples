@@ -1,60 +1,59 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Name of the custom property to check
+            const string targetPropName = "MyFlag";
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load the Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Name of the custom property to check
-                const string targetPropName = "MyFlag";
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Ensure the shape has a Props collection
+                    if (shape.Props == null)
+                        continue;
+
+                    // Look for the custom property with the specified name
+                    foreach (Prop prop in shape.Props)
                     {
-                        bool addField = false;
-
-                        // Check if the shape has the custom property set to true
-                        foreach (Prop prop in shape.Props)
+                        if (prop.Name == targetPropName && 
+                            string.Equals(prop.Value.Val, "TRUE", StringComparison.OrdinalIgnoreCase))
                         {
-                            if (prop.Name == targetPropName &&
-                                prop.Value.Val.Equals("true", StringComparison.OrdinalIgnoreCase))
-                            {
-                                addField = true;
-                                break;
-                            }
-                        }
-
-                        // If condition met, add a new field to the shape
-                        if (addField)
-                        {
+                            // Create a new text field and set its value
                             Field field = new Field();
-                            // Set the field's value (e.g., a simple text)
                             field.Value.Val = "AddedField";
-                            // Add the field to the shape's Fields collection
+
+                            // Add the field to the shape
                             shape.Fields.Add(field);
+
+                            // No need to check other properties for this shape
+                            break;
                         }
                     }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

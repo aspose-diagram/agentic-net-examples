@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,28 +10,36 @@ class Program
         try
         {
 
-            // Path to the Visio file to be processed
+            // Path to the original Visio file
             string filePath = "input.vsdx";
 
-            // Load the diagram from the specified file
+            // Load the diagram from the file
             Diagram diagram = new Diagram(filePath);
 
-            // ----- Begin field operations -----
-            // Example: update a custom property named "Status" on all shapes
-            foreach (Page page in diagram.Pages)
+            // Example field operation: update the first field of the first shape that contains a field
+            if (diagram.Pages.Count > 0)
             {
+                Page page = diagram.Pages[0];
                 foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Prop prop in shape.Props)
+                    if (shape.Fields.Count > 0)
                     {
-                        if (prop.Name == "Status")
-                        {
-                            prop.Value.Val = "Updated";
-                        }
+                        // Access the first field
+                        Field field = shape.Fields[0];
+
+                        // Update the field's value
+                        field.Value.Val = "Updated value";
+
+                        // Clear any existing format strings (optional)
+                        field.Format.Val = "";
+                        field.Format.Ufev.F = "";
+                        field.Format.Ufev.Unit = MeasureConst.Undefined;
+
+                        // Exit after updating one field
+                        break;
                     }
                 }
             }
-            // ----- End field operations -----
 
             // Save the modified diagram back to its original location
             diagram.Save(filePath, SaveFileFormat.Vsdx);

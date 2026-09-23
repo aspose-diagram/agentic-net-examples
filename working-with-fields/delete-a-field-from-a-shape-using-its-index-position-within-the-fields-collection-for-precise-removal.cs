@@ -1,41 +1,52 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        string sourcePath = "input.vsdx";          // Path to the source Visio file
-        if (!System.IO.File.Exists(sourcePath))
+        try
         {
-            Console.Error.WriteLine($"File not found: {sourcePath}");
-            return;
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Choose the page (first page in this example)
+            Page page = diagram.Pages[0];
+
+            // Locate the target shape (by shape ID or index)
+            // Here we retrieve the shape with ID 1 as an example
+            Shape shape = page.Shapes.GetShape(1);
+
+            // Index of the field to remove (zero‑based)
+            int fieldIndex = 0; // change as needed
+
+            // Ensure the shape has enough fields
+            if (shape.Fields.Count > fieldIndex)
+            {
+                // Retrieve the field at the specified index
+                Field fieldToRemove = shape.Fields[fieldIndex];
+
+                // Remove the field from the shape
+                shape.Fields.Remove(fieldToRemove);
+
+                Console.WriteLine($"Field at index {fieldIndex} removed from shape ID {shape.ID}.");
+            }
+            else
+            {
+                Console.WriteLine($"Shape ID {shape.ID} does not contain a field at index {fieldIndex}.");
+            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        string destinationPath = "output.vsdx";    // Path where the modified file will be saved
-
-        // Load the Visio diagram (uses the provided load rule)
-        Diagram diagram = new Diagram(sourcePath);
-
-        // Identify the shape that contains the field to be removed.
-        // Here we assume the shape is on the first page and has a known Shape ID.
-        int shapeId = 1; // Replace with the actual Shape ID
-        Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-
-        // Specify the zero‑based index of the field to delete.
-        int fieldIndex = 0; // Replace with the desired field index
-
-        // Ensure the index is within the collection bounds.
-        if (fieldIndex >= 0 && fieldIndex < shape.Fields.Count)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Retrieve the Field object at the specified index.
-            Field fieldToRemove = shape.Fields[fieldIndex];
-
-            // Remove the Field from the collection (uses FieldCollection.Remove method).
-            shape.Fields.Remove(fieldToRemove);
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-
-        // Save the modified diagram (uses the provided save rule)
-        diagram.Save(destinationPath, SaveFileFormat.Vsdx);
     }
 }

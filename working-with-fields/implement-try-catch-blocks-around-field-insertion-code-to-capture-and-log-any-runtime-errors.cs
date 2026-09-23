@@ -3,28 +3,45 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Create a new diagram instance
-                Diagram diagram = new Diagram();
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Ensure there is at least one page (the default constructor creates one)
-                var page = diagram.Pages[0];
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Add a rectangle shape to the diagram; AddShape returns the shape ID (long)
-                long shapeId = diagram.AddShape(1.0, 1.0, "Rectangle", 0);
-                Shape shape = page.Shapes.GetShape(shapeId);
+                // Ensure there is at least one page and one shape
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-                // Attempt to insert a text field into the shape
+                Page page = diagram.Pages[0];
+                if (page.Shapes.Count == 0)
+                {
+                    Console.WriteLine("The first page contains no shapes.");
+                    return;
+                }
+
+                // Get the first shape on the first page
+                Shape shape = page.Shapes[0];
+
+                // Insert a new text field into the shape with error handling
                 try
                 {
-                    // Create a new field object
+                    // Create a new field
                     Field field = new Field();
 
-                    // Set the field's displayed value
+                    // Set the field type (Undefined is a safe default)
+                    field.Type.Value = TypeFieldValue.Undefined;
+
+                    // Set the field value (the visible text)
                     field.Value.Val = "Sample Text";
 
                     // Add the field to the shape's field collection
@@ -38,13 +55,14 @@ class Program
                     Console.WriteLine($"Error inserting field: {ex.Message}");
                 }
 
-                // Optional: save the diagram to verify changes (commented out as not required)
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

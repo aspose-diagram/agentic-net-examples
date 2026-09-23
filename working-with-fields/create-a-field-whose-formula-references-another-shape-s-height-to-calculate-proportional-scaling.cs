@@ -1,48 +1,60 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty Visio diagram
-                Diagram diagram = new Diagram();
+            // Create a new diagram
+            Diagram diagram = new Diagram();
 
-                // Add two rectangle shapes on the first page (page index 0)
-                long shapeAId = diagram.AddShape(2.0, 5.0, "Rectangle", 0);
-                long shapeBId = diagram.AddShape(5.0, 5.0, "Rectangle", 0);
+            // Access the first page
+            Page page = diagram.Pages[0];
 
-                // Retrieve the shape objects from the page
-                Page page = diagram.Pages[0];
-                Shape shapeA = page.Shapes.GetShape(shapeAId);
-                Shape shapeB = page.Shapes.GetShape(shapeBId);
+            // Add the first rectangle shape (the one that will contain the field)
+            double pinX1 = 2.0;
+            double pinY1 = 2.0;
+            double width1 = 1.0;
+            double height1 = 1.0;
+            string masterName = "Rectangle";
+            long shapeId1 = page.AddShape(pinX1, pinY1, width1, height1, masterName, false);
+            Shape shape1 = page.Shapes.GetShape((int)shapeId1);
 
-                // Assign recognizable names to the shapes (optional but helpful)
-                shapeA.Name = "ShapeA";
-                shapeB.Name = "ShapeB";
+            // Add a second rectangle shape whose Height will be referenced
+            double pinX2 = 5.0;
+            double pinY2 = 2.0;
+            double width2 = 1.0;
+            double height2 = 2.0; // arbitrary height
+            long shapeId2 = page.AddShape(pinX2, pinY2, width2, height2, masterName, false);
+            Shape shape2 = page.Shapes.GetShape((int)shapeId2);
 
-                // Create a new text field on ShapeA
-                Field proportionalField = new Field();
-                shapeA.Fields.Add(proportionalField);
+            // Give the reference shape a universal name for formula usage
+            shape2.NameU = "ReferenceShape";
 
-                // Set the field's formula to reference the Height of ShapeB
-                // Visio formula syntax: Height of shape "ShapeB"
-                proportionalField.Value.Ufev.F = "Height of shape \"ShapeB\"";
+            // Create a new field on shape1
+            Field field = new Field();
 
-                // Optionally set a default display value (will be overridden by the formula at render time)
-                proportionalField.Value.Val = "";
+            // Set the formula to reference the Height cell of the second shape
+            field.Value.Ufev.F = "Height of shape \"ReferenceShape\"";
 
-                // Save the diagram to a VSDX file
-                diagram.Save("ProportionalFieldDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Optional: set an initial display value
+            field.Value.Val = "0";
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+            // Add the field to shape1
+            shape1.Fields.Add(field);
+
+            // Save the diagram
+            diagram.Save("ProportionalScaling.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

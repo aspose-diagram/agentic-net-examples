@@ -5,70 +5,80 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        // Example mapping of old formulas to new formulas.
+        // In a real scenario this could be loaded from a config file.
+        private static readonly System.Collections.Generic.Dictionary<string, string> FormulaMappings = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            try
+            { "Width*Height", "Area()" },
+            { "Length+Width", "Perimeter()" }
+            // Add more mappings as needed.
+        };
+
+        static void Main(string[] args)
+        {
+            // Folder containing Visio files to process.
+            string inputFolder = @"C:\VisioFiles";
+            // Folder to save updated files.
+            string outputFolder = @"C:\VisioFiles\Updated";
+
+            if (!Directory.Exists(outputFolder))
             {
+                Directory.CreateDirectory(outputFolder);
+            }
 
-                // Folder containing source Visio files
-                string inputFolder = @"C:\Visio\Input";
-                // Folder where updated files will be saved
-                string outputFolder = @"C:\Visio\Output";
+            // Process all VSDX files in the input folder.
+            string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
 
-                // Ensure output directory exists
-                if (!Directory.Exists(outputFolder))
+            foreach (string filePath in diagramFiles)
+            {
+                try
                 {
-                    Directory.CreateDirectory(outputFolder);
-                }
+                    Console.WriteLine($"Loading diagram: {Path.GetFileName(filePath)}");
+                    Diagram diagram = new Diagram(filePath);
 
-                // Get all Visio files (VSDX) in the input folder
-                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-
-                foreach (string filePath in diagramFiles)
-                {
-                    try
+                    // Iterate through each page explicitly typed.
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Load the diagram
-                        Diagram diagram = new Diagram(filePath);
-
-                        // Iterate through each page
-                        foreach (Page page in diagram.Pages)
+                        // Iterate through each shape on the page.
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Iterate through each shape on the page
-                            foreach (Shape shape in page.Shapes)
+                            // Ensure the shape has fields to update.
+                            if (shape.Fields != null && shape.Fields.Count > 0)
                             {
-                                // Iterate through each field (text-insertion field) of the shape
+                                // Iterate through each field.
                                 foreach (Field field in shape.Fields)
                                 {
-                                    // Update the formula to the new standard
-                                    // Example: set formula to calculate area (Width * Height)
-                                    field.Value.Ufev.F = "Width*Height";
+                                    // The formula is stored in field.Value.Ufev.F.
+                                    string currentFormula = field.Value.Ufev.F ?? string.Empty;
 
-                                    // Optionally clear unit and format if not needed
-                                    field.Value.Ufev.Unit = MeasureConst.Undefined;
-                                    field.Format.Val = "";
-                                    field.Format.Ufev.F = "";
+                                    // Check if the current formula matches any mapping.
+                                    foreach (var mapping in FormulaMappings)
+                                    {
+                                        if (currentFormula.Equals(mapping.Key, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            Console.WriteLine($"Updating field formula on shape ID {shape.ID} from '{currentFormula}' to '{mapping.Value}'");
+                                            field.Value.Ufev.F = mapping.Value;
+                                            // Optionally clear the displayed value if needed.
+                                            field.Value.Val = string.Empty;
+                                            break;
+                                        }
+                                    }
                                 }
                             }
                         }
+                    }
 
-                        // Save the updated diagram to the output folder
-                        string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log any errors for the current file
-                        Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                    }
+                    // Save the updated diagram to the output folder.
+                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Saved updated diagram to: {outputPath}");
                 }
-
-                Console.WriteLine("Bulk field formula update completed.");
-
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                }
             }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
-    }
+
+            Console.WriteLine("Bulk update operation completed.");
+        }
     }

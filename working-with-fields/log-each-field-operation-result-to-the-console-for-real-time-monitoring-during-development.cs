@@ -1,98 +1,57 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Define input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
 
             // Load the diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputPath);
-                Console.WriteLine($"Diagram loaded from '{inputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page
+            // Iterate through pages and shapes
             foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
-                Console.WriteLine($"Processing Page ID: {page.ID}, Name: {page.NameU}");
-
-                // Iterate through each shape on the page
                 foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    long shapeId = shape.ID;
-                    Console.WriteLine($"  Shape ID: {shapeId}, NameU: {shape.NameU}");
+                    Console.WriteLine($"Processing Shape ID: {shape.ID}");
 
                     // Log existing fields
                     if (shape.Fields != null && shape.Fields.Count > 0)
                     {
-                        Console.WriteLine($"    Existing Fields Count: {shape.Fields.Count}");
                         foreach (Aspose.Diagram.Field field in shape.Fields)
                         {
-                            // Field index
-                            int ix = field.IX;
-                            // Field value (string)
-                            string value = field.Value != null ? field.Value.Val : "<null>";
-                            Console.WriteLine($"      Field IX: {ix}, Value: '{value}'");
+                            string fieldValue = field.Value != null ? field.Value.Val : "null";
+                            Console.WriteLine($"  Field IX: {field.IX}, Value: {fieldValue}");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("    No existing fields.");
+                        Console.WriteLine("  No fields on this shape.");
                     }
 
-                    // Add a new field to the shape
+                    // Add a new text-insertion field and log the operation
                     Aspose.Diagram.Field newField = new Aspose.Diagram.Field();
-                    // Set a simple value for demonstration
-                    if (newField.Value != null)
-                    {
-                        newField.Value.Val = "NewFieldValue";
-                    }
+                    newField.Type.Value = Aspose.Diagram.TypeFieldValue.Undefined;
+                    newField.Value.Val = "NewFieldValue";
                     shape.Fields.Add(newField);
-                    Console.WriteLine("    Added new field with value 'NewFieldValue'.");
-
-                    // Update the first field if it exists
-                    if (shape.Fields.Count > 0)
-                    {
-                        Aspose.Diagram.Field firstField = shape.Fields[0];
-                        if (firstField.Value != null)
-                        {
-                            firstField.Value.Val = "UpdatedValue";
-                            Console.WriteLine($"    Updated first field (IX={firstField.IX}) to 'UpdatedValue'.");
-                        }
-                    }
-
-                    // Remove the field we just added (last field)
-                    int lastIndex = shape.Fields.Count - 1;
-                    if (lastIndex >= 0)
-                    {
-                        Aspose.Diagram.Field fieldToRemove = shape.Fields[lastIndex];
-                        shape.Fields.Remove(fieldToRemove);
-                        Console.WriteLine($"    Removed field at index {lastIndex} (IX={fieldToRemove.IX}).");
-                    }
+                    Console.WriteLine("  Added new field with value: NewFieldValue");
                 }
             }
 
             // Save the modified diagram
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
-            }
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

@@ -4,40 +4,39 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths (adjust as needed)
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through each page in the diagram
+                // Iterate through each page
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through each shape on the page
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Ensure the Props collection is available
+                        if (shape.Props != null)
+                        {
+                            // Create a new custom property (Prop) for the timestamp
+                            Prop timestampProp = new Prop();
+                            timestampProp.Name = "Timestamp";
+                            timestampProp.Value.Val = DateTime.Now.ToString("o"); // ISO 8601 format
 
-                        // Create a new field to hold the timestamp
-                        Field timestampField = new Field();
-
-                        // Set the field's value to the current date and time
-                        timestampField.Value.Val = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-                        // Add the timestamp field to the shape
-                        shape.Fields.Add(timestampField);
+                            // Add the property to the shape
+                            shape.Props.Add(timestampProp);
+                        }
                     }
                 }
 
                 // Save the modified diagram
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

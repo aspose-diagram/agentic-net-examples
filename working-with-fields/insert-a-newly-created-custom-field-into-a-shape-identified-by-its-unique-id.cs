@@ -1,55 +1,38 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Paths to the source and destination Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Unique ID of the shape to which the custom field will be added
-                long targetShapeId = 12345; // replace with the actual shape ID
+            // Unique ID of the target shape (replace with the actual ID)
+            long targetShapeId = 5;
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Retrieve the shape from the first page
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes.GetShape(targetShapeId);
 
-                // Retrieve the first page (adjust index if needed)
-                Page page = diagram.Pages[0];
+            // Create a new text field (custom field) and set its value
+            Field customField = new Field();
+            customField.Value.Val = "Custom Field Value";
 
-                // Get the shape by its unique ID
-                Shape shape = page.Shapes.GetShape(targetShapeId);
-                if (shape == null)
-                {
-                    throw new Exception($"Shape with ID {targetShapeId} not found.");
-                }
+            // Add the field to the shape's Fields collection
+            shape.Fields.Add(customField);
 
-                // Create a new custom field
-                Field customField = new Field();
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-                // Set the field's value (text to be displayed)
-                customField.Value.Val = "MyCustomValue";
-
-                // Optionally, you can set other properties such as format or type if required
-                // customField.Format.Val = ""; // clear format
-                // customField.Type.Value = (int)TypeFieldValue.Undefined; // default type
-
-                // Add the field to the shape's Fields collection
-                shape.Fields.Add(customField);
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Custom field added and diagram saved successfully.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

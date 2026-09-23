@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class DiagramToHtmlAndZip
 {
@@ -11,53 +10,44 @@ class DiagramToHtmlAndZip
         try
         {
 
-            // Input Visio file path
-            string inputFile = @"C:\Input\sample.vsdx";
+            // Path to the source Visio diagram file
+            string sourceDiagramPath = @"C:\Diagrams\sample.vsdx";
 
             // Folder where HTML files will be saved
-            string htmlOutputFolder = @"C:\Output\HtmlFiles";
+            string htmlOutputFolder = @"C:\Diagrams\OutputHtml";
 
             // Path for the resulting ZIP archive
-            string zipPath = @"C:\Output\DiagramHtml.zip";
+            string zipOutputPath = @"C:\Diagrams\DiagramHtml.zip";
 
-            // Ensure the output folder exists and is empty
+            // Ensure the output folder exists; if it does, clean it
             if (Directory.Exists(htmlOutputFolder))
+            {
                 Directory.Delete(htmlOutputFolder, true);
+            }
             Directory.CreateDirectory(htmlOutputFolder);
 
-            // Load the diagram using the provided constructor (load rule)
-            using (Diagram diagram = new Diagram(inputFile))
+            // Load the Visio diagram using Aspose.Diagram
+            Diagram diagram = new Diagram(sourceDiagramPath);
+
+            // Save the diagram as HTML. This creates an index.html file and a resources folder.
+            // The Save method with a folder path and HTML format generates all required files.
+            diagram.Save(htmlOutputFolder, SaveFileFormat.Html);
+
+            // If a previous ZIP file exists, delete it
+            if (File.Exists(zipOutputPath))
             {
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Build a unique file name for each shape's HTML
-                        string shapeHtmlFile = Path.Combine(
-                            htmlOutputFolder,
-                            $"Page{page.ID}_Shape{shape.ID}.html");
-
-                        // Create HTML save options (default options are sufficient)
-                        HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-
-                        // Save the shape as HTML using the provided ToHTML method (save rule)
-                        shape.ToHTML(shapeHtmlFile, htmlOptions);
-                    }
-                }
+                File.Delete(zipOutputPath);
             }
 
             // Compress the entire HTML output folder into a ZIP archive
-            // If the ZIP already exists, delete it first
-            if (File.Exists(zipPath))
-                File.Delete(zipPath);
-            ZipFile.CreateFromDirectory(htmlOutputFolder, zipPath);
+            ZipFile.CreateFromDirectory(htmlOutputFolder, zipOutputPath, CompressionLevel.Optimal, false);
+
+            Console.WriteLine("Diagram converted to HTML and zipped successfully.");
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

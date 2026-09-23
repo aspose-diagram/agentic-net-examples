@@ -2,70 +2,68 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace CustomPageNamingExample
+class CustomPageNamingCallback : IPageSavingCallback
 {
-    // Callback class to modify page titles during PDF saving
-    public class CustomPageNamingCallback : IPageSavingCallback
+    private readonly Diagram _diagram;
+
+    public CustomPageNamingCallback(Diagram diagram)
     {
-        private readonly Diagram _diagram;
+        _diagram = diagram ?? throw new ArgumentNullException(nameof(diagram));
+    }
 
-        // Receive the diagram instance to access its pages
-        public CustomPageNamingCallback(Diagram diagram)
+    // Called before a page is saved
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        // args.PageIndex is zero‑based
+        int pageIndex = args.PageIndex;
+        if (pageIndex >= 0 && pageIndex < _diagram.Pages.Count)
         {
-            _diagram = diagram ?? throw new ArgumentNullException(nameof(diagram));
-        }
-
-        // Called before a page is saved
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            // args.PageIndex is zero‑based; retrieve the corresponding page
-            if (args.PageIndex >= 0 && args.PageIndex < _diagram.Pages.Count)
-            {
-                Page page = _diagram.Pages[args.PageIndex];
-                // Set a custom name for the page
-                string customName = $"CustomPage_{args.PageIndex + 1}";
-                page.Name = customName;
-                page.NameU = customName; // universal name
-            }
-        }
-
-        // Called after a page is saved
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            // No additional actions needed after saving each page
+            Page page = _diagram.Pages[pageIndex];
+            // Set a custom title for the page
+            page.Name = $"Custom Page {pageIndex + 1}";
+            page.NameU = $"Custom_Page_{pageIndex + 1}";
         }
     }
 
-    class Program
+    // Called after a page is saved
+    public void PageEndSaving(PageEndSavingArgs args)
     {
-        static void Main()
-        {
-            try
-            {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the output PDF file
-                string outputPath = "output.pdf";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Create PDF save options and assign the custom callback
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.PageSavingCallback = new CustomPageNamingCallback(diagram);
-
-                    // Save the diagram as PDF; the callback will rename pages during saving
-                    diagram.Save(outputPath, pdfOptions);
-                }
-
-                Console.WriteLine("Diagram saved to PDF with custom page names.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        // No additional processing needed; keep the default behavior
     }
+}
+
+class Program
+{
+    static void Main()
+    {
+        try
+        {
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Path for the resulting PDF file
+            string outputPath = "output.pdf";
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Create PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+                // Assign the custom page‑saving callback
+                pdfOptions.PageSavingCallback = new CustomPageNamingCallback(diagram);
+
+                // Save the diagram as PDF with the custom page titles
+                diagram.Save(outputPath, pdfOptions);
+            }
+
+            Console.WriteLine("Diagram saved with custom page names.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

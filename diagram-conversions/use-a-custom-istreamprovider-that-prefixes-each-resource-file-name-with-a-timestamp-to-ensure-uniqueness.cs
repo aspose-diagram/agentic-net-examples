@@ -3,33 +3,27 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramExport
+namespace DiagramExportExample
 {
-    // Custom stream provider that prefixes each resource file name with a timestamp.
-    public class TimestampStreamProvider : IStreamProvider
+    // Custom stream provider that prefixes each resource file name with a timestamp
+    public class TimestampedStreamProvider : IStreamProvider
     {
-        // Called when Aspose.Diagram needs a stream for a resource.
         public void InitStream(StreamProviderOptions options)
         {
-            // Build a unique file name using the current timestamp.
-            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+            // Create a unique file name using the current timestamp and the original resource name
+            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
             string originalFileName = Path.GetFileName(options.DefaultPath);
-            string directory = Path.GetDirectoryName(options.DefaultPath) ?? string.Empty;
-            string newFileName = $"{timestamp}_{originalFileName}";
-            string fullPath = Path.Combine(directory, newFileName);
+            string uniqueFileName = $"{timestamp}_{originalFileName}";
 
-            // Create a writable file stream for the resource.
-            options.Stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
+            // Open a file stream for writing the resource
+            var fileStream = new FileStream(uniqueFileName, FileMode.Create, FileAccess.Write);
+            options.Stream = fileStream;
         }
 
-        // Called after Aspose.Diagram finishes writing the resource.
         public void CloseStream(StreamProviderOptions options)
         {
-            if (options.Stream != null)
-            {
-                options.Stream.Dispose();
-                options.Stream = null;
-            }
+            // Ensure the stream is properly closed after the resource is written
+            options.Stream?.Close();
         }
     }
 
@@ -40,17 +34,15 @@ namespace DiagramExport
             try
             {
 
-                // Load an existing Visio diagram.
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+                // Load an existing Visio diagram
+                var diagram = new Diagram("input.vsdx");
 
-                // Configure HTML export options with the custom stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new TimestampStreamProvider();
+                // Configure HTML export options and assign the custom stream provider
+                var htmlOptions = new HTMLSaveOptions();
+                htmlOptions.StreamProvider = new TimestampedStreamProvider();
 
-                // Export the diagram to HTML. Resources will be saved with timestamped names.
-                string outputPath = "output.html";
-                diagram.Save(outputPath, htmlOptions);
+                // Export the diagram to HTML; resources (images, CSS, etc.) will be saved with timestamped names
+                diagram.Save("output.html", htmlOptions);
 
                 Console.WriteLine("Diagram exported to HTML with timestamped resource files.");
 

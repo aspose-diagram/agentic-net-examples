@@ -1,63 +1,43 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class WarningCollector : IWarningCallback
-{
-    // Stores warning descriptions captured during save.
-    public List<string> Warnings { get; } = new List<string>();
-
-    // Called by Aspose.Diagram for each warning.
-    public void Warning(WarningInfo warning)
-    {
-        if (warning != null && !string.IsNullOrEmpty(warning.Description))
-        {
-            Warnings.Add(warning.Description);
-        }
-    }
-}
-
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the source Visio file.
-            string inputPath = "input.vsdx";
-
-            // Load the diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prepare HTML export options and attach the warning collector.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            WarningCollector collector = new WarningCollector();
-            htmlOptions.WarningCallback = collector;
-
-            // Export to HTML.
-            string outputPath = "output.html";
-            diagram.Save(outputPath, htmlOptions);
-
-            // Output captured warnings.
-            if (collector.Warnings.Count > 0)
+            try
             {
-                Console.WriteLine("Warnings captured during HTML export:");
-                foreach (string msg in collector.Warnings)
+
+                // Input Visio file path (adjust as needed)
+                string inputPath = "sample.vsdx";
+
+                // Output HTML file path
+                string outputPath = "sample.html";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Configure HTML export options
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    Console.WriteLine("- " + msg);
-                }
-            }
-            else
-            {
-                Console.WriteLine("No warnings were generated during HTML export.");
-            }
+                    // Do not export hidden pages
+                    ExportHiddenPage = false,
+                    // Set a default font to avoid font‑related warnings
+                    DefaultFont = "Arial"
+                };
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Save the diagram as HTML
+                diagram.Save(outputPath, htmlOptions);
+
+                // Note: Aspose.Diagram does not expose a warnings collection.
+                // Warnings (e.g., missing fonts) are handled internally; they cannot be retrieved programmatically.
+                Console.WriteLine($"Diagram exported to HTML successfully: {outputPath}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

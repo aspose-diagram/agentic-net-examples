@@ -6,44 +6,31 @@ using Aspose.Diagram.Saving;
 
 public class MemoryStreamProvider : IStreamProvider
 {
-    // Stores the generated streams keyed by the default path of the resource.
-    private readonly Dictionary<string, MemoryStream> _streams = new Dictionary<string, MemoryStream>();
+    // Stores the generated streams keyed by the resource path (e.g., image file name)
+    public Dictionary<string, MemoryStream> Streams { get; } = new Dictionary<string, MemoryStream>();
 
-    // Called by Aspose.Diagram when a resource stream is needed.
+    // Called by Aspose.Diagram before writing a resource (image, CSS, etc.)
     public void InitStream(StreamProviderOptions options)
     {
-        // Create a new memory stream for the resource.
+        // Create a fresh memory stream for the resource
         var ms = new MemoryStream();
-        // Assign the stream to the options so Aspose can write into it.
         options.Stream = ms;
-        // Store the stream using the default path as the key for later retrieval.
+
+        // Keep a reference using the default path as the key (if provided)
         if (!string.IsNullOrEmpty(options.DefaultPath))
         {
-            _streams[options.DefaultPath] = ms;
+            Streams[options.DefaultPath] = ms;
         }
     }
 
-    // Called after the resource has been written.
+    // Called after the resource has been written
     public void CloseStream(StreamProviderOptions options)
     {
-        // The stream is already stored; optionally flush or reset position.
+        // Ensure the stream is ready for reading later
         if (options.Stream != null)
         {
-            options.Stream.Flush();
             options.Stream.Position = 0;
         }
-    }
-
-    // Helper to retrieve a generated stream by its resource path.
-    public MemoryStream GetStream(string resourcePath)
-    {
-        return _streams.TryGetValue(resourcePath, out var ms) ? ms : null;
-    }
-
-    // Helper to enumerate all stored streams.
-    public IEnumerable<KeyValuePair<string, MemoryStream>> GetAllStreams()
-    {
-        return _streams;
     }
 }
 
@@ -54,35 +41,32 @@ public class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path).
+            // Load an existing Visio diagram (replace with your file path)
             string diagramPath = "sample.vsdx";
             Diagram diagram = new Diagram(diagramPath);
 
-            // Configure HTML export options and assign the custom stream provider.
+            // Configure HTML export options and assign the custom stream provider
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
             var streamProvider = new MemoryStreamProvider();
             htmlOptions.StreamProvider = streamProvider;
 
-            // Export the diagram to HTML. The output path is required but the actual files
-            // will be written to the memory streams provided by the stream provider.
-            string outputHtmlPath = "output.html";
-            diagram.Save(outputHtmlPath, htmlOptions);
+            // Export to HTML (the actual HTML file is written to disk, but images are captured in memory)
+            string htmlOutputPath = "output.html";
+            diagram.Save(htmlOutputPath, htmlOptions);
 
-            // After saving, process the in‑memory resources.
-            foreach (var entry in streamProvider.GetAllStreams())
+            // After saving, process the captured image streams as needed
+            foreach (var kvp in streamProvider.Streams)
             {
-                string resourcePath = entry.Key;          // e.g., "images/img1.png"
-                MemoryStream ms = entry.Value;
+                string resourcePath = kvp.Key;          // e.g., "image1.png"
+                MemoryStream ms = kvp.Value;            // image data in memory
 
-                // Example processing: write the resource to the console as a base64 string.
-                byte[] data = ms.ToArray();
-                string base64 = Convert.ToBase64String(data);
-                Console.WriteLine($"Resource: {resourcePath}, Size: {data.Length} bytes");
-                Console.WriteLine($"Base64: {base64}");
+                // Example: display the size of each image resource
+                Console.WriteLine($"Resource: {resourcePath}, Size: {ms.Length} bytes");
+
+                // If further processing is required, the stream can be read here.
+                // For demonstration, we could save the image to disk:
+                // File.WriteAllBytes(resourcePath, ms.ToArray());
             }
-
-            // Clean up.
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

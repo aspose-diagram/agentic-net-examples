@@ -1,39 +1,33 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+class DiagramToHtml
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio file
+            // Path to the source Visio diagram file
             string sourceDiagramPath = @"C:\Diagrams\sample.vsdx";
 
-            // Load the diagram (uses the standard constructor)
-            Diagram diagram = new Diagram(sourceDiagramPath);
+            // UNC path where the HTML output will be written
+            string uncHtmlPath = @"\\myserver\share\output.html";
 
-            // Select a shape to convert – here we take the first shape on the first page
-            Shape shape = diagram.Pages[0].Shapes[0];
-
-            // UNC network share where the HTML output will be written
-            string uncHtmlPath = @"\\Server\Share\output.html";
-
-            // Create a file stream that points to the UNC location
-            using (FileStream outputStream = new FileStream(uncHtmlPath, FileMode.Create, FileAccess.Write))
+            // Load the Visio diagram using Aspose.Diagram
+            using (Diagram diagram = new Diagram(sourceDiagramPath))
             {
-                // Configure HTML save options as needed
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                // Create a file stream that points to the UNC location
+                using (FileStream outputStream = new FileStream(
+                    uncHtmlPath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None))
                 {
-                    // Example: save everything into a single HTML file
-                    SaveAsSingleFile = true
-                };
-
-                // Write the shape's HTML representation directly to the UNC stream
-                shape.ToHTML(outputStream, htmlOptions);
+                    // Save the diagram as HTML into the stream
+                    diagram.Save(outputStream, SaveFileFormat.Html);
+                }
             }
 
         }

@@ -2,74 +2,70 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramPageCountValidation
+class MyPageSavingCallback : IPageSavingCallback
 {
-    // Custom callback to validate page count during PDF saving
-    public class PageCountValidator : IPageSavingCallback
+    private readonly int _expectedPageCount;
+
+    public MyPageSavingCallback(int expectedPageCount)
     {
-        private readonly Diagram _diagram;
+        _expectedPageCount = expectedPageCount;
+    }
 
-        public PageCountValidator(Diagram diagram)
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        // Validate that the total page count reported at the start of each page matches the diagram's page count.
+        if (args.PageCount != _expectedPageCount)
         {
-            _diagram = diagram ?? throw new ArgumentNullException(nameof(diagram));
-        }
-
-        // Called before each page is saved
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            // args.PageCount is the total number of pages reported by the callback
-            int reportedCount = args.PageCount;
-            int actualCount = _diagram.Pages.Count;
-
-            if (reportedCount != actualCount)
-            {
-                throw new Exception($"Page count mismatch: reported {reportedCount}, actual {actualCount}.");
-            }
-
-            // Optional: log successful validation for the current page
-            Console.WriteLine($"Page {args.PageIndex + 1}/{reportedCount} validated successfully.");
-        }
-
-        // Called after each page is saved
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            // No additional validation needed here
+            throw new Exception($"PageStartSaving: Expected page count {_expectedPageCount}, but got {args.PageCount}.");
         }
     }
 
-    public class Program
+    public void PageEndSaving(PageEndSavingArgs args)
     {
-        public static void Main()
+        // Validate that the total page count reported at the end of each page matches the diagram's page count.
+        if (args.PageCount != _expectedPageCount)
         {
-            // Path to the input Visio file (replace with actual file path)
+            throw new Exception($"PageEndSaving: Expected page count {_expectedPageCount}, but got {args.PageCount}.");
+        }
+
+        // Continue processing remaining pages.
+        args.HasMorePages = true;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        try
+        {
+
+            // Path to the source Visio diagram.
             string inputPath = "input.vsdx";
 
-            // Path to the output PDF file
+            // Load the diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Capture the page count after loading.
+            int diagramPageCount = diagram.Pages.Count;
+
+            // Prepare PDF save options and assign the custom callback.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageSavingCallback = new MyPageSavingCallback(diagramPageCount);
+
+            // Path for the exported PDF.
             string outputPath = "output.pdf";
 
-            try
-            {
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Save the diagram to PDF using the options with the callback.
+            diagram.Save(outputPath, pdfOptions);
 
-                // Create the custom callback, passing the loaded diagram
-                var validator = new PageCountValidator(diagram);
+            // If we reach this point without exception, the page counts matched.
+            Console.WriteLine($"Successfully saved PDF. Diagram page count: {diagramPageCount}");
 
-                // Configure PDF save options and assign the callback
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.PageSavingCallback = validator;
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Ensure correct format
-
-                // Save the diagram as PDF (triggers the callback)
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine("Diagram saved successfully and page count validated.");
-            }
-            catch (Exception ex)
-            {
-                // Report any errors, including page count mismatches
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

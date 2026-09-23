@@ -2,45 +2,57 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-// Custom callback implementing IPageSavingCallback
-class CustomPageSavingCallback : IPageSavingCallback
+namespace DiagramExportExample
 {
-    // Called when a page starts saving
-    public void PageStartSaving(PageStartSavingArgs args)
+    // Custom callback to handle page saving events during PDF export
+    public class MyPageSavingCallback : IPageSavingCallback
     {
-        Console.WriteLine($"Start saving page {args.PageIndex}");
+        // Called before a page starts saving
+        public void PageStartSaving(PageStartSavingArgs args)
+        {
+            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
+        }
+
+        // Called after a page has been saved
+        public void PageEndSaving(PageEndSavingArgs args)
+        {
+            Console.WriteLine($"Finished saving page {args.PageIndex + 1}");
+            // Example: stop further page processing if needed
+            // args.HasMorePages = false;
+        }
     }
 
-    // Called when a page finishes saving
-    public void PageEndSaving(PageEndSavingArgs args)
+    class Program
     {
-        Console.WriteLine($"Finished saving page {args.PageIndex}");
+        static void Main()
+        {
+            try
+            {
+
+                // Path to the source Visio diagram
+                string inputPath = "input.vsdx";
+
+                // Path for the exported PDF file
+                string outputPath = "output.pdf";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Create PDF save options and assign the custom callback
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.PageSavingCallback = new MyPageSavingCallback();
+
+                // Optional: set a default font for missing fonts
+                pdfOptions.DefaultFont = "Arial";
+
+                // Save the diagram as PDF using the configured options
+                diagram.Save(outputPath, pdfOptions);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
-
-class Program
-{
-    static void Main()
-    {
-        try
-        {
-
-            // Load the diagram (replace with your source file)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Create save options for PDF (PdfSaveOptions supports PageSavingCallback)
-            PdfSaveOptions saveOptions = new PdfSaveOptions();
-
-            // Assign the custom IPageSavingCallback instance
-            saveOptions.PageSavingCallback = new CustomPageSavingCallback();
-
-            // Save the diagram using the options
-            diagram.Save("output.pdf", saveOptions);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
 }

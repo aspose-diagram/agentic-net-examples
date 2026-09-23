@@ -2,81 +2,57 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-namespace DiagramProcessing
+class Program
 {
-    // Implements progress logging for PDF page saving.
-    public class ProgressLoggingCallback : IPageSavingCallback
+    static void Main()
     {
-        public void PageStartSaving(PageStartSavingArgs args)
+        try
         {
-            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
-        }
 
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-        }
-    }
+            // Read configuration from appsettings.json
+            bool enableProgressLogging = false;
+            const string configFile = "appsettings.json";
 
-    public class Program
-    {
-        static void Main(string[] args)
-        {
-            try
+            if (File.Exists(configFile))
             {
-
-                // Load configuration from appsettings.json (expects a boolean property "EnableProgressLogging").
-                bool enableProgressLogging = false;
-                const string configFileName = "appsettings.json";
-
-                if (File.Exists(configFileName))
+                try
                 {
-                    try
+                    string json = File.ReadAllText(configFile);
+                    using JsonDocument doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("EnableProgressLogging", out JsonElement elem) &&
+                        elem.ValueKind == JsonValueKind.True)
                     {
-                        string json = File.ReadAllText(configFileName);
-                        using JsonDocument doc = JsonDocument.Parse(json);
-                        if (doc.RootElement.TryGetProperty("EnableProgressLogging", out JsonElement element) &&
-                            element.ValueKind == JsonValueKind.True || element.ValueKind == JsonValueKind.False)
-                        {
-                            enableProgressLogging = element.GetBoolean();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Failed to read configuration: {ex.Message}");
+                        enableProgressLogging = true;
                     }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"Configuration file '{configFileName}' not found. Progress logging disabled by default.");
+                    // If config cannot be read, treat as disabled and report the error
+                    Console.WriteLine($"Failed to read configuration: {ex.Message}");
                 }
-
-                // Load the diagram.
-                const string inputDiagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputDiagramPath);
-
-                // Prepare PDF save options.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-                // Assign progress logging callback if enabled.
-                if (enableProgressLogging)
-                {
-                    pdfOptions.PageSavingCallback = new ProgressLoggingCallback();
-                }
-
-                // Save the diagram as PDF.
-                const string outputPdfPath = "output.pdf";
-                diagram.Save(outputPdfPath, pdfOptions);
-
-                Console.WriteLine("Diagram conversion completed.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Example file paths (adjust as needed)
+            const string inputPath = "input.vsdx";
+            const string outputPath = "output.pdf";
+
+            if (enableProgressLogging) Console.WriteLine("Starting diagram processing...");
+
+            // Load diagram
+            if (enableProgressLogging) Console.WriteLine($"Loading diagram from '{inputPath}'");
+            Diagram diagram = new Diagram(inputPath);
+
+            // Save diagram as PDF
+            if (enableProgressLogging) Console.WriteLine($"Saving diagram to '{outputPath}' as PDF");
+            diagram.Save(outputPath, SaveFileFormat.Pdf);
+
+            if (enableProgressLogging) Console.WriteLine("Diagram processing completed successfully.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

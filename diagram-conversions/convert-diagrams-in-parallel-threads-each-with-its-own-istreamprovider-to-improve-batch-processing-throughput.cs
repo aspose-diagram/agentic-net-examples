@@ -1,111 +1,78 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace BatchDiagramExport
+class CustomStreamProvider : IStreamProvider
 {
-    // Custom IStreamProvider implementation for HTML export.
-    // Writes each resource (e.g., images, CSS) to a dedicated folder.
-    public class FileStreamProvider : IStreamProvider
+    private readonly string _outputPath;
+
+    public CustomStreamProvider(string outputPath)
     {
-        private readonly string _outputFolder;
-
-        public FileStreamProvider(string outputFolder)
-        {
-            _outputFolder = outputFolder;
-        }
-
-        // Called by Aspose.Diagram when a new resource stream is needed.
-        public void InitStream(StreamProviderOptions options)
-        {
-            // Ensure the output folder exists.
-            Directory.CreateDirectory(_outputFolder);
-
-            // options.DefaultPath provides the relative file name for the resource.
-            // Create a FileStream for that file and assign it to options.Stream.
-            string filePath = Path.Combine(_outputFolder, options.DefaultPath);
-            options.Stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
-        }
-
-        // Called after the resource has been written.
-        public void CloseStream(StreamProviderOptions options)
-        {
-            // Close the stream if it was created.
-            if (options.Stream != null)
-            {
-                options.Stream.Close();
-                options.Stream = null;
-            }
-        }
+        _outputPath = outputPath;
     }
 
-    public class Program
+    // Called before the HTML export starts writing to the stream
+    public void InitStream(StreamProviderOptions options)
     {
-        // Entry point.
-        public static void Main(string[] args)
+        // Create a file stream for the HTML file
+        var stream = new FileStream(_outputPath, FileMode.Create, FileAccess.Write);
+        options.Stream = stream;
+    }
+
+    // Called after the HTML export finishes
+    public void CloseStream(StreamProviderOptions options)
+    {
+        options.Stream?.Close();
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Input folder containing Visio files; can be passed as an argument or hard‑coded
+        string inputFolder = args.Length > 0 ? args[0] : @"C:\VisioFiles";
+
+        // Collect all supported Visio files (e.g., .vsdx, .vdx, .vsd)
+        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        var supportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".vsdx", ".vdx", ".vsd", ".vsx", ".vtx", ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm", ".html", ".mmd" };
+        var filesToProcess = new List<string>();
+        foreach (var file in diagramFiles)
+        {
+            if (supportedExtensions.Contains(Path.GetExtension(file)))
+                filesToProcess.Add(file);
+        }
+
+        // Process each diagram in parallel, each thread gets its own IStreamProvider instance
+        Parallel.ForEach(filesToProcess, diagramPath =>
         {
             try
             {
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Input folder containing Visio files.
-                string inputFolder = @"C:\Diagrams\Input";
+                // Determine HTML output path (same name, .html extension)
+                string htmlOutputPath = Path.ChangeExtension(diagramPath, ".html");
 
-                // Output base folder for HTML exports.
-                string outputBaseFolder = @"C:\Diagrams\Output";
+                // Configure HTML save options with a dedicated stream provider
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                htmlOptions.StreamProvider = new CustomStreamProvider(htmlOutputPath);
+                // Optional: do not export hidden pages
+                htmlOptions.ExportHiddenPage = false;
 
-                // Get all supported Visio files.
-                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-                if (diagramFiles.Length == 0)
-                {
-                    Console.WriteLine("No diagram files found in the input folder.");
-                    return;
-                }
-
-                // Process each file in parallel.
-                Parallel.ForEach(diagramFiles, diagramPath =>
-                {
-                    try
-                    {
-                        // Load the diagram.
-                        Diagram diagram = new Diagram(diagramPath);
-
-                        // Determine output paths.
-                        string diagramName = Path.GetFileNameWithoutExtension(diagramPath);
-                        string diagramOutputFolder = Path.Combine(outputBaseFolder, diagramName);
-                        string htmlOutputPath = Path.Combine(diagramOutputFolder, diagramName + ".html");
-
-                        // Ensure the folder for HTML resources exists.
-                        Directory.CreateDirectory(diagramOutputFolder);
-
-                        // Create a stream provider that writes resources into the diagram's folder.
-                        IStreamProvider streamProvider = new FileStreamProvider(diagramOutputFolder);
-
-                        // Configure HTML save options.
-                        HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                        {
-                            ExportHiddenPage = false,
-                            IsExportComments = false,
-                            StreamProvider = streamProvider
-                        };
-
-                        // Save the diagram as HTML.
-                        diagram.Save(htmlOutputPath, htmlOptions);
-
-                        Console.WriteLine($"Successfully exported '{diagramPath}' to HTML.");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error processing '{diagramPath}': {ex.Message}");
-                    }
-                });
-
+                // Save the diagram as HTML using the custom stream provider
+                diagram.Save(htmlOutputPath, htmlOptions);
             }
-            catch (System.IO.DirectoryNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                // Simple error handling – write to console
+                Console.WriteLine($"Error processing '{diagramPath}': {ex.Message}");
             }
-    }
+        });
+
+        Console.WriteLine("Batch conversion completed.");
     }
 }

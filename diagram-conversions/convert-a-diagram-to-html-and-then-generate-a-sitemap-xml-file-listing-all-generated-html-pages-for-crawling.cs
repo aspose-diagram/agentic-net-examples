@@ -2,60 +2,66 @@ using System;
 using System.IO;
 using System.Xml;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+class DiagramToHtmlAndSitemap
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source Visio diagram
-            string sourceDiagramPath = "input.vsd";
+            // Load the Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Folder where HTML pages will be generated
-            string htmlOutputFolder = "HtmlOutput";
-            Directory.CreateDirectory(htmlOutputFolder);
+            // Define output folder for HTML files
+            string outputFolder = "HtmlOutput";
+            Directory.CreateDirectory(outputFolder);
 
-            // Load the diagram (using Diagram constructor)
-            Diagram diagram = new Diagram(sourceDiagramPath);
+            // Export diagram to HTML (creates an HTML file and associated resources)
+            string htmlFileName = Path.Combine(outputFolder, "diagram.html");
+            diagram.Save(htmlFileName, SaveFileFormat.Html);
 
-            // Configure HTML save options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.SaveAsSingleFile = false; // generate separate HTML files per page
-            htmlOptions.PageCount = int.MaxValue; // render all pages
+            // Generate sitemap XML listing the generated HTML page(s)
+            string sitemapPath = Path.Combine(outputFolder, "sitemap.xml");
+            GenerateSitemap(new[] { "diagram.html" }, sitemapPath, "http://example.com/HtmlOutput/");
 
-            // Save the diagram as HTML. The file name is a placeholder; Aspose will create multiple files.
-            string dummyHtmlPath = Path.Combine(htmlOutputFolder, "index.html");
-            diagram.Save(dummyHtmlPath, htmlOptions);
-
-            // Generate sitemap.xml listing all generated HTML pages
-            string sitemapPath = Path.Combine(htmlOutputFolder, "sitemap.xml");
-            using (XmlWriter writer = XmlWriter.Create(sitemapPath, new XmlWriterSettings { Indent = true }))
-            {
-                writer.WriteStartDocument();
-                writer.WriteStartElement("urlset", "http://www.sitemaps.org/schemas/sitemap/0.9");
-
-                // Add each HTML file to the sitemap
-                foreach (string htmlFile in Directory.GetFiles(htmlOutputFolder, "*.html"))
-                {
-                    writer.WriteStartElement("url");
-                    // Convert file path to a URI (adjust base URL as needed)
-                    writer.WriteElementString("loc", new Uri(htmlFile).AbsoluteUri);
-                    writer.WriteEndElement(); // </url>
-                }
-
-                writer.WriteEndElement(); // </urlset>
-                writer.WriteEndDocument();
-            }
-
-            Console.WriteLine("Diagram converted to HTML and sitemap.xml generated successfully.");
+            Console.WriteLine("Conversion completed. HTML and sitemap generated in: " + outputFolder);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    // Creates a simple sitemap.xml file for the given HTML pages
+    static void GenerateSitemap(string[] htmlFiles, string sitemapFilePath, string baseUrl)
+    {
+        XmlDocument doc = new XmlDocument();
+
+        // Create the root <urlset> element with the required namespace
+        XmlElement urlset = doc.CreateElement("urlset");
+        urlset.SetAttribute("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9");
+        doc.AppendChild(urlset);
+
+        foreach (string htmlFile in htmlFiles)
+        {
+            // <url>
+            XmlElement url = doc.CreateElement("url");
+            urlset.AppendChild(url);
+
+            // <loc>
+            XmlElement loc = doc.CreateElement("loc");
+            loc.InnerText = baseUrl + htmlFile;
+            url.AppendChild(loc);
+
+            // Optional: <lastmod>
+            XmlElement lastmod = doc.CreateElement("lastmod");
+            lastmod.InnerText = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            url.AppendChild(lastmod);
+        }
+
+        // Save the sitemap.xml file
+        doc.Save(sitemapFilePath);
     }
 }

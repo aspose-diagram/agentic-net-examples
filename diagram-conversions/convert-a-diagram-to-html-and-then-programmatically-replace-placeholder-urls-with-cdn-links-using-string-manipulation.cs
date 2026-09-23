@@ -1,61 +1,41 @@
 using System;
 using System.IO;
-using System.Text;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class DiagramToHtmlConverter
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file using the provided constructor.
-            var diagram = new Diagram("input.vsdx");
+            // Load the source diagram file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Prepare HTML save options (default settings are sufficient for this example).
-            var htmlOptions = new HTMLSaveOptions();
-
-            // StringBuilder will hold the combined HTML of all shapes.
-            var htmlBuilder = new StringBuilder();
-
-            // Iterate through each page and each shape, converting them to HTML.
-            foreach (var page in diagram.Pages)
-            {
-                foreach (var shape in page.Shapes)
-                {
-                    // Convert the current shape to HTML and write it into a memory stream.
-                    using (var ms = new MemoryStream())
-                    {
-                        shape.ToHTML(ms, htmlOptions);
-                        ms.Position = 0;
-
-                        // Read the generated HTML from the stream.
-                        using (var reader = new StreamReader(ms))
-                        {
-                            string shapeHtml = reader.ReadToEnd();
-                            htmlBuilder.AppendLine(shapeHtml);
-                        }
-                    }
-                }
-            }
-
-            // Save the combined HTML to a file.
+            // Convert the diagram to HTML format
             string htmlFilePath = "output.html";
-            File.WriteAllText(htmlFilePath, htmlBuilder.ToString());
+            diagram.Save(htmlFilePath, SaveFileFormat.Html);
 
-            // Load the saved HTML for placeholder replacement.
+            // Read the generated HTML content
             string htmlContent = File.ReadAllText(htmlFilePath);
 
-            // Replace placeholder URLs with actual CDN links.
-            // Example placeholder: {{PLACEHOLDER_URL}}
-            string updatedHtml = htmlContent.Replace("{{PLACEHOLDER_URL}}", "https://cdn.example.com/resource.js");
+            // Map placeholder URLs to CDN URLs
+            var urlReplacements = new Dictionary<string, string>
+            {
+                { "http://placeholder.com/image1.png", "https://cdn.example.com/image1.png" },
+                { "http://placeholder.com/image2.png", "https://cdn.example.com/image2.png" }
+                // Add more mappings as needed
+            };
 
-            // Write the updated HTML back to the file.
-            File.WriteAllText(htmlFilePath, updatedHtml);
+            // Replace each placeholder URL with its CDN counterpart
+            foreach (var pair in urlReplacements)
+            {
+                htmlContent = htmlContent.Replace(pair.Key, pair.Value);
+            }
 
-            Console.WriteLine("Diagram converted to HTML and placeholders replaced successfully.");
+            // Save the modified HTML back to the file
+            File.WriteAllText(htmlFilePath, htmlContent);
 
         }
         catch (System.IO.FileNotFoundException ex)

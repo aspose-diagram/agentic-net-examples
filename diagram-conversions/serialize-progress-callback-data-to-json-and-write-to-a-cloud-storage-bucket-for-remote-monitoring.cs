@@ -7,37 +7,44 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramProgressMonitoring
 {
-    // Class to hold progress information for each page saved
-    public class ProgressInfo
+    // Represents progress information for each page saved.
+    public class PageProgress
     {
         public int PageIndex { get; set; }
         public int PageCount { get; set; }
         public DateTime Timestamp { get; set; }
     }
 
-    // Implementation of IPageSavingCallback to capture page saving events
-    public class MyPageSavingCallback : IPageSavingCallback
+    // Implements the page saving callback to capture progress.
+    public class ProgressCallback : IPageSavingCallback
     {
-        // Collected progress data
-        public List<ProgressInfo> ProgressData { get; } = new List<ProgressInfo>();
+        private readonly List<PageProgress> _progressData = new List<PageProgress>();
 
+        // Called before a page starts saving.
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            // No action needed at start of page saving for this scenario
+            // No action needed at start for this example.
         }
 
+        // Called after a page has been saved.
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            // Record progress after each page is saved
-            ProgressData.Add(new ProgressInfo
+            _progressData.Add(new PageProgress
             {
                 PageIndex = args.PageIndex,
                 PageCount = args.PageCount,
                 Timestamp = DateTime.UtcNow
             });
+        }
 
-            // Example: stop after first page (optional)
-            // args.HasMorePages = false;
+        // Serializes the collected progress data to JSON and writes it to a cloud bucket.
+        public void UploadProgress(string bucketPath)
+        {
+            string json = JsonSerializer.Serialize(_progressData, new JsonSerializerOptions { WriteIndented = true });
+
+            // Simulate writing to a cloud storage bucket by writing to a file.
+            // In a real scenario, replace this with the appropriate cloud SDK call.
+            File.WriteAllText(bucketPath, json);
         }
     }
 
@@ -48,38 +55,24 @@ namespace DiagramProgressMonitoring
             try
             {
 
-                // Path to the source Visio diagram
-                string inputPath = "input.vsdx";
+                // Load the Visio diagram.
+                string diagramPath = "input.vsdx";
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Prepare PDF save options and assign the custom callback
+                // Prepare PDF save options and assign the custom page saving callback.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                MyPageSavingCallback callback = new MyPageSavingCallback();
+                ProgressCallback callback = new ProgressCallback();
                 pdfOptions.PageSavingCallback = callback;
 
-                // Output PDF file path
+                // Save the diagram as PDF.
                 string outputPdfPath = "output.pdf";
-
-                // Save the diagram as PDF, invoking the callback for each page
                 diagram.Save(outputPdfPath, pdfOptions);
 
-                // Serialize the collected progress data to JSON
-                string json = JsonSerializer.Serialize(callback.ProgressData, new JsonSerializerOptions { WriteIndented = true });
+                // After saving, upload the progress data to the cloud bucket.
+                string bucketJsonPath = "cloud_bucket/progress.json";
+                callback.UploadProgress(bucketJsonPath);
 
-                // Define a path representing the cloud storage bucket (replace with actual bucket integration as needed)
-                string bucketFolder = "cloud_bucket";
-                string bucketFilePath = Path.Combine(bucketFolder, "progress.json");
-
-                // Ensure the bucket folder exists
-                Directory.CreateDirectory(bucketFolder);
-
-                // Write JSON to the bucket location
-                File.WriteAllText(bucketFilePath, json);
-
-                // Inform the user
-                Console.WriteLine($"Progress data written to {bucketFilePath}");
+                Console.WriteLine("Diagram saved and progress uploaded successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

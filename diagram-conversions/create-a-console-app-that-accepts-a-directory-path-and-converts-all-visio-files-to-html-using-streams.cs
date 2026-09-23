@@ -6,7 +6,7 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Get directory path from command line or ask the user
+            // Get directory path from command line argument or prompt the user
             string directoryPath;
             if (args.Length > 0 && Directory.Exists(args[0]))
             {
@@ -18,43 +18,48 @@ class Program
                 directoryPath = Console.ReadLine();
                 if (!Directory.Exists(directoryPath))
                 {
-                    Console.WriteLine("Directory does not exist.");
+                    Console.WriteLine("The specified directory does not exist.");
                     return;
                 }
             }
 
-            // Supported Visio extensions
-            string[] visioExtensions = new[] { ".vsd", ".vsdx", ".vdx", ".vss", ".vssx", ".vst", ".vstx", ".vsx", ".vtx", ".vdw" };
+            // Define Visio file extensions to process
+            string[] visioExtensions = new[] { ".vsd", ".vsdx", ".vsdm", ".vss", ".vssx", ".vssm", ".vst", ".vstx", ".vstm" };
 
-            // Process each Visio file in the directory (non‑recursive)
-            foreach (string filePath in Directory.GetFiles(directoryPath))
+            // Get all Visio files in the directory (non‑recursive)
+            var visioFiles = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (var filePath in visioFiles)
             {
                 if (Array.IndexOf(visioExtensions, Path.GetExtension(filePath).ToLower()) < 0)
-                    continue; // skip non‑Visio files
+                    continue; // Skip non‑Visio files
 
                 try
                 {
-                    // Load diagram from a read‑only file stream
+                    // Load Visio file using a read stream
                     using (FileStream inputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-                    using (Diagram diagram = new Diagram(inputStream))
                     {
+                        // Load the diagram from the stream
+                        Diagram diagram = new Diagram(inputStream);
+
                         // Prepare output HTML file path
-                        string outputFileName = Path.ChangeExtension(filePath, ".html");
-                        using (FileStream outputStream = new FileStream(outputFileName, FileMode.Create, FileAccess.Write))
+                        string htmlFileName = Path.ChangeExtension(Path.GetFileName(filePath), ".html");
+                        string htmlFilePath = Path.Combine(directoryPath, htmlFileName);
+
+                        // Save diagram to HTML using a write stream
+                        using (FileStream outputStream = new FileStream(htmlFilePath, FileMode.Create, FileAccess.Write))
                         {
-                            // Save diagram as HTML to the output stream
                             diagram.Save(outputStream, SaveFileFormat.Html);
                         }
-                    }
 
-                    Console.WriteLine($"Converted: {Path.GetFileName(filePath)} -> {Path.GetFileName(Path.ChangeExtension(filePath, ".html"))}");
+                        Console.WriteLine($"Converted: {Path.GetFileName(filePath)} -> {htmlFileName}");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to convert {Path.GetFileName(filePath)}: {ex.Message}");
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
                 }
             }
 
-            Console.WriteLine("Conversion process completed.");
+            Console.WriteLine("Conversion completed.");
         }
     }

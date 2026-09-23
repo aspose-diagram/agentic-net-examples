@@ -2,45 +2,57 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-// Callback implementation to receive progress for each page
-class PageSavingCallback : IPageSavingCallback
+namespace DiagramPdfExport
 {
-    // Called when a page starts saving
-    public void PageStartSaving(PageStartSavingArgs args)
+    // Callback implementation to receive page saving progress
+    public class PageSavingProgressCallback : IPageSavingCallback
     {
-        Console.WriteLine($"Start saving page {args.PageIndex}");
-    }
-
-    // Called when a page finishes saving
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"Finished saving page {args.PageIndex}");
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        try
+        // Called before a page starts saving
+        public void PageStartSaving(PageStartSavingArgs args)
         {
+            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+        }
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+        // Called after a page has been saved
+        public void PageEndSaving(PageEndSavingArgs args)
+        {
+            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+            // Continue processing remaining pages
+            // args.HasMorePages = false; // Uncomment to stop after first page
+        }
+    }
 
-            // Configure PDF save options and attach the progress callback
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            try
             {
-                PageSavingCallback = new PageSavingCallback()
-            };
 
-            // Save the diagram to PDF using the configured options
-            diagram.Save("output.pdf", pdfOptions);
+                // Input Visio file path (change as needed)
+                string inputPath = "input.vsdx";
+                // Output PDF file path
+                string outputPath = "output.pdf";
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;          // Explicitly set format
+                pdfOptions.DefaultFont = "Arial";                    // Fallback font
+                pdfOptions.PageSavingCallback = new PageSavingProgressCallback();
+
+                // Save the diagram to PDF with progress callbacks
+                diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine("Diagram saved to PDF successfully.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

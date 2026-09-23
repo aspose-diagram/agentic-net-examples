@@ -1,43 +1,36 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Path to the source Visio file
-            string sourcePath = "input.vsdx";
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
 
-            // Load the diagram from the file
-            Diagram diagram = new Diagram(sourcePath);
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // -------------------------------------------------
-            // Export HTML with comments included
-            // -------------------------------------------------
-            HTMLSaveOptions includeCommentsOptions = new HTMLSaveOptions();
-            includeCommentsOptions.IsExportComments = true; // Enable comment export
-            string outputWithComments = "output_with_comments.html";
-            diagram.Save(outputWithComments, includeCommentsOptions);
-            Console.WriteLine($"HTML saved with comments: {outputWithComments}");
+                // Configure HTML export options
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // -------------------------------------------------
-            // Export HTML without comments
-            // -------------------------------------------------
-            HTMLSaveOptions excludeCommentsOptions = new HTMLSaveOptions();
-            excludeCommentsOptions.IsExportComments = false; // Disable comment export
-            string outputWithoutComments = "output_without_comments.html";
-            diagram.Save(outputWithoutComments, excludeCommentsOptions);
-            Console.WriteLine($"HTML saved without comments: {outputWithoutComments}");
+                // Set to true to include comments, false to exclude them
+                htmlOptions.IsExportComments = true; // change to false to disable comment export
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Export the diagram to HTML with the specified options
+                string outputPath = "output.html";
+                diagram.Save(outputPath, htmlOptions);
+
+                Console.WriteLine($"Diagram exported to HTML at: {outputPath}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

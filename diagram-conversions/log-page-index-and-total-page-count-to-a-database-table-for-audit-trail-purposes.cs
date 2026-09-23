@@ -1,71 +1,58 @@
-using System;
 using System.IO;
+using System;
+using System.Data;
+using System.Data.SqlClient;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class MyPageSavingCallback : IPageSavingCallback
+class DiagramAuditLogger
 {
-    // This method is called before each page is saved.
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        // Log page index and total page count (replace with DB logic as needed).
-        LogPageInfo(args.PageIndex, args.PageCount);
-    }
-
-    // This method is called after each page is saved.
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        // No post‑save actions required.
-    }
-
-    private void LogPageInfo(int pageIndex, int pageCount)
+    static void Main()
     {
         try
         {
-            // Placeholder for database logging – currently writes to console.
-            Console.WriteLine($"AuditLog: PageIndex={pageIndex}, TotalPages={pageCount}, Timestamp={DateTime.UtcNow}");
-        }
-        catch (Exception ex)
-        {
-            // Write any logging errors to the error stream.
-            Console.Error.WriteLine($"Failed to log page info: {ex.Message}");
-        }
-    }
-}
 
-class Program
-{
-    static void Main(string[] args)
-    {
-        // Path to the input Visio diagram.
-        string diagramPath = "input.vsdx";
-        // Guard: ensure the diagram file exists before proceeding.
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
+            // Load the Visio diagram (lifecycle rule: load)
+            Diagram diagram = new Diagram("input.vsdx");
 
-        try
-        {
-            // Load the Visio diagram within a using block to ensure disposal.
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Get total number of pages in the diagram
+            int totalPages = diagram.Pages.Count;
+
+            // Connection string to the audit database (replace with actual values)
+            string connectionString = "Data Source=SERVER_NAME;Initial Catalog=AuditDB;Integrated Security=True";
+
+            // Prepare the SQL command for inserting audit records
+            const string insertSql = @"
+                INSERT INTO AuditLog (PageIndex, TotalPages, LoggedAt)
+                VALUES (@PageIndex, @TotalPages, @LoggedAt)";
+
+            // Open a connection to the database
+            using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                // Configure PDF save options and attach the custom page‑saving callback.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.PageSavingCallback = new MyPageSavingCallback();
+                conn.Open();
 
-                // Define the output PDF path.
-                string outputPath = "output.pdf";
+                // Iterate through each page and log its index with the total page count
+                foreach (Page page in diagram.Pages)
+                {
+                    using (SqlCommand cmd = new SqlCommand(insertSql, conn))
+                    {
+                        // Page index (Visio pages are 1‑based)
+                        cmd.Parameters.Add("@PageIndex", SqlDbType.Int).Value = page.ID;
+                        // Total page count (same for all pages)
+                        cmd.Parameters.Add("@TotalPages", SqlDbType.Int).Value = totalPages;
+                        // Timestamp of the audit entry
+                        cmd.Parameters.Add("@LoggedAt", SqlDbType.DateTime).Value = DateTime.UtcNow;
 
-                // Save the diagram to PDF; the callback logs each page.
-                diagram.Save(outputPath, pdfOptions);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
             }
+
+            // No saving of the diagram is required for this audit operation
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Capture and report any errors that occur during processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

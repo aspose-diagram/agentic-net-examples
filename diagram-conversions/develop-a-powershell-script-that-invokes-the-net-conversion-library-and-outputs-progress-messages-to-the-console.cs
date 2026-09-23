@@ -5,93 +5,97 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramConversion
 {
-    // Implements page saving callback to report progress during PDF generation
-    public class PageSavingCallback : IPageSavingCallback
+    // Callback to report page saving progress during PDF export
+    class PdfPageSavingCallback : IPageSavingCallback
     {
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+            Console.WriteLine($"[PDF] Starting page {args.PageIndex + 1} of {args.PageCount}");
         }
 
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-            // Continue processing remaining pages
-            args.HasMorePages = true;
+            Console.WriteLine($"[PDF] Finished page {args.PageIndex + 1} of {args.PageCount}");
         }
     }
 
-    public class Program
+    class Program
     {
-        // Entry point of the console application
-        public static void Main(string[] args)
+        static void Main(string[] args)
         {
-            // Validate arguments: source folder and destination folder
-            if (args.Length < 2)
+            // Determine input and output folders
+            string inputFolder;
+            string outputFolder;
+
+            if (args.Length >= 2)
             {
-                Console.WriteLine("Usage: DiagramConversion <sourceFolder> <outputFolder>");
+                inputFolder = args[0];
+                outputFolder = args[1];
+            }
+            else
+            {
+                Console.WriteLine("Usage: DiagramConversion <inputFolder> <outputFolder>");
                 return;
             }
 
-            string sourceFolder = args[0];
-            string outputFolder = args[1];
-
-            if (!Directory.Exists(sourceFolder))
+            if (!Directory.Exists(inputFolder))
             {
-                Console.WriteLine($"Source folder does not exist: {sourceFolder}");
+                Console.WriteLine($"Input folder does not exist: {inputFolder}");
                 return;
             }
 
-            if (!Directory.Exists(outputFolder))
-            {
-                Console.WriteLine($"Output folder does not exist, creating: {outputFolder}");
-                Directory.CreateDirectory(outputFolder);
-            }
+            // Ensure output folder exists
+            Directory.CreateDirectory(outputFolder);
 
             // Supported Visio file extensions
-            string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vss", ".vstx", ".vst" };
-            string[] files = Directory.GetFiles(sourceFolder, "*.*", SearchOption.TopDirectoryOnly);
-            var diagramFiles = Array.FindAll(files, f => Array.Exists(extensions, ext => ext.Equals(Path.GetExtension(f), StringComparison.OrdinalIgnoreCase)));
+            string[] extensions = new[] { "*.vsdx", "*.vsd", "*.vsdm", "*.vssx", "*.vstx" };
 
-            int totalFiles = diagramFiles.Length;
-            if (totalFiles == 0)
+            // Gather all diagram files
+            var diagramFiles = new System.Collections.Generic.List<string>();
+            foreach (var ext in extensions)
             {
-                Console.WriteLine("No Visio files found in the source folder.");
+                diagramFiles.AddRange(Directory.GetFiles(inputFolder, ext, SearchOption.TopDirectoryOnly));
+            }
+
+            if (diagramFiles.Count == 0)
+            {
+                Console.WriteLine("No diagram files found in the input folder.");
                 return;
             }
 
-            Console.WriteLine($"Found {totalFiles} Visio file(s) to convert.");
+            Console.WriteLine($"Found {diagramFiles.Count} diagram file(s). Starting conversion...");
 
-            for (int i = 0; i < totalFiles; i++)
+            int processedCount = 0;
+            foreach (string filePath in diagramFiles)
             {
-                string inputPath = diagramFiles[i];
-                string fileName = Path.GetFileName(inputPath);
-                Console.WriteLine($"[{i + 1}/{totalFiles}] Processing: {fileName}");
-
                 try
                 {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(inputPath);
+                    Console.WriteLine($"Processing: {Path.GetFileName(filePath)}");
 
-                    // Prepare PDF save options with a page-saving callback
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Prepare PDF save options with page callback
                     PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.PageSavingCallback = new PageSavingCallback();
+                    pdfOptions.PageSavingCallback = new PdfPageSavingCallback();
 
                     // Determine output PDF path
-                    string outputPath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(inputPath) + ".pdf");
+                    string outputFileName = Path.GetFileNameWithoutExtension(filePath) + ".pdf";
+                    string outputPath = Path.Combine(outputFolder, outputFileName);
 
-                    // Save diagram as PDF
+                    // Save as PDF
                     diagram.Save(outputPath, pdfOptions);
 
-                    Console.WriteLine($"Successfully saved PDF: {outputPath}");
+                    Console.WriteLine($"Saved PDF: {outputFileName}");
+                    processedCount++;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing {fileName}: {ex.Message}");
+                    Console.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
                 }
             }
 
-            Console.WriteLine("Conversion process completed.");
+            Console.WriteLine($"Conversion completed. {processedCount} of {diagramFiles.Count} file(s) processed successfully.");
         }
     }
 }

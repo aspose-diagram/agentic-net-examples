@@ -4,81 +4,87 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace AsposeDiagramStreamProviderTest
+namespace DiagramHtmlExportTest
 {
-    // Custom IStreamProvider that records the resource names (DefaultPath) requested during HTML export
+    // Custom stream provider that records the resource names requested by the HTML exporter.
     public class RecordingStreamProvider : IStreamProvider
     {
-        // List to store the resource names received
-        public List<string> ReceivedResourceNames { get; } = new();
+        private readonly List<string> _resourceNames;
 
-        // Called by Aspose.Diagram when a resource stream is needed
+        public RecordingStreamProvider(List<string> resourceNames)
+        {
+            _resourceNames = resourceNames ?? throw new ArgumentNullException(nameof(resourceNames));
+        }
+
+        // Called by Aspose.Diagram when a resource (e.g., image, CSS) needs a stream.
         public void InitStream(StreamProviderOptions options)
         {
-            // DefaultPath is read‑only and contains the name of the resource (e.g., an image file name)
-            if (!string.IsNullOrEmpty(options.DefaultPath))
-            {
-                ReceivedResourceNames.Add(options.DefaultPath);
-            }
+            // Record the default path (resource name) supplied by the exporter.
+            _resourceNames.Add(options.DefaultPath);
 
-            // Provide a writable stream for the resource; using a MemoryStream as a placeholder
+            // Provide a writable stream; for this test we use a MemoryStream.
             options.Stream = new MemoryStream();
         }
 
-        // Called after the resource has been written
+        // Called after the exporter finishes writing to the stream.
         public void CloseStream(StreamProviderOptions options)
         {
-            // Dispose the temporary stream if it was created
+            // Dispose the stream we created in InitStream.
             options.Stream?.Dispose();
         }
     }
 
-    class Program
+    public class Program
     {
-        static void Main()
+        public static void Main()
         {
             try
             {
 
-                // Prepare output folder
-                string outputFolder = Path.Combine(Path.GetTempPath(), "AsposeDiagramHtmlTest");
-                Directory.CreateDirectory(outputFolder);
-                string htmlOutputPath = Path.Combine(outputFolder, "diagram.html");
+                // Prepare a list to capture resource names.
+                List<string> capturedResources = new List<string>();
 
-                // Create a new diagram
-                using Diagram diagram = new Diagram();
-
-                // Add a simple rectangle shape to ensure at least one resource is generated
-                // Using the built‑in "Rectangle" master on the first page (page index 0)
-                long shapeId = diagram.AddShape(1.0, 1.0, "Rectangle", 0);
-                // Retrieve the shape to set some text (optional, just to have content)
+                // Create a simple diagram with one rectangle shape.
+                Diagram diagram = new Diagram();
+                // Add a rectangle master shape to the diagram (master name "Rectangle" exists in the default stencil).
+                long shapeId = diagram.AddShape(2.0, 2.0, 4.0, 2.0, "Rectangle", 0);
+                // Retrieve the shape to set some text (optional, ensures content is present).
                 Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-                shape.Text.Value.Add(new Txt("Test Shape"));
+                shape.Text.Value.Add(new Txt("Sample shape"));
 
-                // Set up HTML save options with the custom stream provider
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                // Configure HTML export options and assign the custom stream provider.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                htmlOptions.StreamProvider = new RecordingStreamProvider(capturedResources);
+
+                // Define output paths.
+                string outputHtml = "test_output.html";
+
+                // Perform the HTML export. The custom stream provider will be invoked for each resource.
+                diagram.Save(outputHtml, htmlOptions);
+
+                // Verify that the stream provider received at least one resource name.
+                if (capturedResources.Count == 0)
                 {
-                    StreamProvider = new RecordingStreamProvider()
-                };
-
-                // Save the diagram as HTML
-                diagram.Save(htmlOutputPath, htmlOptions);
-
-                // Verify that the stream provider received at least one resource name
-                var provider = (RecordingStreamProvider)htmlOptions.StreamProvider;
-                if (provider.ReceivedResourceNames.Count == 0)
-                {
-                    throw new Exception("IStreamProvider did not receive any resource names during HTML export.");
+                    throw new Exception("IStreamProvider was not invoked; no resource names were captured.");
                 }
 
-                // Output the captured resource names for inspection
-                Console.WriteLine("IStreamProvider captured the following resource names:");
-                foreach (string name in provider.ReceivedResourceNames)
+                // Example verification: ensure that at least one captured resource ends with ".png"
+                bool hasPng = false;
+                foreach (string name in capturedResources)
                 {
-                    Console.WriteLine($"- {name}");
+                    Console.WriteLine($"Captured resource: {name}");
+                    if (name.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasPng = true;
+                    }
                 }
 
-                Console.WriteLine("Test completed successfully.");
+                if (!hasPng)
+                {
+                    throw new Exception("Expected at least one PNG resource, but none were captured.");
+                }
+
+                Console.WriteLine("IStreamProvider test passed. Captured resource count: " + capturedResources.Count);
 
             }
             catch (Aspose.Diagram.DiagramException ex)

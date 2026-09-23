@@ -6,33 +6,47 @@ using Aspose.Diagram.Saving;
 
 namespace DiagramHtmlExport
 {
-    // Implements IStreamProvider to write resources (images, CSS, etc.) to a temporary folder.
-    // The folder is deleted when Cleanup() is called after the conversion.
+    // Implements IStreamProvider to write embedded resources to a temporary folder.
+    // The temporary folder is deleted after the conversion completes.
     public class TempFolderStreamProvider : IStreamProvider
     {
-        private string _tempFolder;
+        private readonly string _tempFolder;
         private readonly List<string> _createdFiles = new List<string>();
 
-        // Creates the temporary folder on first use and opens a file stream for the resource.
-        public void InitStream(StreamProviderOptions options)
+        public TempFolderStreamProvider()
         {
-            if (string.IsNullOrEmpty(_tempFolder))
-            {
-                _tempFolder = Path.Combine(Path.GetTempPath(), "AsposeDiagramTemp_" + Guid.NewGuid().ToString("N"));
-                Directory.CreateDirectory(_tempFolder);
-            }
-
-            // options.DefaultPath is read‑only; use it to build the file name.
-            string filePath = Path.Combine(_tempFolder, options.DefaultPath);
-            var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
-            options.Stream = fileStream;
-            _createdFiles.Add(filePath);
+            // Create a unique temporary directory.
+            _tempFolder = Path.Combine(Path.GetTempPath(), "AsposeDiagramTemp_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_tempFolder);
         }
 
-        // Closes the stream after the resource has been written.
+        // Called by Aspose.Diagram before writing each resource stream.
+        public void InitStream(StreamProviderOptions options)
+        {
+            // Determine a file name for the resource.
+            string fileName = Path.GetFileName(options.DefaultPath);
+            if (string.IsNullOrEmpty(fileName))
+            {
+                fileName = Guid.NewGuid().ToString() + ".bin";
+            }
+
+            string fullPath = Path.Combine(_tempFolder, fileName);
+            // Create a file stream that Aspose will write the resource into.
+            var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
+            options.Stream = fileStream;
+
+            // Keep track of the file for later cleanup.
+            _createdFiles.Add(fullPath);
+        }
+
+        // Called after the resource has been written.
         public void CloseStream(StreamProviderOptions options)
         {
-            options.Stream?.Dispose();
+            if (options.Stream != null)
+            {
+                options.Stream.Dispose();
+                options.Stream = null;
+            }
         }
 
         // Deletes all files and the temporary folder.
@@ -42,58 +56,49 @@ namespace DiagramHtmlExport
             {
                 try
                 {
-                    if (File.Exists(file))
-                        File.Delete(file);
+                    File.Delete(file);
                 }
                 catch
                 {
-                    // Ignored – best‑effort cleanup.
+                    // Ignore any errors during cleanup.
                 }
             }
 
             try
             {
-                if (!string.IsNullOrEmpty(_tempFolder) && Directory.Exists(_tempFolder))
-                    Directory.Delete(_tempFolder, true);
+                Directory.Delete(_tempFolder, true);
             }
             catch
             {
-                // Ignored – best‑effort cleanup.
+                // Ignore any errors during cleanup.
             }
         }
     }
 
-    public class Program
+    class Program
     {
-        public static void Main()
+        static void Main()
         {
             try
             {
 
-                // Load a diagram (replace with your actual file path).
+                // Load an existing Visio diagram.
                 string inputPath = "sample.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
-                // Configure HTML export options.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                {
-                    // Example: export all pages as separate files.
-                    PageCount = int.MaxValue,
-                    SaveAsSingleFile = false
-                };
+                // Prepare HTML export options and assign the custom stream provider.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                var streamProvider = new TempFolderStreamProvider();
+                htmlOptions.StreamProvider = streamProvider;
 
-                // Assign the custom stream provider.
-                var provider = new TempFolderStreamProvider();
-                htmlOptions.StreamProvider = provider;
-
-                // Export to HTML.
+                // Export the diagram to HTML. Resources (images, CSS, etc.) will be written to the temp folder.
                 string outputHtml = "output.html";
                 diagram.Save(outputHtml, htmlOptions);
 
-                // Clean up temporary resources.
-                provider.Cleanup();
+                // Clean up temporary files after conversion.
+                streamProvider.Cleanup();
 
-                Console.WriteLine($"Diagram exported to '{outputHtml}'. Temporary resources have been removed.");
+                Console.WriteLine("HTML export completed. Output file: " + outputHtml);
 
             }
             catch (System.IO.FileNotFoundException ex)

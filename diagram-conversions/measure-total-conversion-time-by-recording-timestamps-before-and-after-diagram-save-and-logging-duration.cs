@@ -1,8 +1,6 @@
 using System.IO;
 using System;
-using System.Diagnostics;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,29 +9,23 @@ class Program
         try
         {
 
-            // Path to the source diagram file
+            // Load the source Visio diagram
             string inputPath = "input.vsdx";
-
-            // Path where the converted diagram will be saved
-            string outputPath = "output.vdx";
-
-            // Load the diagram from the file
             Diagram diagram = new Diagram(inputPath);
 
-            // Start measuring time before the save operation
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            // Record the start timestamp
+            DateTime startTime = DateTime.UtcNow;
 
-            // Save the diagram in VDX format
-            diagram.Save(outputPath, SaveFileFormat.Vdx);
+            // Perform the conversion (save to PDF in this example)
+            string outputPath = "output.pdf";
+            diagram.Save(outputPath, SaveFileFormat.Pdf);
 
-            // Stop the timer after saving completes
-            stopwatch.Stop();
+            // Record the end timestamp
+            DateTime endTime = DateTime.UtcNow;
 
-            // Log the elapsed time in milliseconds
-            Console.WriteLine($"Total conversion time: {stopwatch.Elapsed.TotalMilliseconds} ms");
-
-            // Clean up resources
-            diagram.Dispose();
+            // Calculate and log the total conversion time
+            TimeSpan duration = endTime - startTime;
+            Console.WriteLine($"Conversion completed in {duration.TotalMilliseconds} ms.");
 
         }
         catch (System.IO.FileNotFoundException ex)

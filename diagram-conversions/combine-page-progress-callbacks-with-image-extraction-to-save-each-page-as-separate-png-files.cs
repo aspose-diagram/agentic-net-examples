@@ -2,32 +2,17 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class PageSavingCallback : IPageSavingCallback
+class PageSavingLogger : IPageSavingCallback
 {
-    private readonly Diagram _diagram;
-
-    public PageSavingCallback(Diagram diagram)
-    {
-        _diagram = diagram;
-    }
-
-    // Called before a page starts saving (PDF rendering)
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+        Console.WriteLine($"[Callback] Starting to save page {args.PageIndex + 1} of {args.PageCount}");
     }
 
-    // Called after a page has been saved (PDF rendering)
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        Console.WriteLine($"Finished saving page {args.PageIndex + 1}.");
-
-        // Export the same page as a PNG image
-        string pngPath = $"Page_{args.PageIndex + 1}.png";
-        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-        imgOptions.PageIndex = args.PageIndex; // zero‑based page index
-        _diagram.Save(pngPath, imgOptions);
-        Console.WriteLine($"Exported PNG: {pngPath}");
+        Console.WriteLine($"[Callback] Finished saving page {args.PageIndex + 1}");
+        // Continue processing remaining pages
     }
 }
 
@@ -38,20 +23,40 @@ class Program
         try
         {
 
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram("input.vsdx"))
+            // Path to the source Visio file
+            string sourcePath = "input.vsdx";
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(sourcePath))
             {
-                // Configure PDF save options with the page‑saving callback
+                // -------------------------------------------------
+                // 1. Use PDF save with page callback to report progress
+                // -------------------------------------------------
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-                pdfOptions.DefaultFont = "Arial";
-                pdfOptions.PageSavingCallback = new PageSavingCallback(diagram);
+                pdfOptions.PageSavingCallback = new PageSavingLogger();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // explicit format
+                pdfOptions.ExportHiddenPage = false;
 
-                // Save as PDF to trigger the callbacks; PNGs are generated inside the callback
-                diagram.Save("output.pdf", pdfOptions);
+                // Save to a temporary PDF to trigger the callbacks
+                diagram.Save("temp_progress.pdf", pdfOptions);
+
+                // -------------------------------------------------
+                // 2. Export each page as a separate PNG image
+                // -------------------------------------------------
+                int pageCount = diagram.Pages.Count;
+                for (int i = 0; i < pageCount; i++)
+                {
+                    // Configure image save options for the current page
+                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                    imgOptions.PageIndex = i;   // zero‑based page index
+                    imgOptions.PageCount = 1;   // export only this page
+                    imgOptions.Resolution = 300; // optional DPI setting
+
+                    string outputPath = $"Page_{i + 1}.png";
+                    diagram.Save(outputPath, imgOptions);
+                    Console.WriteLine($"Saved page {i + 1} as PNG: {outputPath}");
+                }
             }
-
-            Console.WriteLine("Processing completed.");
 
         }
         catch (System.IO.FileNotFoundException ex)

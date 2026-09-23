@@ -1,79 +1,132 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing.Imaging;
 
-class Program
+namespace VisioToHtmlWithJpegCompression
 {
-    static void Main(string[] args)
+    // Custom stream provider that captures the image data generated during HTML export,
+    // re-encodes it as JPEG, and writes the JPEG file to the target location.
+    public class JpegStreamProvider : IStreamProvider
     {
-        // Path to the source Visio file
-        string sourcePath = "input.vsdx";
-        // Guard: ensure the source file exists
-        if (!File.Exists(sourcePath))
+        // Stores the temporary memory streams for each resource path.
+        private readonly Dictionary<string, MemoryStream> _tempStreams = new();
+
+        // Called by Aspose.Diagram before writing a resource (e.g., an image).
+        public void InitStream(StreamProviderOptions options)
         {
-            Console.Error.WriteLine($"File not found: {sourcePath}");
-            return;
+            // Create a memory stream to capture the original image data.
+            var ms = new MemoryStream();
+            options.Stream = ms;
+            _tempStreams[options.DefaultPath] = ms;
         }
 
-        // Path for the resulting HTML file
-        string htmlOutputPath = "output.html";
-
-        try
+        // Called after the resource has been written to the provided stream.
+        public void CloseStream(StreamProviderOptions options)
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(sourcePath);
+            if (!_tempStreams.TryGetValue(options.DefaultPath, out var ms))
+                return;
 
-            // Iterate through all pages and shapes to compress embedded images
-            foreach (Page page in diagram.Pages)
+            // Reset the memory stream position to read the captured data.
+            ms.Position = 0;
+
+            // Load the image (originally PNG) from the memory stream using the fully qualified Aspose.Drawing.Image.
+            using var originalImage = Aspose.Drawing.Image.FromStream(ms);
+
+            // Determine the JPEG file path (same name, .jpg extension).
+            string jpegPath = Path.ChangeExtension(options.DefaultPath, ".jpg");
+
+            // Save the image as JPEG with default quality.
+            using var outStream = new FileStream(jpegPath, FileMode.Create, FileAccess.Write);
+            originalImage.Save(outStream, ImageFormat.Jpeg);
+
+            // Cleanup: delete the original PNG file if it was created.
+            try
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Identify foreign (image) shapes
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
-                    {
-                        try
-                        {
-                            // Original image bytes
-                            byte[] originalBytes = shape.ForeignData.Value;
-
-                            // Load the image using Aspose.Drawing (fully qualified to avoid ambiguity)
-                            using (MemoryStream msIn = new MemoryStream(originalBytes))
-                            using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(msIn))
-                            using (MemoryStream msOut = new MemoryStream())
-                            {
-                                // Save the image as JPEG (default quality compression)
-                                img.Save(msOut, Aspose.Drawing.Imaging.ImageFormat.Jpeg);
-                                // Replace the foreign data with the compressed JPEG bytes
-                                shape.ForeignData.Value = msOut.ToArray();
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            // Log image processing errors and continue with other shapes
-                            Console.Error.WriteLine($"Failed to compress image in shape ID {shape.ID}: {ex.Message}");
-                        }
-                    }
-                }
+                if (File.Exists(options.DefaultPath))
+                    File.Delete(options.DefaultPath);
+            }
+            catch
+            {
+                // Ignored – cleanup is best-effort.
             }
 
-            // Configure HTML export options
+            // Remove the temporary stream from the dictionary.
+            _tempStreams.Remove(options.DefaultPath);
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            // Input Visio file path.
+            string inputPath = "input.vsdx";
+
+            // Guard: ensure the input file exists.
+            if (!File.Exists(inputPath))
+            {
+                Console.Error.WriteLine($"File not found: {inputPath}");
+                return;
+            }
+
+            // Load the Visio diagram inside a try/catch to capture loading errors.
+            Diagram diagram;
+            try
+            {
+                diagram = new Diagram(inputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+                return;
+            }
+
+            // Configure HTML export options.
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
                 ExportHiddenPage = false,
-                // Optional: set resolution for generated images (e.g., 96 DPI)
-                Resolution = 96
+                // Assign the custom JPEG stream provider.
+                StreamProvider = new JpegStreamProvider()
             };
 
-            // Save the diagram as HTML using the configured options
-            diagram.Save(htmlOutputPath, htmlOptions);
+            // Output HTML file path.
+            string outputHtml = "output.html";
 
-            Console.WriteLine("Visio diagram has been converted to HTML with compressed images.");
-        }
-        catch (Exception ex)
-        {
-            // Log any errors that occur during loading or saving
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Export the diagram to HTML inside a try/catch to capture saving errors.
+            try
+            {
+                diagram.Save(outputHtml, htmlOptions);
+                Console.WriteLine($"Diagram exported to HTML: {outputHtml}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error exporting to HTML: {ex.Message}");
+                return;
+            }
+
+            // After export, replace image references from .png to .jpg in the generated HTML.
+            try
+            {
+                // Guard: ensure the HTML file was created.
+                if (!File.Exists(outputHtml))
+                {
+                    Console.Error.WriteLine($"HTML file not found after export: {outputHtml}");
+                    return;
+                }
+
+                string htmlContent = File.ReadAllText(outputHtml);
+                string updatedContent = htmlContent.Replace(".png", ".jpg");
+                File.WriteAllText(outputHtml, updatedContent);
+                Console.WriteLine("Image references in HTML updated to use JPEG files.");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error updating HTML image references: {ex.Message}");
+                throw;
+            }
         }
     }
 }

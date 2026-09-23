@@ -1,72 +1,128 @@
 using System;
+using System.IO;
+using System.Threading;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    // Simple spinner animation that runs on a separate thread.
+    private static void ShowSpinner(string message, Func<bool> stopCondition)
     {
-        static void Main(string[] args)
+        // Characters to rotate for the spinner.
+        char[] sequence = new[] { '|', '/', '-', '\\' };
+        int idx = 0;
+
+        // Continue looping until the stop condition returns true.
+        while (!stopCondition())
         {
-            // Create a new empty diagram
-            using (Diagram diagram = new Diagram())
+            // Write the spinner character with the provided message.
+            Console.Write($"\r{message} {sequence[idx++ % sequence.Length]}");
+            Thread.Sleep(100);
+        }
+
+        // Clear the spinner line after completion.
+        Console.Write("\r" + new string(' ', Console.WindowWidth) + "\r");
+    }
+
+    static void Main(string[] args)
+    {
+        // Prompt for the Visio file path if not supplied via arguments.
+        string inputPath = args.Length > 0 ? args[0] : "";
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            Console.Write("Enter the path to the Visio file: ");
+            inputPath = Console.ReadLine()?.Trim() ?? "";
+        }
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Prompt for the output directory if not supplied via arguments.
+        string outputDir = args.Length > 1 ? args[1] : "";
+        if (string.IsNullOrWhiteSpace(outputDir))
+        {
+            Console.Write("Enter the output directory for exported images: ");
+            outputDir = Console.ReadLine()?.Trim() ?? "";
+        }
+
+        // Guard: ensure the output directory exists (create if missing).
+        if (!Directory.Exists(outputDir))
+        {
+            try
             {
-                // Define how many pages (e.g., documents) we want to visualize
-                int pageCount = 3;
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+                return;
+            }
+        }
 
-                // Add the required pages to the diagram
-                for (int i = 0; i < pageCount; i++)
+        // Load the Visio diagram inside a using block to ensure disposal.
+        try
+        {
+            using Diagram diagram = new Diagram(inputPath);
+            int pageCount = diagram.Pages.Count;
+
+            Console.WriteLine($"Diagram loaded. Total pages: {pageCount}");
+
+            // Iterate over each page and export it as a PNG image.
+            for (int i = 0; i < pageCount; i++)
+            {
+                // Prepare the output file name for the current page.
+                string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.png");
+
+                // Flag to signal the spinner thread when export finishes.
+                bool exportDone = false;
+
+                // Start the spinner animation on a background thread.
+                Thread spinnerThread = new Thread(() =>
+                    ShowSpinner($"Exporting page {i + 1}/{pageCount}", () => exportDone));
+                spinnerThread.Start();
+
+                try
                 {
-                    Page page = new Page();
-                    page.Name = $"Page{i + 1}";
-                    diagram.Pages.Add(page);
-                }
-
-                // Number of animation steps for each progress circle
-                int totalSteps = 10;
-
-                // Iterate over each page and create an animated progress circle
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
-                {
-                    Page page = diagram.Pages[pageIndex];
-
-                    // Define circle geometry (center at (5,5), radius 2 inches)
-                    double centerX = 5.0;
-                    double centerY = 5.0;
-                    double radius = 2.0;
-                    double left = centerX - radius;
-                    double top = centerY - radius;
-                    double diameter = radius * 2.0;
-
-                    // Draw the circle once; keep the shape ID for later updates
-                    long circleShapeId = page.DrawEllipse(left, top, diameter, diameter);
-                    Shape circleShape = page.Shapes.GetShape(circleShapeId);
-
-                    // Animate the circle by changing its fill color from red to green
-                    for (int step = 1; step <= totalSteps; step++)
+                    // Configure image save options for a single page export.
+                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png)
                     {
-                        // Compute a simple red‑to‑green gradient based on progress
-                        double ratio = (double)step / totalSteps; // 0.0 .. 1.0
-                        int red = (int)((1.0 - ratio) * 255);
-                        int green = (int)(ratio * 255);
-                        string hexColor = $"#{red:X2}{green:X2}00"; // e.g., #FF0000 -> #00FF00
+                        // Export only the current page.
+                        PageIndex = i,
+                        PageCount = 1,
+                        // Do not export hidden pages (optional).
+                        ExportHiddenPage = false
+                    };
 
-                        // Apply the computed color to the circle's fill
-                        circleShape.Fill.FillForegnd.Value = hexColor;
-
-                        // Prepare image export options for the current page
-                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                        {
-                            PageIndex = pageIndex,   // export only this page
-                            PageCount = 1,
-                            ExportHiddenPage = false
-                        };
-
-                        // Save the current animation frame as a PNG file
-                        string outputFile = $"Page_{pageIndex + 1}_Step_{step}.png";
-                        diagram.Save(outputFile, imgOptions);
-                    }
+                    // Perform the actual save operation.
+                    diagram.Save(outputPath, options);
                 }
+                catch (Exception ex)
+                {
+                    // Write any export errors to the error stream.
+                    Console.Error.WriteLine($"Error exporting page {i + 1}: {ex.Message}");
+                }
+                finally
+                {
+                    // Signal the spinner to stop and wait for the thread to finish.
+                    exportDone = true;
+                    spinnerThread.Join();
+                }
+
+                // Inform the user that the page has been exported.
+                Console.WriteLine($"Page {i + 1} exported to: {outputPath}");
             }
 
-            Console.WriteLine("Progress circle animation frames have been generated.");
+            Console.WriteLine("All pages have been processed.");
+        }
+        catch (Exception ex)
+        {
+            // Catch any errors that occur while loading the diagram.
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
         }
     }
+}

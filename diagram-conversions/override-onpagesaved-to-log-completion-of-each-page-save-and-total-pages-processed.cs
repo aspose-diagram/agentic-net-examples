@@ -2,26 +2,23 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class PageSaveLogger : IPageSavingCallback
+class CustomPageSavingCallback : IPageSavingCallback
 {
-    // Called when a page starts to be saved.
+    private int _savedPages = 0;
+
+    public int SavedPagesCount => _savedPages;
+
+    // Called before a page starts saving (not used for logging here)
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        // Log the start of the page save operation.
-        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+        // No action needed before page save
     }
 
-    // Called when a page has finished saving.
+    // Called after a page has been saved
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        // Log the completion of the current page.
-        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-
-        // When the last page is saved, log the total number of pages processed.
-        if (!args.HasMorePages)
-        {
-            Console.WriteLine($"All {args.PageCount} pages have been saved.");
-        }
+        _savedPages++;
+        Console.WriteLine($"Page {args.PageIndex + 1} of {args.PageCount} saved.");
     }
 }
 
@@ -32,17 +29,20 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path).
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Set up PDF save options and attach the page‑saving callback.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            // Load the Visio diagram (replace with actual file path)
+            using (Diagram diagram = new Diagram("input.vsdx"))
             {
-                PageSavingCallback = new PageSaveLogger()
-            };
+                // Configure PDF save options with the custom callback
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                CustomPageSavingCallback callback = new CustomPageSavingCallback();
+                pdfOptions.PageSavingCallback = callback;
 
-            // Save the diagram to PDF; the callback will log progress.
-            diagram.Save("output.pdf", pdfOptions);
+                // Save the diagram to PDF (replace with desired output path)
+                diagram.Save("output.pdf", pdfOptions);
+
+                // Log total pages processed after saving completes
+                Console.WriteLine($"Total pages processed: {callback.SavedPagesCount}");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Drawing;
 
 class Program
     {
@@ -22,30 +22,14 @@ class Program
                 return;
             }
 
-            // Supported Visio extensions and their corresponding SaveFileFormat values
-            var formatMap = new Dictionary<string, SaveFileFormat>(StringComparer.OrdinalIgnoreCase)
-            {
-                { ".vsdx", SaveFileFormat.Vsdx },
-                { ".vsd",  SaveFileFormat.Vsd },
-                { ".vdx",  SaveFileFormat.Vdx },
-                { ".vsx",  SaveFileFormat.Vsx },
-                { ".vtx",  SaveFileFormat.Vtx },
-                { ".vssx", SaveFileFormat.Vssx },
-                { ".vss",  SaveFileFormat.Vss },
-                { ".vstx", SaveFileFormat.Vstx },
-                { ".vst",  SaveFileFormat.Vst },
-                { ".vssm", SaveFileFormat.Vssm },
-                { ".vstm", SaveFileFormat.Vstm },
-                { ".vsdm", SaveFileFormat.Vsdm }
-            };
-
-            // Retrieve all files in the directory (non‑recursive)
+            // Process supported Visio file extensions
+            string[] supportedExtensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx" };
             string[] files = Directory.GetFiles(directoryPath);
 
             foreach (string filePath in files)
             {
-                string extension = Path.GetExtension(filePath);
-                if (!formatMap.ContainsKey(extension))
+                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                if (Array.IndexOf(supportedExtensions, ext) < 0)
                 {
                     // Skip non‑Visio files
                     continue;
@@ -57,27 +41,34 @@ class Program
                     Diagram diagram = new Diagram(filePath);
 
                     // Apply header/footer template
-                    diagram.HeaderFooter.HeaderLeft   = "Company Name";
-                    diagram.HeaderFooter.HeaderCenter = "Confidential";
-                    diagram.HeaderFooter.HeaderRight  = "Created: &d";
+                    diagram.HeaderFooter.HeaderLeft = "Company Name";
+                    diagram.HeaderFooter.HeaderCenter = "Document Title";
+                    diagram.HeaderFooter.HeaderRight = "Confidential";
 
-                    diagram.HeaderFooter.FooterLeft   = "Document ID: 12345";
-                    diagram.HeaderFooter.FooterCenter = "Page &p of &P";
-                    diagram.HeaderFooter.FooterRight  = "Generated on &d";
+                    diagram.HeaderFooter.FooterLeft = "Created: &d";
+                    diagram.HeaderFooter.FooterCenter = "";
+                    diagram.HeaderFooter.FooterRight = "Page: &p of &P";
 
                     // Set margins (in inches)
-                    diagram.HeaderFooter.HeaderMargin.Value = 0.5;
-                    diagram.HeaderFooter.FooterMargin.Value = 0.5;
+                    diagram.HeaderFooter.HeaderMargin.Value = 0.3;
+                    diagram.HeaderFooter.FooterMargin.Value = 0.3;
 
-                    // Configure global font for header/footer
-                    var hfFont = diagram.HeaderFooter.HeaderFooterFont;
-                    hfFont.FaceName = "Arial";
-                    hfFont.Weight   = 700;   // Bold
-                    hfFont.Height   = -16;   // Approx. 12pt (negative mapping per specification)
+                    // Configure global header/footer font
+                    var headerFooterFont = diagram.HeaderFooter.HeaderFooterFont;
+                    headerFooterFont.FaceName = "Arial";
+                    headerFooterFont.Weight = 700;          // Bold
+                    headerFooterFont.Height = -16;          // Approx. 12pt (12 * -1.333 = -16)
+                    headerFooterFont.Italic = BOOL.False;
+                    headerFooterFont.Underline = BOOL.False;
 
-                    // Save the diagram back in its original format
-                    SaveFileFormat saveFormat = formatMap[extension];
-                    diagram.Save(filePath, saveFormat);
+                    // Set font color
+                    diagram.HeaderFooter.HeaderFooterColor = Color.Black;
+
+                    // Determine appropriate SaveFileFormat based on original extension
+                    SaveFileFormat format = GetSaveFileFormat(ext);
+
+                    // Save the diagram back to the same file
+                    diagram.Save(filePath, format);
 
                     Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
                 }
@@ -86,7 +77,19 @@ class Program
                     Console.WriteLine($"Failed to process {Path.GetFileName(filePath)}: {ex.Message}");
                 }
             }
+        }
 
-            Console.WriteLine("Header/footer application completed.");
+        // Maps file extension to the corresponding SaveFileFormat enum value
+        private static SaveFileFormat GetSaveFileFormat(string extension)
+        {
+            return extension switch
+            {
+                ".vsdx" => SaveFileFormat.Vsdx,
+                ".vsd"  => SaveFileFormat.Vsd,
+                ".vdx"  => SaveFileFormat.Vdx,
+                ".vsx"  => SaveFileFormat.Vsx,
+                ".vtx"  => SaveFileFormat.Vtx,
+                _ => SaveFileFormat.Vsdx // Fallback (should not occur)
+            };
         }
     }

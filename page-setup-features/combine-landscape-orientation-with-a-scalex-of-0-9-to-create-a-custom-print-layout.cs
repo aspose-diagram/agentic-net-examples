@@ -14,20 +14,24 @@ class Program
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Apply custom print layout to each page
+            // Iterate through all pages and set custom print layout
             foreach (Page page in diagram.Pages)
             {
-                // Set page orientation to Landscape
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                // Set horizontal scaling to 90%
-                page.PageSheet.PrintProps.ScaleX.Value = 0.9;
+                // Access the print properties of the page
+                PrintProps printProps = page.PageSheet.PrintProps;
+
+                // Set orientation to Landscape
+                printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+
+                // Set horizontal scaling factor to 90%
+                printProps.ScaleX.Value = 0.9;
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
+            string outputPath = "output_custom_print.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Clean up resources
+            // Clean up
             diagram.Dispose();
 
             Console.WriteLine("Custom print layout applied and diagram saved.");

@@ -1,40 +1,47 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Create a new empty diagram (contains a default page)
-        using (Diagram diagram = new Diagram())
+        try
         {
-            // Get the first (default) page
+
+            // Create a new blank diagram
+            Diagram diagram = new Diagram();
+
+            // Access the first (default) page
             Page page = diagram.Pages[0];
 
-            // Convert 10 pixels to inches (assuming 96 DPI)
+            // Convert a 10‑pixel margin to inches (assuming 96 DPI)
             double marginInches = 10.0 / 96.0;
 
-            // Define rectangle size (in inches)
-            double rectWidth = 2.0;   // example width
-            double rectHeight = 1.0;  // example height
+            // Desired rectangle size (in inches)
+            double rectWidth = 2.0;
+            double rectHeight = 1.0;
 
-            // Calculate the PinX and PinY so that the rectangle's left/top edges
-            // are positioned at the page's top‑left corner with the margin
+            // Calculate the PinX and PinY so the rectangle's top‑left corner sits at the margin
             double pinX = marginInches + rectWidth / 2.0;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-            double pinY = pageHeight - marginInches - rectHeight / 2.0;
+            double pinY = page.PageSheet.PageProps.PageHeight.Value - marginInches - rectHeight / 2.0;
 
-            // Draw the rectangle on the page
-            long rectShapeId = page.DrawRectangle(pinX, pinY, rectWidth, rectHeight);
+            // Add a rectangle shape using the built‑in master "Rectangle"
+            long shapeId = page.AddShape(pinX, pinY, "Rectangle", false);
 
-            // (Optional) Retrieve the shape to modify its appearance
-            Shape rectShape = page.Shapes.GetShape((int)rectShapeId);
-            rectShape.Line.LineColor.Value = "#FF0000";   // red border
-            rectShape.Fill.FillForegnd.Value = "#00FF00"; // green fill
+            // Retrieve the shape to adjust its dimensions if necessary
+            Shape rect = page.Shapes.GetShape(shapeId);
+            rect.XForm.Width.Value = rectWidth;
+            rect.XForm.Height.Value = rectHeight;
 
-            // Save the diagram to a VSDX file
+            // Save the diagram
             diagram.Save("AlignedRectangle.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

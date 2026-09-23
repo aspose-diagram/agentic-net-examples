@@ -2,86 +2,89 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Validate arguments: [0] = Visio file path, [1] = CSV file path, [2] = output Visio file path
+            // Expect three arguments: diagram file path, CSV file path, output diagram path
             if (args.Length < 3)
             {
-                Console.WriteLine("Usage: DiagramCsvBinding <inputVisioPath> <csvPath> <outputVisioPath>");
+                Console.WriteLine("Usage: DiagramCsvBinding <diagramPath> <csvPath> <outputPath>");
                 return;
             }
 
-            string visioPath = args[0];
+            string diagramPath = args[0];
             string csvPath = args[1];
             string outputPath = args[2];
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Read CSV file (simple comma‑separated, no quotes handling)
-            List<string[]> csvRows = new List<string[]>();
-            using (var reader = new StreamReader(csvPath))
+            // Assume the diagram has at least one page; use the first page
+            Page page = diagram.Pages[0];
+
+            // Read all lines from the CSV file
+            string[] csvLines = File.ReadAllLines(csvPath);
+            if (csvLines.Length == 0)
             {
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    // Skip empty lines
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    // Split by comma
-                    string[] columns = line.Split(',');
-                    csvRows.Add(columns);
-                }
+                Console.WriteLine("CSV file is empty.");
+                return;
             }
 
-            // Expect at least three columns: ShapeName, Data1, Data2, Data3 (optional extra columns ignored)
-            foreach (var row in csvRows)
+            // Optional: skip header line if it contains non-numeric first column
+            int startIndex = 0;
+            string[] headerParts = csvLines[0].Split(',');
+            if (headerParts.Length > 0 && !long.TryParse(headerParts[0], out _))
             {
-                if (row.Length < 4)
+                startIndex = 1; // skip header
+            }
+
+            for (int i = startIndex; i < csvLines.Length; i++)
+            {
+                string line = csvLines[i];
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                // Simple CSV split (does not handle quoted commas)
+                string[] parts = line.Split(',');
+
+                if (parts.Length < 4)
                 {
-                    Console.WriteLine("Skipping row with insufficient columns.");
+                    Console.WriteLine($"Skipping line {i + 1}: insufficient columns.");
                     continue;
                 }
 
-                string targetShapeName = row[0].Trim();
-                string data1 = row[1].Trim();
-                string data2 = row[2].Trim();
-                string data3 = row[3].Trim();
-
-                // Find the shape by universal name (NameU) across all pages
-                Shape targetShape = null;
-                foreach (Page page in diagram.Pages)
+                // Parse shape ID (first column)
+                if (!long.TryParse(parts[0].Trim(), out long shapeId))
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.NameU != null && shape.NameU.Equals(targetShapeName, StringComparison.OrdinalIgnoreCase))
-                        {
-                            targetShape = shape;
-                            break;
-                        }
-                    }
-                    if (targetShape != null)
-                        break;
-                }
-
-                if (targetShape == null)
-                {
-                    Console.WriteLine($"Shape \"{targetShapeName}\" not found in the diagram.");
+                    Console.WriteLine($"Skipping line {i + 1}: invalid shape ID.");
                     continue;
                 }
 
-                // Bind CSV values to the shape's Data fields
-                targetShape.Data1 = data1;
-                targetShape.Data2 = data2;
-                targetShape.Data3 = data3;
+                // Retrieve the shape by ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
+                {
+                    Console.WriteLine($"Shape with ID {shapeId} not found on page.");
+                    continue;
+                }
+
+                // Skip deleted shapes
+                if (shape.Del == BOOL.True)
+                {
+                    Console.WriteLine($"Shape with ID {shapeId} is marked as deleted; skipping.");
+                    continue;
+                }
+
+                // Bind CSV columns to shape data fields
+                shape.Data1 = parts[1].Trim();
+                shape.Data2 = parts[2].Trim();
+                shape.Data3 = parts[3].Trim();
             }
 
-            // Save the updated diagram
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
         }
     }

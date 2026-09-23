@@ -1,37 +1,49 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            // Create a new diagram
-            Diagram diagram = new Diagram();
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Define circle (ellipse) parameters – a perfect circle with width = height = 2 inches
-            double pinX = 5.0;   // X coordinate of the shape's center
-            double pinY = 5.0;   // Y coordinate of the shape's center
-            double size = 2.0;   // Diameter in inches
+            // Iterate through all pages and shapes to find the circle shape
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Identify the circle shape (commonly named "Ellipse" master or contains "Circle" in its name)
+                    bool isCircleMaster = shape.Master != null && shape.Master.Name == "Ellipse";
+                    bool nameContainsCircle = !string.IsNullOrEmpty(shape.NameU) && shape.NameU.IndexOf("Circle", StringComparison.OrdinalIgnoreCase) >= 0;
 
-            // Add the circle shape to the page; DrawEllipse returns the shape ID (long)
-            long shapeId = page.DrawEllipse(pinX, pinY, size, size);
+                    if (isCircleMaster || nameContainsCircle)
+                    {
+                        // Set fill color to blue (hex format)
+                        shape.Fill.FillForegnd.Value = "#0000FF";
 
-            // Retrieve the shape object using the returned ID
-            Shape circle = page.Shapes.GetShape(shapeId);
+                        // Set line weight to 0.5 points (convert points to inches: 1 point = 1/72 inch)
+                        shape.Line.LineWeight.Value = 0.5 / 72.0;
 
-            // Set fill color to solid blue (#0000FF)
-            circle.Fill.FillPattern.Value = 1;               // Solid fill pattern
-            circle.Fill.FillForegnd.Value = "#0000FF";        // Blue foreground fill
+                        // If there are multiple circle shapes, continue updating each one
+                    }
+                }
+            }
 
-            // Set line weight to 0.5 points (Visio stores line weight in inches;
-            // 1 point = 1/72 inch, so 0.5 points = 0.5/72 inches)
-            circle.Line.LineWeight.Value = 0.5 / 72.0;
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Save the diagram to a VSDX file
-            diagram.Save("CircleDiagram.vsdx", SaveFileFormat.Vsdx);
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

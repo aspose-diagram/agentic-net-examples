@@ -1,45 +1,51 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Properties;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the existing Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            // Paths to the input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Find the custom property named "Status"
-            bool found = false;
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // -------------------------------------------------
+            // Your processing steps would go here.
+            // -------------------------------------------------
+
+            // Update the custom property "Status" to "Completed"
+            bool statusFound = false;
             foreach (CustomProp prop in diagram.DocumentProps.CustomProps)
             {
                 if (prop.Name == "Status")
                 {
-                    // Update its value to "Completed"
                     prop.CustomValue.ValueString = "Completed";
-                    found = true;
+                    statusFound = true;
                     break;
                 }
             }
 
-            // If the property does not exist, optionally add it
-            if (!found)
+            // If the property does not exist, add it
+            if (!statusFound)
             {
-                var newProp = new CustomProp
-                {
-                    Name = "Status",
-                    PropType = PropType.String,
-                    CustomValue = { ValueString = "Completed" }
-                };
-                diagram.DocumentProps.CustomProps.Add(newProp);
+                CustomProp statusProp = new CustomProp();
+                statusProp.Name = "Status";
+                statusProp.PropType = PropType.String;
+                statusProp.CustomValue = new CustomValue();
+                statusProp.CustomValue.ValueString = "Completed";
+
+                diagram.DocumentProps.CustomProps.Add(statusProp);
             }
 
-            // Save the diagram with the updated property
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

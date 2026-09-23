@@ -1,29 +1,48 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vdx");
+            // Paths for the source and the new Visio file
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Update page print settings (example: enable page enlargement when printing)
-            PrintSaveOptions printOptions = new PrintSaveOptions();
-            printOptions.EnlargePage = true; // set desired print option
+            // Load the existing diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // (Optional) Apply any additional print-related settings here.
-            // For saving, configure DiagramSaveOptions as needed.
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions();
-            saveOptions.AutoFitPageToDrawingContent = true; // ensure page fits drawing content
+            // Update print settings for each page
+            foreach (Page page in diagram.Pages)
+            {
+                // Set orientation to Landscape
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-            // Save the modified diagram to a new Visio file
-            diagram.Save("output.vdx", saveOptions);
+                // Set scaling to 75%
+                page.PageSheet.PrintProps.ScaleX.Value = 0.75;
+                page.PageSheet.PrintProps.ScaleY.Value = 0.75;
+
+                // Enable fit-to-sheet (print on a single page)
+                page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
+                page.PageSheet.PrintProps.PagesX.Value = 1;
+                page.PageSheet.PrintProps.PagesY.Value = 1;
+
+                // Set page margins (in inches)
+                page.PageSheet.PrintProps.PageTopMargin.Value = 0.5;
+                page.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
+                page.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
+                page.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
+            }
+
+            // Save the modified diagram to a new file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

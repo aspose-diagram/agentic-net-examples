@@ -1,56 +1,75 @@
 using System;
-using Aspose.Diagram;
+using System.IO;
 using System.Xml.Linq;
+using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: input Visio file path and output XML file path
+        if (args.Length < 2)
         {
-            try
+            Console.WriteLine("Usage: DiagramCommentExport <inputVisioFile> <outputXmlFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+
+        try
+        {
+            // Load the Visio diagram from the specified file
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Prepare an XML document with a root element for comments
+                XDocument xmlDoc = new XDocument(new XElement("Comments"));
 
-                // Input Visio file path
-                string visioPath = "input.vsdx";
-                // Output XML file path
-                string xmlOutputPath = "comments.xml";
-
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(visioPath))
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Create the root element for the XML document
-                    XElement root = new XElement("Comments");
+                    // Retrieve the page name directly (Page.Name is a string)
+                    string pageName = page.Name;
 
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through annotations (comments) on the current page
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // Retrieve the annotations (comments) collection for the current page
-                        foreach (Annotation annotation in page.PageSheet.Annotations)
-                        {
-                            // Build an XML element representing the comment
-                            XElement commentElement = new XElement("Comment",
-                                new XAttribute("PageName", page.Name ?? string.Empty),
-                                new XAttribute("MarkerIndex", annotation.MarkerIndex.Value),
-                                new XAttribute("ShapeID", annotation.ShapeID),
-                                new XAttribute("ReviewerID", annotation.ReviewerID.Value),
-                                new XAttribute("CommentText", annotation.Comment.Value ?? string.Empty)
-                            );
+                        // Extract required fields from the annotation
+                        long markerId = annotation.MarkerIndex.Value;      // unique comment identifier
+                        string commentText = annotation.Comment.Value;    // comment text
+                        int reviewerId = annotation.ReviewerID.Value;     // reviewer index
+                        int shapeId = annotation.ShapeID;                 // associated shape ID (primitive int)
 
-                            // Add the comment element to the root
-                            root.Add(commentElement);
-                        }
+                        // Build an XML element representing this comment
+                        XElement commentElement = new XElement("Comment",
+                            new XAttribute("Page", pageName),
+                            new XAttribute("MarkerId", markerId),
+                            new XAttribute("ReviewerId", reviewerId),
+                            new XAttribute("ShapeId", shapeId),
+                            new XElement("Text", commentText)
+                        );
+
+                        // Add the comment element to the root of the XML document
+                        xmlDoc.Root.Add(commentElement);
                     }
-
-                    // Create the XDocument and save it to the specified file
-                    XDocument doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
-                    doc.Save(xmlOutputPath);
                 }
 
-                Console.WriteLine("Comments exported successfully to " + xmlOutputPath);
-
+                // Save the XML document to the specified output path
+                xmlDoc.Save(outputPath);
+                Console.WriteLine($"Comments exported successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error exporting comments: {ex.Message}");
+        }
     }
-    }
+}

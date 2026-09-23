@@ -7,34 +7,70 @@ class Program
 {
     static void Main()
     {
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        // Verify the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Folder where OLE preview images will be saved
+        string outputFolder = "OlePreviews";
+
+        // Ensure the output directory exists
+        if (!Directory.Exists(outputFolder))
+        {
+            Directory.CreateDirectory(outputFolder);
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through each shape on the current page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Identify OLE foreign objects
+                    if (shape.Type == TypeValue.Foreign &&
+                        shape.ForeignData != null &&
+                        shape.ForeignData.ObjectData != null &&
+                        shape.ForeignData.ObjectData.Length > 0)
+                    {
+                        // Configure image export options with a custom DPI (e.g., 300)
+                        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                        saveOptions.Resolution = 300f; // DPI setting
 
-            // ---------- Render OLE object previews to images with custom DPI ----------
-            // Create image save options for PNG format
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Set the desired resolution (dots per inch) for higher clarity
-            imgOptions.Resolution = 300f; // 300 DPI
+                        // Build a unique file name for the preview image
+                        string outputPath = Path.Combine(
+                            outputFolder,
+                            $"Page{page.ID}_Shape{shape.ID}.png");
 
-            // Save the diagram (or specific pages) as PNG images using the custom DPI
-            diagram.Save("output_page.png", imgOptions);
+                        // Render the OLE object preview to an image file
+                        using (FileStream fileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+                        {
+                            shape.ToImage(fileStream, saveOptions);
+                        }
 
-            // ---------- Optionally, render to PDF with custom DPI ----------
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Apply the same DPI settings for PDF rendering
-            pdfOptions.HorizontalResolution = 300;
-            pdfOptions.VerticalResolution = 300;
+                        Console.WriteLine($"Saved OLE preview for shape ID {shape.ID} on page {page.ID} to {outputPath}");
+                    }
+                }
+            }
 
-            // Save the diagram as PDF with the higher DPI settings
-            diagram.Save("output.pdf", pdfOptions);
-
+            // Save the (potentially unchanged) diagram back to a file
+            string outputDiagramPath = "output.vsdx";
+            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputDiagramPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

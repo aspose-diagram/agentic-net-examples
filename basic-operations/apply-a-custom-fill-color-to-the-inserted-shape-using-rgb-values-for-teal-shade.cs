@@ -1,43 +1,41 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Add a new page to the diagram (required before adding shapes)
-                diagram.Pages.Add(new Page());
+            // Define shape position and master name
+            double pinX = 2.0;
+            double pinY = 2.0;
+            string masterName = "Rectangle";
 
-                // Reference the first (and only) page
-                Page page = diagram.Pages[0];
+            // Insert the shape; the method returns the shape ID (long)
+            long shapeId = diagram.ActivePage.AddShape(pinX, pinY, masterName, false);
 
-                // Insert a rectangle shape at position (2, 2) inches
-                // The AddShape method returns the shape's unique ID (long)
-                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+            // Retrieve the shape object using the returned ID
+            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-                // Retrieve the shape instance using the returned ID
-                Shape shape = page.Shapes.GetShape(shapeId);
+            // Set a solid fill pattern
+            shape.Fill.FillPattern.Value = 1; // 1 = solid fill
 
-                // Apply a solid fill pattern
-                shape.Fill.FillPattern.Value = 1; // 1 = solid
+            // Apply teal color (RGB 0,128,128) using a hex string
+            shape.Fill.FillForegnd.Value = "#008080";
 
-                // Set the foreground fill color to teal using a hex RGB value
-                // Teal RGB = (0, 128, 128) => hex "#008080"
-                shape.Fill.FillForegnd.Value = "#008080";
+            // Save the diagram to VSDX format
+            diagram.Save("TealShape.vsdx", SaveFileFormat.Vsdx);
 
-                // Save the diagram to a VSDX file
-                diagram.Save("TealShapeDiagram.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (System.NullReferenceException ex)
+        {
+            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+        }
     }
-    }
+}

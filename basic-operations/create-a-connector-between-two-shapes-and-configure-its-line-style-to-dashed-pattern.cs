@@ -1,49 +1,55 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Path to a stencil file that contains the required masters (e.g., "Rectangle" and "Dynamic connector")
+            string stencilPath = @"C:\Stencils\Basic_U.vss";
+            // Output Visio file
+            string outputPath = @"C:\Output\ConnectorDemo.vsdx";
 
-                // Get the first (default) page
-                Page page = diagram.Pages[0];
+            // Load the stencil as a diagram (masters become available)
+            Diagram diagram = new Diagram(stencilPath);
 
-                // Add two rectangle shapes
-                // Parameters: pinX, pinY, master name, isCalculate (bool)
-                long shapeId1 = page.AddShape(2.0, 2.0, "Rectangle", false);
-                long shapeId2 = page.AddShape(5.0, 5.0, "Rectangle", false);
+            // Use the first page of the diagram
+            Page page = diagram.Pages[0];
 
-                // Add a dynamic connector shape
-                long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector", false);
+            // Add two rectangle shapes
+            long shapeId1 = page.AddShape(2.0, 2.0, "Rectangle", false);
+            long shapeId2 = page.AddShape(5.0, 5.0, "Rectangle", false);
 
-                // Retrieve the connector shape to modify its line style
-                Shape connector = page.Shapes.GetShape(connectorId);
-                // Set the line pattern to dashed
-                connector.Line.LinePattern.Value = LinePatternValue.Dash;
+            // Add a dynamic connector shape (initial position is irrelevant; it will be glued)
+            long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector", false);
 
-                // Connect the two rectangles using the connector
-                // Connect shape1 bottom to shape2 top
-                page.ConnectShapesViaConnector(
-                    shapeId1,
-                    ConnectionPointPlace.Bottom,
-                    shapeId2,
-                    ConnectionPointPlace.Top,
-                    connectorId);
+            // Connect the two rectangles using the connector
+            page.ConnectShapesViaConnector(
+                shapeId1,
+                ConnectionPointPlace.Bottom,
+                shapeId2,
+                ConnectionPointPlace.Top,
+                connectorId);
 
-                // Save the diagram to a VSDX file
-                diagram.Save("ConnectorDemo.vsdx", SaveFileFormat.Vsdx);
+            // Retrieve the connector shape to modify its line style
+            Shape connector = page.Shapes.GetShape(connectorId);
+            // Set the line pattern to a dashed style
+            connector.Line.LinePattern.Value = LinePatternValue.Dash;
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+            // Save the diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Diagram saved to: " + outputPath);
+
+        }
+        catch (System.IO.DirectoryNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

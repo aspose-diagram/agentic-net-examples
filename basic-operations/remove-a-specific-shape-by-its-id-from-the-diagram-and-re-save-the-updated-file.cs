@@ -9,22 +9,19 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
+            // Load the existing diagram file
             Diagram diagram = new Diagram("input.vsdx");
 
             // Specify the ID of the shape to be removed
-            long shapeId = 12345; // replace with the actual shape ID
+            int shapeIdToRemove = 5; // replace with the actual shape ID
 
-            // Access the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
+            // Locate the shape on the first page (adjust page index if needed)
+            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeIdToRemove);
 
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // If the shape exists, remove it from the collection
+            // Remove the shape if it exists
             if (shape != null)
             {
-                page.Shapes.Remove(shape);
+                diagram.Pages[0].Shapes.Remove(shape);
             }
 
             // Save the updated diagram to a new file

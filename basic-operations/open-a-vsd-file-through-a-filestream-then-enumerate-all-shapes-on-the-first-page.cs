@@ -9,32 +9,23 @@ class Program
         try
         {
 
-            // Path to the Visio file (VSD format)
-            string visioFilePath = "example.vsd";
+            // Path to the VSD file
+            string filePath = "sample.vsd";
 
-            // Open the VSD file using a FileStream
-            using (FileStream fs = new FileStream(visioFilePath, FileMode.Open, FileAccess.Read))
+            // Open the VSD file through a FileStream
+            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
                 // Load the diagram from the stream
-                using (Diagram diagram = new Diagram(fs))
-                {
-                    // Ensure there is at least one page
-                    if (diagram.Pages.Count > 0)
-                    {
-                        // Get the first page (index 0)
-                        Page firstPage = diagram.Pages[0];
+                Diagram diagram = new Diagram(fs);
 
-                        // Enumerate all shapes on the first page
-                        foreach (Shape shape in firstPage.Shapes)
-                        {
-                            // Example: output shape ID and name
-                            Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("The diagram contains no pages.");
-                    }
+                // Get the first page (index 0)
+                Page firstPage = diagram.Pages[0];
+
+                // Enumerate all shapes on the first page
+                foreach (Shape shape in firstPage.Shapes)
+                {
+                    // Example output: shape ID and name
+                    Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
                 }
             }
 

@@ -7,55 +7,51 @@ class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Define the folder containing VDX files.
+            // You can change this path or pass it as a command‑line argument.
+            string inputFolder = args.Length > 0 ? args[0] : @"C:\VisioFiles";
+            string outputFolder = Path.Combine(inputFolder, "PdfOutput");
+
+            // Ensure the output directory exists.
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
+
+            // Get all VDX files in the input folder.
+            string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx", SearchOption.TopDirectoryOnly);
+
+            foreach (string vdxPath in vdxFiles)
             {
-
-                // Define input and output directories
-                string inputFolder = @"C:\Visio\Input";
-                string outputFolder = @"C:\Visio\Output";
-
-                // Ensure the output directory exists
-                if (!Directory.Exists(outputFolder))
+                try
                 {
-                    Directory.CreateDirectory(outputFolder);
-                }
+                    // Load the Visio diagram.
+                    Diagram diagram = new Diagram(vdxPath);
 
-                // Get all VDX files in the input folder
-                string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx", SearchOption.TopDirectoryOnly);
-
-                foreach (string vdxPath in vdxFiles)
-                {
-                    // Load the Visio diagram
-                    using (Diagram diagram = new Diagram(vdxPath, LoadFileFormat.Vdx))
+                    // Configure PDF save options.
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
                     {
-                        // Configure PDF save options
-                        PdfSaveOptions pdfOptions = new PdfSaveOptions
-                        {
-                            // Set a default font to avoid missing font issues
-                            DefaultFont = "Arial",
-                            // Example custom options
-                            EnlargePage = true,
-                            ExportHiddenPage = false,
-                            ExportGuideShapes = false
-                        };
+                        // Use a fallback font in case the diagram references missing fonts.
+                        DefaultFont = "Arial",
+                        // Export hidden pages as well.
+                        ExportHiddenPage = true,
+                        // Set PDF/A compliance (optional).
+                        Compliance = PdfCompliance.PdfA1b
+                    };
 
-                        // Build the output PDF file path
-                        string pdfFileName = Path.GetFileNameWithoutExtension(vdxPath) + ".pdf";
-                        string pdfPath = Path.Combine(outputFolder, pdfFileName);
+                    // Build the output PDF file path.
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(vdxPath);
+                    string pdfPath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
 
-                        // Save the diagram as PDF using the custom options
-                        diagram.Save(pdfPath, pdfOptions);
-                    }
+                    // Save the diagram as PDF with the specified options.
+                    diagram.Save(pdfPath, pdfOptions);
 
-                    Console.WriteLine($"Converted: {Path.GetFileName(vdxPath)} -> PDF");
+                    Console.WriteLine($"Successfully converted: {vdxPath} -> {pdfPath}");
                 }
-
-                Console.WriteLine("Batch conversion completed.");
-
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{vdxPath}': {ex.Message}");
+                }
             }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
-    }
+
+            Console.WriteLine("Batch conversion completed.");
+        }
     }

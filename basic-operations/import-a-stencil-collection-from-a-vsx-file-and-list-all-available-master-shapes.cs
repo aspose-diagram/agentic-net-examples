@@ -9,21 +9,33 @@ class Program
         try
         {
 
-            // Load the VSX stencil file using the appropriate load format.
-            // The Diagram constructor with (string, LoadFileFormat) follows the provided lifecycle rule.
-            var stencil = new Diagram("StencilFile.vsx", LoadFileFormat.Vsx);
+            // Path to the VSX stencil file
+            string stencilPath = @"C:\Stencils\MyStencil.vsx";
 
-            // Iterate through all masters (shapes) defined in the stencil and list their names.
-            foreach (Master master in stencil.Masters)
+            // Load the stencil as a diagram to access its masters
+            Diagram stencilDiagram = new Diagram(stencilPath);
+
+            // Create an empty diagram that will receive the masters
+            Diagram diagram = new Diagram();
+
+            // Import each master from the stencil into the new diagram
+            foreach (Master master in stencilDiagram.Masters)
             {
-                // Output the master name and its universal name.
-                Console.WriteLine($"Master Name: {master.Name}, Universal Name: {master.NameU}");
+                // Add the master by specifying the stencil file path and the master name
+                diagram.AddMaster(stencilPath, master.Name);
+            }
+
+            // List all masters now available in the diagram
+            Console.WriteLine("Masters imported from the stencil:");
+            foreach (Master master in diagram.Masters)
+            {
+                Console.WriteLine($"- {master.Name}");
             }
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

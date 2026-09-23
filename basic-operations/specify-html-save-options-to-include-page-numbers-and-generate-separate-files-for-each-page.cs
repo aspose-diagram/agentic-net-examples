@@ -1,36 +1,58 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+
+        // Verify the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
             // Load the Visio diagram
-            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Add page number field to the footer (Visio uses '&p' for current page number)
+            // Insert automatic page number field in the footer (Visio field code &p)
             diagram.HeaderFooter.FooterRight = "Page: &p";
 
-            // Configure HTML save options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.SaveAsSingleFile = false;      // Generate a separate HTML file for each page
-            htmlOptions.ExportHiddenPage = false;      // Do not export hidden pages
-            htmlOptions.IsExportComments = false;      // Optional: exclude comments
+            // Determine total page count for later use
+            int totalPages = diagram.Pages.Count;
 
-            // Save the diagram as HTML
-            string outputPath = "output.html";
-            diagram.Save(outputPath, htmlOptions);
+            // Loop through each page and save it as a separate HTML file
+            for (int i = 0; i < totalPages; i++)
+            {
+                // Configure HTML save options for the current page
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    // Export hidden pages is disabled (optional)
+                    ExportHiddenPage = false,
+                    // Specify which page to render (0‑based index)
+                    PageIndex = i,
+                    // Indicate total number of pages (required for proper navigation links)
+                    PageCount = totalPages
+                };
 
+                // Build output file name that includes the page number
+                string outputPath = $"output_page_{i + 1}.html";
+
+                // Save the current page as HTML
+                diagram.Save(outputPath, htmlOptions);
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

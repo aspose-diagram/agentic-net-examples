@@ -9,32 +9,32 @@ class Program
         try
         {
 
-            // Path to the existing VDX file
-            string vdxPath = @"C:\Path\To\YourDiagram.vdx";
+            // Path to the VDX file to load
+            string filePath = "input.vdx";
 
-            // Load the diagram using the constructor that accepts a file name
-            Diagram diagram = new Diagram(vdxPath);
+            // Load the diagram using the Diagram constructor
+            Diagram diagram = new Diagram(filePath);
 
-            // Validate the number of pages in the diagram
+            // Get the number of pages in the diagram
             int pageCount = diagram.Pages.Count;
 
-            // Example validation: ensure there is at least one page
-            if (pageCount > 0)
+            // Output the page count for validation
+            Console.WriteLine($"Page count: {pageCount}");
+
+            // Example validation: ensure the diagram has at least one page
+            if (pageCount < 1)
             {
-                Console.WriteLine($"Diagram loaded successfully. Page count: {pageCount}");
+                Console.WriteLine("Validation failed: The diagram contains no pages.");
             }
             else
             {
-                Console.WriteLine("Diagram loaded, but it contains no pages.");
+                Console.WriteLine("Validation succeeded: The diagram contains pages.");
             }
 
-            // Dispose the diagram when done
-            diagram.Dispose();
-
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

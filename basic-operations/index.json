@@ -1,11 +1,11 @@
 {
   "category": "basic-operations",
   "display_name": "Basic Operations",
-  "version": "26.8.0",
+  "version": "26.9.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-08-28",
+  "generated": "2026-09-23",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,6 +14,7 @@
       "task": "Add a second page to the diagram and set its size to a4 dimensions",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -50,8 +51,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -66,14 +66,14 @@
       "task": "Apply a custom fill color to the inserted shape using rgb values for teal shade",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
-        "Page",
         "Pages",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -116,9 +116,7 @@
       "task": "Convert a visio file to swf format and confirm playback works in a web browser",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Diagnostics",
         "System.IO"
       ],
       "key_apis": [
@@ -134,7 +132,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -156,9 +155,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -168,14 +165,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "SVGSaveOptions",
-        "Save",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -202,7 +200,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -224,7 +223,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -257,7 +255,10 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "AddMaster",
+        "Diagram",
+        "Masters",
+        "diagram"
       ]
     },
     {
@@ -266,15 +267,14 @@
       "task": "Insert a rectangle shape onto the first page at coordinates 2 2 with width 3 centimeters",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -299,14 +299,15 @@
       "task": "Load a single stencil from a vss file and add a master shape to the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "AddMaster",
+        "AddShape",
         "Diagram",
-        "Save",
-        "diagram"
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -372,8 +373,9 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
+        "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -382,6 +384,7 @@
       "task": "Read a vsdx diagram from a memory stream and extract its document title property",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
         "System",
         "System.IO"
       ],
@@ -402,7 +405,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -427,7 +429,6 @@
       "task": "Set the default font for the entire diagram to times new roman before adding shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -435,6 +436,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -486,6 +488,7 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -497,14 +500,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     }
   ]

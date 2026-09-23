@@ -1,29 +1,35 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Set the global default font for all diagrams to Times New Roman
+        // Configure the global default font before any shapes are added
         FontConfigs.DefaultFontName = "Times New Roman";
 
-        // Create a new diagram instance
+        // Create a new empty diagram
         Diagram diagram = new Diagram();
 
-        // Use the first page (a new diagram contains one default page)
+        // Access the first page (automatically created with a new diagram)
         Page page = diagram.Pages[0];
 
-        // Add a text shape; it will use the default font set above
-        page.AddText(pinX: 4.25, pinY: 5.5, width: 2.0, height: 0.5, text: "Hello Aspose");
+        // Add a rectangle shape using the DrawRectangle method
+        double pinX = 2.0;   // X coordinate of the shape's center
+        double pinY = 2.0;   // Y coordinate of the shape's center
+        double width = 2.0; // Width of the rectangle
+        double height = 1.0; // Height of the rectangle
+        long shapeId = page.DrawRectangle(pinX, pinY, width, height);
 
-        // Optional: configure save options with the same default font
-        DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
-        saveOptions.DefaultFont = "Times New Roman";
+        // Retrieve the shape object to modify its properties
+        Shape shape = page.Shapes.GetShape(shapeId);
 
-        // Save the diagram to a VDX file
-        diagram.Save("output.vdx", saveOptions);
+        // Set the shape's text
+        shape.Text.Value.Clear();
+        shape.Text.Value.Add(new Txt("Sample Text"));
+
+        // Save the diagram to a VSDX file
+        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
     }
 }

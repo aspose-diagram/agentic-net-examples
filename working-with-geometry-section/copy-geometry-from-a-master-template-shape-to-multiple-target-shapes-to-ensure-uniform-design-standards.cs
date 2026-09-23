@@ -1,77 +1,75 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class CopyGeometryExample
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Load the existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("InputDiagram.vsdx");
-
-            // -----------------------------------------------------------------
-            // 1. Retrieve the master that contains the template shape.
-            //    Assume the master is identified by its universal name "TemplateMaster".
-            // -----------------------------------------------------------------
-            Master templateMaster = null;
-            foreach (Master m in diagram.Masters)
+            try
             {
-                if (string.Equals(m.NameU, "TemplateMaster", StringComparison.OrdinalIgnoreCase))
+
+                // Paths to the source diagram and the output diagram
+                string sourcePath = "source.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(sourcePath);
+
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
+
+                // Identify the master template shape by its universal name (NameU)
+                // Change "TemplateShape" to the actual NameU of your template shape
+                Shape? masterShape = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    templateMaster = m;
-                    break;
+                    if (shape.NameU == "TemplateShape")
+                    {
+                        masterShape = shape;
+                        break;
+                    }
                 }
-            }
 
-            if (templateMaster == null)
-            {
-                Console.WriteLine("Template master not found.");
-                return;
-            }
-
-            // -----------------------------------------------------------------
-            // 2. Get the source shape from the master.
-            //    Here we take the first shape inside the master as the template.
-            // -----------------------------------------------------------------
-            if (templateMaster.Shapes.Count == 0)
-            {
-                Console.WriteLine("No shapes found in the template master.");
-                return;
-            }
-
-            Shape sourceShape = templateMaster.Shapes[0];
-
-            // -----------------------------------------------------------------
-            // 3. Identify target shapes that need to receive the geometry.
-            //    For demonstration, we select shapes on the first page whose
-            //    NameU starts with "TargetShape".
-            // -----------------------------------------------------------------
-            Page firstPage = diagram.Pages[0];
-            foreach (Shape targetShape in firstPage.Shapes)
-            {
-                if (!string.IsNullOrEmpty(targetShape.NameU) &&
-                    targetShape.NameU.StartsWith("TargetShape", StringComparison.OrdinalIgnoreCase))
+                if (masterShape == null)
                 {
-                    // -----------------------------------------------------------------
-                    // 4. Copy geometry (and related properties) from the source shape.
-                    //    The Copy method copies all shape data, including Geoms.
-                    // -----------------------------------------------------------------
-                    targetShape.Copy(sourceShape);
+                    throw new Exception("Master template shape not found.");
                 }
+
+                // Iterate over all shapes on the page and copy geometry to target shapes
+                // Here we consider shapes whose NameU starts with "Target" as the shapes to update
+                foreach (Shape targetShape in page.Shapes)
+                {
+                    if (targetShape == masterShape) continue; // skip the master itself
+
+                    if (targetShape.NameU != null && targetShape.NameU.StartsWith("Target"))
+                    {
+                        // Clear existing geometry of the target shape
+                        targetShape.Geoms.Clear();
+
+                        // Copy each geometry section from the master shape
+                        foreach (Geom masterGeom in masterShape.Geoms)
+                        {
+                            // Clone the geometry object (deep copy)
+                            Geom clonedGeom = (Geom)masterGeom.Clone();
+
+                            // Add the cloned geometry to the target shape
+                            targetShape.Geoms.Add(clonedGeom);
+                        }
+
+                        // Optionally, copy the local pin positions to keep the shape centered
+                        targetShape.XForm.LocPinX.Ufe.F = "Width*0.5";
+                        targetShape.XForm.LocPinY.Ufe.F = "Height*0.5";
+                    }
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // -----------------------------------------------------------------
-            // 5. Save the modified diagram (replace with your desired output path).
-            // -----------------------------------------------------------------
-            diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

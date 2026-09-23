@@ -1,47 +1,46 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Define input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Width threshold for geometry modification (in inches)
+                // Define the width threshold (in inches)
                 double widthThreshold = 2.0;
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Load an existing Visio diagram
+                // Replace "input.vsdx" with the path to your diagram file
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Iterate through all pages
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Check if the shape's width exceeds the threshold
+                        // Check if the shape's width exceeds the defined threshold
                         if (shape.XForm.Width.Value > widthThreshold)
                         {
                             // Ensure the shape has at least one geometry section
                             if (shape.Geoms.Count > 0)
                             {
-                                // Retrieve the first geometry (usually the primary one)
+                                // Cast the first geometry to Geom
                                 Geom geom = (Geom)shape.Geoms[0];
 
-                                // Create a new vertex (LineTo) and set its coordinates
+                                // Create a new LineTo vertex
                                 LineTo newVertex = new LineTo();
-                                // Example: place the new vertex slightly to the right of the shape's current width
-                                newVertex.X.Value = shape.XForm.Width.Value + 0.5; // 0.5 inches beyond current width
-                                newVertex.Y.Value = shape.XForm.Height.Value;    // Align with current height
+
+                                // Example: place the new vertex relative to the shape's position
+                                newVertex.X.Value = shape.XForm.PinX.Value + 0.5; // 0.5 inches to the right
+                                newVertex.Y.Value = shape.XForm.PinY.Value + 0.5; // 0.5 inches upward
 
                                 // Append the new vertex to the geometry's coordinate collection
                                 geom.CoordinateCol.Add(newVertex);
@@ -51,7 +50,8 @@ class Program
                 }
 
                 // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Replace "output.vsdx" with the desired output path
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

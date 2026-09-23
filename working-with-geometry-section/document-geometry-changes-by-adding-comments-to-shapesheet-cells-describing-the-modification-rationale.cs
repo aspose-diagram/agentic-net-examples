@@ -1,57 +1,53 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram.
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Access the first page of the diagram.
+            Page page = diagram.Pages[0];
+
+            // Find the first shape on the page to modify.
+            Shape targetShape = null;
+            foreach (Shape s in page.Shapes)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page
-                Page page = diagram.Pages[0];
-
-                // Retrieve the first shape on the page (if any)
-                if (page.Shapes.Count == 0)
-                {
-                    Console.WriteLine("No shapes found on the first page.");
-                    return;
-                }
-
-                // Get the shape by its ID
-                long shapeId = page.Shapes[0].ID;
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Record original position for comment
-                double originalPinX = shape.XForm.PinX.Value;
-                double originalPinY = shape.XForm.PinY.Value;
-
-                // Modify geometry: move the shape by a specific offset
-                double offsetX = 1.0; // inches
-                double offsetY = 0.5; // inches
-                shape.XForm.PinX.Value += offsetX;
-                shape.XForm.PinY.Value += offsetY;
-
-                // Add a comment annotation describing the change
-                string commentText = $"Geometry updated: moved from ({originalPinX:F2}, {originalPinY:F2}) " +
-                                     $"to ({shape.XForm.PinX.Value:F2}, {shape.XForm.PinY.Value:F2}) " +
-                                     $"by offsets X={offsetX}in, Y={offsetY}in.";
-                page.AddComment(shape, commentText);
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Diagram saved to '{outputPath}'. Comment added to shape ID {shapeId}.");
-
+                targetShape = s;
+                break;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("No shapes found on the page.");
+                return;
             }
+
+            // ----- Geometry modification -----
+            // Move the shape to a new position (PinX, PinY) and resize it (Width, Height).
+            targetShape.XForm.PinX.Value = 5.0;    // New X coordinate (in inches)
+            targetShape.XForm.PinY.Value = 7.0;    // New Y coordinate (in inches)
+            targetShape.XForm.Width.Value = 2.5;   // New width (in inches)
+            targetShape.XForm.Height.Value = 1.5;  // New height (in inches)
+
+            // ----- Add comment describing the change -----
+            string rationale = "Moved shape to (5,7) and resized to 2.5x1.5 inches for layout alignment.";
+            page.AddComment(targetShape, rationale);
+
+            // Save the modified diagram.
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

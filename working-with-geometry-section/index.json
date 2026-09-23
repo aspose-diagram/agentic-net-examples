@@ -1,11 +1,11 @@
 {
   "category": "working-with-geometry-section",
   "display_name": "Working With Geometry Section",
-  "version": "26.8.0",
+  "version": "26.9.0",
   "framework": "net8.0",
   "total": 36,
   "pass_rate": 100.0,
-  "generated": "2026-08-28",
+  "generated": "2026-09-23",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -17,8 +17,8 @@
         "System"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
+        "Page",
         "Pages",
         "Save",
         "Shapes"
@@ -30,7 +30,9 @@
       "task": "Apply a scaling transformation to all vertices in a geometry to uniformly enlarge the shape",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -46,16 +48,16 @@
       "task": "Apply custom line caps to geometry edges to enhance visual representation of diagram connectors",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
-        "ConnectShapesViaConnector",
         "Diagram",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -64,7 +66,9 @@
       "task": "Batch process multiple shapes adding a standard geometry template to each for consistent styling",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -80,7 +84,8 @@
       "task": "Calculate the total length of all line segments in a geometry to assess diagram complexity metrics",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -96,7 +101,9 @@
       "task": "Clone geometry from a source shape and apply it to a target shape to duplicate design elements",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -128,14 +135,14 @@
       "task": "Copy geometry from a master template shape to multiple target shapes to ensure uniform design standards",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
-        "Masters",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -151,9 +158,9 @@
       "key_apis": [
         "AddShape",
         "Diagram",
+        "Page",
         "Pages",
-        "Save",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -162,7 +169,6 @@
       "task": "Create asynchronous methods to add geometries to shapes improving performance for large diagram processing",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.Threading.Tasks"
@@ -181,7 +187,9 @@
       "task": "Document geometry changes by adding comments to shapesheet cells describing the modification rationale",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -197,8 +205,6 @@
       "task": "Edit connector geometry entries directly in the shapesheet to improve diagram routing clarity",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -216,7 +222,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -232,13 +239,11 @@
       "task": "Export the updated diagram to pdf format to verify visual appearance after geometry adjustments",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -249,8 +254,8 @@
       "task": "Filter geometries by line type processing only those with solid lines for further customization",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -267,14 +272,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Page",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -304,6 +310,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -314,6 +321,7 @@
       "task": "Implement conditional logic that updates geometry vertices only when shape width exceeds a defined threshold",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -330,7 +338,11 @@
       "task": "Integrate geometry manipulation into a web api endpoint allowing remote clients to modify visio shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Net",
+        "System.Text",
+        "System.Text.Json"
       ],
       "key_apis": [
         "Diagram",
@@ -352,6 +364,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -378,7 +391,9 @@
       "task": "Merge multiple geometries within a shape into a single geometry to simplify the shapesheet structure",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -394,6 +409,7 @@
       "task": "Offset geometry coordinates by a given delta to reposition the shape without changing its size",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -411,7 +427,6 @@
       "task": "Remove the first geometry entry from a connector shape using the linetocol method",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -446,6 +461,7 @@
       "task": "Rollback geometry updates within a transaction when an exception occurs to maintain diagram integrity",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -463,13 +479,14 @@
       "task": "Rotate geometry vertices by a specified angle to align the shape with diagram orientation requirements",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -484,9 +501,7 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -496,9 +511,7 @@
       "task": "Schedule periodic geometry validation jobs that scan diagrams for missing or corrupted geometry entries",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Threading"
       ],
@@ -532,7 +545,6 @@
       "task": "Update geometry line type property to dashed style for visual distinction of connector paths",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System"
       ],
       "key_apis": [
@@ -549,8 +561,8 @@
       "task": "Update vertex coordinates of an existing geometry to reshape the shape according to new dimensions",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -585,15 +597,16 @@
       "task": "Use shapesheet formulas to dynamically calculate geometry vertex positions based on shape dimensions",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Page",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -609,6 +622,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     }

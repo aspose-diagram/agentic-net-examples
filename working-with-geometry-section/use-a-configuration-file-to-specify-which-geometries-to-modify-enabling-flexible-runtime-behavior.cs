@@ -1,23 +1,25 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
 namespace DiagramGeometryModifier
 {
-    // Represents a point to be added to a shape's geometry.
-    public class Point
-    {
-        public double X { get; set; }
-        public double Y { get; set; }
-    }
-
-    // Represents modification instructions for a specific shape.
+    // Represents a single geometry modification instruction read from the configuration file.
     public class GeometryModification
     {
-        public int ShapeId { get; set; }               // The unique ID of the shape to modify.
-        public List<Point> Points { get; set; }        // New vertices to append to the shape's first geometry.
+        public long ShapeId { get; set; }          // ID of the shape to modify
+        public double? X { get; set; }             // New X coordinate (optional)
+        public double? Y { get; set; }             // New Y coordinate (optional)
+        public double? Width { get; set; }         // New width (optional)
+        public double? Height { get; set; }        // New height (optional)
+    }
+
+    // Root object for the JSON configuration.
+    public class GeometryConfig
+    {
+        public List<GeometryModification> Modifications { get; set; } = new List<GeometryModification>();
     }
 
     class Program
@@ -27,65 +29,59 @@ namespace DiagramGeometryModifier
             try
             {
 
-                // Paths can be supplied via command‑line arguments or hard‑coded for simplicity.
-                string diagramPath = "input.vsdx";
-                string configPath = "config.json";
-                string outputPath = "output.vsdx";
+                // Paths – adjust as needed or pass via command‑line arguments.
+                string diagramPath = @"C:\Diagrams\input.vsdx";
+                string configPath = @"C:\Diagrams\geometryConfig.json";
+                string outputPath = @"C:\Diagrams\output.vsdx";
 
-                // Load the diagram from file.
+                // Load configuration.
+                GeometryConfig config = LoadConfiguration(configPath);
+
+                // Load the diagram using Aspose.Diagram.
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Read and deserialize the configuration file.
-                if (!File.Exists(configPath))
-                {
-                    Console.WriteLine($"Configuration file not found: {configPath}");
-                    return;
-                }
-
-                string json = File.ReadAllText(configPath);
-                List<GeometryModification> modifications = JsonSerializer.Deserialize<List<GeometryModification>>(json);
-
-                if (modifications == null || modifications.Count == 0)
-                {
-                    Console.WriteLine("No modifications found in configuration.");
-                    return;
-                }
-
                 // Apply each modification.
-                foreach (GeometryModification mod in modifications)
+                foreach (var mod in config.Modifications)
                 {
-                    Shape targetShape = FindShapeById(diagram, mod.ShapeId);
-                    if (targetShape == null)
+                    // Find the shape by its ID.
+                    Shape shape = FindShapeById(diagram, mod.ShapeId);
+                    if (shape == null)
                     {
-                        Console.WriteLine($"Shape with ID {mod.ShapeId} not found.");
+                        Console.WriteLine($"Shape with ID {mod.ShapeId} not found. Skipping.");
                         continue;
                     }
 
-                    // Ensure the shape has at least one geometry.
-                    if (targetShape.Geoms.Count == 0)
+                    // The shape's geometry is stored in the XForm element.
+                    // XForm contains PinX, PinY (center point) and Width, Height.
+                    // Adjust values only if they are provided in the config.
+
+                    if (mod.X.HasValue)
                     {
-                        Console.WriteLine($"Shape ID {mod.ShapeId} has no geometry to modify.");
-                        continue;
+                        // PinX is the X coordinate of the shape's center.
+                        shape.XForm.PinX.Value = mod.X.Value;
                     }
 
-                    // Retrieve the first geometry (index 0) explicitly casting to Geom.
-                    Geom geom = (Geom)targetShape.Geoms[0];
-
-                    // Append each new point as a LineTo segment.
-                    foreach (Point pt in mod.Points)
+                    if (mod.Y.HasValue)
                     {
-                        LineTo line = new LineTo();
-                        line.X.Value = pt.X;
-                        line.Y.Value = pt.Y;
-                        geom.CoordinateCol.Add(line);
+                        // PinY is the Y coordinate of the shape's center.
+                        shape.XForm.PinY.Value = mod.Y.Value;
                     }
 
-                    Console.WriteLine($"Modified shape ID {mod.ShapeId} with {mod.Points.Count} new points.");
+                    if (mod.Width.HasValue)
+                    {
+                        shape.XForm.Width.Value = mod.Width.Value;
+                    }
+
+                    if (mod.Height.HasValue)
+                    {
+                        shape.XForm.Height.Value = mod.Height.Value;
+                    }
                 }
 
                 // Save the modified diagram.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to {outputPath}");
+
+                Console.WriteLine("Diagram processing completed.");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -94,17 +90,29 @@ namespace DiagramGeometryModifier
             }
     }
 
-        // Helper method to locate a shape by its unique ID across all pages.
-        private static Shape FindShapeById(Diagram diagram, int shapeId)
+        // Loads the JSON configuration file into a GeometryConfig object.
+        private static GeometryConfig LoadConfiguration(string configPath)
+        {
+            if (!File.Exists(configPath))
+                throw new FileNotFoundException($"Configuration file not found: {configPath}");
+
+            string json = File.ReadAllText(configPath);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            return JsonSerializer.Deserialize<GeometryConfig>(json, options);
+        }
+
+        // Finds a shape in the diagram by its unique ID.
+        private static Shape FindShapeById(Diagram diagram, long shapeId)
         {
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
                     if (shape.ID == shapeId)
-                    {
                         return shape;
-                    }
                 }
             }
             return null;

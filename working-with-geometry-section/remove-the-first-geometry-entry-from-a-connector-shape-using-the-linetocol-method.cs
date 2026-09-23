@@ -1,67 +1,66 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Define input file path
-        string inputPath = "input.vsdx";
-        // Guard against missing input file
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            // Load an existing Visio diagram
+
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page
-            Page page = diagram.Pages[0];
+            bool modified = false;
 
-            // Find the first connector shape (1‑D shape)
-            Shape connector = null;
-            foreach (Shape shape in page.Shapes)
+            // Iterate through pages and shapes to find a connector (1‑D shape)
+            foreach (Page page in diagram.Pages)
             {
-                if (shape.OneD) // connectors are 1‑D shapes
+                foreach (Shape shape in page.Shapes)
                 {
-                    connector = shape;
-                    break;
+                    // Connectors are 1‑D shapes; the OneD property is a native bool
+                    if (shape.OneD)
+                    {
+                        // Ensure the shape has at least one geometry section
+                        if (shape.Geoms.Count > 0)
+                        {
+                            // Retrieve the first geometry (cast required)
+                            Geom geom = (Geom)shape.Geoms[0];
+
+                            // Ensure there is at least one LineTo entry in the geometry
+                            if (geom.CoordinateCol.LineToCol.Count > 0)
+                            {
+                                // Mark the first LineTo segment as deleted
+                                LineTo firstLineTo = geom.CoordinateCol.LineToCol[0];
+                                firstLineTo.Del = BOOL.True;
+
+                                modified = true;
+                                // Exit loops after the first modification
+                                break;
+                            }
+                        }
+                    }
                 }
+                if (modified) break;
             }
 
-            if (connector == null)
-                throw new Exception("No connector shape found on the page.");
-
-            // Ensure the connector has at least one geometry section
-            if (connector.Geoms.Count > 0)
+            if (!modified)
             {
-                // Get the first Geom object
-                Geom firstGeom = (Geom)connector.Geoms[0];
-
-                // Ensure the geometry has at least one coordinate entry
-                if (firstGeom.CoordinateCol.Count > 0)
-                {
-                    // Retrieve the first geometry row (type varies: MoveTo, LineTo, etc.)
-                    dynamic firstRow = firstGeom.CoordinateCol[0];
-
-                    // Mark the geometry row as deleted
-                    firstRow.Del = BOOL.True;
-                }
+                Console.WriteLine("No suitable connector geometry found to modify.");
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,57 +1,67 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate over each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output_merged.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate over each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Process only shapes that contain multiple geometry sections
+                    if (shape.Geoms.Count > 1)
                     {
-                        // Ensure the shape has a Geoms collection with more than one geometry
-                        if (shape.Geoms != null && shape.Geoms.Count > 1)
+                        // Use the first geometry as the primary target for merging
+                        Geom primaryGeom = (Geom)shape.Geoms[0];
+
+                        // Loop through the remaining geometries (secondary)
+                        for (int i = 1; i < shape.Geoms.Count; i++)
                         {
-                            // Take the first geometry as the target for merging
-                            Geom targetGeom = shape.Geoms[0];
+                            Geom secondaryGeom = (Geom)shape.Geoms[i];
 
-                            // Merge all subsequent geometries into the target geometry
-                            for (int i = 1; i < shape.Geoms.Count; i++)
+                            // Append each coordinate (MoveTo, LineTo, etc.) from the secondary geometry
+                            foreach (object coord in secondaryGeom.CoordinateCol)
                             {
-                                Geom sourceGeom = shape.Geoms[i];
-
-                                // Append each segment from the source geometry to the target geometry
-                                foreach (var segment in sourceGeom.CoordinateCol)
-                                {
-                                    targetGeom.CoordinateCol.Add(segment);
-                                }
-
-                                // Mark the source geometry as deleted to hide it
-                                sourceGeom.Del = BOOL.True;
+                                // The collection expects a Coordinate instance; cast accordingly
+                                primaryGeom.CoordinateCol.Add((Coordinate)coord);
                             }
+
+                            // Mark the secondary geometry as deleted to hide it
+                            secondaryGeom.Del = BOOL.True;
                         }
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Output Visio file path
+            string outputPath = "merged_output.vsdx";
+
+            // Save the modified diagram using the appropriate SaveFileFormat enum
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

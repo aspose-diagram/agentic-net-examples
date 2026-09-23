@@ -1,69 +1,63 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
-
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Use the first (default) page
+            // Add a new page to the diagram
+            diagram.Pages.Add(new Page());
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape at (2,2) with width=1 and height=1
-            long shapeId = page.AddShape(2.0, 2.0, 1.0, 1.0, "Rectangle");
+            // Add a rectangle shape to the page (pinX, pinY, width, height, master name, isCalculate)
+            long shapeId = page.AddShape(2.0, 2.0, 2.0, 2.0, "Rectangle", false);
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Ensure the shape has at least one geometry section
-            if (shape.Geoms.Count == 0)
-            {
-                Geom emptyGeom = new Geom();
-                shape.Geoms.Add(emptyGeom);
-            }
+            // Create a new Geom object (represents custom geometry)
+            Geom customGeom = new Geom();
 
-            // Get the first geometry section
-            Geom geom = (Geom)shape.Geoms[0];
+            // Define custom vertices (MoveTo + LineTo segments)
 
-            // Optional: clear existing vertices
-            geom.CoordinateCol.Clear();
-
-            // Define custom vertices (a triangle)
-            // Move to the first point (0,0)
+            // Move to the starting point (0,0)
             MoveTo move = new MoveTo();
             move.X.Value = 0.0;
             move.Y.Value = 0.0;
-            geom.CoordinateCol.Add(move);
+            customGeom.CoordinateCol.Add(move);
 
-            // Line to second point (1,0)
+            // Line to (3,0)
             LineTo line1 = new LineTo();
-            line1.X.Value = 1.0;
+            line1.X.Value = 3.0;
             line1.Y.Value = 0.0;
-            geom.CoordinateCol.Add(line1);
+            customGeom.CoordinateCol.Add(line1);
 
-            // Line to third point (0.5,1)
+            // Line to (3,2)
             LineTo line2 = new LineTo();
-            line2.X.Value = 0.5;
-            line2.Y.Value = 1.0;
-            geom.CoordinateCol.Add(line2);
+            line2.X.Value = 3.0;
+            line2.Y.Value = 2.0;
+            customGeom.CoordinateCol.Add(line2);
 
-            // Close the shape by returning to the first point
+            // Line back to the start point (0,0) to close the shape
             LineTo line3 = new LineTo();
             line3.X.Value = 0.0;
             line3.Y.Value = 0.0;
-            geom.CoordinateCol.Add(line3);
+            customGeom.CoordinateCol.Add(line3);
 
-            // Save the diagram with the custom geometry
+            // Add the custom geometry to the shape's Geoms collection
+            shape.Geoms.Add(customGeom);
+
+            // Save the diagram to a VSDX file
             diagram.Save("CustomGeometry.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Output any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

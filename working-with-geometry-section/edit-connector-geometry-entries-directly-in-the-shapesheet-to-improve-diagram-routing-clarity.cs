@@ -1,20 +1,15 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Manipulation;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths (can be provided via command line or hard‑coded)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-                // Load the Visio diagram
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages
@@ -23,30 +18,29 @@ class Program
                     // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Process only connector shapes (1‑D shapes) that are not deleted
-                        if (shape.OneD && shape.Del == BOOL.False)
+                        // Process only connector shapes (1‑D shapes)
+                        if (shape.OneD)
                         {
-                            // Set routing style to RightAngle for clearer routing
+                            // Set routing style to right‑angle for clearer routing
                             shape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
 
-                            // Ensure the connector uses the default line‑jump style (no explicit jumps)
+                            // Ensure connector jump style uses the default page setting
                             shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.PageDefault;
 
-                            // Optionally, enforce straight connector type (overrides any existing type)
-                            shape.SetConnectorsType(ConnectorsTypeValue.StraightLines);
+                            // Reset any explicit jump code to undefined
+                            shape.Layout.ConLineJumpCode.Value = ConLineJumpCodeValue.Undefined;
                         }
                     }
                 }
 
-                // Save the modified diagram using a proper SaveOptions overload
-                diagram.Save(outputPath, new DiagramSaveOptions(SaveFileFormat.Vsdx));
-
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

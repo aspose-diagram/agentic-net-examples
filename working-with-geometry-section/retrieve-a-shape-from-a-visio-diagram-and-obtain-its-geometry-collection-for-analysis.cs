@@ -1,58 +1,78 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the Visio file (adjust as needed)
+        string filePath = "input.vsdx";
+        // Guard to ensure the file exists before proceeding
+        if (!File.Exists(filePath)) { Console.Error.WriteLine($"File not found: {filePath}"); return; }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(filePath);
 
-            // Path to the Visio file
-            string filePath = "sample.vsdx";
+            // Access the first page (or use diagram.Pages.GetPage("Page-1") for a named page)
+            Page page = diagram.Pages[0];
 
-            // Load the diagram (ensure the file exists at the specified location)
-            using (Diagram diagram = new Diagram(filePath))
+            // Retrieve a shape by its ID (replace with a valid ID from your diagram)
+            int shapeId = 1;
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Guard to ensure the shape was found
+            if (shape == null)
             {
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Define the ID of the shape you want to retrieve
-                int shapeId = 1; // Change this to the actual shape ID you need
-
-                // Retrieve the shape from the page's shape collection
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape == null)
-                {
-                    throw new Exception($"Shape with ID {shapeId} was not found on page '{page.Name}'.");
-                }
-
-                // Output basic shape information
-                Console.WriteLine($"Shape ID: {shape.ID}");
-                Console.WriteLine($"Shape Name: {shape.Name}");
-                Console.WriteLine($"Number of geometry sections (Geoms): {shape.Geoms.Count}");
-
-                // Iterate through each geometry (Geom) in the shape
-                for (int i = 0; i < shape.Geoms.Count; i++)
-                {
-                    Aspose.Diagram.Geom geom = (Aspose.Diagram.Geom)shape.Geoms[i];
-                    Console.WriteLine($"  Geom {i} contains {geom.CoordinateCol.Count} coordinate entries.");
-
-                    // Iterate through each coordinate entry within the geometry
-                    for (int j = 0; j < geom.CoordinateCol.Count; j++)
-                    {
-                        // Each entry can be a MoveTo, LineTo, ArcTo, etc.
-                        object coordinate = geom.CoordinateCol[j];
-                        Console.WriteLine($"    Coordinate {j}: Type = {coordinate.GetType().Name}");
-                    }
-                }
+                Console.WriteLine($"Shape with ID {shapeId} not found.");
+                return;
             }
 
+            // Output basic shape information
+            Console.WriteLine("Shape ID: " + shape.ID);
+            Console.WriteLine("Shape NameU: " + shape.NameU);
+            Console.WriteLine("Number of geometry sections: " + shape.Geoms.Count);
+
+            // Iterate through each geometry (Geom) section
+            foreach (Aspose.Diagram.Geom geom in shape.Geoms)
+            {
+                // Geom does not expose an Index property; output its hash code as an identifier
+                Console.WriteLine("Geom Identifier: " + geom.GetHashCode());
+                Console.WriteLine("Number of coordinate entries: " + geom.CoordinateCol.Count);
+
+                // Iterate through each coordinate entry within the geometry
+                foreach (object coord in geom.CoordinateCol)
+                {
+                    if (coord is MoveTo move)
+                    {
+                        // Output MoveTo coordinates
+                        Console.WriteLine($"  MoveTo - X: {move.X.Value}, Y: {move.Y.Value}");
+                    }
+                    else if (coord is LineTo line)
+                    {
+                        // Output LineTo coordinates
+                        Console.WriteLine($"  LineTo - X: {line.X.Value}, Y: {line.Y.Value}");
+                    }
+                    else if (coord is ArcTo arc)
+                    {
+                        // Output ArcTo coordinates
+                        Console.WriteLine($"  ArcTo - X: {arc.X.Value}, Y: {arc.Y.Value}");
+                    }
+                    else if (coord is SplineKnot spline)
+                    {
+                        // Output SplineKnot coordinates
+                        Console.WriteLine($"  SplineKnot - X: {spline.X.Value}, Y: {spline.Y.Value}");
+                    }
+                    // Additional coordinate types can be handled here if needed
+                }
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine("Error processing diagram: " + ex.Message);
         }
     }
 }

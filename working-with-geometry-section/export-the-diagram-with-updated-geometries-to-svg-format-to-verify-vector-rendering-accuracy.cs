@@ -1,77 +1,65 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Example geometry update: add a new line segment to the first shape on the first page
+            if (diagram.Pages.Count > 0)
             {
-
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
-                // Output SVG file path
-                string outputPath = "output.svg";
-
-                // Load the diagram from file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page explicitly
                 Page page = diagram.Pages[0];
-
-                // Attempt to retrieve a shape with ID 1 (ensure it exists)
-                Shape shape = page.Shapes.GetShape(1);
-                if (shape != null)
+                if (page.Shapes.Count > 0)
                 {
+                    // Retrieve the first shape (cast long ID to int if needed)
+                    Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
+
                     // Ensure the shape has at least one geometry section
                     if (shape.Geoms.Count > 0)
                     {
-                        // Cast the first geometry to Geom
+                        // Get the first geometry
                         Geom geom = (Geom)shape.Geoms[0];
 
-                        // Create a MoveTo segment at (0,0)
+                        // Add a MoveTo at the current position (optional, ensures a start point)
                         MoveTo move = new MoveTo();
-                        move.X.Value = 0.0;
-                        move.Y.Value = 0.0;
+                        move.X.Value = shape.XForm.PinX.Value;
+                        move.Y.Value = shape.XForm.PinY.Value;
                         geom.CoordinateCol.Add(move);
 
-                        // Create a LineTo segment to (1,1)
+                        // Append a new line segment (LineTo) to extend the shape
                         LineTo line = new LineTo();
-                        line.X.Value = 1.0;
-                        line.Y.Value = 1.0;
+                        line.X.Value = shape.XForm.PinX.Value + 1.0; // extend 1 inch to the right
+                        line.Y.Value = shape.XForm.PinY.Value;      // same vertical position
                         geom.CoordinateCol.Add(line);
-
-                        Console.WriteLine("Geometry of shape ID 1 has been updated.");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Shape ID 1 does not contain any geometry sections.");
                     }
                 }
-                else
-                {
-                    Console.WriteLine("Shape with ID 1 was not found on the first page.");
-                }
-
-                // Configure SVG save options
-                SVGSaveOptions svgOptions = new SVGSaveOptions
-                {
-                    ExportHiddenPage = false,
-                    ExportGuideShapes = false,
-                    SVGFitToViewPort = true,
-                    ExportElementAsRectTag = true
-                };
-
-                // Save the diagram as SVG using the configured options
-                diagram.Save(outputPath, svgOptions);
-
-                Console.WriteLine($"Diagram exported to SVG successfully: {outputPath}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Configure SVG export options
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            svgOptions.ExportHiddenPage = false; // do not export hidden pages
+            svgOptions.ExportGuideShapes = false; // optional: exclude guide shapes
+            svgOptions.SVGFitToViewPort = true;   // fit SVG to viewport
+
+            // Export the updated diagram to SVG
+            string outputPath = "output.svg";
+            diagram.Save(outputPath, svgOptions);
+
+            Console.WriteLine($"Diagram exported to SVG at: {outputPath}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

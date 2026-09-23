@@ -1,89 +1,114 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        Diagram diagram;
+        try
+        {
+            // Load the existing diagram
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Locate the target shape by its universal name (case‑insensitive)
+        Shape targetShape = null;
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Retrieve the shape to modify (example: shape with ID = 1)
-                // Replace the ID with the actual shape ID you need to update
-                int shapeId = 1;
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape == null)
-                    throw new Exception($"Shape with ID {shapeId} not found.");
-
-                // Ensure the shape has at least one geometry section
-                if (shape.Geoms.Count == 0)
-                    throw new Exception("The shape does not contain any geometry sections.");
-
-                // Get the first geometry (index 0) and cast to Geom
-                Geom targetGeom = (Geom)shape.Geoms[0];
-
-                // Disable (delete) existing vertex segments by marking them as deleted
-                foreach (var segment in targetGeom.CoordinateCol)
+                if (!string.IsNullOrEmpty(shape.NameU) &&
+                    shape.NameU.Equals("Rectangle", StringComparison.OrdinalIgnoreCase))
                 {
-                    // All segment types inherit the Del property (BOOL)
-                    segment.Del = BOOL.True;
+                    targetShape = shape;
+                    break;
                 }
-
-                // Define new dimensions for the shape (in inches)
-                double newWidth = 2.0;   // example width
-                double newHeight = 1.0;  // example height
-
-                // Build a new rectangle geometry: MoveTo (0,0) -> LineTo (newWidth,0) -> LineTo (newWidth,newHeight)
-                // -> LineTo (0,newHeight) -> LineTo (0,0) to close the path
-
-                // MoveTo (starting point)
-                MoveTo move = new MoveTo();
-                move.X.Value = 0.0;
-                move.Y.Value = 0.0;
-                targetGeom.CoordinateCol.Add(move);
-
-                // LineTo (right side)
-                LineTo line1 = new LineTo();
-                line1.X.Value = newWidth;
-                line1.Y.Value = 0.0;
-                targetGeom.CoordinateCol.Add(line1);
-
-                // LineTo (top side)
-                LineTo line2 = new LineTo();
-                line2.X.Value = newWidth;
-                line2.Y.Value = newHeight;
-                targetGeom.CoordinateCol.Add(line2);
-
-                // LineTo (left side)
-                LineTo line3 = new LineTo();
-                line3.X.Value = 0.0;
-                line3.Y.Value = newHeight;
-                targetGeom.CoordinateCol.Add(line3);
-
-                // LineTo (close the rectangle)
-                LineTo line4 = new LineTo();
-                line4.X.Value = 0.0;
-                line4.Y.Value = 0.0;
-                targetGeom.CoordinateCol.Add(line4);
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+            if (targetShape != null) break;
+        }
+
+        if (targetShape == null)
+        {
+            Console.Error.WriteLine("Target shape not found.");
+            return;
+        }
+
+        // Desired new dimensions (in inches)
+        double newWidth = 3.0;
+        double newHeight = 2.0;
+
+        // Original dimensions from the shape's XForm
+        double origWidth = targetShape.XForm.Width.Value;
+        double origHeight = targetShape.XForm.Height.Value;
+
+        if (origWidth == 0 || origHeight == 0)
+        {
+            Console.Error.WriteLine("Original shape dimensions are zero; cannot scale.");
+            return;
+        }
+
+        // Scaling factors for X and Y axes
+        double scaleX = newWidth / origWidth;
+        double scaleY = newHeight / origHeight;
+
+        // Update geometry vertices in the first geometry section, if present
+        if (targetShape.Geoms.Count > 0)
+        {
+            Geom geom = (Geom)targetShape.Geoms[0];
+            foreach (object segment in geom.CoordinateCol)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                if (segment is MoveTo move)
+                {
+                    // Scale MoveTo coordinates
+                    move.X.Value *= scaleX;
+                    move.Y.Value *= scaleY;
+                }
+                else if (segment is LineTo line)
+                {
+                    // Scale LineTo coordinates
+                    line.X.Value *= scaleX;
+                    line.Y.Value *= scaleY;
+                }
+                else if (segment is ArcTo arc)
+                {
+                    // Scale ArcTo end point; radius scaling is optional and omitted
+                    arc.X.Value *= scaleX;
+                    arc.Y.Value *= scaleY;
+                }
+                // Additional segment types (e.g., EllipticalArcTo) can be handled similarly if needed
             }
+        }
+
+        // Apply the new width and height to the shape's XForm
+        targetShape.XForm.Width.Value = newWidth;
+        targetShape.XForm.Height.Value = newHeight;
+
+        // Save the modified diagram
+        string outputPath = "output.vsdx";
+        try
+        {
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+        }
     }
-    }
+}

@@ -3,62 +3,56 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
                 // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                // Path for the processed output file
-                string outputPath = "output.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Process each page and its shapes
+                // Iterate through all pages
                 for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    var page = diagram.Pages[pageIndex];
+                    Page page = diagram.Pages[pageIndex];
 
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through the geometry sections of the shape
-                        for (int geomIndex = 0; geomIndex < shape.Geoms.Count; geomIndex++)
-                        {
-                            try
-                            {
-                                // Retrieve the geometry object
-                                var geom = (Geom)shape.Geoms[geomIndex];
+                        // Example index that may be out of range
+                        int targetGeomIndex = 5;
 
-                                // Example operation: iterate over coordinate collection
-                                for (int coordIndex = 0; coordIndex < geom.CoordinateCol.Count; coordIndex++)
-                                {
-                                    var segment = geom.CoordinateCol[coordIndex];
-                                    // Placeholder for any geometry manipulation logic
-                                    // e.g., segment.X.Value = segment.X.Value + 0.1;
-                                }
-                            }
-                            catch (IndexOutOfRangeException ex)
-                            {
-                                // Log detailed error information and skip the invalid geometry entry
-                                Console.WriteLine($"[Warning] Page {pageIndex + 1}, Shape ID {shape.ID}, Geometry index {geomIndex} is out of range. Details: {ex.Message}");
-                                continue;
-                            }
-                            catch (Exception ex)
-                            {
-                                // Log unexpected errors without halting the entire processing
-                                Console.WriteLine($"[Error] Unexpected exception on Page {pageIndex + 1}, Shape ID {shape.ID}, Geometry index {geomIndex}. Details: {ex}");
-                                continue;
-                            }
+                        try
+                        {
+                            // Attempt to retrieve the geometry at the specified index
+                            Geom geom = (Geom)shape.Geoms[targetGeomIndex];
+
+                            // If successful, perform any required processing here
+                            Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shape.ID}: Geometry {targetGeomIndex} accessed successfully.");
+                        }
+                        catch (ArgumentOutOfRangeException ex)
+                        {
+                            // Log detailed error information and skip this geometry
+                            Console.WriteLine($"[Error] Page {pageIndex + 1}, Shape ID {shape.ID}, Geometry index {targetGeomIndex} is out of range.");
+                            Console.WriteLine($"Message: {ex.Message}");
+                            Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                            // Continue with the next shape
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log any other unexpected errors
+                            Console.WriteLine($"[Unexpected Error] Page {pageIndex + 1}, Shape ID {shape.ID}, Geometry index {targetGeomIndex}.");
+                            Console.WriteLine($"Message: {ex.Message}");
                         }
                     }
                 }
 
-                // Save the modified diagram
+                // Save the diagram (no modifications made in this example)
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Processing completed successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

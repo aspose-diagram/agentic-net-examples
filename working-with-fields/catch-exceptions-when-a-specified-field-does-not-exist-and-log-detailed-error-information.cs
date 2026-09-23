@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,39 +10,54 @@ class Program
             {
 
                 // Path to the Visio file
-                string diagramPath = "input.vsdx";
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+                Diagram diagram = new Diagram(inputPath);
 
-                // Ensure there is at least one page and one shape
-                if (diagram.Pages.Count == 0)
+                // Name of the custom property (field) to check
+                string targetFieldName = "MyField";
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.WriteLine("The diagram contains no pages.");
-                    return;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        try
+                        {
+                            // Attempt to find the custom property by name
+                            Prop targetProp = null;
+                            foreach (Prop prop in shape.Props)
+                            {
+                                if (prop.Name == targetFieldName)
+                                {
+                                    targetProp = prop;
+                                    break;
+                                }
+                            }
+
+                            // If the property was not found, throw an exception
+                            if (targetProp == null)
+                            {
+                                throw new Exception($"Custom property '{targetFieldName}' not found on shape ID {shape.ID} (NameU: {shape.NameU}).");
+                            }
+
+                            // Property exists – you can work with it here
+                            Console.WriteLine($"Found property '{targetFieldName}' on shape ID {shape.ID} with value: {targetProp.Value.Val}");
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log detailed error information
+                            Console.WriteLine("Error accessing custom property:");
+                            Console.WriteLine($"Message: {ex.Message}");
+                            Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                        }
+                    }
                 }
 
-                Shape shape = diagram.Pages[0].Shapes[0];
-
-                // Attempt to access a field that may not exist
-                try
-                {
-                    // This will throw if the Fields collection is empty
-                    Field targetField = shape.Fields[0];
-
-                    // If no exception, output some details about the field
-                    Console.WriteLine($"Field Index: {targetField.IX}");
-                    Console.WriteLine($"Field Type Value: {(int)targetField.Type.Value}");
-                    Console.WriteLine($"Field Display Value: {targetField.DisplayValue}");
-                }
-                catch (Exception ex)
-                {
-                    // Log detailed error information
-                    Console.WriteLine("Error: Specified field does not exist or could not be accessed.");
-                    Console.WriteLine($"Exception Type: {ex.GetType().FullName}");
-                    Console.WriteLine($"Message: {ex.Message}");
-                    Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-                }
+                // Save the diagram (no changes made in this example)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

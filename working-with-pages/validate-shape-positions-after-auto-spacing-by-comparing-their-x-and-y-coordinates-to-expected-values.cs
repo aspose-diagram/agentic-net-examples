@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
 using Aspose.Diagram.Saving;
@@ -16,7 +17,7 @@ class Program
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Work with the first page (index 0)
+                // Assume we work with the first page
                 Page page = diagram.Pages[0];
 
                 // Configure auto‑spacing options (example distances)
@@ -29,36 +30,42 @@ class Program
                 // Apply auto‑spacing to all shapes on the page
                 page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
 
-                // Expected positions for validation (shape ID -> (expected PinX, expected PinY))
-                var expectedPositions = new System.Collections.Generic.Dictionary<long, (double PinX, double PinY)>
+                // Expected positions after auto‑spacing (shape ID -> (PinX, PinY))
+                // These values should be set according to your test expectations.
+                var expectedPositions = new Dictionary<long, (double X, double Y)>
                 {
-                    // Example entries – replace with real expected values
+                    // Example entries:
+                    // { shapeId, (expectedPinX, expectedPinY) }
                     { 1, (2.0, 3.0) },
-                    { 2, (5.0, 4.0) }
+                    { 2, (4.0, 5.0) },
+                    // Add more expected positions as needed
                 };
 
-                // Tolerance for floating‑point comparison (in inches)
-                const double tolerance = 0.001;
+                const double tolerance = 0.001; // allowable deviation in inches
 
                 // Validate each shape's position
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
                     long shapeId = shape.ID;
 
                     if (expectedPositions.TryGetValue(shapeId, out var expected))
                     {
-                        double actualPinX = shape.XForm.PinX.Value;
-                        double actualPinY = shape.XForm.PinY.Value;
+                        double actualX = shape.XForm.PinX.Value;
+                        double actualY = shape.XForm.PinY.Value;
 
-                        bool xMatches = Math.Abs(actualPinX - expected.PinX) <= tolerance;
-                        bool yMatches = Math.Abs(actualPinY - expected.PinY) <= tolerance;
+                        bool xMatches = Math.Abs(actualX - expected.X) <= tolerance;
+                        bool yMatches = Math.Abs(actualY - expected.Y) <= tolerance;
 
                         if (!xMatches || !yMatches)
                         {
                             string message = $"Shape ID {shapeId} position mismatch. " +
-                                             $"Expected (PinX={expected.PinX}, PinY={expected.PinY}), " +
-                                             $"Actual (PinX={actualPinX}, PinY={actualPinY}).";
-                            // Throwing an exception signals validation failure
+                                             $"Expected (X={expected.X}, Y={expected.Y}), " +
+                                             $"Actual (X={actualX}, Y={actualY}).";
+                            Console.WriteLine(message);
                             throw new Exception(message);
                         }
                         else
@@ -68,16 +75,16 @@ class Program
                     }
                     else
                     {
-                        // No expected position defined for this shape; skip validation
-                        Console.WriteLine($"Shape ID {shapeId} has no expected position defined; skipping.");
+                        // No expected position defined for this shape; optionally log it.
+                        Console.WriteLine($"No expected position defined for shape ID {shapeId}; skipping validation.");
                     }
                 }
 
-                // Save the diagram after auto‑spacing (optional)
+                // Optionally save the diagram after validation
                 string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                Console.WriteLine("Auto‑spacing validation completed successfully.");
+                Console.WriteLine("Validation completed and diagram saved.");
 
             }
             catch (System.IO.FileNotFoundException ex)

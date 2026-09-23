@@ -4,56 +4,60 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram
+            // Paths to input and output Visio files
             string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page and retrieve a shape by its ID (example ID = 1)
+            // Access the first page and the first shape (ID = 1)
             Page page = diagram.Pages[0];
             Shape shape = page.Shapes.GetShape(1);
 
-            // Ensure the shape has a gradient fill enabled
-            shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
-            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-
-            // Retrieve the current gradient stops collection
-            GradientFill gradientFill = shape.Fill.GradientFill;
-            int stopCount = gradientFill.GradientStops.Count;
-            Console.WriteLine($"Current gradient stop count: {stopCount}");
-
-            // If there are fewer than three stops, replace them with three default stops
-            if (stopCount < 3)
+            if (shape != null && shape.Fill != null && shape.Fill.GradientFill != null)
             {
-                // Clear existing stops
-                gradientFill.GradientStops.Clear();
+                var gradientFill = shape.Fill.GradientFill;
 
-                // Add three gradient stops at positions 0, 0.5, and 1 with sample colors
-                gradientFill.GradientStops.Add(
-                    new DoubleValue(0, MeasureConst.NUM),
-                    new ColorValue("#FF0000", MeasureConst.Undefined)); // Red at start
+                // Retrieve current gradient stop count
+                int stopCount = gradientFill.GradientStops.Count;
+                Console.WriteLine($"Current gradient stop count: {stopCount}");
 
-                gradientFill.GradientStops.Add(
-                    new DoubleValue(0.5, MeasureConst.NUM),
-                    new ColorValue("#00FF00", MeasureConst.Undefined)); // Green at middle
+                // Ensure at least three stops
+                if (stopCount < 3)
+                {
+                    // Clear existing stops before adding new ones
+                    gradientFill.GradientStops.Clear();
 
-                gradientFill.GradientStops.Add(
-                    new DoubleValue(1, MeasureConst.NUM),
-                    new ColorValue("#0000FF", MeasureConst.Undefined)); // Blue at end
+                    // Add three default gradient stops
+                    gradientFill.GradientStops.Add(
+                        new DoubleValue(0, MeasureConst.NUM),
+                        new ColorValue("#FF0000", MeasureConst.Undefined)); // Red at position 0
 
-                Console.WriteLine("Added three gradient stops to meet the minimum requirement.");
+                    gradientFill.GradientStops.Add(
+                        new DoubleValue(0.5, MeasureConst.NUM),
+                        new ColorValue("#00FF00", MeasureConst.Undefined)); // Green at position 0.5
+
+                    gradientFill.GradientStops.Add(
+                        new DoubleValue(1, MeasureConst.NUM),
+                        new ColorValue("#0000FF", MeasureConst.Undefined)); // Blue at position 1
+
+                    Console.WriteLine("Added default gradient stops to ensure a minimum of three stops.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("The specified shape does not have a gradient fill.");
             }
 
-            // Verify the final count
-            Console.WriteLine($"Final gradient stop count: {gradientFill.GradientStops.Count}");
-
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

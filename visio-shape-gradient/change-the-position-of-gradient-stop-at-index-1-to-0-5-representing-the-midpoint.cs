@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -10,65 +11,60 @@ class Program
             {
 
                 // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Get the first page
+                // Access the first page
                 Page page = diagram.Pages[0];
 
-                // Find the first shape that has a gradient fill
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
+                // Retrieve the first shape on the page (adjust as needed)
+                Shape shape = null;
+                foreach (Shape s in page.Shapes)
                 {
-                    // Ensure the shape has a gradient fill enabled
-                    if (shape.Fill != null && shape.Fill.GradientFill != null && shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
+                    shape = s;
+                    break;
                 }
 
-                if (targetShape == null)
+                if (shape == null)
                 {
-                    Console.WriteLine("No shape with an enabled gradient fill was found.");
-                    return;
+                    throw new Exception("No shape found on the first page.");
                 }
 
-                // Access the gradient fill collection
-                var gradientFill = targetShape.Fill.GradientFill;
-                var existingStops = new List<(double position, string color)>();
-                int index = 0;
+                // Ensure the shape has a gradient fill
+                shape.Fill.FillPattern.Value = 25;                         // Gradient fill pattern
+                shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True; // Enable gradient
+                shape.Fill.GradientFill.GradientDir.Value = 0;             // Direction (optional)
 
-                // Preserve existing stops, modifying the one at index 1
-                foreach (GradientStop stop in gradientFill.GradientStops)
+                // Capture existing gradient stops
+                List<(double Position, string Color)> stops = new List<(double, string)>();
+                foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
                 {
                     double pos = stop.Position.Value;
                     string col = stop.Color.Value;
-
-                    if (index == 1)
-                    {
-                        // Change position to midpoint (0.5)
-                        pos = 0.5;
-                    }
-
-                    existingStops.Add((pos, col));
-                    index++;
+                    stops.Add((pos, col));
                 }
 
-                // Clear current stops and re-add them with the updated position
-                gradientFill.GradientStops.Clear();
-                foreach (var (pos, col) in existingStops)
+                // Verify there is a stop at index 1
+                if (stops.Count <= 1)
                 {
-                    gradientFill.GradientStops.Add(
-                        new DoubleValue(pos, MeasureConst.NUM),
-                        new ColorValue(col, MeasureConst.Undefined));
+                    throw new Exception("The shape does not have a gradient stop at index 1.");
+                }
+
+                // Change the position of the stop at index 1 to 0.5 (midpoint)
+                var modifiedStop = stops[1];
+                modifiedStop.Position = 0.5;
+                stops[1] = modifiedStop;
+
+                // Reapply the gradient stops
+                shape.Fill.GradientFill.GradientStops.Clear();
+                foreach (var stopInfo in stops)
+                {
+                    shape.Fill.GradientFill.GradientStops.Add(
+                        new DoubleValue(stopInfo.Position, MeasureConst.NUM),
+                        new ColorValue(stopInfo.Color, MeasureConst.Undefined));
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Gradient stop at index 1 updated and diagram saved to '{outputPath}'.");
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

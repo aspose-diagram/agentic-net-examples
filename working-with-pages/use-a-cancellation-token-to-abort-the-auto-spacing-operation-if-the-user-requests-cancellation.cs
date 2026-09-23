@@ -1,76 +1,74 @@
-using System.IO;
 using System;
-using System.Linq;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Aspose.Diagram;
+using Aspose.Diagram.AutoLayout;
 using Aspose.Diagram.Saving;
 
-class AutoSpaceWithCancellation
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing diagram
-            var diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Get the first page (or any specific page)
-            var page = diagram.Pages[0];
+            // Load the diagram (lifecycle rule)
+            Diagram diagram = new Diagram(inputPath);
 
-            // Prepare auto‑spacing options
-            var options = new AutoSpaceOptions
+            // Get the first page of the diagram
+            Page page = diagram.Pages[0];
+
+            // Configure auto‑spacing options
+            AutoSpaceOptions options = new AutoSpaceOptions();
+            options.DistanceInHorizontal = 1.0; // horizontal gap in inches
+            options.DistanceInVertical = 1.0;   // vertical gap in inches
+
+            // Set up cancellation support
+            CancellationTokenSource cts = new CancellationTokenSource();
+            CancellationToken token = cts.Token;
+
+            // Listen for user input to cancel the operation
+            Task.Run(() =>
             {
-                DistanceInHorizontal = 0.5, // inches
-                DistanceInVertical = 0.5    // inches
-            };
-
-            // Create a cancellation token source that the user can trigger
-            var cts = new CancellationTokenSource();
-
-            // Example: cancel after 2 seconds (replace with real user request)
-            Task.Delay(TimeSpan.FromSeconds(2)).ContinueWith(_ => cts.Cancel());
-
-            // Run the auto‑spacing operation in a separate task
-            var autoSpaceTask = Task.Run(() =>
-            {
-                // InterruptMonitor will be signaled when cancellation is requested
-                var monitor = new InterruptMonitor();
-
-                // Register the token so that when cancellation is requested,
-                // the monitor interrupts the long‑running operation.
-                cts.Token.Register(() => monitor.Interrupt());
-
-                // Perform auto‑spacing; Aspose.Diagram checks the monitor internally
-                // and aborts the operation if interruption is requested.
-                page.AutoSpaceShapes(page.Shapes, options);
-            }, cts.Token);
+                Console.WriteLine("Press 'c' then Enter to cancel auto‑spacing...");
+                while (true)
+                {
+                    string? line = Console.ReadLine();
+                    if (line != null && line.Equals("c", StringComparison.OrdinalIgnoreCase))
+                    {
+                        cts.Cancel();
+                        break;
+                    }
+                }
+            });
 
             try
             {
-                // Wait for the operation to complete or be cancelled
-                autoSpaceTask.Wait(cts.Token);
+                // Check for cancellation before starting the auto‑spacing
+                if (token.IsCancellationRequested)
+                {
+                    Console.WriteLine("Auto‑spacing was cancelled before it started.");
+                }
+                else
+                {
+                    // Perform auto‑spacing; this call is atomic, so we only check before it runs
+                    page.AutoSpaceShapes(page.Shapes, options);
+                    Console.WriteLine("Auto‑spacing completed successfully.");
+                }
             }
-            catch (OperationCanceledException)
+            catch (Exception ex)
             {
-                Console.WriteLine("Auto‑spacing was cancelled by the user.");
-            }
-            catch (AggregateException ae) when (ae.InnerExceptions.Any(e => e is OperationCanceledException))
-            {
-                Console.WriteLine("Auto‑spacing was cancelled by the user.");
+                Console.WriteLine($"Error during auto‑spacing: {ex.Message}");
             }
 
-            // Save the diagram (if the operation completed)
-            if (!cts.IsCancellationRequested)
-            {
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved with auto‑spacing applied.");
-            }
-            else
-            {
-                Console.WriteLine("Diagram not saved because the operation was cancelled.");
-            }
+            // Save the modified diagram (lifecycle rule)
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

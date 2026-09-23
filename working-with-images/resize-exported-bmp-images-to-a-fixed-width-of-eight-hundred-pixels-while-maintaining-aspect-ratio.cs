@@ -2,68 +2,82 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using AsposeDrawing = Aspose.Drawing;
+using AsposeDrawingImaging = Aspose.Drawing.Imaging;
+using AsposeDrawingDrawing2D = Aspose.Drawing.Drawing2D;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string visioPath = "input.vsdx";
-        // Verify the Visio file exists before proceeding
-        if (!File.Exists(visioPath)) { Console.Error.WriteLine($"File not found: {visioPath}"); return; }
+        // Input Visio file path
+        string diagramPath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(diagramPath)) { Console.Error.WriteLine($"File not found: {diagramPath}"); return; }
 
-        try
+        // Output folder for resized BMP images
+        string outputFolder = "ResizedBmp";
+        Directory.CreateDirectory(outputFolder);
+
+        // Load the diagram inside a using block for proper disposal
+        using (Diagram diagram = new Diagram(diagramPath))
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(visioPath);
-            // Ensure the diagram is disposed at the end of processing
-            using (diagram)
+            // Iterate through each page in the diagram
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Iterate through all pages in the diagram
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Export the page as BMP using ImageSaveOptions
+                string tempBmpPath = Path.Combine(outputFolder, $"Page_{pageIndex + 1}_original.bmp");
+                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Bmp);
+                imgOptions.PageIndex = pageIndex; // zero‑based page index
+
+                try
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    diagram.Save(tempBmpPath, imgOptions);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error exporting page {pageIndex + 1}: {ex.Message}");
+                    continue;
+                }
 
-                    // Export the current page as BMP using Aspose.Diagram's ImageSaveOptions
-                    string bmpPath = $"Page_{page.ID}_original.bmp";
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Bmp);
-                    imgOptions.PageIndex = pageIndex; // zero‑based page index
-                    diagram.Save(bmpPath, imgOptions);
-
-                    // Resize the exported BMP to a width of 800 pixels while keeping aspect ratio
-                    using (Aspose.Drawing.Image originalImage = Aspose.Drawing.Image.FromFile(bmpPath))
+                // Load the exported BMP with Aspose.Drawing and resize it
+                try
+                {
+                    using (AsposeDrawing.Image srcImage = AsposeDrawing.Image.FromFile(tempBmpPath))
                     {
-                        int originalWidth = originalImage.Width;
-                        int originalHeight = originalImage.Height;
-
-                        // Desired width
-                        int targetWidth = 800;
-                        // Calculate proportional height
-                        int targetHeight = (int)(originalHeight * (targetWidth / (double)originalWidth));
+                        const int targetWidth = 800; // desired width in pixels
+                        double scaleFactor = (double)targetWidth / srcImage.Width;
+                        int targetHeight = (int)(srcImage.Height * scaleFactor);
 
                         // Create a new bitmap with the target dimensions
-                        using (Aspose.Drawing.Bitmap resizedBitmap = new Aspose.Drawing.Bitmap(targetWidth, targetHeight))
+                        using (AsposeDrawing.Bitmap resizedBitmap = new AsposeDrawing.Bitmap(targetWidth, targetHeight))
                         {
-                            // Draw the original image onto the new bitmap with high‑quality scaling
-                            using (Aspose.Drawing.Graphics graphics = Aspose.Drawing.Graphics.FromImage(resizedBitmap))
+                            // Draw the source image onto the new bitmap with high‑quality scaling
+                            using (AsposeDrawing.Graphics graphics = AsposeDrawing.Graphics.FromImage(resizedBitmap))
                             {
-                                graphics.InterpolationMode = Aspose.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                                graphics.DrawImage(originalImage, 0, 0, targetWidth, targetHeight);
+                                graphics.InterpolationMode = AsposeDrawingDrawing2D.InterpolationMode.HighQualityBicubic;
+                                graphics.DrawImage(srcImage, 0, 0, targetWidth, targetHeight);
                             }
 
-                            // Overwrite the original BMP with the resized version
-                            resizedBitmap.Save(bmpPath, Aspose.Drawing.Imaging.ImageFormat.Bmp);
+                            // Save the resized BMP, overwriting the temporary file
+                            string finalBmpPath = Path.Combine(outputFolder, $"Page_{pageIndex + 1}_800.bmp");
+                            resizedBitmap.Save(finalBmpPath, AsposeDrawingImaging.ImageFormat.Bmp);
                         }
                     }
 
-                    Console.WriteLine($"Page {page.ID} exported and resized to 800px width: {bmpPath}");
+                    // Optionally delete the original un‑resized BMP
+                    try { File.Delete(tempBmpPath); } catch { /* ignore deletion errors */ }
                 }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error processing image for page {pageIndex + 1}: {ex.Message}");
+                    continue;
+                }
+
+                Console.WriteLine($"Page {pageIndex + 1} resized and saved.");
             }
         }
-        catch (Exception ex)
-        {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+
+        Console.WriteLine("All pages processed.");
     }
 }

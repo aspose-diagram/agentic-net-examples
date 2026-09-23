@@ -1,86 +1,63 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Drawing.Imaging; // Required for ImageFormat
 
-public class Program
-{
-    public static void Main(string[] args)
+class Program
     {
-        // Expect two arguments: the Visio file (stencil) and the output folder for thumbnails.
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: <exe> <visioFilePath> <outputFolder>");
-            return;
-        }
-
-        string visioPath = args[0];
-        // Guard to ensure the Visio file exists.
-        if (!File.Exists(visioPath))
-        {
-            Console.Error.WriteLine($"File not found: {visioPath}");
-            return;
-        }
-
-        string outputFolder = args[1];
-        // Ensure the output directory exists.
-        if (!Directory.Exists(outputFolder))
-        {
-            Directory.CreateDirectory(outputFolder);
-        }
-
-        Diagram diagram;
-        try
-        {
-            // Load the Visio diagram (stencil) containing masters.
-            diagram = new Diagram(visioPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // Iterate through each master shape in the stencil.
-        foreach (Master master in diagram.Masters)
-        {
-            // The master icon is stored as a byte array. Skip if missing.
-            if (master.Icon == null || master.Icon.Length == 0)
-            {
-                Console.WriteLine($"Master '{master.Name}' has no icon data.");
-                continue;
-            }
-
-            // Build a safe file name for the PNG thumbnail.
-            string safeName = SanitizeFileName(master.Name);
-            string outputPath = Path.Combine(outputFolder, safeName + ".png");
-
             try
             {
-                // Convert the icon byte array to an Aspose.Drawing.Image and save as PNG.
-                using (MemoryStream ms = new MemoryStream(master.Icon))
-                using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
+
+                // Path to the Visio file (or stencil) that contains the masters.
+                string diagramPath = "input.vsdx";
+
+                // Folder where PNG thumbnails will be saved.
+                string outputFolder = "MasterThumbnails";
+
+                // Ensure the output directory exists.
+                if (!Directory.Exists(outputFolder))
                 {
-                    img.Save(outputPath, ImageFormat.Png);
+                    Directory.CreateDirectory(outputFolder);
                 }
 
-                Console.WriteLine($"Exported thumbnail for master '{master.Name}' to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to export thumbnail for master '{master.Name}': {ex.Message}");
-            }
-        }
-    }
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(diagramPath);
 
-    // Helper to replace invalid filename characters with an underscore.
-    private static string SanitizeFileName(string name)
-    {
-        char[] invalidChars = Path.GetInvalidFileNameChars();
-        foreach (char c in invalidChars)
-        {
-            name = name.Replace(c, '_');
-        }
-        return name;
+                // Iterate through all masters in the diagram.
+                foreach (Master master in diagram.Masters)
+                {
+                    // The master icon is stored as a byte array (PNG format).
+                    byte[] iconData = master.Icon;
+
+                    // Skip masters without an icon.
+                    if (iconData == null || iconData.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    // Build a safe file name for the thumbnail.
+                    string safeName = string.IsNullOrWhiteSpace(master.Name) ? "UnnamedMaster" : master.Name;
+                    // Replace any invalid filename characters.
+                    foreach (char c in Path.GetInvalidFileNameChars())
+                    {
+                        safeName = safeName.Replace(c, '_');
+                    }
+
+                    string outputPath = Path.Combine(outputFolder, $"{safeName}.png");
+
+                    // Write the PNG data to disk.
+                    File.WriteAllBytes(outputPath, iconData);
+
+                    Console.WriteLine($"Exported thumbnail for master '{master.Name}' to '{outputPath}'.");
+                }
+
+                Console.WriteLine("Thumbnail export completed.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

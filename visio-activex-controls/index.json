@@ -1,11 +1,11 @@
 {
   "category": "visio-activex-controls",
   "display_name": "Visio Activex Controls",
-  "version": "26.8.0",
+  "version": "26.9.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-08-28",
+  "generated": "2026-09-23",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -33,6 +33,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Diagnostics",
         "System.IO"
@@ -57,10 +58,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -70,8 +71,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -87,8 +87,8 @@
       "task": "Compare two visio diagrams by checking differences in activex control property values across matching shapes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -117,7 +117,9 @@
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -139,10 +141,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -152,7 +154,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -172,9 +173,9 @@
       "task": "Design a feature that disables activex controls when the diagram is opened in read only mode to prevent changes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.ActiveXControls",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -191,7 +192,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -208,7 +210,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -243,8 +246,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System",
-        "System.Reflection"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -266,10 +268,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -280,8 +282,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -297,6 +298,7 @@
       "task": "Iterate over all shapes in a diagram processing only those that contain an activexcontrol object",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.ActiveXControls",
         "System",
         "System.IO"
       ],
@@ -351,7 +353,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -368,7 +371,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -385,6 +389,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -403,8 +408,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -420,7 +424,6 @@
       "task": "Save the modified visio diagram to a new file preserving original activex control configurations and layout",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -475,8 +478,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Saving",
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -491,14 +494,11 @@
       "file": "use-reflection-to-enumerate-all-publicly-settable-properties-of-a-specific-activex-control-class-at-runtime.cs",
       "task": "Use reflection to enumerate all publicly settable properties of a specific activex control class at runtime",
       "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.ActiveXControls",
         "System",
+        "System.Collections.Generic",
         "System.Reflection"
       ],
-      "key_apis": [
-        "Diagram"
-      ]
+      "key_apis": []
     },
     {
       "slug": "validate-that-the-value-property-of-a-slider-activex-control-remains-within-its-defined-minimum-and-maximum-range",
@@ -513,9 +513,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -525,11 +525,13 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.ActiveXControls",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
+        "Diagram",
+        "Pages",
         "Shapes",
+        "diagram",
         "page"
       ]
     }

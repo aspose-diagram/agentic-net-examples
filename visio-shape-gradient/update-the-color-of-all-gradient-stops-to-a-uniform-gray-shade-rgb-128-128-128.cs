@@ -1,59 +1,55 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Verify the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        try
-        {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Uniform gray color in hex format
-            string grayHex = "#808080";
-
-            // Iterate over all pages and shapes to locate gradient fills
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Load the Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Define the uniform gray color in hexadecimal
+                const string grayHex = "#808080";
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the shape uses a gradient fill and that the gradient is enabled
-                    if (shape.Fill != null && shape.Fill.FillPattern != null &&
-                        shape.Fill.FillPattern.Value == 25 && // 25 = gradient fill pattern
-                        shape.Fill.GradientFill != null &&
-                        shape.Fill.GradientFill.GradientEnabled != null &&
-                        shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Update each gradient stop to the uniform gray color while keeping its position
-                        foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
+                        // Check if the shape uses a gradient fill (FillPattern value 25)
+                        if (shape.Fill.FillPattern.Value == 25)
                         {
-                            // Assign the hex string directly to the Color cell's Value
-                            stop.Color.Value = grayHex;
+                            // Ensure gradient is enabled
+                            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+
+                            // Clear any existing gradient stops
+                            shape.Fill.GradientFill.GradientStops.Clear();
+
+                            // Add a start stop at position 0 with gray color
+                            shape.Fill.GradientFill.GradientStops.Add(
+                                new DoubleValue(0, MeasureConst.NUM),
+                                new ColorValue(grayHex, MeasureConst.Undefined));
+
+                            // Add an end stop at position 1 with gray color
+                            shape.Fill.GradientFill.GradientStops.Add(
+                                new DoubleValue(1, MeasureConst.NUM),
+                                new ColorValue(grayHex, MeasureConst.Undefined));
                         }
                     }
                 }
-            }
 
-            // Path for the modified Visio file
-            string outputPath = "output.vsdx";
-            // Save the updated diagram in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Output any errors encountered during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+                // Save the modified diagram (replace with your desired output path)
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

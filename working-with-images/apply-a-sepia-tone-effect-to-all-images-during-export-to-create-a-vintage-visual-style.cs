@@ -5,38 +5,25 @@ using Aspose.Diagram.Saving;
 using Aspose.Drawing;
 using Aspose.Drawing.Imaging;
 
+// Alias Aspose.Drawing types to avoid conflict with Aspose.Diagram.Image
+using AsposeImage = Aspose.Drawing.Image;
+using AsposeBitmap = Aspose.Drawing.Bitmap;
+using AsposeColor = Aspose.Drawing.Color;
+using AsposeImageFormat = Aspose.Drawing.Imaging.ImageFormat;
+
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file and output folder for images
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputFolder>");
-            return;
-        }
+        // Define input and output file paths
+        string inputPath = "input.vsdx";
+        string outputPath = "output.pdf";
 
-        string inputPath = args[0];
-        // Guard: verify input file exists
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
-        }
-
-        string outputFolder = args[1];
-        // Guard: create output folder if it does not exist
-        if (!Directory.Exists(outputFolder))
-        {
-            try
-            {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
-                return;
-            }
         }
 
         try
@@ -44,69 +31,67 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over each page in the diagram
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Configure image export options for PNG format
-                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Export only the current page
-                    PageIndex = pageIndex,
-                    PageCount = 1
-                };
-
-                // Temporary file path for the raw exported image
-                string tempImagePath = Path.Combine(Path.GetTempPath(), $"page_{pageIndex}.png");
-
-                // Export the page to a PNG file
-                diagram.Save(tempImagePath, imgOptions);
-
-                // Load the exported PNG using Aspose.Drawing
-                using (Bitmap bitmap = new Bitmap(tempImagePath))
-                {
-                    // Apply sepia tone to each pixel
-                    for (int y = 0; y < bitmap.Height; y++)
+                    // Process only foreign (image) shapes that contain image data
+                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
                     {
-                        for (int x = 0; x < bitmap.Width; x++)
+                        byte[] imageBytes = shape.ForeignData.Value;
+
+                        // Load image bytes into Aspose.Drawing objects
+                        using (MemoryStream inputStream = new MemoryStream(imageBytes))
+                        using (AsposeImage originalImage = AsposeImage.FromStream(inputStream))
+                        using (AsposeBitmap bitmap = new AsposeBitmap(originalImage))
                         {
-                            // Retrieve original pixel color
-                            Color original = bitmap.GetPixel(x, y);
-                            double r = original.R;
-                            double g = original.G;
-                            double b = original.B;
+                            // Apply sepia tone to each pixel
+                            for (int y = 0; y < bitmap.Height; y++)
+                            {
+                                for (int x = 0; x < bitmap.Width; x++)
+                                {
+                                    AsposeColor originalColor = bitmap.GetPixel(x, y);
 
-                            // Compute sepia values
-                            int tr = (int)(0.393 * r + 0.769 * g + 0.189 * b);
-                            int tg = (int)(0.349 * r + 0.686 * g + 0.168 * b);
-                            int tb = (int)(0.272 * r + 0.534 * g + 0.131 * b);
+                                    double r = originalColor.R;
+                                    double g = originalColor.G;
+                                    double b = originalColor.B;
 
-                            // Clamp values to valid byte range
-                            tr = Math.Min(255, tr);
-                            tg = Math.Min(255, tg);
-                            tb = Math.Min(255, tb);
+                                    int tr = (int)(0.393 * r + 0.769 * g + 0.189 * b);
+                                    int tg = (int)(0.349 * r + 0.686 * g + 0.168 * b);
+                                    int tb = (int)(0.272 * r + 0.534 * g + 0.131 * b);
 
-                            // Set the new sepia pixel
-                            Color sepia = Color.FromArgb(tr, tg, tb);
-                            bitmap.SetPixel(x, y, sepia);
+                                    // Clamp values to 0‑255 range
+                                    tr = tr > 255 ? 255 : tr;
+                                    tg = tg > 255 ? 255 : tg;
+                                    tb = tb > 255 ? 255 : tb;
+
+                                    AsposeColor sepiaColor = AsposeColor.FromArgb(tr, tg, tb);
+                                    bitmap.SetPixel(x, y, sepiaColor);
+                                }
+                            }
+
+                            // Save the modified image back to a byte array (PNG format)
+                            using (MemoryStream outputStream = new MemoryStream())
+                            {
+                                bitmap.Save(outputStream, AsposeImageFormat.Png);
+                                shape.ForeignData.Value = outputStream.ToArray();
+                            }
                         }
                     }
-
-                    // Final output path for the sepia‑toned image
-                    string finalImagePath = Path.Combine(outputFolder, $"Page_{pageIndex + 1}.png");
-
-                    // Save the processed image back to PNG
-                    bitmap.Save(finalImagePath, ImageFormat.Png);
                 }
-
-                // Delete the temporary raw image
-                try { File.Delete(tempImagePath); } catch { /* ignore cleanup errors */ }
             }
 
-            Console.WriteLine("Sepia‑toned image export completed successfully.");
+            // Export the diagram with the sepia‑toned images to PDF
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                DefaultFont = "Arial"
+            };
+            diagram.Save(outputPath, pdfOptions);
         }
         catch (Exception ex)
         {
-            // Report any Aspose or IO errors
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -2,53 +2,52 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Drawing.Imaging; // for ImageFormat
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
+        // Define input and output Visio file paths
         string inputPath = "input.vsdx";
-        // Guard: ensure input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-
-        // Output Visio file path
-        string outputPath = "output_converted.vsdx";
+        // Guard: ensure the source file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
 
         try
         {
-            // Load the diagram
+            // Load the Visio diagram from the input file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Iterate over each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
+                // Iterate over each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape is a foreign (image) shape with embedded data
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
+                    // Process only foreign (image) shapes
+                    if (shape.Type == TypeValue.Foreign)
                     {
+                        // Retrieve the raw image bytes stored in the shape
                         byte[] imageData = shape.ForeignData.Value;
+                        if (imageData == null || imageData.Length < 2)
+                            continue; // Skip if no image data
 
-                        // Load the image from the byte array using Aspose.Drawing.Image
-                        using (MemoryStream ms = new MemoryStream(imageData))
-                        using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
+                        // Detect JPEG signature (0xFF, 0xD8)
+                        if (imageData[0] == 0xFF && imageData[1] == 0xD8)
                         {
-                            // Determine if the image is JPEG
-                            if (img.RawFormat.Equals(ImageFormat.Jpeg))
+                            // Load JPEG image using Aspose.Drawing.Image (fully qualified to avoid ambiguity)
+                            using (MemoryStream jpegStream = new MemoryStream(imageData))
+                            using (Aspose.Drawing.Image jpegImage = Aspose.Drawing.Image.FromStream(jpegStream))
                             {
-                                // Convert JPEG to PNG
-                                using (MemoryStream pngMs = new MemoryStream())
+                                // Convert the JPEG to PNG and write back to the shape
+                                using (MemoryStream pngStream = new MemoryStream())
                                 {
-                                    img.Save(pngMs, ImageFormat.Png);
-                                    byte[] pngData = pngMs.ToArray();
-
-                                    // Replace the foreign data with PNG bytes
-                                    shape.ForeignData.Value = pngData;
-
-                                    Console.WriteLine($"Replaced JPEG image in shape ID {shape.ID} on page '{page.Name}'.");
+                                    jpegImage.Save(pngStream, Aspose.Drawing.Imaging.ImageFormat.Png);
+                                    shape.ForeignData.Value = pngStream.ToArray();
                                 }
                             }
                         }
@@ -56,9 +55,8 @@ class Program
                 }
             }
 
-            // Save the modified diagram (preserving VSDX format)
+            // Save the modified diagram to the output file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram processing completed.");
         }
         catch (Exception ex)
         {

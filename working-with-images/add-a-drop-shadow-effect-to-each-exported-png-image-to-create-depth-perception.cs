@@ -1,72 +1,54 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Apply a simple drop shadow to every shape on every page
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load the Visio diagram from a file.
-                // Adjust the path as needed.
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page in the diagram.
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Page page = diagram.Pages[pageIndex];
-
-                    // Apply a simple drop shadow to every non‑deleted shape on the page.
-                    foreach (Shape shape in page.Shapes)
+                    // Ensure the shape has a Fill section before setting shadow properties
+                    if (shape.Fill != null)
                     {
-                        // Skip shapes that are marked as deleted.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Enable simple shadow.
+                        // Enable simple shadow
                         shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-
-                        // Shadow color (gray).
-                        shape.Fill.ShdwForegnd.Value = "#808080";
-
-                        // Shadow transparency (30% transparent).
+                        // Shadow color (black)
+                        shape.Fill.ShdwForegnd.Value = "#000000";
+                        // Shadow transparency (30% transparent)
                         shape.Fill.ShdwForegndTrans.Value = 0.3;
-
-                        // Shadow offset (0.1 inch right and down).
+                        // Shadow offset (horizontal and vertical)
                         shape.Fill.ShapeShdwOffsetX.Value = 0.1;
                         shape.Fill.ShapeShdwOffsetY.Value = 0.1;
                     }
-
-                    // Configure PNG export options for the current page.
-                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                    {
-                        // Export only the current page.
-                        PageIndex = pageIndex,
-                        PageCount = 1,
-
-                        // Optional: set resolution (dots per inch).
-                        Resolution = 300f
-                    };
-
-                    // Build output file name, e.g., "Page_0.png", "Page_1.png", etc.
-                    string outputPath = $"Page_{pageIndex}.png";
-
-                    // Save the diagram (single page) as PNG.
-                    diagram.Save(outputPath, pngOptions);
                 }
-
-                // Clean up resources.
-                diagram.Dispose();
-
-                Console.WriteLine("Export completed with drop shadows applied.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Export each page as a PNG image with the applied shadow effect
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                pngOptions.PageIndex = i; // Export the specific page
+                string outputPath = $"output_page_{i + 1}.png";
+                diagram.Save(outputPath, pngOptions);
             }
+
+            Console.WriteLine("Export completed with drop shadows applied.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

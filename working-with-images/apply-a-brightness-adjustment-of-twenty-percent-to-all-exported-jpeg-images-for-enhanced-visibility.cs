@@ -5,38 +5,30 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
+                // Input Visio file path
+                string inputPath = "input.vsdx";
 
-                // Directory where JPEG images will be saved
+                // Output directory for JPEG images
                 string outputDir = "ExportedImages";
+                Directory.CreateDirectory(outputDir);
 
-                // Ensure the output directory exists
-                if (!Directory.Exists(outputDir))
-                    Directory.CreateDirectory(outputDir);
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Load the diagram from file
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Iterate through each page in the diagram
+                // Export each page as a JPEG with 20% increased brightness
                 for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Prepare JPEG save options with 20% brightness increase
-                    ImageSaveOptions jpegOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-                    jpegOptions.ImageBrightness = 0.2f; // Increase brightness by 20%
-                    jpegOptions.PageIndex = i;          // Export current page
-                    jpegOptions.PageCount = 1;          // Export only one page
+                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Jpeg);
+                    options.PageIndex = i;               // Export current page
+                    options.ImageBrightness = 1.2f;      // Increase brightness by 20%
 
-                    // Build output file name (e.g., Page_1.jpg)
                     string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.jpg");
-
-                    // Save the page as JPEG with the specified options
-                    diagram.Save(outputPath, jpegOptions);
+                    diagram.Save(outputPath, options);
                 }
 
                 Console.WriteLine("Export completed.");

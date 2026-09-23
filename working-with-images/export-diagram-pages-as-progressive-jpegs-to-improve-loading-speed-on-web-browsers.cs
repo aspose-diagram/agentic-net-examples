@@ -1,48 +1,55 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsd");
-
-            // Folder where JPEG images will be saved
-            string outputFolder = "ExportedJpegs";
-            Directory.CreateDirectory(outputFolder);
-
-            // Desired JPEG quality (0‑100). Lower value gives higher compression.
-            int jpegQuality = 75;
-
-            // Export each page as a progressive JPEG
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            try
             {
-                // Configure image save options for JPEG format
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg)
+
+                // Input Visio file path (change as needed)
+                string inputPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through each page and export as a JPEG
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    JpegQuality = jpegQuality,   // set compression level
-                    PageIndex = pageIndex,       // render this page only
-                    PageCount = 1,               // one page at a time
-                    Resolution = 96              // optional DPI setting
-                };
+                    // Configure JPEG export options
+                    ImageSaveOptions jpegOptions = new ImageSaveOptions(SaveFileFormat.Jpeg)
+                    {
+                        // Export only the current page
+                        PageIndex = i,
+                        PageCount = 1,
 
-                // Build the output file name (e.g., Page_1.jpg)
-                string outputPath = Path.Combine(outputFolder, $"Page_{pageIndex + 1}.jpg");
+                        // Optional: set JPEG quality (0-100). Adjust as needed.
+                        JpegQuality = 90
+                    };
 
-                // Save the current page as JPEG
-                diagram.Save(outputPath, saveOptions);
+                    // Note: If the library version supports progressive JPEGs,
+                    // you can enable it via a property such as 'Progressive' here.
+                    // Example (uncomment if available):
+                    // jpegOptions.Progressive = true;
+
+                    // Build output file name (e.g., Page_1.jpg)
+                    string outputPath = $"Page_{i + 1}.jpg";
+
+                    // Save the page as JPEG
+                    diagram.Save(outputPath, jpegOptions);
+
+                    Console.WriteLine($"Exported page {i + 1} to {outputPath}");
+                }
+
+                // No explicit disposal needed; Diagram does not implement IDisposable
+                Console.WriteLine("All pages have been exported.");
+
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

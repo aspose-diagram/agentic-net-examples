@@ -2,70 +2,127 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
+using Aspose.Drawing.Drawing2D;
+using Aspose.Drawing.Imaging;
+
+// Alias Aspose.Drawing types to avoid conflict with Aspose.Diagram.Image
+using ADImage = Aspose.Drawing.Image;
+using ADGraphics = Aspose.Drawing.Graphics;
+using ADColorMatrix = Aspose.Drawing.Imaging.ColorMatrix;
+using ADImageAttributes = Aspose.Drawing.Imaging.ImageAttributes;
+using ADRectangle = Aspose.Drawing.Rectangle;
+using ADGraphicsUnit = Aspose.Drawing.GraphicsUnit;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input Visio file, watermark image and output folder
+        string diagramPath = "input.vsdx";
+        // Guard: ensure Visio file exists
+        if (!File.Exists(diagramPath))
         {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        string watermarkPath = "watermark.png";
+        // Guard: ensure watermark image exists
+        if (!File.Exists(watermarkPath))
+        {
+            Console.Error.WriteLine($"File not found: {watermarkPath}");
+            return;
+        }
+
+        string outputFolder = "output";
+        // Ensure output directory exists
+        if (!Directory.Exists(outputFolder))
+            Directory.CreateDirectory(outputFolder);
+
+        Diagram diagram = null;
+        try
+        {
+            // Load the Visio diagram (Aspose.Diagram operation)
+            diagram = new Diagram(diagramPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Iterate through each page in the diagram
+        for (int i = 0; i < diagram.Pages.Count; i++)
+        {
+            // Export the current page to a temporary PNG file
+            var pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+            {
+                PageIndex = i,   // zero‑based page index
+                PageCount = 1    // export only this page
+            };
+
+            string pagePngPath = Path.Combine(outputFolder, $"page_{i + 1}.png");
             try
             {
+                // Save page as PNG (Aspose.Diagram operation)
+                diagram.Save(pagePngPath, pngOptions);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error saving PNG for page {i + 1}: {ex.Message}");
+                continue;
+            }
 
-                // Input Visio file and watermark image paths
-                string diagramPath = "input.vsdx";
-                string watermarkPath = "watermark.png";
-
-                // Output folder for PNG pages
-                string outputFolder = "output";
-                Directory.CreateDirectory(outputFolder);
-
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(diagramPath))
+            try
+            {
+                // Load base PNG and watermark using Aspose.Drawing
+                using (ADImage baseImage = ADImage.FromFile(pagePngPath))
+                using (ADImage watermarkImage = ADImage.FromFile(watermarkPath))
+                using (ADGraphics graphics = ADGraphics.FromImage(baseImage))
                 {
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
+                    // Prepare image attributes with desired opacity (e.g., 30%)
+                    float opacity = 0.3f;
+                    var colorMatrix = new ADColorMatrix(new float[][]
                     {
-                        // Retrieve page dimensions (in inches)
-                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                        new float[] {1, 0, 0, 0, 0},
+                        new float[] {0, 1, 0, 0, 0},
+                        new float[] {0, 0, 1, 0, 0},
+                        new float[] {0, 0, 0, opacity, 0},
+                        new float[] {0, 0, 0, 0, 1}
+                    });
 
-                        // Insert the watermark image covering the whole page
-                        using (FileStream imgStream = new FileStream(watermarkPath, FileMode.Open, FileAccess.Read))
-                        {
-                            // AddShape returns the shape ID (long)
-                            long watermarkShapeId = page.AddShape(0, 0, pageWidth, pageHeight, imgStream);
+                    var imgAttr = new ADImageAttributes();
+                    imgAttr.SetColorMatrix(colorMatrix, ColorMatrixFlag.Default, ColorAdjustType.Default);
 
-                            // Retrieve the shape object to modify its properties
-                            Shape watermarkShape = page.Shapes.GetShape(watermarkShapeId);
+                    // Center the watermark on the page
+                    int x = (baseImage.Width - watermarkImage.Width) / 2;
+                    int y = (baseImage.Height - watermarkImage.Height) / 2;
 
-                            // Set semi‑transparent fill (0 = opaque, 100 = fully transparent)
-                            watermarkShape.Fill.FillForegndTrans.Value = 50; // 50% transparency
-
-                            // Send the watermark to the back so other content appears above it
-                            watermarkShape.SendToBack();
-
-                            // Make the watermark non‑selectable
-                            watermarkShape.Protection.LockSelect.Value = BOOL.True;
-                        }
-
-                        // Prepare PNG export options for the current page only
-                        ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                        {
-                            PageIndex = (int)page.ID - 1, // zero‑based page index
-                            PageCount = 1
-                        };
-
-                        // Export the page as a PNG file
-                        string outputPath = Path.Combine(outputFolder, $"Page_{page.ID}.png");
-                        diagram.Save(outputPath, pngOptions);
-                    }
+                    // Draw the watermark with the transparency settings
+                    graphics.DrawImage(
+                        watermarkImage,
+                        new ADRectangle(x, y, watermarkImage.Width, watermarkImage.Height),
+                        0,
+                        0,
+                        watermarkImage.Width,
+                        watermarkImage.Height,
+                        ADGraphicsUnit.Pixel,
+                        imgAttr);
                 }
 
-                Console.WriteLine("Watermarked PNG pages have been generated.");
-
+                // The base image (with watermark) has been saved back to the same file path
+                Console.WriteLine($"Processed page {i + 1} -> {pagePngPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Error applying watermark to page {i + 1}: {ex.Message}");
             }
+        }
+
+        // Clean up diagram resources
+        diagram?.Dispose();
+
+        Console.WriteLine("All pages exported with watermark.");
     }
-    }
+}

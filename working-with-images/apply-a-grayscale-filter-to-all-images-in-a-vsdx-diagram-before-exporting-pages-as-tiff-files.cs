@@ -10,15 +10,26 @@ class Program
         try
         {
 
-            // Load the VSDX diagram from file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram (VSDX format)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vsdx);
 
-            // Configure image save options for TIFF format with grayscale color mode
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
-            saveOptions.ImageColorMode = ImageColorMode.Grayscale; // Apply grayscale filter to all rendered pages
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Configure image save options for TIFF with grayscale conversion
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
+                saveOptions.ImageColorMode = ImageColorMode.Grayscale; // Apply grayscale filter
+                saveOptions.PageIndex = page.ID; // Export the current page only
 
-            // Export all pages of the diagram as a multi‑page TIFF file
-            diagram.Save("output.tiff", saveOptions);
+                // Define output file name per page
+                string outputPath = $"Page_{page.ID}.tiff";
+
+                // Save the page as a TIFF image
+                diagram.Save(outputPath, saveOptions);
+            }
+
+            // No explicit disposal needed; objects will be cleaned up by the runtime
 
         }
         catch (System.IO.FileNotFoundException ex)

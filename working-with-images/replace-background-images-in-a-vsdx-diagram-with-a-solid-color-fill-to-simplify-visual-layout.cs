@@ -6,75 +6,46 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input VSDX path and output VSDX path
-            if (args.Length != 2)
-            {
-                Console.WriteLine("Usage: DiagramBackgroundSimplifier <input.vsdx> <output.vsdx>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            // Load the diagram
-            Diagram diagram;
             try
             {
-                diagram = new Diagram(inputPath, LoadFileFormat.Vsdx);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
 
-            // Process each page
-            foreach (Page page in diagram.Pages)
-            {
-                // Get the background page linked to this foreground page (if any)
-                Page backgroundPage = page.BackPage;
-                if (backgroundPage == null)
-                    continue; // No background page to process
+                // Input and output file paths (adjust as needed)
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Determine page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Mark existing foreign (image) shapes for deletion
-                foreach (Shape shape in backgroundPage.Shapes)
+                // Define the solid fill color to replace background images
+                const string solidColorHex = "#FFFFFF"; // white; change to any hex color
+
+                // Iterate through all pages (including background pages)
+                foreach (Page page in diagram.Pages)
                 {
-                    if (shape.Type == TypeValue.Foreign)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        shape.Del = BOOL.True;
+                        // Identify foreign (image) shapes
+                        if (shape.Type == TypeValue.Foreign)
+                        {
+                            // Apply solid fill
+                            shape.Fill.FillPattern.Value = 1; // solid fill
+                            shape.Fill.FillForegnd.Value = solidColorHex;
+
+                            // Remove outline by setting line pattern to none and weight to zero
+                            shape.Line.LinePattern.Value = (LinePatternValue)0; // no line pattern
+                            shape.Line.LineWeight.Value = 0; // zero thickness
+                        }
                     }
                 }
 
-                // Add a solid color rectangle covering the entire page
-                double rectPinX = pageWidth / 2.0;
-                double rectPinY = pageHeight / 2.0;
-                long rectId = backgroundPage.DrawRectangle(rectPinX, rectPinY, pageWidth, pageHeight);
-                Shape rectShape = backgroundPage.Shapes.GetShape(rectId);
-
-                // Set solid fill (pattern 1) and desired color (e.g., light gray)
-                rectShape.Fill.FillPattern.Value = 1;               // Solid fill
-                rectShape.Fill.FillForegnd.Value = "#D3D3D3";       // Light gray color
-
-                // Remove outline stroke
-                rectShape.Line.LinePattern.Value = 0;               // No line
-
-                // Ensure the rectangle stays behind other content
-                rectShape.SendToBack();
-            }
-
-            // Save the modified diagram
-            try
-            {
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
+    }
     }

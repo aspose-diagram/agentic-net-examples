@@ -1,98 +1,112 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
+using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
 {
+    // Threshold for low‑resolution images (pixels). Images with width or height below this are considered low‑res.
+    const int LowResolutionThreshold = 200;
+
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram, high‑resolution images folder, output diagram path
-        if (args.Length < 3)
+        // Validate command‑line arguments.
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine("Usage: ReplaceImages <inputDiagram> <highResFolder> <outputDiagram>");
+            Console.WriteLine("Usage: <program> <diagramPath> <highResFolderPath> <outputPath>");
             return;
         }
 
-        string inputDiagramPath = args[0];
-        if (!File.Exists(inputDiagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputDiagramPath}");
-            return;
-        }
-
+        string diagramPath = args[0];
         string highResFolder = args[1];
+        string outputPath = args[2];
+
+        // Guard: ensure the source diagram file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        // Guard: ensure the folder containing high‑resolution images exists.
         if (!Directory.Exists(highResFolder))
         {
-            Console.Error.WriteLine($"Folder not found: {highResFolder}");
-            return;
-        }
-
-        string outputDiagramPath = args[2];
-        // Ensure the output directory exists
-        string outputDir = Path.GetDirectoryName(outputDiagramPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine($"High‑resolution folder not found: {highResFolder}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputDiagramPath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Pre‑load all high‑resolution image file names for quick lookup
-            var highResFiles = Directory.GetFiles(highResFolder);
-            // Build a dictionary keyed by file name without extension (case‑insensitive)
-            var highResMap = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var file in highResFiles)
-            {
-                string key = Path.GetFileNameWithoutExtension(file);
-                if (!highResMap.ContainsKey(key))
-                    highResMap[key] = file;
-            }
-
-            // Iterate through every page in the diagram
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through every shape on the current page
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify image shapes – they are of TypeValue.Foreign
-                    if (shape.Type == TypeValue.Foreign)
-                    {
-                        // Use the universal name (NameU) if available; otherwise fallback to Name
-                        string shapeName = !string.IsNullOrEmpty(shape.NameU) ? shape.NameU : shape.Name;
-                        if (string.IsNullOrEmpty(shapeName))
-                            continue; // Skip shapes without a recognizable name
+                    // Identify image shapes (foreign objects).
+                    if (shape.Type != TypeValue.Foreign)
+                        continue;
 
-                        // Attempt to locate a matching high‑resolution file (ignoring extension)
-                        if (highResMap.TryGetValue(shapeName, out string highResPath))
+                    // Ensure the shape actually contains image data.
+                    if (shape.ForeignData == null || shape.ForeignData.Value == null || shape.ForeignData.Value.Length == 0)
+                        continue;
+
+                    // Determine image dimensions using Aspose.Drawing.Image.
+                    int imgWidth, imgHeight;
+                    using (var ms = new MemoryStream(shape.ForeignData.Value))
+                    using (var img = Aspose.Drawing.Image.FromStream(ms))
+                    {
+                        imgWidth = img.Width;
+                        imgHeight = img.Height;
+                    }
+
+                    // Skip shapes that already meet the resolution threshold.
+                    if (imgWidth >= LowResolutionThreshold && imgHeight >= LowResolutionThreshold)
+                        continue;
+
+                    // Attempt to locate a high‑resolution replacement file.
+                    // Use the shape's name (without extension) to match a file in the folder.
+                    string baseName = Path.GetFileNameWithoutExtension(shape.NameU ?? shape.Name ?? "image");
+                    string[] possibleExtensions = new[] { ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff" };
+                    string replacementPath = null;
+
+                    foreach (var ext in possibleExtensions)
+                    {
+                        string candidate = Path.Combine(highResFolder, baseName + ext);
+                        if (File.Exists(candidate))
                         {
-                            // Read the high‑resolution image bytes
-                            byte[] imageBytes = File.ReadAllBytes(highResPath);
-                            // Replace the foreign data (raw image) with the new bytes
-                            shape.ForeignData.Value = imageBytes;
-                            Console.WriteLine($"Replaced image for shape '{shapeName}' with '{Path.GetFileName(highResPath)}'.");
-                        }
-                        else
-                        {
-                            // No matching high‑resolution file found; leave the original image unchanged
-                            Console.WriteLine($"No high‑resolution image found for shape '{shapeName}'.");
+                            replacementPath = candidate;
+                            break;
                         }
                     }
+
+                    // If no matching high‑resolution file is found, log and continue.
+                    if (replacementPath == null)
+                    {
+                        Console.WriteLine($"No high‑resolution image found for shape '{shape.NameU}'. Skipping.");
+                        continue;
+                    }
+
+                    // Load the high‑resolution image bytes and replace the foreign data.
+                    byte[] highResBytes = File.ReadAllBytes(replacementPath);
+                    shape.ForeignData.Value = highResBytes;
+
+                    Console.WriteLine($"Replaced image for shape '{shape.NameU}' with '{Path.GetFileName(replacementPath)}'.");
                 }
             }
 
-            // Save the modified diagram to the desired output path (VSDX format)
-            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputDiagramPath}");
+            // Save the updated diagram in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

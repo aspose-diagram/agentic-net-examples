@@ -3,7 +3,7 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class VsdxToJpegConverter
 {
     static void Main()
     {
@@ -13,10 +13,9 @@ class Program
             // Load the VSDX diagram from file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create image save options for JPEG format
+            // Set JPEG save options with 80% compression quality
             ImageSaveOptions jpegOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-            // Set the compression quality to 80%
-            jpegOptions.JpegQuality = 80;
+            jpegOptions.JpegQuality = 80; // Compression quality (0-100)
 
             // Save the diagram as a JPEG image using the specified options
             diagram.Save("output.jpg", jpegOptions);

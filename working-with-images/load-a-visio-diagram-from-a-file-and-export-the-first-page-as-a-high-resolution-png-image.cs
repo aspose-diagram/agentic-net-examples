@@ -3,33 +3,35 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportFirstPage
+class Program
 {
     static void Main()
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+
+        // Path for the exported PNG image of the first page
+        string outputPath = "first_page.png";
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the source Visio file
-            string sourceFile = "diagram.vsdx";
+            // Set up high‑resolution PNG export options
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            saveOptions.Resolution = 300f;   // DPI for high quality
+            saveOptions.PageIndex = 0;       // Zero‑based index of the first page
+            saveOptions.PageCount = 1;       // Export only this page
 
-            // Path for the exported PNG image
-            string outputImage = "firstPage.png";
+            // Export the first page as a PNG image
+            diagram.Save(outputPath, saveOptions);
 
-            // Load the Visio diagram from the file (uses Diagram(string) constructor)
-            Diagram diagram = new Diagram(sourceFile);
-
-            // Export the diagram (active page) as a high‑resolution PNG.
-            // SaveFileFormat.Png selects PNG output format.
-            diagram.Save(outputImage, SaveFileFormat.Png);
-
-            // Clean up resources
-            diagram.Dispose();
-
+            Console.WriteLine($"First page exported successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

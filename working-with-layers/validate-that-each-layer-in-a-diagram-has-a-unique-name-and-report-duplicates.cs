@@ -1,61 +1,81 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-class Program
+namespace DiagramLayerValidator
 {
-    static void Main()
+    // Simple holder for layer location information
+    class LayerInfo
     {
-        try
+        public string PageName { get; set; }
+        public int LayerIndex { get; set; }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
         {
-
-            // Path to the Visio file to be validated
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Track all layer names across the document
-            var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var duplicateReports = new List<string>();
-
-            // Iterate through each page and its layers
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Layer layer in page.PageSheet.Layers)
-                {
-                    string name = layer.Name.Value;
 
-                    // If the name already exists, record a duplicate
-                    if (!seenNames.Add(name))
+                // Path to the Visio file to be validated
+                string diagramPath = "input.vsdx";
+                if (args.Length > 0)
+                {
+                    diagramPath = args[0];
+                }
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Dictionary to track layer names and where they appear
+                Dictionary<string, List<LayerInfo>> layerMap = new Dictionary<string, List<LayerInfo>>(StringComparer.OrdinalIgnoreCase);
+
+                // Iterate through all pages and their layers
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        duplicateReports.Add($"Duplicate layer name \"{name}\" found on page \"{page.Name}\".");
+                        string name = layer.Name.Value ?? string.Empty;
+
+                        if (!layerMap.ContainsKey(name))
+                        {
+                            layerMap[name] = new List<LayerInfo>();
+                        }
+
+                        layerMap[name].Add(new LayerInfo
+                        {
+                            PageName = page.Name,
+                            LayerIndex = layer.IX
+                        });
                     }
                 }
-            }
 
-            // Output the validation results
-            if (duplicateReports.Count == 0)
-            {
-                Console.WriteLine("All layer names are unique.");
-            }
-            else
-            {
-                Console.WriteLine("Duplicate layer names detected:");
-                foreach (string report in duplicateReports)
+                // Report duplicate layer names
+                bool duplicatesFound = false;
+                foreach (var kvp in layerMap)
                 {
-                    Console.WriteLine(report);
+                    if (kvp.Value.Count > 1)
+                    {
+                        duplicatesFound = true;
+                        Console.WriteLine($"Duplicate layer name '{kvp.Key}' found in {kvp.Value.Count} locations:");
+                        foreach (var info in kvp.Value)
+                        {
+                            Console.WriteLine($"  Page: {info.PageName}, Layer Index: {info.LayerIndex}");
+                        }
+                    }
                 }
+
+                if (!duplicatesFound)
+                {
+                    Console.WriteLine("No duplicate layer names were found.");
+                }
+
             }
-
-            // Save the diagram (optional, demonstrates proper save usage)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
+    }
     }
 }

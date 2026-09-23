@@ -2,30 +2,50 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class VsdToCsvConverter
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the source VSD file
-            string inputVsdPath = "input.vsd";
+            // Load the Visio diagram (VSD) file.
+            // Adjust the input path as needed.
+            string inputPath = "input.vsd";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the destination CSV file
+            // Define the output CSV file path.
             string outputCsvPath = "output.csv";
 
-            // Load the VSD diagram
-            Diagram diagram = new Diagram(inputVsdPath);
-
-            // Write the CSV output using a FileStream inside a using block
-            using (FileStream csvStream = new FileStream(outputCsvPath, FileMode.Create, FileAccess.Write))
+            // Use a FileStream inside a using block to write CSV data.
+            using (FileStream fs = new FileStream(outputCsvPath, FileMode.Create, FileAccess.Write))
+            using (StreamWriter writer = new StreamWriter(fs))
             {
-                // Save the diagram to the CSV stream
-                diagram.Save(csvStream, SaveFileFormat.Csv);
+                // Write CSV header.
+                writer.WriteLine("Page,ShapeId,ShapeText");
+
+                // Iterate through each page and each shape to extract data.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                {
+                    Page page = diagram.Pages[pageIndex];
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Retrieve plain text from the shape.
+                        string shapeText = shape.Text.Value.Text;
+
+                        // Escape commas in text to keep CSV format valid.
+                        if (shapeText.Contains(","))
+                        {
+                            shapeText = $"\"{shapeText.Replace("\"", "\"\"")}\"";
+                        }
+
+                        // Write a CSV line: Page number (1‑based), Shape ID, Shape text.
+                        writer.WriteLine($"{pageIndex + 1},{shape.ID},{shapeText}");
+                    }
+                }
             }
 
-            Console.WriteLine("Conversion completed successfully.");
+            Console.WriteLine($"Diagram data has been exported to CSV at: {outputCsvPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

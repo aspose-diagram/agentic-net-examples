@@ -1,88 +1,95 @@
 using System;
 using System.IO;
-using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string visioPath = "input.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
+
+            // Directory where HTML export will place images
+            string htmlOutputPath = "output.html";
+
+            // Export each shape to an individual SVG file
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path
-                string visioPath = "input.vsdx";
-
-                // Output HTML file path
-                string htmlOutputPath = "output.html";
-
-                // Folder to store generated SVG files for each shape
-                string svgFolder = "svg_shapes";
-
-                // Ensure the SVG output folder exists
-                if (!Directory.Exists(svgFolder))
+                foreach (Shape shape in page.Shapes)
                 {
-                    Directory.CreateDirectory(svgFolder);
+                    // Build a unique SVG file name for the shape
+                    string svgFileName = $"shape_{shape.ID}.svg";
+
+                    // Export the shape to SVG
+                    SVGSaveOptions svgOptions = new SVGSaveOptions();
+                    shape.ToSvg(svgFileName, svgOptions);
                 }
+            }
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
+            // Export the whole diagram to HTML (default raster PNG images)
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            diagram.Save(htmlOutputPath, htmlOptions);
 
-                // StringBuilder to construct the HTML content
-                StringBuilder htmlBuilder = new StringBuilder();
+            // The HTML export creates an auxiliary folder with the same name as the HTML file (without extension)
+            string htmlFolder = Path.Combine(Path.GetDirectoryName(htmlOutputPath) ?? "", Path.GetFileNameWithoutExtension(htmlOutputPath));
 
-                // Basic HTML header
-                htmlBuilder.AppendLine("<!DOCTYPE html>");
-                htmlBuilder.AppendLine("<html lang=\"en\">");
-                htmlBuilder.AppendLine("<head>");
-                htmlBuilder.AppendLine("    <meta charset=\"UTF-8\">");
-                htmlBuilder.AppendLine("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
-                htmlBuilder.AppendLine("    <title>Visio Diagram with SVG Shapes</title>");
-                htmlBuilder.AppendLine("</head>");
-                htmlBuilder.AppendLine("<body>");
-                htmlBuilder.AppendLine("    <h1>Visio Diagram Exported as HTML with SVG Shapes</h1>");
+            // Read the generated HTML content
+            string htmlContent = File.ReadAllText(htmlOutputPath);
 
-                // Iterate through each page and each shape
-                foreach (Page page in diagram.Pages)
+            // Replace each PNG image reference with the corresponding inline SVG
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    htmlBuilder.AppendLine($"    <h2>Page: {page.Name}</h2>");
-                    foreach (Shape shape in page.Shapes)
+                    string pngFileName = $"shape_{shape.ID}.png";
+                    string svgFileName = $"shape_{shape.ID}.svg";
+
+                    string pngPath = Path.Combine(htmlFolder, pngFileName);
+                    string svgPath = Path.Combine(Directory.GetCurrentDirectory(), svgFileName);
+
+                    if (File.Exists(pngPath) && File.Exists(svgPath))
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Load SVG content
+                        string svgContent = File.ReadAllText(svgPath);
 
-                        // Generate a unique SVG file name for the shape
-                        string svgFileName = $"shape_{shape.ID}.svg";
-                        string svgFilePath = Path.Combine(svgFolder, svgFileName);
+                        // Remove XML declaration if present (HTML cannot have it inside <svg>)
+                        if (svgContent.StartsWith("<?xml"))
+                        {
+                            int idx = svgContent.IndexOf("?>");
+                            if (idx > -1)
+                            {
+                                svgContent = svgContent.Substring(idx + 2).TrimStart();
+                            }
+                        }
 
-                        // Export the shape to SVG
-                        SVGSaveOptions svgOptions = new SVGSaveOptions();
-                        shape.ToSvg(svgFilePath, svgOptions);
+                        // Build the replacement string: <img src="..."> => inline SVG
+                        string imgTagPattern = $"src=\"{pngFileName}\"";
+                        string replacement = $"src=\"data:image/svg+xml;base64,{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(svgContent))}\"";
 
-                        // Embed the SVG in the HTML using <object> tag
-                        htmlBuilder.AppendLine("    <div style=\"margin:10px; display:inline-block; text-align:center;\">");
-                        htmlBuilder.AppendLine($"        <p>Shape ID: {shape.ID}</p>");
-                        htmlBuilder.AppendLine($"        <object type=\"image/svg+xml\" data=\"{svgFolder}/{svgFileName}\" width=\"200\" height=\"200\"></object>");
-                        htmlBuilder.AppendLine("    </div>");
+                        // Perform the replacement in the HTML content
+                        htmlContent = htmlContent.Replace(imgTagPattern, replacement);
                     }
                 }
-
-                // Close HTML tags
-                htmlBuilder.AppendLine("</body>");
-                htmlBuilder.AppendLine("</html>");
-
-                // Write the HTML content to the output file
-                File.WriteAllText(htmlOutputPath, htmlBuilder.ToString());
-
-                Console.WriteLine($"HTML file generated at: {Path.GetFullPath(htmlOutputPath)}");
-                Console.WriteLine($"SVG files are stored in: {Path.GetFullPath(svgFolder)}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Write the modified HTML with embedded SVGs
+            string finalHtmlPath = "output_embedded.html";
+            File.WriteAllText(finalHtmlPath, htmlContent);
+
+            Console.WriteLine("Conversion completed.");
+            Console.WriteLine($"HTML with embedded SVG saved to: {finalHtmlPath}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

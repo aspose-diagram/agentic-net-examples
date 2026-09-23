@@ -1,67 +1,69 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            // Replace "input.vsdx" with the path to your diagram file
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Assume we are interested in the first page
+            Page page = diagram.Pages[0];
+
+            // Example shape ID – replace with the actual ID of the shape that contains the ActiveX control
+            long shapeId = 1; // long is required for shape IDs
+
+            // Retrieve the shape by its unique Visio ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Ensure the shape actually hosts an ActiveX control
+            if (shape.ActiveXControl == null)
             {
-
-                // Path to the Visio file (adjust as needed)
-                string diagramPath = "sample.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Check if the shape contains an ActiveX control
-                        if (shape.ActiveXControl != null)
-                        {
-                            // Retrieve the concrete control type via the Type property
-                            ControlType controlType = shape.ActiveXControl.Type;
-
-                            // Output the control type
-                            Console.WriteLine($"Shape ID {shape.ID} contains an ActiveX control of type: {controlType}");
-
-                            // Example of handling specific control types
-                            switch (controlType)
-                            {
-                                case ControlType.CommandButton:
-                                    // Cast to the specific control class if needed
-                                    CommandButtonActiveXControl button = (CommandButtonActiveXControl)shape.ActiveXControl;
-                                    Console.WriteLine($"  Caption: {button.Caption}");
-                                    break;
-                                case ControlType.CheckBox:
-                                    CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
-                                    Console.WriteLine($"  Value: {checkBox.Value}");
-                                    break;
-                                case ControlType.TextBox:
-                                    TextBoxActiveXControl textBox = (TextBoxActiveXControl)shape.ActiveXControl;
-                                    Console.WriteLine($"  Text: {textBox.Text}");
-                                    break;
-                                // Add additional cases as required
-                                default:
-                                    Console.WriteLine("  No additional handling for this control type.");
-                                    break;
-                            }
-                        }
-                    }
-                }
-
-                // Dispose the diagram when done
-                diagram.Dispose();
-
+                Console.WriteLine("The specified shape does not contain an ActiveX control.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Determine the concrete ActiveX control type using the Type property (ControlType enum)
+            ControlType controlType = shape.ActiveXControl.Type;
+
+            // Output the identified control type
+            Console.WriteLine($"ActiveX control type: {controlType}");
+
+            // Optional: based on the control type, you can cast to the specific control class
+            switch (controlType)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                case ControlType.CommandButton:
+                    CommandButtonActiveXControl btn = (CommandButtonActiveXControl)shape.ActiveXControl;
+                    Console.WriteLine($"Caption: {btn.Caption}");
+                    break;
+
+                case ControlType.CheckBox:
+                    CheckBoxActiveXControl chk = (CheckBoxActiveXControl)shape.ActiveXControl;
+                    Console.WriteLine($"Checked state: {chk.Value}");
+                    break;
+
+                case ControlType.TextBox:
+                    TextBoxActiveXControl txt = (TextBoxActiveXControl)shape.ActiveXControl;
+                    Console.WriteLine($"Text: {txt.Text}");
+                    break;
+
+                // Add additional cases for other control types as needed
+                default:
+                    Console.WriteLine("Control type is not specifically handled in this example.");
+                    break;
             }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

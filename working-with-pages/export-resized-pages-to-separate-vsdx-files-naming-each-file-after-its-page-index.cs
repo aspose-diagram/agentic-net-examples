@@ -1,65 +1,64 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        try
         {
-            try
+
+            // Validate arguments: first argument is the source Visio file,
+            // second (optional) argument is the output folder.
+            if (args.Length == 0)
             {
+                Console.WriteLine("Usage: ExportPages <sourceVisioFile> [outputFolder]");
+                return;
+            }
 
-                // Path to the source Visio file (replace with actual path)
-                string sourcePath = "input.vsdx";
+            string sourcePath = args[0];
+            string outputFolder = args.Length > 1 ? args[1] : Environment.CurrentDirectory;
 
-                // Load the source diagram
-                Diagram sourceDiagram = new Diagram(sourcePath);
+            // Ensure the output folder exists.
+            if (!System.IO.Directory.Exists(outputFolder))
+            {
+                System.IO.Directory.CreateDirectory(outputFolder);
+            }
 
-                // Iterate through each page in the source diagram
-                for (int i = 0; i < sourceDiagram.Pages.Count; i++)
+            // Load the source diagram.
+            using (Diagram sourceDiagram = new Diagram(sourcePath))
+            {
+                int pageCount = sourceDiagram.Pages.Count;
+
+                for (int i = 0; i < pageCount; i++)
                 {
-                    // Get the current page from the source diagram
-                    Page srcPage = sourceDiagram.Pages[i];
+                    // Retrieve the page to export.
+                    Page sourcePage = sourceDiagram.Pages[i];
 
-                    // Create a new empty diagram for the single page export
-                    Diagram singlePageDiagram = new Diagram();
-
-                    // Copy all masters from the source diagram to the new diagram
-                    foreach (Master master in sourceDiagram.Masters)
+                    // Create a new empty diagram.
+                    using (Diagram singlePageDiagram = new Diagram())
                     {
-                        singlePageDiagram.Masters.Add(master);
+                        // The new diagram contains a default page at index 0.
+                        // Copy the source page content into this default page.
+                        singlePageDiagram.Pages[0].Copy(sourcePage);
+
+                        // Build the output file name using the page index.
+                        string outputPath = System.IO.Path.Combine(outputFolder, $"Page_{i}.vsdx");
+
+                        // Save the diagram containing only the copied page.
+                        singlePageDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                        Console.WriteLine($"Exported page {i} to '{outputPath}'.");
                     }
-
-                    // Remove the default empty page that is created by the default constructor
-                    if (singlePageDiagram.Pages.Count > 0)
-                    {
-                        Page defaultPage = singlePageDiagram.Pages[0];
-                        singlePageDiagram.Pages.Remove(defaultPage);
-                    }
-
-                    // Add the source page to the new diagram
-                    // The page is added as a reference; this is sufficient for export purposes
-                    singlePageDiagram.Pages.Add(srcPage);
-
-                    // Build the output file name using the page index
-                    string outputPath = $"Page_{i}.vsdx";
-
-                    // Save the new diagram containing only the current page
-                    singlePageDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                    // Dispose the temporary diagram to free resources
-                    singlePageDiagram.Dispose();
                 }
-
-                // Dispose the source diagram
-                sourceDiagram.Dispose();
-
-                Console.WriteLine("Export completed.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

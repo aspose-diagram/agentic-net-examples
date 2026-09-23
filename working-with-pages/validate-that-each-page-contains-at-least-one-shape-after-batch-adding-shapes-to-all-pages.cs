@@ -1,46 +1,46 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        try
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
+
+        // Ensure there is at least one page; add a blank page if none exist
+        if (diagram.Pages.Count == 0)
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Name of the master shape to be added (e.g., a built‑in rectangle)
-            string masterName = "Rectangle";
-
-            // Add a shape to every page in the document
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
-            {
-                // Add the shape at a fixed position (PinX, PinY). Width/Height are default.
-                diagram.Pages[pageIndex].AddShape(1.0, 1.0, masterName);
-            }
-
-            // Validate that each page now contains at least one shape
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
-            {
-                Page page = diagram.Pages[pageIndex];
-                if (page.Shapes.Count == 0)
-                {
-                    // Throw an exception if a page is found without shapes
-                    throw new InvalidOperationException($"Page \"{page.Name}\" does not contain any shapes.");
-                }
-            }
-
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            diagram.Pages.Add(new Page());
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Batch add a rectangle shape to every page
+        foreach (Page page in diagram.Pages)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Draw a rectangle at (1,1) with width 2 and height 1 (in inches)
+            long shapeId = page.DrawRectangle(1.0, 1.0, 2.0, 1.0);
+
+            // Retrieve the shape to set its text (optional)
+            Shape shape = page.Shapes.GetShape(shapeId);
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt("Sample"));
         }
+
+        // Validate that each page contains at least one shape
+        foreach (Page page in diagram.Pages)
+        {
+            if (page.Shapes.Count == 0)
+            {
+                throw new Exception($"Validation failed: Page '{page.Name}' contains no shapes.");
+            }
+            else
+            {
+                Console.WriteLine($"Page '{page.Name}' contains {page.Shapes.Count} shape(s).");
+            }
+        }
+
+        // Save the diagram to a VSDX file
+        diagram.Save("BatchAddedDiagram.vsdx", SaveFileFormat.Vsdx);
     }
 }

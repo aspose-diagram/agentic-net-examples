@@ -4,58 +4,71 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
                 // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Access the first page and the first shape on that page
-                Page firstPage = (Page)diagram.Pages[0];
-                Shape shape = (Shape)firstPage.Shapes[0];
-
-                // Capture the original vertex list
-                List<string> originalVertices = GetVertexList(shape);
-
-                // Modify the geometry: add a new LineTo vertex to the first geometry path
-                Geom targetGeom = (Geom)shape.Geoms[0];
-                LineTo newSegment = new LineTo();
-                newSegment.X.Value = 2.0;
-                newSegment.Y.Value = 2.0;
-                targetGeom.CoordinateCol.Add(newSegment);
-
-                // Capture the modified vertex list
-                List<string> modifiedVertices = GetVertexList(shape);
-
-                // Compare the lists to ensure the new vertex was added
-                bool changeDetected = modifiedVertices.Count == originalVertices.Count + 1 &&
-                                      modifiedVertices[modifiedVertices.Count - 1] == "LineTo(2,2)";
-
-                if (!changeDetected)
+                // Find the first non-page shape on the first page
+                Shape targetShape = null;
+                for (int s = 0; s < diagram.Pages[0].Shapes.Count; s++)
                 {
-                    throw new Exception("Geometry modification was not applied as expected.");
+                    Shape shp = diagram.Pages[0].Shapes[s];
+                    if (shp.ID != 0) // page shape has ID 0
+                    {
+                        targetShape = shp;
+                        break;
+                    }
                 }
 
-                Console.WriteLine("Vertex list before modification:");
-                foreach (string v in originalVertices)
+                if (targetShape == null)
                 {
-                    Console.WriteLine(v);
+                    throw new Exception("No suitable shape found in the diagram.");
                 }
 
-                Console.WriteLine("\nVertex list after modification:");
-                foreach (string v in modifiedVertices)
+                // Capture vertex list before modification
+                List<(double X, double Y)> beforeVertices = GetVertices(targetShape);
+
+                // Modify geometry: add a new vertex at (5.0, 5.0)
+                Geom geom = (Geom)targetShape.Geoms[0];
+                LineTo newVertex = new LineTo();
+                newVertex.X.Value = 5.0;
+                newVertex.Y.Value = 5.0;
+                geom.CoordinateCol.Add(newVertex);
+
+                // Capture vertex list after modification
+                List<(double X, double Y)> afterVertices = GetVertices(targetShape);
+
+                // Verify that the new vertex was added correctly
+                if (afterVertices.Count != beforeVertices.Count + 1)
                 {
-                    Console.WriteLine(v);
+                    throw new Exception($"Vertex count mismatch. Expected {beforeVertices.Count + 1}, but got {afterVertices.Count}.");
                 }
 
-                Console.WriteLine("\nGeometry modification verified successfully.");
+                // Ensure original vertices are unchanged and new vertex is at the end
+                for (int i = 0; i < beforeVertices.Count; i++)
+                {
+                    if (Math.Abs(beforeVertices[i].X - afterVertices[i].X) > 1e-6 ||
+                        Math.Abs(beforeVertices[i].Y - afterVertices[i].Y) > 1e-6)
+                    {
+                        throw new Exception($"Vertex at index {i} was altered unexpectedly.");
+                    }
+                }
 
-                // Optionally save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Check the newly added vertex
+                (double X, double Y) newAdded = afterVertices[afterVertices.Count - 1];
+                if (Math.Abs(newAdded.X - 5.0) > 1e-6 || Math.Abs(newAdded.Y - 5.0) > 1e-6)
+                {
+                    throw new Exception("The newly added vertex does not have the expected coordinates (5.0, 5.0).");
+                }
+
+                Console.WriteLine("Geometry vertex list comparison succeeded. Modification applied as intended.");
+
+                // Save the modified diagram
+                diagram.Save("output_modified.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -64,27 +77,29 @@ class Program
             }
     }
 
-        // Helper method to extract a readable list of vertices from a shape
-        private static List<string> GetVertexList(Shape shape)
+        // Retrieves the list of vertex coordinates (MoveTo and LineTo) from the first geometry of a shape
+        static List<(double X, double Y)> GetVertices(Shape shape)
         {
-            List<string> vertices = new List<string>();
+            List<(double X, double Y)> vertices = new List<(double X, double Y)>();
 
-            // Iterate over each geometry section
-            foreach (Geom geom in shape.Geoms)
+            // Assume the shape has at least one geometry section
+            Geom geom = (Geom)shape.Geoms[0];
+
+            for (int i = 0; i < geom.CoordinateCol.Count; i++)
             {
-                // Iterate over each coordinate command within the geometry
-                foreach (object coord in geom.CoordinateCol)
+                object segment = geom.CoordinateCol[i];
+
+                if (segment is MoveTo)
                 {
-                    if (coord is MoveTo move)
-                    {
-                        vertices.Add($"MoveTo({move.X.Value},{move.Y.Value})");
-                    }
-                    else if (coord is LineTo line)
-                    {
-                        vertices.Add($"LineTo({line.X.Value},{line.Y.Value})");
-                    }
-                    // Additional command types (e.g., ArcTo) can be handled similarly if needed
+                    MoveTo move = (MoveTo)segment;
+                    vertices.Add((move.X.Value, move.Y.Value));
                 }
+                else if (segment is LineTo)
+                {
+                    LineTo line = (LineTo)segment;
+                    vertices.Add((line.X.Value, line.Y.Value));
+                }
+                // Other segment types (ArcTo, etc.) are ignored for this comparison
             }
 
             return vertices;

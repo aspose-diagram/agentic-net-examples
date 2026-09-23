@@ -3,101 +3,110 @@ using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 using Aspose.Drawing.Imaging;
+using Aspose.Drawing.Drawing2D;
+
+// Alias to avoid ambiguity between Aspose.Diagram.Image and Aspose.Drawing.Image
+using DrawingImage = Aspose.Drawing.Image;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument) and output sprite sheet path (second argument)
-        string inputPath = args.Length > 0 ? args[0] : "diagram.vsdx";
-        if (!File.Exists(inputPath))
+        // Path to the source VST diagram (Visio template)
+        string vstPath = "input.vst";
+
+        // Guard to ensure the input file exists
+        if (!File.Exists(vstPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {vstPath}");
             return;
         }
 
-        string outputPath = args.Length > 1 ? args[1] : "spritesheet.png";
-
-        // List to hold each page image and its dimensions
-        List<Aspose.Drawing.Image> pageImages = new List<Aspose.Drawing.Image>();
-        int totalWidth = 0;
-        int maxHeight = 0;
-
+        Diagram diagram;
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prepare PNG export options (one image per page)
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            pngOptions.PageCount = 1; // export a single page at a time
-
-            int pageIndex = 0;
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                // Set the page index for the current export
-                pngOptions.PageIndex = pageIndex;
-
-                // Create a temporary file for the exported PNG
-                string tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".png");
-
-                // Export the current page to the temporary PNG file
-                diagram.Save(tempFile, pngOptions);
-
-                // Load the exported PNG into an Aspose.Drawing.Image
-                Aspose.Drawing.Image img = Aspose.Drawing.Image.FromFile(tempFile);
-                pageImages.Add(img);
-
-                // Update sprite sheet dimensions
-                totalWidth += img.Width;
-                if (img.Height > maxHeight) maxHeight = img.Height;
-
-                // Delete the temporary file
-                File.Delete(tempFile);
-
-                pageIndex++;
-            }
-
-            // Ensure at least one page was processed
-            if (pageImages.Count == 0)
-            {
-                Console.Error.WriteLine("No pages were found in the diagram.");
-                return;
-            }
-
-            // Create a new bitmap to hold the combined sprite sheet
-            using (Aspose.Drawing.Bitmap spriteSheet = new Aspose.Drawing.Bitmap(totalWidth, maxHeight))
-            {
-                // Obtain a graphics object for drawing onto the bitmap
-                using (Aspose.Drawing.Graphics g = Aspose.Drawing.Graphics.FromImage(spriteSheet))
-                {
-                    int offsetX = 0;
-                    // Draw each page image side by side
-                    foreach (Aspose.Drawing.Image img in pageImages)
-                    {
-                        g.DrawImage(img, offsetX, 0, img.Width, img.Height);
-                        offsetX += img.Width;
-                    }
-                }
-
-                // Save the final sprite sheet as PNG
-                spriteSheet.Save(outputPath, ImageFormat.Png);
-            }
-
-            // Dispose all loaded page images
-            foreach (Aspose.Drawing.Image img in pageImages)
-            {
-                img.Dispose();
-            }
-
-            Console.WriteLine($"Sprite sheet created successfully: {outputPath}");
+            // Load the diagram using the appropriate LoadFileFormat
+            diagram = new Diagram(vstPath, LoadFileFormat.Vst);
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Collect rendered page images
+        List<DrawingImage> pageImages = new List<DrawingImage>();
+        int pageCount = diagram.Pages.Count;
+
+        for (int i = 0; i < pageCount; i++)
+        {
+            // Configure image export options for a single page
+            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
+            {
+                PageIndex = i,          // zero‑based page index
+                PageCount = 1,          // export only this page
+                Resolution = 300,       // DPI (adjust as needed)
+                ExportHiddenPage = false
+            };
+
+            // Export the page to a memory stream
+            using (MemoryStream ms = new MemoryStream())
+            {
+                try
+                {
+                    diagram.Save(ms, imgOptions);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error exporting page {i}: {ex.Message}");
+                    continue;
+                }
+
+                ms.Position = 0;
+                // Load the image from the stream using the aliased DrawingImage type
+                DrawingImage img = DrawingImage.FromStream(ms);
+                pageImages.Add(img);
+            }
+        }
+
+        // Determine sprite sheet dimensions (horizontal strip)
+        int sheetWidth = 0;
+        int sheetHeight = 0;
+        foreach (DrawingImage img in pageImages)
+        {
+            sheetWidth += img.Width;
+            if (img.Height > sheetHeight)
+                sheetHeight = img.Height;
+        }
+
+        // Create the sprite sheet bitmap
+        using (Bitmap spriteSheet = new Bitmap(sheetWidth, sheetHeight, PixelFormat.Format32bppArgb))
+        {
+            using (Graphics g = Graphics.FromImage(spriteSheet))
+            {
+                g.Clear(Color.Transparent);
+                int offsetX = 0;
+                foreach (DrawingImage img in pageImages)
+                {
+                    g.DrawImage(img, offsetX, 0, img.Width, img.Height);
+                    offsetX += img.Width;
+                    img.Dispose(); // release individual page image
+                }
+            }
+
+            // Save the combined sprite sheet
+            string outputPath = "sprite_sheet.png";
+            try
+            {
+                spriteSheet.Save(outputPath, ImageFormat.Png);
+                Console.WriteLine($"Sprite sheet saved to: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error saving sprite sheet: {ex.Message}");
+            }
         }
     }
 }

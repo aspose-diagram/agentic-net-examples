@@ -2,65 +2,71 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class ExtractOleObjects
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Output folder for extracted OLE files
-            string outputFolder = "ExtractedOleObjects";
-            Directory.CreateDirectory(outputFolder);
-
-            int oleCounter = 0;
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+
+                // Output directory for extracted OLE objects
+                string outputDir = "OleObjects";
+
+                // Ensure the output directory exists
+                if (!Directory.Exists(outputDir))
                 {
-                    // Check if the shape contains foreign (OLE) data
-                    ForeignData foreignData = shape.ForeignData;
-                    if (foreignData == null) continue;
-
-                    // Embedded OLE object data
-                    byte[] oleBytes = foreignData.ObjectData;
-                    if (oleBytes == null || oleBytes.Length == 0) continue;
-
-                    // Determine file extension
-                    string sourceName = foreignData.ObjectSourceFullName;
-                    string extension = ".bin"; // fallback
-
-                    if (!string.IsNullOrEmpty(sourceName))
-                    {
-                        extension = Path.GetExtension(sourceName);
-                        if (string.IsNullOrEmpty(extension))
-                            extension = ".bin";
-                    }
-
-                    // Build output file name
-                    string fileName = $"OleObject_{oleCounter}{extension}";
-                    string filePath = Path.Combine(outputFolder, fileName);
-
-                    // Save the binary data to file
-                    File.WriteAllBytes(filePath, oleBytes);
-                    Console.WriteLine($"Extracted OLE object to: {filePath}");
-
-                    oleCounter++;
+                    Directory.CreateDirectory(outputDir);
                 }
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
+                {
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        // Check if the shape is a foreign OLE object
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ForeignType == ForeignType.Object)
+                        {
+                            // Get the binary data of the OLE object
+                            byte[] oleData = shape.ForeignData.ObjectData;
+
+                            // Ensure there is data to write
+                            if (oleData != null && oleData.Length > 0)
+                            {
+                                // Determine original file extension from the source name
+                                string sourceName = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
+                                string extension = Path.GetExtension(sourceName);
+                                if (string.IsNullOrEmpty(extension))
+                                {
+                                    extension = ".bin";
+                                }
+
+                                // Build a unique file name using the shape ID
+                                string fileName = $"Ole_{shape.ID}{extension}";
+                                string outputPath = Path.Combine(outputDir, fileName);
+
+                                // Write the binary data to the file
+                                File.WriteAllBytes(outputPath, oleData);
+
+                                Console.WriteLine($"Saved OLE object from shape ID {shape.ID} to {outputPath}");
+                            }
+                        }
+                    }
+                }
+
+                Console.WriteLine("OLE extraction completed.");
+
             }
-
-            // Optionally, save the diagram unchanged (demonstrating use of Save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

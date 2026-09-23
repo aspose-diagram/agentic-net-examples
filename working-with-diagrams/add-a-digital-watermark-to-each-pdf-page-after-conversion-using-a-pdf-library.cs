@@ -5,58 +5,60 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input Visio file path
-            string visioPath = "input.vsdx";
-
-            // Output PDF file path
+            // Paths for input Visio diagram and output PDF
+            string diagramPath = "input.vsdx";
             string pdfPath = "output.pdf";
 
             // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            // Save the diagram as PDF
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-            diagram.Save(pdfPath, pdfOptions);
-
-            // Load the generated PDF using Aspose.Pdf (fully qualified)
-            Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(pdfPath);
-
-            // Add a watermark to each page
-            foreach (Aspose.Pdf.Page page in pdfDocument.Pages)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Create the watermark text fragment
-                Aspose.Pdf.Text.TextFragment watermark = new Aspose.Pdf.Text.TextFragment("CONFIDENTIAL");
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
+                // Explicitly set the format tracker
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Set font size
-                watermark.TextState.FontSize = 72;
-
-                // Set rotation (float, degrees)
-                watermark.TextState.Rotation = (float)45;
-
-                // Set light gray color (values are 0.0‑1.0)
-                watermark.TextState.ForegroundColor = Aspose.Pdf.Color.FromRgb(0.78, 0.78, 0.78);
-
-                // Position the watermark at the center of the page
-                double centerX = page.MediaBox.Width / 2;
-                double centerY = page.MediaBox.Height / 2;
-                watermark.Position = new Aspose.Pdf.Text.Position(centerX, centerY);
-
-                // Add the watermark to the page
-                page.Paragraphs.Add(watermark);
+                // Save the diagram as PDF
+                diagram.Save(pdfPath, pdfOptions);
             }
 
-            // Save the PDF with watermarks (overwrites the previous file)
-            pdfDocument.Save(pdfPath);
+            // Open the generated PDF with Aspose.Pdf
+            using (Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(pdfPath))
+            {
+                // Iterate through each page and add a watermark
+                for (int i = 1; i <= pdfDocument.Pages.Count; i++)
+                {
+                    Aspose.Pdf.Page page = pdfDocument.Pages[i];
 
-            // Clean up resources
-            diagram.Dispose();
-            pdfDocument.Dispose();
+                    // Create a text fragment that will serve as the watermark
+                    Aspose.Pdf.Text.TextFragment watermark = new Aspose.Pdf.Text.TextFragment("CONFIDENTIAL");
+                    // Set font and style
+                    watermark.TextState.Font = Aspose.Pdf.Text.FontRepository.FindFont("Arial");
+                    watermark.TextState.FontSize = 72; // points
+                    watermark.TextState.FontStyle = Aspose.Pdf.Text.FontStyles.Bold;
+                    // Set color (light gray) – values are 0.0 to 1.0
+                    watermark.TextState.ForegroundColor = Aspose.Pdf.Color.FromRgb(0.78, 0.78, 0.78);
+                    // Rotate the watermark 45 degrees
+                    watermark.TextState.Rotation = (float)45;
+                    // Position the watermark at the center of the page
+                    double centerX = page.PageInfo.Width / 2;
+                    double centerY = page.PageInfo.Height / 2;
+                    watermark.Position = new Aspose.Pdf.Text.Position(centerX, centerY);
+
+                    // Add the watermark to the page's paragraphs collection
+                    page.Paragraphs.Add(watermark);
+                }
+
+                // Save the PDF with watermarks (overwrites the original file)
+                pdfDocument.Save(pdfPath);
+            }
+
+            Console.WriteLine("PDF generated with digital watermark on each page.");
 
         }
         catch (System.IO.FileNotFoundException ex)

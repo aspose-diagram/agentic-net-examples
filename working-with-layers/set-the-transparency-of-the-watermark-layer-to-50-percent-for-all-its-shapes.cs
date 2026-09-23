@@ -1,7 +1,7 @@
 using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,53 +10,64 @@ class Program
         try
         {
 
-            // Load the Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Assume the watermark layer is on the first page
-            Page page = diagram.Pages[0];
-
-            // Find the index of the layer named "Watermark"
-            int watermarkLayerIndex = -1;
-            foreach (Layer layer in page.PageSheet.Layers)
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                if (layer.Name.Value.Equals("Watermark", StringComparison.OrdinalIgnoreCase))
+                // Find the layer named "Watermark"
+                Layer watermarkLayer = null;
+                foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    watermarkLayerIndex = layer.IX;
-                    break;
-                }
-            }
-
-            if (watermarkLayerIndex == -1)
-            {
-                throw new Exception("Layer named 'Watermark' was not found.");
-            }
-
-            // Apply 50% transparency to all shapes that belong to the Watermark layer
-            foreach (Shape shape in page.Shapes)
-            {
-                string member = shape.LayerMem.LayerMember.Value;
-                if (string.IsNullOrEmpty(member))
-                    continue;
-
-                string[] indices = member.Split(';');
-                foreach (string idxStr in indices)
-                {
-                    if (int.TryParse(idxStr, out int idx) && idx == watermarkLayerIndex)
+                    if (layer.Name.Value == "Watermark")
                     {
-                        // Set fill foreground transparency
-                        shape.Fill.FillForegndTrans.Value = 50;
-                        // Set line color transparency
-                        shape.Line.LineColorTrans.Value = 50;
+                        watermarkLayer = layer;
                         break;
                     }
+                }
+
+                // If the layer does not exist on this page, continue to next page
+                if (watermarkLayer == null)
+                    continue;
+
+                // Get the index of the watermark layer as a string
+                string layerIndexStr = watermarkLayer.IX.ToString();
+
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Check if the shape belongs to the watermark layer
+                    // The LayerMember property contains semicolon‑separated layer indexes
+                    string member = shape.LayerMem.LayerMember.Value;
+                    if (string.IsNullOrEmpty(member))
+                        continue;
+
+                    // Split the member string and see if it contains the watermark layer index
+                    string[] indexes = member.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                    bool belongsToWatermark = false;
+                    foreach (string idx in indexes)
+                    {
+                        if (idx == layerIndexStr)
+                        {
+                            belongsToWatermark = true;
+                            break;
+                        }
+                    }
+
+                    if (!belongsToWatermark)
+                        continue;
+
+                    // Set fill foreground transparency to 50%
+                    shape.Fill.FillForegndTrans.Value = 50;
+
+                    // Set line color transparency to 50%
+                    shape.Line.LineColorTrans.Value = 50;
                 }
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -9,18 +9,22 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file (replace with your actual file path)
-            string filePath = "input.vsdx";
-            using (Diagram diagram = new Diagram(filePath))
-            {
-                // Get the collection of custom properties defined at the document level
-                var customProps = diagram.DocumentProps.CustomProps;
+            // Path to the Visio file
+            string diagramPath = "sample.vsdx";
 
-                // Enumerate each custom property and output its name and value
-                foreach (CustomProp prop in customProps)
-                {
-                    Console.WriteLine($"Name: {prop.Name}, Value: {prop.CustomValue}");
-                }
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Access custom document properties
+            var customProps = diagram.DocumentProps.CustomProps;
+
+            // Enumerate and output each name‑value pair
+            for (int i = 0; i < customProps.Count; i++)
+            {
+                var prop = customProps[i];
+                string name = prop.Name;
+                string value = prop.CustomValue.ValueString;
+                Console.WriteLine($"{name}: {value}");
             }
 
         }

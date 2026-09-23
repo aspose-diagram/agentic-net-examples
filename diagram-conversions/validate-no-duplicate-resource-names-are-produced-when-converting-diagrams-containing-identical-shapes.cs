@@ -3,46 +3,58 @@ using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-class DiagramDuplicateResourceValidator
+class DiagramResourceValidator
 {
     static void Main()
     {
         try
         {
 
-            // Load the diagrams to be merged
-            var diagram1 = new Diagram("diagram1.vsdx");
-            var diagram2 = new Diagram("diagram2.vsdx");
+            // Load the source diagram (replace with actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Combine the second diagram into the first one
-            diagram1.Combine(diagram2);
+            // HashSet to track unique resource (shape) names
+            HashSet<string> resourceNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // List to collect any duplicate names found
+            List<string> duplicateNames = new List<string>();
 
-            // Validate that no duplicate master (resource) names exist after the merge
-            ValidateNoDuplicateMasterNames(diagram1);
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Use the universal name (NameU) as the resource identifier
+                    string name = shape.NameU;
 
-            // Save the combined diagram (optional, demonstrates use of the save rule)
-            diagram1.Save("combined.vsdx", SaveFileFormat.Vsdx);
+                    // If the name is already present, record it as duplicate
+                    if (!resourceNames.Add(name))
+                    {
+                        duplicateNames.Add(name);
+                    }
+                }
+            }
+
+            // Report the validation result
+            if (duplicateNames.Count == 0)
+            {
+                Console.WriteLine("Validation passed: No duplicate resource names found.");
+            }
+            else
+            {
+                Console.WriteLine("Validation failed: Duplicate resource names detected:");
+                foreach (string dup in duplicateNames)
+                {
+                    Console.WriteLine($"- {dup}");
+                }
+            }
+
+            // Optionally, save the diagram after validation (replace with desired output path)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    static void ValidateNoDuplicateMasterNames(Diagram diagram)
-    {
-        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (Master master in diagram.Masters)
-        {
-            // Prefer the universal name; fall back to the local name if needed
-            string name = master.NameU ?? master.Name;
-            if (string.IsNullOrEmpty(name))
-                continue;
-
-            // If the name already exists, raise an error
-            if (!seenNames.Add(name))
-                throw new InvalidOperationException($"Duplicate master resource name detected: {name}");
         }
     }
 }

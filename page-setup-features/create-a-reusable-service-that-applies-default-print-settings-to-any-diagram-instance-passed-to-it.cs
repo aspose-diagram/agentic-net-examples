@@ -1,64 +1,92 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Printing;
+using Aspose.Diagram.Saving;
 
-public class PrintSettingsService
+/// <summary>
+/// Service that applies a set of default print settings to every page of a Diagram.
+/// </summary>
+public static class PrintSettingsService
 {
-    // Applies default print settings to all pages of the diagram.
-    public void ApplyDefaultPrintSettings(Diagram diagram)
+    /// <summary>
+    /// Applies default print configuration to all pages of the provided diagram.
+    /// </summary>
+    /// <param name="diagram">The Aspose.Diagram.Diagram instance to modify.</param>
+    public static void ApplyDefaultPrintSettings(Diagram diagram)
     {
-        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
+        if (diagram == null)
+            throw new ArgumentNullException(nameof(diagram));
 
+        // Iterate over each page explicitly (do not use var in foreach as per rules)
         foreach (Page page in diagram.Pages)
         {
-            // Ensure PageSheet and PrintProps are available.
-            var printProps = page.PageSheet?.PrintProps;
-            if (printProps == null) continue;
+            // Ensure the page has a valid PageSheet and PrintProps
+            if (page?.PageSheet?.PrintProps == null)
+                continue;
 
-            // Orientation: Landscape.
+            PrintProps printProps = page.PageSheet.PrintProps;
+
+            // Set orientation to Landscape
             printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-            // Scaling: 75% (both X and Y).
+            // Set scaling to 75%
             printProps.ScaleX.Value = 0.75;
             printProps.ScaleY.Value = 0.75;
 
-            // Fit to a single sheet.
+            // Enable "Fit to sheet" and define one sheet across and down
             printProps.OnPage.Value = BOOL.True;
             printProps.PagesX.Value = 1;
             printProps.PagesY.Value = 1;
 
-            // Margins: 0.5 inches on each side.
-            printProps.PageTopMargin.Value = 0.5;
-            printProps.PageBottomMargin.Value = 0.5;
-            printProps.PageLeftMargin.Value = 0.5;
-            printProps.PageRightMargin.Value = 0.5;
+            // Set uniform margins (0.5 inches on each side)
+            // Margins are expressed directly in inches
+            double marginInInches = 0.5;
+            printProps.PageTopMargin.Value = marginInInches;
+            printProps.PageBottomMargin.Value = marginInInches;
+            printProps.PageLeftMargin.Value = marginInInches;
+            printProps.PageRightMargin.Value = marginInInches;
         }
     }
 }
 
-public class Program
+/// <summary>
+/// Entry point for the console application demonstrating the PrintSettingsService.
+/// </summary>
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
+        // Determine input file path (first argument or default placeholder)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load a diagram from a file.
-            string inputPath = "example.vsdx";
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Apply the default print settings.
-            PrintSettingsService service = new PrintSettingsService();
-            service.ApplyDefaultPrintSettings(diagram);
+            // Apply the default print settings to every page
+            PrintSettingsService.ApplyDefaultPrintSettings(diagram);
 
-            // Save the modified diagram (optional).
-            string outputPath = "example_modified.vsdx";
+            // Define output path (same directory, different file name)
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "output.vsdx");
+
+            // Save the modified diagram using the correct SaveFileFormat enum
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
+            Console.WriteLine($"Diagram saved with default print settings to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

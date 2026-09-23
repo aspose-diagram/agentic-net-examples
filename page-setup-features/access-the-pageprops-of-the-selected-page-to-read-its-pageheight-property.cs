@@ -4,25 +4,27 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the Visio file to be loaded
+            string inputPath = "input.vsdx";
 
-            // Select the first page (or use diagram.Pages[index] for a specific page)
-            Page page = diagram.Pages[0];
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Select the page you want to work with.
+                // Here we use the first page (index 0). Adjust as needed.
+                Page page = diagram.Pages[0];
 
-            // Access the PageProps of the selected page
-            PageProps pageProps = page.PageSheet.PageProps;
+                // Read the page height (value is in inches)
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Read the PageHeight property (value is stored in a DoubleValue)
-            double pageHeight = pageProps.PageHeight.Value;
-
-            // Output the page height
-            Console.WriteLine($"Page Height: {pageHeight}");
+                // Output the page height
+                Console.WriteLine($"Page Height: {pageHeight} inches");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

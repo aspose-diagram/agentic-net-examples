@@ -1,46 +1,37 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        // Create a new blank diagram
+        using (Diagram diagram = new Diagram())
         {
-            // Prompt user for desired orientation
-            Console.WriteLine("Select page orientation:");
-            Console.WriteLine("P - Portrait");
-            Console.WriteLine("L - Landscape");
-            Console.Write("Enter choice (P/L): ");
-            string input = Console.ReadLine()?.Trim().ToUpperInvariant();
+            // Access the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Determine the orientation value
-            PrintPageOrientationValue orientation;
-            if (input == "L")
+            // Ask the user for the desired orientation
+            Console.WriteLine("Select page orientation: P for Portrait, L for Landscape");
+            string input = Console.ReadLine();
+
+            // Apply the chosen orientation
+            if (!string.IsNullOrEmpty(input) && input.Equals("L", StringComparison.OrdinalIgnoreCase))
             {
-                orientation = PrintPageOrientationValue.Landscape;
-            }
-            else if (input == "P")
-            {
-                orientation = PrintPageOrientationValue.Portrait;
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                Console.WriteLine("Orientation set to Landscape.");
             }
             else
             {
-                Console.WriteLine("Invalid input. Defaulting to Portrait.");
-                orientation = PrintPageOrientationValue.Portrait;
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                Console.WriteLine("Orientation set to Portrait.");
             }
 
-            // Create a new diagram (contains a default page)
-            using (Diagram diagram = new Diagram())
-            {
-                // Apply the chosen orientation to each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
-                }
-
-                // Save the diagram to a VSDX file
-                string outputPath = "OrientationDemo.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}' with {orientation} orientation.");
-            }
+            // Save the diagram to a PDF file
+            string outputPath = "OrientationDemo.pdf";
+            diagram.Save(outputPath, SaveFileFormat.Pdf);
+            Console.WriteLine($"Diagram saved to {outputPath}");
         }
     }
+}

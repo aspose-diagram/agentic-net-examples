@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,29 +9,19 @@ class Program
         try
         {
 
-            // Load a Visio file into a byte array (could be from any source, e.g., database, network)
+            // Read the diagram file into a byte array (could be from any source, e.g., network, database)
             byte[] diagramBytes = File.ReadAllBytes("input.vsdx");
 
-            // Create a memory stream from the byte array
-            using (MemoryStream inputStream = new MemoryStream(diagramBytes))
+            // Wrap the byte array in a MemoryStream
+            using (MemoryStream memoryStream = new MemoryStream(diagramBytes))
             {
-                // Use the Diagram constructor that accepts a Stream to load the diagram from memory
-                Diagram diagram = new Diagram(inputStream);
+                // Load the diagram from the memory stream using the Diagram constructor overload that accepts a Stream
+                Diagram diagram = new Diagram(memoryStream);
 
-                // Perform any required operations on the diagram here
-                // ...
+                // (Optional) Manipulate the diagram here
 
-                // Save the diagram back to a memory stream in the same format (VSDX)
-                using (MemoryStream outputStream = new MemoryStream())
-                {
-                    diagram.Save(outputStream, SaveFileFormat.Vsdx);
-
-                    // Optionally write the result to a file
-                    File.WriteAllBytes("output.vsdx", outputStream.ToArray());
-                }
-
-                // Clean up the Diagram object
-                diagram.Dispose();
+                // Save the diagram to a new file
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
 
         }

@@ -8,10 +8,10 @@ class Program
         {
             // Example usage:
             // args[0] = input Visio file path
-            // args[1] = output PDF file path
+            // args[1] = output Visio file path
             if (args.Length < 2)
             {
-                Console.WriteLine("Usage: DiagramExportWithMetadata <input.vsdx> <output.pdf>");
+                Console.WriteLine("Usage: DiagramExportWithMetadata <inputPath> <outputPath>");
                 return;
             }
 
@@ -20,72 +20,50 @@ class Program
 
             try
             {
-                ExportDiagramWithPageMetadata(inputPath, outputPath);
+                ExportDiagramWithPageDimensions(inputPath, outputPath);
                 Console.WriteLine($"Diagram exported successfully to '{outputPath}'.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error during export: {ex.Message}");
+                Console.WriteLine($"Error: {ex.Message}");
                 throw;
             }
         }
 
         /// <summary>
         /// Loads a Visio diagram, embeds page dimension metadata into the document header,
-        /// and saves the diagram to the specified output file.
+        /// and saves the diagram to the specified output path.
         /// </summary>
-        /// <param name="inputFile">Path to the source Visio file.</param>
-        /// <param name="outputFile">Path where the exported file will be saved.</param>
-        static void ExportDiagramWithPageMetadata(string inputFile, string outputFile)
+        /// <param name="inputPath">Path to the source Visio file.</param>
+        /// <param name="outputPath">Path where the modified file will be saved.</param>
+        static void ExportDiagramWithPageDimensions(string inputPath, string outputPath)
         {
             // Load the diagram from file
-            Diagram diagram = new Diagram(inputFile);
+            Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first page (index 0) to obtain its dimensions
-            // Use explicit typing as required by the rules
+            // Retrieve the first page to obtain its dimensions (in inches)
+            // If the document has multiple pages, you could iterate and build a composite header.
+            if (diagram.Pages.Count == 0)
+                throw new InvalidOperationException("The diagram contains no pages.");
+
             Page firstPage = diagram.Pages[0];
+            double pageWidth = firstPage.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = firstPage.PageSheet.PageProps.PageHeight.Value;
 
-            double pageWidth = firstPage.PageSheet.PageProps.PageWidth.Value;   // inches
-            double pageHeight = firstPage.PageSheet.PageProps.PageHeight.Value; // inches
+            // Build a header string that includes page number placeholder (&p) and dimensions
+            // The &p field will be replaced by the actual page number during rendering/printing.
+            string headerText = $"Page: &p   Size: {pageWidth:F2} x {pageHeight:F2} inches";
 
-            // Embed dimensions into the global header (left side)
-            // Header/Footer strings support Visio wildcards; we use plain text here
-            diagram.HeaderFooter.HeaderLeft = $"Page Size: {pageWidth:F2} x {pageHeight:F2} inches";
+            // Assign the header text to the center part of the global header/footer
+            diagram.HeaderFooter.HeaderCenter = headerText;
 
-            // Optionally, also store dimensions as custom document properties
-            // This demonstrates another way to embed metadata
-            var customProps = diagram.DocumentProps.CustomProps;
-            // Remove existing properties with the same names if they exist
-            for (int i = customProps.Count - 1; i >= 0; i--)
-            {
-                var prop = customProps[i];
-                if (prop.Name == "PageWidth" || prop.Name == "PageHeight")
-                {
-                    customProps.Remove(prop);
-                }
-            }
+            // Optional: style the header/footer text (font face, size, weight)
+            var headerFont = diagram.HeaderFooter.HeaderFooterFont;
+            headerFont.FaceName = "Calibri";
+            headerFont.Height = -16; // Approx. 12pt (negative value per API spec)
+            headerFont.Weight = 700; // Bold
 
-            // Add new custom properties for width and height
-            var widthProp = new CustomProp();
-            widthProp.Name = "PageWidth";
-            widthProp.PropType = PropType.String;
-            widthProp.CustomValue.ValueString = pageWidth.ToString("F2");
-            customProps.Add(widthProp);
-
-            var heightProp = new CustomProp();
-            heightProp.Name = "PageHeight";
-            heightProp.PropType = PropType.String;
-            heightProp.CustomValue.ValueString = pageHeight.ToString("F2");
-            customProps.Add(heightProp);
-
-            // Prepare PDF save options (you can choose other formats if needed)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Ensure the format is explicitly set (required by some overloads)
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            // Set a default font to avoid missing font warnings
-            pdfOptions.DefaultFont = "Arial";
-
-            // Save the diagram with the header/footer and custom properties embedded
-            diagram.Save(outputFile, pdfOptions);
+            // Save the diagram using the VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
     }

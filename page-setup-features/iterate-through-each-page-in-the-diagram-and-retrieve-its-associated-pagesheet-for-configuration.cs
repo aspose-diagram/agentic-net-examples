@@ -1,36 +1,30 @@
-using System.IO;
 using System;
-using Aspose.Diagram;
+using System.IO;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
 
             // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
                 // Retrieve the PageSheet associated with the current page
-                PageSheet pageSheet = page.PageSheet;
+                Aspose.Diagram.PageSheet pageSheet = page.PageSheet;
 
-                // Example: access page layout and page properties for configuration
-                PageLayout layout = pageSheet.PageLayout;
-                PageProps props = pageSheet.PageProps;
+                // Example configuration: set the background color of the page sheet (optional)
+                // pageSheet.FillColor = System.Drawing.Color.LightGray;
 
-                // Output basic information (you can replace this with actual configuration logic)
-                Console.WriteLine($"Page Name: {page.Name}");
-                // The PageProps class contains properties such as Width and Height.
-                // Uncomment the following lines if you need to read those values.
-                // Console.WriteLine($"Width: {props.Width}, Height: {props.Height}");
+                // Additional configuration can be performed here using pageSheet properties
             }
 
-            // Save the diagram after any modifications (if any)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram after any modifications (if needed)
+            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

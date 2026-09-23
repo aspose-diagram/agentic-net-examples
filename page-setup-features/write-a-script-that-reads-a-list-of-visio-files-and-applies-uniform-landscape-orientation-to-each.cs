@@ -2,110 +2,66 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Determine the folder containing Visio files
+        string folderPath;
+        if (args.Length > 0)
         {
-            // Expect a folder path as the first argument
-            if (args.Length == 0)
-            {
-                Console.WriteLine("Please provide the folder path containing Visio files as an argument.");
-                return;
-            }
-
-            string folderPath = args[0];
-            if (!Directory.Exists(folderPath))
-            {
-                Console.WriteLine($"Folder does not exist: {folderPath}");
-                return;
-            }
-
-            // Supported Visio extensions
-            var supportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx",
-                ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm",
-                ".vss", ".vst"
-            };
-
-            // Get all files with supported extensions
-            var files = Directory.GetFiles(folderPath);
-            var visioFiles = new List<string>();
-            foreach (var file in files)
-            {
-                if (supportedExtensions.Contains(Path.GetExtension(file)))
-                {
-                    visioFiles.Add(file);
-                }
-            }
-
-            if (visioFiles.Count == 0)
-            {
-                Console.WriteLine("No Visio files found in the specified folder.");
-                return;
-            }
-
-            foreach (var filePath in visioFiles)
-            {
-                try
-                {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Apply Landscape orientation to every page
-                    foreach (Page page in diagram.Pages)
-                    {
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                    }
-
-                    // Determine appropriate SaveFileFormat based on file extension
-                    SaveFileFormat format = GetSaveFileFormat(Path.GetExtension(filePath));
-
-                    // Save back to the same file (overwrites original)
-                    diagram.Save(filePath, format);
-
-                    Console.WriteLine($"Processed and saved: {filePath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
-            }
+            folderPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the folder path containing Visio files: ");
+            folderPath = Console.ReadLine();
         }
 
-        // Maps file extensions to the corresponding SaveFileFormat enum values
-        private static SaveFileFormat GetSaveFileFormat(string extension)
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
         {
-            switch (extension.ToLowerInvariant())
+            Console.WriteLine("The specified folder does not exist.");
+            return;
+        }
+
+        // Collect Visio files with common extensions
+        string[] searchPatterns = new[] { "*.vsdx", "*.vsd", "*.vdx", "*.vsx", "*.vtx", "*.vssx", "*.vstx", "*.vsdm", "*.vssm", "*.vstm" };
+        var visioFiles = new List<string>();
+        foreach (string pattern in searchPatterns)
+        {
+            visioFiles.AddRange(Directory.GetFiles(folderPath, pattern));
+        }
+
+        if (visioFiles.Count == 0)
+        {
+            Console.WriteLine("No Visio files found in the specified folder.");
+            return;
+        }
+
+        // Process each file: set all pages to Landscape orientation and save
+        foreach (string filePath in visioFiles)
+        {
+            try
             {
-                case ".vsdx":
-                    return SaveFileFormat.Vsdx;
-                case ".vsd":
-                    return SaveFileFormat.Vsd;
-                case ".vdx":
-                    return SaveFileFormat.Vdx;
-                case ".vsx":
-                    return SaveFileFormat.Vsx;
-                case ".vtx":
-                    return SaveFileFormat.Vtx;
-                case ".vssx":
-                    return SaveFileFormat.Vssx;
-                case ".vstx":
-                    return SaveFileFormat.Vstx;
-                case ".vsdm":
-                    return SaveFileFormat.Vsdm;
-                case ".vssm":
-                    return SaveFileFormat.Vssm;
-                case ".vstm":
-                    return SaveFileFormat.Vstm;
-                case ".vss":
-                    return SaveFileFormat.Vss;
-                case ".vst":
-                    return SaveFileFormat.Vst;
-                default:
-                    // Default to Vsdx if unknown
-                    return SaveFileFormat.Vsdx;
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Apply Landscape orientation to every page
+                foreach (Page page in diagram.Pages)
+                {
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                }
+
+                // Save the diagram back to the same file (overwrites original)
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Successfully updated: {Path.GetFileName(filePath)}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to process {Path.GetFileName(filePath)}: {ex.Message}");
             }
         }
     }
+}

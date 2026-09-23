@@ -4,19 +4,24 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        // ISO 216 A‑series sizes in inches (width x height)
-        private static readonly (double Width, double Height)[] ASeriesInches = new (double, double)[]
+        // ISO 216 A-series sizes in inches (width x height)
+        private static readonly (double Width, double Height)[] IsoASeries = new (double, double)[]
         {
             (33.11, 46.81), // A0
             (23.39, 33.11), // A1
             (16.54, 23.39), // A2
             (11.69, 16.54), // A3
             (8.27, 11.69),  // A4
-            (5.83, 8.27)    // A5
+            (5.83, 8.27),   // A5
+            (4.13, 5.83),   // A6
+            (2.91, 4.13),   // A7
+            (2.05, 2.91),   // A8
+            (1.46, 2.05),   // A9
+            (1.02, 1.46)    // A10
         };
 
         // Tolerance for floating‑point comparison (in inches)
-        private const double Tolerance = 0.01;
+        private const double Tolerance = 0.02;
 
         static void Main()
         {
@@ -24,19 +29,52 @@ class Program
             {
 
                 // Path to the source Visio file
-                const string inputPath = "input.vsdx";
+                string sourcePath = "input.vsdx";
 
-                // Load the diagram (using a using block to ensure disposal)
-                using (Diagram diagram = new Diagram(inputPath))
+                // Load the diagram
+                Diagram diagram = new Diagram(sourcePath);
+
+                // Validate each page size against ISO 216 A‑series
+                foreach (Page page in diagram.Pages)
                 {
-                    // Validate each page size against ISO 216 A‑series dimensions
-                    ValidatePageSizes(diagram);
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // After successful validation, export the diagram to PDF
-                    ExportToPdf(diagram, "output.pdf");
+                    if (!IsIsoASeriesSize(pageWidth, pageHeight))
+                    {
+                        string message = $"Page \"{page.Name}\" (ID={page.ID}) has non‑ISO dimensions: " +
+                                         $"{pageWidth:F2}\" x {pageHeight:F2}\".";
+                        // Stop processing and report the problem
+                        throw new Exception(message);
+                    }
                 }
 
-                Console.WriteLine("Batch export completed successfully.");
+                // All pages are valid – proceed with batch export
+                // Example: export each page to a separate PDF file
+                int pageIndex = 0;
+                foreach (Page page in diagram.Pages)
+                {
+                    string outputPath = $"Page_{pageIndex + 1}.pdf";
+
+                    // Configure PDF save options
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
+                    {
+                        // Export only the current page
+                        PageIndex = pageIndex,
+                        PageCount = 1,
+                        // Use a default font to avoid missing‑font warnings
+                        DefaultFont = "Arial"
+                    };
+
+                    // Save the diagram (only the selected page) as PDF
+                    diagram.Save(outputPath, pdfOptions);
+
+                    Console.WriteLine($"Exported page {pageIndex + 1} to \"{outputPath}\".");
+                    pageIndex++;
+                }
+
+                // Clean up
+                diagram.Dispose();
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -45,61 +83,18 @@ class Program
             }
     }
 
-        /// <summary>
-        /// Checks that every page in the diagram matches one of the ISO 216 A‑series sizes
-        /// (allowing portrait or landscape orientation). Throws an exception if a page
-        /// does not conform.
-        /// </summary>
-        /// <param name="diagram">The loaded Diagram instance.</param>
-        private static void ValidatePageSizes(Diagram diagram)
+        // Checks whether the given dimensions match any ISO A‑series size (allowing for tolerance)
+        private static bool IsIsoASeriesSize(double width, double height)
         {
-            int pageIndex = 0;
-            foreach (Page page in diagram.Pages)
+            foreach (var (isoWidth, isoHeight) in IsoASeries)
             {
-                double width = page.PageSheet.PageProps.PageWidth.Value;
-                double height = page.PageSheet.PageProps.PageHeight.Value;
+                if (Math.Abs(width - isoWidth) <= Tolerance && Math.Abs(height - isoHeight) <= Tolerance)
+                    return true;
 
-                bool matches = false;
-                foreach (var (stdWidth, stdHeight) in ASeriesInches)
-                {
-                    // Check portrait orientation
-                    if (Math.Abs(width - stdWidth) <= Tolerance && Math.Abs(height - stdHeight) <= Tolerance)
-                    {
-                        matches = true;
-                        break;
-                    }
-                    // Check landscape orientation (swap width/height)
-                    if (Math.Abs(width - stdHeight) <= Tolerance && Math.Abs(height - stdWidth) <= Tolerance)
-                    {
-                        matches = true;
-                        break;
-                    }
-                }
-
-                if (!matches)
-                {
-                    string message = $"Page {pageIndex} size ({width:F2}\" x {height:F2}\") does not conform to ISO 216 A‑series dimensions.";
-                    throw new Exception(message);
-                }
-
-                pageIndex++;
+                // Also accept rotated orientation (height as width, width as height)
+                if (Math.Abs(width - isoHeight) <= Tolerance && Math.Abs(height - isoWidth) <= Tolerance)
+                    return true;
             }
-        }
-
-        /// <summary>
-        /// Exports the entire diagram to a PDF file using default PDF save options.
-        /// </summary>
-        /// <param name="diagram">The Diagram to export.</param>
-        /// <param name="outputPath">The file path for the exported PDF.</param>
-        private static void ExportToPdf(Diagram diagram, string outputPath)
-        {
-            // Configure PDF save options (e.g., set a default font to avoid missing‑font issues)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                DefaultFont = "Arial"
-            };
-
-            // Save the diagram as PDF
-            diagram.Save(outputPath, pdfOptions);
+            return false;
         }
     }

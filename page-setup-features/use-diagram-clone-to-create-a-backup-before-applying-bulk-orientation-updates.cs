@@ -6,42 +6,51 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Paths for the original diagram, the modified output, and the backup copy
-        string inputPath = "input.vsdx";
-        // Guard to ensure the source file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-        string outputPath = "output_modified.vsdx";
-        string backupPath = "backup.vsdx";
+        // Path to the source Visio file
+        string sourcePath = "input.vsdx";
+
+        // Verify the source file exists before proceeding
+        if (!File.Exists(sourcePath))
+        {
+            Console.Error.WriteLine($"File not found: {sourcePath}");
+            return;
+        }
 
         try
         {
-            // Load the original diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the original diagram from the file
+            Diagram diagram = new Diagram(sourcePath);
 
-            // Create a backup by loading the same file again (Clone not available)
-            Diagram backupDiagram = new Diagram(inputPath);
-
-            // Apply bulk orientation updates: set every page to Landscape orientation
-            foreach (Page page in diagram.Pages)
+            // Create a backup copy by saving to a memory stream and reloading
+            using (MemoryStream backupStream = new MemoryStream())
             {
-                // Ensure the page sheet and print properties are available
-                if (page.PageSheet != null && page.PageSheet.PrintProps != null)
+                // Save the original diagram into the stream in VSDX format
+                diagram.Save(backupStream, SaveFileFormat.Vsdx);
+                backupStream.Position = 0; // Reset stream position for reading
+
+                // Load a new Diagram instance from the stream (this is the backup)
+                Diagram backupDiagram = new Diagram(backupStream);
+
+                // Apply bulk orientation update: set all pages to Landscape
+                foreach (Page page in diagram.Pages)
                 {
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    // Ensure the page has a PrintProps section before modifying
+                    if (page.PageSheet != null && page.PageSheet.PrintProps != null)
+                    {
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    }
                 }
+
+                // Save the unchanged backup diagram
+                backupDiagram.Save("backup.vsdx", SaveFileFormat.Vsdx);
+
+                // Save the updated diagram with the new orientation
+                diagram.Save("updated.vsdx", SaveFileFormat.Vsdx);
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Save the backup diagram
-            backupDiagram.Save(backupPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram processing completed. Modified diagram saved to '{outputPath}', backup saved to '{backupPath}'.");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Output any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

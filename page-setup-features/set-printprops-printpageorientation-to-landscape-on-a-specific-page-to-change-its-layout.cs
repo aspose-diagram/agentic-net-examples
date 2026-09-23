@@ -10,11 +10,11 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Load the Visio diagram
             string inputPath = "input.vsdx";
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Retrieve the specific page (e.g., first page)
+                // Access the specific page (e.g., first page)
                 int pageIndex = 0;
                 Page page = diagram.Pages[pageIndex];
 

@@ -5,46 +5,58 @@ using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Path to the Visio file to be inspected
-            string filePath = "input.vsdx";
+            // Path to the Visio file to be checked
+            string diagramPath = "input.vsdx";
 
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(filePath);
-
-            // Define the expected page orientation (change as needed)
+            // Expected orientation (change as needed)
             PrintPageOrientationValue expectedOrientation = PrintPageOrientationValue.Landscape;
 
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the diagram
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Retrieve the actual orientation value from the page's PrintProps
-                PrintPageOrientationValue actualOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-
-                // Compare actual orientation with the expected value
-                if (actualOrientation != expectedOrientation)
-                {
-                    Console.WriteLine($"[ERROR] Page \"{page.Name}\" orientation mismatch. Expected: {expectedOrientation}, Actual: {actualOrientation}");
-                    // Optionally, throw an exception to halt execution on mismatch
-                    // throw new Exception($"Orientation mismatch on page \"{page.Name}\".");
-                }
-                else
-                {
-                    Console.WriteLine($"[OK] Page \"{page.Name}\" orientation matches expected value: {expectedOrientation}");
-                }
+                // Perform the diagnostic check
+                CheckPrintPageOrientation(diagram, expectedOrientation);
             }
 
-            // Clean up resources
-            diagram.Dispose();
+            Console.WriteLine("Diagnostic completed successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Checks each page's PrintPageOrientation against the expected value.
+    /// Throws an exception if any page does not match.
+    /// </summary>
+    /// <param name="diagram">The loaded Diagram instance.</param>
+    /// <param name="expected">The expected PrintPageOrientationValue.</param>
+    static void CheckPrintPageOrientation(Diagram diagram, PrintPageOrientationValue expected)
+    {
+        foreach (Page page in diagram.Pages)
+        {
+            // Access the orientation cell value
+            PrintPageOrientationValue actual = page.PageSheet.PrintProps.PrintPageOrientation.Value;
+
+            if (actual != expected)
+            {
+                string message = $"Page '{page.Name}' (ID: {page.ID}) has orientation '{actual}', expected '{expected}'.";
+                // Output diagnostic information
+                Console.WriteLine(message);
+                // Fail the diagnostic
+                throw new Exception(message);
+            }
+            else
+            {
+                Console.WriteLine($"Page '{page.Name}' orientation matches expected value '{expected}'.");
+            }
         }
     }
 }

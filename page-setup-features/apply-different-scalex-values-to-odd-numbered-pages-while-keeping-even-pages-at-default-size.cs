@@ -1,52 +1,44 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            using (Diagram diagram = new Diagram("input.vsdx"))
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the modified Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate through all pages (1‑based page numbers)
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Iterate through all pages by index
-                    for (int i = 0; i < diagram.Pages.Count; i++)
+                    Page page = diagram.Pages[i];
+                    int pageNumber = i + 1; // Visio page numbers start at 1
+
+                    // Apply a custom ScaleX to odd‑numbered pages
+                    if (pageNumber % 2 == 1) // odd page
                     {
-                        // Retrieve the page (0‑based index)
-                        Page page = diagram.Pages[i];
-
-                        // Determine if the page number (1‑based) is odd
-                        bool isOdd = ((i + 1) % 2) == 1;
-
-                        if (isOdd)
-                        {
-                            // Apply a custom horizontal scale (e.g., 50% of original size)
-                            page.PageSheet.PrintProps.ScaleX.Value = 0.5;
-                        }
-                        else
-                        {
-                            // Ensure even pages retain the default scale (100%)
-                            page.PageSheet.PrintProps.ScaleX.Value = 1.0;
-                        }
+                        // Example: scale to 50% width
+                        page.PageSheet.PrintProps.ScaleX.Value = 0.5;
                     }
-
-                    // Save the modified diagram in VSDX format
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    else
+                    {
+                        // Even pages keep the default scale (1.0)
+                        page.PageSheet.PrintProps.ScaleX.Value = 1.0;
+                    }
                 }
 
-                Console.WriteLine("Diagram processing completed successfully.");
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

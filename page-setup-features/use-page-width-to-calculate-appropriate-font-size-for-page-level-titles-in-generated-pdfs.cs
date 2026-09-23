@@ -3,71 +3,54 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+public class Program
 {
-    static void Main()
+    public static void Main()
     {
-        try
-        {
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+        // Access the first (default) page
+        Page page = diagram.Pages[0];
 
-            // Load the diagram inside a using block to ensure proper disposal
-            using Diagram diagram = new Diagram(inputPath);
+        // Retrieve page dimensions (in inches)
+        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                // Retrieve the page width (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+        // Calculate font size based on page width.
+        // Example: 10 points per inch of page width.
+        double fontSizePoints = pageWidth * 10.0;
+        // Convert points to inches (Aspose.Diagram expects size in inches)
+        double fontSizeInches = fontSizePoints / 72.0;
 
-                // Calculate a font size that is 10% of the page width.
-                // Shape.Char.Size.Value expects a size in inches.
-                double titleFontSizeInInches = pageWidth * 0.10;
+        // Define title shape dimensions
+        double titleWidth = pageWidth * 0.8;      // 80% of page width
+        double titleHeight = 0.5;                // half an inch tall
+        double titlePinX = pageWidth / 2.0;      // centered horizontally
+        double titlePinY = pageHeight - titleHeight / 2.0 - 0.2; // near top with margin
 
-                // Locate a shape whose universal name is "Title"
-                Shape titleShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.NameU != null && shape.NameU.Equals("Title", StringComparison.OrdinalIgnoreCase))
-                    {
-                        titleShape = shape;
-                        break;
-                    }
-                }
+        // Add a rectangle shape to serve as the title placeholder
+        long titleShapeId = page.DrawRectangle(titlePinX, titlePinY, titleWidth, titleHeight);
+        Shape titleShape = page.Shapes.GetShape(titleShapeId);
 
-                // If a title shape exists, update its text and font size
-                if (titleShape != null)
-                {
-                    // Replace any existing text
-                    titleShape.Text.Value.Clear();
-                    titleShape.Text.Value.Add(new Txt("Page Title"));
+        // Clear any existing text and add the title text
+        titleShape.Text.Value.Clear();
+        titleShape.Text.Value.Add(new Txt("Page Title"));
 
-                    // Ensure there is at least one Char entry for formatting
-                    if (titleShape.Chars.Count == 0)
-                    {
-                        titleShape.Chars.Add(new Aspose.Diagram.Char());
-                    }
+        // Create character formatting for the title text
+        Aspose.Diagram.Char titleChar = new Aspose.Diagram.Char();
+        titleChar.IX = 0;                         // first character run
+        titleChar.FontName.Value = "Arial";       // fallback font
+        titleChar.Size.Value = fontSizeInches;    // calculated size in inches
+        titleChar.Style.Value |= StyleValue.Bold; // make the title bold
+        titleShape.Chars.Add(titleChar);
 
-                    // Apply the calculated font size (in inches) and a fallback font
-                    titleShape.Chars[0].Size.Value = titleFontSizeInInches;
-                    titleShape.Chars[0].FontName.Value = "Arial";
-                }
-            }
+        // Configure PDF save options
+        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+        pdfOptions.DefaultFont = "Arial";
+        pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Configure PDF save options (set a default font for fallback)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-
-            // Save the modified diagram as a PDF
-            string outputPath = "output.pdf";
-            diagram.Save(outputPath, pdfOptions);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        // Save the diagram as a PDF
+        diagram.Save("output.pdf", pdfOptions);
     }
 }

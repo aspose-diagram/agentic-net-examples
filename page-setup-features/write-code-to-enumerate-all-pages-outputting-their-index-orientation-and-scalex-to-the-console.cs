@@ -1,42 +1,43 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the Visio file (replace with actual file path)
-            string filePath = "input.vsdx";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(filePath))
+            try
             {
-                // Enumerate pages with explicit index
-                int pageIndex = 0;
-                foreach (Aspose.Diagram.Page page in diagram.Pages)
+
+                // TODO: replace with the actual path to your Visio file
+                const string diagramPath = "input.vsdx";
+
+                // Load the diagram
+                using (Diagram diagram = new Diagram(diagramPath))
                 {
-                    // Retrieve orientation from PrintProps
-                    PrintPageOrientationValue orientationValue = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-                    string orientation = orientationValue.ToString();
+                    // Iterate through all pages
+                    for (int i = 0; i < diagram.Pages.Count; i++)
+                    {
+                        // Retrieve the page by index
+                        Page page = diagram.Pages[i];
 
-                    // Retrieve ScaleX from PrintProps
-                    double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
+                        // Page orientation (Landscape, Portrait, SameAsPrinter)
+                        PrintPageOrientationValue orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
 
-                    // Output page information
-                    Console.WriteLine($"Page Index: {pageIndex}, Orientation: {orientation}, ScaleX: {scaleX}");
+                        // ScaleX value (double)
+                        double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
 
-                    pageIndex++;
+                        // Output the information to the console
+                        Console.WriteLine($"Page Index: {i}");
+                        Console.WriteLine($"Orientation: {orientation}");
+                        Console.WriteLine($"ScaleX: {scaleX}");
+                        Console.WriteLine(new string('-', 30));
+                    }
                 }
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

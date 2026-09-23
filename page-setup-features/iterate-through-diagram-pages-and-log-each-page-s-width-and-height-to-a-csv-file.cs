@@ -3,44 +3,45 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio diagram file (adjust as needed)
+            string diagramPath = "input.vsdx";
+
+            // Path to the CSV file that will contain page dimensions
+            string csvPath = "pages_dimensions.csv";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Create or overwrite the CSV file and write the header
+            using (StreamWriter writer = new StreamWriter(csvPath))
             {
+                writer.WriteLine("PageName,Width,Height");
 
-                // Path to the Visio diagram file (adjust as needed)
-                string diagramPath = "input.vsdx";
-
-                // Path to the output CSV file
-                string csvPath = "PageDimensions.csv";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Prepare the CSV file with a header
-                using (StreamWriter writer = new StreamWriter(csvPath, false))
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    writer.WriteLine("PageName,Width,Height");
+                    // Retrieve page name and dimensions (in inches)
+                    string pageName = page.NameU;
+                    double width = page.PageSheet.PageProps.PageWidth.Value;
+                    double height = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Retrieve page width and height (values are in inches)
-                        double width = page.PageSheet.PageProps.PageWidth.Value;
-                        double height = page.PageSheet.PageProps.PageHeight.Value;
-
-                        // Write the page information to the CSV
-                        writer.WriteLine($"{page.Name},{width},{height}");
-                    }
+                    // Write a CSV line for the current page
+                    writer.WriteLine($"{pageName},{width},{height}");
                 }
-
-                Console.WriteLine($"Page dimensions have been written to '{csvPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine($"Page dimensions have been logged to '{csvPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

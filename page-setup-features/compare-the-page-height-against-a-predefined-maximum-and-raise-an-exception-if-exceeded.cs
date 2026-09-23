@@ -9,25 +9,33 @@ class Program
         try
         {
 
-            // Maximum allowed page height in inches
-            double maxHeight = 11.0; // adjust as needed
-
-            // Load the Visio diagram (replace with your actual file path)
+            // Path to the Visio file to be processed
             string diagramPath = "input.vsdx";
-            Diagram diagram = new Diagram(diagramPath);
 
-            // Check each page's height
-            foreach (Page page in diagram.Pages)
+            // Define the maximum allowed page height (in inches)
+            const double maxPageHeight = 20.0;
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-                if (pageHeight > maxHeight)
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Raise an exception if the height exceeds the limit
-                    throw new Exception($"Page \"{page.Name}\" height {pageHeight} exceeds the maximum allowed {maxHeight} inches.");
+                    // Retrieve the page height (in inches)
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Compare against the predefined maximum
+                    if (pageHeight > maxPageHeight)
+                    {
+                        // Raise an exception if the height exceeds the limit
+                        throw new Exception(
+                            $"Page \"{page.Name}\" height ({pageHeight} inches) exceeds the maximum allowed ({maxPageHeight} inches).");
+                    }
                 }
             }
 
-            Console.WriteLine("All page heights are within the allowed limit.");
+            // If execution reaches this point, all pages are within the allowed height
+            Console.WriteLine("All pages are within the allowed height limit.");
 
         }
         catch (System.IO.FileNotFoundException ex)

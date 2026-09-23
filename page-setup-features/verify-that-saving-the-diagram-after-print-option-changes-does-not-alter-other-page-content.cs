@@ -2,124 +2,117 @@ using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.Printing;
 
-namespace DiagramPrintOptionVerification
+class Program
 {
-    // Helper class to store essential page content for comparison
-    class PageContent
+    static void Main()
     {
-        public List<long> ShapeIds { get; } = new List<long>();
-        public Dictionary<long, string> ShapeTexts { get; } = new Dictionary<long, string>();
-    }
-
-    class Program
-    {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+            // Paths for the original and the saved diagram
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-                // Load the original diagram
-                Diagram originalDiagram = new Diagram(inputPath);
+            // Load the original diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Capture original page content
-                var originalPagesContent = CaptureDiagramContent(originalDiagram);
+            // Capture page and shape information before modifications
+            List<PageSnapshot> beforeSnapshots = CaptureDiagramState(diagram);
 
-                // Modify print options on each page
-                foreach (Page page in originalDiagram.Pages)
-                {
-                    // Set orientation to Landscape
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-
-                    // Set scaling to 50%
-                    page.PageSheet.PrintProps.ScaleX.Value = 0.5;
-                    page.PageSheet.PrintProps.ScaleY.Value = 0.5;
-
-                    // Enable fit to sheet (print on one page)
-                    page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
-                    page.PageSheet.PrintProps.PagesX.Value = 1;
-                    page.PageSheet.PrintProps.PagesY.Value = 1;
-
-                    // Set margins (1/8 inch = 0.125)
-                    page.PageSheet.PrintProps.PageTopMargin.Value = 0.125;
-                    page.PageSheet.PrintProps.PageBottomMargin.Value = 0.125;
-                    page.PageSheet.PrintProps.PageLeftMargin.Value = 0.125;
-                    page.PageSheet.PrintProps.PageRightMargin.Value = 0.125;
-                }
-
-                // Save the modified diagram
-                originalDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Reload the saved diagram for verification
-                Diagram savedDiagram = new Diagram(outputPath);
-                var savedPagesContent = CaptureDiagramContent(savedDiagram);
-
-                // Verify that page content (shapes and their text) is unchanged
-                if (originalPagesContent.Count != savedPagesContent.Count)
-                    throw new Exception("Page count mismatch after saving.");
-
-                for (int i = 0; i < originalPagesContent.Count; i++)
-                {
-                    PageContent original = originalPagesContent[i];
-                    PageContent saved = savedPagesContent[i];
-
-                    // Compare shape counts
-                    if (original.ShapeIds.Count != saved.ShapeIds.Count)
-                        throw new Exception($"Shape count mismatch on page index {i}.");
-
-                    // Compare each shape's text
-                    foreach (long shapeId in original.ShapeIds)
-                    {
-                        if (!saved.ShapeTexts.TryGetValue(shapeId, out string savedText))
-                            throw new Exception($"Shape ID {shapeId} missing after save on page index {i}.");
-
-                        string originalText = original.ShapeTexts[shapeId];
-                        if (originalText != savedText)
-                            throw new Exception($"Text mismatch on shape ID {shapeId} on page index {i}.");
-                    }
-                }
-
-                Console.WriteLine("Verification succeeded: print option changes did not alter page content.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Captures shape IDs and plain text for each page in the diagram
-        private static List<PageContent> CaptureDiagramContent(Diagram diagram)
-        {
-            var pagesContent = new List<PageContent>();
-
+            // Modify print options for each page
             foreach (Page page in diagram.Pages)
             {
-                var content = new PageContent();
-
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    long id = shape.ID;
-                    content.ShapeIds.Add(id);
-
-                    // Retrieve plain text; empty string if no text
-                    string text = shape.Text.Value.Text ?? string.Empty;
-                    content.ShapeTexts[id] = text;
-                }
-
-                pagesContent.Add(content);
+                // Set orientation to Landscape
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                // Set scaling to 75%
+                page.PageSheet.PrintProps.ScaleX.Value = 0.75;
+                page.PageSheet.PrintProps.ScaleY.Value = 0.75;
             }
 
-            return pagesContent;
+            // Save the diagram after changes
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            // Load the saved diagram for verification
+            Diagram savedDiagram = new Diagram(outputPath);
+            List<PageSnapshot> afterSnapshots = CaptureDiagramState(savedDiagram);
+
+            // Verify that page content (shapes and their text) is unchanged
+            if (beforeSnapshots.Count != afterSnapshots.Count)
+                throw new Exception("Page count mismatch after saving.");
+
+            for (int i = 0; i < beforeSnapshots.Count; i++)
+            {
+                PageSnapshot before = beforeSnapshots[i];
+                PageSnapshot after = afterSnapshots[i];
+
+                if (before.ShapeInfos.Count != after.ShapeInfos.Count)
+                    throw new Exception($"Shape count mismatch on page ID {before.PageId}.");
+
+                for (int j = 0; j < before.ShapeInfos.Count; j++)
+                {
+                    ShapeInfo sBefore = before.ShapeInfos[j];
+                    ShapeInfo sAfter = after.ShapeInfos[j];
+
+                    if (sBefore.ShapeId != sAfter.ShapeId)
+                        throw new Exception($"Shape ID mismatch on page ID {before.PageId}.");
+
+                    if (sBefore.Text != sAfter.Text)
+                        throw new Exception($"Shape text mismatch on shape ID {sBefore.ShapeId} (page ID {before.PageId}).");
+                }
+            }
+
+            Console.WriteLine("Verification passed: page content unchanged after saving.");
+
         }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
+    }
+
+    // Captures a lightweight snapshot of each page's shapes and their plain text
+    private static List<PageSnapshot> CaptureDiagramState(Diagram diagram)
+    {
+        var snapshots = new List<PageSnapshot>();
+
+        foreach (Page page in diagram.Pages)
+        {
+            var pageSnap = new PageSnapshot
+            {
+                PageId = page.ID,
+                ShapeInfos = new List<ShapeInfo>()
+            };
+
+            foreach (Shape shape in page.Shapes)
+            {
+                // Retrieve plain text of the shape
+                string plainText = shape.Text.Value.Text;
+
+                pageSnap.ShapeInfos.Add(new ShapeInfo
+                {
+                    ShapeId = shape.ID,
+                    Text = plainText
+                });
+            }
+
+            snapshots.Add(pageSnap);
+        }
+
+        return snapshots;
+    }
+
+    // Simple DTO for page snapshot
+    private class PageSnapshot
+    {
+        public int PageId { get; set; }
+        public List<ShapeInfo> ShapeInfos { get; set; }
+    }
+
+    // Simple DTO for shape information
+    private class ShapeInfo
+    {
+        public long ShapeId { get; set; }
+        public string Text { get; set; }
     }
 }

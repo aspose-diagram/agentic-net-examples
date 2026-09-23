@@ -9,13 +9,13 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            var diagram = new Diagram("input.vsdx"); // replace with your file path
+            // Load the Visio file into a Diagram object
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Select the first page in the document
-            var firstPage = diagram.Pages[0];
+            // Select the first page (index 0) from the diagram
+            Page firstPage = diagram.Pages[0];
 
-            // Example usage: output the name of the first page
+            // Example: output the name of the first page
             Console.WriteLine("First page name: " + firstPage.Name);
 
         }

@@ -9,23 +9,37 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram (replace with your actual file path)
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the modified Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages and set the horizontal print scaling to 75%
-                foreach (Page page in diagram.Pages)
+                try
                 {
-                    // Access the PrintProps via the PageSheet and assign the new scale value
-                    page.PageSheet.PrintProps.ScaleX.Value = 0.75;
+                    // Iterate through all pages and set ScaleX to 0.75 (75% of original size)
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Access the PrintProps via the PageSheet and assign the scaling factor
+                        page.PageSheet.PrintProps.ScaleX.Value = 0.75;
+                    }
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-
-                // Save the modified diagram back to a Visio file (replace with your desired output path)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Clean up resources
-                diagram.Dispose();
+                catch (Exception ex)
+                {
+                    // Simple error handling
+                    Console.WriteLine($"Error: {ex.Message}");
+                    throw;
+                }
+                finally
+                {
+                    // Ensure resources are released
+                    diagram.Dispose();
+                }
 
                 Console.WriteLine("Print scaling applied and diagram saved successfully.");
 

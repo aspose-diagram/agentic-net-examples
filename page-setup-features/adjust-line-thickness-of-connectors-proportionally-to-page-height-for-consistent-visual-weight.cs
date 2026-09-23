@@ -10,38 +10,39 @@ class Program
         try
         {
 
-            // Input and output file paths
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+            // Path for the modified Visio file
             string outputPath = "output.vsdx";
 
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Proportional factor for line thickness (e.g., 0.5% of page height)
-                const double weightFactor = 0.005;
+                // Retrieve the page height (in inches)
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Define a proportional factor for line thickness.
+                // Example: 0.001 means the line weight will be 0.1% of the page height.
+                double thicknessFactor = 0.001;
+                double newLineWeight = pageHeight * thicknessFactor;
+
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the page height in inches
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Calculate the line weight based on the page height
-                    double lineWeight = pageHeight * weightFactor;
-
-                    // Adjust line thickness for all connector shapes (1‑D shapes) on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Process only connector shapes (1‑D shapes)
+                    if (shape.OneD)
                     {
-                        if (shape.OneD) // Connector detection
-                        {
-                            shape.Line.LineWeight.Value = lineWeight;
-                        }
+                        // Set the line thickness proportionally to the page height
+                        shape.Line.LineWeight.Value = newLineWeight;
                     }
                 }
-
-                // Save the updated diagram back to VSDX format
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            // Save the modified diagram back to Visio format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

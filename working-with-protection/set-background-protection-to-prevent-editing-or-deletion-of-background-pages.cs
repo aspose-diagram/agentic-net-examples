@@ -7,34 +7,35 @@ class Program
 {
     static void Main()
     {
-        try
+        // Create a new empty diagram
+        using (Diagram diagram = new Diagram())
         {
+            // Determine the next available page ID
+            int maxPageId = 0;
+            foreach (Page p in diagram.Pages)
+            {
+                if (p.ID > maxPageId)
+                    maxPageId = p.ID;
+            }
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Create a background page
+            Page backgroundPage = new Page();
+            backgroundPage.ID = maxPageId + 1;
+            backgroundPage.Name = "BackgroundPage";
+            backgroundPage.Background = BOOL.True; // Mark as background
 
-            // Enable protection for background pages (prevent editing/deletion)
+            // Add the background page to the diagram
+            diagram.Pages.Add(backgroundPage);
+
+            // Apply global protection to prevent editing or deletion of background pages
             diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
-
-            // Optionally, protect other elements globally
-            // diagram.DocumentSettings.ProtectMasters = BOOL.True;
-            // diagram.DocumentSettings.ProtectShapes = BOOL.True;
-            // diagram.DocumentSettings.ProtectStyles = BOOL.True;
+            // Optionally protect other aspects of the document as well
+            diagram.DocumentSettings.ProtectMasters = BOOL.True;
+            diagram.DocumentSettings.ProtectShapes = BOOL.True;
+            diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
             // Save the protected diagram
-            string outputPath = "output_protected.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Clean up resources
-            diagram.Dispose();
-
-            Console.WriteLine("Diagram saved with background protection applied.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            diagram.Save("ProtectedDiagram.vsdx", SaveFileFormat.Vsdx);
         }
     }
 }

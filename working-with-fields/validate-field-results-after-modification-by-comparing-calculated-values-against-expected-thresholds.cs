@@ -1,64 +1,72 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is at least one page and one shape
+            if (diagram.Pages.Count == 0)
+                throw new Exception("The diagram contains no pages.");
+
+            Page page = diagram.Pages[0];
+            if (page.Shapes.Count == 0)
+                throw new Exception("The first page contains no shapes.");
+
+            // Retrieve the first shape on the page
+            Shape shape = page.Shapes[0];
+
+            // Ensure the shape has at least one field to modify
+            if (shape.Fields.Count == 0)
+                throw new Exception("The selected shape does not contain any fields.");
+
+            // Modify the first field's value
+            Field field = shape.Fields[0];
+            // Example: set a numeric value as string
+            field.Value.Val = "123.45";
+
+            // Optionally, set a formula (Visio formula syntax) for the field
+            // field.Value.Ufev.F = "Width*Height";
+
+            // Refresh the shape to apply changes
+            shape.RefreshData();
+
+            // Validate the modified field against expected thresholds
+            // Parse the field value to a double for comparison
+            if (!double.TryParse(field.Value.Val, out double numericValue))
+                throw new Exception("Failed to parse the field value to a numeric type.");
+
+            double lowerThreshold = 100.0;
+            double upperThreshold = 200.0;
+
+            if (numericValue < lowerThreshold || numericValue > upperThreshold)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page
-                Page page = diagram.Pages[0];
-
-                // Add a rectangle shape to the diagram at position (1,1) on page index 0
-                long shapeId = diagram.AddShape(1.0, 1.0, "Rectangle", 0);
-
-                // Retrieve the concrete Shape instance using the returned ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Create a new text field and add it to the shape
-                Field field = new Field();
-                shape.Fields.Add(field);
-
-                // Set the field's value (as a string that represents a numeric value)
-                field.Value.Val = "10";
-
-                // Example calculation: parse the field value to double
-                double actualValue;
-                if (!double.TryParse(field.Value.Val, out actualValue))
-                {
-                    throw new Exception("Failed to parse field value to a numeric type.");
-                }
-
-                // Define the expected threshold
-                double expectedThreshold = 5.0;
-
-                // Validate the calculated value against the expected threshold
-                if (actualValue < expectedThreshold)
-                {
-                    throw new Exception($"Validation failed: actual value {actualValue} is below the expected threshold {expectedThreshold}.");
-                }
-                else
-                {
-                    Console.WriteLine($"Validation succeeded: actual value {actualValue} meets the expected threshold {expectedThreshold}.");
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                // Validation failed
+                throw new Exception($"Field value {numericValue} is outside the expected range [{lowerThreshold}, {upperThreshold}].");
             }
-            catch (System.IO.FileNotFoundException ex)
+            else
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Validation succeeded
+                Console.WriteLine($"Field value {numericValue} is within the expected range.");
             }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

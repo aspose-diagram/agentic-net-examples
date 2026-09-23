@@ -1,6 +1,6 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
 {
@@ -9,24 +9,29 @@ class Program
         try
         {
 
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the Visio file
+            string inputPath = "input.vsdx";
 
-            // Identify the shape whose gradient angle you want to read
-            // Replace 1 with the actual shape ID you are interested in
-            long shapeId = 1;
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the shape from the first page (adjust page index if needed)
-            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+            // Access the first page (index 0)
+            Page page = diagram.Pages[0];
 
-            // Access the shape's fill gradient information
-            GradientFill gradientFill = shape.Fill.GradientFill;
+            // Retrieve a shape (example: shape with ID 1)
+            Shape shape = page.Shapes.GetShape(1);
 
-            // Read the current gradient angle (in degrees)
-            double gradientAngle = gradientFill.GradientAngle.Value;
+            // Read the gradient angle if a gradient fill is defined
+            double gradientAngle = 0.0;
+            if (shape.Fill != null && shape.Fill.GradientFill != null)
+            {
+                gradientAngle = shape.Fill.GradientFill.GradientAngle.Value;
+            }
 
-            // Output the angle value
-            Console.WriteLine($"Gradient Angle: {gradientAngle} degrees");
+            Console.WriteLine($"Shape ID {shape.ID} gradient angle: {gradientAngle} degrees");
+
+            // Clean up
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

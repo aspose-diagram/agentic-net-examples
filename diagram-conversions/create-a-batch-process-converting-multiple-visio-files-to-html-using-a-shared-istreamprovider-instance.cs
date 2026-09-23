@@ -1,44 +1,28 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 namespace VisioBatchHtmlExport
 {
-    // Custom IStreamProvider that writes resources to a shared output directory
-    public class SharedStreamProvider : IStreamProvider
+    // Shared stream provider for HTML export
+    public class CustomStreamProvider : IStreamProvider
     {
-        private readonly string _baseOutputPath;
-
-        public SharedStreamProvider(string baseOutputPath)
-        {
-            _baseOutputPath = baseOutputPath;
-        }
-
-        // Called when a resource stream is needed
+        // Called before each file is saved
         public void InitStream(StreamProviderOptions options)
         {
-            // Combine base path with the default relative path provided by Aspose
-            string fullPath = Path.Combine(_baseOutputPath, options.DefaultPath);
-
-            // Ensure the directory exists
-            string directory = Path.GetDirectoryName(fullPath);
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            // Assign a writable file stream to the options
-            options.Stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
+            // Create a file stream for the target HTML file
+            // options.DefaultPath contains the full output file path
+            options.Stream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write);
         }
 
-        // Called after the resource has been written
+        // Called after each file is saved
         public void CloseStream(StreamProviderOptions options)
         {
+            // Close the stream if it was created
             if (options.Stream != null)
             {
-                options.Stream.Dispose();
+                options.Stream.Close();
                 options.Stream = null;
             }
         }
@@ -50,51 +34,41 @@ namespace VisioBatchHtmlExport
         {
             // Input folder containing Visio files
             string inputFolder = @"C:\VisioFiles";
-
-            // Output folder where HTML files and resources will be placed
-            string outputFolder = @"C:\VisioHtmlOutput";
+            // Output folder for generated HTML files
+            string outputFolder = @"C:\VisioHtml";
 
             // Ensure output folder exists
             if (!Directory.Exists(outputFolder))
-            {
                 Directory.CreateDirectory(outputFolder);
-            }
 
             // Create a single shared IStreamProvider instance
-            SharedStreamProvider streamProvider = new SharedStreamProvider(outputFolder);
+            IStreamProvider sharedProvider = new CustomStreamProvider();
 
-            // Get all Visio files (any supported extension) in the input folder
+            // Get all Visio files (VSDX, VSD, VDX) in the input folder
             string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-            List<string> supportedExtensions = new List<string> { ".vsdx", ".vsd", ".vsdx", ".vssx", ".vstx", ".vdx", ".vsx", ".vtx" };
-
             foreach (string filePath in visioFiles)
             {
                 string extension = Path.GetExtension(filePath).ToLowerInvariant();
-                if (!supportedExtensions.Contains(extension))
-                {
-                    continue; // Skip non-Visio files
-                }
+                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
+                    continue; // Skip non‑Visio files
 
                 try
                 {
                     // Load the Visio diagram
                     Diagram diagram = new Diagram(filePath);
 
-                    // Prepare HTML save options
-                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                    {
-                        StreamProvider = streamProvider,
-                        SaveAsSingleFile = false,
-                        Title = Path.GetFileNameWithoutExtension(filePath)
-                    };
+                    // Prepare HTML save options and assign the shared stream provider
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                    htmlOptions.StreamProvider = sharedProvider;
 
                     // Determine output HTML file path
-                    string outputHtmlPath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(filePath) + ".html");
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                    string outputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".html");
 
                     // Save diagram as HTML
-                    diagram.Save(outputHtmlPath, htmlOptions);
+                    diagram.Save(outputPath, htmlOptions);
 
-                    Console.WriteLine($"Successfully exported '{filePath}' to HTML.");
+                    Console.WriteLine($"Converted '{filePath}' to HTML successfully.");
                 }
                 catch (Exception ex)
                 {

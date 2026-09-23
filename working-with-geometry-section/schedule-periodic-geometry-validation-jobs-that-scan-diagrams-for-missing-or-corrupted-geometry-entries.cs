@@ -1,58 +1,62 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Threading;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        // Interval for the periodic job (e.g., 5 minutes)
-        private const int ValidationIntervalMs = 5 * 60 * 1000;
+        // Interval for periodic validation (e.g., every 5 minutes)
+        private static readonly TimeSpan ValidationInterval = TimeSpan.FromMinutes(5);
 
-        // Folder containing Visio files to validate
-        private static readonly string DiagramsFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Diagrams");
+        // Folder containing Visio diagram files to validate
+        private const string DiagramsFolder = "Diagrams";
 
-        // Timer that triggers the validation job
-        private static Timer _validationTimer;
-
-        static void Main(string[] args)
+        static void Main()
         {
-            Console.WriteLine("Starting Diagram Geometry Validation Service...");
-
             // Ensure the diagrams folder exists
             if (!Directory.Exists(DiagramsFolder))
             {
-                Console.WriteLine($"Diagrams folder not found: {DiagramsFolder}");
-                return;
+                Console.WriteLine($"Folder \"{DiagramsFolder}\" does not exist. Creating it.");
+                Directory.CreateDirectory(DiagramsFolder);
             }
 
-            // Set up the timer to run the validation method periodically
-            _validationTimer = new Timer(ValidateAllDiagrams, null, 0, ValidationIntervalMs);
+            // Set up a timer that triggers the validation routine at the defined interval
+            Timer timer = new Timer(ValidateAllDiagrams, null, TimeSpan.Zero, ValidationInterval);
 
-            // Prevent the application from exiting
-            Console.WriteLine("Press Enter to stop the service.");
+            Console.WriteLine("Diagram geometry validator started.");
+            Console.WriteLine($"Scanning folder \"{DiagramsFolder}\" every {ValidationInterval.TotalMinutes} minutes.");
+            Console.WriteLine("Press Enter to exit.");
+
+            // Keep the application running until the user decides to stop it
             Console.ReadLine();
 
-            // Clean up timer
-            _validationTimer.Dispose();
-            Console.WriteLine("Service stopped.");
+            // Dispose the timer before exiting
+            timer.Dispose();
         }
 
-        // Timer callback that validates all diagrams in the folder
+        // Timer callback that processes all diagram files in the target folder
         private static void ValidateAllDiagrams(object state)
         {
             try
             {
-                Console.WriteLine($"[{DateTime.Now}] Validation run started.");
+                string[] diagramFiles = Directory.GetFiles(DiagramsFolder, "*.vsdx", SearchOption.AllDirectories);
 
-                string[] diagramFiles = Directory.GetFiles(DiagramsFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
-                foreach (string filePath in diagramFiles)
+                if (diagramFiles.Length == 0)
                 {
-                    ValidateDiagram(filePath);
+                    Console.WriteLine($"[{DateTime.Now}] No diagram files found in \"{DiagramsFolder}\".");
+                    return;
                 }
 
-                Console.WriteLine($"[{DateTime.Now}] Validation run completed.");
+                foreach (string filePath in diagramFiles)
+                {
+                    Console.WriteLine($"[{DateTime.Now}] Validating geometry for \"{Path.GetFileName(filePath)}\".");
+
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Perform geometry validation
+                    ValidateGeometry(diagram, filePath);
+                }
             }
             catch (Exception ex)
             {
@@ -60,81 +64,67 @@ class Program
             }
         }
 
-        // Loads a diagram, scans for geometry issues, and reports them
-        private static void ValidateDiagram(string filePath)
+        // Scans a diagram for missing or corrupted geometry entries
+        private static void ValidateGeometry(Diagram diagram, string diagramPath)
         {
-            try
+            foreach (Page page in diagram.Pages)
             {
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Collect problematic shape IDs
-                List<long> problematicShapeIds = new List<long>();
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // If the shape has no geometry sections, report it
+                    if (shape.Geoms == null || shape.Geoms.Count == 0)
                     {
-                        // Check for missing geometry (no Geoms)
-                        if (shape.Geoms == null || shape.Geoms.Count == 0)
+                        ReportIssue(diagramPath, page, shape, "Missing geometry sections.");
+                        continue;
+                    }
+
+                    // Examine each geometry section
+                    foreach (Geom geom in shape.Geoms)
+                    {
+                        // If a geometry section has no coordinate entries, report it
+                        if (geom.CoordinateCol == null || geom.CoordinateCol.Count == 0)
                         {
-                            problematicShapeIds.Add(shape.ID);
+                            ReportIssue(diagramPath, page, shape, "Geometry section contains no coordinate data.");
                             continue;
                         }
 
-                        // Examine each Geom for deleted segments
-                        foreach (Geom geom in shape.Geoms)
+                        // Check each coordinate segment for explicit deletion flag
+                        foreach (object segment in geom.CoordinateCol)
                         {
-                            if (geom == null || geom.CoordinateCol == null)
-                                continue;
-
-                            foreach (object segmentObj in geom.CoordinateCol)
+                            // MoveTo segment
+                            if (segment is MoveTo move && move.Del == BOOL.True)
                             {
-                                // All geometry segment types inherit a Del property of type BOOL
-                                // Use dynamic to access it safely
-                                dynamic segment = segmentObj;
-                                try
-                                {
-                                    if (segment.Del == BOOL.True)
-                                    {
-                                        problematicShapeIds.Add(shape.ID);
-                                        // No need to check further segments for this shape
-                                        break;
-                                    }
-                                }
-                                catch
-                                {
-                                    // Segment does not have a Del property; ignore
-                                }
+                                ReportIssue(diagramPath, page, shape, "MoveTo segment marked as deleted.");
                             }
-
-                            // If already flagged, skip remaining Geoms
-                            if (problematicShapeIds.Contains(shape.ID))
-                                break;
+                            // LineTo segment
+                            else if (segment is LineTo line && line.Del == BOOL.True)
+                            {
+                                ReportIssue(diagramPath, page, shape, "LineTo segment marked as deleted.");
+                            }
+                            // ArcTo segment
+                            else if (segment is ArcTo arc && arc.Del == BOOL.True)
+                            {
+                                ReportIssue(diagramPath, page, shape, "ArcTo segment marked as deleted.");
+                            }
+                            // SplineKnot segment
+                            else if (segment is SplineKnot spline && spline.Del == BOOL.True)
+                            {
+                                ReportIssue(diagramPath, page, shape, "SplineKnot segment marked as deleted.");
+                            }
+                            // Additional segment types can be added here following the same pattern
                         }
                     }
                 }
+            }
+        }
 
-                // Report results
-                if (problematicShapeIds.Count > 0)
-                {
-                    Console.WriteLine($"Diagram: {Path.GetFileName(filePath)}");
-                    Console.WriteLine("  Shapes with missing or corrupted geometry:");
-                    foreach (long shapeId in problematicShapeIds)
-                    {
-                        Console.WriteLine($"    Shape ID: {shapeId}");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Diagram: {Path.GetFileName(filePath)} - No geometry issues found.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to process '{Path.GetFileName(filePath)}': {ex.Message}");
-            }
+        // Helper method to output a validation issue
+        private static void ReportIssue(string diagramPath, Page page, Shape shape, string message)
+        {
+            Console.WriteLine($"[Issue] Diagram: {Path.GetFileName(diagramPath)} | Page: {page.Name} (ID={page.ID}) | Shape ID: {shape.ID} | {message}");
         }
     }

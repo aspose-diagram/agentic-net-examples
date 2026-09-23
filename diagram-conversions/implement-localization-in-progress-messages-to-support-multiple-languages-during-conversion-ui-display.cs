@@ -1,101 +1,116 @@
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-namespace DiagramConversionWithLocalization
+namespace DiagramConversion
 {
-    // Simple localization provider for progress messages
-    internal static class LocalizationProvider
+    // Simple localization helper
+    class Localizer
     {
-        // Language -> (MessageKey -> Message)
-        private static readonly Dictionary<string, Dictionary<string, string>> _messages = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+        private readonly Dictionary<string, string> _messages;
+
+        public Localizer(string languageCode)
         {
+            // Define messages for supported languages
+            var resources = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
             {
-                "en", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    { "SelectLanguage", "Select language (en/es): " },
-                    { "EnterInputPath", "Enter the path of the source diagram file: " },
-                    { "EnterOutputPath", "Enter the desired output file path: " },
-                    { "Loading", "Loading diagram..." },
-                    { "Converting", "Converting diagram..." },
-                    { "Saving", "Saving diagram..." },
-                    { "Completed", "Conversion completed successfully." },
-                    { "Error", "An error occurred: " }
+                    "en", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "Loading", "Loading diagram..." },
+                        { "SavingPdf", "Saving diagram as PDF..." },
+                        { "SavingPng", "Saving diagram as PNG..." },
+                        { "PageStart", "Starting page {0} of {1}..." },
+                        { "PageEnd", "Finished page {0} of {1}." },
+                        { "ConversionComplete", "Conversion completed successfully." }
+                    }
+                },
+                {
+                    "es", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "Loading", "Cargando el diagrama..." },
+                        { "SavingPdf", "Guardando el diagrama como PDF..." },
+                        { "SavingPng", "Guardando el diagrama como PNG..." },
+                        { "PageStart", "Iniciando página {0} de {1}..." },
+                        { "PageEnd", "Finalizada página {0} de {1}." },
+                        { "ConversionComplete", "Conversión completada con éxito." }
+                    }
                 }
-            },
+            };
+
+            if (!resources.TryGetValue(languageCode, out var selected))
             {
-                "es", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    { "SelectLanguage", "Seleccione el idioma (en/es): " },
-                    { "EnterInputPath", "Ingrese la ruta del archivo de diagrama origen: " },
-                    { "EnterOutputPath", "Ingrese la ruta de salida deseada: " },
-                    { "Loading", "Cargando diagrama..." },
-                    { "Converting", "Convirtiendo diagrama..." },
-                    { "Saving", "Guardando diagrama..." },
-                    { "Completed", "Conversión completada con éxito." },
-                    { "Error", "Ocurrió un error: " }
-                }
+                // Fallback to English if language not supported
+                selected = resources["en"];
             }
-        };
 
-        // Retrieves a localized message; falls back to English if missing
-        public static string GetMessage(string language, string key)
+            _messages = selected;
+        }
+
+        public string Get(string key, params object[] args)
         {
-            if (string.IsNullOrWhiteSpace(language))
-                language = "en";
-
-            if (_messages.TryGetValue(language, out var langDict) && langDict.TryGetValue(key, out var message))
-                return message;
-
-            // Fallback to English
-            if (_messages["en"].TryGetValue(key, out var fallback))
-                return fallback;
-
-            // If still not found, return the key itself
+            if (_messages.TryGetValue(key, out var format))
+            {
+                return args.Length > 0 ? string.Format(format, args) : format;
+            }
+            // Return key itself if missing
             return key;
         }
     }
 
-    internal class Program
+    // Callback to display localized page saving progress for PDF export
+    class LocalizedPageSavingCallback : IPageSavingCallback
+    {
+        private readonly Localizer _localizer;
+
+        public LocalizedPageSavingCallback(Localizer localizer)
+        {
+            _localizer = localizer;
+        }
+
+        public void PageStartSaving(PageStartSavingArgs args)
+        {
+            Console.WriteLine(_localizer.Get("PageStart", args.PageIndex + 1, args.PageCount));
+        }
+
+        public void PageEndSaving(PageEndSavingArgs args)
+        {
+            Console.WriteLine(_localizer.Get("PageEnd", args.PageIndex + 1, args.PageCount));
+        }
+    }
+
+    class Program
     {
         static void Main()
         {
-            // Choose language
-            Console.Write(LocalizationProvider.GetMessage("en", "SelectLanguage"));
-            string language = Console.ReadLine()?.Trim();
-            if (string.IsNullOrEmpty(language))
-                language = "en";
+            // Choose language (e.g., "en" for English, "es" for Spanish)
+            Console.Write("Enter language code (en/es): ");
+            string lang = Console.ReadLine()?.Trim() ?? "en";
 
-            // Input diagram path
-            Console.Write(LocalizationProvider.GetMessage(language, "EnterInputPath"));
-            string inputPath = Console.ReadLine()?.Trim();
+            var localizer = new Localizer(lang);
 
-            // Output diagram path
-            Console.Write(LocalizationProvider.GetMessage(language, "EnterOutputPath"));
-            string outputPath = Console.ReadLine()?.Trim();
+            // Paths (adjust as needed)
+            string inputPath = "input.vsdx";
+            string pdfOutput = "output.pdf";
+            string pngOutput = "output.png";
 
-            try
-            {
-                // Loading phase
-                Console.WriteLine(LocalizationProvider.GetMessage(language, "Loading"));
-                Diagram diagram = new Diagram(inputPath);
+            // Load diagram
+            Console.WriteLine(localizer.Get("Loading"));
+            Diagram diagram = new Diagram(inputPath);
 
-                // Converting phase (placeholder for any processing)
-                Console.WriteLine(LocalizationProvider.GetMessage(language, "Converting"));
-                // Example: no additional processing; could add layout, etc.
+            // Save as PDF with localized page callbacks
+            Console.WriteLine(localizer.Get("SavingPdf"));
+            var pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageSavingCallback = new LocalizedPageSavingCallback(localizer);
+            diagram.Save(pdfOutput, pdfOptions);
 
-                // Saving phase
-                Console.WriteLine(LocalizationProvider.GetMessage(language, "Saving"));
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save as PNG
+            Console.WriteLine(localizer.Get("SavingPng"));
+            var pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            diagram.Save(pngOutput, pngOptions);
 
-                // Completion message
-                Console.WriteLine(LocalizationProvider.GetMessage(language, "Completed"));
-            }
-            catch (Exception ex)
-            {
-                // Localized error output
-                Console.WriteLine($"{LocalizationProvider.GetMessage(language, "Error")}{ex.Message}");
-            }
+            Console.WriteLine(localizer.Get("ConversionComplete"));
         }
     }
 }

@@ -1,46 +1,64 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Input Visio file path
+        string inputPath;
+        // Output folder for PNG files
+        string outputFolder;
+
+        if (args.Length >= 2)
         {
+            inputPath = args[0];
+            outputFolder = args[1];
+        }
+        else
+        {
+            Console.WriteLine("Enter the full path to the Visio file:");
+            inputPath = Console.ReadLine();
 
-            // Path to the source Visio file
-            string sourcePath = "input.vsdx";
+            Console.WriteLine("Enter the folder path where PNG pages will be saved:");
+            outputFolder = Console.ReadLine();
+        }
 
-            // Folder where PNG files will be saved
-            string outputFolder = "output_pngs";
+        if (string.IsNullOrWhiteSpace(inputPath) || string.IsNullOrWhiteSpace(outputFolder))
+        {
+            Console.WriteLine("Invalid input or output path.");
+            return;
+        }
 
-            // Ensure the output directory exists
-            Directory.CreateDirectory(outputFolder);
+        // Load the diagram
+        Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram
-            Diagram diagram = new Diagram(sourcePath);
+        // Ensure the output folder exists
+        if (!System.IO.Directory.Exists(outputFolder))
+        {
+            System.IO.Directory.CreateDirectory(outputFolder);
+        }
 
-            // Export each page as a PNG image
-            for (int i = 0; i < diagram.Pages.Count; i++)
+        // Export each page as a separate PNG file
+        for (int i = 0; i < diagram.Pages.Count; i++)
+        {
+            // Configure PNG export options
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
             {
-                // Configure PNG save options for the current page
-                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                pngOptions.PageIndex = i; // zero‑based page index
+                // Export only the current page
+                PageIndex = i,
+                PageCount = 1,
+                // Do not export hidden pages
+                ExportHiddenPage = false
+            };
 
-                // Build the output file name
-                string outputPath = Path.Combine(outputFolder, $"Page_{i + 1}.png");
-
-                // Save the page as PNG
-                diagram.Save(outputPath, pngOptions);
-                Console.WriteLine($"Saved page {i + 1} to {outputPath}");
-            }
-
+            string outputFile = System.IO.Path.Combine(outputFolder, $"Page_{i + 1}.png");
+            diagram.Save(outputFile, pngOptions);
+            Console.WriteLine($"Saved page {i + 1} to {outputFile}");
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+
+        Console.WriteLine("Export completed.");
     }
 }

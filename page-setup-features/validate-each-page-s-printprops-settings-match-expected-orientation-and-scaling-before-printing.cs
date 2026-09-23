@@ -1,55 +1,56 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Printing;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file to validate
+            string filePath = "input.vsdx";
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(filePath))
             {
-
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
-
-                // Expected print settings
+                // Define expected print settings
                 PrintPageOrientationValue expectedOrientation = PrintPageOrientationValue.Landscape;
-                double expectedScaleX = 0.75; // 75% scaling
-                double expectedScaleY = 0.75; // 75% scaling
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+                double expectedScaleX = 1.0;
+                double expectedScaleY = 1.0;
 
                 // Iterate through each page and validate its PrintProps
                 foreach (Page page in diagram.Pages)
                 {
-                    var printProps = page.PageSheet.PrintProps;
+                    PrintProps printProps = page.PageSheet.PrintProps;
 
                     // Validate orientation
                     if (printProps.PrintPageOrientation.Value != expectedOrientation)
                     {
-                        throw new Exception(
-                            $"Page '{page.Name}' orientation mismatch. Expected: {expectedOrientation}, Actual: {printProps.PrintPageOrientation.Value}");
+                        throw new Exception($"Page '{page.Name}' orientation mismatch. Expected: {expectedOrientation}, Actual: {printProps.PrintPageOrientation.Value}");
                     }
 
-                    // Validate scaling (allow a tiny tolerance for floating‑point comparison)
-                    if (Math.Abs(printProps.ScaleX.Value - expectedScaleX) > 0.0001 ||
-                        Math.Abs(printProps.ScaleY.Value - expectedScaleY) > 0.0001)
+                    // Validate scaling factors
+                    double actualScaleX = printProps.ScaleX.Value;
+                    double actualScaleY = printProps.ScaleY.Value;
+
+                    if (Math.Abs(actualScaleX - expectedScaleX) > 0.0001 || Math.Abs(actualScaleY - expectedScaleY) > 0.0001)
                     {
-                        throw new Exception(
-                            $"Page '{page.Name}' scaling mismatch. Expected ScaleX/Y: {expectedScaleX}, Actual ScaleX: {printProps.ScaleX.Value}, ScaleY: {printProps.ScaleY.Value}");
+                        throw new Exception($"Page '{page.Name}' scaling mismatch. Expected: {expectedScaleX}/{expectedScaleY}, Actual: {actualScaleX}/{actualScaleY}");
                     }
 
-                    Console.WriteLine($"Page '{page.Name}' passed print settings validation.");
+                    Console.WriteLine($"Page '{page.Name}' passed PrintProps validation.");
                 }
 
-                // Clean up
-                diagram.Dispose();
+                // At this point all pages have the expected print settings and can be printed.
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

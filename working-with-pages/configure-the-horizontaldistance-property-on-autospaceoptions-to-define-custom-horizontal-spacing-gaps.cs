@@ -1,35 +1,46 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Define the input Visio file path
+        string inputPath = "input.vsdx";
+        // Verify that the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the existing Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Create AutoSpaceOptions and set custom horizontal spacing (in inches)
-            AutoSpaceOptions options = new AutoSpaceOptions();
-            options.DistanceInHorizontal = 1.0; // 1 inch horizontal gap
-            options.DistanceInVertical = 0.5;   // optional vertical gap
-
-            // Get the first page of the diagram
+            // Retrieve the first page of the diagram for processing
             Page page = diagram.Pages[0];
 
-            // Apply auto-spacing to all shapes on the page using the custom options
+            // Create AutoSpaceOptions and configure custom horizontal and vertical gaps (in inches)
+            AutoSpaceOptions options = new AutoSpaceOptions();
+            options.DistanceInHorizontal = 2.0; // Set desired horizontal spacing
+            options.DistanceInVertical = 2.0;   // Set desired vertical spacing
+
+            // Apply auto-spacing to all shapes on the page using the configured options
             page.AutoSpaceShapes(page.Shapes, options);
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Define the output file path for the modified diagram
+            string outputPath = "output.vsdx";
 
+            // Save the modified diagram to the specified output file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors encountered during processing to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

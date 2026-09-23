@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,48 +10,42 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Work with the active page
-            Page page = diagram.ActivePage;
+            // Work with the first page
+            Page page = diagram.Pages[0];
 
-            // Locate the first shape that uses the "Diamond" master
-            Shape originalDiamond = null;
+            // Locate the first diamond shape on the page
+            Shape? originalShape = null;
             foreach (Shape shape in page.Shapes)
             {
                 if (shape.Master != null && shape.Master.Name == "Diamond")
                 {
-                    originalDiamond = shape;
+                    originalShape = shape;
                     break;
                 }
             }
 
-            if (originalDiamond == null)
+            if (originalShape == null)
             {
-                throw new Exception("Diamond shape not found in the diagram.");
+                Console.WriteLine("No diamond shape found on the page.");
+                return;
             }
 
-            // Retrieve original shape geometry
-            double originalPinX = originalDiamond.XForm.PinX.Value;
-            double originalPinY = originalDiamond.XForm.PinY.Value;
-            double originalWidth = originalDiamond.XForm.Width.Value;
-            double originalHeight = originalDiamond.XForm.Height.Value;
-            string masterName = originalDiamond.Master.Name;
+            // Retrieve the master name and original position
+            string masterName = originalShape.Master.Name;
+            double origPinX = originalShape.XForm.PinX.Value;
+            double origPinY = originalShape.XForm.PinY.Value;
 
-            // Calculate new position (0.5 inches to the right)
-            double newPinX = originalPinX + 0.5;
-            double newPinY = originalPinY;
+            // Add a new shape using the same master and offset its X position by 0.5 inches
+            long newShapeId = page.AddShape(origPinX + 0.5, origPinY, masterName, false);
 
-            // Add a duplicate of the diamond shape at the new location
-            long newShapeId = page.AddShape(newPinX, newPinY, originalWidth, originalHeight, masterName);
-            // Optional: retrieve the newly added shape if further manipulation is needed
-            Shape duplicatedDiamond = page.Shapes.GetShape(newShapeId);
+            // Optionally retrieve the newly added shape (not required for the offset operation)
+            Shape newShape = page.Shapes.GetShape(newShapeId);
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

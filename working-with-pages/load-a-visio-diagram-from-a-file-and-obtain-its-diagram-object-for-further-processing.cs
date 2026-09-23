@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
@@ -10,16 +10,12 @@ class Program
         {
 
             // Path to the Visio file to be loaded
-            string filePath = "sample.vsdx";
+            string filePath = @"C:\Diagrams\sample.vsdx";
 
-            // Load the diagram from the specified file
+            // Load the Visio diagram and obtain the Diagram object
             Diagram diagram = new Diagram(filePath);
 
-            // The 'diagram' object is now ready for further processing
-            // Example: access the active page
-            Page activePage = diagram.ActivePage;
-
-            // (Additional processing can be added here)
+            // The 'diagram' object can now be used for further processing
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,73 +1,60 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Determine the VST file path from the first argument or use a default name.
-        string vstPath = args.Length > 0 ? args[0] : "stencil.vst";
-        // Verify that the VST file exists before proceeding.
-        if (!File.Exists(vstPath))
-        {
-            Console.Error.WriteLine($"File not found: {vstPath}");
-            return;
-        }
-
         try
         {
-            // Load the stencil (VST) file into a Diagram object.
-            Diagram diagram = new Diagram(vstPath);
 
-            // Define the maximum pixel dimension for thumbnails.
-            const int maxPixelSize = 100;
+            // Path to the VST (stencil) file
+            string vstPath = "stencil.vst";
 
-            // Iterate over each page in the stencil.
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Load the stencil diagram
+            using (Diagram diagram = new Diagram(vstPath))
             {
-                // Retrieve the current page.
-                Page page = diagram.Pages[i];
-
-                // Obtain page width and height in inches.
-                double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeightInches = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Choose a resolution (DPI) for rendering; 96 DPI is a common default.
-                const float resolutionDpi = 96f;
-
-                // Compute the scale factor so that the larger side becomes maxPixelSize pixels.
-                double maxInches = Math.Max(pageWidthInches, pageHeightInches);
-                float scale = (float)(maxPixelSize / (maxInches * resolutionDpi));
-
-                // Configure image save options for PNG output.
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                // Iterate through each page in the stencil
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Set the page index to render the current page.
-                    PageIndex = i,
-                    // Apply the calculated scale to fit within the pixel limit.
-                    Scale = scale,
-                    // Use the chosen resolution.
-                    Resolution = resolutionDpi,
-                    // Export only the current page.
-                    ExportHiddenPage = false
-                };
+                    Page page = diagram.Pages[i];
 
-                // Build the output file name for the thumbnail.
-                string outputFile = $"thumbnail_page_{i + 1}.png";
+                    // Retrieve page dimensions (in inches)
+                    double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeightInches = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Save the rendered page as a PNG thumbnail.
-                diagram.Save(outputFile, saveOptions);
+                    // Create image save options for PNG format
+                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
 
-                // Inform the user about the generated thumbnail.
-                Console.WriteLine($"Generated thumbnail: {outputFile}");
+                    // Export only the current page
+                    options.PageIndex = i;
+                    options.PageCount = 1;
+
+                    // Set resolution (dots per inch)
+                    options.Resolution = 96f; // default screen DPI
+
+                    // Calculate the scale factor so that the longest side is at most 100 pixels
+                    double maxDimensionInches = Math.Max(pageWidthInches, pageHeightInches);
+                    double maxDimensionPixels = maxDimensionInches * options.Resolution;
+                    float scale = (float)(100.0 / maxDimensionPixels);
+                    // Ensure scale does not exceed 1 (no up‑scaling)
+                    options.Scale = scale < 1f ? scale : 1f;
+
+                    // Build output file name
+                    string outputFile = $"thumbnail_page_{i + 1}.png";
+
+                    // Save the thumbnail image
+                    diagram.Save(outputFile, options);
+                    Console.WriteLine($"Saved thumbnail for page {i + 1} to '{outputFile}'.");
+                }
             }
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any exceptions to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

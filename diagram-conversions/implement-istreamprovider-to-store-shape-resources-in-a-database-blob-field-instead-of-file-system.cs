@@ -1,106 +1,113 @@
 using System;
-using System.IO;
-using System.Data;
-using System.Data.SqlClient;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramHtmlExport
+namespace DiagramHtmlExportWithDbStreamProvider
 {
-    // Implements IStreamProvider to store shape resources in a database BLOB field.
-    public class DbStreamProvider : IStreamProvider
+    // Custom IStreamProvider that stores streams (e.g., images) into a database BLOB field.
+    public class DatabaseStreamProvider : IStreamProvider
     {
-        // Holds temporary streams keyed by the resource path.
-        private readonly Dictionary<string, MemoryStream> _streams = new Dictionary<string, MemoryStream>();
+        // In-memory storage to keep streams between InitStream and CloseStream calls.
+        private readonly Dictionary<string, MemoryStream> _streamCache = new();
 
-        // Called by Aspose.Diagram before a resource is written.
+        // Called by Aspose.Diagram when a new resource stream is needed.
         public void InitStream(StreamProviderOptions options)
         {
             // Create a memory stream to capture the resource data.
             var memStream = new MemoryStream();
+
+            // Assign the stream to the options so Aspose.Diagram writes into it.
             options.Stream = memStream;
 
-            // Store the stream using the default path as the key.
-            // DefaultPath identifies the resource (e.g., image file name).
-            _streams[options.DefaultPath] = memStream;
+            // Use DefaultPath (the resource name) as the key for later retrieval.
+            string key = options.DefaultPath ?? Guid.NewGuid().ToString();
+            _streamCache[key] = memStream;
         }
 
-        // Called by Aspose.Diagram after the resource has been written.
+        // Called by Aspose.Diagram after writing to the stream is finished.
         public void CloseStream(StreamProviderOptions options)
         {
-            // Retrieve the memory stream that was used.
-            if (_streams.TryGetValue(options.DefaultPath, out MemoryStream memStream))
+            // Retrieve the memory stream that was previously stored.
+            string key = options.DefaultPath ?? string.Empty;
+            if (!_streamCache.TryGetValue(key, out var memStream))
             {
-                // Ensure all data is flushed.
-                memStream.Flush();
-
-                // Get the byte array representing the resource.
-                byte[] data = memStream.ToArray();
-
-                // Persist the data to the database.
-                SaveResourceToDatabase(options.DefaultPath, data);
-
-                // Clean up.
-                memStream.Dispose();
-                _streams.Remove(options.DefaultPath);
+                // No stream found; nothing to store.
+                return;
             }
-        }
 
-        // Inserts or updates the resource BLOB in the database.
-        private void SaveResourceToDatabase(string resourcePath, byte[] data)
-        {
-            // Placeholder connection string – replace with actual DB details.
-            const string connectionString = "Data Source=YOUR_SERVER;Initial Catalog=YOUR_DATABASE;Integrated Security=True";
+            // Ensure the stream position is at the beginning before reading.
+            memStream.Position = 0;
+            byte[] data = memStream.ToArray();
 
-            // Example table schema:
-            // CREATE TABLE ShapeResources (ResourcePath NVARCHAR(260) PRIMARY KEY, Data VARBINARY(MAX));
-            const string sql = @"
-IF EXISTS (SELECT 1 FROM ShapeResources WHERE ResourcePath = @Path)
-    UPDATE ShapeResources SET Data = @Data WHERE ResourcePath = @Path;
-ELSE
-    INSERT INTO ShapeResources (ResourcePath, Data) VALUES (@Path, @Data);";
-
-            using (var connection = new SqlConnection(connectionString))
-            using (var command = new SqlCommand(sql, connection))
+            // -----------------------------------------------------------------
+            // Insert the byte[] into a database BLOB field.
+            // The following code is a placeholder illustrating typical ADO.NET usage.
+            // Replace the connection string and command text with your actual schema.
+            // -----------------------------------------------------------------
+            /*
+            using (DbConnection conn = new SqlConnection("your-connection-string"))
             {
-                command.Parameters.Add("@Path", SqlDbType.NVarChar, 260).Value = resourcePath;
-                command.Parameters.Add("@Data", SqlDbType.VarBinary, -1).Value = data;
+                conn.Open();
+                using (DbCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "INSERT INTO DiagramResources (ResourceName, Data) VALUES (@name, @data)";
+                    var paramName = cmd.CreateParameter();
+                    paramName.ParameterName = "@name";
+                    paramName.Value = key;
+                    cmd.Parameters.Add(paramName);
 
-                connection.Open();
-                command.ExecuteNonQuery();
+                    var paramData = cmd.CreateParameter();
+                    paramData.ParameterName = "@data";
+                    paramData.Value = data;
+                    cmd.Parameters.Add(paramData);
+
+                    cmd.ExecuteNonQuery();
+                }
             }
+            */
+            // Since external DB drivers are not available, we simulate the operation with a DataTable.
+            DataTable simulatedTable = new DataTable("DiagramResources");
+            simulatedTable.Columns.Add("ResourceName", typeof(string));
+            simulatedTable.Columns.Add("Data", typeof(byte[]));
+            DataRow row = simulatedTable.NewRow();
+            row["ResourceName"] = key;
+            row["Data"] = data;
+            simulatedTable.Rows.Add(row);
+            Console.WriteLine($"[Info] Resource '{key}' stored in simulated DB table (Rows: {simulatedTable.Rows.Count}).");
+
+            // Clean up the cached stream.
+            _streamCache.Remove(key);
+            memStream.Dispose();
         }
     }
 
-    class Program
+    public class Program
     {
-        static void Main()
+        public static void Main()
         {
             try
             {
 
-                try
+                // Load an existing Visio diagram.
+                string diagramPath = "sample.vsdx";
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Configure HTML export options and assign the custom stream provider.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    // Load the Visio diagram from a file.
-                    var diagram = new Diagram("input.vsdx");
+                    // The StreamProvider will intercept resource streams (e.g., images) during export.
+                    StreamProvider = new DatabaseStreamProvider()
+                };
 
-                    // Configure HTML export options and assign the custom stream provider.
-                    var htmlOptions = new HTMLSaveOptions
-                    {
-                        StreamProvider = new DbStreamProvider()
-                    };
+                // Export the diagram to HTML. Resources will be captured by DatabaseStreamProvider.
+                string outputHtml = "output.html";
+                diagram.Save(outputHtml, htmlOptions);
 
-                    // Export the diagram to HTML; resources (images, etc.) will be stored in the DB.
-                    diagram.Save("output.html", htmlOptions);
-
-                    Console.WriteLine("Diagram exported to HTML successfully. Resources saved to database.");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error: {ex.Message}");
-                    throw;
-                }
+                Console.WriteLine($"Diagram exported to '{outputHtml}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

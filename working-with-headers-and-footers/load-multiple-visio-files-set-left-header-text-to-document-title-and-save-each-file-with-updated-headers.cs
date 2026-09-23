@@ -1,61 +1,54 @@
 using System;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Determine the folder containing Visio files.
-            // If a folder path is provided as a command‑line argument, use it; otherwise use the current directory.
-            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
 
-            if (!Directory.Exists(folderPath))
+            // Folder containing the source Visio files
+            string inputFolder = "VisioFiles";
+
+            // Folder where the updated files will be saved
+            string outputFolder = "UpdatedVisioFiles";
+
+            // Ensure the output directory exists
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
+
+            // Get all files in the input folder (Visio supports multiple extensions)
+            string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+
+            foreach (string filePath in files)
             {
-                Console.WriteLine($"Folder not found: {folderPath}");
-                return;
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Use the document title; if missing, fall back to the file name without extension
+                string title = diagram.DocumentProps.Title;
+                if (string.IsNullOrWhiteSpace(title))
+                    title = Path.GetFileNameWithoutExtension(filePath);
+
+                // Set the left header text to the title
+                diagram.HeaderFooter.HeaderLeft = title;
+
+                // Build the output file path (preserve original file name)
+                string fileName = Path.GetFileName(filePath);
+                string outPath = Path.Combine(outputFolder, fileName);
+
+                // Save the diagram (using Vsdx format as a common Visio format)
+                diagram.Save(outPath, SaveFileFormat.Vsdx);
             }
 
-            // Supported Visio extensions.
-            string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm" };
+            Console.WriteLine("All Visio files have been processed and saved with updated headers.");
 
-            // Get all Visio files in the folder.
-            var visioFiles = Directory.GetFiles(folderPath)
-                                      .Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
-                                      .ToList();
-
-            if (!visioFiles.Any())
-            {
-                Console.WriteLine("No Visio files found in the specified folder.");
-                return;
-            }
-
-            foreach (var filePath in visioFiles)
-            {
-                try
-                {
-                    // Load the diagram.
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Retrieve the document title (built‑in property).
-                    string title = diagram.DocumentProps.Title ?? string.Empty;
-
-                    // Set the left header text to the document title.
-                    diagram.HeaderFooter.HeaderLeft = title;
-
-                    // Save the diagram back to the same file in VSDX format.
-                    // This overwrites the original file; change the path if you need a separate output folder.
-                    diagram.Save(filePath, SaveFileFormat.Vsdx);
-
-                    Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
-            }
-
-            Console.WriteLine("Header update completed.");
+        }
+        catch (System.IO.DirectoryNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
+}

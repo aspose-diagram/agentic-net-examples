@@ -1,34 +1,32 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the active page where we will draw the rectangle
-            Page page = diagram.ActivePage;
+            // Use the first page (a new diagram contains one default page)
+            Page page = diagram.Pages[0];
 
-            // Draw a rectangle at position (2,2) with width 4 and height 2 inches
-            long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
+            // Draw a rectangle shape (pinX, pinY, width, height)
+            // This method returns the shape ID (long)
+            long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 3.0);
 
-            // Retrieve the shape object using the returned ID
+            // Retrieve the shape object using the ID
             Shape rectShape = page.Shapes.GetShape((int)rectId);
 
-            // Set the fill pattern to gradient (value 25)
+            // Apply a linear gradient fill (blue to green)
+            // Set fill pattern to gradient (value 25)
             rectShape.Fill.FillPattern.Value = 25;
 
             // Enable gradient fill
             rectShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Set gradient direction to linear
-            rectShape.Fill.GradientFill.GradientDir.Value = (int)GradientFillDir.Linear;
+            // Set gradient direction (0 = left to right)
+            rectShape.Fill.GradientFill.GradientDir.Value = 0;
 
             // Clear any existing gradient stops
             rectShape.Fill.GradientFill.GradientStops.Clear();
@@ -45,11 +43,5 @@ class Program
 
             // Save the diagram to a VSDX file
             diagram.Save("GradientRectangle.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.NullReferenceException ex)
-        {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
         }
     }
-}

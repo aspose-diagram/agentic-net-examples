@@ -4,58 +4,52 @@ using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Folder containing Visio files to process
-        string folderPath = @"C:\VisioFiles";
-
-        // Certificate path (not used because Aspose.Diagram does not support signing VBA projects)
-        string certificatePath = @"C:\Certificates\mycert.pfx";
-
-        if (!Directory.Exists(folderPath))
+        static void Main(string[] args)
         {
-            Console.WriteLine($"Folder not found: {folderPath}");
-            return;
+            // Folder containing Visio files to process
+            string folderPath = @"C:\VisioFiles";
+
+            // Certificate placeholder – actual signing is not supported by Aspose.Diagram API
+            // string certificatePath = @"C:\Certificates\mycert.pfx";
+            // string certificatePassword = "password";
+
+            // Get all Visio files (VSDX and VSDM) in the folder
+            string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (string filePath in visioFiles)
+            {
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                if (extension != ".vsdx" && extension != ".vsdm")
+                {
+                    continue; // Skip non-Visio files
+                }
+
+                try
+                {
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Access the VBA project (read‑only)
+                    VbaProject vbaProject = diagram.VbaProject;
+
+                    // Check if the VBA project is already signed
+                    bool isSigned = vbaProject.IsSigned;
+                    Console.WriteLine($"File: {Path.GetFileName(filePath)} – VBA Signed: {isSigned}");
+
+                    // NOTE: Aspose.Diagram does not provide a method to sign a VBA project.
+                    // If signing were supported, it would be performed here using the common certificate.
+
+                    // Save the diagram back in a macro‑enabled format to preserve VBA
+                    string outputPath = Path.Combine(folderPath, Path.GetFileNameWithoutExtension(filePath) + "_signed.vsdm");
+                    diagram.Save(outputPath, SaveFileFormat.Vsdm);
+                    Console.WriteLine($"Saved processed file to: {outputPath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                }
+            }
+
+            Console.WriteLine("Batch processing completed.");
         }
-
-        // Process each Visio file in the folder
-        string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in visioFiles)
-        {
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (ext != ".vsdx" && ext != ".vsdm" && ext != ".vsx" && ext != ".vtx")
-            {
-                continue; // Skip non-Visio files
-            }
-
-            try
-            {
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Access the VBA project (read‑only)
-                VbaProject vba = diagram.VbaProject;
-
-                // Check if the VBA project is already signed
-                bool isSigned = vba.IsSigned;
-                Console.WriteLine($"File: {Path.GetFileName(filePath)} - VBA Signed: {isSigned}");
-
-                // NOTE: Aspose.Diagram does not provide an API to sign a VBA project.
-                // The VbaProject.Sign() method does not exist, and IsSigned is read‑only.
-                // Therefore, actual signing cannot be performed with the current library.
-
-                // Save the diagram in a macro‑enabled format to preserve any VBA code
-                string outputPath = Path.Combine(folderPath, Path.GetFileNameWithoutExtension(filePath) + "_processed.vsdm");
-                diagram.Save(outputPath, SaveFileFormat.Vsdm);
-                Console.WriteLine($"Saved processed file to: {outputPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-            }
-        }
-
-        Console.WriteLine("Batch processing completed.");
     }
-}

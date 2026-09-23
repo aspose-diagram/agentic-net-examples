@@ -3,65 +3,67 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Validate input arguments
-            if (args.Length < 3)
+            try
             {
-                Console.WriteLine("Usage: GradientComparison <diagramPath> <shapeName1> <shapeName2>");
-                return;
-            }
 
-            string diagramPath = args[0];
-            string shapeName1 = args[1];
-            string shapeName2 = args[2];
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
+                // Access the first page (adjust index if needed)
+                Page page = diagram.Pages[0];
 
-            // Access the first page (adjust if needed)
-            Page page = diagram.Pages[0];
+                // Retrieve the two shapes to compare (replace with actual IDs or logic)
+                long shapeId1 = 1; // example shape ID
+                long shapeId2 = 2; // example shape ID
 
-            // Locate the two shapes by their universal names (NameU)
-            Shape shape1 = null;
-            Shape shape2 = null;
+                Shape shape1 = page.Shapes.GetShape(shapeId1);
+                Shape shape2 = page.Shapes.GetShape(shapeId2);
 
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.NameU != null && shape.NameU.Equals(shapeName1, StringComparison.OrdinalIgnoreCase))
+                if (shape1 == null || shape2 == null)
                 {
-                    shape1 = shape;
-                }
-                else if (shape.NameU != null && shape.NameU.Equals(shapeName2, StringComparison.OrdinalIgnoreCase))
-                {
-                    shape2 = shape;
+                    Console.WriteLine("One or both shapes could not be found.");
+                    return;
                 }
 
-                if (shape1 != null && shape2 != null)
-                    break;
+                // Ensure gradient fill is enabled for both shapes
+                bool gradientEnabled1 = shape1.Fill.GradientFill.GradientEnabled.Value == BOOL.True;
+                bool gradientEnabled2 = shape2.Fill.GradientFill.GradientEnabled.Value == BOOL.True;
+
+                if (!gradientEnabled1 || !gradientEnabled2)
+                {
+                    Console.WriteLine("Gradient fill is not enabled on one or both shapes.");
+                    return;
+                }
+
+                // Retrieve gradient direction values (0‑7 where each value represents a direction)
+                double dir1 = shape1.Fill.GradientFill.GradientDir.Value;
+                double dir2 = shape2.Fill.GradientFill.GradientDir.Value;
+
+                Console.WriteLine($"Shape {shapeId1} gradient direction: {dir1}");
+                Console.WriteLine($"Shape {shapeId2} gradient direction: {dir2}");
+
+                // Compare the directions and report differences
+                if (dir1 == dir2)
+                {
+                    Console.WriteLine("Both shapes have the same gradient direction.");
+                }
+                else
+                {
+                    Console.WriteLine("Gradient directions differ between the two shapes.");
+                    Console.WriteLine($"Difference: {Math.Abs(dir1 - dir2)} (direction units)");
+                }
+
+                // Save the diagram (unchanged) to demonstrate lifecycle usage
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Ensure both shapes were found
-            if (shape1 == null)
-                throw new Exception($"Shape \"{shapeName1}\" not found on the first page.");
-            if (shape2 == null)
-                throw new Exception($"Shape \"{shapeName2}\" not found on the first page.");
-
-            // Retrieve gradient direction values
-            // GradientDir is a DoubleValue; its .Value holds the direction index (0‑7)
-            double dir1 = shape1.Fill.GradientFill.GradientDir.Value;
-            double dir2 = shape2.Fill.GradientFill.GradientDir.Value;
-
-            // Output the comparison result
-            if (dir1 == dir2)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Both shapes have the same gradient direction: {dir1}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-            else
-            {
-                Console.WriteLine($"Gradient direction differs:");
-                Console.WriteLine($" - {shapeName1}: {dir1}");
-                Console.WriteLine($" - {shapeName2}: {dir2}");
-            }
-        }
+    }
     }

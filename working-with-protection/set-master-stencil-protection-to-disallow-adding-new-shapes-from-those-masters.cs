@@ -9,18 +9,14 @@ class Program
         try
         {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Disallow adding new shapes from masters by enabling master protection
             diagram.DocumentSettings.ProtectMasters = BOOL.True;
 
-            // Save the protected diagram to a new file
-            string outputPath = "output_protected.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the diagram with the protection applied
+            diagram.Save("protected_output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

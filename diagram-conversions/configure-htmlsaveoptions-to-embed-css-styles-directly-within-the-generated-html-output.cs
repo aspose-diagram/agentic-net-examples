@@ -1,39 +1,38 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Path for the generated HTML file
-            string outputPath = "output.html";
-
-            // Load the Visio diagram
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure HTML save options to embed CSS (and other resources) into a single HTML file
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-            {
-                // When true, all CSS styles and images are embedded directly in the HTML,
-                // producing a self‑contained file without external resources.
-                SaveAsSingleFile = true
-            };
+            // Configure HTML save options
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            // By default Aspose.Diagram embeds CSS; no explicit property is required.
+            htmlOptions.ExportHiddenPage = false; // Do not export hidden pages
 
-            // Save the diagram as HTML with the configured options
-            diagram.Save(outputPath, htmlOptions);
-
+            // Save the diagram as an HTML file using the configured options
+            diagram.Save("output.html", htmlOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error during HTML export: {ex.Message}");
         }
     }
 }

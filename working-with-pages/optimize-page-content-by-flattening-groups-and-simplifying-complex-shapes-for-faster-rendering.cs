@@ -1,70 +1,56 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the source Visio file
-            const string inputPath = "input.vsdx";
-            // Path for the optimized output
-            const string outputPath = "optimized.vsdx";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            try
             {
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path to the optimized output file
+                string outputPath = "optimized.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
                 // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Collect shape IDs to avoid modification during enumeration
-                    var shapeIds = new System.Collections.Generic.List<long>();
+                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        shapeIds.Add(shape.ID);
-                    }
-
-                    // Process each shape
-                    foreach (long shapeId in shapeIds)
-                    {
-                        Shape shape = page.Shapes.GetShape(shapeId);
-
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // If the shape is a group, ungroup it to flatten the hierarchy
-                        if (shape.Type == TypeValue.Group)
+                        // Flatten groups by hiding the group container shape
+                        // If the shape is a group container, set its size to zero
+                        if (shape.IsInGroup())
                         {
-                            shape.Ungroup();
-                            // After ungrouping, the original group shape is removed automatically
-                            continue;
+                            shape.XForm.Width.Value = 0;
+                            shape.XForm.Height.Value = 0;
                         }
 
-                        // Simplify complex shapes by reducing line and fill details
-                        // Set a simple solid line pattern
+                        // Simplify complex shapes:
+                        // Reduce line weight to a minimal value for faster rendering
+                        shape.Line.LineWeight.Value = 0.01;
+
+                        // Set a simple solid fill pattern (pattern index 1)
+                        shape.Fill.FillPattern.Value = 1;
+
+                        // Optional: set a basic line pattern (solid)
+                        // Note: LinePatternValue.Solid is the typical enum member for a solid line
                         shape.Line.LinePattern.Value = LinePatternValue.Solid;
-                        // Reduce line weight to a minimal value
-                        shape.Line.LineWeight.Value = 0.02;
-                        // Remove fill pattern (set to none)
-                        shape.Fill.FillPattern.Value = 0;
                     }
                 }
 
-                // Save the optimized diagram
+                // Save the optimized diagram using VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            Console.WriteLine("Diagram optimization completed successfully.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

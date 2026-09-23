@@ -3,36 +3,33 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
 
-            // Path to the source Visio file
+            // Paths to the source and destination Visio files
             string inputPath = "input.vsdx";
-            // Path to the output Visio file
             string outputPath = "output.vsdx";
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape uses a gradient fill (FillPattern value 25)
-                    if (shape.Fill != null && shape.Fill.FillPattern != null && shape.Fill.FillPattern.Value == 25)
+                    // Ensure the shape has a gradient fill enabled
+                    if (shape.Fill != null &&
+                        shape.Fill.GradientFill != null &&
+                        shape.Fill.GradientFill.GradientEnabled != null &&
+                        shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
                     {
-                        // Ensure the gradient fill structure exists
-                        if (shape.Fill.GradientFill != null && shape.Fill.GradientFill.GradientDir != null)
-                        {
-                            // Reset the gradient direction to the default value (0)
-                            shape.Fill.GradientFill.GradientDir.Value = 0;
-                        }
+                        // Reset the gradient direction to its default value (0)
+                        shape.Fill.GradientFill.GradientDir.Value = 0;
                     }
                 }
             }

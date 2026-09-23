@@ -9,25 +9,24 @@ class Program
         try
         {
 
-            // Load the diagram (replace with your actual file path)
-            string diagramPath = "input.vsdx";
-            Diagram diagram = new Diagram(diagramPath);
+            // Load an existing Visio diagram (replace with your file path)
+            var diagram = new Diagram("input.vsdx");
 
-            // Iterate through each page in the diagram
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through each shape on the page
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape has gradient fill enabled
+                    // Ensure the shape has a gradient fill enabled
                     if (shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
                     {
-                        // Iterate through all gradient stops of the shape
+                        // Iterate over each gradient stop in the shape's gradient fill
                         foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
                         {
-                            double position = stop.Position.Value;   // Position (0 to 1)
-                            string color = stop.Color.Value;        // Color as hex string (e.g., "#FF0000")
-                            Console.WriteLine($"Shape ID {shape.ID}: Position = {position}, Color = {color}");
+                            double position = stop.Position.Value;   // Position (0.0 to 1.0)
+                            string color = stop.Color.Value;        // Color as HEX string (e.g., "#FF0000")
+                            Console.WriteLine($"Shape ID {shape.ID}: Stop Position = {position}, Color = {color}");
                         }
                     }
                 }

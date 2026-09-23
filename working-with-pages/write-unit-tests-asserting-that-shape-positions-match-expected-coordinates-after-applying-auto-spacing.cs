@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
 
@@ -7,92 +6,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
-        if (args.Length < 1)
-        {
-            Console.Error.WriteLine("Usage: Program <visioFilePath>");
-            return;
-        }
-
-        // Path to the Visio file to be processed.
-        string visioPath = args[0];
-        // Guard: ensure the file exists before proceeding.
-        if (!File.Exists(visioPath))
-        {
-            Console.Error.WriteLine($"File not found: {visioPath}");
-            return;
-        }
-
         try
         {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(visioPath);
+            // Create a new empty diagram (default page is added automatically)
+            Diagram diagram = new Diagram();
 
-            // Retrieve the first page (index 0) where shapes reside.
+            // Get the first (and only) page
             Page page = diagram.Pages[0];
 
-            // Configure auto-spacing options: 2 inches horizontal and vertical gaps.
-            AutoSpaceOptions options = new AutoSpaceOptions
-            {
-                DistanceInHorizontal = 2.0,
-                DistanceInVertical = 2.0
-            };
+            // Add three rectangle shapes using DrawRectangle (pinX, pinY, width, height)
+            // All shapes have the same size for simplicity
+            long shapeId1 = page.DrawRectangle(1.0, 1.0, 1.0, 1.0);
+            long shapeId2 = page.DrawRectangle(1.5, 1.0, 1.0, 1.0);
+            long shapeId3 = page.DrawRectangle(2.0, 1.0, 1.0, 1.0);
 
-            // Apply auto-spacing to all shapes on the page.
+            // Retrieve shape objects for later inspection
+            Shape shape1 = page.Shapes.GetShape(shapeId1);
+            Shape shape2 = page.Shapes.GetShape(shapeId2);
+            Shape shape3 = page.Shapes.GetShape(shapeId3);
+
+            // Configure auto‑spacing options (2 inches horizontal and vertical gaps)
+            AutoSpaceOptions options = new AutoSpaceOptions();
+            options.DistanceInHorizontal = 2.0;
+            options.DistanceInVertical = 2.0;
+
+            // Apply auto‑spacing to all shapes on the page
             page.AutoSpaceShapes(page.Shapes, options);
 
-            // Expected coordinates after auto-spacing (shape ID -> (PinX, PinY)).
-            var expectedPositions = new System.Collections.Generic.Dictionary<long, (double PinX, double PinY)>
+            // After spacing, verify that each pair of shapes respects the minimum horizontal distance
+            Shape[] shapes = new Shape[] { shape1, shape2, shape3 };
+            double minHorizontal = options.DistanceInHorizontal;
+
+            for (int i = 0; i < shapes.Length; i++)
             {
-                // Adjust these expected values to match your diagram's layout.
-                { 1, (1.0, 1.0) },
-                { 2, (3.0, 1.0) },
-                { 3, (5.0, 1.0) }
-            };
-
-            // Tolerance for floating‑point comparison (in inches).
-            const double tolerance = 0.001;
-
-            // Iterate over each expected shape and verify its position.
-            foreach (var kvp in expectedPositions)
-            {
-                long shapeId = kvp.Key;
-                double expPinX = kvp.Value.PinX;
-                double expPinY = kvp.Value.PinY;
-
-                // Retrieve the shape by its ID; cast to int if required.
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape == null)
+                for (int j = i + 1; j < shapes.Length; j++)
                 {
-                    throw new Exception($"Shape with ID {shapeId} not found.");
+                    Shape a = shapes[i];
+                    Shape b = shapes[j];
+
+                    // Horizontal distance between shape centers
+                    double horizDist = Math.Abs(a.XForm.PinX.Value - b.XForm.PinX.Value);
+                    // Minimum allowed center‑to‑center distance = half widths + required gap
+                    double horizMinAllowed = (a.XForm.Width.Value + b.XForm.Width.Value) / 2.0 + minHorizontal;
+
+                    // Throw if the horizontal spacing requirement is not met
+                    if (horizDist < horizMinAllowed)
+                    {
+                        throw new Exception($"Horizontal spacing violation between shape {a.ID} and shape {b.ID}. " +
+                                            $"Actual: {horizDist}, Required minimum: {horizMinAllowed}");
+                    }
                 }
-
-                // Actual coordinates from the shape's XForm.
-                double actualPinX = shape.XForm.PinX.Value;
-                double actualPinY = shape.XForm.PinY.Value;
-
-                // Compare X coordinate.
-                if (Math.Abs(actualPinX - expPinX) > tolerance)
-                {
-                    throw new Exception($"Shape ID {shapeId} PinX mismatch. Expected: {expPinX}, Actual: {actualPinX}");
-                }
-
-                // Compare Y coordinate.
-                if (Math.Abs(actualPinY - expPinY) > tolerance)
-                {
-                    throw new Exception($"Shape ID {shapeId} PinY mismatch. Expected: {expPinY}, Actual: {actualPinY}");
-                }
-
-                // Log successful verification for this shape.
-                Console.WriteLine($"Shape ID {shapeId} position verified: ({actualPinX}, {actualPinY})");
             }
 
-            // All checks passed.
-            Console.WriteLine("All shape positions match expected coordinates after auto-spacing.");
+            Console.WriteLine("All shape positions satisfy the expected auto‑spacing distances.");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

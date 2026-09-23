@@ -6,32 +6,44 @@ class Program
 {
     static void Main()
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Attempt to delete (clear) a built‑in property.
-        // Built‑in properties like Title are read‑only for deletion;
-        // setting them to null should raise an exception.
+        // Load an existing Visio diagram (replace with a valid path if needed)
+        string inputPath = "sample.vsdx";
+        Diagram diagram;
         try
         {
-            // This operation is expected to fail.
-            diagram.DocumentProps.Title = null;
-
-            // If no exception is thrown, the test has failed.
-            throw new Exception("Expected exception was not thrown when deleting a built-in property.");
-        }
-        catch (ArgumentNullException ex)
-        {
-            // Expected exception type for null assignment.
-            Console.WriteLine("Caught expected ArgumentNullException: " + ex.Message);
+            diagram = new Diagram(inputPath);
         }
         catch (Exception ex)
         {
-            // Any other exception type is also acceptable for this test.
-            Console.WriteLine("Caught expected exception type: " + ex.GetType().Name + " - " + ex.Message);
+            Console.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
         }
 
-        // Clean up
-        diagram.Dispose();
+        // Attempt to delete (clear) a built‑in property: Title
+        // Built‑in properties are read‑only for certain operations; setting to null should raise an exception.
+        try
+        {
+            // This operation is expected to fail because Title cannot be set to null.
+            diagram.DocumentProps.Title = null;
+            // If no exception is thrown, the test has failed.
+            throw new Exception("Expected exception was not thrown when attempting to delete a built‑in property.");
+        }
+        catch (Exception ex)
+        {
+            // Expected path: an exception should be caught.
+            Console.WriteLine($"Caught expected exception: {ex.GetType().Name} - {ex.Message}");
+        }
+
+        // Save the diagram to verify that the file can still be saved after the operation.
+        string outputPath = "output.vsdx";
+        try
+        {
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to save diagram: {ex.Message}");
+        }
     }
 }

@@ -9,37 +9,39 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Paths to the source and destination Visio files
             string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Custom style settings
-            string fillColor = "#FFCC00";          // Solid fill color
-            string shadowColor = "#808080";        // Shadow color
-            double shadowOffsetX = 0.1;            // Horizontal shadow offset (in inches)
-            double shadowOffsetY = 0.1;            // Vertical shadow offset (in inches)
-            double shadowTransparency = 0.3;      // 30% transparent shadow
+            // Define the custom style values
+            string fillColor = "#FFCC00";          // Example fill color (orange)
+            string shadowColor = "#000000";        // Shadow color (black)
+            double shadowTransparency = 0.3;       // 30% transparent
+            double shadowOffsetX = 0.1;            // Horizontal offset
+            double shadowOffsetY = 0.1;            // Vertical offset
 
             // Apply the style to every master and each shape within the master
             foreach (Master master in diagram.Masters)
             {
                 foreach (Shape shape in master.Shapes)
                 {
-                    // Fill settings
+                    // Set solid fill pattern
                     shape.Fill.FillPattern.Value = 1;               // Solid fill
-                    shape.Fill.FillForegnd.Value = fillColor;       // Fill color
+                    shape.Fill.FillForegnd.Value = fillColor;       // Fill foreground color
 
-                    // Shadow settings
-                    shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple; // Simple shadow
-                    shape.Fill.ShdwForegnd.Value = shadowColor;                // Shadow color
-                    shape.Fill.ShdwForegndTrans.Value = shadowTransparency;   // Shadow transparency
-                    shape.Fill.ShapeShdwOffsetX.Value = shadowOffsetX;         // Shadow offset X
-                    shape.Fill.ShapeShdwOffsetY.Value = shadowOffsetY;         // Shadow offset Y
+                    // Configure simple shadow
+                    shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+                    shape.Fill.ShdwForegnd.Value = shadowColor;     // Shadow color
+                    shape.Fill.ShdwForegndTrans.Value = shadowTransparency; // Transparency
+                    shape.Fill.ShapeShdwOffsetX.Value = shadowOffsetX; // X offset
+                    shape.Fill.ShapeShdwOffsetY.Value = shadowOffsetY; // Y offset
                 }
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

@@ -10,16 +10,21 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
+            // Input Visio file path
             string inputPath = "input.vsdx";
+            // Output snapshot image path
+            string outputPath = "snapshot.png";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and set layer visibility
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Access the collection of layers on the page
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Only the layer named "Presentation" should be visible
+                    // Make only the layer named "Presentation" visible; hide others
                     if (layer.Name.Value == "Presentation")
                     {
                         layer.Visible.Value = BOOL.True;
@@ -31,12 +36,16 @@ class Program
                 }
             }
 
-            // Configure image save options (PNG format)
-            ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+            // Configure image export options (PNG format)
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Export only the first page (snapshot)
+            saveOptions.PageIndex = 0;
+            saveOptions.PageCount = 1;
+            // Do not export hidden pages
+            saveOptions.ExportHiddenPage = false;
 
-            // Save the snapshot image with the applied layer visibility
-            string outputPath = "snapshot.png";
-            diagram.Save(outputPath, options);
+            // Save the snapshot image
+            diagram.Save(outputPath, saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

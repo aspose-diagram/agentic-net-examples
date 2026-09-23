@@ -4,10 +4,10 @@ display_name: Visio Activex Controls
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.8.0
+version: 26.9.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-08-31
+generated: 2026-09-23
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.8.0 |
+| Aspose.Diagram Version | 26.9.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-08-31 |
+| Last Updated | 2026-09-23 |
 
 ## Persona
 
@@ -61,16 +61,16 @@ You always use explicit types (never `var`), include all required `using` direct
 
 | Namespace | Files | Purpose |
 |-----------|-------|---------|
-| `Aspose.Diagram` | 30 | Core diagram API |
 | `System` | 30 | Console, Math, DateTime, Exception |
+| `Aspose.Diagram` | 29 | Core diagram API |
 | `Aspose.Diagram.ActiveXControls` | 27 | Supporting utilities |
-| `System.IO` | 21 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 5 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 3 | List, Dictionary, HashSet |
+| `System.IO` | 22 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 6 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 4 | List, Dictionary, HashSet |
 | `System.Text.Json` | 2 | JSON serialization |
-| `System.Reflection` | 2 | Supporting utilities |
 | `System.Diagnostics` | 1 | Supporting utilities |
 | `System.Runtime.InteropServices` | 1 | Supporting utilities |
+| `System.Reflection` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -103,19 +103,19 @@ class Program
 |------|----------|------|
 | [add-a-new-slider-activex-control-to-a-shape-programmatically-and-initialize-its-minimum-maximum-and-value-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/add-a-new-slider-activex-control-to-a-shape-programmatically-and-initialize-its-minimum-maximum-and-value-properties.cs) | `Diagram`, `Pages`, `Save` | Add a new slider activex control to a shape programmatically and initialize its minimum maximum and value properties |
 | [benchmark-the-time-required-to-retrieve-and-modify-activex-controls-across-diagrams-of-varying-sizes-and-complexities.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/benchmark-the-time-required-to-retrieve-and-modify-activex-controls-across-diagrams-of-varying-sizes-and-complexities.cs) | `Diagram`, `Pages`, `Save` | Benchmark the time required to retrieve and modify activex controls across diagrams of varying sizes and complexities |
-| [cast-the-generic-activexcontrol-instance-to-its-specific-control-class-before-modifying-any-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/cast-the-generic-activexcontrol-instance-to-its-specific-control-class-before-modifying-any-properties.cs) | `Diagram`, `Save`, `Shapes` | Cast the generic activexcontrol instance to its specific control class before modifying any properties |
+| [cast-the-generic-activexcontrol-instance-to-its-specific-control-class-before-modifying-any-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/cast-the-generic-activexcontrol-instance-to-its-specific-control-class-before-modifying-any-properties.cs) | `Diagram`, `Pages`, `Save` | Cast the generic activexcontrol instance to its specific control class before modifying any properties |
 | [check-whether-a-shape-s-activexcontrol-property-is-null-before-accessing-its-members.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/check-whether-a-shape-s-activexcontrol-property-is-null-before-accessing-its-members.cs) | `Diagram`, `Pages`, `Save` | Check whether a shape s activexcontrol property is null before accessing its members |
 | [compare-two-visio-diagrams-by-checking-differences-in-activex-control-property-values-across-matching-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/compare-two-visio-diagrams-by-checking-differences-in-activex-control-property-values-across-matching-shapes.cs) | `Diagram`, `Shapes`, `page` | Compare two visio diagrams by checking differences in activex control property values across matching shapes |
 | [create-a-reusable-helper-method-that-abstracts-casting-of-activexcontrol-objects-to-their-concrete-types.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/create-a-reusable-helper-method-that-abstracts-casting-of-activexcontrol-objects-to-their-concrete-types.cs) |  | Create a reusable helper method that abstracts casting of activexcontrol objects to their concrete types |
 | [create-a-script-that-disables-all-activex-controls-on-a-diagram-before-exporting-it-to-pdf-for-security.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/create-a-script-that-disables-all-activex-controls-on-a-diagram-before-exporting-it-to-pdf-for-security.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Create a script that disables all activex controls on a diagram before exporting it to pdf for security |
-| [create-a-unit-test-that-verifies-property-changes-on-a-retrieved-checkbox-activex-control-are-persisted-after-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/create-a-unit-test-that-verifies-property-changes-on-a-retrieved-checkbox-activex-control-are-persisted-after-saving.cs) | `Diagram`, `Save`, `Shapes` | Create a unit test that verifies property changes on a retrieved checkbox activex control are persisted after saving |
+| [create-a-unit-test-that-verifies-property-changes-on-a-retrieved-checkbox-activex-control-are-persisted-after-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/create-a-unit-test-that-verifies-property-changes-on-a-retrieved-checkbox-activex-control-are-persisted-after-saving.cs) | `Diagram`, `Pages`, `Save` | Create a unit test that verifies property changes on a retrieved checkbox activex control are persisted after saving |
 | [deserialize-json-configuration-and-apply-the-values-to-corresponding-activex-control-properties-within-a-visio-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/deserialize-json-configuration-and-apply-the-values-to-corresponding-activex-control-properties-within-a-visio-diagram.cs) | `Diagram`, `Pages`, `Save` | Deserialize json configuration and apply the values to corresponding activex control properties within a visio diagram |
 | [design-a-feature-that-disables-activex-controls-when-the-diagram-is-opened-in-read-only-mode-to-prevent-changes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/design-a-feature-that-disables-activex-controls-when-the-diagram-is-opened-in-read-only-mode-to-prevent-changes.cs) | `Diagram`, `Pages`, `Save` | Design a feature that disables activex controls when the diagram is opened in read only mode to prevent changes |
 | [determine-the-concrete-activex-control-type-of-a-retrieved-object-by-inspecting-its-progid-property-value.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/determine-the-concrete-activex-control-type-of-a-retrieved-object-by-inspecting-its-progid-property-value.cs) | `Diagram`, `Pages`, `Shapes` | Determine the concrete activex control type of a retrieved object by inspecting its progid property value |
 | [extract-the-helpfile-property-from-a-commandbutton-activex-control-to-locate-associated-documentation-resources.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/extract-the-helpfile-property-from-a-commandbutton-activex-control-to-locate-associated-documentation-resources.cs) | `Diagram`, `Pages`, `Shapes` | Extract the helpfile property from a commandbutton activex control to locate associated documentation resources |
 | [handle-invalidcastexception-when-attempting-to-cast-an-activexcontrol-to-an-incompatible-control-class-type.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/handle-invalidcastexception-when-attempting-to-cast-an-activexcontrol-to-an-incompatible-control-class-type.cs) | `Diagram`, `Pages`, `Save` | Handle invalidcastexception when attempting to cast an activexcontrol to an incompatible control class type |
 | [implement-a-safeguard-that-prevents-modifying-read-only-properties-of-an-activex-control-and-logs-a-warning.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/implement-a-safeguard-that-prevents-modifying-read-only-properties-of-an-activex-control-and-logs-a-warning.cs) | `Diagram`, `Pages`, `Save` | Implement a safeguard that prevents modifying read only properties of an activex control and logs a warning |
-| [implement-error-handling-to-catch-comexception-when-accessing-activex-control-properties-that-require-specific-permissio.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/implement-error-handling-to-catch-comexception-when-accessing-activex-control-properties-that-require-specific-permissio.cs) | `Diagram`, `Save`, `Shapes` | Implement error handling to catch comexception when accessing activex control properties that require specific permissio |
+| [implement-error-handling-to-catch-comexception-when-accessing-activex-control-properties-that-require-specific-permissio.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/implement-error-handling-to-catch-comexception-when-accessing-activex-control-properties-that-require-specific-permissio.cs) | `Diagram`, `Pages`, `Save` | Implement error handling to catch comexception when accessing activex control properties that require specific permissio |
 | [integrate-activex-control-manipulation-into-an-asp-net-mvc-application-to-dynamically-update-diagram-visuals.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/integrate-activex-control-manipulation-into-an-asp-net-mvc-application-to-dynamically-update-diagram-visuals.cs) | `Diagram`, `Page`, `Pages` | Integrate activex control manipulation into an asp net mvc application to dynamically update diagram visuals |
 | [iterate-over-all-shapes-in-a-diagram-processing-only-those-that-contain-an-activexcontrol-object.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/iterate-over-all-shapes-in-a-diagram-processing-only-those-that-contain-an-activexcontrol-object.cs) | `Diagram`, `Pages`, `Save` | Iterate over all shapes in a diagram processing only those that contain an activexcontrol object |
 | [load-a-visio-diagram-containing-activex-controls-and-enumerate-all-shapes-that-embed-such-controls.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/load-a-visio-diagram-containing-activex-controls-and-enumerate-all-shapes-that-embed-such-controls.cs) | `Diagram`, `Pages`, `Shapes` | Load a visio diagram containing activex controls and enumerate all shapes that embed such controls |
@@ -128,9 +128,9 @@ class Program
 | [serialize-the-property-values-of-an-activex-control-to-json-for-external-configuration-management.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/serialize-the-property-values-of-an-activex-control-to-json-for-external-configuration-management.cs) | `Diagram`, `Pages`, `Shapes` | Serialize the property values of an activex control to json for external configuration management |
 | [set-the-enabled-property-of-a-checkbox-activex-control-to-false-to-disable-user-interaction.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/set-the-enabled-property-of-a-checkbox-activex-control-to-false-to-disable-user-interaction.cs) | `Diagram`, `Pages`, `Save` | Set the enabled property of a checkbox activex control to false to disable user interaction |
 | [update-one-or-more-properties-of-the-activex-control-and-persist-the-modified-diagram-to-a-new-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/update-one-or-more-properties-of-the-activex-control-and-persist-the-modified-diagram-to-a-new-file.cs) | `Diagram`, `Pages`, `Save` | Update one or more properties of the activex control and persist the modified diagram to a new file |
-| [use-reflection-to-enumerate-all-publicly-settable-properties-of-a-specific-activex-control-class-at-runtime.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/use-reflection-to-enumerate-all-publicly-settable-properties-of-a-specific-activex-control-class-at-runtime.cs) | `Diagram` | Use reflection to enumerate all publicly settable properties of a specific activex control class at runtime |
-| [validate-that-the-value-property-of-a-slider-activex-control-remains-within-its-defined-minimum-and-maximum-range.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/validate-that-the-value-property-of-a-slider-activex-control-remains-within-its-defined-minimum-and-maximum-range.cs) | `Diagram`, `Pages`, `Save` | Validate that the value property of a slider activex control remains within its defined minimum and maximum range |
-| [write-a-method-that-retrieves-all-activex-controls-on-a-given-page-and-returns-their-count.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/write-a-method-that-retrieves-all-activex-controls-on-a-given-page-and-returns-their-count.cs) | `Shapes`, `page` | Write a method that retrieves all activex controls on a given page and returns their count |
+| [use-reflection-to-enumerate-all-publicly-settable-properties-of-a-specific-activex-control-class-at-runtime.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/use-reflection-to-enumerate-all-publicly-settable-properties-of-a-specific-activex-control-class-at-runtime.cs) |  | Use reflection to enumerate all publicly settable properties of a specific activex control class at runtime |
+| [validate-that-the-value-property-of-a-slider-activex-control-remains-within-its-defined-minimum-and-maximum-range.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/validate-that-the-value-property-of-a-slider-activex-control-remains-within-its-defined-minimum-and-maximum-range.cs) | `Diagram`, `Pages`, `Shapes` | Validate that the value property of a slider activex control remains within its defined minimum and maximum range |
+| [write-a-method-that-retrieves-all-activex-controls-on-a-given-page-and-returns-their-count.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/write-a-method-that-retrieves-all-activex-controls-on-a-given-page-and-returns-their-count.cs) | `Diagram`, `Pages`, `Shapes` | Write a method that retrieves all activex controls on a given page and returns their count |
 
 ## Command Reference
 
@@ -238,7 +238,7 @@ Frequently asked questions about **Visio Activex Controls** in **Aspose.Diagram 
 
 **Q: How do I get started with Visio Activex Controls in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.8.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.9.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -269,4 +269,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-08-31 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-09-23 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

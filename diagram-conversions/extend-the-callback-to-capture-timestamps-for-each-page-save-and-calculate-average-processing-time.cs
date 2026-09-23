@@ -1,84 +1,81 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramPageTimingExample
+class MyPageSavingCallback : IPageSavingCallback
 {
-    // Custom callback to capture timestamps for each page during PDF saving
-    public class TimingPageSavingCallback : IPageSavingCallback
+    // Store start time for each page index
+    private readonly Dictionary<int, DateTime> _pageStartTimes = new Dictionary<int, DateTime>();
+    // List of elapsed times for completed pages
+    private readonly List<TimeSpan> _pageDurations = new List<TimeSpan>();
+
+    // Called before a page is saved
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        // Stores the start time for each page index
-        private readonly Dictionary<int, Stopwatch> _stopwatches = new Dictionary<int, Stopwatch>();
-
-        // Stores the elapsed time for each page after it is saved
-        public readonly List<TimeSpan> PageDurations = new List<TimeSpan>();
-
-        // Called when a page starts saving
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            // Ensure we have a stopwatch for the current page
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            _stopwatches[args.PageIndex] = stopwatch;
-        }
-
-        // Called when a page finishes saving
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            // Retrieve and stop the stopwatch for the current page
-            if (_stopwatches.TryGetValue(args.PageIndex, out var stopwatch))
-            {
-                stopwatch.Stop();
-                PageDurations.Add(stopwatch.Elapsed);
-                _stopwatches.Remove(args.PageIndex);
-            }
-        }
+        // Record the start timestamp for the current page
+        _pageStartTimes[args.PageIndex] = DateTime.UtcNow;
     }
 
-    class Program
+    // Called after a page is saved
+    public void PageEndSaving(PageEndSavingArgs args)
     {
-        static void Main()
+        // Retrieve the start timestamp and calculate the elapsed time
+        if (_pageStartTimes.TryGetValue(args.PageIndex, out DateTime start))
         {
-            try
-            {
+            TimeSpan duration = DateTime.UtcNow - start;
+            _pageDurations.Add(duration);
+        }
 
-                // Load an existing Visio diagram
-                var diagram = new Diagram(@"InputDiagram.vsdx");
-
-                // Create PDF save options and attach the custom page saving callback
-                var pdfOptions = new PdfSaveOptions
-                {
-                    PageSavingCallback = new TimingPageSavingCallback()
-                };
-
-                // Save the diagram as PDF; the callback will be invoked for each page
-                diagram.Save(@"OutputDiagram.pdf", pdfOptions);
-
-                // After saving, retrieve the callback to calculate average processing time
-                var timingCallback = (TimingPageSavingCallback)pdfOptions.PageSavingCallback;
-
-                // Calculate average duration per page
-                if (timingCallback.PageDurations.Count > 0)
-                {
-                    var averageTicks = timingCallback.PageDurations.Average(ts => ts.Ticks);
-                    var averageTime = new TimeSpan(Convert.ToInt64(averageTicks));
-
-                    Console.WriteLine($"Processed {timingCallback.PageDurations.Count} pages.");
-                    Console.WriteLine($"Average page processing time: {averageTime.TotalMilliseconds} ms");
-                }
-                else
-                {
-                    Console.WriteLine("No page timing data was captured.");
-                }
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        // Example: stop processing after the first page (optional)
+        // args.HasMorePages = false;
     }
+
+    // Returns the average processing time across all saved pages
+    public TimeSpan GetAverageProcessingTime()
+    {
+        if (_pageDurations.Count == 0)
+            return TimeSpan.Zero;
+
+        long totalTicks = 0;
+        foreach (var ts in _pageDurations)
+            totalTicks += ts.Ticks;
+
+        return new TimeSpan(totalTicks / _pageDurations.Count);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        try
+        {
+
+            // Load an existing Visio diagram (replace with your file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+
+            // Instantiate and assign the custom page-saving callback
+            MyPageSavingCallback callback = new MyPageSavingCallback();
+            pdfOptions.PageSavingCallback = callback;
+
+            // Save the diagram to PDF using the options with the callback
+            string outputPath = "output.pdf";
+            diagram.Save(outputPath, pdfOptions);
+
+            // After saving, calculate and display the average processing time
+            TimeSpan average = callback.GetAverageProcessingTime();
+            Console.WriteLine($"Average page processing time: {average.TotalMilliseconds} ms");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

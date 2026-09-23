@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -21,8 +22,8 @@ class Program
                     // Identify connector shapes (1‑D shapes)
                     if (shape.OneD)
                     {
-                        // Change the target end arrowhead to a filled triangle (value 4)
-                        shape.Line.EndArrow.Value = 4;
+                        // Set the target (end) arrowhead to a filled triangle (value 2)
+                        shape.Line.EndArrow.Value = 2;
                     }
                 }
             }

@@ -1,52 +1,36 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 public static class DiagramHelper
 {
-    // Checks if the ScaleX of the specified page is within the given tolerance of the target value.
+    /// <summary>
+    /// Checks whether the ScaleX value of the specified page is within the given tolerance of the target scale.
+    /// </summary>
+    /// <param name="page">The Aspose.Diagram.Page to evaluate.</param>
+    /// <param name="targetScaleX">The desired ScaleX value (e.g., 1.0 for 100%).</param>
+    /// <param name="tolerance">The acceptable deviation from the target (e.g., 0.01 for ±1%).</param>
+    /// <returns>True if the page's ScaleX is within tolerance; otherwise, false.</returns>
     public static bool IsScaleXWithinTolerance(Page page, double targetScaleX, double tolerance)
     {
-        if (page == null) throw new ArgumentNullException(nameof(page));
+        if (page == null)
+        {
+            throw new ArgumentNullException(nameof(page));
+        }
 
-        // Retrieve the current ScaleX from the page's PrintProps.
+        // Retrieve the current ScaleX value from the page's PrintProps.
         double currentScaleX = page.PageSheet.PrintProps.ScaleX.Value;
 
-        // Compare the absolute difference with the tolerance.
-        return Math.Abs(currentScaleX - targetScaleX) <= tolerance;
+        // Compute the absolute difference and compare with tolerance.
+        double difference = Math.Abs(currentScaleX - targetScaleX);
+        return difference <= tolerance;
     }
 }
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
-        {
-
-            // Load an existing Visio diagram.
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page (index 0).
-            Page page = diagram.Pages[0];
-
-            // Define the desired ScaleX and tolerance.
-            double desiredScaleX = 1.0;   // target scale factor
-            double tolerance = 0.01;     // acceptable deviation
-
-            // Use the helper to verify the scale.
-            bool isWithinTolerance = DiagramHelper.IsScaleXWithinTolerance(page, desiredScaleX, tolerance);
-            Console.WriteLine(isWithinTolerance
-                ? "ScaleX matches the target within tolerance."
-                : "ScaleX does NOT match the target within tolerance.");
-
-            // Optionally save the diagram after any modifications.
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        // See classes above
     }
 }

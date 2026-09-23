@@ -9,7 +9,7 @@ class Program
             // Validate arguments: args[0] = input VDX file, args[1] = output directory
             if (args.Length < 2)
             {
-                Console.WriteLine("Usage: ExtractEmbeddedImages <input.vdx> <output_directory>");
+                Console.WriteLine("Usage: DiagramImageExtractor <input.vdx> <output_directory>");
                 return;
             }
 
@@ -18,47 +18,54 @@ class Program
 
             if (!File.Exists(inputPath))
             {
-                Console.WriteLine($"Input file not found: {inputPath}");
+                Console.WriteLine($"Error: Input file not found: {inputPath}");
                 return;
             }
 
             // Ensure the output directory exists
-            Directory.CreateDirectory(outputDir);
+            if (!Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
 
             // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vdx);
+            Diagram diagram = new Diagram(inputPath);
 
-            int imageCount = 0;
+            int imageCounter = 0;
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and shapes to find embedded images
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify embedded images: TypeValue.Foreign indicates a foreign (image) shape
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
+                    // Identify foreign (image) shapes
+                    if (shape.Type == TypeValue.Foreign)
                     {
-                        byte[] imageBytes = shape.ForeignData.Value;
+                        // The raw image bytes are stored in ForeignData.Value
+                        byte[] imageData = shape.ForeignData?.Value;
+                        if (imageData == null || imageData.Length == 0)
+                        {
+                            continue; // No data to write
+                        }
 
-                        // Build a file name using shape ID to ensure uniqueness
-                        string fileName = $"image_{shape.ID}.png";
+                        // Determine a file name for the extracted image
+                        string fileName = $"image_{++imageCounter}.png"; // Default to PNG
                         string outputPath = Path.Combine(outputDir, fileName);
 
-                        // Write the raw image data to disk
+                        // Write the image bytes to disk
                         try
                         {
-                            File.WriteAllBytes(outputPath, imageBytes);
-                            Console.WriteLine($"Extracted image to: {outputPath}");
-                            imageCount++;
+                            File.WriteAllBytes(outputPath, imageData);
+                            Console.WriteLine($"Extracted image saved to: {outputPath}");
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"Failed to write image for shape ID {shape.ID}: {ex.Message}");
+                            Console.WriteLine($"Failed to save image {fileName}: {ex.Message}");
                         }
                     }
                 }
             }
 
-            Console.WriteLine($"Extraction complete. Total images extracted: {imageCount}");
+            Console.WriteLine($"Extraction complete. {imageCounter} image(s) saved to '{outputDir}'.");
         }
     }

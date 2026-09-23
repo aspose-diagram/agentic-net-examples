@@ -1,63 +1,57 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Path to the output Visio file
+        string outputPath = "output.vsdx";
+
         try
         {
+            // Load the diagram from the input file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // NOTE: The Aspose.Diagram API does not expose an EventComment cell.
+            // Therefore, duplicate event comment removal cannot be performed via this property.
+            // The code below simply iterates through pages and shapes to illustrate where such logic would be placed
+            // if a supported event cell were available.
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            foreach (Page page in diagram.Pages)
             {
-                // Process each page in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Keep track of comment texts that have already been encountered
-                    HashSet<string> seenComments = new HashSet<string>();
-                    // Collect annotations that are duplicates
-                    List<Annotation> duplicates = new List<Annotation>();
+                    // Ensure the shape has an Event section before accessing any event cells
+                    if (shape.Event == null)
+                        continue;
 
-                    // Iterate through all annotations (comments) on the page
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
-                    {
-                        string commentText = annotation.Comment.Value ?? string.Empty;
-
-                        // If this comment text was seen before, mark it for removal
-                        if (seenComments.Contains(commentText))
-                        {
-                            duplicates.Add(annotation);
-                        }
-                        else
-                        {
-                            seenComments.Add(commentText);
-                        }
-                    }
-
-                    // Remove the duplicate annotations from the page
-                    foreach (Annotation dup in duplicates)
-                    {
-                        page.PageSheet.Annotations.Remove(dup);
-                    }
+                    // Placeholder for event comment handling – currently not supported by the API
+                    // Example of accessing a supported event cell:
+                    // var dblClickCell = shape.Event.EventDblClick;
+                    // if (dblClickCell != null) { /* process dbl-click event formula */ }
                 }
-
-                // Save the updated diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Duplicate EventComment cells removed and diagram saved.");
-
+            // Save the modified diagram to the output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -9,17 +9,17 @@ class Program
         try
         {
 
-            // Path to the Visio file to be loaded
-            string filePath = "example.vsdx";
+            // Path to the Visio file
+            string visioPath = "input.vsdx";
 
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
 
             // Retrieve the left header text
             string leftHeader = diagram.HeaderFooter.HeaderLeft;
 
-            // Output the retrieved value
-            Console.WriteLine($"Left Header Text: {leftHeader}");
+            // Output the header text
+            Console.WriteLine($"Left Header: {leftHeader}");
 
         }
         catch (System.IO.FileNotFoundException ex)

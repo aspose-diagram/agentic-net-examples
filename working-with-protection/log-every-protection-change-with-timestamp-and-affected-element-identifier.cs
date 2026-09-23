@@ -1,92 +1,99 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    // Helper method to log protection changes with timestamp and element identifier
-    static void LogChange(string elementId, string changeDescription)
+    static void Main()
     {
-        // Write log entry to standard error to separate from normal output
-        Console.Error.WriteLine($"{DateTime.Now:O} | Element: {elementId} | Change: {changeDescription}");
-    }
-
-    static void Main(string[] args)
-    {
-        // Input Visio file path (first argument)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output Visio file path (second argument)
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
 
-            // ---------- Global document protection changes ----------
-            // Protect backgrounds
-            diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
-            LogChange("Document", "ProtectBkgnds set to TRUE");
+            // Create a new diagram
+            Diagram diagram = new Diagram();
 
-            // Protect masters
-            diagram.DocumentSettings.ProtectMasters = BOOL.True;
-            LogChange("Document", "ProtectMasters set to TRUE");
+            // Set and log global document protection settings
+            SetDocumentProtection(diagram, "ProtectBkgnds", BOOL.True);
+            SetDocumentProtection(diagram, "ProtectMasters", BOOL.False);
+            SetDocumentProtection(diagram, "ProtectShapes", BOOL.True);
+            SetDocumentProtection(diagram, "ProtectStyles", BOOL.False);
 
-            // Protect shapes
-            diagram.DocumentSettings.ProtectShapes = BOOL.True;
-            LogChange("Document", "ProtectShapes set to TRUE");
+            // Add a shape to demonstrate shape-level protection
+            Page page = diagram.Pages[0];
+            long shapeId = page.AddShape(1, 1, 2, 1, "Rectangle", false);
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Protect styles
-            diagram.DocumentSettings.ProtectStyles = BOOL.True;
-            LogChange("Document", "ProtectStyles set to TRUE");
+            // Set and log shape protection properties
+            SetShapeProtection(shape, "LockMoveX", BOOL.True);
+            SetShapeProtection(shape, "LockMoveY", BOOL.False);
+            SetShapeProtection(shape, "LockWidth", BOOL.True);
+            SetShapeProtection(shape, "LockHeight", BOOL.True);
+            SetShapeProtection(shape, "LockRotate", BOOL.True);
+            SetShapeProtection(shape, "LockVtxEdit", BOOL.False);
 
-            // ---------- Shape-level protection changes ----------
-            // Iterate through all pages and shapes to apply locks
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Example: lock movement on X axis
-                    shape.Protection.LockMoveX.Value = BOOL.True;
-                    LogChange($"Shape ID {shape.ID}", "LockMoveX set to TRUE");
+            // Save the diagram
+            diagram.Save("ProtectedDiagram.vsdx", SaveFileFormat.Vsdx);
 
-                    // Example: lock movement on Y axis
-                    shape.Protection.LockMoveY.Value = BOOL.True;
-                    LogChange($"Shape ID {shape.ID}", "LockMoveY set to TRUE");
-
-                    // Example: lock width resizing
-                    shape.Protection.LockWidth.Value = BOOL.True;
-                    LogChange($"Shape ID {shape.ID}", "LockWidth set to TRUE");
-
-                    // Example: lock height resizing
-                    shape.Protection.LockHeight.Value = BOOL.True;
-                    LogChange($"Shape ID {shape.ID}", "LockHeight set to TRUE");
-
-                    // Example: lock rotation
-                    shape.Protection.LockRotate.Value = BOOL.True;
-                    LogChange($"Shape ID {shape.ID}", "LockRotate set to TRUE");
-
-                    // Example: lock deletion
-                    shape.Protection.LockDelete.Value = BOOL.True;
-                    LogChange($"Shape ID {shape.ID}", "LockDelete set to TRUE");
-                }
-            }
-
-            // Save the modified diagram to the output path using VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
         }
-        catch (Exception ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            // Log any exceptions that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
+    }
+
+    static void SetDocumentProtection(Diagram diagram, string propertyName, BOOL value)
+    {
+        switch (propertyName)
+        {
+            case "ProtectBkgnds":
+                diagram.DocumentSettings.ProtectBkgnds = value;
+                break;
+            case "ProtectMasters":
+                diagram.DocumentSettings.ProtectMasters = value;
+                break;
+            case "ProtectShapes":
+                diagram.DocumentSettings.ProtectShapes = value;
+                break;
+            case "ProtectStyles":
+                diagram.DocumentSettings.ProtectStyles = value;
+                break;
+            default:
+                throw new Exception($"Unknown document protection property: {propertyName}");
+        }
+        LogChange("Document", propertyName, value);
+    }
+
+    static void SetShapeProtection(Shape shape, string propertyName, BOOL value)
+    {
+        switch (propertyName)
+        {
+            case "LockMoveX":
+                shape.Protection.LockMoveX.Value = value;
+                break;
+            case "LockMoveY":
+                shape.Protection.LockMoveY.Value = value;
+                break;
+            case "LockWidth":
+                shape.Protection.LockWidth.Value = value;
+                break;
+            case "LockHeight":
+                shape.Protection.LockHeight.Value = value;
+                break;
+            case "LockRotate":
+                shape.Protection.LockRotate.Value = value;
+                break;
+            case "LockVtxEdit":
+                shape.Protection.LockVtxEdit.Value = value;
+                break;
+            default:
+                throw new Exception($"Unknown shape protection property: {propertyName}");
+        }
+        LogChange($"Shape ID {shape.ID}", propertyName, value);
+    }
+
+    static void LogChange(string elementIdentifier, string propertyName, BOOL value)
+    {
+        string timestamp = DateTime.Now.ToString("o");
+        Console.WriteLine($"{timestamp} - {elementIdentifier} - {propertyName} set to {value}");
     }
 }

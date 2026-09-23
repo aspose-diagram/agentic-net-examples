@@ -1,64 +1,56 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect input and output file paths as command‑line arguments.
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: ShapeProtectionExample <input.vsdx> <output.vsdx>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Load the Visio diagram.
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages.
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape has a custom property named "FixedAngle".
-                    bool hasFixedAngleTrue = false;
+                    // Ensure the shape has custom properties collection
                     if (shape.Props != null)
                     {
+                        // Look for a custom property named "FixedAngle"
                         foreach (Prop prop in shape.Props)
                         {
                             if (prop.Name == "FixedAngle" &&
-                                prop.Value != null &&
-                                prop.Value.Val != null &&
-                                prop.Value.Val.Equals("true", StringComparison.OrdinalIgnoreCase))
+                                string.Equals(prop.Value.Val, "true", StringComparison.OrdinalIgnoreCase))
                             {
-                                hasFixedAngleTrue = true;
-                                break;
+                                // Apply protection: lock rotation of the shape
+                                shape.Protection.LockRotate.Value = BOOL.True;
+
+                                // Additional locks can be added here if needed, e.g.:
+                                // shape.Protection.LockMoveX.Value = BOOL.True;
+                                // shape.Protection.LockMoveY.Value = BOOL.True;
+
+                                break; // Property found, no need to check further props for this shape
                             }
                         }
-                    }
-
-                    // If the custom property is set to true, apply protection.
-                    if (hasFixedAngleTrue)
-                    {
-                        // Lock rotation to prevent the shape from being rotated.
-                        shape.Protection.LockRotate.Value = BOOL.True;
-
-                        // Optionally lock other aspects (example: lock moving on X/Y).
-                        shape.Protection.LockMoveX.Value = BOOL.True;
-                        shape.Protection.LockMoveY.Value = BOOL.True;
-
-                        Console.WriteLine($"Applied protection to shape ID {shape.ID} on page '{page.Name}'.");
                     }
                 }
             }
 
-            // Save the modified diagram using VSDX format.
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

@@ -1,42 +1,34 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Path to the source Visio file.
-        string inputPath = "input.vsdx";
-        // Verify the source file exists before proceeding.
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            // Load the diagram from the specified file.
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Apply global protection to prevent adding new pages, backgrounds, masters, shapes, and styles.
+            // Apply global protection to the diagram.
+            // These protection flags restrict modifications and also prevent adding new pages.
             diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
             diagram.DocumentSettings.ProtectMasters = BOOL.True;
             diagram.DocumentSettings.ProtectShapes = BOOL.True;
             diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
-            // Path for the protected output file.
+            // Save the protected diagram
             string outputPath = "protected_output.vsdx";
-
-            // Save the protected diagram using the VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Log any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

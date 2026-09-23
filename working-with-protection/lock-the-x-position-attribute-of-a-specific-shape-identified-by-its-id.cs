@@ -10,33 +10,25 @@ class Program
         try
         {
 
-            // Paths to the source and destination Visio files
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+            // Path to the output Visio file
             string outputPath = "output.vsdx";
-
-            // The ID of the shape whose X‑position should be locked
-            long targetShapeId = 12345; // <-- replace with the actual shape ID
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
+            // ID of the shape whose X‑position should be locked
+            long targetShapeId = 12345; // replace with the actual shape ID
 
-            // Get the shape by its ID
-            Shape shape = page.Shapes.GetShape(targetShapeId);
-            if (shape == null)
-            {
-                throw new Exception($"Shape with ID {targetShapeId} not found.");
-            }
+            // Retrieve the shape from the first page (adjust page index if needed)
+            Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
 
-            // Lock the X‑position (PinX) of the shape
+            // Lock the X‑position (PinX) to prevent horizontal movement
             shape.Protection.LockMoveX.Value = BOOL.True;
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("X‑position locked and diagram saved successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

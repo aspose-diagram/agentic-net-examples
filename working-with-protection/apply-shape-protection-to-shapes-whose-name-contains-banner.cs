@@ -3,41 +3,36 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Paths for input and output Visio files
+                // Load an existing Visio diagram
                 string inputPath = "input.vsdx";
-                string outputPath = "output_protected.vsdx";
-
-                // Load the diagram from the specified file
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate over all pages in the diagram
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Check if the shape's universal name contains "Banner" (case‑insensitive)
-                        if (!string.IsNullOrEmpty(shape.NameU) &&
-                            shape.NameU.IndexOf("Banner", StringComparison.OrdinalIgnoreCase) >= 0)
+                        // Check if the shape's universal name contains "Banner"
+                        if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.Contains("Banner"))
                         {
-                            // Apply protection to prevent moving, resizing, rotating, editing vertices, and deletion
+                            // Apply protection to the shape
                             shape.Protection.LockMoveX.Value = BOOL.True;
                             shape.Protection.LockMoveY.Value = BOOL.True;
                             shape.Protection.LockWidth.Value = BOOL.True;
                             shape.Protection.LockHeight.Value = BOOL.True;
                             shape.Protection.LockRotate.Value = BOOL.True;
                             shape.Protection.LockVtxEdit.Value = BOOL.True;
-                            shape.Protection.LockDelete.Value = BOOL.True;
                         }
                     }
                 }
 
-                // Save the modified diagram to a new file
+                // Save the modified diagram
+                string outputPath = "output_protected.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

@@ -15,26 +15,18 @@ class Program
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // ID of the shape whose height should be locked
-            long targetShapeId = 5; // replace with the actual shape ID
+            // ID of the shape whose height attribute should be locked
+            long targetShapeId = 123; // replace with the actual shape ID
 
-            // Access the first page (adjust if the shape is on a different page)
-            Page page = diagram.Pages[0];
+            // Retrieve the shape from the first page (adjust page index if needed)
+            Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
 
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(targetShapeId);
-            if (shape == null)
-            {
-                Console.WriteLine($"Shape with ID {targetShapeId} not found.");
-                return;
-            }
-
-            // Lock the height attribute of the shape
+            // Lock the height attribute (prevents height changes)
             shape.Protection.LockHeight.Value = BOOL.True;
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Height attribute locked and diagram saved successfully.");
+            string outputPath = "output_locked.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

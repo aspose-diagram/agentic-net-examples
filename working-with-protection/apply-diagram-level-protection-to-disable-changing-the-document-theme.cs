@@ -10,12 +10,20 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Apply global protection to prevent editing of styles (themes are part of styles)
+            // Apply global protection to prevent theme changes.
+            // Protecting styles disables modifications that affect the document theme.
             diagram.DocumentSettings.ProtectStyles = BOOL.True;
+
+            // (Optional) Additional protection to lock other aspects of the document.
+            diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
+            diagram.DocumentSettings.ProtectMasters = BOOL.True;
+            diagram.DocumentSettings.ProtectShapes = BOOL.True;
 
             // Save the protected diagram
             string outputPath = "output_protected.vsdx";

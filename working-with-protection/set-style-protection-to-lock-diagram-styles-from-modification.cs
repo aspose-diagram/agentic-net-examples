@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,15 +11,13 @@ class Program
         {
 
             // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Apply global protection to lock styles from modification
+            // Lock diagram styles from modification (global protection)
             diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
-            // Save the protected diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the diagram with the protection applied
+            diagram.Save("output_protected.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

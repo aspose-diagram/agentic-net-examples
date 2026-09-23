@@ -4,70 +4,64 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        // Path to the Visio diagram file
+        string diagramPath = "input.vsdx";
+        // Verify the diagram file exists
+        if (!File.Exists(diagramPath)) { Console.Error.WriteLine($"File not found: {diagramPath}"); return; }
+
+        // Path to the output text file
+        string outputPath = "authors.txt";
+
+        try
         {
-            // Expect two arguments: input Visio file path and output text file path
-            if (args.Length < 2)
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Build a map of reviewer indices to reviewer names (Reviewer.ID does not exist)
+            var reviewerMap = new Dictionary<int, string>();
+            int reviewerIndex = 0;
+            foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
             {
-                Console.WriteLine("Usage: CommentAuthorLister <inputVisioFile> <outputTextFile>");
-                return;
+                // Reviewer.Name is a Str2Value; use .Value to get the string
+                string reviewerName = reviewer.Name.Value ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(reviewerName))
+                {
+                    reviewerMap[reviewerIndex] = reviewerName;
+                }
+                reviewerIndex++;
             }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            // Load the Visio diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
-
-            // Collect author names (reviewer names) from annotations
-            HashSet<string> authorSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            // Iterate through all pages
+            // Collect all author names from annotations (comments)
+            var authorSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (Page page in diagram.Pages)
             {
-                // Annotations are stored in the PageSheet
                 foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    // ReviewerID links to a reviewer in the document's Reviewer collection
+                    // Annotation.ReviewerID is an IntValue referencing the reviewer index
                     int reviewerId = annotation.ReviewerID.Value;
-
-                    // Ensure the reviewer index is within bounds
-                    if (reviewerId >= 0 && reviewerId < diagram.DocumentSheet.Reviewers.Count)
+                    if (reviewerMap.TryGetValue(reviewerId, out string author))
                     {
-                        var reviewer = diagram.DocumentSheet.Reviewers[reviewerId];
-                        // Reviewer.Name is a Str2Value; retrieve the actual string via .Value
-                        string authorName = reviewer.Name.Value ?? string.Empty;
-                        if (!string.IsNullOrWhiteSpace(authorName))
-                        {
-                            authorSet.Add(authorName.Trim());
-                        }
+                        authorSet.Add(author);
                     }
                 }
             }
 
-            // Sort the distinct author names alphabetically
-            List<string> sortedAuthors = new List<string>(authorSet);
+            // Sort authors alphabetically
+            var sortedAuthors = new List<string>(authorSet);
             sortedAuthors.Sort(StringComparer.OrdinalIgnoreCase);
 
-            // Write the sorted list to the output text file
-            try
-            {
-                File.WriteAllLines(outputPath, sortedAuthors);
-                Console.WriteLine($"Author list written to: {outputPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to write output file: {ex.Message}");
-            }
+            // Write the sorted list to the output file
+            File.WriteAllLines(outputPath, sortedAuthors);
+
+            Console.WriteLine($"Author list written to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

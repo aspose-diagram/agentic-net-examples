@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 
 class Program
 {
@@ -9,28 +10,28 @@ class Program
         try
         {
 
-            // Path to the Visio diagram file to be loaded
-            string diagramPath = "input.vsdx";
+            // Path to the Visio file to be processed
+            string inputPath = "input.vsdx";
 
-            // Load the diagram using the constructor that accepts a file name (load rule)
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Read the built‑in Title property from the document properties collection
-            string actualTitle = diagram.DocumentProps.Title;
+            // Retrieve the built‑in Title property from the document properties
+            string title = diagram.DocumentProps.Title;
 
-            // Predefined template title to compare against
-            string expectedTitle = "My Diagram Template";
+            // Define the expected title template for comparison
+            const string templateTitle = "My Template Title";
 
-            // Compare the actual title with the expected title (case‑insensitive)
-            bool titlesMatch = string.Equals(actualTitle, expectedTitle, StringComparison.OrdinalIgnoreCase);
-
-            // Output the comparison result
-            Console.WriteLine($"Actual Title: \"{actualTitle}\"");
-            Console.WriteLine($"Expected Title: \"{expectedTitle}\"");
-            Console.WriteLine($"Titles match: {titlesMatch}");
-
-            // Clean up resources
-            diagram.Dispose();
+            // Compare the actual title with the template and handle the result
+            if (title == templateTitle)
+            {
+                Console.WriteLine("Title matches the template.");
+            }
+            else
+            {
+                Console.WriteLine($"Title mismatch. Diagram title: \"{title}\"");
+                throw new Exception("Diagram title does not match the expected template.");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -6,8 +6,8 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect two file paths as arguments: diagram1 and diagram2
-            if (args.Length < 2)
+            // Expect two file paths as command‑line arguments.
+            if (args.Length != 2)
             {
                 Console.WriteLine("Usage: DiagramCustomPropertyComparer <DiagramPath1> <DiagramPath2>");
                 return;
@@ -16,70 +16,97 @@ class Program
             string diagramPath1 = args[0];
             string diagramPath2 = args[1];
 
-            // Load the two diagrams
+            // Load the two diagrams.
             Diagram diagram1 = new Diagram(diagramPath1);
             Diagram diagram2 = new Diagram(diagramPath2);
 
-            // Retrieve custom property collections
-            var customProps1 = diagram1.DocumentProps.CustomProps;
-            var customProps2 = diagram2.DocumentProps.CustomProps;
+            // Build dictionaries of custom property name -> value for each diagram.
+            var props1 = GetCustomProperties(diagram1);
+            var props2 = GetCustomProperties(diagram2);
 
-            // Build dictionaries for easy lookup (Name -> ValueString)
-            var dict1 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (CustomProp prop in customProps1)
+            // Identify added, removed, and changed properties.
+            var added = new List<string>();
+            var removed = new List<string>();
+            var changed = new List<string>();
+
+            foreach (var kvp in props1)
             {
-                // Guard against null CustomValue
-                string value = prop.CustomValue?.ValueString ?? string.Empty;
-                dict1[prop.Name] = value;
-            }
-
-            var dict2 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (CustomProp prop in customProps2)
-            {
-                string value = prop.CustomValue?.ValueString ?? string.Empty;
-                dict2[prop.Name] = value;
-            }
-
-            bool differencesFound = false;
-
-            // Compare properties present in diagram1
-            foreach (var kvp in dict1)
-            {
-                string name = kvp.Key;
-                string value1 = kvp.Value;
-
-                if (!dict2.ContainsKey(name))
+                if (!props2.ContainsKey(kvp.Key))
                 {
-                    differencesFound = true;
-                    Console.WriteLine($"Property '{name}' exists in Diagram 1 but not in Diagram 2.");
+                    removed.Add(kvp.Key);
                 }
-                else
+                else if (!string.Equals(kvp.Value, props2[kvp.Key], StringComparison.Ordinal))
                 {
-                    string value2 = dict2[name];
-                    if (!string.Equals(value1, value2, StringComparison.Ordinal))
-                    {
-                        differencesFound = true;
-                        Console.WriteLine($"Property '{name}' differs:");
-                        Console.WriteLine($"  Diagram 1 value: '{value1}'");
-                        Console.WriteLine($"  Diagram 2 value: '{value2}'");
-                    }
+                    changed.Add(kvp.Key);
                 }
             }
 
-            // Find properties present only in diagram2
-            foreach (var kvp in dict2)
+            foreach (var kvp in props2)
             {
-                string name = kvp.Key;
-                if (!dict1.ContainsKey(name))
+                if (!props1.ContainsKey(kvp.Key))
                 {
-                    differencesFound = true;
-                    Console.WriteLine($"Property '{name}' exists in Diagram 2 but not in Diagram 1.");
+                    added.Add(kvp.Key);
                 }
             }
 
-            if (!differencesFound)
+            // Output the differences.
+            Console.WriteLine("Custom Property Differences:");
+            Console.WriteLine();
+
+            if (added.Count > 0)
             {
-                Console.WriteLine("No differences found in custom property sets between the two diagrams.");
+                Console.WriteLine("Added:");
+                foreach (var name in added)
+                {
+                    Console.WriteLine($"  {name} = \"{props2[name]}\"");
+                }
+                Console.WriteLine();
             }
+
+            if (removed.Count > 0)
+            {
+                Console.WriteLine("Removed:");
+                foreach (var name in removed)
+                {
+                    Console.WriteLine($"  {name} = \"{props1[name]}\"");
+                }
+                Console.WriteLine();
+            }
+
+            if (changed.Count > 0)
+            {
+                Console.WriteLine("Changed:");
+                foreach (var name in changed)
+                {
+                    Console.WriteLine($"  {name}: \"{props1[name]}\" => \"{props2[name]}\"");
+                }
+                Console.WriteLine();
+            }
+
+            if (added.Count == 0 && removed.Count == 0 && changed.Count == 0)
+            {
+                Console.WriteLine("No differences found in custom properties.");
+            }
+        }
+
+        /// <summary>
+        /// Extracts custom properties from a diagram into a dictionary.
+        /// </summary>
+        /// <param name="diagram">The diagram to inspect.</param>
+        /// <returns>Dictionary where key = property name, value = property value as string.</returns>
+        private static Dictionary<string, string> GetCustomProperties(Diagram diagram)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.Ordinal);
+            var customProps = diagram.DocumentProps.CustomProps;
+
+            for (int i = 0; i < customProps.Count; i++)
+            {
+                CustomProp prop = customProps[i];
+                string name = prop.Name;
+                string value = prop.CustomValue.ValueString ?? string.Empty;
+                dict[name] = value;
+            }
+
+            return dict;
         }
     }

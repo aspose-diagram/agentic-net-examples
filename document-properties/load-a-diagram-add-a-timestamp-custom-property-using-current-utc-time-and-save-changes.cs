@@ -9,25 +9,25 @@ class Program
         try
         {
 
-            // Path to the input Visio file
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            // Path to the output Visio file
+
+            // Path where the modified file will be saved
             string outputPath = "output.vsdx";
 
-            // Load the diagram from file
+            // Load the diagram from the file system
             Diagram diagram = new Diagram(inputPath);
 
-            // Create a new custom property for the timestamp
+            // Create a custom property to store the current UTC timestamp
             CustomProp timestampProp = new CustomProp();
-            timestampProp.Name = "Timestamp";
+            timestampProp.Name = "TimestampUTC";
             timestampProp.PropType = PropType.String;
-            timestampProp.CustomValue = new CustomValue();
-            timestampProp.CustomValue.ValueString = DateTime.UtcNow.ToString("o"); // ISO 8601 format
+            timestampProp.CustomValue.ValueString = DateTime.UtcNow.ToString("o");
 
-            // Add the custom property to the document properties collection
+            // Add the custom property to the document's custom properties collection
             diagram.DocumentProps.CustomProps.Add(timestampProp);
 
-            // Save the diagram with the new custom property
+            // Save the updated diagram back to a file (VSDX format)
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
@@ -9,21 +9,11 @@ class Program
         try
         {
 
-            // Path to the original protected diagram file
-            string sourceFile = "protected.vsdx";
+            // Load the protected diagram file
+            Diagram diagram = new Diagram("protected_diagram.vsdx");
 
-            // Path where the copy will be saved
-            string destinationFile = "protected_copy.vsdx";
-
-            // Load the diagram from the source file
-            Diagram diagram = new Diagram(sourceFile);
-
-            // Save the diagram to a new file using the same format.
-            // This preserves all original metadata (properties, settings, etc.).
-            diagram.Save(destinationFile, SaveFileFormat.Vsdx);
-
-            // Release resources
-            diagram.Dispose();
+            // Save it to a new file; original metadata is retained automatically
+            diagram.Save("protected_diagram_copy.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

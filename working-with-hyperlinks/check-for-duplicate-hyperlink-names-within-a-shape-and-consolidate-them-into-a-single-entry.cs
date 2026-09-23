@@ -10,52 +10,53 @@ class HyperlinkConsolidator
         try
         {
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the diagram (replace with your actual file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Get the collection of hyperlinks for the current shape
-                    HyperlinkCollection hyperlinks = shape.Hyperlinks;
-
-                    // Dictionary to keep track of the first hyperlink encountered for each name
-                    Dictionary<string, Hyperlink> firstByName = new Dictionary<string, Hyperlink>(StringComparer.OrdinalIgnoreCase);
-
-                    // List to collect duplicates that need to be removed
-                    List<Hyperlink> duplicates = new List<Hyperlink>();
-
-                    // Examine each hyperlink in the collection
-                    foreach (Hyperlink hl in hyperlinks)
+                    // Ensure the shape has hyperlinks
+                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
                     {
-                        // Use empty string if Name is null to avoid null reference issues
-                        string name = hl.Name ?? string.Empty;
+                        // Track first occurrence of each hyperlink name
+                        var firstByName = new Dictionary<string, Hyperlink>(StringComparer.OrdinalIgnoreCase);
+                        // Collect duplicates to remove after iteration
+                        var duplicates = new List<Hyperlink>();
 
-                        if (firstByName.ContainsKey(name))
+                        foreach (Hyperlink hl in shape.Hyperlinks)
                         {
-                            // Duplicate found – schedule for removal
-                            duplicates.Add(hl);
-                        }
-                        else
-                        {
-                            // First occurrence of this name – store it
-                            firstByName[name] = hl;
-                        }
-                    }
+                            // Skip hyperlinks without a name
+                            if (string.IsNullOrEmpty(hl.Name))
+                                continue;
 
-                    // Remove duplicate hyperlinks from the shape's collection
-                    foreach (Hyperlink dup in duplicates)
-                    {
-                        hyperlinks.Remove(dup);
+                            if (firstByName.ContainsKey(hl.Name))
+                            {
+                                // Duplicate name found – mark for removal
+                                duplicates.Add(hl);
+                            }
+                            else
+                            {
+                                // First time we see this name – keep it
+                                firstByName[hl.Name] = hl;
+                            }
+                        }
+
+                        // Remove duplicate hyperlink entries from the shape
+                        foreach (Hyperlink dup in duplicates)
+                        {
+                            shape.Hyperlinks.Remove(dup);
+                        }
                     }
                 }
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram (replace with your desired output path)
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

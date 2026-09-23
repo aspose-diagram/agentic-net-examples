@@ -1,47 +1,55 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Define the custom tag to prepend
+            const string tag = "[Review] ";
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Access the annotations (comments) collection on the page sheet
+                var annotations = page.PageSheet.Annotations;
 
-                // Path to the source Visio file
-                const string inputPath = "input.vsdx";
-                // Path for the modified Visio file
-                const string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                // Process each annotation
+                foreach (Annotation annotation in annotations)
                 {
-                    // Access the annotations (comments) collection via the PageSheet
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    // Retrieve the current comment text
+                    string commentText = annotation.Comment.Value;
+
+                    // Apply criteria: comment contains the word "TODO"
+                    if (!string.IsNullOrEmpty(commentText) && commentText.Contains("TODO"))
                     {
-                        // Example criteria: comment text contains the word "Review"
-                        if (annotation.Comment.Value != null && annotation.Comment.Value.Contains("Review"))
+                        // Add the custom tag if it's not already present
+                        if (!commentText.StartsWith(tag))
                         {
-                            // Apply a custom tag if it hasn't been added already
-                            const string tag = "[CustomTag] ";
-                            if (!annotation.Comment.Value.StartsWith(tag))
-                            {
-                                annotation.Comment.Value = tag + annotation.Comment.Value;
-                            }
+                            annotation.Comment.Value = tag + commentText;
                         }
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

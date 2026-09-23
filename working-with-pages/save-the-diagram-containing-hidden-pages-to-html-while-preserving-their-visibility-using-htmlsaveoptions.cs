@@ -10,26 +10,25 @@ class Program
         try
         {
 
-            // Load the diagram that contains hidden pages
-            Diagram diagram = new Diagram(@"C:\Input\sample.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the HTML output
+            string outputPath = "output.html";
 
-            // Configure HTML save options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-            {
-                // Preserve hidden pages in the output (default is true, set explicitly for clarity)
-                ExportHiddenPage = true,
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Render all pages (including hidden ones)
-                PageCount = int.MaxValue
-            };
+            // Configure HTML save options to preserve hidden pages
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.ExportHiddenPage = true;
 
-            // Save the diagram to HTML while keeping hidden pages visible
-            diagram.Save(@"C:\Output\sample.html", htmlOptions);
+            // Save the diagram as HTML
+            diagram.Save(outputPath, htmlOptions);
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

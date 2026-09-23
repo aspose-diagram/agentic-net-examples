@@ -1,60 +1,54 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the existing Visio file
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Assume we work with the first page
+            Page page = diagram.Pages[0];
+
+            // Find the target shape (example: shape with ID 1)
+            // Adjust the ID or selection logic as needed
+            Shape shape = page.Shapes.GetShape(1);
+
+            // Ensure the shape contains at least one field
+            if (shape.Fields.Count > 0)
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output.vsdx";
-
-                // Load the existing diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Retrieve a shape – for demonstration we use the first shape on the page
-                // Ensure the page contains at least one shape
-                if (page.Shapes.Count == 0)
-                {
-                    throw new Exception("No shapes found on the first page.");
-                }
-
-                // Get the shape by its ID
-                Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
-
-                // Verify the shape has at least one field (e.g., a date, page number, or custom formula field)
-                if (shape.Fields.Count == 0)
-                {
-                    throw new Exception("The selected shape does not contain any fields to modify.");
-                }
-
-                // Access the first field in the collection
+                // Get the first field
                 Field field = shape.Fields[0];
 
-                // Set the formula to calculate the area (Width * Height)
-                // The formula is stored in the Ufev.F property of the field's Value object
+                // Set the formula to calculate area (Width * Height)
                 field.Value.Ufev.F = "Width*Height";
 
-                // Optionally, clear any existing format strings to avoid conflicts
+                // Optionally, clear any existing format strings
                 field.Format.Val = "";
                 field.Format.Ufev.F = "";
-                field.Format.Ufev.Unit = MeasureConst.Undefined;
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+            else
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("The selected shape does not contain any fields.");
             }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved successfully.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,46 +1,60 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
 
-            // Add a custom property named "Author" if it does not already exist
-            AddCustomPropertyIfNotExists(diagram, "Author", "John Doe");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Attempt to add the same property again – it will be skipped
-            AddCustomPropertyIfNotExists(diagram, "Author", "Jane Smith");
+            // Define the custom property to add
+            string newPropName = "MyCustomProperty";
+            string newPropValue = "SampleValue";
 
-            // Save the diagram to verify the custom property was added
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-        }
-
-        // Adds a custom property only when a property with the same name is not already present
-        static void AddCustomPropertyIfNotExists(Diagram diagram, string propName, string propValue)
-        {
-            // Check existing custom properties for a matching name
-            foreach (var existingProp in diagram.DocumentProps.CustomProps)
+            // Check if a custom property with the same name already exists
+            bool exists = false;
+            foreach (CustomProp prop in diagram.DocumentProps.CustomProps)
             {
-                if (existingProp.Name == propName)
+                if (prop.Name == newPropName)
                 {
-                    Console.WriteLine($"Custom property \"{propName}\" already exists. Skipping addition.");
-                    return;
+                    exists = true;
+                    break;
                 }
             }
 
-            // Property does not exist – create and add it
-            var newProp = new CustomProp
+            if (!exists)
             {
-                Name = propName,
-                PropType = PropType.String
-            };
-            // Set the string value for the custom property
-            newProp.CustomValue.ValueString = propValue;
+                // Create and configure the new custom property
+                CustomProp customProp = new CustomProp();
+                customProp.Name = newPropName;
+                customProp.PropType = PropType.String;
+                customProp.CustomValue.ValueString = newPropValue;
 
-            diagram.DocumentProps.CustomProps.Add(newProp);
-            Console.WriteLine($"Custom property \"{propName}\" added with value \"{propValue}\".");
+                // Add the custom property to the diagram
+                diagram.DocumentProps.CustomProps.Add(customProp);
+                Console.WriteLine($"Custom property '{newPropName}' added.");
+            }
+            else
+            {
+                Console.WriteLine($"Custom property '{newPropName}' already exists. No action taken.");
+            }
+
+            // Save the diagram with the changes
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

@@ -6,48 +6,29 @@ class DiagramConversion
 {
     static void Main()
     {
-        // Paths to the source VSD file and the target VDW file
-        string inputPath = @"C:\Docs\source.vsd";
-        string outputPath = @"C:\Docs\target.vdw";
-
-        // Declare the streams outside the try block so they are visible in finally
-        FileStream inputStream = null;
-        FileStream outputStream = null;
-
+        // Initialize a FileStream for the source Visio file
+        FileStream fileStream = null;
         try
         {
-            // Open the input and output streams
-            inputStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read);
-            outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
-
-            // Perform the conversion using Aspose.Diagram
-            Diagram.Export(inputStream, outputStream);
+            fileStream = new FileStream("source.vsdx", FileMode.Open, FileAccess.Read);
+            
+            // Load the Visio diagram from the FileStream (using the load rule)
+            Diagram diagram = new Diagram(fileStream);
+            
+            // Perform the conversion (e.g., save as PDF)
+            diagram.Save("output.pdf", SaveFileFormat.Pdf);
         }
         catch (Exception ex)
         {
-            // Handle any errors that occur during conversion
-            Console.WriteLine("An error occurred during diagram conversion:");
-            Console.WriteLine(ex.Message);
+            // Handle any errors that occur during loading or conversion
+            Console.WriteLine("An error occurred: " + ex.Message);
         }
         finally
         {
-            // Ensure both streams are closed even if an exception occurs
-            if (outputStream != null)
+            // Ensure the FileStream is properly closed regardless of success or failure
+            if (fileStream != null)
             {
-                try
-                {
-                    outputStream.Close();
-                }
-                catch { /* ignore secondary errors */ }
-            }
-
-            if (inputStream != null)
-            {
-                try
-                {
-                    inputStream.Close();
-                }
-                catch { /* ignore secondary errors */ }
+                fileStream.Close();
             }
         }
     }

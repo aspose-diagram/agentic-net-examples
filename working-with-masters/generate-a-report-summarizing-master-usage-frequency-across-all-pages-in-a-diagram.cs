@@ -1,58 +1,53 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Dictionary to store master name and its usage count
+            Dictionary<string, int> masterUsage = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(diagramPath))
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Dictionary to hold master name and its usage count
-                    Dictionary<string, int> masterUsage = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    // Some shapes (e.g., groups) may not have an associated master
+                    if (shape.Master == null)
+                        continue;
 
-                    // Iterate through all pages and shapes to count master usage
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            if (shape.Master != null)
-                            {
-                                string masterName = shape.Master.Name;
-                                if (masterUsage.ContainsKey(masterName))
-                                    masterUsage[masterName]++;
-                                else
-                                    masterUsage[masterName] = 1;
-                            }
-                        }
-                    }
+                    // Get the universal name of the master
+                    string masterName = shape.Master.NameU;
 
-                    // Ensure all masters are represented, even if not used
-                    foreach (Master master in diagram.Masters)
-                    {
-                        if (!masterUsage.ContainsKey(master.Name))
-                            masterUsage[master.Name] = 0;
-                    }
-
-                    // Output the report
-                    Console.WriteLine("Master Usage Frequency Report:");
-                    foreach (var entry in masterUsage)
-                    {
-                        Console.WriteLine($"{entry.Key}: {entry.Value}");
-                    }
+                    // Increment usage count for this master
+                    if (masterUsage.ContainsKey(masterName))
+                        masterUsage[masterName]++;
+                    else
+                        masterUsage[masterName] = 1;
                 }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
+            // Output the summary report
+            Console.WriteLine("Master Usage Frequency Report:");
+            foreach (var entry in masterUsage)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine($"Master: {entry.Key}, Usage Count: {entry.Value}");
             }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

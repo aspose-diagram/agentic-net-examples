@@ -1,63 +1,61 @@
 using System;
 using System.IO;
-using System.Reflection;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Saving; // required for SaveFileFormat enum
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Paths to the input and output Visio files
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-        string outputPath = "output.vsdx";
+        // Define input file path
+        string inputPath = "input.vsdx"; // replace with actual file path
 
-        // Load the diagram from file
+        // Guard: ensure the input file exists before loading
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Load an existing Visio diagram
         Diagram diagram = new Diagram(inputPath);
 
-        // Attempt to modify a read‑only built‑in property: BuildNumberCreated via reflection
+        // Attempt to modify a read‑only built‑in property: Version
         try
         {
-            // Use reflection to bypass compile‑time read‑only restriction
-            PropertyInfo buildProp = typeof(Diagram).GetProperty("BuildNumberCreated", BindingFlags.Instance | BindingFlags.Public);
-            // Set a string value; the property is read‑only, so this will throw at runtime
-            buildProp?.SetValue(diagram, "9999");
-            Console.WriteLine("BuildNumberCreated was set successfully (unexpected).");
+            // diagram.Version is read‑only; this will throw an exception
+            diagram.Version = "1.0.0";
         }
         catch (Exception ex)
         {
-            // Expected: property is read‑only, so an exception is caught here
-            Console.WriteLine($"Error setting BuildNumberCreated: {ex.Message}");
+            // Log the error to standard error stream
+            Console.Error.WriteLine("Error modifying read‑only property 'Version': " + ex.Message);
         }
 
-        // Attempt to modify another read‑only built‑in property: Version via reflection
+        // Attempt to modify another read‑only built‑in property: BuildNumberCreated
         try
         {
-            PropertyInfo versionProp = typeof(Diagram).GetProperty("Version", BindingFlags.Instance | BindingFlags.Public);
-            // Attempt to set a new version string; will raise an exception because the property is read‑only
-            versionProp?.SetValue(diagram, "15.0");
-            Console.WriteLine("Version was set successfully (unexpected).");
+            // DocumentProps.BuildNumberCreated is read‑only and expects a string
+            diagram.DocumentProps.BuildNumberCreated = "12345";
         }
         catch (Exception ex)
         {
-            // Expected: property is read‑only, so an exception is caught here
-            Console.WriteLine($"Error setting Version: {ex.Message}");
+            // Log the error to standard error stream
+            Console.Error.WriteLine("Error modifying read‑only property 'BuildNumberCreated': " + ex.Message);
         }
 
-        // Save the diagram (even if modifications failed)
+        // Define output file path
+        string outputPath = "output.vsdx"; // replace with desired output path
+
+        // Save the diagram (unchanged) to a new file with proper error handling
         try
         {
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            Console.WriteLine("Diagram saved to " + outputPath);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving diagram: {ex.Message}");
+            Console.Error.WriteLine("Error saving diagram: " + ex.Message);
         }
-
-        // Clean up resources
-        diagram.Dispose();
     }
 }

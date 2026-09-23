@@ -4,34 +4,38 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect input and output file paths as arguments
-        if (args.Length < 2)
+        try
         {
-            Console.WriteLine("Usage: <exe> <inputFilePath> <outputFilePath>");
-            return;
-        }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
+            // Paths to the input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-        // Load the existing Visio diagram
-        Diagram diagram = new Diagram(inputPath);
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-        // Iterate through all pages and disable the layer named "Grid"
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Layer layer in page.PageSheet.Layers)
+            // Iterate through all pages and disable the layer named "Grid"
+            foreach (Page page in diagram.Pages)
             {
-                if (layer.Name.Value == "Grid")
+                foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    layer.Visible.Value = BOOL.False;
+                    if (layer.Name.Value == "Grid")
+                    {
+                        // Hide the Grid layer
+                        layer.Visible.Value = BOOL.False;
+                    }
                 }
             }
-        }
 
-        // Save the modified diagram as VSDX
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram as VSDX
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

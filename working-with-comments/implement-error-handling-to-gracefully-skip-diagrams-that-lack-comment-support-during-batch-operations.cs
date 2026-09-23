@@ -11,19 +11,19 @@ class Program
             {
 
                 // Input folder containing Visio files
-                string inputFolder = args.Length > 0 ? args[0] : "InputDiagrams";
+                string inputFolder = @"C:\Visio\Input";
                 // Output folder for processed files
-                string outputFolder = args.Length > 1 ? args[1] : "ProcessedDiagrams";
+                string outputFolder = @"C:\Visio\Output";
 
-                // Ensure output directory exists
+                // Ensure output folder exists
                 if (!Directory.Exists(outputFolder))
                 {
                     Directory.CreateDirectory(outputFolder);
                 }
 
-                // Get all Visio files (VSDX, VSD, VDX, etc.) in the input folder
-                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-                foreach (string filePath in diagramFiles)
+                // Get all Visio files (VSDX, VSD, VDX) in the input folder
+                string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+                foreach (string filePath in files)
                 {
                     // Process only supported Visio extensions
                     string extension = Path.GetExtension(filePath).ToLowerInvariant();
@@ -38,31 +38,49 @@ class Program
                         // Load the diagram
                         Diagram diagram = new Diagram(filePath);
 
-                        // Iterate through each page and attempt to add a comment
+                        // Iterate through each page
                         foreach (Page page in diagram.Pages)
                         {
+                            // Attempt to add a comment to the first shape on the page
                             try
                             {
-                                // Add a comment at coordinates (1,1) with sample text
-                                page.AddComment(1.0, 1.0, "Batch processed comment");
+                                Shape firstShape = null;
+                                foreach (Shape shape in page.Shapes)
+                                {
+                                    firstShape = shape;
+                                    break; // only need the first shape
+                                }
+
+                                if (firstShape != null)
+                                {
+                                    // Add a comment associated with the shape
+                                    page.AddComment(firstShape, "Processed by batch operation");
+                                    Console.WriteLine($"Added comment to shape ID {firstShape.ID} on page '{page.Name}'.");
+                                }
+                                else
+                                {
+                                    // No shapes on this page; add a page-level comment instead
+                                    page.AddComment(1.0, 1.0, "Page processed - no shapes");
+                                    Console.WriteLine($"Added page-level comment on page '{page.Name}'.");
+                                }
                             }
-                            catch (Exception ex)
+                            catch (Exception exComment)
                             {
-                                // If the page does not support comments, log and continue with next page
-                                Console.WriteLine($"Comment not supported on page '{page.Name}' in file '{Path.GetFileName(filePath)}': {ex.Message}");
-                                continue;
+                                // Comment operation failed (e.g., diagram format does not support comments)
+                                Console.WriteLine($"Comment not supported on page '{page.Name}' of file '{Path.GetFileName(filePath)}'. Skipping this page. Details: {exComment.Message}");
+                                // Continue with next page
                             }
                         }
 
-                        // Save the modified diagram to the output folder with the same file name
+                        // Save the modified diagram to the output folder
                         string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
                         diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                        Console.WriteLine($"Processed and saved: {Path.GetFileName(outputPath)}");
+                        Console.WriteLine($"Successfully processed and saved: {Path.GetFileName(outputPath)}");
                     }
-                    catch (Exception ex)
+                    catch (Exception exLoad)
                     {
-                        // If loading or saving fails, log and skip this file
-                        Console.WriteLine($"Failed to process file '{Path.GetFileName(filePath)}': {ex.Message}");
+                        // Loading the diagram failed; skip this file
+                        Console.WriteLine($"Failed to load file '{Path.GetFileName(filePath)}'. Skipping. Details: {exLoad.Message}");
                     }
                 }
 

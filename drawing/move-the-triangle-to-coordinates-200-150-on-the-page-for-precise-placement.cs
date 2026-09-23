@@ -1,6 +1,7 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
+using System;
+using System.Linq;
 
 class Program
 {
@@ -9,25 +10,24 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Locate the triangle shape (assumes its NameU is "Triangle")
+            Shape triangle = diagram.Pages[0].Shapes.FirstOrDefault(s => s.NameU == "Triangle");
+
+            if (triangle != null)
             {
-                // Search for the triangle shape by its name (case‑insensitive)
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (!string.IsNullOrEmpty(shape.NameU) &&
-                        shape.NameU.Equals("Triangle", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Move the triangle to the absolute position (200, 150) on the page
-                        shape.MoveTo(200.0, 150.0);
-                    }
-                }
+                // Move the triangle to the desired coordinates (200,150)
+                triangle.XForm.PinX.Value = 200;
+                triangle.XForm.PinY.Value = 150;
+            }
+            else
+            {
+                Console.WriteLine("Triangle shape not found.");
             }
 
-            // Save the modified diagram (replace with your desired output path)
+            // Save the updated diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

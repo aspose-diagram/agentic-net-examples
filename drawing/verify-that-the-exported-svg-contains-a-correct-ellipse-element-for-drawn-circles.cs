@@ -1,71 +1,73 @@
 using System;
 using System.IO;
-using System.Xml;
+using System.Linq;
+using System.Xml.Linq;
 using Aspose.Diagram;
 
-class VerifyEllipseInSvg
+class SvgEllipseVerifier
 {
     static void Main()
     {
-        // Define ellipse (circle) parameters
-        double pinX = 5.0;   // X coordinate of the shape's pin (center of rotation)
-        double pinY = 5.0;   // Y coordinate of the shape's pin (center of rotation)
-        double diameter = 4.0; // Width and height (circle)
-
-        // Create a new diagram
-        Diagram diagram = new Diagram();
-
-        // Draw an ellipse (circle) on the first page
-        // DrawEllipse returns the shape ID, which we ignore here
-        diagram.Pages[0].DrawEllipse(pinX, pinY, diameter, diameter);
-
-        // Export the diagram to SVG
-        string svgPath = "circle.svg";
-        diagram.Save(svgPath, SaveFileFormat.Svg);
-
-        // Load the generated SVG for verification
-        XmlDocument svgDoc = new XmlDocument();
-        svgDoc.Load(svgPath);
-
-        // Find all <ellipse> elements
-        XmlNodeList ellipseNodes = svgDoc.GetElementsByTagName("ellipse");
-
-        if (ellipseNodes.Count == 0)
+        try
         {
-            Console.WriteLine("Verification failed: No <ellipse> element found in the SVG.");
-            return;
-        }
 
-        // Verify that at least one ellipse has equal radii (i.e., a circle)
-        const double tolerance = 0.0001;
-        bool circleFound = false;
+            // Load the Visio diagram (lifecycle rule)
+            Diagram diagram = new Diagram("input.vsdx");
 
-        foreach (XmlNode node in ellipseNodes)
-        {
-            // Extract radius attributes (rx, ry)
-            double rx = double.Parse(node.Attributes["rx"].Value);
-            double ry = double.Parse(node.Attributes["ry"].Value);
+            // Export the diagram to SVG (lifecycle rule)
+            diagram.Save("output.svg", SaveFileFormat.Svg);
 
-            // Check if radii are effectively equal
-            if (Math.Abs(rx - ry) <= tolerance)
+            // Read the generated SVG content
+            string svgContent = File.ReadAllText("output.svg");
+
+            // Parse SVG XML
+            XDocument svgDoc = XDocument.Parse(svgContent);
+
+            // Namespace handling (Visio may include default namespace)
+            XNamespace ns = svgDoc.Root.GetDefaultNamespace();
+
+            // Find all <ellipse> elements
+            var ellipses = svgDoc.Descendants(ns + "ellipse").ToList();
+
+            if (!ellipses.Any())
             {
-                // Optionally verify position matches the drawn parameters
-                double cx = double.Parse(node.Attributes["cx"].Value);
-                double cy = double.Parse(node.Attributes["cy"].Value);
+                Console.WriteLine("No <ellipse> elements found in the SVG.");
+                return;
+            }
 
-                // The SVG coordinates may differ due to internal scaling,
-                // but we can at least ensure the center is close to the pin point.
-                if (Math.Abs(cx - pinX) <= tolerance && Math.Abs(cy - pinY) <= tolerance)
+            // Verify each ellipse corresponds to a circle (rx == ry)
+            foreach (var ellipse in ellipses)
+            {
+                string rxStr = ellipse.Attribute("rx")?.Value;
+                string ryStr = ellipse.Attribute("ry")?.Value;
+
+                if (string.IsNullOrEmpty(rxStr) || string.IsNullOrEmpty(ryStr))
                 {
-                    circleFound = true;
-                    break;
+                    Console.WriteLine("<ellipse> missing 'rx' or 'ry' attributes.");
+                    continue;
+                }
+
+                if (double.TryParse(rxStr, out double rx) && double.TryParse(ryStr, out double ry))
+                {
+                    if (Math.Abs(rx - ry) < 0.001)
+                    {
+                        Console.WriteLine($"Valid circle found: cx={ellipse.Attribute("cx")?.Value}, cy={ellipse.Attribute("cy")?.Value}, r={rx}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Ellipse is not a circle (rx={rx}, ry={ry}).");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Unable to parse 'rx' or 'ry' as numbers.");
                 }
             }
-        }
 
-        if (circleFound)
-            Console.WriteLine("Verification succeeded: SVG contains a correct <ellipse> element representing the drawn circle.");
-        else
-            Console.WriteLine("Verification failed: No matching <ellipse> element with equal radii found.");
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

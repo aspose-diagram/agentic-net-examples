@@ -1,55 +1,67 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Input and output file paths
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Create a backup of the original diagram in memory
-            MemoryStream backupStream = new MemoryStream();
-            diagram.Save(backupStream, SaveFileFormat.Vsdx);
-            backupStream.Position = 0; // Reset stream for reading
-
             try
             {
-                // Perform geometry updates inside the transaction
-                // Example: draw a rectangle on the first page
-                Page page = diagram.Pages[0];
-                // DrawRectangle(pinX, pinY, width, height)
-                // This creates a rectangle shape; the method returns the shape ID (long)
-                long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 3.0);
-                // Retrieve the shape to modify further if needed
-                Shape rectShape = page.Shapes.GetShape(rectId);
-                // Set a fill color as an example of additional geometry-related change
-                rectShape.Fill.FillForegnd.Value = "#FFCC00"; // orange fill
+
+                // Path to the source Visio file
+                string sourcePath = "input.vsdx";
+
+                // Temporary backup file to enable rollback
+                string backupPath = Path.Combine(Path.GetTempPath(), "diagram_backup.vsdx");
+
+                // Load the diagram
+                Diagram diagram = new Diagram(sourcePath);
+
+                // Save a backup copy before making any changes
+                diagram.Save(backupPath, SaveFileFormat.Vsdx);
+
+                try
+                {
+                    // Example geometry update: move the first shape on the first page
+                    Page page = diagram.Pages[0];
+                    // Retrieve shape with ID 1 (adjust as needed)
+                    Shape shape = page.Shapes.GetShape(1);
+                    // Apply translation
+                    shape.XForm.PinX.Value += 1.0; // move right by 1 inch
+                    shape.XForm.PinY.Value += 1.0; // move up by 1 inch
+
+                    // Additional geometry modifications can be placed here
+                    // ...
+
+                    Console.WriteLine("Geometry updates applied successfully.");
+                }
+                catch (Exception ex)
+                {
+                    // Rollback to the backup diagram if any error occurs
+                    diagram = new Diagram(backupPath);
+                    Console.WriteLine($"Error occurred: {ex.Message}");
+                    Console.WriteLine("Diagram has been rolled back to its original state.");
+                }
+                finally
+                {
+                    // Save the final diagram (whether updated or rolled back)
+                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+                    // Clean up the temporary backup file
+                    if (File.Exists(backupPath))
+                    {
+                        File.Delete(backupPath);
+                    }
+
+                    Console.WriteLine("Diagram saved to output.vsdx.");
+                }
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                // An error occurred – roll back to the original diagram state
-                Console.WriteLine($"Error during update: {ex.Message}");
-                // Reload the diagram from the backup stream
-                backupStream.Position = 0;
-                diagram = new Diagram(backupStream);
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save the (possibly rolled‑back) diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
     }
-}
+    }

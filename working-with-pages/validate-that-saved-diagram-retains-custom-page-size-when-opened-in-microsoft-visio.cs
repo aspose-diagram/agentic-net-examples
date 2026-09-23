@@ -2,43 +2,53 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+public class Program
 {
-    static void Main()
+    public static void Main()
     {
-        const double customWidth = 5.0;   // inches
-        const double customHeight = 7.0;  // inches
-        const string filePath = "customPageSize.vsdx";
+        // Define custom page size in inches
+        double customWidth = 8.5;   // example width
+        double customHeight = 11.0; // example height
 
-        // Create a new diagram, add a page, and set custom page dimensions
-        using (Diagram diagram = new Diagram())
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
+
+        // Ensure there is at least one page; add if none exist
+        if (diagram.Pages.Count == 0)
         {
-            diagram.Pages.Add(new Page());                     // add a blank page
-            Page page = diagram.Pages[0];                      // retrieve the first page
-            page.PageSheet.PageProps.PageWidth.Value = customWidth;
-            page.PageSheet.PageProps.PageHeight.Value = customHeight;
-
-            // Save the diagram to a VSDX file
-            diagram.Save(filePath, SaveFileFormat.Vsdx);
+            diagram.Pages.Add(new Page());
         }
 
-        // Load the saved diagram and verify that the page size is preserved
-        using (Diagram loadedDiagram = new Diagram(filePath))
+        // Access the first page and set its custom size
+        Page page = diagram.Pages[0];
+        page.PageSheet.PageProps.PageWidth.Value = customWidth;
+        page.PageSheet.PageProps.PageHeight.Value = customHeight;
+
+        // Save the diagram to a VSDX file
+        string filePath = "customPageSize.vsdx";
+        diagram.Save(filePath, SaveFileFormat.Vsdx);
+
+        // Load the saved diagram
+        Diagram loadedDiagram = new Diagram(filePath);
+
+        // Retrieve the page size from the loaded diagram
+        Page loadedPage = loadedDiagram.Pages[0];
+        double loadedWidth = loadedPage.PageSheet.PageProps.PageWidth.Value;
+        double loadedHeight = loadedPage.PageSheet.PageProps.PageHeight.Value;
+
+        // Validate that the saved and loaded sizes match (tolerance for floating‑point)
+        double tolerance = 0.001;
+        bool widthMatches = Math.Abs(customWidth - loadedWidth) < tolerance;
+        bool heightMatches = Math.Abs(customHeight - loadedHeight) < tolerance;
+
+        if (widthMatches && heightMatches)
         {
-            Page loadedPage = loadedDiagram.Pages[0];
-            double loadedWidth = loadedPage.PageSheet.PageProps.PageWidth.Value;
-            double loadedHeight = loadedPage.PageSheet.PageProps.PageHeight.Value;
-
-            const double tolerance = 0.001; // allow minor floating‑point differences
-            if (Math.Abs(loadedWidth - customWidth) > tolerance ||
-                Math.Abs(loadedHeight - customHeight) > tolerance)
-            {
-                throw new Exception(
-                    $"Page size mismatch. Expected {customWidth}x{customHeight} inches, " +
-                    $"but got {loadedWidth}x{loadedHeight} inches.");
-            }
-
-            Console.WriteLine($"Page size retained correctly: {loadedWidth} x {loadedHeight} inches.");
+            Console.WriteLine("Success: Custom page size retained after saving and loading.");
+        }
+        else
+        {
+            throw new Exception($"Page size mismatch. Expected ({customWidth} x {customHeight}), " +
+                                $"but loaded ({loadedWidth} x {loadedHeight}).");
         }
     }
 }

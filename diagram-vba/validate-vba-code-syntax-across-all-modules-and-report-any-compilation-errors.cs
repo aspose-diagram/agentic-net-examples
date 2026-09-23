@@ -7,14 +7,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file (must be a macro-enabled format if VBA is present)
-        string filePath = args.Length > 0 ? args[0] : "input.vsdm";
+        // Expect the Visio file path as the first argument
+        if (args.Length == 0)
+        {
+            Console.WriteLine("Usage: dotnet run <VisioFilePath>");
+            return;
+        }
 
-        // Load the diagram
+        string visioPath = args[0];
+
+        // Load the diagram (no password handling required)
         Diagram diagram;
         try
         {
-            diagram = new Diagram(filePath);
+            diagram = new Diagram(visioPath);
         }
         catch (Exception ex)
         {
@@ -22,31 +28,61 @@ class Program
             return;
         }
 
-        // Ensure the diagram contains a VBA project
-        if (diagram.VbaProject == null)
+        // Access the VBA project
+        VbaProject vbaProject = diagram.VbaProject;
+        if (vbaProject == null)
         {
             Console.WriteLine("No VBA project found in the diagram.");
             return;
         }
 
-        // Iterate through all VBA modules
         bool anyErrors = false;
-        for (int i = 0; i < diagram.VbaProject.Modules.Count; i++)
-        {
-            VbaModule module = diagram.VbaProject.Modules[i];
-            Console.WriteLine($"--- Module: {module.Name} ---");
-            Console.WriteLine(module.Codes);
-            Console.WriteLine();
 
-            // Placeholder for actual VBA syntax validation.
-            // Aspose.Diagram does not expose a direct compile method,
-            // so we assume the code is syntactically correct.
-            // If a real validation API existed, it would be invoked here.
+        // Iterate through all VBA modules
+        for (int i = 0; i < vbaProject.Modules.Count; i++)
+        {
+            VbaModule module = vbaProject.Modules[i];
+            string code = module.Codes ?? string.Empty;
+
+            // Simple syntax validation: ensure each Sub has a matching End Sub
+            // This is a rudimentary check and may not catch all errors.
+            int subCount = CountOccurrences(code, "Sub ");
+            int endSubCount = CountOccurrences(code, "End Sub");
+
+            if (subCount != endSubCount)
+            {
+                anyErrors = true;
+                Console.WriteLine($"Module '{module.Name}' (Index {i}) has mismatched Sub/End Sub statements.");
+                Console.WriteLine($"  Sub statements: {subCount}, End Sub statements: {endSubCount}");
+            }
+
+            // Additional basic check: ensure the module contains at least one Sub or Function
+            if (!code.Contains("Sub ") && !code.Contains("Function "))
+            {
+                anyErrors = true;
+                Console.WriteLine($"Module '{module.Name}' (Index {i}) does not contain any Sub or Function definitions.");
+            }
         }
 
         if (!anyErrors)
         {
-            Console.WriteLine("VBA syntax validation completed: no compilation errors detected.");
+            Console.WriteLine("All VBA modules passed the basic syntax validation.");
         }
+    }
+
+    // Helper method to count non-overlapping occurrences of a substring
+    private static int CountOccurrences(string source, string substring)
+    {
+        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(substring))
+            return 0;
+
+        int count = 0;
+        int index = 0;
+        while ((index = source.IndexOf(substring, index, StringComparison.OrdinalIgnoreCase)) != -1)
+        {
+            count++;
+            index += substring.Length;
+        }
+        return count;
     }
 }

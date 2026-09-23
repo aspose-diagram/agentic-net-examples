@@ -14,37 +14,34 @@ class Program
             string inputPath = "input.vsdx";
 
             // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Iterate through each page in the diagram
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    // Retrieve the current page
-                    Page page = diagram.Pages[i];
+                Page page = diagram.Pages[i];
 
-                    // Get page dimensions (in inches)
-                    double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeightInches = page.PageSheet.PageProps.PageHeight.Value;
+                // Retrieve page dimensions (in inches)
+                double widthInches = page.PageSheet.PageProps.PageWidth.Value;
+                double heightInches = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Configure image save options for PNG thumbnail
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                    {
-                        // Export only the current page
-                        PageIndex = i,
-                        PageCount = 1,
-                        // Define the canvas size using the page dimensions
-                        PageSize = new PageSize((float)pageWidthInches, (float)pageHeightInches)
-                    };
+                // Configure image export options
+                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+                // Set canvas size to match the page dimensions
+                options.PageSize = new PageSize((float)widthInches, (float)heightInches);
+                // Export only the current page
+                options.PageIndex = i;
+                options.PageCount = 1;
 
-                    // Build output file name for the thumbnail
-                    string outputPath = $"Page_{i + 1}_thumb.png";
+                // Generate a thumbnail file name per page
+                string outputPath = $"thumbnail_page_{page.ID}.png";
 
-                    // Save the thumbnail image
-                    diagram.Save(outputPath, saveOptions);
-                }
+                // Save the page as an image thumbnail
+                diagram.Save(outputPath, options);
             }
 
-            Console.WriteLine("Thumbnails generated successfully.");
+            // Release resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

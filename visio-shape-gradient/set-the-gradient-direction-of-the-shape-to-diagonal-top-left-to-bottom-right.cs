@@ -10,37 +10,21 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (or create a new one)
+            // Load an existing Visio diagram
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Add a rectangle shape to the active page
-            // AddShape returns the shape ID (long)
-            long rectId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle");
+            // Access the first page and the first shape on that page
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes.GetShape(1); // shape ID 1
 
-            // Retrieve the Shape object using the ID
-            Shape rectShape = diagram.ActivePage.Shapes.GetShape((int)rectId);
-
-            // Enable gradient fill
-            rectShape.Fill.FillPattern.Value = 25; // 25 = gradient fill pattern
-            rectShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+            // Ensure the shape has a gradient fill
+            shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
+            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
             // Set gradient direction to diagonal (top‑left to bottom‑right)
-            // Direction values: 0 = left‑right, 1 = top‑bottom, 2 = diagonal TL‑BR, 3 = diagonal BL‑TR
-            rectShape.Fill.GradientFill.GradientDir.Value = 2;
-
-            // Clear any existing gradient stops
-            rectShape.Fill.GradientFill.GradientStops.Clear();
-
-            // Add gradient stop at start (position 0) – blue
-            rectShape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(0.0, MeasureConst.NUM),
-                new ColorValue("#0000FF", MeasureConst.Undefined));
-
-            // Add gradient stop at end (position 1) – green
-            rectShape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(1.0, MeasureConst.NUM),
-                new ColorValue("#00FF00", MeasureConst.Undefined));
+            // Direction value 2 corresponds to diagonal in Visio
+            shape.Fill.GradientFill.GradientDir.Value = 2;
 
             // Save the modified diagram
             string outputPath = "output.vsdx";

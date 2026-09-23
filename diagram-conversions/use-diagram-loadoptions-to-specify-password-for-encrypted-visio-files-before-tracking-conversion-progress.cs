@@ -1,41 +1,61 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramConversion
 {
-    static void Main()
+    // Callback to track page saving progress during PDF export
+    class PageProgressCallback : IPageSavingCallback
     {
-        try
+        public void PageStartSaving(PageStartSavingArgs args)
         {
-
-            // Path to the encrypted Visio file.
-            string inputPath = "encrypted.vsdx";
-
-            // Path for the converted output (PDF in this example).
-            string outputPath = "converted.pdf";
-
-            // LoadOptions does not support a password property in this version.
-            // Create a LoadOptions instance and use it when loading the diagram.
-            LoadOptions loadOptions = new LoadOptions();
-
-            // Load the diagram using the LoadOptions constructor overload.
-            Diagram diagram = new Diagram(inputPath, loadOptions);
-
-            // Simple progress tracking.
-            Console.WriteLine("Conversion started...");
-
-            // Perform a conversion operation (e.g., save as PDF).
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine("Conversion completed.");
-
+            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        public void PageEndSaving(PageEndSavingArgs args)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+        }
+    }
+
+    class Program
+    {
+        static void Main()
+        {
+            string inputPath = "encrypted.vsdx";   // Path to the encrypted Visio file
+            string outputPath = "output.pdf";      // Desired output PDF file
+
+            Diagram diagram;
+            try
+            {
+                // Load the diagram. Password handling is not supported via LoadOptions,
+                // so the file must be accessible without a password or handled externally.
+                diagram = new Diagram(inputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
+
+            // Configure PDF save options with a progress callback
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                DefaultFont = "Arial",                     // Fallback font
+                SaveFormat = SaveFileFormat.Pdf,           // Explicitly set format
+                PageSavingCallback = new PageProgressCallback()
+            };
+
+            // Save the diagram to PDF while tracking progress
+            try
+            {
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine("Diagram conversion completed successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during conversion: {ex.Message}");
+            }
         }
     }
 }

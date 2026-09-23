@@ -9,20 +9,21 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            var diagram = new Diagram("input.vsdx");
+            // Path to the Visio file to load
+            string inputPath = "input.vsdx";
 
-            // Choose the page you want to inspect (e.g., the first page)
-            var page = diagram.Pages[0];
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Select the first page (index 0)
+                Page page = diagram.Pages[0];
 
-            // Access the PageProps of the selected page
-            var pageProps = page.PageSheet.PageProps;
+                // Read the page width (value is in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
 
-            // Read the PageWidth property (DoubleValue) and get its numeric value
-            double pageWidth = pageProps.PageWidth.Value;
-
-            // Output the page width
-            Console.WriteLine($"Page width: {pageWidth}");
+                // Output the page width
+                Console.WriteLine($"Page width: {pageWidth} inches");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

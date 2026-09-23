@@ -1,68 +1,47 @@
 using System;
-using System.Reflection;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Path to the Visio file (adjust as needed)
+        string filePath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(filePath)) { Console.Error.WriteLine($"File not found: {filePath}"); return; }
+
+        try
         {
-            try
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file (replace with actual path)
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                int executionOrder = 0;
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Ensure the Event section exists
+                    if (shape.Event != null)
                     {
-                        // Ensure the shape has an Event section
-                        if (shape.Event == null)
-                            continue;
-
-                        // Use reflection to get the EventMouseDown cell (if it exists)
-                        PropertyInfo mouseDownProp = shape.Event.GetType().GetProperty("EventMouseDown");
-                        if (mouseDownProp == null)
-                            continue; // Cell not present on this shape
-
-                        object eventCell = mouseDownProp.GetValue(shape.Event);
-                        if (eventCell == null)
-                            continue;
-
-                        // The event cell contains a Ufe property with an F (formula) field
-                        PropertyInfo ufeProp = eventCell.GetType().GetProperty("Ufe");
-                        if (ufeProp == null)
-                            continue;
-
-                        object ufeObj = ufeProp.GetValue(eventCell);
-                        if (ufeObj == null)
-                            continue;
-
-                        PropertyInfo formulaProp = ufeObj.GetType().GetProperty("F");
-                        if (formulaProp == null)
-                            continue;
-
-                        string formula = formulaProp.GetValue(ufeObj) as string ?? string.Empty;
-
-                        // Log the execution order, shape ID and the formula
-                        executionOrder++;
-                        Console.WriteLine($"Order {executionOrder}: Shape ID {shape.ID} - EventMouseDown Formula: {formula}");
+                        // NOTE: The Aspose.Diagram API does not expose an EventMouseDown cell.
+                        // As an alternative, we log the EventDblClick cell if it exists.
+                        if (shape.Event.EventDblClick != null)
+                        {
+                            // Retrieve the formula stored in the EventDblClick cell
+                            string formula = shape.Event.EventDblClick.Ufe.F;
+                            // Log the execution order (page name, shape ID, and formula)
+                            Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, EventDblClick Formula: {formula}");
+                        }
                     }
                 }
-
-                Console.WriteLine("Logging completed.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

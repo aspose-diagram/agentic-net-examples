@@ -1,43 +1,42 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Verify the input file exists before proceeding
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            // Load the diagram inside a using block to ensure proper disposal
-            using (Diagram diagram = new Diagram(inputPath))
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Access the first page (index 0)
-                Page page = diagram.Pages[0];
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip shapes that are marked for deletion
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                // Retrieve a shape to modify; using shape ID 1 as an example
-                Shape shape = page.Shapes.GetShape(1);
-
-                // Configure the EventXFMod cell (triggered on shape resize) to maintain aspect ratio.
-                // The formula sets Width = Height * 1.5, preserving a 1.5 aspect ratio.
-                shape.Event.EventXFMod.Ufe.F = "SETF(Width, Height * 1.5)";
-
-                // Save the modified diagram with a valid SaveFileFormat enum value
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                    // Configure the shape‑resize event (EventXFMod) to keep a fixed aspect ratio.
+                    // The formula below forces the width to be 1.5 times the height.
+                    // Adjust the multiplier (1.5) to the desired aspect ratio for your shapes.
+                    shape.Event.EventXFMod.Ufe.F = "GUARD(Height*1.5)";
+                }
             }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Output any errors encountered during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -2,63 +2,58 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
-using Aspose.Diagram.Saving; // Required for SaveFileFormat
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         // Path to the source Visio file
         string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
 
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+        // Path to the output macro‑enabled Visio file
+        string outputPath = "output.vsdm";
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // -------------------------------------------------
-            // Add a VBA module with the custom macro (MyMacro)
-            // -------------------------------------------------
-            // Create (or reuse) a procedural module named "CustomMacros"
-            int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "CustomMacros");
-            VbaModule module = diagram.VbaProject.Modules[moduleIndex];
+            // Ensure a VBA project exists (VBA project is read‑only, just verify)
+            if (diagram.VbaProject == null)
+                throw new Exception("The diagram does not contain a VBA project.");
 
-            // Define the macro code that will be called on mouse‑enter
-            module.Codes = @"
+            // Add a new procedural module for the custom macro
+            int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "CustomMacros");
+            VbaModule macroModule = diagram.VbaProject.Modules[moduleIndex];
+
+            // Define the macro code (adjust as needed)
+            macroModule.Codes = @"
 Public Sub MyMacro()
-    MsgBox ""Mouse entered shape!""
+    MsgBox ""Custom macro triggered!""
 End Sub
 ";
 
-            // -------------------------------------------------
-            // Update EventDblClick for the selected shapes (as EventMouseEnter is not a valid cell)
-            // -------------------------------------------------
-            // For demonstration, select all shapes whose universal name starts with "Rect"
+            // Iterate over all shapes on the first page (replace with your own selection logic if needed)
             Page page = diagram.Pages[0];
             foreach (Shape shape in page.Shapes)
             {
-                if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.StartsWith("Rect"))
-                {
-                    // Set the EventDblClick cell to call the custom macro
-                    shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"MyMacro\")";
-                }
+                // Skip deleted shapes
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                // NOTE: EventMouseEnter is not a valid event cell in Aspose.Diagram.
+                // Using EventDblClick as an example to trigger the macro on a shape event.
+                shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"MyMacro\")";
             }
 
-            // -------------------------------------------------
-            // Save the diagram as a macro‑enabled Visio file
-            // -------------------------------------------------
-            diagram.Save("output.vsdm", SaveFileFormat.Vsdm);
+            // Save the diagram in a macro‑enabled format
+            diagram.Save(outputPath, SaveFileFormat.Vsdm);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

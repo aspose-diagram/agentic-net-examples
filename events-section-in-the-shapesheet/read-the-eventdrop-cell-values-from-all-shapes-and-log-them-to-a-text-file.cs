@@ -6,61 +6,53 @@ class Program
     {
         static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output log file path
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: EventDropLogger <inputVisioFile> <outputLogFile>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string logPath = args[1];
+
+            // Load the Visio diagram
+            Diagram diagram;
             try
             {
+                diagram = new Diagram(inputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
 
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
-                // Path to the output log file
-                string logPath = "EventDropValues.txt";
-
-                // Load the diagram using Aspose.Diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                using (StreamWriter writer = new StreamWriter(logPath, false))
+            // Open a StreamWriter for logging
+            using (StreamWriter writer = new StreamWriter(logPath, false))
+            {
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
+                        // Ensure the Event section exists
+                        if (shape.Event != null && shape.Event.EventDrop != null && shape.Event.EventDrop.Ufe != null)
                         {
-                            // Ensure the shape has an Event object
-                            if (shape.Event != null && shape.Event.EventDrop != null)
-                            {
-                                // Retrieve the EventDrop value (DoubleValue)
-                                double? eventDropValue = null;
-
-                                // DoubleValue may contain a numeric value or a formula.
-                                // Attempt to get the numeric value; if not available, skip.
-                                try
-                                {
-                                    // The Value property holds the numeric representation.
-                                    // It may be null if the cell contains a formula.
-                                    eventDropValue = shape.Event.EventDrop.Value;
-                                }
-                                catch
-                                {
-                                    // Ignore shapes where the value cannot be parsed.
-                                }
-
-                                if (eventDropValue.HasValue)
-                                {
-                                    // Log shape ID, name, and EventDrop value
-                                    writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Shape Name: {shape.Name}, EventDrop: {eventDropValue.Value}");
-                                }
-                            }
+                            string eventDropFormula = shape.Event.EventDrop.Ufe.F ?? string.Empty;
+                            // Log shape ID and its EventDrop formula
+                            writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, EventDrop: {eventDropFormula}");
+                        }
+                        else
+                        {
+                            // Log that the shape has no EventDrop defined
+                            writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, EventDrop: <none>");
                         }
                     }
                 }
-
-                // Optionally, save the diagram if any modifications were made (not required here)
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            Console.WriteLine($"EventDrop values have been logged to: {logPath}");
+        }
     }

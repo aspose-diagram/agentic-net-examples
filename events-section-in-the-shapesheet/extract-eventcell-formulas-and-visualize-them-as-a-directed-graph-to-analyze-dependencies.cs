@@ -1,84 +1,105 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Reflection;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class EventDependencyGraphGenerator
-{
-    // Entry point
-    static void Main(string[] args)
+class Program
     {
-        // Validate arguments
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: EventDependencyGraphGenerator <inputVisioFile> <outputDotFile>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Load the Visio diagram (using the provided load rule)
-        Diagram diagram = new Diagram(inputPath);
-
-        // Build a directed graph in DOT format
-        StringBuilder dotBuilder = new StringBuilder();
-        dotBuilder.AppendLine("digraph EventDependencies {");
-        dotBuilder.AppendLine("    rankdir=LR;"); // left‑to‑right layout
-
-        // Regular expression to capture shape IDs referenced in formulas (e.g., Sheet.5!Prop.Row)
-        Regex sheetIdRegex = new Regex(@"Sheet\.([0-9]+)", RegexOptions.Compiled);
-
-        // Iterate through all pages and shapes
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                long sourceId = shape.ID;
 
-                // Access the Event object of the shape
-                Event shapeEvent = shape.Event;
-                if (shapeEvent == null) continue;
+                // Path to the source Visio file
+                string sourcePath = "input.vsdx";
 
-                // Use reflection to enumerate all event‑related properties (EventDblClick, EventDrop, etc.)
-                PropertyInfo[] eventProps = typeof(Event).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-                foreach (PropertyInfo propInfo in eventProps)
+                // Load the diagram
+                Diagram diagram = new Diagram(sourcePath);
+
+                // Dictionary to hold shape ID and its list of event formulas
+                Dictionary<long, List<string>> shapeEvents = new Dictionary<long, List<string>>();
+
+                // Iterate through all pages and shapes to collect event formulas
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip properties that are not event cells (e.g., Del)
-                    if (propInfo.Name == "Del") continue;
-
-                    object eventCell = propInfo.GetValue(shapeEvent);
-                    if (eventCell == null) continue;
-
-                    // Many event cells are of type RuleValue which contains a Formula property
-                    PropertyInfo formulaProp = eventCell.GetType().GetProperty("Formula", BindingFlags.Public | BindingFlags.Instance);
-                    if (formulaProp == null) continue; // Not a formula‑holding cell
-
-                    string formula = formulaProp.GetValue(eventCell) as string;
-                    if (string.IsNullOrWhiteSpace(formula)) continue;
-
-                    // Find all referenced shape IDs within the formula
-                    MatchCollection matches = sheetIdRegex.Matches(formula);
-                    foreach (Match match in matches)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (long.TryParse(match.Groups[1].Value, out long targetId))
+                        long shapeId = shape.ID;
+                        List<string> formulas = new List<string>();
+
+                        // Helper local function to add formula if it exists and is not empty
+                        void AddFormula(string formula)
                         {
-                            // Add an edge from the source shape to the target shape
-                            dotBuilder.AppendLine($"    \"{sourceId}\" -> \"{targetId}\" [label=\"{propInfo.Name}\"];");
+                            if (!string.IsNullOrWhiteSpace(formula))
+                            {
+                                formulas.Add(formula);
+                            }
+                        }
+
+                        // Access each supported event cell via the Event property
+                        if (shape.Event != null)
+                        {
+                            if (shape.Event.EventDrop != null) AddFormula(shape.Event.EventDrop.Ufe.F);
+                            if (shape.Event.EventDblClick != null) AddFormula(shape.Event.EventDblClick.Ufe.F);
+                            if (shape.Event.EventXFMod != null) AddFormula(shape.Event.EventXFMod.Ufe.F);
+                            if (shape.Event.EventMultiDrop != null) AddFormula(shape.Event.EventMultiDrop.Ufe.F);
+                            if (shape.Event.TheText != null) AddFormula(shape.Event.TheText.Ufe.F);
+                            if (shape.Event.TheData != null) AddFormula(shape.Event.TheData.Ufe.F);
+                        }
+
+                        if (formulas.Count > 0)
+                        {
+                            shapeEvents[shapeId] = formulas;
                         }
                     }
                 }
+
+                // Output the collected event formulas
+                Console.WriteLine("=== Event Cell Formulas ===");
+                foreach (var kvp in shapeEvents)
+                {
+                    Console.WriteLine($"Shape ID: {kvp.Key}");
+                    foreach (string formula in kvp.Value)
+                    {
+                        Console.WriteLine($"  Formula: {formula}");
+                    }
+                }
+
+                // Simple directed graph representation:
+                // For demonstration, we treat any shape name referenced in a formula as a dependency.
+                // This example parses tokens that look like shape names (alphanumeric strings) and
+                // creates edges from the current shape to the referenced shape if it exists.
+                Console.WriteLine("\n=== Dependency Graph (Adjacency List) ===");
+                foreach (var kvp in shapeEvents)
+                {
+                    long fromId = kvp.Key;
+                    foreach (string formula in kvp.Value)
+                    {
+                        // Very naive parsing: split by non-word characters and look for shape IDs
+                        string[] tokens = System.Text.RegularExpressions.Regex.Split(formula, @"\W+");
+                        foreach (string token in tokens)
+                        {
+                            if (long.TryParse(token, out long toId))
+                            {
+                                // Check if the target shape actually exists in the diagram
+                                if (shapeEvents.ContainsKey(toId))
+                                {
+                                    Console.WriteLine($"{fromId} -> {toId}");
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // OPTIONAL: Save a copy of the diagram (no modifications made)
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"\nDiagram saved to: {outputPath}");
+
             }
-        }
-
-        dotBuilder.AppendLine("}"); // close digraph
-
-        // Write the DOT representation to the specified output file
-        File.WriteAllText(outputPath, dotBuilder.ToString());
-
-        Console.WriteLine($"Event dependency graph generated at: {outputPath}");
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

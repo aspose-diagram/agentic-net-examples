@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for save options if needed
 
 class Program
 {
@@ -9,14 +8,14 @@ class Program
     {
         // Define input and output file paths
         string inputPath = "input.vsdx";
+        string outputPath = "output.vsdx";
+
         // Guard: ensure the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-
-        string outputPath = "output.vsdx";
 
         try
         {
@@ -29,16 +28,9 @@ class Program
                 // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Generate a timestamp string for the current moment
-                    string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-                    // Set the EventXFMod cell (Visio's "After Update" event) to the timestamp.
-                    // The formula must be a quoted string to be a valid Visio formula.
-                    shape.Event.EventXFMod.Ufe.F = $"\"{timestamp}\"";
+                    // Set the EventXFMod cell (Visio's After Update event) to the current timestamp
+                    // Using the NOW() formula ensures the timestamp updates when the shape is modified
+                    shape.Event.EventXFMod.Ufe.F = "NOW()";
                 }
             }
 
@@ -47,7 +39,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
+            // Write any errors that occur during processing to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

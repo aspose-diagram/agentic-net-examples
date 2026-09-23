@@ -2,62 +2,39 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-namespace CustomEventHandlerExample
+class Program
 {
-    // Simple logger class to encapsulate logging logic
-    public static class Logger
+    static void Main(string[] args)
     {
-        // Logs the shape ID when the event is (simulated) triggered
-        public static void LogShapeId(long shapeId)
+        try
         {
-            Console.WriteLine($"Event triggered for Shape ID: {shapeId}");
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Access the first page (index 0) of the diagram
+            Page page = diagram.Pages[0];
+
+            // Add a rectangle shape; AddShape returns the shape's ID (long)
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Set a double‑click event to call a VBA macro named "LogShapeID"
+            // (EventMouseLeave does not exist; using a valid event cell instead)
+            shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"LogShapeID\")";
+
+            // Store the shape ID in a user‑defined cell so the macro can read it
+            User user = new User();
+            user.Name = "ShapeID";
+            user.Value.Val = shapeId.ToString();
+            shape.Users.Add(user);
+
+            // Save the diagram to a VSDX file
+            diagram.Save("EventMouseLeaveDemo.vsdx", SaveFileFormat.Vsdx);
         }
-    }
-
-    class Program
-    {
-        static void Main(string[] args)
+        catch (Exception ex)
         {
-            // Path to the input Visio diagram
-            string diagramPath = "input.vsdx";
-            // Guard: ensure the input file exists before proceeding
-            if (!File.Exists(diagramPath))
-            {
-                Console.Error.WriteLine($"File not found: {diagramPath}");
-                return;
-            }
-
-            // Path for the optional output diagram
-            string outputPath = "output.vsdx";
-
-            try
-            {
-                // Load the diagram from the specified file
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through all pages and shapes to attach an event formula
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Use a valid event cell (EventDblClick) as a placeholder for EventMouseLeave
-                        // This sets a CALLTHIS formula that would invoke a macro in Visio.
-                        shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"LogShapeLeave\")";
-
-                        // Simulate the event firing by directly invoking the logger
-                        // (Aspose.Diagram cannot raise UI events in a console application)
-                        Logger.LogShapeId(shape.ID);
-                    }
-                }
-
-                // Save the modified diagram (optional)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
-            catch (Exception ex)
-            {
-                // Write any Aspose or I/O errors to the error stream
-                Console.Error.WriteLine($"Error: {ex.Message}");
-            }
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

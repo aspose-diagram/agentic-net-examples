@@ -1,34 +1,56 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 using Aspose.Diagram.Vba;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+                // Path to the source Visio file (must be a macro‑enabled format)
+                string sourcePath = "input.vsdm";
 
-            // Access the VBA project contained in the diagram
-            VbaProject vbaProject = diagram.VbaProject;
+                // Load the diagram
+                Diagram diagram = new Diagram(sourcePath);
 
-            // Retrieve the module you want to rename (replace "OldModuleName" with the actual name)
-            VbaModule module = vbaProject.Modules["OldModuleName"];
+                // Ensure the diagram contains a VBA project
+                if (diagram.VbaProject == null)
+                {
+                    Console.WriteLine("The diagram does not contain a VBA project.");
+                    return;
+                }
 
-            // Assign a new, more descriptive name to the module
-            module.Name = "DescriptiveModuleName";
+                // Rename the desired VBA module.
+                // Example: rename a module named "Module1" to "DescriptiveModule"
+                bool renamed = false;
+                foreach (VbaModule module in diagram.VbaProject.Modules)
+                {
+                    if (module.Name == "Module1")
+                    {
+                        module.Name = "DescriptiveModule";
+                        renamed = true;
+                        Console.WriteLine($"Module renamed to '{module.Name}'.");
+                        break;
+                    }
+                }
 
-            // Save the diagram with the updated VBA module name
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                if (!renamed)
+                {
+                    Console.WriteLine("Target module not found. No changes were made.");
+                }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Save the updated diagram in a macro‑enabled format to preserve VBA changes
+                string outputPath = "output.vsdm";
+                diagram.Save(outputPath, SaveFileFormat.Vsdm);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

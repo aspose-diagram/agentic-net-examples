@@ -1,52 +1,58 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Access the first page
+            Page page = diagram.Pages[0];
+
+            // Add a rectangle shape to the page
+            // Parameters: pinX, pinY, width, height, master name, isCalculate
+            long shapeId = page.AddShape(2.0, 2.0, 2.0, 2.0, "Rectangle", false);
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // -------------------------------------------------
+            // Insert a new geometry vertex at a defined coordinate
+            // (e.g., X = 1.0, Y = 1.0) into the first geometry section
+            // -------------------------------------------------
+            // Ensure the shape has at least one geometry section
+            if (shape.Geoms.Count > 0)
             {
+                // Create a new LineTo segment (vertex)
+                LineTo vertex = new LineTo();
+                vertex.X.Value = 1.0; // X coordinate in inches
+                vertex.Y.Value = 1.0; // Y coordinate in inches
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
-                // Use the first (default) page
-                Page page = diagram.Pages[0];
-
-                // Add a rectangle shape at coordinates (2,2)
-                // The AddShape method returns the shape ID (long)
-                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
-
-                // Retrieve the concrete Shape object using the ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Ensure the shape is positioned at the desired location
-                shape.XForm.PinX.Value = 2.0;
-                shape.XForm.PinY.Value = 2.0;
-
-                // Create a new text field that will display the current page number dynamically
-                Field pageNumberField = new Field();
-
-                // Set the field's formula to the Visio function that returns the page number
-                // The formula is stored in the Ufev.F property of the field's Value object
-                pageNumberField.Value.Ufev.F = "PageNum";
-
-                // Optionally set a placeholder value (not displayed, but required by the API)
-                pageNumberField.Value.Val = "";
-
-                // Add the field to the shape's Fields collection
-                shape.Fields.Add(pageNumberField);
-
-                // Save the diagram to a VSDX file
-                diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Diagram created and field inserted successfully.");
-
+                // Append the vertex to the coordinate collection
+                shape.Geoms[0].CoordinateCol.Add(vertex);
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+            // -------------------------------------------------
+            // Add a text field to the shape to display dynamic text
+            // -------------------------------------------------
+            Field field = new Field();
+            // Set the displayed value of the field
+            field.Value.Val = "Dynamic Text";
+            // Add the field to the shape's field collection
+            shape.Fields.Add(field);
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

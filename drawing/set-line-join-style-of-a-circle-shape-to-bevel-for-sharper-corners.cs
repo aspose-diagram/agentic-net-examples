@@ -1,40 +1,53 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access the first page (you can adjust the index as needed)
-            Page page = diagram.Pages[0];
-
-            // Iterate through shapes to find a circle (ellipse master)
-            foreach (Aspose.Diagram.Shape shape in page.Shapes)
+            try
             {
-                // The master name for a circle/ellipse is typically "Ellipse"
-                if (shape.Master != null && shape.Master.Name == "Ellipse")
+
+                // Load an existing Visio diagram (replace with your file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Aspose.Diagram does not expose a LineJoin property.
-                    // To achieve sharper corners on the outline, set the rounding to zero.
-                    shape.Line.Rounding.Value = 0;
-                    Console.WriteLine($"Shape ID {shape.ID}: line rounding set to 0 (sharp corners).");
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Identify a circle/ellipse shape.
+                        // In Visio, circles are typically created using the "Ellipse" master.
+                        // Adjust the condition as needed for your specific diagram.
+                        if (shape.Master != null && shape.Master.Name == "Ellipse")
+                        {
+                            // The Aspose.Diagram API does not expose a LineJoin property.
+                            // To achieve sharper corners on a shape's outline, we can set the rounding to zero.
+                            // This removes any corner rounding that might be applied.
+                            shape.Line.Rounding.Value = 0.0;
+
+                            // Optionally, you can also set the line pattern or weight if desired.
+                            // shape.Line.LinePattern.Value = LinePatternValue.Solid;
+                            // shape.Line.LineWeight.Value = 0.02; // thickness in inches
+
+                            Console.WriteLine($"Adjusted line rounding for shape ID {shape.ID} on page '{page.Name}'.");
+                        }
+                    }
                 }
+
+                // Save the modified diagram (replace with your desired output path)
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Diagram saved successfully.");
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

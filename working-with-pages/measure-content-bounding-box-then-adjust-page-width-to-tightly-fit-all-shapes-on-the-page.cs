@@ -1,41 +1,62 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.AutoLayout;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the existing Visio diagram (uses the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Adjust each page so its size tightly encloses all shapes
-            foreach (Page page in diagram.Pages)
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // LayoutOptions with EnlargePage = true tells Aspose to resize the page
-                // to the bounding box of its drawing content.
-                LayoutOptions layoutOptions = new LayoutOptions
+                // Work with the first page (index 0)
+                Page page = diagram.Pages[0];
+
+                // Initialize bounding box extremes
+                double minX = double.MaxValue;
+                double maxX = double.MinValue;
+
+                // Iterate over all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    EnlargePage = true
-                };
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                // Apply the layout; this updates the page width/height as needed.
-                page.Layout(layoutOptions);
+                    // Calculate left and right extents of the shape
+                    double left = shape.XForm.PinX.Value - shape.XForm.Width.Value / 2.0;
+                    double right = shape.XForm.PinX.Value + shape.XForm.Width.Value / 2.0;
+
+                    if (left < minX) minX = left;
+                    if (right > maxX) maxX = right;
+                }
+
+                // If no shapes were found, report and skip resizing
+                if (minX == double.MaxValue)
+                {
+                    Console.WriteLine("No visible shapes found on the page.");
+                }
+                else
+                {
+                    // Compute the required page width to tightly fit all shapes
+                    double newWidth = maxX - minX;
+
+                    // Apply the new width to the page
+                    page.PageSheet.PageProps.PageWidth.Value = newWidth;
+
+                    Console.WriteLine($"Adjusted page width to {newWidth} inches to fit all shapes.");
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Configure save options to ensure the page size matches the drawing content.
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions
-            {
-                AutoFitPageToDrawingContent = true
-            };
-
-            // Save the modified diagram (uses the provided save rule)
-            diagram.Save("output.vsdx", saveOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

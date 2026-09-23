@@ -1,38 +1,44 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Path to the Visio file
-            string visioFile = @"C:\Diagrams\sample.vsdx";
+                // Path to the Visio file to be loaded
+                string inputPath = "example.vsdx";
 
-            // Load the diagram using the built‑in constructor (lifecycle rule)
-            Diagram diagram = new Diagram(visioFile);
+                // Load the diagram from file
+                Diagram diagram = new Diagram(inputPath);
 
-            // Identifier of the shape we want to locate
-            long shapeId = 5; // replace with the actual ID
+                // Identifier of the shape to locate (example ID)
+                long targetShapeId = 5; // replace with the actual shape ID
 
-            // Get the first page (or use diagram.ActivePage)
-            Page page = diagram.Pages[0];
+                // Retrieve the first page (adjust if the shape is on a different page)
+                Page page = diagram.Pages[0];
 
-            // Locate the shape by its ID using the ShapeCollection.GetShape method
-            Shape targetShape = page.Shapes.GetShape(shapeId);
+                // Locate the shape by its ID
+                Shape shape = page.Shapes.GetShape(targetShapeId);
 
-            // Example processing: output shape name and text
-            Console.WriteLine($"Shape ID: {targetShape.ID}");
-            Console.WriteLine($"Shape Name: {targetShape.Name}");
-            Console.WriteLine($"Shape Text: {targetShape.Text}");
+                // Verify that the shape was found
+                if (shape == null)
+                {
+                    throw new Exception($"Shape with ID {targetShapeId} was not found on page '{page.Name}'.");
+                }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Example processing: output shape details
+                Console.WriteLine($"Shape ID: {shape.ID}");
+                Console.WriteLine($"Shape NameU: {shape.NameU}");
+                Console.WriteLine($"Master Name: {shape.Master?.Name ?? "No master"}");
+                Console.WriteLine($"Position (PinX, PinY): ({shape.XForm.PinX.Value}, {shape.XForm.PinY.Value})");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

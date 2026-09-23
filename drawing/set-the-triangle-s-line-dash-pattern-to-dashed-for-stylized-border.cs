@@ -1,36 +1,30 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
-        {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+        // Get the first (default) page
+        Page page = diagram.Pages[0];
 
-            // Define points for a triangle (closed polygon)
-            // Points are specified as a flat double array: x1, y1, x2, y2, ...
-            double[] trianglePoints = new double[]
-            {
-                0, 0,   // Point 1
-                2, 0,   // Point 2
-                1, 2,   // Point 3
-                0, 0    // Close the shape by returning to Point 1
-            };
+        // Define triangle vertices (X1,Y1, X2,Y2, X3,Y3, X1,Y1 to close)
+        double[] trianglePoints = new double[] { 2.0, 2.0, 4.0, 2.0, 3.0, 4.0, 2.0, 2.0 };
 
-            // Draw the triangle on the page; returns the shape ID (long)
-            long triangleId = page.DrawPolyline(trianglePoints);
+        // Draw the triangle; returns the shape ID (long)
+        long triangleId = page.DrawPolyline(trianglePoints);
 
-            // Retrieve the shape object using the ID
-            Shape triangle = page.Shapes.GetShape((int)triangleId);
+        // Retrieve the shape object using the ID
+        Shape triangle = page.Shapes.GetShape(triangleId);
 
-            // Set the line dash pattern to dashed
-            triangle.Line.LinePattern.Value = LinePatternValue.Dash;
+        // Set the line dash pattern to dashed
+        triangle.Line.LinePattern.Value = LinePatternValue.Dash;
 
-            // Optional: save the diagram to verify the result
-            diagram.Save("Triangle.vsdx", SaveFileFormat.Vsdx);
-        }
+        // Save the diagram to a VSDX file
+        diagram.Save("TriangleDashed.vsdx", SaveFileFormat.Vsdx);
     }
+}

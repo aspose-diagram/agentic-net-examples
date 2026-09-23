@@ -1,105 +1,98 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Paths – replace with actual file locations as needed
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is a second page; create one if necessary
+            if (diagram.Pages.Count < 2)
             {
-
-                // Load an existing Visio diagram
-                // Replace "input.vsdx" with the actual path to your diagram file
-                using (Diagram diagram = new Diagram("input.vsdx"))
+                // Determine the next page ID
+                int maxId = 0;
+                foreach (Page p in diagram.Pages)
                 {
-                    // -------------------------------------------------
-                    // 1. Locate the first triangle shape on the first page
-                    // -------------------------------------------------
-                    Page sourcePage = diagram.Pages[0];
-                    Shape triangleShape = null;
-
-                    foreach (Shape shape in sourcePage.Shapes)
-                    {
-                        // Ensure the shape has a master and that the master name is "Triangle"
-                        if (shape.Master != null && shape.Master.Name == "Triangle")
-                        {
-                            triangleShape = shape;
-                            break;
-                        }
-                    }
-
-                    if (triangleShape == null)
-                    {
-                        Console.WriteLine("Triangle shape not found on the first page.");
-                        return;
-                    }
-
-                    // -------------------------------------------------
-                    // 2. Retrieve original shape geometry and master name
-                    // -------------------------------------------------
-                    string masterName = triangleShape.Master.Name;
-                    double originalPinX = triangleShape.XForm.PinX.Value;
-                    double originalPinY = triangleShape.XForm.PinY.Value;
-                    double originalWidth = triangleShape.XForm.Width.Value;
-                    double originalHeight = triangleShape.XForm.Height.Value;
-
-                    // -------------------------------------------------
-                    // 3. Ensure a second page exists; create if necessary
-                    // -------------------------------------------------
-                    Page targetPage;
-                    if (diagram.Pages.Count >= 2)
-                    {
-                        targetPage = diagram.Pages[1];
-                    }
-                    else
-                    {
-                        // Determine the maximum existing page ID
-                        int maxPageId = 0;
-                        foreach (Page p in diagram.Pages)
-                        {
-                            if (p.ID > maxPageId)
-                                maxPageId = p.ID;
-                        }
-
-                        // Create a new page with a unique ID
-                        targetPage = new Page(maxPageId + 1);
-                        targetPage.Name = "Page-2";
-                        diagram.Pages.Add(targetPage);
-                    }
-
-                    // -------------------------------------------------
-                    // 4. Define offset coordinates for the cloned shape
-                    // -------------------------------------------------
-                    const double offsetX = 2.0; // inches
-                    const double offsetY = 2.0; // inches
-                    double newPinX = originalPinX + offsetX;
-                    double newPinY = originalPinY + offsetY;
-
-                    // -------------------------------------------------
-                    // 5. Add the cloned triangle shape to the second page
-                    // -------------------------------------------------
-                    long newShapeId = targetPage.AddShape(newPinX, newPinY, originalWidth, originalHeight, masterName);
-                    Shape clonedShape = targetPage.Shapes.GetShape(newShapeId);
-
-                    // Optional: copy text from the original shape to the cloned shape
-                    if (!string.IsNullOrWhiteSpace(triangleShape.Text.Value.ToString()))
-                    {
-                        clonedShape.Text.Value.Clear();
-                        clonedShape.Text.Value.Add(new Txt(triangleShape.Text.Value.ToString()));
-                    }
-
-                    // -------------------------------------------------
-                    // 6. Save the modified diagram
-                    // -------------------------------------------------
-                    // Replace "output.vsdx" with the desired output path
-                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-                    Console.WriteLine("Triangle shape cloned and placed on the second page successfully.");
+                    if (p.ID > maxId) maxId = p.ID;
                 }
 
+                Page newPage = new Page();
+                newPage.ID = maxId + 1;
+                diagram.Pages.Add(newPage);
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // References to the source (first) and target (second) pages
+            Page sourcePage = diagram.Pages[0];
+            Page targetPage = diagram.Pages[1];
+
+            // Find the first triangle shape on the source page
+            Shape triangleShape = null;
+            foreach (Shape shp in sourcePage.Shapes)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Identify by master name "Triangle" (adjust if your diagram uses a different master)
+                if (shp.Master != null && shp.Master.Name == "Triangle")
+                {
+                    triangleShape = shp;
+                    break;
+                }
             }
+
+            if (triangleShape == null)
+            {
+                throw new Exception("Triangle shape not found on the first page.");
+            }
+
+            // Offset to apply for the cloned shape
+            double offsetX = 2.0; // inches
+            double offsetY = 2.0; // inches
+
+            // Compute new position based on original shape's PinX/PinY
+            double newPinX = triangleShape.XForm.PinX.Value + offsetX;
+            double newPinY = triangleShape.XForm.PinY.Value + offsetY;
+
+            // Preserve original size
+            double width = triangleShape.XForm.Width.Value;
+            double height = triangleShape.XForm.Height.Value;
+
+            // Add a new shape on the target page using the same master
+            long newShapeId = targetPage.AddShape(newPinX, newPinY, width, height, triangleShape.Master.Name, false);
+            Shape clonedShape = targetPage.Shapes.GetShape(newShapeId);
+
+            // Copy visual properties (fill, line)
+            clonedShape.Fill.FillForegnd.Value = triangleShape.Fill.FillForegnd.Value;
+            clonedShape.Fill.FillPattern.Value = triangleShape.Fill.FillPattern.Value;
+            clonedShape.Line.LineColor.Value = triangleShape.Line.LineColor.Value;
+            clonedShape.Line.LineWeight.Value = triangleShape.Line.LineWeight.Value;
+            clonedShape.Line.LinePattern.Value = triangleShape.Line.LinePattern.Value;
+
+            // Copy text (if any)
+            clonedShape.Text.Value.Clear();
+            foreach (var txtItem in triangleShape.Text.Value)
+            {
+                if (txtItem is Txt txt)
+                {
+                    clonedShape.Text.Value.Add(new Txt(txt.Text));
+                }
+            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

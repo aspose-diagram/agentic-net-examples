@@ -1,65 +1,66 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a new diagram (empty document)
-            using (Diagram diagram = new Diagram())
-            {
-                // Ensure there is at least one foreground page
-                Page foregroundPage = diagram.Pages[0];
+            // Retrieve the first page (index 0) from the diagram
+            Page page = diagram.Pages[0];
 
-                // Create a background page
-                Page backgroundPage = new Page();
-                backgroundPage.Background = BOOL.True; // Mark as background page
+            // Determine page dimensions (in inches) to size the background shape
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Copy page dimensions from the foreground page
-                backgroundPage.PageSheet.PageProps.PageWidth.Value = foregroundPage.PageSheet.PageProps.PageWidth.Value;
-                backgroundPage.PageSheet.PageProps.PageHeight.Value = foregroundPage.PageSheet.PageProps.PageHeight.Value;
+            // Add a rectangle shape that spans the entire page.
+            // The AddShape method returns the shape ID (long).
+            long bgShapeId = page.AddShape(
+                pinX: pageWidth / 2,   // center X
+                pinY: pageHeight / 2,  // center Y
+                width: pageWidth,
+                height: pageHeight,
+                masterName: "Rectangle",
+                isCalculate: false);
 
-                // Add a rectangle shape that spans the entire page
-                // PinX and PinY are the center of the shape; for a full‑page rectangle,
-                // they are set to half the width/height.
-                double pageWidth = backgroundPage.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = backgroundPage.PageSheet.PageProps.PageHeight.Value;
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
+            // Retrieve the newly added shape using its ID
+            Shape bgShape = page.Shapes.GetShape(bgShapeId);
 
-                // Add the rectangle shape using the built‑in "Rectangle" master
-                long rectShapeId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle");
-                Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
+            // Set the shape's fill to a solid color (light blue)
+            bgShape.Fill.FillPattern.Value = 1;          // 1 = solid fill
+            bgShape.Fill.FillForegnd.Value = "#ADD8E6"; // hexadecimal color
 
-                // Apply solid fill with a light blue color
-                rectShape.Fill.FillPattern.Value = 1;               // Solid fill
-                rectShape.Fill.FillForegnd.Value = "#ADD8E6";       // Light blue (hex)
+            // Remove the border by setting line pattern to 0 (no line)
+            bgShape.Line.LinePattern.Value = 0;
 
-                // Remove the outline
-                rectShape.Line.LinePattern.Value = 0;               // No line
+            // Send the shape to the back so it appears behind all other content
+            bgShape.SendToBack();
 
-                // Send the rectangle to the back so other shapes appear above it
-                rectShape.SendToBack();
+            // Optionally lock the shape to prevent accidental selection/editing
+            bgShape.Protection.LockSelect.Value = BOOL.True;
 
-                // Attach the background page to the foreground page
-                foregroundPage.BackPage = backgroundPage;
-
-                // Add the background page to the diagram's page collection
-                diagram.Pages.Add(backgroundPage);
-
-                // Save the diagram to a VSDX file
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            }
-
+            // Save the modified diagram to a new file
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.NullReferenceException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,59 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+
+        // Output DOCX file path (Aspose.Diagram does not support DOCX directly; using PDF as an alternative)
+        string outputPath = "output.pdf";
+        if (string.IsNullOrWhiteSpace(outputPath)) { Console.Error.WriteLine("Output path is empty."); return; }
+
         try
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Desired output path (DOCX is not a supported format for Aspose.Diagram.
-            // The diagram is saved as VSDX instead. Adjust as needed for supported formats.)
-            string outputPath = "output.vsdx";
-
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Font to apply to all characters
-            const string targetFont = "Arial";
+            // Font to apply to all text runs
+            const string targetFont = "Calibri";
 
-            // Iterate through all pages
+            // Desired line spacing (in inches)
+            const double lineSpacing = 0.2; // adjust as needed
+
+            // Iterate through all pages, shapes, paragraphs and character runs
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Set line spacing for each paragraph in the shape
-                    for (int p = 0; p < shape.Paras.Count; p++)
+                    // Apply the font to every character run in the shape
+                    if (shape.Chars != null && shape.Chars.Count > 0)
                     {
-                        // Example: set line spacing factor to 1.0 (single spacing)
-                        shape.Paras[p].SpLine.Value = 1.0;
-                        // Optional: set space before and after paragraphs
-                        shape.Paras[p].SpBefore.Value = 0.0;
-                        shape.Paras[p].SpAfter.Value = 0.0;
+                        foreach (Aspose.Diagram.Char ch in shape.Chars)
+                        {
+                            // Set the font name for the character
+                            ch.FontName.Value = targetFont;
+                        }
                     }
 
-                    // Apply the target font to all character runs in the shape
-                    for (int c = 0; c < shape.Chars.Count; c++)
+                    // Set line spacing for each paragraph in the shape
+                    if (shape.Paras != null && shape.Paras.Count > 0)
                     {
-                        shape.Chars[c].FontName.Value = targetFont;
+                        foreach (Para para in shape.Paras)
+                        {
+                            // SpLine controls line spacing; value is in inches
+                            para.SpLine.Value = lineSpacing;
+                        }
                     }
                 }
             }
 
-            // Save the modified diagram.
-            // Aspose.Diagram does not support saving directly to DOCX.
-            // Use a supported format such as VSDX.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            // Save the modified diagram as PDF (DOCX not supported by Aspose.Diagram)
+            diagram.Save(outputPath, new PdfSaveOptions());
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

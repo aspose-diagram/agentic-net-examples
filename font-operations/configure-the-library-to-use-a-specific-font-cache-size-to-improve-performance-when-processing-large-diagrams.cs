@@ -1,34 +1,63 @@
-using System.IO;
 using System;
+using System.Reflection;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Configure the font cache size for Aspose.Diagram.
-            // The library checks the environment variable "Aspose.Diagram.FontCacheSize"
-            // to determine how many font objects it should keep in memory.
-            // Setting it to a higher value (e.g., 500) can improve performance
-            // when processing large diagrams that use many different fonts.
-            Environment.SetEnvironmentVariable("Aspose.Diagram.FontCacheSize", "500");
+                // Configure global font settings before loading any diagram.
+                // Set the default fallback font.
+                FontConfigs.DefaultFontName = "Arial";
 
-            // Load an existing diagram (using the standard load pattern).
-            Diagram diagram = new Diagram("input.vsdx");
+                // Add a font folder (recursive) so that all required fonts are available.
+                // The second parameter indicates whether to search subfolders.
+                FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
 
-            // ... perform any diagram processing here ...
+                // Attempt to set a custom font cache size.
+                // Aspose.Diagram does not expose a public FontCacheSize property,
+                // so we use reflection to set a possible internal field if it exists.
+                try
+                {
+                    // Look for a static field named "fontCacheSize" in the FontConfigs type.
+                    FieldInfo cacheField = typeof(FontConfigs).GetField("fontCacheSize", BindingFlags.Static | BindingFlags.NonPublic);
+                    if (cacheField != null)
+                    {
+                        // Example: set cache size to 200 MB (value in bytes).
+                        long cacheSizeBytes = 200L * 1024 * 1024;
+                        cacheField.SetValue(null, cacheSizeBytes);
+                        Console.WriteLine($"Font cache size set to {cacheSizeBytes} bytes via reflection.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Font cache size field not found; using default cache settings.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error configuring font cache size: {ex.Message}");
+                }
 
-            // Save the diagram (using the standard save pattern).
-            diagram.Save("output.vsdx", SaveFileFormat.Vdx);
+                // Load a diagram (replace with actual file path as needed).
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Perform any processing on the diagram here...
+
+                // Save the diagram after processing.
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Diagram processing completed.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

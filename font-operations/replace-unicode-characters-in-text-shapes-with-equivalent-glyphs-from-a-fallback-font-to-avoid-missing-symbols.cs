@@ -1,49 +1,82 @@
 using System.IO;
 using System;
+using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect input and output file paths as command‑line arguments
-        if (args.Length < 2)
+        try
         {
-            Console.WriteLine("Usage: <program> <input.vsdx> <output.vsdx>");
-            return;
-        }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
+            // Paths to input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-        // Fallback font to use for missing Unicode glyphs
-        const string fallbackFont = "Arial Unicode MS";
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Load the Visio diagram
-        Diagram diagram = new Diagram(inputPath);
+            // Configure fallback font for missing glyphs
+            string fallbackFontName = "Arial Unicode MS";
+            FontConfigs.DefaultFontName = fallbackFontName;
 
-        // Iterate through all pages and shapes to ensure text shapes are visited
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            // Verify that the fallback font is installed on the system
+            InstalledFontCollection fontCollection = new InstalledFontCollection();
+            bool fallbackExists = fontCollection.Families.Any(f => f.Name.Equals(fallbackFontName, StringComparison.OrdinalIgnoreCase));
+            if (!fallbackExists)
             {
-                // Verify the shape actually contains text
-                if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
+                throw new Exception($"Fallback font \"{fallbackFontName}\" is not installed on this machine.");
+            }
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    // No explicit character replacement is required here.
-                    // Setting the DefaultFont in the save options will cause
-                    // missing glyphs to be rendered using the fallback font.
+                    // Ensure the shape contains text
+                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.ToString()))
+                    {
+                        // Iterate over each text run (Txt) within the shape
+                        foreach (var item in shape.Text.Value)
+                        {
+                            if (item is Txt txt)
+                            {
+                                string original = txt.Text;
+                                char[] characters = original.ToCharArray();
+                                bool modified = false;
+
+                                // Replace non‑ASCII characters with a placeholder glyph
+                                for (int i = 0; i < characters.Length; i++)
+                                {
+                                    char ch = characters[i];
+                                    if (ch > 127) // Simple heuristic for missing glyphs
+                                    {
+                                        characters[i] = '?';
+                                        modified = true;
+                                    }
+                                }
+
+                                // Update the text run if any replacement occurred
+                                if (modified)
+                                {
+                                    txt.Text = new string(characters);
+                                }
+                            }
+                        }
+                    }
                 }
             }
+
+            // Save the updated diagram using the fallback font configuration
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-
-        // Configure save options with the fallback font
-        DiagramSaveOptions saveOptions = new DiagramSaveOptions();
-        saveOptions.DefaultFont = fallbackFont;
-
-        // Save the diagram using the configured options
-        diagram.Save(outputPath, saveOptions);
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

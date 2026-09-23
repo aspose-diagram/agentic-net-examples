@@ -1,7 +1,6 @@
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -10,53 +9,39 @@ class Program
             try
             {
 
-                // Create a new empty Visio diagram
+                // Create a new empty diagram
                 Diagram diagram = new Diagram();
 
-                // Use the first (default) page
+                // Get the first (default) page
                 Page page = diagram.Pages[0];
 
-                // -----------------------------------------------------------------
                 // Add first shape (Rectangle) at position (2,2)
-                // -----------------------------------------------------------------
-                long rectId = page.AddShape(2.0, 2.0, "Rectangle");
-                Shape rectShape = page.Shapes.GetShape(rectId);
+                long shapeId1 = page.AddShape(2.0, 2.0, "Rectangle", false);
+                Shape shape1 = page.Shapes.GetShape(shapeId1);
 
-                // Insert a text field into the rectangle shape
+                // Add second shape (Rectangle) at position (6,2)
+                long shapeId2 = page.AddShape(6.0, 2.0, "Rectangle", false);
+                Shape shape2 = page.Shapes.GetShape(shapeId2);
+
+                // Insert a custom field into the first shape
                 Field field = new Field();
-                field.Value.Val = "Sample Field";
-                rectShape.Fields.Add(field);
+                field.Value.Val = "CustomFieldValue";
+                shape1.Fields.Add(field);
 
-                // -----------------------------------------------------------------
-                // Add second shape (Ellipse) at position (5,5)
-                // -----------------------------------------------------------------
-                long ellipseId = page.AddShape(5.0, 5.0, "Ellipse");
-                Shape ellipseShape = page.Shapes.GetShape(ellipseId);
+                // Add a dynamic connector shape (will be used to connect the two rectangles)
+                long connectorId = page.AddShape(4.0, 2.0, "Dynamic connector", false);
+                Shape connector = page.Shapes.GetShape(connectorId);
 
-                // -----------------------------------------------------------------
-                // Add a dynamic connector shape (will be used to link the two shapes)
-                // -----------------------------------------------------------------
-                long connectorId = page.AddShape(3.5, 3.5, "Dynamic connector");
-                Shape connectorShape = page.Shapes.GetShape(connectorId);
-
-                // Set connector routing style (optional, e.g., right‑angle routing)
-                connectorShape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-
-                // -----------------------------------------------------------------
-                // Connect the rectangle to the ellipse using the dynamic connector
-                // Connect bottom of rectangle to top of ellipse
-                // -----------------------------------------------------------------
+                // Connect shape1 (bottom) to shape2 (top) using the dynamic connector
                 page.ConnectShapesViaConnector(
-                    rectId,
+                    shapeId1,
                     ConnectionPointPlace.Bottom,
-                    ellipseId,
+                    shapeId2,
                     ConnectionPointPlace.Top,
                     connectorId);
 
-                // -----------------------------------------------------------------
                 // Save the diagram to a VSDX file
-                // -----------------------------------------------------------------
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (Aspose.Diagram.DiagramException ex)

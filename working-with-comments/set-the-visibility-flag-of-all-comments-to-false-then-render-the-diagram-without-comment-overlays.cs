@@ -10,29 +10,35 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file.
-            // Replace "input.vsdx" with the actual path to your diagram.
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the rendered image without comment overlays
+            string outputPath = "output.png";
 
-            // Iterate through all pages and their annotations (comments).
-            // Although Aspose.Diagram does not expose a direct visibility flag for annotations,
-            // we clear the comment text to effectively hide it if needed.
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and their annotations (comments)
             foreach (Page page in diagram.Pages)
             {
+                // Annotations collection holds the comments
                 foreach (Annotation comment in page.PageSheet.Annotations)
                 {
-                    // Clear the comment text to hide the overlay content.
-                    comment.Comment.Value = string.Empty;
+                    // There is no explicit visibility flag on Annotation in Aspose.Diagram.
+                    // To ensure comments are not rendered, we rely on the save option below.
+                    // (If a visibility property existed, it would be set here.)
                 }
             }
 
-            // Configure image export options.
-            // Setting IsExportComments to false ensures that comment overlays are not rendered.
+            // Configure image export options to exclude comments
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Do not export comments (overlays)
             saveOptions.IsExportComments = false;
 
-            // Save the diagram as a PNG image without comment overlays.
-            diagram.Save("output.png", saveOptions);
+            // Render the diagram to PNG without comment overlays
+            diagram.Save(outputPath, saveOptions);
+
+            Console.WriteLine($"Diagram rendered to '{outputPath}' without comments.");
 
         }
         catch (System.IO.FileNotFoundException ex)

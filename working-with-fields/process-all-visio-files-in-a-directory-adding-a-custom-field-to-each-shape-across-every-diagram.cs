@@ -1,41 +1,89 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        // Directory containing Visio files
-        string inputDirectory = @"C:\VisioFiles";
-
-        // Get all Visio files (common extensions)
-        string[] visioFiles = Directory.GetFiles(inputDirectory, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in visioFiles)
+        static void Main(string[] args)
         {
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
-            if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
-                continue; // Skip non‑Visio files
-
-            // Load the diagram using the constructor that accepts a file path
-            Diagram diagram = new Diagram(filePath);
-
-            // Iterate through every page and every shape on the page
-            foreach (Page page in diagram.Pages)
+            // Determine the directory to process
+            string folderPath;
+            if (args.Length > 0 && Directory.Exists(args[0]))
             {
-                foreach (Shape shape in page.Shapes)
+                folderPath = args[0];
+            }
+            else
+            {
+                Console.Write("Enter the full path of the folder containing Visio files: ");
+                folderPath = Console.ReadLine()?.Trim() ?? string.Empty;
+                if (!Directory.Exists(folderPath))
                 {
-                    // Add a custom field – using the Data1 property as an example
-                    shape.Data1 = "MyCustomFieldValue";
+                    Console.WriteLine("The specified folder does not exist.");
+                    return;
                 }
             }
 
-            // Save the modified diagram, overwriting the original file
-            diagram.Save(filePath, SaveFileFormat.Vsdx);
+            // Get all Visio files (common extensions)
+            string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (string filePath in visioFiles)
+            {
+                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx")
+                {
+                    continue; // Skip non‑Visio files
+                }
 
-            // Release resources
-            diagram.Dispose();
+                try
+                {
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Iterate through each page
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Iterate through each shape on the page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Ensure the shape is not deleted
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            // Check if the custom property already exists
+                            bool exists = false;
+                            foreach (Prop existingProp in shape.Props)
+                            {
+                                if (existingProp.Name == "MyCustomField")
+                                {
+                                    exists = true;
+                                    break;
+                                }
+                            }
+
+                            if (!exists)
+                            {
+                                // Create a new custom property (Prop)
+                                Prop customProp = new Prop();
+                                customProp.Name = "MyCustomField";
+                                customProp.Label.Value = "MyCustomField";
+                                customProp.Value.Val = "CustomValue";
+                                customProp.Type.Value = TypePropValue.String;
+
+                                // Add the property to the shape
+                                shape.Props.Add(customProp);
+                            }
+                        }
+                    }
+
+                    // Save the modified diagram, overwriting the original file
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
+                }
+            }
+
+            Console.WriteLine("Batch processing completed.");
         }
     }
-}

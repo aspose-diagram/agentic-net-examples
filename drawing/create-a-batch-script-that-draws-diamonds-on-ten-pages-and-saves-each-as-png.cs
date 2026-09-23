@@ -1,67 +1,66 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Create a new blank diagram (contains one default page)
-        using (Diagram diagram = new Diagram())
+        static void Main()
         {
-            // Loop to create ten pages and draw a diamond on each
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Remove the default page if it exists to start with a clean collection
+            if (diagram.Pages.Count > 0)
+            {
+                Page defaultPage = diagram.Pages[0];
+                diagram.Pages.Remove(defaultPage);
+            }
+
+            // Add ten pages and draw a diamond on each
             for (int i = 0; i < 10; i++)
             {
-                Page page;
-
-                // Use the existing first page for i == 0, otherwise add a new page
-                if (i == 0)
+                // Determine the next page ID (max existing ID + 1)
+                int maxId = 0;
+                foreach (Page existingPage in diagram.Pages)
                 {
-                    page = diagram.Pages[0];
-                }
-                else
-                {
-                    Page newPage = new Page();
-                    diagram.Pages.Add(newPage);
-                    page = newPage;
+                    if (existingPage.ID > maxId)
+                        maxId = existingPage.ID;
                 }
 
-                // Determine page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Create and configure the new page
+                Page newPage = new Page(maxId + 1);
+                newPage.Name = $"Page{i + 1}";
+                diagram.Pages.Add(newPage);
 
-                // Center of the page
-                double centerX = pageWidth / 2.0;
-                double centerY = pageHeight / 2.0;
-
-                // Size of the diamond (distance from center to each vertex)
-                double halfSize = 2.0; // inches
-
-                // Define the diamond vertices and close the shape by repeating the first point
+                // Define diamond vertices (top, right, bottom, left, back to top)
                 double[] diamondPoints = new double[]
                 {
-                    centerX,               centerY - halfSize, // Top
-                    centerX + halfSize,    centerY,            // Right
-                    centerX,               centerY + halfSize, // Bottom
-                    centerX - halfSize,    centerY,            // Left
-                    centerX,               centerY - halfSize  // Close back to Top
+                    5.0, 6.0,   // Top
+                    6.0, 5.0,   // Right
+                    5.0, 4.0,   // Bottom
+                    4.0, 5.0,   // Left
+                    5.0, 6.0    // Close polygon
                 };
 
-                // Draw the diamond (returns a shape ID)
-                long shapeId = page.DrawPolyline(diamondPoints);
-
-                // Retrieve the shape to apply styling
-                Shape diamondShape = page.Shapes.GetShape((int)shapeId);
-                diamondShape.Line.LineColor.Value = "#FF0000";      // Red border
-                diamondShape.Fill.FillForegnd.Value = "#00FF00";    // Green fill
-
-                // Save the current page as a PNG file
-                string outputFile = $"DiamondPage_{i + 1}.png";
-                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                pngOptions.PageIndex = i; // Export only this page
-                diagram.Save(outputFile, pngOptions);
+                // Draw the diamond shape on the current page
+                long shapeId = newPage.DrawPolyline(diamondPoints);
+                // Shape retrieval is optional; the shape is already part of the page
+                // Shape diamondShape = newPage.Shapes.GetShape(shapeId);
             }
+
+            // Export each page as an individual PNG file
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                pngOptions.PageIndex = i;   // Export only the current page
+                pngOptions.PageCount = 1;   // Single page per file
+
+                string outputPath = $"DiamondPage{i + 1}.png";
+                diagram.Save(outputPath, pngOptions);
+                Console.WriteLine($"Saved {outputPath}");
+            }
+
+            // Dispose the diagram to release resources
+            diagram.Dispose();
         }
     }
-}

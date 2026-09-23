@@ -5,69 +5,37 @@ using Aspose.Diagram.ActiveXControls;
 
 public static class ActiveXHelper
 {
-    /// <summary>
-    /// Retrieves the concrete ActiveX control of the requested type from the specified shape.
-    /// Throws if the shape does not contain an ActiveX control or if the control cannot be cast to T.
-    /// </summary>
-    /// <typeparam name="T">Concrete ActiveX control type (e.g., CommandButtonActiveXControl).</typeparam>
-    /// <param name="shape">The shape that holds the ActiveX control.</param>
-    /// <returns>Instance of the concrete ActiveX control.</returns>
-    public static T GetActiveXControl<T>(Shape shape) where T : ActiveXControl
+    // Returns the concrete ActiveXControl cast to the requested type.
+    // Throws if the shape has no ActiveX control or the cast is invalid.
+    public static T CastActiveXControl<T>(Shape shape) where T : ActiveXControl
     {
         if (shape == null) throw new ArgumentNullException(nameof(shape));
+        if (shape.ActiveXControl == null) throw new InvalidOperationException("Shape does not contain an ActiveX control.");
 
-        var control = shape.ActiveXControl;
-        if (control == null)
-            throw new InvalidOperationException("The shape does not contain an ActiveX control.");
+        // Direct cast works for compatible types.
+        if (shape.ActiveXControl is T target) return target;
 
-        if (control is T typedControl)
-            return typedControl;
+        // Fallback: map ControlType to the expected concrete class.
+        ControlType type = shape.ActiveXControl.Type;
 
-        throw new InvalidCastException(
-            $"ActiveX control type mismatch. Expected: {typeof(T).Name}, Actual: {control.GetType().Name}.");
-    }
+        if (typeof(T) == typeof(CommandButtonActiveXControl) && type == ControlType.CommandButton)
+            return (T)(object)(CommandButtonActiveXControl)shape.ActiveXControl;
 
-    /// <summary>
-    /// Returns the concrete ActiveX control based on the ControlType enumeration.
-    /// If the type is not recognized, the original ActiveXControl instance is returned.
-    /// </summary>
-    /// <param name="shape">The shape that holds the ActiveX control.</param>
-    /// <returns>Concrete ActiveXControl instance or null if none exists.</returns>
-    public static ActiveXControl GetConcreteControl(Shape shape)
-    {
-        if (shape == null) throw new ArgumentNullException(nameof(shape));
+        if (typeof(T) == typeof(ImageActiveXControl) && type == ControlType.Image)
+            return (T)(object)(ImageActiveXControl)shape.ActiveXControl;
 
-        var control = shape.ActiveXControl;
-        if (control == null) return null;
+        if (typeof(T) == typeof(CheckBoxActiveXControl) && type == ControlType.CheckBox)
+            return (T)(object)(CheckBoxActiveXControl)shape.ActiveXControl;
 
-        switch (control.Type)
-        {
-            case ControlType.CommandButton:
-                return (CommandButtonActiveXControl)control;
-            case ControlType.ComboBox:
-                return (ComboBoxActiveXControl)control;
-            case ControlType.CheckBox:
-                return (CheckBoxActiveXControl)control;
-            case ControlType.ListBox:
-                return (ListBoxActiveXControl)control;
-            case ControlType.TextBox:
-                return (TextBoxActiveXControl)control;
-            case ControlType.SpinButton:
-                return (SpinButtonActiveXControl)control;
-            case ControlType.RadioButton:
-                return (RadioButtonActiveXControl)control;
-            case ControlType.Label:
-                return (LabelActiveXControl)control;
-            case ControlType.Image:
-                return (ImageActiveXControl)control;
-            case ControlType.ToggleButton:
-                return (ToggleButtonActiveXControl)control;
-            case ControlType.ScrollBar:
-                return (ScrollBarActiveXControl)control;
-            default:
-                // Unknown or unhandled type – return the base instance.
-                return control;
-        }
+        if (typeof(T) == typeof(TextBoxActiveXControl) && type == ControlType.TextBox)
+            return (T)(object)(TextBoxActiveXControl)shape.ActiveXControl;
+
+        if (typeof(T) == typeof(SpinButtonActiveXControl) && type == ControlType.SpinButton)
+            return (T)(object)(SpinButtonActiveXControl)shape.ActiveXControl;
+
+        // Add additional mappings here as needed.
+
+        throw new InvalidCastException($"ActiveX control of type '{type}' cannot be cast to '{typeof(T).Name}'.");
     }
 }
 

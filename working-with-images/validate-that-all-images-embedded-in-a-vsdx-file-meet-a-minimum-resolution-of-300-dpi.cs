@@ -11,42 +11,37 @@ class Program
             {
 
                 // Path to the VSDX file to validate
-                string filePath = "input.vsdx";
+                string inputPath = "input.vsdx";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath, LoadFileFormat.Vsdx);
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vsdx);
 
+                // Minimum DPI requirement
+                const float MinDpi = 300f;
+
+                // Flag to track validation result
                 bool allImagesValid = true;
 
-                // Iterate through all pages and shapes
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Identify embedded images (foreign shapes)
-                        if (shape.Type == TypeValue.Foreign)
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
                         {
-                            // Retrieve the raw image bytes
-                            byte[] imageData = shape.ForeignData.Value;
-
-                            if (imageData == null || imageData.Length == 0)
-                            {
-                                Console.WriteLine($"Shape ID {shape.ID} has no image data.");
-                                allImagesValid = false;
-                                continue;
-                            }
-
-                            // Load the image using Aspose.Drawing
-                            using (MemoryStream ms = new MemoryStream(imageData))
+                            // Load the image from the foreign data byte array
+                            using (MemoryStream ms = new MemoryStream(shape.ForeignData.Value))
                             using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
                             {
-                                float hDpi = img.HorizontalResolution;
-                                float vDpi = img.VerticalResolution;
+                                float horizDpi = img.HorizontalResolution;
+                                float vertDpi = img.VerticalResolution;
 
-                                if (hDpi < 300f || vDpi < 300f)
+                                if (horizDpi < MinDpi || vertDpi < MinDpi)
                                 {
-                                    Console.WriteLine($"Shape ID {shape.ID} fails DPI check: {hDpi}x{vDpi} DPI.");
                                     allImagesValid = false;
+                                    Console.WriteLine($"Image in shape ID {shape.ID} on page {page.Name} has insufficient resolution: {horizDpi}x{vertDpi} DPI.");
                                 }
                             }
                         }

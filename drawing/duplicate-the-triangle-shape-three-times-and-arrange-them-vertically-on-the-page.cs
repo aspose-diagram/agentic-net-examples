@@ -1,52 +1,60 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Create a new empty Visio diagram
+        // Create a new blank diagram
         using (Diagram diagram = new Diagram())
         {
-            // Access the first (default) page
+            // Get the first (default) page
             Page page = diagram.Pages[0];
 
-            // Triangle geometry (base points and height)
-            double leftX = 2.0;
-            double rightX = 3.0;
-            double topX = 2.5;
-            double triangleHeight = 1.0; // vertical size of the triangle
+            // Define triangle vertices (in inches)
+            double x1 = 2.0, y1 = 2.0;   // Bottom left
+            double x2 = 4.0, y2 = 2.0;   // Bottom right
+            double x3 = 3.0, y3 = 4.0;   // Top
 
-            // We need the original triangle plus three duplicates (total 4)
-            int totalTriangles = 4;
-            double verticalSpacing = 3.0; // space between each triangle
-
-            for (int i = 0; i < totalTriangles; i++)
+            // Helper to draw a triangle at a given vertical offset
+            void DrawTriangle(double offsetY)
             {
-                // Compute the Y coordinate for the current triangle's base
-                double baseY = 2.0 + i * verticalSpacing;
-
-                // Define the four points of the closed polyline (triangle)
+                // Points are defined in a flat double array; repeat the first point to close the shape
                 double[] points = new double[]
                 {
-                    leftX,  baseY,          // left base point
-                    rightX, baseY,          // right base point
-                    topX,   baseY + triangleHeight, // top point
-                    leftX,  baseY           // close back to the first point
+                    x1, y1 + offsetY,
+                    x2, y2 + offsetY,
+                    x3, y3 + offsetY,
+                    x1, y1 + offsetY
                 };
 
-                // Draw the triangle; DrawPolyline returns the shape ID (long)
+                // Draw the polyline (triangle) and obtain its shape ID
                 long shapeId = page.DrawPolyline(points);
 
-                // Retrieve the shape to set visual properties
-                Shape triangle = page.Shapes.GetShape((int)shapeId);
-                triangle.Fill.FillForegnd.Value = "#FFCC00"; // light orange fill
-                triangle.Line.LineColor.Value = "#000000";   // black outline
+                // Retrieve the shape object if further modifications are needed
+                Shape shape = page.Shapes.GetShape(shapeId);
+                // Example: set a fill color for visibility
+                shape.Fill.FillForegnd.Value = "#FFCC00"; // Light orange
+                shape.Line.LineColor.Value = "#000000";   // Black border
             }
 
-            // Save the diagram as a VSDX file
-            diagram.Save("TriangleDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Draw the original triangle
+            DrawTriangle(0);
+
+            // Define vertical spacing between triangles (in inches)
+            double verticalSpacing = 3.0;
+
+            // Duplicate the triangle three times, arranging them vertically
+            for (int i = 1; i <= 3; i++)
+            {
+                DrawTriangle(i * verticalSpacing);
+            }
+
+            // Save the diagram to a VSDX file
+            string outputPath = "TriangleDiagram.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
     }
 }

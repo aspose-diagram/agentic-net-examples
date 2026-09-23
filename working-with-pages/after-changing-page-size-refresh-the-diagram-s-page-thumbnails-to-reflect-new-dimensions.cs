@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,28 +10,25 @@ class Program
         try
         {
 
-            // Paths to the source and destination Visio files
-            string sourcePath = "input.vsdx";
-            string destinationPath = "output.vsdx";
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram from file
-            Diagram diagram = new Diagram(sourcePath);
+            // Access the first page (or any specific page)
+            Page page = diagram.Pages[0];
 
-            // Define new page dimensions (A4 size in inches)
-            double newWidth = 8.27;   // Width in inches
-            double newHeight = 11.69; // Height in inches
+            // Set new page dimensions (in inches)
+            double newWidth = 11.0;   // example width
+            double newHeight = 8.5;   // example height
+            page.PageSheet.PageProps.PageWidth.Value = newWidth;
+            page.PageSheet.PageProps.PageHeight.Value = newHeight;
 
-            // Update each page's size
-            foreach (Page page in diagram.Pages)
-            {
-                page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                page.PageSheet.PageProps.PageHeight.Value = newHeight;
-            }
+            // Refresh the diagram to update page thumbnails after size change
+            diagram.Refresh();
 
-            // Save the diagram; this operation refreshes the page thumbnails
-            diagram.Save(destinationPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Page sizes updated and diagram saved successfully.");
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

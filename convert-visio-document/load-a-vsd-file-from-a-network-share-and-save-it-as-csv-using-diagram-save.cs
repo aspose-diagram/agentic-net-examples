@@ -10,19 +10,16 @@ class Program
         {
 
             // Path to the VSD file on a network share
-            string networkFilePath = @"\\ServerName\ShareFolder\Diagram.vsd";
+            string inputPath = @"\\ServerName\ShareName\Folder\Diagram.vsd";
 
-            // Load the Visio diagram from the network location.
-            // The LoadFileFormat.Vsd enum value specifies that the source file is a binary VSD file.
-            using (Diagram diagram = new Diagram(networkFilePath, LoadFileFormat.Vsd))
-            {
-                // Save the diagram as CSV.
-                // Aspose.Diagram does not provide a dedicated CSV format in SaveFileFormat,
-                // so here we demonstrate saving using a supported format (e.g., VDX) as a placeholder.
-                // Replace SaveFileFormat.Vdx with the appropriate CSV format if it becomes available.
-                string outputCsvPath = @"C:\Output\Diagram.csv";
-                diagram.Save(outputCsvPath, SaveFileFormat.Csv);
-            }
+            // Load the VSD file using Aspose.Diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Path where the CSV file will be saved
+            string outputPath = @"C:\Temp\Diagram.csv";
+
+            // Save the diagram as CSV
+            diagram.Save(outputPath, SaveFileFormat.Csv);
 
         }
         catch (System.IO.IOException ex)

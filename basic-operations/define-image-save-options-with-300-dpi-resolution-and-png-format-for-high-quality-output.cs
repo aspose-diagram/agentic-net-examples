@@ -10,15 +10,14 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load the Visio diagram (replace with your actual file)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Create ImageSaveOptions for PNG format
+            // Create image save options: PNG format with 300 DPI resolution
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Set the resolution to 300 DPI for high‑quality output
-            saveOptions.Resolution = 300f;
+            saveOptions.Resolution = 300; // DPI setting for high‑quality output
 
-            // Save the diagram (or a specific page) using the defined options
+            // Save the diagram (first page) as a PNG image using the defined options
             diagram.Save("output.png", saveOptions);
 
         }

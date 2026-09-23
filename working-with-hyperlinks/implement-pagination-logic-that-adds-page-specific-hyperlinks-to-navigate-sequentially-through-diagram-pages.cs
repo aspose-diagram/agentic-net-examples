@@ -1,65 +1,67 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Define the number of pages to create
-            int totalPages = 5;
-
-            // Create additional pages (the diagram already contains one page)
-            for (int i = 1; i < totalPages; i++)
+            try
             {
-                // Add a new blank page with a unique name
-                Page newPage = new Page();
-                newPage.Name = $"Page-{i + 1}";
-                diagram.Pages.Add(newPage);
-            }
 
-            // Iterate through each page and add navigation shapes with hyperlinks
-            for (int i = 0; i < diagram.Pages.Count; i++)
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+                // Output Visio file path
+                string outputPath = "output_paginated.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    Page page = diagram.Pages[i];
+                    // Determine the target page for navigation (next page, wrap to first)
+                    int targetIndex = (i + 1) % diagram.Pages.Count;
+                    Page targetPage = diagram.Pages[targetIndex];
+
+                    // Add a simple rectangle shape that will act as the navigation button
+                    // Position: top‑right corner of the page (adjust as needed)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    double rectWidth = 1.0;   // inches
+                    double rectHeight = 0.5; // inches
+                    double pinX = pageWidth - rectWidth / 2 - 0.2; // 0.2 inch margin from right edge
+                    double pinY = pageHeight - rectHeight / 2 - 0.2; // 0.2 inch margin from top edge
+
+                    long shapeId = page.DrawRectangle(pinX, pinY, rectWidth, rectHeight);
+                    Shape navShape = page.Shapes.GetShape(shapeId);
+
+                    // Set visible text on the shape
+                    navShape.Text.Value.Clear();
+                    navShape.Text.Value.Add(new Txt("Next Page"));
+
+                    // Style the shape (optional)
+                    navShape.Fill.FillForegnd.Value = "#DDEEFF";
+                    navShape.Line.LineColor.Value = "#0000FF";
+
+                    // Create a hyperlink that points to the target page
+                    Hyperlink link = new Hyperlink();
+                    link.Name = "NavLink";
+                    link.Description.Value = $"Navigate to page \"{targetPage.Name}\"";
+                    // SubAddress is used for internal page navigation; leave Address empty
+                    link.SubAddress.Value = targetPage.Name;
+
+                    // Add the hyperlink to the shape
+                    navShape.Hyperlinks.Add(link);
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Page page = diagram.Pages[i];
-                page.Name = $"Page-{i + 1}";
-
-                // Position and size for the navigation rectangle (in inches)
-                double pinX = 2.0;   // center X
-                double pinY = 2.0;   // center Y
-                double width = 1.5;  // width
-                double height = 0.5; // height
-
-                // Draw a rectangle shape on the current page
-                long shapeId = page.DrawRectangle(pinX, pinY, width, height);
-                Shape navShape = page.Shapes.GetShape((int)shapeId);
-
-                // Set the shape's text to indicate navigation direction
-                navShape.Text.Value.Clear();
-                navShape.Text.Value.Add(new Txt(i == diagram.Pages.Count - 1 ? "First Page" : "Next Page"));
-
-                // Create a hyperlink that points to the target page
-                Hyperlink link = new Hyperlink();
-                link.Name = "PageNavLink";
-                link.Address.Value = ""; // Empty address for internal navigation
-                // Determine target page name (next page or first page for the last page)
-                string targetPageName = i == diagram.Pages.Count - 1
-                    ? diagram.Pages[0].Name   // loop back to first page
-                    : diagram.Pages[i + 1].Name;
-                link.SubAddress.Value = targetPageName;
-                link.Description.Value = $"Navigate to {targetPageName}";
-
-                // Add the hyperlink to the shape
-                navShape.Hyperlinks.Add(link);
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save the diagram to a VSDX file
-            string outputPath = "PaginatedDiagram.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-        }
+    }
     }

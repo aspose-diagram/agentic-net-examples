@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using System.Data;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,56 +9,55 @@ class Program
 {
     static void Main()
     {
-        // -------------------------------------------------
-        // 1. Load external data (example uses a DataTable)
-        // -------------------------------------------------
-        DataTable externalData = GetExternalData();
+        // Simulate an external dataset with some records
+        DataTable table = new DataTable();
+        table.Columns.Add("Category", typeof(string));
+        table.Columns.Add("Value", typeof(int));
 
-        // -------------------------------------------------
-        // 2. Create a new empty Visio diagram
-        // -------------------------------------------------
-        Diagram diagram = new Diagram(); // uses the default constructor
+        table.Rows.Add("Alpha", 10);
+        table.Rows.Add("Beta", 20);
+        table.Rows.Add("Alpha", 15);
+        table.Rows.Add("Gamma", 5);
 
-        // -------------------------------------------------
-        // 3. For each distinct record, add a new page
-        // -------------------------------------------------
-        foreach (DataRow row in externalData.Rows)
+        // Determine distinct categories (each will become a page)
+        HashSet<string> distinctCategories = new HashSet<string>();
+        foreach (DataRow row in table.Rows)
         {
-            // Create a new page
-            Page newPage = new Page();
-            diagram.Pages.Add(newPage);
-
-            // Optionally set a meaningful name for the page
-            // (e.g., using a column called "Title" from the data row)
-            if (externalData.Columns.Contains("Title") && row["Title"] != DBNull.Value)
-            {
-                newPage.Name = row["Title"].ToString();
-            }
-
-            // Additional page customization can be done here,
-            // such as setting background, size, etc.
+            distinctCategories.Add(row["Category"].ToString());
         }
 
-        // -------------------------------------------------
-        // 4. Save the diagram to a file
-        // -------------------------------------------------
-        // Save as VDX (Visio 2003-2007 XML format)
-        diagram.Save("DynamicPagesOutput.vdx", SaveFileFormat.Vdx);
-    }
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-    // Mock method to simulate retrieving external data.
-    // Replace this with actual data access logic (e.g., database query, CSV read, etc.).
-    static DataTable GetExternalData()
-    {
-        DataTable table = new DataTable();
-        table.Columns.Add("ID", typeof(int));
-        table.Columns.Add("Title", typeof(string));
+        // Find the current maximum page ID to assign unique IDs to new pages
+        int maxPageId = 0;
+        foreach (Page existingPage in diagram.Pages)
+        {
+            if (existingPage.ID > maxPageId)
+                maxPageId = existingPage.ID;
+        }
 
-        // Sample distinct records
-        table.Rows.Add(1, "Page One");
-        table.Rows.Add(2, "Page Two");
-        table.Rows.Add(3, "Page Three");
+        // Add a new page for each distinct category
+        foreach (string category in distinctCategories)
+        {
+            maxPageId++;
+            Page newPage = new Page(maxPageId);
+            newPage.Name = category;
+            diagram.Pages.Add(newPage);
 
-        return table;
+            // Add a simple rectangle shape to the page and label it with the category name
+            double pinX = 2.0;   // X coordinate of the shape's center
+            double pinY = 2.0;   // Y coordinate of the shape's center
+            double width = 4.0;  // Width of the rectangle
+            double height = 2.0; // Height of the rectangle
+
+            long shapeId = newPage.DrawRectangle(pinX, pinY, width, height);
+            Shape shape = newPage.Shapes.GetShape((int)shapeId);
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt(category));
+        }
+
+        // Save the diagram with all generated pages
+        diagram.Save("DynamicPages.vsdx", SaveFileFormat.Vsdx);
     }
 }

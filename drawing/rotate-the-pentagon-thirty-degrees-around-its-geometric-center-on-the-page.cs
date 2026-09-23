@@ -1,50 +1,58 @@
 using System;
 using System.IO;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Create a new blank diagram inside a try/catch to handle Aspose errors
         try
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
-
-            // Assume the pentagon is on the first page; adjust the page index if needed
-            Aspose.Diagram.Page page = diagram.Pages[0];
-
-            // Find the pentagon shape by its name (or by ID if you know it)
-            // Here we look for a shape whose NameU equals "Pentagon"
-            Aspose.Diagram.Shape pentagon = null;
-            foreach (Aspose.Diagram.Shape shp in page.Shapes)
+            using (Diagram diagram = new Diagram())
             {
-                if (shp.NameU != null && shp.NameU.Equals("Pentagon", System.StringComparison.OrdinalIgnoreCase))
+                // Access the first (default) page
+                Page page = diagram.Pages[0];
+
+                // Define pentagon parameters (center, radius, number of sides)
+                double centerX = 5.0;   // inches
+                double centerY = 5.0;   // inches
+                double radius = 2.0;    // inches
+                int sides = 5;
+                double angleOffset = Math.PI / 2; // start at top
+
+                // Build a flat double array of coordinates (x1, y1, x2, y2, ...) 
+                // Include the first point again at the end to close the shape
+                double[] coords = new double[(sides + 1) * 2];
+                for (int i = 0; i <= sides; i++)
                 {
-                    pentagon = shp;
-                    break;
+                    double angle = angleOffset + i * 2 * Math.PI / sides;
+                    double x = centerX + radius * Math.Cos(angle);
+                    double y = centerY + radius * Math.Sin(angle);
+                    coords[i * 2] = x;
+                    coords[i * 2 + 1] = y;
                 }
+
+                // Draw the pentagon as a closed polyline using the flat double array overload
+                long shapeId = page.DrawPolyline(coords);
+
+                // Retrieve the shape object by its ID
+                Shape pentagon = page.Shapes.GetShape(shapeId);
+
+                // Rotate the pentagon 30 degrees around its geometric center
+                pentagon.SetAngle(30.0);
+
+                // Save the diagram to a VSDX file
+                string outputPath = "RotatedPentagon.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // If the shape was not found, you may need to locate it by its ID instead
-            if (pentagon == null)
-            {
-                // Example: use a known shape ID (replace 5 with the actual ID)
-                pentagon = page.Shapes.GetShape(5);
-            }
-
-            // Rotate the pentagon 30 degrees (π/6 radians) around its geometric center
-            // The shape's pin point is its center of rotation, so no additional move is required
-            double angleInRadians = System.Math.PI / 6.0; // 30 degrees
-            pentagon.SetAngle(angleInRadians);
-
-            // Save the modified diagram (replace with your desired output path and format)
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -1,47 +1,42 @@
 using System.IO;
 using System;
-using System.Drawing;
-using System.Drawing.Drawing2D;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class RenderDiagramPage
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram(@"C:\Input\sample.vsdx");
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create image save options for PNG format (supports transparency)
+            // Index of the page to render (0‑based)
+            int pageIndex = 0;
+
+            // Configure image export options
             ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+            // Enable anti‑aliasing for smoother rendering
+            options.SmoothingMode = Aspose.Diagram.Saving.SmoothingMode.AntiAlias;
+            // Specify which page to render
+            options.PageIndex = pageIndex;
 
-            // Enable anti‑aliasing for smoother lines and curves
-            options.SmoothingMode = SmoothingMode.AntiAlias;
-            options.CompositingQuality = CompositingQuality.HighQuality;
-            options.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            options.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            // Export the selected page to a PNG bitmap
+            string outputPath = "page.png";
+            diagram.Save(outputPath, options);
 
-            // Set resolution (optional, e.g., 300 DPI)
-            options.Resolution = 300;
+            // Clean up resources
+            diagram.Dispose();
 
-            // Ensure the background is transparent (PNG respects alpha channel)
-            // No explicit property needed; transparent background is the default for PNG
-            // when no background shape fills the page.
-
-            // Render the first page (index 0) to an image file
-            options.PageIndex = 0;   // 0‑based index of the page to render
-            options.PageCount = 1;   // Render only one page
-
-            // Save the rendered page as a bitmap image
-            diagram.Save(@"C:\Output\page0.png", options);
+            Console.WriteLine("Page rendered to image successfully.");
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

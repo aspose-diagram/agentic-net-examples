@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -13,10 +12,10 @@ class Program
             // Load the source Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Convert and save the diagram to the desired format (e.g., PDF)
-            diagram.Save("output.pdf", SaveFileFormat.Pdf);
+            // Convert and save the diagram to PNG format
+            diagram.Save("output.png", SaveFileFormat.Png);
 
-            // Release unmanaged resources promptly
+            // Dispose the Diagram object to promptly release unmanaged resources
             diagram.Dispose();
 
         }

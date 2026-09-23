@@ -2,7 +2,6 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,32 +10,40 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the Visio file
+            string filePath = "input.vsdx";
 
-            // Dictionary to store connector counts per page (key = page number)
-            Dictionary<int, int> connectorCounts = new Dictionary<int, int>();
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
 
-            // Iterate through all pages in the diagram
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Dictionary to store connector counts per page (key: page name, value: count)
+            Dictionary<string, int> connectorCounts = new Dictionary<string, int>();
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[i];
+                int count = 0;
 
-                // The Connects collection holds a Connect element for each connector on the page
-                int connectorCount = page.Connects.Count;
+                // Count shapes that are connectors (1‑D shapes)
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.OneD) // true for connector shapes
+                    {
+                        count++;
+                    }
+                }
 
-                // Store the count using 1‑based page numbering
-                connectorCounts[i + 1] = connectorCount;
+                connectorCounts[page.Name] = count;
             }
 
-            // Example output of the results
+            // Output the results
             foreach (var kvp in connectorCounts)
             {
-                Console.WriteLine($"Page {kvp.Key}: {kvp.Value} connectors");
+                Console.WriteLine($"Page '{kvp.Key}' has {kvp.Value} connectors.");
             }
 
-            // Optionally save the diagram (preserving original content)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Clean up
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

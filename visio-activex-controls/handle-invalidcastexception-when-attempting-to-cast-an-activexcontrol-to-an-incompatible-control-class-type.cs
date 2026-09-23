@@ -11,37 +11,39 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Only shapes that contain an ActiveX control have a non‑null ActiveXControl property
+                    // Check if the shape contains an ActiveX control
                     if (shape.ActiveXControl != null)
                     {
-                        ActiveXControl control = shape.ActiveXControl;
-
-                        // Attempt to cast the generic ActiveXControl to a specific type (ComboBoxActiveXControl)
                         try
                         {
-                            ComboBoxActiveXControl comboBox = (ComboBoxActiveXControl)control;
+                            // Attempt to cast the control to a CommandButtonActiveXControl
+                            CommandButtonActiveXControl commandButton = (CommandButtonActiveXControl)shape.ActiveXControl;
 
-                            // If the cast succeeds, you can work with ComboBox‑specific members
-                            Console.WriteLine($"ComboBox control found on shape ID {shape.ID} (Page {page.ID}).");
+                            // Cast succeeded – modify a property as needed
+                            commandButton.Caption = "Handled Button";
+                            Console.WriteLine($"Shape ID {shape.ID}: CommandButton caption updated.");
                         }
                         catch (InvalidCastException)
                         {
-                            // The control is not a ComboBox; handle the incompatibility gracefully
-                            Console.WriteLine($"Shape ID {shape.ID} contains an ActiveX control of type {control.Type}, which cannot be cast to ComboBoxActiveXControl.");
+                            // Cast failed – handle the incompatibility gracefully
+                            Console.WriteLine($"Shape ID {shape.ID}: ActiveX control is not a CommandButton (type: {shape.ActiveXControl.Type}).");
                         }
                     }
                 }
             }
 
-            // Save the diagram (if any modifications were made)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

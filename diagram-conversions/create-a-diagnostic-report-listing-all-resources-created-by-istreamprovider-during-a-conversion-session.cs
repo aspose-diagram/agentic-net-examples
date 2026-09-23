@@ -4,73 +4,59 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramConversionDiagnostics
+namespace DiagramConversionDiagnostic
 {
-    // Custom stream provider that records each resource created during HTML export
+    // Custom IStreamProvider that records each resource created during HTML export
     public class DiagnosticStreamProvider : IStreamProvider
     {
-        // List to hold the paths (DefaultPath) of created resources
-        private readonly List<string> _createdResources = new List<string>();
-
-        // Expose the recorded resources
-        public IReadOnlyList<string> CreatedResources => _createdResources.AsReadOnly();
+        // List to hold the identifiers (paths) of created resources
+        public List<string> CreatedResources { get; } = new List<string>();
 
         // Called by Aspose.Diagram when a new resource stream is needed
         public void InitStream(StreamProviderOptions options)
         {
-            // Record the resource identifier (DefaultPath)
-            if (!string.IsNullOrEmpty(options.DefaultPath))
-            {
-                _createdResources.Add(options.DefaultPath);
-            }
+            // Record the default path (resource name) provided by the library
+            CreatedResources.Add(options.DefaultPath);
 
-            // Provide a memory stream for the resource
+            // Provide a stream for the resource; using MemoryStream as a placeholder
             options.Stream = new MemoryStream();
         }
 
         // Called when the resource stream is no longer needed
         public void CloseStream(StreamProviderOptions options)
         {
-            // Ensure the stream is properly disposed
+            // Dispose the stream if it was created
             options.Stream?.Dispose();
         }
     }
 
-    public class Program
+    class Program
     {
-        public static void Main()
+        static void Main()
         {
             try
             {
 
                 // Path to the source Visio file (adjust as needed)
-                const string inputPath = "input.vsdx";
+                string sourcePath = "input.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram(sourcePath);
 
                 // Prepare HTML save options and assign the custom stream provider
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
                 DiagnosticStreamProvider streamProvider = new DiagnosticStreamProvider();
                 htmlOptions.StreamProvider = streamProvider;
 
-                // Export the diagram to HTML (output file path can be adjusted)
-                const string outputHtmlPath = "output.html";
+                // Export the diagram to HTML (output folder will be created)
+                string outputHtmlPath = "output.html";
                 diagram.Save(outputHtmlPath, htmlOptions);
 
-                // After export, generate a diagnostic report of created resources
-                Console.WriteLine("Diagnostic Report: Resources created by IStreamProvider");
-                Console.WriteLine("------------------------------------------------------");
-                if (streamProvider.CreatedResources.Count == 0)
+                // After saving, output the list of resources created by the stream provider
+                Console.WriteLine("Resources created by IStreamProvider during conversion:");
+                foreach (string resource in streamProvider.CreatedResources)
                 {
-                    Console.WriteLine("No resources were created.");
-                }
-                else
-                {
-                    foreach (string resource in streamProvider.CreatedResources)
-                    {
-                        Console.WriteLine($"- {resource}");
-                    }
+                    Console.WriteLine(resource);
                 }
 
             }

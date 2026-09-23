@@ -1,11 +1,11 @@
 {
   "category": "diagram-conversions",
   "display_name": "Diagram Conversions",
-  "version": "26.8.0",
+  "version": "26.9.0",
   "framework": "net8.0",
   "total": 96,
   "pass_rate": 100.0,
-  "generated": "2026-08-28",
+  "generated": "2026-09-23",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,14 +14,12 @@
       "task": "Add configuration to enable or disable progress logging via appsettings json without code changes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Text.Json"
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -55,6 +53,7 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -67,7 +66,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text.RegularExpressions"
       ],
       "key_apis": [
         "Diagram",
@@ -104,9 +104,9 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
+        "Pages",
         "PdfSaveOptions",
-        "Save",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -117,7 +117,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Properties",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -184,7 +185,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -200,8 +202,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -234,16 +235,13 @@
       "task": "Convert a diagram to html and then compress the entire output folder into a zip archive programmatically",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.IO.Compression"
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions",
-        "Pages",
-        "Shapes",
+        "Save",
         "diagram"
       ]
     },
@@ -253,16 +251,15 @@
       "task": "Convert a diagram to html and then embed the html into a sharepoint page via rest api",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Net.Http",
         "System.Net.Http.Headers",
-        "System.Text"
+        "System.Text",
+        "System.Threading.Tasks"
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions",
         "Save",
         "diagram"
       ]
@@ -273,16 +270,15 @@
       "task": "Convert a diagram to html and then embed the resulting html into an email body using mime multipart format",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Net.Mail",
-        "System.Net.Mime",
-        "System.Text"
+        "System.Net.Mime"
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -292,7 +288,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -307,14 +304,12 @@
       "task": "Convert a diagram to html and then generate a sitemap xml file listing all generated html pages for crawling",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Xml"
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions",
         "Save",
         "diagram"
       ]
@@ -325,16 +320,13 @@
       "task": "Convert a diagram to html and then programmatically replace placeholder urls with cdn links using string manipulation",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Text"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions",
-        "Pages",
-        "Shapes",
+        "Save",
         "diagram"
       ]
     },
@@ -344,7 +336,6 @@
       "task": "Convert a diagram to html and then validate the resulting markup against an html5 schema",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Xml",
@@ -352,7 +343,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions",
         "Save",
         "diagram"
       ]
@@ -365,15 +355,14 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "HTMLSaveOptions",
         "Pages",
         "SVGSaveOptions",
-        "Shapes",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -383,15 +372,16 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Imaging",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -419,6 +409,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO",
         "System.Threading.Tasks"
       ],
@@ -437,7 +428,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -509,8 +499,7 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
-        "Shapes",
+        "Save",
         "diagram"
       ]
     },
@@ -521,7 +510,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -538,14 +528,16 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO",
+        "System.Threading"
       ],
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
-        "Page",
         "Pages",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -588,13 +580,11 @@
       "task": "Develop a console application that accepts input and output paths and displays real time conversion progress",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -639,7 +629,6 @@
       "task": "Dispose the diagram object after conversion completes to promptly release unmanaged resources",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -658,13 +647,10 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Net",
-        "System.Text",
         "System.Text.Json"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "PdfSaveOptions",
         "Save",
         "diagram"
@@ -678,9 +664,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.Diagnostics",
-        "System.Linq"
+        "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
@@ -703,9 +687,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -715,8 +699,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.Collections.Generic"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -731,7 +714,6 @@
       "task": "Generate html output then extract all hyperlink urls from the generated markup for analysis",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -739,7 +721,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions",
         "Save",
         "diagram"
       ]
@@ -750,7 +731,6 @@
       "task": "Handle exceptions during diagram save by wrapping the call in try catch and logging errors",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -768,7 +748,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Threading"
+        "System.Threading",
+        "System.Threading.Tasks"
       ],
       "key_apis": [
         "Diagram",
@@ -853,9 +834,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Net.Http",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -892,7 +871,12 @@
         "System",
         "System.IO"
       ],
-      "key_apis": []
+      "key_apis": [
+        "Diagram",
+        "HTMLSaveOptions",
+        "Save",
+        "diagram"
+      ]
     },
     {
       "slug": "implement-a-progress-reporter-updating-a-console-progress-bar-each-time-istreamprovider-getstream-is-called",
@@ -907,7 +891,6 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -937,9 +920,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1045,7 +1026,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.IO.Compression"
       ],
@@ -1083,7 +1063,7 @@
         "System",
         "System.Collections.Generic",
         "System.Data",
-        "System.Data.SqlClient",
+        "System.Data.Common",
         "System.IO"
       ],
       "key_apis": [
@@ -1117,11 +1097,14 @@
       "task": "Implement localization in progress messages to support multiple languages during conversion ui display",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -1138,8 +1121,8 @@
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Pages",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -1150,12 +1133,11 @@
       "task": "Load a visio diagram from a file path and initialize a diagram object",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Pages",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -1164,7 +1146,6 @@
       "task": "Load a visio diagram from a file path and validate its structure before conversion",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1182,14 +1163,14 @@
       "task": "Log page index and total page count to a database table for audit trail purposes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
+        "System.Data",
+        "System.Data.SqlClient",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
-        "Save",
+        "Pages",
         "diagram"
       ]
     },
@@ -1207,7 +1188,7 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
+        "Save",
         "diagram"
       ]
     },
@@ -1217,9 +1198,7 @@
       "task": "Measure total conversion time by recording timestamps before and after diagram save and logging duration",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Diagnostics",
         "System.IO"
       ],
       "key_apis": [
@@ -1235,8 +1214,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1268,8 +1246,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1286,7 +1263,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Diagnostics"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1301,14 +1278,12 @@
       "task": "Save html conversion output to a network share by providing a stream that writes to a unc path",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions",
-        "Pages",
+        "Save",
         "diagram"
       ]
     },
@@ -1408,15 +1383,14 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
         "ImageSaveOptions",
-        "Pages",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -1459,8 +1433,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1480,10 +1453,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "HTMLSaveOptions",
-        "Save",
-        "diagram"
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -1494,8 +1468,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1517,7 +1490,7 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
+        "Save",
         "diagram"
       ]
     },
@@ -1544,8 +1517,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1561,8 +1533,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -1577,9 +1548,8 @@
       "task": "Use parallel foreach to convert visio diagrams concurrently while ensuring thread safe progress logging",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
+        "System.Collections.Concurrent",
         "System.IO",
         "System.Threading.Tasks"
       ],
@@ -1595,14 +1565,13 @@
       "task": "Validate all external resource references in generated html point to existing files after conversion",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO",
         "System.Text.RegularExpressions"
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions",
         "Save",
         "diagram"
       ]
@@ -1619,7 +1588,9 @@
       ],
       "key_apis": [
         "Diagram",
-        "Masters",
+        "Pages",
+        "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -1634,6 +1605,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "PdfSaveOptions",
         "Save",
         "diagram"
@@ -1664,13 +1636,12 @@
       "task": "Write page start and end notifications to a text file using a custom logger implementation",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]

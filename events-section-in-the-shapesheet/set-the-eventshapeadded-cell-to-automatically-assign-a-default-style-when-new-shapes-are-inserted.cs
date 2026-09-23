@@ -10,25 +10,34 @@ class Program
         try
         {
 
-            // Create a new empty diagram
+            // Create a new diagram
             Diagram diagram = new Diagram();
 
-            // Use the first (default) page
-            Page page = diagram.Pages[0];
+            // Add a page to the diagram (required before adding shapes)
+            Page page = new Page();
+            diagram.Pages.Add(page);
 
-            // Add a rectangle shape at position (2,2) on the page
-            // The fourth parameter (isCalculate) must be a boolean
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+            // Add a rectangle shape to the page
+            // Parameters: pinX, pinY, width, height, master name, isCalculate (bool)
+            long shapeId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle", false);
 
-            // Retrieve the Shape object using the returned ID
+            // Retrieve the shape object using the returned ID
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Set the EventDrop cell to assign a default style ("Normal") when the shape is added/dropped
-            // The formula is a valid Visio formula that runs on the drop event
-            shape.Event.EventDrop.Ufe.F = "SETSTYLE(\"Normal\")";
+            // Set an event formula that will be triggered when the shape is added.
+            // Since Aspose.Diagram does not expose an EventShapeAdded cell,
+            // we use the closest available event cell: EventDrop.
+            // The formula calls a Visio macro (AssignDefaultStyle) that should
+            // apply the desired default style to the shape.
+            shape.Event.EventDrop.Ufe.F = "CALLTHIS(\"AssignDefaultStyle\")";
+
+            // Optionally, define a simple default style directly on the shape
+            // (e.g., fill color). This ensures the shape has a style even if
+            // the macro is not present.
+            shape.Fill.FillForegnd.Value = "#FFCC00"; // Light orange fill
 
             // Save the diagram to a VSDX file
-            diagram.Save("EventShapeAddedDemo.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (Aspose.Diagram.DiagramException ex)

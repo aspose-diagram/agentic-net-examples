@@ -1,65 +1,60 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.Printing;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio diagram file
-        string diagramPath = "input.vsdx";
-
-        // Guard: ensure the diagram file exists before proceeding
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
-
-        // Name of the printer to use (replace with an actual printer name)
-        string printerName = "Microsoft Print to PDF";
-
         try
         {
-            // Load the diagram inside a using block to ensure proper disposal
-            using (Diagram diagram = new Diagram(diagramPath))
-            {
-                // Access the first page (adjust index if needed)
-                Page page = diagram.Pages[0];
 
+            // Input Visio file (adjust the path as needed)
+            string inputPath = "input.vsdx";
+
+            // Output PDF file after applying dynamic margins
+            string outputPath = "output.pdf";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and set margins based on page size
+            foreach (Page page in diagram.Pages)
+            {
                 // Retrieve page dimensions (in inches)
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Calculate dynamic margins (e.g., 5% of page size)
-                double leftMargin = pageWidth * 0.05;
-                double rightMargin = pageWidth * 0.05;
-                double topMargin = pageHeight * 0.05;
-                double bottomMargin = pageHeight * 0.05;
+                // Example: set margins to 5% of the respective dimension
+                double leftRightMargin = pageWidth * 0.05;
+                double topBottomMargin = pageHeight * 0.05;
 
-                // Set the margins in the page's PrintProps (values are in inches)
-                page.PageSheet.PrintProps.PageLeftMargin.Value = leftMargin;
-                page.PageSheet.PrintProps.PageRightMargin.Value = rightMargin;
-                page.PageSheet.PrintProps.PageTopMargin.Value = topMargin;
-                page.PageSheet.PrintProps.PageBottomMargin.Value = bottomMargin;
+                // Access the printing properties for the page
+                PrintProps printProps = page.PageSheet.PrintProps;
 
-                // Create print options (optional configuration)
-                PrintSaveOptions printOptions = new PrintSaveOptions
-                {
-                    // Print only foreground pages (property expects a bool)
-                    SaveForegroundPagesOnly = true
-                };
-
-                // Execute the print job with the specified printer and options
-                diagram.Print(printerName, printOptions);
+                // Set margins (values are in inches)
+                printProps.PageLeftMargin.Value = leftRightMargin;
+                printProps.PageRightMargin.Value = leftRightMargin;
+                printProps.PageTopMargin.Value = topBottomMargin;
+                printProps.PageBottomMargin.Value = topBottomMargin;
             }
+
+            // Prepare PDF save options (optional: set default font)
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+
+            // Save the modified diagram as PDF
+            diagram.Save(outputPath, pdfOptions);
+
+            // Clean up resources
+            diagram.Dispose();
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Log any errors that occur during loading or printing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

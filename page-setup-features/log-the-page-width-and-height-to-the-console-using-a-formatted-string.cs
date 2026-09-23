@@ -1,31 +1,34 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load a Visio diagram (replace with your actual file path)
+            string diagramPath = "input.vsdx";
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Iterate through each page and log its dimensions
+            foreach (Page page in diagram.Pages)
             {
+                double width = page.PageSheet.PageProps.PageWidth.Value;   // width in inches
+                double height = page.PageSheet.PageProps.PageHeight.Value; // height in inches
 
-                // Load the Visio diagram (replace with your actual file path)
-                using (Diagram diagram = new Diagram("input.vsdx"))
-                {
-                    // Access the first page (index 0)
-                    Page page = diagram.Pages[0];
-
-                    // Retrieve page dimensions (values are in inches)
-                    double width = page.PageSheet.PageProps.PageWidth.Value;
-                    double height = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Log the dimensions using a formatted string
-                    Console.WriteLine($"Page size: Width = {width} inches, Height = {height} inches");
-                }
-
+                Console.WriteLine($"Page \"{page.Name}\" - Width: {width} inches, Height: {height} inches");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Clean up resources
+            diagram.Dispose();
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

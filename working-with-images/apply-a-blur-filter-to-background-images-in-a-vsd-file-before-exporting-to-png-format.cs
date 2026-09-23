@@ -10,27 +10,32 @@ class Program
         try
         {
 
-            // Load the VSD file
-            Diagram diagram = new Diagram("input.vsd");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Apply blur to all shapes that contain an image (background pictures)
+            // Load the diagram (VSDX format)
+            Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vsdx);
+
+            // Iterate through all pages and shapes to find background images
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.Image != null)
+                    // Background images are foreign shapes that contain an Image object
+                    if (shape.Type == TypeValue.Foreign && shape.Image != null)
                     {
-                        // Blur value is between 0 (no blur) and 1 (maximum blur)
-                        shape.Image.Blur.Value = 0.5; // 50% blur
+                        // Apply a blur effect (value between 0.0 and 1.0)
+                        shape.Image.Blur.Value = 0.25;
                     }
                 }
             }
 
-            // Prepare PNG save options
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Configure PNG export options
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
-            // Export the diagram to PNG format
-            diagram.Save("output.png", saveOptions);
+            // Export the modified diagram to PNG
+            string outputPath = "output.png";
+            diagram.Save(outputPath, pngOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

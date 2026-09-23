@@ -1,43 +1,70 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing.Text;
 
-class FontReplacementExample
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
+            if (args.Length < 4)
+            {
+                Console.WriteLine("Usage: FontReplacementExample <inputVisio> <outputFile> <oldFontName> <newFontName>");
+                return;
+            }
 
-            // Path to the source Visio diagram
-            string sourcePath = @"C:\Diagrams\input.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
+            string oldFont = args[2];
+            string newFont = args[3];
 
-            // Path where the modified diagram will be saved
-            string destinationPath = @"C:\Diagrams\output.vsdx";
+            // Verify that the replacement font is installed on the system
+            InstalledFontCollection fontCollection = new InstalledFontCollection();
+            bool newFontInstalled = false;
+            foreach (var family in fontCollection.Families)
+            {
+                if (string.Equals(family.Name, newFont, StringComparison.OrdinalIgnoreCase))
+                {
+                    newFontInstalled = true;
+                    break;
+                }
+            }
 
-            // Font to be replaced and its replacement
-            string originalFontName = "Arial";
-            string[] substituteFontNames = new[] { "Calibri" };
+            if (!newFontInstalled)
+            {
+                Console.WriteLine($"Warning: The replacement font \"{newFont}\" is not installed on this machine.");
+            }
 
-            // Load the diagram from file
-            Diagram diagram = new Diagram(sourcePath);
+            try
+            {
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Register the substitute font(s) for the original font
-            FontConfigs.SetFontSubstitutes(originalFontName, substituteFontNames);
+                // Iterate through all pages, shapes, and character runs to replace the font
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        foreach (Aspose.Diagram.Char ch in shape.Chars)
+                        {
+                            if (string.Equals(ch.FontName.Value, oldFont, StringComparison.OrdinalIgnoreCase))
+                            {
+                                ch.FontName.Value = newFont;
+                            }
+                        }
+                    }
+                }
 
-            // Create save options for the desired format (VDX in this case)
-            SaveOptions saveOptions = SaveOptions.CreateSaveOptions(SaveFileFormat.Vdx);
-            // Ensure the default font is also set to the replacement (optional but helpful)
-            saveOptions.DefaultFont = "Calibri";
+                // Save the modified diagram as PDF, specifying the default font for fallback
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = newFont;
+                diagram.Save(outputPath, pdfOptions);
 
-            // Save the diagram with the new font configuration
-            diagram.Save(destinationPath, saveOptions);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine($"Diagram saved to \"{outputPath}\" with font \"{oldFont}\" replaced by \"{newFont}\".");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
         }
     }
-}

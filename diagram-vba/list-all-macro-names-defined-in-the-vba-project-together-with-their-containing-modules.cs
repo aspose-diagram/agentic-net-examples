@@ -1,53 +1,63 @@
 using System.IO;
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class ListVbaMacros
+class Program
 {
     static void Main(string[] args)
     {
         try
         {
 
-            // Path to the Visio file (replace with your actual file)
-            string diagramPath = "input.vsdx";
+            // Path to the Visio file (must be a macro-enabled format, e.g., .vsdm)
+            string filePath = "input.vsdm";
 
-            // Load the Visio diagram using Aspose.Diagram (lifecycle rule)
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
 
-            // Get the VBA project from the diagram
-            VbaProject vbaProject = diagram.VbaProject;
-
-            // If there is no VBA project, exit
-            if (vbaProject == null)
+            // Ensure the diagram contains a VBA project
+            if (diagram.VbaProject == null || diagram.VbaProject.Modules == null)
             {
                 Console.WriteLine("No VBA project found in the diagram.");
                 return;
             }
 
-            // Iterate through all VBA modules
-            foreach (VbaModule module in vbaProject.Modules)
+            // Regular expression to match Sub and Function declarations
+            Regex macroRegex = new Regex(@"^\s*(Public|Private)?\s*(Sub|Function)\s+(\w+)", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+            // Iterate through each VBA module
+            foreach (VbaModule module in diagram.VbaProject.Modules)
             {
                 string moduleName = module.Name;
                 string code = module.Codes ?? string.Empty;
 
-                // Use a simple regex to find Sub and Function declarations
-                // This captures names after "Sub" or "Function" ignoring case and optional whitespace
-                Regex macroRegex = new Regex(@"\b(Sub|Function)\s+([A-Za-z_][A-Za-z0-9_]*)", RegexOptions.IgnoreCase);
+                // Find all macro definitions in the module code
                 MatchCollection matches = macroRegex.Matches(code);
+                List<string> macroNames = new List<string>();
 
-                // If no macros found, continue to next module
-                if (matches.Count == 0)
-                    continue;
-
-                Console.WriteLine($"Module: {moduleName}");
                 foreach (Match match in matches)
                 {
-                    // Group 2 contains the macro name
-                    string macroName = match.Groups[2].Value;
-                    Console.WriteLine($"  Macro: {macroName}");
+                    // The macro name is captured in group 3
+                    if (match.Groups.Count > 3)
+                    {
+                        macroNames.Add(match.Groups[3].Value);
+                    }
+                }
+
+                // Output the results
+                if (macroNames.Count > 0)
+                {
+                    foreach (string macroName in macroNames)
+                    {
+                        Console.WriteLine($"Module: {moduleName}, Macro: {macroName}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Module: {moduleName} contains no macros.");
                 }
             }
 

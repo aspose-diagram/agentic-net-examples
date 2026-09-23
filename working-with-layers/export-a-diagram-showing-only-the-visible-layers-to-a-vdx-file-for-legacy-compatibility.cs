@@ -1,47 +1,47 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file (any supported format)
+            string inputPath = "input.vsdx";
+
+            // Path for the exported VDX file (legacy Visio format)
+            string outputPath = "output.vdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page and its layers.
+            // Only layers with Visible == BOOL.True will be retained in the export.
+            // Hidden layers remain hidden and are not rendered in the saved VDX.
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path (replace with your actual file)
-                string inputPath = "input.vsdx";
-
-                // Output VDX file path (legacy format)
-                string outputPath = "output.vdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page and its layers
-                foreach (Page page in diagram.Pages)
+                foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Access the collection of layers on the page
-                    foreach (Layer layer in page.PageSheet.Layers)
-                    {
-                        // Ensure only visible layers remain visible.
-                        // Hidden layers are already marked with BOOL.False.
-                        // No additional action required unless you want to force hide them.
-                        if (layer.Visible.Value == BOOL.False)
-                        {
-                            // Example: explicitly keep hidden layers hidden (optional)
-                            layer.Visible.Value = BOOL.False;
-                        }
-                    }
+                    // No action needed; the layer's visibility flag is respected during save.
+                    // Example of explicit handling (optional):
+                    // if (layer.Visible.Value == BOOL.False)
+                    // {
+                    //     // Optionally, you could remove shapes from this hidden layer here.
+                    // }
                 }
-
-                // Save the diagram in VDX format (legacy compatibility)
-                diagram.Save(outputPath, SaveFileFormat.Vdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the diagram as VDX, preserving only visible layers.
+            diagram.Save(outputPath, SaveFileFormat.Vdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

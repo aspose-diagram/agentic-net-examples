@@ -1,6 +1,6 @@
 using System;
+using System.Data;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -11,53 +11,47 @@ class Program
             try
             {
 
-                // Path to the Visio file
-                string diagramPath = "input.vsdx";
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path to the output Visio file
+                string outputPath = "output.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+                Diagram diagram = new Diagram(inputPath);
 
-                // Path to the external data source (e.g., CSV with "ShapeId,Visible")
-                string dataPath = "visibility.txt";
+                // Simulate external data source: a DataTable with ShapeId and IsVisible columns
+                DataTable visibilityTable = CreateVisibilityDataTable();
 
-                // Read visibility settings into a dictionary
-                var visibilityMap = new Dictionary<long, bool>();
-                foreach (var line in File.ReadAllLines(dataPath))
+                // Iterate through each row and set shape visibility accordingly
+                foreach (DataRow row in visibilityTable.Rows)
                 {
-                    // Skip empty lines
-                    if (string.IsNullOrWhiteSpace(line))
+                    // Retrieve shape ID and visibility flag from the data row
+                    long shapeId = Convert.ToInt64(row["ShapeId"]);
+                    bool isVisible = Convert.ToBoolean(row["IsVisible"]);
+
+                    // Retrieve the shape from the first page (adjust if shapes are on other pages)
+                    Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+                    if (shape == null)
+                    {
+                        Console.WriteLine($"Shape with ID {shapeId} not found.");
                         continue;
-
-                    // Expected format: ShapeId,Visible (e.g., 123,true)
-                    var parts = line.Split(',');
-                    if (parts.Length != 2)
-                        continue; // Invalid line, ignore
-
-                    if (long.TryParse(parts[0].Trim(), out long shapeId) &&
-                        bool.TryParse(parts[1].Trim(), out bool isVisible))
-                    {
-                        visibilityMap[shapeId] = isVisible;
                     }
-                }
 
-                // Apply visibility settings to shapes
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
+                    // Hide shape by setting width and height to zero, show by restoring to a default size (e.g., 1 inch)
+                    if (isVisible)
                     {
-                        if (visibilityMap.TryGetValue(shape.ID, out bool isVisible))
-                        {
-                            // Shape.Del is of type BOOL. TRUE means hidden (deleted), FALSE means visible.
-                            shape.Del = isVisible ? BOOL.False : BOOL.True;
-                        }
+                        shape.XForm.Width.Value = 1.0;   // default visible width
+                        shape.XForm.Height.Value = 1.0;  // default visible height
+                    }
+                    else
+                    {
+                        shape.XForm.Width.Value = 0.0;   // hide width
+                        shape.XForm.Height.Value = 0.0;  // hide height
                     }
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Shape visibility updated and diagram saved to " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -65,4 +59,20 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
+
+        // Helper method to create a sample DataTable representing external visibility data
+        private static DataTable CreateVisibilityDataTable()
+        {
+            DataTable table = new DataTable();
+            table.Columns.Add("ShapeId", typeof(long));
+            table.Columns.Add("IsVisible", typeof(bool));
+
+            // Sample data: adjust ShapeId values to match actual shape IDs in your diagram
+            table.Rows.Add(1L, true);
+            table.Rows.Add(2L, false);
+            table.Rows.Add(3L, true);
+            // Add more rows as needed
+
+            return table;
+        }
     }

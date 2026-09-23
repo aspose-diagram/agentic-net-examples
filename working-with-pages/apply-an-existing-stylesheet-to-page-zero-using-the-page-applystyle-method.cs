@@ -1,32 +1,63 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the existing diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram (lifecycle rule: load)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Verify that the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Assume the diagram already contains at least one StyleSheet.
-            // Retrieve the ID of the first StyleSheet to use for text, line, and fill.
-            int styleId = diagram.StyleSheets[0].ID;
+            // Retrieve the first page (page zero)
+            Page page = diagram.Pages[0];
 
-            // Apply the retrieved style to the first page (page zero) using ApplyStyle.
-            // The same style ID is used for text, line, and fill formatting.
-            diagram.Pages[0].ApplyStyle(styleId, styleId, styleId);
+            // Verify that the diagram contains at least one stylesheet
+            if (diagram.StyleSheets.Count == 0)
+            {
+                Console.WriteLine("The diagram contains no stylesheets.");
+                return;
+            }
 
-            // Save the modified diagram (lifecycle rule: save)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Use the first stylesheet in the collection
+            StyleSheet styleSheet = diagram.StyleSheets[0];
+            // Cast the stylesheet ID from long to int as required by ApplyStyle
+            int styleId = (int)styleSheet.ID;
 
+            // Apply the stylesheet to the page (line, fill, and text styles)
+            page.ApplyStyle(styleId, styleId, styleId);
+
+            // Output Visio file path
+            string outputPath = "output.vsdx";
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Stylesheet applied to page zero and diagram saved.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any Aspose or I/O errors
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

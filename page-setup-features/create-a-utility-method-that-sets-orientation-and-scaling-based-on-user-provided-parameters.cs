@@ -2,45 +2,54 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-public static class DiagramPrintUtility
+public static class DiagramHelper
 {
     /// <summary>
-    /// Sets the print orientation and scaling factors for all pages in the diagram.
+    /// Sets the print orientation and scaling factors for a specific page in a diagram.
     /// </summary>
-    /// <param name="diagram">The Aspose.Diagram Diagram instance.</param>
-    /// <param name="orientation">Desired page orientation (Landscape or Portrait).</param>
-    /// <param name="scaleX">Horizontal scaling factor (e.g., 0.75 for 75%).</param>
-    /// <param name="scaleY">Vertical scaling factor (e.g., 0.75 for 75%).</param>
-    public static void SetOrientationAndScaling(Diagram diagram, PrintPageOrientationValue orientation, double scaleX, double scaleY)
+    /// <param name="diagram">The Aspose.Diagram.Diagram instance.</param>
+    /// <param name="pageIndex">Zero‑based index of the page to modify.</param>
+    /// <param name="orientation">Desired orientation (Landscape, Portrait, or SameAsPrinter).</param>
+    /// <param name="scaleX">Horizontal scaling factor (e.g., 0.75 for 75%). Must be greater than 0.</param>
+    /// <param name="scaleY">Vertical scaling factor. Must be greater than 0.</param>
+    public static void SetOrientationAndScaling(
+        Diagram diagram,
+        int pageIndex,
+        PrintPageOrientationValue orientation,
+        double scaleX,
+        double scaleY)
     {
+        // Validate input diagram.
         if (diagram == null)
             throw new ArgumentNullException(nameof(diagram));
 
-        // Validate scaling values
+        // Validate page index range.
+        if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+            throw new ArgumentOutOfRangeException(nameof(pageIndex), "Page index is out of range.");
+
+        // Validate scaling factors.
         if (scaleX <= 0 || scaleY <= 0)
-            throw new ArgumentException("Scale factors must be greater than zero.");
+            throw new ArgumentException("Scaling factors must be greater than zero.");
 
-        // Iterate through each page explicitly typed as Page
-        foreach (Page page in diagram.Pages)
+        try
         {
-            // Ensure the page has a valid PageSheet and PrintProps
-            if (page?.PageSheet?.PrintProps == null)
-                continue;
+            // Retrieve the target page.
+            Page page = diagram.Pages[pageIndex];
 
-            try
-            {
-                // Set orientation
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
+            // Access the print properties collection.
+            PrintProps printProps = page.PageSheet.PrintProps;
 
-                // Set scaling factors
-                page.PageSheet.PrintProps.ScaleX.Value = scaleX;
-                page.PageSheet.PrintProps.ScaleY.Value = scaleY;
-            }
-            catch (Exception ex)
-            {
-                // Log any Aspose-related errors but continue processing other pages
-                Console.Error.WriteLine($"Error updating page ID {page.ID}: {ex.Message}");
-            }
+            // Apply the requested orientation.
+            printProps.PrintPageOrientation.Value = orientation;
+
+            // Apply the scaling factors.
+            printProps.ScaleX.Value = scaleX;
+            printProps.ScaleY.Value = scaleY;
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose‑Diagram errors to the error stream.
+            Console.Error.WriteLine($"Error setting orientation and scaling: {ex.Message}");
         }
     }
 }
@@ -49,48 +58,25 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect arguments: <diagramPath> <orientation> <scaleX> <scaleY>
-        if (args.Length < 4)
-        {
-            Console.Error.WriteLine("Usage: <diagramPath> <Landscape|Portrait> <scaleX> <scaleY>");
-            return;
-        }
+        // Example usage: create a diagram (replace with a real file path as needed).
+        string diagramPath = "example.vsdx";
 
-        string diagramPath = args[0];
-        // Guard: ensure the diagram file exists
+        // Guard to ensure the file exists before loading.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
-        // Parse orientation string to enum
-        PrintPageOrientationValue orientation = args[1].Equals("Landscape", StringComparison.OrdinalIgnoreCase)
-            ? PrintPageOrientationValue.Landscape
-            : PrintPageOrientationValue.Portrait;
-
-        // Parse scaling factors
-        if (!double.TryParse(args[2], out double scaleX) || !double.TryParse(args[3], out double scaleY))
+        // Load the diagram inside a using block to ensure proper disposal.
+        using (Diagram diagram = new Diagram(diagramPath))
         {
-            Console.Error.WriteLine("Invalid scaling factors. Provide numeric values for scaleX and scaleY.");
-            return;
-        }
+            // Set orientation to Portrait and scaling to 75% for the first page.
+            DiagramHelper.SetOrientationAndScaling(diagram, 0, PrintPageOrientationValue.Portrait, 0.75, 0.75);
 
-        try
-        {
-            // Load the diagram from file
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Apply orientation and scaling to all pages
-            DiagramPrintUtility.SetOrientationAndScaling(diagram, orientation, scaleX, scaleY);
-
-            // Optionally save the modified diagram (overwrites original)
-            diagram.Save(diagramPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Capture any errors during loading, processing, or saving
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Save the modified diagram (output path can be adjusted).
+            string outputPath = "modified.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
     }
 }

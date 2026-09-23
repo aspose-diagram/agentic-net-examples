@@ -5,27 +5,23 @@ using Aspose.Diagram.Saving;
 
 namespace BatchHtmlExport
 {
-    // Custom stream provider that creates a MemoryStream for each resource
-    // and disposes it when the export process signals that the stream is no longer needed.
-    public class MyStreamProvider : IStreamProvider
+    // Custom stream provider that creates a file stream for each HTML export
+    // and disposes it after the save operation to avoid memory leaks.
+    public class FileStreamProvider : IStreamProvider
     {
-        // Called by Aspose.Diagram before writing a resource.
+        // Called by Aspose.Diagram before writing the HTML file.
         public void InitStream(StreamProviderOptions options)
         {
-            // Create a new memory stream for the resource.
-            // The stream will be assigned to options.Stream and later disposed.
-            options.Stream = new MemoryStream();
+            // options.DefaultPath contains the full path of the HTML file to be created.
+            // Create a writable file stream and assign it to the options.
+            options.Stream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write);
         }
 
-        // Called by Aspose.Diagram after the resource has been written.
+        // Called by Aspose.Diagram after the HTML file has been written.
         public void CloseStream(StreamProviderOptions options)
         {
-            // Dispose the stream to release unmanaged resources and avoid memory leaks.
-            if (options.Stream != null)
-            {
-                options.Stream.Dispose();
-                options.Stream = null;
-            }
+            // Dispose the stream to release the file handle and free resources.
+            options.Stream?.Dispose();
         }
     }
 
@@ -33,51 +29,54 @@ namespace BatchHtmlExport
     {
         static void Main(string[] args)
         {
-            try
+            // Folder containing Visio files to convert.
+            string inputFolder = @"C:\VisioFiles";
+            // Folder where the HTML files will be saved.
+            string outputFolder = @"C:\VisioHtml";
+
+            // Ensure the output directory exists.
+            if (!Directory.Exists(outputFolder))
             {
-
-                // Input folder containing Visio files (e.g., .vsdx)
-                string inputFolder = @"C:\Visio\Input";
-                // Output folder for generated HTML files
-                string outputFolder = @"C:\Visio\Output";
-
-                // Ensure output directory exists
                 Directory.CreateDirectory(outputFolder);
+            }
 
-                // Get all Visio files in the input folder
-                string[] visioFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-
-                foreach (string visioPath in visioFiles)
+            // Get all Visio files (VSDX, VSD, VDX) in the input folder.
+            string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (string filePath in visioFiles)
+            {
+                // Process only supported Visio extensions.
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
                 {
-                    // Determine output HTML file path
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(visioPath);
-                    string htmlPath = Path.Combine(outputFolder, fileNameWithoutExt + ".html");
-
-                    // Load the diagram inside a using block to ensure proper disposal
-                    using (Diagram diagram = new Diagram(visioPath))
-                    {
-                        // Configure HTML save options with the custom stream provider
-                        HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                        {
-                            StreamProvider = new MyStreamProvider()
-                        };
-
-                        // Save the diagram as HTML
-                        diagram.Save(htmlPath, htmlOptions);
-                    }
-
-                    // At this point, the diagram and all streams created by MyStreamProvider
-                    // have been disposed, preventing memory leaks.
-                    Console.WriteLine($"Exported '{visioPath}' to '{htmlPath}'.");
+                    continue;
                 }
 
-                Console.WriteLine("Batch HTML export completed.");
+                try
+                {
+                    // Load the diagram.
+                    Diagram diagram = new Diagram(filePath);
 
+                    // Prepare HTML save options and assign the custom stream provider.
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                    htmlOptions.StreamProvider = new FileStreamProvider();
+
+                    // Determine output HTML file path.
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                    string outputPath = Path.Combine(outputFolder, fileNameWithoutExt + ".html");
+
+                    // Save the diagram as HTML. The stream provider will handle stream creation and disposal.
+                    diagram.Save(outputPath, htmlOptions);
+
+                    Console.WriteLine($"Successfully exported '{filePath}' to HTML.");
+                }
+                catch (Exception ex)
+                {
+                    // Log any errors for the current file but continue processing others.
+                    Console.WriteLine($"Error processing '{filePath}': {ex.Message}");
+                }
             }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
-    }
+
+            Console.WriteLine("Batch HTML export completed.");
+        }
     }
 }

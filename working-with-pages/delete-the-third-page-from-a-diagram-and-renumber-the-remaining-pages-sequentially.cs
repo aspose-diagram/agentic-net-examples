@@ -1,48 +1,36 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the existing diagram (replace with your file path)
+            var diagram = new Diagram("input.vsdx");
+
+            // Delete the third page (index 2, zero‑based) if it exists
+            if (diagram.Pages.Count >= 3)
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Ensure there are at least three pages
-                if (diagram.Pages.Count < 3)
-                {
-                    throw new Exception("The diagram must contain at least three pages.");
-                }
-
-                // Remove the third page (zero‑based index 2)
-                Page pageToRemove = diagram.Pages[2];
-                diagram.Pages.Remove(pageToRemove);
-
-                // Renumber remaining pages sequentially (starting from 1)
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    Page page = diagram.Pages[i];
-                    page.ID = i + 1; // Set new sequential ID
-
-                    // Optional: update the page name to reflect new order
-                    page.Name = $"Page-{i + 1}";
-                    page.NameU = page.Name;
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                diagram.Pages.RemoveAt(2);
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Renumber the remaining pages sequentially starting from 1
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                diagram.Pages[i].ID = i + 1;
             }
+
+            // Save the modified diagram (replace with your desired output path)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

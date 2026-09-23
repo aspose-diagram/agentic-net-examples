@@ -2,51 +2,57 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class HeaderComparison
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths to the two Visio diagrams to compare
-            string diagramPath1 = "Diagram1.vsdx";
-            string diagramPath2 = "Diagram2.vsdx";
-
-            // Load the diagrams using Aspose.Diagram constructors (lifecycle rule)
-            Diagram diagram1 = new Diagram(diagramPath1);
-            Diagram diagram2 = new Diagram(diagramPath2);
-
-            // Retrieve the left header text from each diagram
-            string headerLeft1 = diagram1.HeaderFooter.HeaderLeft;
-            string headerLeft2 = diagram2.HeaderFooter.HeaderLeft;
-
-            // Prepare the log file
-            string logPath = "HeaderComparisonLog.txt";
-            using (StreamWriter logWriter = new StreamWriter(logPath, false))
+            try
             {
-                // Compare the header texts and write differences (if any)
-                if (headerLeft1 == headerLeft2)
+
+                // Paths to the two Visio files to compare
+                string diagramPath1 = @"C:\Diagrams\Diagram1.vsdx";
+                string diagramPath2 = @"C:\Diagrams\Diagram2.vsdx";
+
+                // Path to the log file where differences will be recorded
+                string logFilePath = @"C:\Diagrams\HeaderComparisonLog.txt";
+
+                // Load the first diagram
+                Diagram diagram1 = new Diagram(diagramPath1);
+                // Load the second diagram
+                Diagram diagram2 = new Diagram(diagramPath2);
+
+                // Retrieve the left header text from each diagram (null‑safe)
+                string headerLeft1 = diagram1.HeaderFooter.HeaderLeft ?? string.Empty;
+                string headerLeft2 = diagram2.HeaderFooter.HeaderLeft ?? string.Empty;
+
+                // Compare the header texts and write the result to the log file
+                using (StreamWriter writer = new StreamWriter(logFilePath, true))
                 {
-                    logWriter.WriteLine("HeaderLeft texts are identical.");
-                    logWriter.WriteLine($"HeaderLeft: \"{headerLeft1}\"");
+                    writer.WriteLine($"Comparison performed at {DateTime.Now}");
+                    writer.WriteLine($"Diagram 1: {Path.GetFileName(diagramPath1)}");
+                    writer.WriteLine($"Diagram 2: {Path.GetFileName(diagramPath2)}");
+
+                    if (headerLeft1.Equals(headerLeft2, StringComparison.Ordinal))
+                    {
+                        writer.WriteLine("Result: Left header texts are identical.");
+                    }
+                    else
+                    {
+                        writer.WriteLine("Result: Left header texts differ.");
+                        writer.WriteLine($" - Diagram 1 HeaderLeft: \"{headerLeft1}\"");
+                        writer.WriteLine($" - Diagram 2 HeaderLeft: \"{headerLeft2}\"");
+                    }
+
+                    writer.WriteLine(new string('-', 50));
                 }
-                else
-                {
-                    logWriter.WriteLine("HeaderLeft texts differ:");
-                    logWriter.WriteLine($"Diagram 1 HeaderLeft: \"{headerLeft1}\"");
-                    logWriter.WriteLine($"Diagram 2 HeaderLeft: \"{headerLeft2}\"");
-                }
+
+                // Optional: inform the user via console
+                Console.WriteLine("Header comparison completed. See log file for details.");
+
             }
-
-            // Clean up resources
-            diagram1.Dispose();
-            diagram2.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

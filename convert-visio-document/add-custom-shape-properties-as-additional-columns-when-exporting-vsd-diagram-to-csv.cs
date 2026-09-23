@@ -1,65 +1,113 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect two arguments: input Visio file path and output CSV file path
-            if (args.Length < 2)
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path to the output CSV file
+            string outputPath = "output.csv";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Collect all unique custom property names across all shapes
+            HashSet<string> customPropNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine("Usage: DiagramCsvExport <inputVisioPath> <outputCsvPath>");
-                return;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Props != null)
+                    {
+                        foreach (Prop prop in shape.Props)
+                        {
+                            if (!string.IsNullOrWhiteSpace(prop.Name))
+                            {
+                                customPropNames.Add(prop.Name);
+                            }
+                        }
+                    }
+                }
             }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            try
+            // Prepare CSV header
+            List<string> headerColumns = new List<string>
             {
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+                "ShapeID",
+                "ShapeNameU",
+                "MasterName"
+            };
+            headerColumns.AddRange(customPropNames);
 
-                // Iterate through all pages and shapes to add a custom property
+            // Write CSV
+            using (StreamWriter writer = new StreamWriter(outputPath))
+            {
+                // Write header line
+                writer.WriteLine(string.Join(",", headerColumns));
+
+                // Write data rows
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Create a new custom property (Prop) if it does not already exist
-                        bool propExists = false;
-                        foreach (Prop existingProp in shape.Props)
+                        List<string> row = new List<string>
                         {
-                            if (existingProp.Name == "MyCustomProperty")
+                            shape.ID.ToString(),
+                            EscapeCsv(shape.NameU),
+                            shape.Master != null ? EscapeCsv(shape.Master.Name) : ""
+                        };
+
+                        // Add custom property values in the same order as headerColumns
+                        foreach (string propName in customPropNames)
+                        {
+                            string value = "";
+                            if (shape.Props != null)
                             {
-                                propExists = true;
-                                break;
+                                foreach (Prop prop in shape.Props)
+                                {
+                                    if (string.Equals(prop.Name, propName, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        value = prop.Value?.Val ?? "";
+                                        break;
+                                    }
+                                }
                             }
+                            row.Add(EscapeCsv(value));
                         }
 
-                        if (!propExists)
-                        {
-                            Prop customProp = new Prop();
-                            customProp.Name = "MyCustomProperty";
-                            customProp.Label.Value = "My Custom Property";
-                            customProp.Value.Val = "DefaultValue";
-                            customProp.Type.Value = TypePropValue.String;
-                            shape.Props.Add(customProp);
-                        }
+                        writer.WriteLine(string.Join(",", row));
                     }
                 }
+            }
 
-                // Export the diagram to CSV; custom properties become additional columns
-                diagram.Save(outputPath, SaveFileFormat.Csv);
-                Console.WriteLine($"Diagram exported successfully to CSV at: {outputPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+            Console.WriteLine($"CSV export completed: {outputPath}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+
+    // Helper to escape commas and quotes in CSV fields
+    private static string EscapeCsv(string field)
+    {
+        if (field == null)
+            return "";
+
+        if (field.Contains("\""))
+            field = field.Replace("\"", "\"\"");
+
+        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r"))
+            field = $"\"{field}\"";
+
+        return field;
+    }
+}

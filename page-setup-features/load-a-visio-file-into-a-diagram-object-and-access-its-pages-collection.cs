@@ -9,20 +9,18 @@ class Program
         try
         {
 
-            // Load the Visio file into a Diagram object using the built‑in constructor
-            var diagram = new Diagram("sample.vsdx");
+            // Load an existing Visio file into a Diagram object.
+            // Replace "sample.vsdx" with the path to your Visio file.
+            Diagram diagram = new Diagram("sample.vsdx");
 
-            // Access the Pages collection of the loaded diagram
-            var pages = diagram.Pages;
+            // Access the collection of pages in the diagram.
+            PageCollection pages = diagram.Pages;
 
-            // Example: iterate through the pages and output basic information
-            foreach (var page in pages)
+            // Example: iterate through pages and print their names.
+            foreach (Page page in pages)
             {
                 Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
             }
-
-            // Dispose the diagram when done (optional, as Diagram implements IDisposable)
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -6,73 +6,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, shape ID, output diagram path.
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <shapeId> <outputVisioPath>");
-            return;
-        }
-
-        // Assign input parameters to variables.
-        string inputPath = args[0];
-        // Guard: ensure the input file exists.
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Guard: ensure the source file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string shapeIdArg = args[1];
-        // Guard: parse shape ID to long.
-        if (!long.TryParse(shapeIdArg, out long shapeId))
-        {
-            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
-            return;
-        }
+        // Path to the output Visio file after unlocking rotation
+        string outputPath = "output_unlocked.vsdx";
 
-        string outputPath = args[2];
+        // ID of the shape whose rotation lock should be removed
+        long targetShapeId = 5; // replace with the actual shape ID
 
         try
         {
-            // Load the Visio diagram from the specified file.
+            // Load the diagram from the input file
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the shape with the given ID across all pages.
+            // Locate the shape with the specified ID on any page
             Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
-                // Iterate each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                try
                 {
-                    // Compare the shape's ID with the requested ID.
-                    if (shape.ID == shapeId)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
+                    // Attempt to retrieve the shape; GetShape returns null if not found
+                    targetShape = page.Shapes.GetShape(targetShapeId);
+                    if (targetShape != null)
+                        break; // shape found, exit the loop
                 }
-                if (targetShape != null) break;
+                catch
+                {
+                    // Ignore exceptions for pages that do not contain the shape
+                }
             }
 
-            // Guard: ensure the shape was found.
+            // If the shape was not found, report and exit
             if (targetShape == null)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found.");
+                Console.Error.WriteLine($"Shape with ID {targetShapeId} not found.");
                 return;
             }
 
-            // Unlock the rotation lock on the shape.
-            // The rotation lock is accessed via the Protection collection.
+            // Unlock rotation by clearing the LockRotate protection flag
             targetShape.Protection.LockRotate.Value = BOOL.False;
 
-            // Save the modified diagram to the output path using VSDX format.
+            // Optionally, set a new rotation angle (degrees) if desired
+            // targetShape.XForm.Angle.Value = 45;
+
+            // Save the modified diagram to the output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Rotation attribute unlocked and diagram saved to: {outputPath}");
+            Console.WriteLine($"Rotation unlocked for shape ID {targetShapeId} and diagram saved to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

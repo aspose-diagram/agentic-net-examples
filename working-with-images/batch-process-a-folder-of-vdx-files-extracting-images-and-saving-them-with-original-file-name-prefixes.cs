@@ -1,48 +1,68 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class VdxImageExtractor
-{
-    static void Main(string[] args)
+class Program
     {
-        // Folder containing VDX files
-        string inputFolder = @"C:\VisioFiles";
-        // Folder where extracted images will be saved
-        string outputFolder = @"C:\ExtractedImages";
-
-        // Ensure output directory exists
-        Directory.CreateDirectory(outputFolder);
-
-        // Process each VDX file in the input folder
-        foreach (string vdxPath in Directory.GetFiles(inputFolder, "*.vdx"))
+        static void Main(string[] args)
         {
-            // Load the diagram using the constructor that accepts a file path
-            using (Diagram diagram = new Diagram(vdxPath))
+            // Determine the folder to process. Use the first argument if provided, otherwise the current directory.
+            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+
+            if (!Directory.Exists(folderPath))
             {
-                string filePrefix = Path.GetFileNameWithoutExtension(vdxPath);
-                int shapeCounter = 0;
+                Console.WriteLine($"Folder does not exist: {folderPath}");
+                return;
+            }
 
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+            // Get all VDX files in the folder.
+            string[] vdxFiles = Directory.GetFiles(folderPath, "*.vdx", SearchOption.TopDirectoryOnly);
+            if (vdxFiles.Length == 0)
+            {
+                Console.WriteLine("No VDX files found in the specified folder.");
+                return;
+            }
+
+            foreach (string vdxFile in vdxFiles)
+            {
+                try
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Load the Visio diagram.
+                    Diagram diagram = new Diagram(vdxFile);
+
+                    int imageIndex = 1;
+                    string baseFileName = Path.GetFileNameWithoutExtension(vdxFile);
+
+                    // Iterate through all pages and shapes to find image (foreign) shapes.
+                    foreach (Page page in diagram.Pages)
                     {
-                        shapeCounter++;
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Image shapes are stored as foreign shapes.
+                            if (shape.Type == TypeValue.Foreign)
+                            {
+                                // The raw image bytes are stored in the ForeignData cell.
+                                byte[] imageData = shape.ForeignData?.Value;
+                                if (imageData != null && imageData.Length > 0)
+                                {
+                                    // Save the image using the original file name as a prefix.
+                                    string outputFileName = $"{baseFileName}_image{imageIndex}.png";
+                                    string outputPath = Path.Combine(folderPath, outputFileName);
 
-                        // Build the output image file name with original file prefix
-                        string imageFileName = $"{filePrefix}_shape{shapeCounter}.png";
-                        string imagePath = Path.Combine(outputFolder, imageFileName);
-
-                        // Save the shape as an image (PNG format)
-                        shape.ToImage(imagePath, new ImageSaveOptions(SaveFileFormat.Png));
+                                    File.WriteAllBytes(outputPath, imageData);
+                                    Console.WriteLine($"Extracted image to: {outputPath}");
+                                    imageIndex++;
+                                }
+                            }
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{vdxFile}': {ex.Message}");
+                }
             }
-        }
 
-        Console.WriteLine("Image extraction completed.");
+            Console.WriteLine("Image extraction completed.");
+        }
     }
-}

@@ -1,29 +1,39 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load the Visio diagram from a VSDX file
-            var diagram = new Diagram("input.vsdx", LoadFileFormat.Vsdx);
+                // Path to the source VSDX file
+                string inputPath = "inputDiagram.vsdx";
 
-            // Create save options and set a custom default font for rendering
-            var saveOptions = new DiagramSaveOptions();
-            saveOptions.DefaultFont = "MS Gothic"; // replace with any installed font name
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Save the diagram using the options (saving to VDX as an example)
-            diagram.Save("output.vdx", saveOptions);
+                // Set a custom default font for rendering.
+                // This font name must be installed on the system or located in a font folder added to FontConfigs.
+                FontConfigs.DefaultFontName = "Calibri";
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Optional: add a custom font folder if the font is not in the default system fonts.
+                // FontConfigs.SetFontFolder(@"C:\CustomFonts", true);
+
+                // Save the diagram to PDF to trigger rendering with the custom default font.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Calibri"; // Ensure the save options also use the custom font.
+
+                diagram.Save("outputDiagram.pdf", pdfOptions);
+
+                Console.WriteLine("Diagram loaded and saved with custom default font.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

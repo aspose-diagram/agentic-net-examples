@@ -1,48 +1,46 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first (default) page; ensure at least one page exists
+            // Add a page to the diagram (the first page is created by default)
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape that will act as the hyperlink target
-            // Parameters: PinX, PinY, Width, Height, Master name, isCalculate (bool)
-            long shapeId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle", false);
+            // Draw a simple rectangle shape that will hold the hyperlink
+            // Parameters: pinX, pinY, width, height (all in inches)
+            double pinX = 5.0;
+            double pinY = 5.0;
+            double width = 2.0;
+            double height = 1.0;
+            long shapeId = page.DrawRectangle(pinX, pinY, width, height);
+
+            // Retrieve the shape object using the returned ID
             Shape shape = page.Shapes.GetShape((int)shapeId);
 
-            // Set visible text for the shape
-            shape.Text.Value.Add(new Txt("Open PDF"));
-
-            // Create a hyperlink that points to a PDF file
+            // Add a hyperlink to the shape
             Hyperlink link = new Hyperlink();
-            // Address of the PDF document (relative or absolute URL)
-            link.Address.Value = "https://example.com/document.pdf";
+            // URL of the PDF document to open
+            link.Address.Value = "https://example.com/sample.pdf";
             // Optional description (tooltip)
-            link.Description.Value = "Open the PDF in a new browser window";
-            // Instruct Visio to open the link in a new window/tab
-            // NewWindow expects a BOOL value, not an integer
-            link.NewWindow.Value = BOOL.True;
+            link.Description.Value = "Open PDF in a new browser window";
+            // If the Hyperlink class supports opening in a new window, set it.
+            // The Visio cell is named "NewWindow". Use BOOL.True if available.
+            // Uncomment the following line if the property exists in your version:
+            // link.NewWindow.Value = BOOL.True;
 
-            // Add the hyperlink to the shape's Hyperlinks collection
+            // Attach the hyperlink to the shape
             shape.Hyperlinks.Add(link);
 
-            // Save the diagram to a VSDX file so the hyperlink can be tested in Visio or a viewer
-            diagram.Save("HyperlinkDiagram.vsdx", SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or runtime errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Save the diagram to a VSDX file
+            string outputPath = "HyperlinkDiagram.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
         }
     }
-}

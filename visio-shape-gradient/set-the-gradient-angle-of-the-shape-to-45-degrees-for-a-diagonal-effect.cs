@@ -8,50 +8,40 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram (replace with your actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
+                // Create a new diagram
+                Diagram diagram = new Diagram();
 
-                // Access the first page of the diagram
+                // Access the first page
                 Page page = diagram.Pages[0];
 
-                // Retrieve the first shape on the page
-                Shape shape = null;
-                foreach (Shape s in page.Shapes)
-                {
-                    shape = s;
-                    break;
-                }
-
-                if (shape == null)
-                {
-                    Console.WriteLine("No shapes found on the page.");
-                    return;
-                }
+                // Add a rectangle shape (pinX, pinY, width, height, master name, isCalculate)
+                long shapeId = page.AddShape(2.0, 2.0, 2.0, 1.0, "Rectangle", false);
+                Shape shape = page.Shapes.GetShape(shapeId);
 
                 // Enable gradient fill
-                shape.Fill.FillPattern.Value = 25; // 25 corresponds to gradient fill pattern
+                shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
                 shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+                shape.Fill.GradientFill.GradientDir.Value = 0; // Horizontal direction
 
-                // Set the gradient angle to 45 degrees for a diagonal effect
-                shape.Fill.GradientFill.GradientAngle.Value = 45;
-
-                // Optional: define gradient stops (blue to green) – can be adjusted as needed
+                // Define gradient stops
                 shape.Fill.GradientFill.GradientStops.Clear();
                 shape.Fill.GradientFill.GradientStops.Add(
                     new DoubleValue(0, MeasureConst.NUM),
-                    new ColorValue("#0000FF", MeasureConst.Undefined));
+                    new ColorValue("#FF0000", MeasureConst.Undefined)); // Start color (red)
                 shape.Fill.GradientFill.GradientStops.Add(
                     new DoubleValue(1, MeasureConst.NUM),
-                    new ColorValue("#00FF00", MeasureConst.Undefined));
+                    new ColorValue("#0000FF", MeasureConst.Undefined)); // End color (blue)
 
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved with gradient angle set to 45 degrees.");
+                // Set gradient angle to 45 degrees for diagonal effect
+                shape.Fill.GradientFill.GradientAngle.Value = 45;
+
+                // Save the diagram
+                diagram.Save("GradientShape.vsdx", SaveFileFormat.Vsdx);
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

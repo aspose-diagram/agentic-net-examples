@@ -1,7 +1,7 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,64 +10,43 @@ class Program
         try
         {
 
-            // Load the diagram from a file.
+            // Load the diagram from a file
             string inputPath = "input.vsdx";
-            using (Diagram diagram = new Diagram(inputPath))
+            Diagram diagram = new Diagram(inputPath);
+
+            // Sample orientation values for each page (could come from any source)
+            string[] orientationValues = { "Landscape", "Portrait", "InvalidOrientation", "SameAsPrinter" };
+
+            int i = 0;
+            foreach (Page page in diagram.Pages)
             {
-                // Define desired orientations for each page (by index).
-                var orientations = new Dictionary<int, string>
+                if (i >= orientationValues.Length)
+                    break;
+
+                string orientStr = orientationValues[i];
+                try
                 {
-                    { 0, "Landscape" },
-                    { 1, "Portrait" },
-                    { 2, "InvalidOrientation" } // This will trigger the catch block.
-                };
+                    // Try to parse the string to the enum; throws ArgumentException if not valid
+                    PrintPageOrientationValue orientation = (PrintPageOrientationValue)Enum.Parse(
+                        typeof(PrintPageOrientationValue), orientStr, ignoreCase: true);
 
-                // Iterate through pages using an index to match the dictionary.
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                    // Apply the orientation to the page
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
+                    Console.WriteLine($"Page {page.ID} orientation set to {orientation}.");
+                }
+                catch (ArgumentException)
                 {
-                    Page page = diagram.Pages[i];
-                    string orientationStr;
-
-                    // Use the specified orientation if present; otherwise default.
-                    if (!orientations.TryGetValue(i, out orientationStr))
-                    {
-                        orientationStr = "SameAsPrinter";
-                    }
-
-                    try
-                    {
-                        // Apply orientation based on the string value.
-                        switch (orientationStr)
-                        {
-                            case "Landscape":
-                                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                                break;
-                            case "Portrait":
-                                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-                                break;
-                            case "SameAsPrinter":
-                                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.SameAsPrinter;
-                                break;
-                            default:
-                                // Unsupported value – raise an exception to be caught.
-                                throw new ArgumentException($"Unsupported orientation: {orientationStr}");
-                        }
-
-                        Console.WriteLine($"Page {i} orientation set to {orientationStr}.");
-                    }
-                    catch (ArgumentException ex)
-                    {
-                        // Handle unsupported orientation values gracefully.
-                        Console.WriteLine($"Error processing page {i}: {ex.Message}");
-                        // Fallback to a safe default orientation.
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.SameAsPrinter;
-                    }
+                    // Handle unsupported orientation values
+                    Console.WriteLine($"Unsupported orientation \"{orientStr}\" for page {page.ID}. Defaulting to Portrait.");
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
                 }
 
-                // Save the modified diagram.
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                i++;
             }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

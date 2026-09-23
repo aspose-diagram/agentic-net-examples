@@ -10,16 +10,27 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Paths for input Visio file and output PNG
+            string inputPath = "input.vsdx";
+            string outputPath = "output.png";
 
-            // Create save options appropriate for PNG format
-            SaveOptions options = SaveOptions.CreateSaveOptions(SaveFileFormat.Png);
-            // Specify a fallback font to use for characters that are missing in the original font
-            options.DefaultFont = "MS Gothic";
+            // Specify the fallback font name to use for missing glyphs
+            string fallbackFont = "Arial";
 
-            // Render and save the diagram as a PNG image using the defined options
-            diagram.Save("output.png", options);
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Set the global fallback font for the diagram rendering engine
+            FontConfigs.DefaultFontName = fallbackFont;
+
+            // Configure PNG export options and enforce the fallback font
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            saveOptions.DefaultFont = fallbackFont;
+
+            // Render and save the diagram as a PNG image
+            diagram.Save(outputPath, saveOptions);
+
+            Console.WriteLine($"Diagram rendered to PNG with fallback font '{fallbackFont}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

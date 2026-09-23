@@ -4,44 +4,60 @@ using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect three arguments: input diagram file, VBA module name, output .bas file
-        if (args.Length != 3)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: ExtractVbaModule <inputDiagram> <moduleName> <outputBas>");
-            return;
-        }
+            try
+            {
 
-        string diagramPath = args[0];
-        string moduleName = args[1];
-        string outputPath = args[2];
+                // Path to the Visio file (must be a macro-enabled format if it contains VBA)
+                string visioPath = "input.vsdm";
 
-        // Load the Visio diagram
-        Diagram diagram = new Diagram(diagramPath);
+                // Name of the VBA module to extract
+                string targetModuleName = "Module1";
 
-        // Verify that the diagram contains a VBA project
-        if (diagram.VbaProject == null)
-        {
-            Console.WriteLine("The diagram does not contain a VBA project.");
-            return;
-        }
+                // Load the diagram
+                Diagram diagram = new Diagram(visioPath);
 
-        // Retrieve the specified VBA module by name
-        VbaModule vbaModule = diagram.VbaProject.Modules[moduleName];
-        if (vbaModule == null)
-        {
-            Console.WriteLine($"VBA module '{moduleName}' not found in the diagram.");
-            return;
-        }
+                // Ensure the diagram contains a VBA project
+                if (diagram.VbaProject == null)
+                {
+                    Console.WriteLine("The diagram does not contain a VBA project.");
+                    return;
+                }
 
-        // Extract the VBA source code from the module
-        string vbaCode = vbaModule.Codes;
+                // Find the requested module
+                VbaModule? targetModule = null;
+                foreach (VbaModule module in diagram.VbaProject.Modules)
+                {
+                    if (string.Equals(module.Name, targetModuleName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetModule = module;
+                        break;
+                    }
+                }
 
-        // Write the source code to a .bas file
-        File.WriteAllText(outputPath, vbaCode);
+                if (targetModule == null)
+                {
+                    Console.WriteLine($"VBA module '{targetModuleName}' not found.");
+                    return;
+                }
 
-        Console.WriteLine($"VBA module '{moduleName}' has been extracted to '{outputPath}'.");
+                // Extract the VBA source code
+                string vbaCode = targetModule.Codes;
+
+                // Define output .bas file path
+                string outputPath = $"{targetModule.Name}.bas";
+
+                // Write the code to the .bas file
+                File.WriteAllText(outputPath, vbaCode);
+
+                Console.WriteLine($"VBA module '{targetModule.Name}' extracted to '{outputPath}'.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

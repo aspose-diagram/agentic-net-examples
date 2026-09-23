@@ -13,26 +13,30 @@ class Program
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve a shape (example: shape with ID 1 on the first page)
-            Shape shape = diagram.Pages[0].Shapes.GetShape(1);
+            // Get the first page (index 0)
+            Page page = diagram.Pages[0];
 
-            // Enable gradient fill for the shape
+            // Retrieve a shape by its ID (example uses shape ID 1)
+            // Adjust the shape ID as needed for your diagram
+            Shape shape = page.Shapes.GetShape(1);
+
+            // Ensure the shape uses a gradient fill
             shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
             shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-            shape.Fill.GradientFill.GradientDir.Value = 0; // Direction (e.g., left to right)
 
-            // Remove any existing gradient stops
+            // Clear existing gradient stops
             shape.Fill.GradientFill.GradientStops.Clear();
 
-            // Add a gradient stop at index 0 with pure red color (RGB 255,0,0)
+            // Add a new gradient stop at index 0 with pure red color (#FF0000)
+            // Position 0 (MeasureConst.NUM) represents the start of the gradient
             shape.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(0, MeasureConst.NUM),
                 new ColorValue("#FF0000", MeasureConst.Undefined));
 
-            // (Optional) Add another stop to complete the gradient (e.g., blue at position 1)
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(1, MeasureConst.NUM),
-                new ColorValue("#0000FF", MeasureConst.Undefined));
+            // (Optional) Add additional stops if needed, e.g., at position 1
+            // shape.Fill.GradientFill.GradientStops.Add(
+            //     new DoubleValue(1, MeasureConst.NUM),
+            //     new ColorValue("#00FF00", MeasureConst.Undefined));
 
             // Save the modified diagram
             string outputPath = "output.vsdx";

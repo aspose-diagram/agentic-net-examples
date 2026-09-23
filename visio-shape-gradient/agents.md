@@ -4,10 +4,10 @@ display_name: Visio Shape Gradient
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.8.0
+version: 26.9.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-08-31
+generated: 2026-09-23
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.8.0 |
+| Aspose.Diagram Version | 26.9.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-08-31 |
+| Last Updated | 2026-09-23 |
 
 ## Persona
 
@@ -63,9 +63,9 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 30 | Core diagram API |
 | `System` | 30 | Console, Math, DateTime, Exception |
-| `System.IO` | 22 | File, Stream, Path, Directory operations |
+| `System.IO` | 20 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 8 | Save options (PDF, PNG, HTML, SVG, XPS) |
 | `System.Collections.Generic` | 5 | List, Dictionary, HashSet |
-| `Aspose.Diagram.Saving` | 4 | Save options (PDF, PNG, HTML, SVG, XPS) |
 
 ## Common Code Pattern
 
@@ -97,35 +97,35 @@ class Program
 | File | Key APIs | Task |
 |------|----------|------|
 | [access-gradient-stop-at-index-0-and-read-its-color-value-for-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/access-gradient-stop-at-index-0-and-read-its-color-value-for-analysis.cs) | `Diagram`, `Pages`, `Shapes` | Access gradient stop at index 0 and read its color value for analysis |
-| [access-gradient-stop-at-index-0-and-read-its-position-value-for-verification.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/access-gradient-stop-at-index-0-and-read-its-position-value-for-verification.cs) | `Diagram`, `Pages`, `Save` | Access gradient stop at index 0 and read its position value for verification |
+| [access-gradient-stop-at-index-0-and-read-its-position-value-for-verification.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/access-gradient-stop-at-index-0-and-read-its-position-value-for-verification.cs) | `Diagram`, `Pages`, `Shapes` | Access gradient stop at index 0 and read its position value for verification |
 | [add-a-new-gradient-stop-at-position-0-25-with-yellow-color-rgb-255-255-0.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/add-a-new-gradient-stop-at-position-0-25-with-yellow-color-rgb-255-255-0.cs) | `Diagram`, `Pages`, `Save` | Add a new gradient stop at position 0 25 with yellow color rgb 255 255 0 |
 | [add-a-new-gradient-stop-at-position-0-75-with-blue-color-rgb-0-0-255.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/add-a-new-gradient-stop-at-position-0-75-with-blue-color-rgb-0-0-255.cs) | `Diagram`, `Pages`, `Save` | Add a new gradient stop at position 0 75 with blue color rgb 0 0 255 |
 | [apply-the-modified-gradientfill-back-to-the-shape-s-fill-property-to-update-appearance.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/apply-the-modified-gradientfill-back-to-the-shape-s-fill-property-to-update-appearance.cs) | `Diagram`, `Pages`, `Save` | Apply the modified gradientfill back to the shape s fill property to update appearance |
 | [change-the-color-of-gradient-stop-at-index-0-to-pure-red-rgb-255-0-0.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/change-the-color-of-gradient-stop-at-index-0-to-pure-red-rgb-255-0-0.cs) | `Diagram`, `Pages`, `Save` | Change the color of gradient stop at index 0 to pure red rgb 255 0 0 |
-| [change-the-color-of-gradient-stop-at-index-1-to-pure-green-rgb-0-255-0.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/change-the-color-of-gradient-stop-at-index-1-to-pure-green-rgb-0-255-0.cs) | `Diagram`, `Save`, `diagram` | Change the color of gradient stop at index 1 to pure green rgb 0 255 0 |
+| [change-the-color-of-gradient-stop-at-index-1-to-pure-green-rgb-0-255-0.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/change-the-color-of-gradient-stop-at-index-1-to-pure-green-rgb-0-255-0.cs) | `Diagram`, `Pages`, `Save` | Change the color of gradient stop at index 1 to pure green rgb 0 255 0 |
 | [change-the-position-of-gradient-stop-at-index-0-to-0-0-representing-the-start.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/change-the-position-of-gradient-stop-at-index-0-to-0-0-representing-the-start.cs) | `Diagram`, `Pages`, `Save` | Change the position of gradient stop at index 0 to 0 0 representing the start |
 | [change-the-position-of-gradient-stop-at-index-1-to-0-5-representing-the-midpoint.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/change-the-position-of-gradient-stop-at-index-1-to-0-5-representing-the-midpoint.cs) | `Diagram`, `Pages`, `Save` | Change the position of gradient stop at index 1 to 0 5 representing the midpoint |
 | [compare-the-gradient-angles-of-two-shapes-and-record-any-variations-in-orientation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/compare-the-gradient-angles-of-two-shapes-and-record-any-variations-in-orientation.cs) | `Diagram`, `Pages`, `Shapes` | Compare the gradient angles of two shapes and record any variations in orientation |
-| [compare-the-gradient-direction-of-two-shapes-and-note-any-differences-for-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/compare-the-gradient-direction-of-two-shapes-and-note-any-differences-for-analysis.cs) | `Diagram`, `Pages`, `Shapes` | Compare the gradient direction of two shapes and note any differences for analysis |
+| [compare-the-gradient-direction-of-two-shapes-and-note-any-differences-for-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/compare-the-gradient-direction-of-two-shapes-and-note-any-differences-for-analysis.cs) | `Diagram`, `Pages`, `Save` | Compare the gradient direction of two shapes and note any differences for analysis |
 | [iterate-through-all-gradient-stops-and-log-each-stop-s-color-and-position-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/iterate-through-all-gradient-stops-and-log-each-stop-s-color-and-position-values.cs) | `Diagram`, `Pages`, `Shapes` | Iterate through all gradient stops and log each stop s color and position values |
 | [load-a-visio-diagram-and-locate-a-shape-by-its-identifier-for-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/load-a-visio-diagram-and-locate-a-shape-by-its-identifier-for-processing.cs) | `Diagram`, `Pages`, `Shapes` | Load a visio diagram and locate a shape by its identifier for processing |
-| [read-the-current-gradient-angle-of-the-selected-shape-to-understand-its-orientation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/read-the-current-gradient-angle-of-the-selected-shape-to-understand-its-orientation.cs) | `Diagram`, `Pages`, `diagram` | Read the current gradient angle of the selected shape to understand its orientation |
+| [read-the-current-gradient-angle-of-the-selected-shape-to-understand-its-orientation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/read-the-current-gradient-angle-of-the-selected-shape-to-understand-its-orientation.cs) | `Diagram`, `Pages`, `Shapes` | Read the current gradient angle of the selected shape to understand its orientation |
 | [read-the-current-gradient-direction-of-the-selected-shape-for-verification-purposes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/read-the-current-gradient-direction-of-the-selected-shape-for-verification-purposes.cs) | `Diagram`, `Pages`, `Shapes` | Read the current gradient direction of the selected shape for verification purposes |
 | [remove-the-gradient-stop-at-index-2-from-the-collection-to-simplify-the-gradient.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/remove-the-gradient-stop-at-index-2-from-the-collection-to-simplify-the-gradient.cs) | `Diagram`, `Pages`, `Save` | Remove the gradient stop at index 2 from the collection to simplify the gradient |
 | [remove-the-gradient-stop-at-index-3-from-the-collection-to-adjust-stop-count.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/remove-the-gradient-stop-at-index-3-from-the-collection-to-adjust-stop-count.cs) | `Diagram`, `Pages`, `Save` | Remove the gradient stop at index 3 from the collection to adjust stop count |
 | [reset-the-gradient-angle-to-0-degrees-to-achieve-a-left-to-right-fill-orientation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/reset-the-gradient-angle-to-0-degrees-to-achieve-a-left-to-right-fill-orientation.cs) | `Diagram`, `Pages`, `Save` | Reset the gradient angle to 0 degrees to achieve a left to right fill orientation |
 | [reset-the-gradient-direction-to-the-shape-s-original-default-value-to-restore-initial-layout.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/reset-the-gradient-direction-to-the-shape-s-original-default-value-to-restore-initial-layout.cs) | `Diagram`, `Pages`, `Save` | Reset the gradient direction to the shape s original default value to restore initial layout |
 | [retrieve-the-gradient-stop-count-and-ensure-it-meets-a-minimum-of-three-stops.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/retrieve-the-gradient-stop-count-and-ensure-it-meets-a-minimum-of-three-stops.cs) | `Diagram`, `Pages`, `Save` | Retrieve the gradient stop count and ensure it meets a minimum of three stops |
-| [retrieve-the-shape-s-fill-property-and-obtain-the-associated-gradientfill-object.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/retrieve-the-shape-s-fill-property-and-obtain-the-associated-gradientfill-object.cs) | `Diagram`, `Pages`, `Save` | Retrieve the shape s fill property and obtain the associated gradientfill object |
-| [set-the-gradient-angle-of-the-shape-to-0-degrees-for-a-horizontal-fill.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/set-the-gradient-angle-of-the-shape-to-0-degrees-for-a-horizontal-fill.cs) | `Diagram`, `Pages`, `Save` | Set the gradient angle of the shape to 0 degrees for a horizontal fill |
-| [set-the-gradient-angle-of-the-shape-to-45-degrees-for-a-diagonal-effect.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/set-the-gradient-angle-of-the-shape-to-45-degrees-for-a-diagonal-effect.cs) | `Diagram`, `Pages`, `Save` | Set the gradient angle of the shape to 45 degrees for a diagonal effect |
+| [retrieve-the-shape-s-fill-property-and-obtain-the-associated-gradientfill-object.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/retrieve-the-shape-s-fill-property-and-obtain-the-associated-gradientfill-object.cs) | `Diagram`, `Pages`, `Shapes` | Retrieve the shape s fill property and obtain the associated gradientfill object |
+| [set-the-gradient-angle-of-the-shape-to-0-degrees-for-a-horizontal-fill.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/set-the-gradient-angle-of-the-shape-to-0-degrees-for-a-horizontal-fill.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Set the gradient angle of the shape to 0 degrees for a horizontal fill |
+| [set-the-gradient-angle-of-the-shape-to-45-degrees-for-a-diagonal-effect.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/set-the-gradient-angle-of-the-shape-to-45-degrees-for-a-diagonal-effect.cs) | `AddShape`, `Diagram`, `Pages` | Set the gradient angle of the shape to 45 degrees for a diagonal effect |
 | [set-the-gradient-angle-of-the-shape-to-90-degrees-to-create-a-vertical-fill.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/set-the-gradient-angle-of-the-shape-to-90-degrees-to-create-a-vertical-fill.cs) | `Diagram`, `Pages`, `Save` | Set the gradient angle of the shape to 90 degrees to create a vertical fill |
-| [set-the-gradient-direction-of-the-shape-to-diagonal-top-left-to-bottom-right.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/set-the-gradient-direction-of-the-shape-to-diagonal-top-left-to-bottom-right.cs) | `Diagram`, `Save`, `diagram` | Set the gradient direction of the shape to diagonal top left to bottom right |
-| [set-the-gradient-direction-of-the-shape-to-horizontal-to-achieve-left-to-right-fill.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/set-the-gradient-direction-of-the-shape-to-horizontal-to-achieve-left-to-right-fill.cs) | `Diagram`, `Save`, `diagram` | Set the gradient direction of the shape to horizontal to achieve left to right fill |
+| [set-the-gradient-direction-of-the-shape-to-diagonal-top-left-to-bottom-right.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/set-the-gradient-direction-of-the-shape-to-diagonal-top-left-to-bottom-right.cs) | `Diagram`, `Pages`, `Save` | Set the gradient direction of the shape to diagonal top left to bottom right |
+| [set-the-gradient-direction-of-the-shape-to-horizontal-to-achieve-left-to-right-fill.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/set-the-gradient-direction-of-the-shape-to-horizontal-to-achieve-left-to-right-fill.cs) | `Diagram`, `Pages`, `Save` | Set the gradient direction of the shape to horizontal to achieve left to right fill |
 | [set-the-gradient-direction-of-the-shape-to-vertical-for-top-to-bottom-fill-effect.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/set-the-gradient-direction-of-the-shape-to-vertical-for-top-to-bottom-fill-effect.cs) | `Diagram`, `Pages`, `Save` | Set the gradient direction of the shape to vertical for top to bottom fill effect |
 | [shift-all-gradient-stop-positions-by-0-1-while-keeping-each-value-within-the-0-1-range.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/shift-all-gradient-stop-positions-by-0-1-while-keeping-each-value-within-the-0-1-range.cs) | `Diagram`, `Pages`, `Save` | Shift all gradient stop positions by 0 1 while keeping each value within the 0 1 range |
 | [update-the-color-of-all-gradient-stops-to-a-uniform-gray-shade-rgb-128-128-128.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/update-the-color-of-all-gradient-stops-to-a-uniform-gray-shade-rgb-128-128-128.cs) | `Diagram`, `Pages`, `Save` | Update the color of all gradient stops to a uniform gray shade rgb 128 128 128 |
-| [verify-that-the-shape-now-contains-exactly-four-gradient-stops-after-modifications.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/verify-that-the-shape-now-contains-exactly-four-gradient-stops-after-modifications.cs) | `Diagram`, `Pages`, `Shapes` | Verify that the shape now contains exactly four gradient stops after modifications |
+| [verify-that-the-shape-now-contains-exactly-four-gradient-stops-after-modifications.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-shape-gradient/verify-that-the-shape-now-contains-exactly-four-gradient-stops-after-modifications.cs) | `Diagram`, `Pages`, `Save` | Verify that the shape now contains exactly four gradient stops after modifications |
 
 ## Command Reference
 
@@ -211,7 +211,9 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ## Key API Surface
 
+- `AddShape`
 - `Diagram`
+- `ImageSaveOptions`
 - `Pages`
 - `Save`
 - `Shapes`
@@ -231,7 +233,7 @@ Frequently asked questions about **Visio Shape Gradient** in **Aspose.Diagram fo
 
 **Q: How do I get started with Visio Shape Gradient in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.8.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.9.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -262,4 +264,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-08-31 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-09-23 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

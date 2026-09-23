@@ -1,8 +1,6 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,50 +9,55 @@ class Program
         try
         {
 
-            // Load the diagram (replace with your actual file path)
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Access the gradient fill of the shape
-                    var gradientFill = shape.Fill.GradientFill;
-
-                    // Proceed only if there are gradient stops defined
-                    if (gradientFill != null && gradientFill.GradientStops.Count > 0)
+                    // Ensure the shape has a gradient fill enabled
+                    if (shape.Fill != null &&
+                        shape.Fill.GradientFill != null &&
+                        shape.Fill.GradientFill.GradientEnabled != null &&
+                        shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
                     {
-                        // Preserve existing stops (position and color)
-                        var existingStops = new List<(double Position, string Color)>();
+                        var gradientFill = shape.Fill.GradientFill;
+                        var originalStops = new System.Collections.Generic.List<GradientStop>();
 
+                        // Collect existing stops
                         foreach (GradientStop stop in gradientFill.GradientStops)
                         {
-                            double pos = stop.Position.Value;          // Current position (0‑1)
-                            string col = stop.Color.Value;            // Hex color string
-                            existingStops.Add((pos, col));
+                            originalStops.Add(stop);
                         }
 
-                        // Clear current stops
+                        // Clear existing stops
                         gradientFill.GradientStops.Clear();
 
-                        // Re‑add stops with shifted positions, clamped to the 0‑1 range
-                        foreach (var (pos, col) in existingStops)
+                        // Re‑add stops with shifted positions
+                        foreach (GradientStop stop in originalStops)
                         {
-                            double newPos = pos + 0.1;
-                            if (newPos > 1.0) newPos = 1.0;
-                            if (newPos < 0.0) newPos = 0.0;
+                            double originalPos = stop.Position.Value;
+                            double shiftedPos = originalPos + 0.1;
 
+                            // Keep the position within the 0‑1 range (clamp to 1.0)
+                            if (shiftedPos > 1.0)
+                                shiftedPos = 1.0;
+
+                            // Preserve the original color
+                            string colorHex = stop.Color.Value;
+
+                            // Add the new stop
                             gradientFill.GradientStops.Add(
-                                new DoubleValue(newPos, MeasureConst.NUM),
-                                new ColorValue(col, MeasureConst.Undefined));
+                                new DoubleValue(shiftedPos, MeasureConst.NUM),
+                                new ColorValue(colorHex, MeasureConst.Undefined));
                         }
                     }
                 }
             }
 
-            // Save the modified diagram (replace with your desired output path)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

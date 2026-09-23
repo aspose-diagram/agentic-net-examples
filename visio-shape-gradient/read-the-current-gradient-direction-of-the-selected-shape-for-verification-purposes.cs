@@ -1,36 +1,40 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-class GradientDirectionReader
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+                // Path to the Visio file
+                string inputPath = "input.vsdx";
 
-            // Select the page and shape you want to inspect
-            // Here we assume the first page and a shape with ID = 1
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes.GetShape(1);
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Access the gradient fill of the shape
-            GradientFill gradientFill = shape.Fill.GradientFill;
+                // Get the first page (index 0)
+                Page page = diagram.Pages[0];
 
-            // Read the gradient direction (IntValue) and cast to the enum
-            int dirValue = gradientFill.GradientDir.Value;
-            GradientFillDir gradientDirection = (GradientFillDir)dirValue;
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Verify that the shape has gradient fill enabled
+                    if (shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
+                    {
+                        // Read the current gradient direction value
+                        double gradientDirection = shape.Fill.GradientFill.GradientDir.Value;
 
-            // Output the gradient direction for verification
-            Console.WriteLine($"Gradient Direction: {gradientDirection} (Value = {dirValue})");
+                        // Output the shape ID and its gradient direction
+                        Console.WriteLine($"Shape ID {shape.ID} gradient direction: {gradientDirection}");
+                    }
+                }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

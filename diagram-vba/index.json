@@ -1,11 +1,11 @@
 {
   "category": "diagram-vba",
   "display_name": "Diagram Vba",
-  "version": "26.8.0",
+  "version": "26.9.0",
   "framework": "net8.0",
   "total": 35,
   "pass_rate": 100.0,
-  "generated": "2026-08-28",
+  "generated": "2026-09-23",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -30,7 +30,6 @@
       "task": "Apply password protection to the vba project to restrict unauthorized macro editing",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
         "System",
         "System.IO"
@@ -90,8 +89,8 @@
       "task": "Clone the vba project from one diagram and attach it to another diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
+        "Aspose.Diagram.Vba",
+        "System"
       ],
       "key_apis": [
         "Diagram"
@@ -105,7 +104,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram"
@@ -118,9 +118,9 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Diagram.Vba",
         "System",
-        "System.IO",
-        "System.IO.Compression"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -153,8 +153,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram"
@@ -198,12 +197,12 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
-        "System.Diagnostics",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -214,7 +213,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram"
@@ -240,7 +240,6 @@
       "task": "Generate a consolidated csv report summarizing vba module counts across all processed diagrams",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Vba",
         "System",
         "System.IO",
         "System.Text"
@@ -255,6 +254,7 @@
       "task": "Import a previously exported vba project file into a diagram to restore macros",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
@@ -272,6 +272,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
+        "System.Collections.Generic",
         "System.IO",
         "System.Text.RegularExpressions"
       ],
@@ -290,9 +291,7 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Save",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -317,6 +316,7 @@
       "task": "Log detailed vba project metadata to a json file for auditing purposes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
         "Aspose.Diagram.Vba",
         "System",
         "System.Collections.Generic",
@@ -348,6 +348,7 @@
       "task": "Remove password protection from a vba project after verifying user credentials successfully",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
@@ -378,9 +379,9 @@
       "task": "Rename a vba module to a more descriptive identifier within the same diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -395,8 +396,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -424,6 +424,8 @@
       "task": "Save a diagram containing vba macros to a memory stream for network transmission",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
@@ -472,7 +474,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -502,6 +503,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
+        "System.IO",
         "System.Security.Cryptography.X509Certificates"
       ],
       "key_apis": [

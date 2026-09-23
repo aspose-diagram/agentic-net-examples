@@ -1,40 +1,33 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Input Visio file path (replace with actual path)
-                string inputPath = "input.vsdx";
+            // Load the multi‑page Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-                // Output PDF file path
-                string outputPath = "second_page.pdf";
+            // Configure PDF save options to export only the second page (zero‑based index 1)
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageIndex = 1;   // second page
+            pdfOptions.PageCount = 1;   // export a single page
+            pdfOptions.DefaultFont = "Arial";
 
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Configure PDF save options to export only the second page (zero‑based index = 1)
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions
-                    {
-                        PageIndex = 1,   // Start from the second page
-                        PageCount = 1    // Export only one page
-                    };
+            // Save the selected page as a PDF file
+            string outputPath = "second_page.pdf";
+            diagram.Save(outputPath, pdfOptions);
 
-                    // Save the selected page as PDF
-                    diagram.Save(outputPath, pdfOptions);
-                }
-
-                Console.WriteLine($"Second page exported to '{outputPath}'.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

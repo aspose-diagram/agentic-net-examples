@@ -1,38 +1,40 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Diagram.AutoLayout;
 
-using Aspose.Diagram.AutoLayout; // Namespace for AutoSpaceOptions (if needed)
-
-class AutoSpaceExample
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input and output file paths (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Create autospace options – set desired horizontal and vertical distances (in inches)
-                AutoSpaceOptions options = new AutoSpaceOptions
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    DistanceInHorizontal = 0.5, // 0.5 inch horizontal spacing
-                    DistanceInVertical = 0.5    // 0.5 inch vertical spacing
-                };
+                    // Configure auto‑spacing options
+                    AutoSpaceOptions options = new AutoSpaceOptions
+                    {
+                        DistanceInHorizontal = 0.5, // horizontal spacing in inches
+                        DistanceInVertical = 0.5    // vertical spacing in inches
+                    };
 
-                // Apply autospace to all shapes on the current page
-                page.AutoSpaceShapes(page.Shapes, options);
+                    // Apply auto‑spacing to all shapes on the current page
+                    page.AutoSpaceShapes(page.Shapes, options);
+                }
 
-                // Optional: center the drawing after spacing
-                page.CenterDrawing();
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Save the modified diagram (replace with your desired output path and format)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,25 +1,28 @@
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 namespace DiagramPageSavingTest
 {
-    // Custom callback to count page saving events
+    // Callback implementation to track page saving events
     public class PageSavingCounter : IPageSavingCallback
     {
-        public int StartCount { get; private set; } = 0;
+        public int StartCount { get; private set; }
+        public int EndCount { get; private set; }
+        public List<int> StartedPages { get; } = new List<int>();
+        public List<int> EndedPages { get; } = new List<int>();
 
-        // Called before each page is saved
         public void PageStartSaving(PageStartSavingArgs args)
         {
             StartCount++;
-            Console.WriteLine($"Starting save of page {args.PageIndex + 1} of {args.PageCount}");
+            StartedPages.Add(args.PageIndex);
         }
 
-        // Called after each page is saved
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            // No action needed for this test
+            EndCount++;
+            EndedPages.Add(args.PageIndex);
         }
     }
 
@@ -27,38 +30,42 @@ namespace DiagramPageSavingTest
     {
         public static void Main()
         {
-            // Create a new diagram
+            // Create a new diagram with two pages
             Diagram diagram = new Diagram();
+            // The diagram starts with one page; add a second page
+            diagram.Pages.Add(new Page());
 
-            // Ensure the diagram has multiple pages (e.g., 3 pages)
-            // The default diagram may already contain one page; add additional pages as needed
-            while (diagram.Pages.Count < 3)
-            {
-                // Add a new page with a unique ID
-                int newId = diagram.Pages.Count + 1;
-                diagram.Pages.Add(new Page(newId));
-            }
+            // Verify page count
+            int pageCount = diagram.Pages.Count;
+            if (pageCount != 2)
+                throw new Exception($"Expected 2 pages, but found {pageCount}.");
 
-            int expectedPageCount = diagram.Pages.Count;
-
-            // Set up PDF save options with the custom page-saving callback
+            // Set up PDF save options with the custom callback
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
             PageSavingCounter callback = new PageSavingCounter();
             pdfOptions.PageSavingCallback = callback;
 
-            // Define output path (in the current directory)
-            string outputPath = "MultiPageDiagram.pdf";
-
-            // Save the diagram as PDF; this will trigger the callback for each page
+            // Save the diagram to PDF (output file path can be any valid location)
+            string outputPath = "multi_page_output.pdf";
             diagram.Save(outputPath, pdfOptions);
 
-            // Verify that the callback was invoked for each page
-            if (callback.StartCount != expectedPageCount)
+            // Validate that the callback was invoked for each page
+            if (callback.StartCount != pageCount)
+                throw new Exception($"PageStartSaving was called {callback.StartCount} times; expected {pageCount}.");
+
+            if (callback.EndCount != pageCount)
+                throw new Exception($"PageEndSaving was called {callback.EndCount} times; expected {pageCount}.");
+
+            // Optional: verify that page indices reported match expected range
+            for (int i = 0; i < pageCount; i++)
             {
-                throw new Exception($"Page saving callback was called {callback.StartCount} times, expected {expectedPageCount} times.");
+                if (!callback.StartedPages.Contains(i))
+                    throw new Exception($"PageStartSaving did not report page index {i}.");
+                if (!callback.EndedPages.Contains(i))
+                    throw new Exception($"PageEndSaving did not report page index {i}.");
             }
 
-            Console.WriteLine("Test passed: OnPageSaving (PageStartSaving) was called for each page.");
+            Console.WriteLine("All page saving callbacks were invoked correctly for each page.");
         }
     }
 }

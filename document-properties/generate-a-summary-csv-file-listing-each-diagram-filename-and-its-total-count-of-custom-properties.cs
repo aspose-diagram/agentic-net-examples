@@ -1,40 +1,50 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
-class DiagramCustomPropertiesSummary
-{
-    static void Main()
+class Program
     {
-        // Folder containing Visio diagram files
-        string diagramsFolder = @"C:\Diagrams";
-
-        // Output CSV file path
-        string csvPath = @"C:\Diagrams\summary.csv";
-
-        // Get all Visio files (adjust extensions as needed)
-        string[] diagramFiles = Directory.GetFiles(diagramsFolder, "*.vsdx");
-
-        // Create CSV and write header
-        using (var csvWriter = new StreamWriter(csvPath))
+        static void Main(string[] args)
         {
-            csvWriter.WriteLine("Filename,CustomPropertyCount");
+            // Determine the folder to scan. Use the first argument if provided; otherwise, use the current directory.
+            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
 
-            foreach (string filePath in diagramFiles)
+            // Prepare CSV content with a header row.
+            List<string> csvLines = new List<string>();
+            csvLines.Add("Filename,CustomPropertyCount");
+
+            // Retrieve all files in the specified folder.
+            string[] files = Directory.GetFiles(folderPath);
+
+            foreach (string filePath in files)
             {
-                // Load diagram from file
-                using (var diagram = new Diagram(filePath))
+                try
                 {
-                    // Count custom properties in the document
+                    // Load the Visio diagram.
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Count the custom properties in the document.
                     int customPropCount = diagram.DocumentProps.CustomProps.Count;
 
-                    // Write result line to CSV
+                    // Extract just the file name for the CSV.
                     string fileName = Path.GetFileName(filePath);
-                    csvWriter.WriteLine($"{fileName},{customPropCount}");
+
+                    // Add the result line to the CSV collection.
+                    csvLines.Add($"{fileName},{customPropCount}");
+                }
+                catch (Exception ex)
+                {
+                    // If the file cannot be processed, note the error in the CSV and write a message to the console.
+                    string fileName = Path.GetFileName(filePath);
+                    csvLines.Add($"{fileName},Error");
+                    Console.WriteLine($"Error processing '{fileName}': {ex.Message}");
                 }
             }
-        }
 
-        Console.WriteLine("Summary CSV created at: " + csvPath);
+            // Write the CSV file to the same folder.
+            string outputPath = Path.Combine(folderPath, "DiagramCustomPropertiesSummary.csv");
+            File.WriteAllLines(outputPath, csvLines);
+            Console.WriteLine($"Summary CSV created at: {outputPath}");
+        }
     }
-}

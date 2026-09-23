@@ -9,29 +9,38 @@ class Program
         try
         {
 
-            // Path to the Visio file to be audited
-            string inputPath = "sample.vsdx";
-
-            // Load the diagram (ensure disposal to free resources)
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram (replace with your file path)
+            using (Diagram diagram = new Diagram("input.vsdx"))
             {
-                // Iterate through each page in the diagram
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the current page
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Verify the shape contains text
-                        if (shape.Text != null && !string.IsNullOrEmpty(shape.Text.Value.Text))
+                        // Check if the shape contains visible text
+                        if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
                         {
-                            Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, Shape Name: {shape.NameU}");
+                            Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
 
-                            // Iterate over character formatting runs within the shape
-                            foreach (Aspose.Diagram.Char ch in shape.Chars)
+                            // If the shape has character formatting, log each character's font size
+                            if (shape.Chars != null && shape.Chars.Count > 0)
                             {
-                                // Font size is stored in inches; convert to points (1 inch = 72 points)
-                                double fontSizePoints = ch.Size.Value * 72.0;
-                                Console.WriteLine($"  Char Index: {ch.IX}, Font: {ch.FontName.Value}, Size (pts): {fontSizePoints}");
+                                int charIndex = 0;
+                                foreach (Aspose.Diagram.Char ch in shape.Chars)
+                                {
+                                    // Font size is stored in inches; convert to points (1 inch = 72 points)
+                                    double sizeInInches = ch.Size.Value;
+                                    double sizeInPoints = sizeInInches * 72.0;
+                                    Console.WriteLine($"  Char {charIndex}: Font = {ch.FontName.Value}, Size = {sizeInPoints:F2} pt");
+                                    charIndex++;
+                                }
+                            }
+                            else
+                            {
+                                // No character-level formatting; attempt to infer size from the shape's default text style
+                                // (If needed, additional logic can be added here)
+                                Console.WriteLine("  No character formatting found.");
                             }
                         }
                     }

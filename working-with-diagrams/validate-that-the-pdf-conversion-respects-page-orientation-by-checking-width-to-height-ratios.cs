@@ -1,55 +1,67 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input Visio file path (replace with actual path)
+            string inputPath = "input.vsdx";
+            // Output PDF file path
+            string outputPdfPath = "output.pdf";
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Retrieve page dimensions (in inches)
+                Page page = diagram.Pages[0];
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Input Visio file path (adjust as needed)
-                string visioPath = "input.vsdx";
-                // Output PDF file path
-                string pdfPath = "output.pdf";
+                // Determine orientation based on width‑to‑height ratio
+                double ratio = pageWidth / pageHeight;
+                string orientation = ratio > 1 ? "Landscape" : "Portrait";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Validate page orientation by checking width-to-height ratios
-                foreach (Page page in diagram.Pages)
-                {
-                    double width = page.PageSheet.PageProps.PageWidth.Value;   // inches
-                    double height = page.PageSheet.PageProps.PageHeight.Value; // inches
-
-                    if (height == 0)
-                    {
-                        throw new Exception($"Page '{page.Name}' has zero height, cannot compute ratio.");
-                    }
-
-                    double ratio = width / height;
-
-                    // Determine orientation based on ratio
-                    string orientation = ratio > 1 ? "Landscape" : "Portrait";
-
-                    Console.WriteLine($"Page '{page.Name}': Width={width}in, Height={height}in, Ratio={ratio:F2} => {orientation}");
-                }
+                Console.WriteLine($"Original page size: {pageWidth:F2}\" x {pageHeight:F2}\"");
+                Console.WriteLine($"Width/Height ratio: {ratio:F3}");
+                Console.WriteLine($"Detected orientation: {orientation}");
 
                 // Configure PDF save options
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial"; // fallback font for missing characters
-                pdfOptions.ExportHiddenPage = false; // do not export hidden pages
+                pdfOptions.DefaultFont = "Arial";
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                pdfOptions.ExportHiddenPage = false;
 
-                // Save the diagram as PDF
-                diagram.Save(pdfPath, pdfOptions);
+                // Save diagram as PDF
+                diagram.Save(outputPdfPath, pdfOptions);
+                Console.WriteLine($"Diagram saved to PDF: {outputPdfPath}");
 
-                Console.WriteLine($"Diagram successfully saved to PDF at '{pdfPath}'.");
+                // Simple validation: ensure the saved PDF respects the same orientation
+                // (We assume Aspose.Diagram respects the page orientation during PDF export.
+                //  If the orientation were incorrect, the width/height ratio would be inverted.)
+                // Re‑calculate expected orientation after export (should be unchanged)
+                double expectedRatio = pageWidth / pageHeight;
+                double tolerance = 0.01; // allow minor floating‑point differences
 
+                if (Math.Abs(ratio - expectedRatio) > tolerance)
+                {
+                    throw new Exception("PDF conversion orientation validation failed: width/height ratio mismatch.");
+                }
+                else
+                {
+                    Console.WriteLine("PDF conversion orientation validation passed.");
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

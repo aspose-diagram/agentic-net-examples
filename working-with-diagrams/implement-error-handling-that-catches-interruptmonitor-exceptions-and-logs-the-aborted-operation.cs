@@ -1,55 +1,55 @@
 using System;
 using System.Threading;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Path to the source diagram file
-            const string inputPath = "input.vsdx";
-            // Path for the output diagram file
-            const string outputPath = "output.vsdx";
+            // Path to the Visio file to load
+            string inputPath = "sample.vsdx";
+            // Path to the output file (if load succeeds)
+            string outputPath = "output.pdf";
 
-            // Create an InterruptMonitor to allow interruption of long-running operations
+            // Create an InterruptMonitor instance
             InterruptMonitor monitor = new InterruptMonitor();
 
-            // Configure load options to use the interrupt monitor
-            LoadOptions loadOptions = new LoadOptions();
-            loadOptions.InterruptMonitor = monitor;
-
-            Diagram diagram = null;
-            Thread interrupter = null;
+            // Start a background thread that will interrupt the operation after a short delay
+            Thread interrupter = new Thread(() =>
+            {
+                // Wait for 2 seconds before interrupting
+                Thread.Sleep(2000);
+                Console.WriteLine("Interrupt requested.");
+                monitor.Interrupt();
+            });
+            interrupter.Start();
 
             try
             {
-                // Load the diagram with interrupt monitoring enabled
-                diagram = new Diagram(inputPath, loadOptions);
+                // Prepare load options and assign the monitor
+                LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsdx);
+                loadOptions.InterruptMonitor = monitor;
 
-                // Start a background thread that will trigger an interrupt after a short delay
-                interrupter = new Thread(() =>
-                {
-                    // Wait briefly before interrupting
-                    Thread.Sleep(100);
-                    monitor.Interrupt();
-                });
-                interrupter.Start();
+                // Load the diagram (this operation can be aborted)
+                Diagram diagram = new Diagram(inputPath, loadOptions);
+                Console.WriteLine("Diagram loaded successfully.");
 
-                // Perform a save operation that can be interrupted
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Example operation: save to PDF
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
             }
             catch (Exception ex)
             {
-                // Log the aborted operation
+                // Catch any exception caused by the interrupt monitor
                 Console.WriteLine($"Operation aborted: {ex.Message}");
             }
             finally
             {
                 // Ensure the interrupter thread has finished
-                interrupter?.Join();
-
-                // Clean up the diagram object
-                diagram?.Dispose();
+                interrupter.Join();
+                Console.WriteLine("Processing completed.");
             }
         }
     }

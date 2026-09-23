@@ -10,66 +10,78 @@ class Program
         try
         {
 
-            // Create a new diagram (or load an existing one)
-            Diagram diagram = new Diagram();
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output PDF file path
+            string outputPath = "output.pdf";
 
-            // Ensure there is at least one foreground page
-            Page foregroundPage = diagram.Pages[0];
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve page dimensions (in inches)
-            double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
+            // Define the background color (hex string)
+            string backgroundHex = "#ADD8E6"; // Light blue
 
-            // -------------------------------------------------
-            // 1. Create a background page
-            // -------------------------------------------------
-            // Determine a new unique page ID
-            int maxId = 0;
-            foreach (Page p in diagram.Pages)
+            // Process each foreground page
+            foreach (Page page in diagram.Pages)
             {
-                if (p.ID > maxId) maxId = p.ID;
+                // Skip pages that are already background pages
+                if (page.Background == BOOL.True)
+                    continue;
+
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Create a new background page
+                Page bgPage = new Page();
+
+                // Assign a unique ID and name to the background page
+                int maxId = 0;
+                foreach (Page p in diagram.Pages)
+                {
+                    if (p.ID > maxId) maxId = p.ID;
+                }
+                bgPage.ID = maxId + 1;
+                bgPage.Name = "Background_" + bgPage.ID;
+                bgPage.Background = BOOL.True;
+
+                // Calculate the center position for the rectangle shape
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
+
+                // Add a rectangle shape that spans the entire page
+                // Parameters: pinX, pinY, width, height, master name, isCalculate
+                long shapeId = bgPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle", false);
+                Shape bgShape = bgPage.Shapes.GetShape(shapeId);
+
+                // Set solid fill pattern
+                bgShape.Fill.FillPattern.Value = 1; // Solid
+                // Set the desired background color
+                bgShape.Fill.FillForegnd.Value = backgroundHex;
+                // Remove outline by setting line pattern to none
+                bgShape.Line.LinePattern.Value = (LinePatternValue)0;
+                // Send the shape to the back so other content appears above it
+                bgShape.SendToBack();
+                // Make the background shape non‑selectable
+                bgShape.Protection.LockSelect.Value = BOOL.True;
+
+                // Add the background page to the diagram
+                diagram.Pages.Add(bgPage);
+                // Link the foreground page to its background page
+                page.BackPage = bgPage;
             }
-            Page backgroundPage = new Page();
-            backgroundPage.ID = maxId + 1;
-            backgroundPage.Name = "BackgroundPage";
-            backgroundPage.Background = BOOL.True; // Mark as background page
-            diagram.Pages.Add(backgroundPage);
 
-            // -------------------------------------------------
-            // 2. Add a rectangle shape that covers the whole page
-            // -------------------------------------------------
-            // AddShape(pinX, pinY, width, height, masterName)
-            long bgShapeId = backgroundPage.AddShape(0, 0, pageWidth, pageHeight, "Rectangle");
-            Shape bgShape = backgroundPage.Shapes.GetShape(bgShapeId);
-
-            // Set solid fill pattern
-            bgShape.Fill.FillPattern.Value = 1; // Solid
-            // Set desired background color (hex string)
-            bgShape.Fill.FillForegnd.Value = "#ADD8E6"; // Light blue
-
-            // Remove any border
-            bgShape.Line.LinePattern.Value = 0; // No line
-
-            // Send the shape to the back and lock selection
-            bgShape.SendToBack();
-            bgShape.Protection.LockSelect.Value = BOOL.True;
-
-            // -------------------------------------------------
-            // 3. Associate the background page with the foreground page
-            // -------------------------------------------------
-            foregroundPage.BackPage = backgroundPage;
-
-            // -------------------------------------------------
-            // 4. Export the diagram to PDF with branding
-            // -------------------------------------------------
+            // Configure PDF save options (optional: set default font)
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial"; // Fallback font for missing glyphs
-            diagram.Save("BrandedOutput.pdf", pdfOptions);
+            pdfOptions.DefaultFont = "Arial";
+
+            // Save the diagram as PDF with the branding background
+            diagram.Save(outputPath, pdfOptions);
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,46 +1,45 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output PDF file path.
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramExport <inputVisioPath> <outputPdfPath>");
+                return;
+            }
 
-            // Load the Visio diagram from a file
-            string inputPath = "input.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
+
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Define a uniform line thickness (in inches)
-            double uniformThickness = 0.02; // Example: 0.02 inches
-
-            // Apply the line thickness to every connector (1‑D shape) in the diagram
+            // Apply a uniform line thickness to all connector shapes (1‑D shapes).
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.OneD) // Connectors are 1‑D shapes
+                    // Connectors are 1‑D shapes; filter them.
+                    if (shape.OneD)
                     {
-                        shape.Line.LineWeight.Value = uniformThickness;
+                        // Set line weight (thickness) in inches. Example: 0.02 inches (~0.5 mm).
+                        shape.Line.LineWeight.Value = 0.02;
                     }
                 }
             }
 
-            // Configure PDF save options
+            // Configure PDF save options.
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
             pdfOptions.DefaultFont = "Arial";
 
-            // Export the updated diagram to PDF
-            string outputPath = "output.pdf";
+            // Save the diagram as PDF.
             diagram.Save(outputPath, pdfOptions);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Diagram exported to PDF successfully: {outputPath}");
         }
     }
-}

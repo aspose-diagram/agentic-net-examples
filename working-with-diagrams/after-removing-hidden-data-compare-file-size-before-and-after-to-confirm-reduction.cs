@@ -3,47 +3,59 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Paths for the original and cleaned Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output_cleaned.vsdx";
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output_cleaned.vsdx";
 
-            // Get original file size in bytes
-            long originalSize = new FileInfo(inputPath).Length;
+                // Ensure the input file exists
+                if (!File.Exists(inputPath))
+                {
+                    throw new FileNotFoundException($"Input file not found: {inputPath}");
+                }
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Get original file size
+                long originalSize = new FileInfo(inputPath).Length;
+                Console.WriteLine($"Original file size: {originalSize} bytes");
 
-            // Combine all hidden info items to be removed
-            int removeMask = (int)(RemoveHiddenInfoItem.PersonalInfo |
-                                   RemoveHiddenInfoItem.Shapes |
-                                   RemoveHiddenInfoItem.Masters |
-                                   RemoveHiddenInfoItem.Styles |
-                                   RemoveHiddenInfoItem.DataRecordSets);
+                // Load the diagram, remove hidden information, and save the cleaned file
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Remove hidden shapes and masters (add other flags as needed)
+                    diagram.RemoveHiddenInformation((int)(RemoveHiddenInfoItem.Shapes | RemoveHiddenInfoItem.Masters));
 
-            // Remove hidden information from the diagram
-            diagram.RemoveHiddenInformation(removeMask);
+                    // Save the cleaned diagram in VSDX format
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
 
-            // Save the cleaned diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Get cleaned file size
+                long cleanedSize = new FileInfo(outputPath).Length;
+                Console.WriteLine($"Cleaned file size: {cleanedSize} bytes");
 
-            // Get cleaned file size in bytes
-            long cleanedSize = new FileInfo(outputPath).Length;
+                // Compare sizes
+                if (cleanedSize < originalSize)
+                {
+                    Console.WriteLine("Hidden data removal successful: file size reduced.");
+                }
+                else if (cleanedSize == originalSize)
+                {
+                    Console.WriteLine("No size reduction detected after hidden data removal.");
+                }
+                else
+                {
+                    // Unexpected increase; raise an exception to indicate failure
+                    throw new Exception("File size increased after hidden data removal, which is unexpected.");
+                }
 
-            // Output size comparison
-            Console.WriteLine($"Original size: {originalSize} bytes");
-            Console.WriteLine($"Cleaned size: {cleanedSize} bytes");
-            Console.WriteLine($"Size reduced: {originalSize - cleanedSize} bytes");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

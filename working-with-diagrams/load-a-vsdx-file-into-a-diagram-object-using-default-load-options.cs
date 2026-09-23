@@ -10,13 +10,13 @@ class Program
         {
 
             // Path to the VSDX file to be loaded
-            string filePath = "sample.vsdx";
+            string filePath = "input.vsdx";
 
-            // Load the diagram using the default load options (auto‑detect format)
+            // Load the VSDX file into a Diagram object using default load options
             Diagram diagram = new Diagram(filePath);
 
-            // Example usage: output the number of pages in the loaded diagram
-            Console.WriteLine($"Pages count: {diagram.Pages.Count}");
+            // At this point the diagram object is ready for further processing
+            Console.WriteLine("Diagram loaded successfully. Pages count: " + diagram.Pages.Count);
 
         }
         catch (System.IO.FileNotFoundException ex)

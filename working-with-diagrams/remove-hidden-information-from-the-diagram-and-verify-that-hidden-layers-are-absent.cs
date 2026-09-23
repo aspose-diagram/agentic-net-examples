@@ -1,40 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram from a file
-            var diagram = new Diagram("input.vsdx");
+            // Remove hidden information (shapes and masters). The enum does not contain a Layers flag,
+            // so we omit it and rely on layer visibility checks after removal.
+            int removeFlags = (int)(RemoveHiddenInfoItem.Shapes |
+                                    RemoveHiddenInfoItem.Masters);
+            diagram.RemoveHiddenInformation(removeFlags);
 
-            // Combine all hidden information flags
-            int hiddenInfoFlags =
-                (int)RemoveHiddenInfoItem.PersonalInfo |
-                (int)RemoveHiddenInfoItem.Shapes |
-                (int)RemoveHiddenInfoItem.Masters |
-                (int)RemoveHiddenInfoItem.Styles |
-                (int)RemoveHiddenInfoItem.DataRecordSets;
+            // Verify that no hidden layers remain (layers with Visible == FALSE)
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Layer layer in page.PageSheet.Layers)
+                {
+                    if (layer.Visible.Value == BOOL.False)
+                    {
+                        throw new Exception($"Hidden layer detected: {layer.Name.Value}");
+                    }
+                }
+            }
 
-            // Remove hidden information based on the combined flags
-            diagram.RemoveHiddenInformation(hiddenInfoFlags);
+            // Output Visio file path
+            string outputPath = "output.vsdx";
 
-            // Verify that the diagram no longer contains hidden information
-            bool hasHiddenInfo = diagram.HasHiddenInfo();
-            Console.WriteLine("Has hidden information after removal: " + hasHiddenInfo);
-
-            // Save the cleaned diagram to a new file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the cleaned diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

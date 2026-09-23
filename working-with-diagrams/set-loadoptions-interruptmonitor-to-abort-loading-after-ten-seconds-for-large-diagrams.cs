@@ -1,42 +1,37 @@
+using System.IO;
 using System;
-using System.Diagnostics;
+using System.Threading.Tasks;
 using Aspose.Diagram;
-
-// Custom interrupt monitor that requests interruption after 10 seconds
-class MyInterruptMonitor : AbstractInterruptMonitor
-{
-    private readonly Stopwatch _watch;
-
-    public MyInterruptMonitor()
-    {
-        _watch = Stopwatch.StartNew();
-    }
-
-    // Returns true when more than 10 seconds have elapsed
-    public override bool IsInterruptionRequested
-    {
-        get { return _watch.Elapsed.TotalSeconds > 10; }
-    }
-}
 
 class Program
 {
     static void Main()
     {
-        // Create load options and assign the custom interrupt monitor
+        // Create an interrupt monitor to allow aborting the load operation
+        InterruptMonitor monitor = new InterruptMonitor();
+
+        // Schedule the interrupt after ten seconds
+        Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10));
+            monitor.Interrupt();
+        });
+
+        // Assign the monitor to LoadOptions
         LoadOptions loadOptions = new LoadOptions();
-        loadOptions.InterruptMonitor = new MyInterruptMonitor();
+        loadOptions.InterruptMonitor = monitor;
 
         try
         {
-            // Load the diagram using the options; loading will abort after 10 seconds
-            Diagram diagram = new Diagram("largeDiagram.vsd", loadOptions);
-            // Diagram is now loaded (if it completed within the time limit)
+            // Load the diagram with the configured options
+            Diagram diagram = new Diagram("largeDiagram.vsdx", loadOptions);
+            Console.WriteLine("Diagram loaded successfully.");
+            // Additional processing can be done here
         }
         catch (Exception ex)
         {
-            // Handle the interruption or any other loading errors
-            Console.WriteLine($"Loading aborted: {ex.Message}");
+            // Loading was aborted or failed
+            Console.WriteLine($"Diagram loading aborted: {ex.Message}");
         }
     }
 }

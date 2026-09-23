@@ -1,48 +1,56 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using System.Collections.Generic;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths (adjust as needed)
+        string inputPath = "input.vsdx";
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output_flattened.vsdx";
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Process each page in the diagram
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // First, collect all shapes that are groups.
-                // We store them in a separate list to avoid modifying the collection while iterating.
-                List<Shape> groupShapes = new List<Shape>();
+                // Collect group shapes on the current page
+                var groups = new System.Collections.Generic.List<Shape>();
                 foreach (Shape shape in page.Shapes)
                 {
-                    // A shape is a group if its Group property is not null.
-                    if (shape.Group != null)
+                    // Identify group shapes by their Type
+                    if (shape.Type == TypeValue.Group)
                     {
-                        groupShapes.Add(shape);
+                        groups.Add(shape);
                     }
                 }
 
-                // Ungroup each collected group shape.
-                // After UnGroup, the members become individual shapes in the same collection.
-                foreach (Shape groupShape in groupShapes)
+                // Ungroup each group shape
+                foreach (Shape groupShape in groups)
                 {
-                    page.Shapes.UnGroup(groupShape);
+                    // Ungroup expands the group into its constituent shapes
+                    // and removes the original group shape from the page.
+                    groupShape.Ungroup();
                 }
             }
 
-            // Save the diagram with all groups flattened.
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Aspose.Diagram;
-using Aspose.Drawing.Text;
 
 class Program
     {
@@ -11,78 +10,50 @@ class Program
             try
             {
 
-                // Path to the Visio diagram file (VSD/VSDX etc.)
-                string diagramPath = "sample.vsdx";
+                // Path to the Visio diagram file (VSD, VSDX, etc.)
+                string diagramPath = "example.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Corporate whitelist of allowed font names
-                List<string> whitelist = new List<string>
+                // Corporate whitelist of allowed font names (case‑insensitive)
+                var whitelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
                     "Arial",
                     "Calibri",
-                    "Times New Roman"
+                    "Times New Roman",
+                    "Segoe UI"
                     // Add other approved fonts here
                 };
 
-                // Collect font names used in the diagram
-                List<string> diagramFonts = new List<string>();
+                // Collect all font names used in the diagram
+                var usedFonts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (Font font in diagram.Fonts)
                 {
-                    // Font.Name provides the font name as a string
-                    diagramFonts.Add(font.Name);
+                    if (!string.IsNullOrEmpty(font.Name))
+                    {
+                        usedFonts.Add(font.Name);
+                    }
                 }
 
-                // Identify fonts that are not in the whitelist
-                List<string> nonWhitelistedFonts = diagramFonts
-                    .Where(f => !whitelist.Contains(f, StringComparer.OrdinalIgnoreCase))
-                    .Distinct()
-                    .ToList();
+                // Determine fonts that are not in the whitelist
+                var nonCompliantFonts = usedFonts.Except(whitelist).ToList();
 
-                if (nonWhitelistedFonts.Count > 0)
+                // Report the results
+                if (nonCompliantFonts.Count > 0)
                 {
-                    Console.WriteLine("The following fonts are used in the diagram but are NOT in the corporate whitelist:");
-                    foreach (string f in nonWhitelistedFonts)
+                    Console.WriteLine("The following fonts are used in the diagram but are NOT allowed by the corporate whitelist:");
+                    foreach (string fontName in nonCompliantFonts)
                     {
-                        Console.WriteLine($"- {f}");
+                        Console.WriteLine($"- {fontName}");
                     }
 
-                    // Optionally, you can fail the process
-                    throw new Exception("Font validation failed due to non‑whitelisted fonts.");
+                    // Optionally, halt execution to enforce compliance
+                    throw new Exception("Font compliance check failed.");
                 }
                 else
                 {
                     Console.WriteLine("All fonts used in the diagram are compliant with the corporate whitelist.");
-                }
-
-                // OPTIONAL: Verify that the fonts used are installed on the system
-                // (This step uses Aspose.Drawing.Text.InstalledFontCollection)
-                InstalledFontCollection installedFonts = new InstalledFontCollection();
-
-                // Build a set of installed font names (case‑insensitive)
-                HashSet<string> installedFontNames = new HashSet<string>(
-                    installedFonts.Families.Select(f => f.Name),
-                    StringComparer.OrdinalIgnoreCase);
-
-                // Find any diagram fonts that are missing from the system
-                List<string> missingSystemFonts = diagramFonts
-                    .Where(f => !installedFontNames.Contains(f))
-                    .Distinct()
-                    .ToList();
-
-                if (missingSystemFonts.Count > 0)
-                {
-                    Console.WriteLine("The following fonts are used in the diagram but are NOT installed on this machine:");
-                    foreach (string f in missingSystemFonts)
-                    {
-                        Console.WriteLine($"- {f}");
-                    }
-                    // You may choose to handle this situation as needed
-                }
-                else
-                {
-                    Console.WriteLine("All fonts used in the diagram are installed on the system.");
                 }
 
             }

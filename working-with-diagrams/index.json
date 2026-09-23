@@ -1,11 +1,11 @@
 {
   "category": "working-with-diagrams",
   "display_name": "Working With Diagrams",
-  "version": "26.8.0",
+  "version": "26.9.0",
   "framework": "net8.0",
   "total": 40,
   "pass_rate": 100.0,
-  "generated": "2026-08-28",
+  "generated": "2026-09-23",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -98,8 +98,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -115,15 +114,12 @@
       "task": "Apply auto fit layout to all shapes in the diagram before saving",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.AutoLayout",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Layout",
-        "LayoutOptions",
         "Save",
         "diagram"
       ]
@@ -152,8 +148,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram"
@@ -168,8 +163,7 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Threading",
-        "System.Threading.Tasks"
+        "System.Threading"
       ],
       "key_apis": [
         "Diagram",
@@ -185,7 +179,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -203,7 +198,9 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text",
+        "System.Text.RegularExpressions"
       ],
       "key_apis": [
         "Diagram",
@@ -224,7 +221,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -236,7 +232,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -266,13 +263,14 @@
       "task": "Create a utility that removes hidden information from diagrams and logs amount of data removed",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -285,7 +283,8 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
-        "System.Linq"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -301,6 +300,7 @@
       "task": "Embed pdf metadata such as author and creation date using diagram properties after conversion",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
@@ -326,10 +326,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Page",
-        "Shapes",
         "diagram",
-        "page"
+        "shape"
       ]
     },
     {
@@ -341,6 +341,7 @@
         "System",
         "System.Collections.Generic",
         "System.IO",
+        "System.Linq",
         "System.Text.Json"
       ],
       "key_apis": [
@@ -357,7 +358,6 @@
       "task": "Extract font names used in a vsd diagram and compare them against a corporate whitelist",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Drawing.Text",
         "System",
         "System.Collections.Generic",
         "System.Linq"
@@ -374,8 +374,8 @@
       "task": "Flatten all groups into individual shapes after merging to simplify further processing",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -392,10 +392,7 @@
       "task": "Generate a summary report listing page counts and shape totals for each source diagram after merging",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System"
       ],
       "key_apis": [
         "Diagram",
@@ -411,11 +408,13 @@
       "task": "Implement error handling that catches interruptmonitor exceptions and logs the aborted operation",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Threading"
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -426,8 +425,10 @@
       "task": "Load a vsd file with custom loadoptions enabling interruptmonitor for cancellation",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Threading"
       ],
       "key_apis": [
         "Diagram"
@@ -455,7 +456,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Linq",
+        "System.Collections.Generic",
+        "System.IO",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -468,15 +470,12 @@
       "task": "Measure conversion time for pdf output with and without interruptmonitor to assess performance impact",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Diagnostics",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Save",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -485,15 +484,11 @@
       "task": "Merge two vsdx diagrams into a single diagram automatically resolving duplicate shape ids",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Shapes",
-        "page"
+        "Diagram"
       ]
     },
     {
@@ -507,10 +502,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
+        "Pages",
         "PdfSaveOptions",
-        "Save",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -525,6 +521,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -585,13 +582,11 @@
       "task": "Save the converted pdf to a memory stream for immediate network transmission",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -603,7 +598,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Diagnostics"
+        "System.IO",
+        "System.Threading.Tasks"
       ],
       "key_apis": [
         "Diagram"
@@ -615,7 +611,6 @@
       "task": "Strip hidden metadata from a vsdx file then save the cleaned diagram back to vsdx",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -632,7 +627,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -648,12 +644,12 @@
       "task": "Validate that no hidden comments remain after calling removehiddeninfo by inspecting diagram metadata",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -665,7 +661,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",

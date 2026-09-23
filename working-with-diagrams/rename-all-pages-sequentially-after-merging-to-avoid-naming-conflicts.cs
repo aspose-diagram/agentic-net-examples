@@ -9,35 +9,23 @@ class Program
         try
         {
 
-            // Load the merged diagram (the load operation should follow the provided load rule)
-            Diagram diagram = LoadDiagram("mergedDiagram.vsdx");
+            // Load the merged diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("merged.vsdx");
 
             // Rename each page sequentially to avoid naming conflicts
             for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Pages are zero‑based; assign names like "Page1", "Page2", …
+                // Page names are 1‑based for readability (Page1, Page2, ...)
                 diagram.Pages[i].Name = $"Page{i + 1}";
             }
 
-            // Save the diagram after renaming (the save operation should follow the provided save rule)
-            SaveDiagram(diagram, "renamedDiagram.vsdx");
+            // Save the diagram with the updated page names
+            diagram.Save("merged_renamed.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-    }
-
-    // Placeholder for the load rule – replace with the actual rule implementation
-    static Diagram LoadDiagram(string filePath)
-    {
-        return new Diagram(filePath);
-    }
-
-    // Placeholder for the save rule – replace with the actual rule implementation
-    static void SaveDiagram(Diagram diagram, string filePath)
-    {
-        diagram.Save(filePath, SaveFileFormat.Vdx);
     }
 }

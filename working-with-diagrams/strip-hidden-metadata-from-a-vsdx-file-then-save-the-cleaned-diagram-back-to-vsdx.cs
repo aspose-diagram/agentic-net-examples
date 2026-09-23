@@ -1,46 +1,49 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class CleanVisioDiagram
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard to ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+
         try
         {
+            // Load the Visio diagram using the VSDX format.
+            Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vsdx);
 
-            // Paths to the source and cleaned Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output_cleaned.vsdx";
+            // Combine hidden‑information flags (shapes and masters only; pages flag is not available).
+            int hiddenInfoFlags = (int)(RemoveHiddenInfoItem.Shapes |
+                                        RemoveHiddenInfoItem.Masters);
 
-            // Load the Visio diagram from the file
-            Diagram diagram = new Diagram(inputPath);
+            // Remove the specified hidden information from the diagram.
+            diagram.RemoveHiddenInformation(hiddenInfoFlags);
 
-            // If the diagram contains hidden information, remove it
-            if (diagram.HasHiddenInfo())
-            {
-                // Combine all hidden‑info flags that should be removed
-                int allHiddenInfoItems =
-                    (int)RemoveHiddenInfoItem.PersonalInfo |
-                    (int)RemoveHiddenInfoItem.Shapes |
-                    (int)RemoveHiddenInfoItem.Masters |
-                    (int)RemoveHiddenInfoItem.Styles |
-                    (int)RemoveHiddenInfoItem.DataRecordSets;
-
-                diagram.RemoveHiddenInformation(allHiddenInfoItems);
-            }
-
-            // Remove any VBA/macros that may be embedded in the diagram
-            diagram.RemoveMacro();
-
-            // Save the cleaned diagram back to VSDX format
+            // Save the cleaned diagram back to VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
+            Console.WriteLine($"Cleaned diagram saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,37 +1,46 @@
 using System.IO;
 using System;
+using System.Threading;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Path to the Visio file to be loaded
+        // Path to the Visio file to load
         string inputPath = "input.vsdx";
 
-        // Create an InterruptMonitor to allow cancellation of the load operation
+        // Create an InterruptMonitor to allow cancellation
         InterruptMonitor monitor = new InterruptMonitor();
 
-        // Configure LoadOptions with the desired format and assign the monitor
+        // Optional: start a background thread that will interrupt after a delay
+        Thread interrupter = new Thread(() =>
+        {
+            Thread.Sleep(2000); // wait 2 seconds before interrupting
+            monitor.Interrupt();
+            Console.WriteLine("Loading operation was interrupted.");
+        });
+        interrupter.Start();
+
+        // Configure LoadOptions with the interrupt monitor
         LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsdx);
         loadOptions.InterruptMonitor = monitor;
 
-        Diagram diagram = null;
         try
         {
             // Load the diagram using the custom LoadOptions
-            diagram = new Diagram(inputPath, loadOptions);
+            Diagram diagram = new Diagram(inputPath, loadOptions);
             Console.WriteLine("Diagram loaded successfully.");
+            // Additional processing can be performed here
         }
         catch (Exception ex)
         {
-            // Handle interruption or any other loading errors
-            Console.WriteLine("Loading was interrupted or failed: " + ex.Message);
+            // Handle exceptions, including those caused by interruption
+            Console.WriteLine($"Failed to load diagram: {ex.Message}");
         }
-        finally
-        {
-            // Ensure resources are released
-            diagram?.Dispose();
-        }
+
+        // Ensure the interrupter thread has finished
+        interrupter.Join();
     }
 }

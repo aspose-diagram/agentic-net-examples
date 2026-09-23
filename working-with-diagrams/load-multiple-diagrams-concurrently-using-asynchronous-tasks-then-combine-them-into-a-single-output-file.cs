@@ -1,51 +1,48 @@
 using System;
-using System.Linq;
+using System.IO;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 
 class Program
+{
+    static async Task Main(string[] args)
     {
-        // Asynchronous entry point
-        static async Task Main(string[] args)
+        // Folder containing the diagrams to combine
+        string inputFolder = "InputDiagrams";
+        if (!Directory.Exists(inputFolder))
         {
-            try
-            {
+            Console.WriteLine($"Folder not found: {inputFolder}");
+            return;
+        }
 
-                // Input diagram file paths
-                string[] inputFiles = { "diagram1.vsdx", "diagram2.vsdx", "diagram3.vsdx" };
-                // Output combined diagram file path
-                string outputFile = "combined.vsdx";
+        // Get all Visio files (adjust the pattern if needed)
+        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+        if (diagramFiles.Length == 0)
+        {
+            Console.WriteLine("No diagram files found to process.");
+            return;
+        }
 
-                // Load all diagrams concurrently using tasks
-                Task<Diagram>[] loadTasks = inputFiles
-                    .Select(file => Task.Run(() => new Diagram(file)))
-                    .ToArray();
+        // Load each diagram concurrently
+        List<Task<Diagram>> loadTasks = new List<Task<Diagram>>();
+        foreach (string filePath in diagramFiles)
+        {
+            loadTasks.Add(Task.Run(() => new Diagram(filePath)));
+        }
 
-                // Await completion of all loading tasks
-                Diagram[] diagrams = await Task.WhenAll(loadTasks);
+        Diagram[] loadedDiagrams = await Task.WhenAll(loadTasks);
 
-                // Use the first diagram as the base for combination
-                Diagram combinedDiagram = diagrams[0];
+        // Use the first diagram as the base and combine the rest into it
+        Diagram combinedDiagram = loadedDiagrams[0];
+        for (int i = 1; i < loadedDiagrams.Length; i++)
+        {
+            combinedDiagram.Combine(loadedDiagrams[i]);
+        }
 
-                // Combine remaining diagrams into the base diagram
-                for (int i = 1; i < diagrams.Length; i++)
-                {
-                    combinedDiagram.Combine(diagrams[i]);
-                }
-
-                // Save the combined diagram to the specified output file
-                combinedDiagram.Save(outputFile, SaveFileFormat.Vsdx);
-
-                // Dispose all diagram objects to release resources
-                foreach (Diagram diagram in diagrams)
-                {
-                    diagram.Dispose();
-                }
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        // Save the combined diagram
+        string outputPath = "CombinedDiagram.vsdx";
+        combinedDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+        Console.WriteLine($"Combined diagram saved to: {outputPath}");
     }
-    }
+}

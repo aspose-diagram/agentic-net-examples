@@ -1,26 +1,28 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-public class PdfExportService
+public class DiagramToPdfConverter
 {
-    // Loads a diagram, converts it to PDF and returns the PDF as a MemoryStream
-    public MemoryStream GetDiagramPdfStream(string diagramPath)
+    /// <summary>
+    /// Loads a Visio diagram from the specified file path,
+    /// converts it to PDF, and returns the PDF data in a MemoryStream.
+    /// The stream is positioned at the beginning for immediate transmission.
+    /// </summary>
+    /// <param name="diagramPath">Full path to the source Visio file.</param>
+    /// <returns>MemoryStream containing the PDF representation of the diagram.</returns>
+    public static MemoryStream ConvertDiagramToPdf(string diagramPath)
     {
-        // Load the diagram from file (replace with appropriate load method if needed)
+        // Load the Visio diagram
         Diagram diagram = new Diagram(diagramPath);
 
-        // Prepare a memory stream to hold the PDF data
+        // Prepare a memory stream to receive the PDF output
         MemoryStream pdfStream = new MemoryStream();
 
-        // Create PDF save options (optional – customize if required)
-        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+        // Save the diagram as PDF directly into the memory stream
+        diagram.Save(pdfStream, SaveFileFormat.Pdf);
 
-        // Save the diagram directly to the memory stream in PDF format using the provided Save method
-        diagram.Save(pdfStream, pdfOptions);
-
-        // Reset the stream position to the beginning so it can be read by the caller/network layer
+        // Reset the stream position so it can be read from the start
         pdfStream.Position = 0;
 
         return pdfStream;

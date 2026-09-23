@@ -1,54 +1,45 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-        string outputPath = "output.vsdx";
+            // Expect input and output file paths as command‑line arguments.
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramConnectorFieldUpdater <input.vsdx> <output.vsdx>");
+                return;
+            }
 
-        try
-        {
-            // Load the Visio diagram
+            string inputPath = args[0];
+            string outputPath = args[1];
+
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page and each shape
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Process only connector shapes (1‑D shapes)
+                    // Identify connector shapes (1‑D shapes).
                     if (shape.OneD)
                     {
-                        // Ensure the shape contains at least one field
+                        // Ensure the shape has at least one field.
                         if (shape.Fields != null && shape.Fields.Count > 0)
                         {
-                            // Update the formula of the first field
+                            // Update the formula of the first field.
                             Field field = shape.Fields[0];
-                            // Assign a dynamic formula to the field (using the Val property for compatibility)
-                            field.Value.Val = "Width*Height";
+                            // Example formula – replace with the desired expression.
+                            field.Value.Ufev.F = "Width*Height";
                         }
                     }
                 }
             }
 
-            // Save the modified diagram using the correct overload
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.WriteLine($"Diagram saved to {outputPath}");
         }
     }
-}

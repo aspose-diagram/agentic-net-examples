@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,64 +11,44 @@ class Program
         {
 
             // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
+            // Define the name of the shape whose field we want to update
+            string targetShapeNameU = "TargetShape";
 
-            // Locate the shape that provides the data (source shape)
-            Shape sourceShape = null;
-            foreach (Shape s in page.Shapes)
+            // Define the formula that references another shape's data (e.g., shape with ID 2, property "MyProp")
+            string referenceFormula = "Sheet.2!Prop.MyProp";
+
+            // Iterate through all pages to find the target shape
+            foreach (Page page in diagram.Pages)
             {
-                if (s.NameU == "SourceShape")
+                foreach (Shape shape in page.Shapes)
                 {
-                    sourceShape = s;
-                    break;
+                    // Match shape by its universal name
+                    if (shape.NameU == targetShapeNameU)
+                    {
+                        // If the shape already has at least one field, update the first field's formula
+                        if (shape.Fields.Count > 0)
+                        {
+                            Field existingField = shape.Fields[0];
+                            existingField.Value.Ufev.F = referenceFormula;
+                        }
+                        else
+                        {
+                            // Otherwise, create a new field and set its formula
+                            Field newField = new Field();
+                            newField.Value.Ufev.F = referenceFormula;
+                            shape.Fields.Add(newField);
+                        }
+
+                        // Exit after updating the target shape
+                        break;
+                    }
                 }
             }
-            if (sourceShape == null)
-            {
-                throw new Exception("Source shape not found.");
-            }
-
-            // Locate the shape whose field will be updated (target shape)
-            Shape targetShape = null;
-            foreach (Shape s in page.Shapes)
-            {
-                if (s.NameU == "TargetShape")
-                {
-                    targetShape = s;
-                    break;
-                }
-            }
-            if (targetShape == null)
-            {
-                throw new Exception("Target shape not found.");
-            }
-
-            // Ensure the target shape has at least one field; create one if necessary
-            Field field;
-            if (targetShape.Fields.Count > 0)
-            {
-                field = targetShape.Fields[0];
-            }
-            else
-            {
-                field = new Field();
-                targetShape.Fields.Add(field);
-            }
-
-            // Build a Visio formula that references the source shape's Data1 cell
-            // Formula format: Sheet.<ShapeID>!Data1
-            string formula = $"Sheet.{sourceShape.ID}!Data1";
-
-            // Assign the formula to the field's value (Ufev.F holds the formula string)
-            field.Value.Ufev.F = formula;
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

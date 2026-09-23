@@ -1,29 +1,28 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+public class Program
+{
+    public static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Path to the Visio diagram file
-                string diagramPath = "sample.vsdx";
+            // Load the Visio diagram from a file
+            string filePath = "sample.vsdx";
+            Diagram diagram = new Diagram(filePath);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+            // Retrieve the current footer margin (in inches)
+            double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
 
-                // Retrieve the footer margin (value is in inches)
-                double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
+            // Output the margin value for debugging
+            Console.WriteLine($"Footer margin: {footerMargin} inches");
 
-                // Output the margin value for debugging
-                Console.WriteLine($"Footer margin: {footerMargin} inches");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

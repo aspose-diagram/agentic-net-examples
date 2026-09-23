@@ -9,27 +9,22 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram (replace with actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Preserve existing font name and size for the header/footer
-            var headerFont = diagram.HeaderFooter.HeaderFooterFont;
-            string existingFaceName = headerFont.FaceName;
-            int existingHeight = headerFont.Height; // height is stored as an integer (points)
+            // Access the global header/footer font settings
+            HeaderFooterFont headerFont = diagram.HeaderFooter.HeaderFooterFont;
 
-            // Apply bold (Weight = 700) and underline (Underline = BOOL.True) to the center header font
-            headerFont.FaceName = existingFaceName; // keep original font name
-            headerFont.Height = existingHeight;     // keep original font size
-            headerFont.Weight = 700;                // 700 corresponds to bold
-            headerFont.Underline = BOOL.True;       // enable underline
+            // Preserve existing font name (FaceName) and size (Height)
+            // and set the style to bold and underline
+            headerFont.Weight = 700;          // 700 = Bold
+            headerFont.Underline = BOOL.True; // Enable underline
 
-            // Optionally set the center header text (preserve existing text if needed)
-            // diagram.HeaderFooter.HeaderCenter = "Your Header Text";
+            // Optionally, you can set or keep the center header text
+            // diagram.HeaderFooter.HeaderCenter = "Your Center Header Text";
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

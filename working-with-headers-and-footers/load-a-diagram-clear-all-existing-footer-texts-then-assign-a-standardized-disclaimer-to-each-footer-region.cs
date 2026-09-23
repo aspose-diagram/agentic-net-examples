@@ -1,35 +1,38 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Input Visio file path
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
 
-            // Output Visio file path
+            // Path where the modified file will be saved
             string outputPath = "output.vsdx";
 
-            // Load the diagram from the file (uses the Diagram(string) constructor)
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Standard disclaimer to be placed in all footer sections
-                string disclaimer = "Confidential: This document is for internal use only.";
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Clear any existing footer text and assign the disclaimer
-                diagram.HeaderFooter.FooterLeft = disclaimer;
-                diagram.HeaderFooter.FooterCenter = disclaimer;
-                diagram.HeaderFooter.FooterRight = disclaimer;
+            // Clear any existing footer text
+            diagram.HeaderFooter.FooterLeft = "";
+            diagram.HeaderFooter.FooterCenter = "";
+            diagram.HeaderFooter.FooterRight = "";
 
-                // Save the modified diagram (uses the Diagram.Save method)
-                diagram.Save(outputPath, SaveFileFormat.Vdx);
-            }
+            // Standardized disclaimer to apply to all footer regions
+            string disclaimer = "Confidential - Do not distribute";
+
+            // Assign the disclaimer to each footer region
+            diagram.HeaderFooter.FooterLeft = disclaimer;
+            diagram.HeaderFooter.FooterCenter = disclaimer;
+            diagram.HeaderFooter.FooterRight = disclaimer;
+
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

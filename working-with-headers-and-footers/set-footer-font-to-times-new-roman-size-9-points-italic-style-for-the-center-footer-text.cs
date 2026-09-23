@@ -1,34 +1,36 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Load an existing Visio diagram (replace with your actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Configure the global footer font (applies to all footer fields)
-                var footerFont = diagram.HeaderFooter.HeaderFooterFont;
-                footerFont.FaceName = "Times New Roman";   // Font family
-                footerFont.Height = 9;                     // Font size in points
-                footerFont.Italic = BOOL.True;             // Italic style
-                // Optional: set normal weight (400) if needed
-                footerFont.Weight = 400;
+            // Set the center footer text
+            diagram.HeaderFooter.FooterCenter = "Center Footer Text";
 
-                // Example: set the center footer text (content can be adjusted as needed)
-                diagram.HeaderFooter.FooterCenter = "Center Footer";
+            // Configure the footer font: Times New Roman, 9 pt, italic
+            // Height uses a negative mapping: (points * -1.333) rounded → -12 for 9 pt
+            diagram.HeaderFooter.HeaderFooterFont.FaceName = "Times New Roman";
+            diagram.HeaderFooter.HeaderFooterFont.Height = -12;
+            diagram.HeaderFooter.HeaderFooterFont.Italic = BOOL.True;
+            // Normal weight (regular) – optional
+            diagram.HeaderFooter.HeaderFooterFont.Weight = 400;
 
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

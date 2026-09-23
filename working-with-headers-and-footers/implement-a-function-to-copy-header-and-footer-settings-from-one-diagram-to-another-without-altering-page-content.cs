@@ -1,59 +1,77 @@
 using System;
-using System.IO;
-using System.Reflection;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-
-public static class DiagramHeaderFooterHelper
-{
-    // Copies header and footer settings from source diagram to target diagram
-    private static void CopyHeaderFooter(Diagram source, Diagram target)
-    {
-        // HeaderFooter property is read‑only, so we copy its individual writable properties
-        var sourceHF = source.HeaderFooter;
-        var targetHF = target.HeaderFooter;
-
-        Type hfType = sourceHF.GetType();
-        foreach (PropertyInfo prop in hfType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            // Only copy properties that can be read and written
-            if (prop.CanRead && prop.CanWrite)
-            {
-                object value = prop.GetValue(sourceHF);
-                prop.SetValue(targetHF, value);
-            }
-        }
-    }
-
-    // Public method that loads diagrams, copies header/footer, and saves the result
-    public static void CopyHeaderFooterBetweenFiles(string sourceFilePath, string targetFilePath, string outputFilePath)
-    {
-        // Load source and target diagrams using the provided constructors
-        using (Diagram sourceDiagram = new Diagram(sourceFilePath))
-        using (Diagram targetDiagram = new Diagram(targetFilePath))
-        {
-            // Perform the copy operation
-            CopyHeaderFooter(sourceDiagram, targetDiagram);
-
-            // Save the modified target diagram (preserving page content)
-            targetDiagram.Save(outputFilePath, SaveFileFormat.Vdx);
-        }
-    }
-}
+using Aspose.Drawing;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            DiagramHeaderFooterHelper.CopyHeaderFooterBetweenFiles("", "", "");
+                // Example file paths – replace with actual paths as needed
+                string sourcePath = "sourceDiagram.vsdx";
+                string targetPath = "targetDiagram.vsdx";
+                string outputPath = "targetDiagram_WithHeaderFooterCopied.vsdx";
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
+                try
+                {
+                    CopyHeaderFooter(sourcePath, targetPath, outputPath);
+                    Console.WriteLine("Header and footer settings copied successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error: {ex.Message}");
+                    throw;
+                }
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
+
+        /// <summary>
+        /// Copies header and footer settings from the source diagram to the target diagram.
+        /// Page content (shapes, pages, etc.) in the target diagram remains unchanged.
+        /// </summary>
+        /// <param name="sourceFile">Path to the source Visio file.</param>
+        /// <param name="targetFile">Path to the target Visio file.</param>
+        /// <param name="outputFile">Path where the updated target diagram will be saved.</param>
+        static void CopyHeaderFooter(string sourceFile, string targetFile, string outputFile)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Load source and target diagrams
+            Diagram sourceDiagram = new Diagram(sourceFile);
+            Diagram targetDiagram = new Diagram(targetFile);
+
+            // Copy textual header/footer fields
+            targetDiagram.HeaderFooter.HeaderLeft   = sourceDiagram.HeaderFooter.HeaderLeft;
+            targetDiagram.HeaderFooter.HeaderCenter = sourceDiagram.HeaderFooter.HeaderCenter;
+            targetDiagram.HeaderFooter.HeaderRight  = sourceDiagram.HeaderFooter.HeaderRight;
+            targetDiagram.HeaderFooter.FooterLeft   = sourceDiagram.HeaderFooter.FooterLeft;
+            targetDiagram.HeaderFooter.FooterCenter = sourceDiagram.HeaderFooter.FooterCenter;
+            targetDiagram.HeaderFooter.FooterRight  = sourceDiagram.HeaderFooter.FooterRight;
+
+            // Copy margin values (in inches)
+            targetDiagram.HeaderFooter.HeaderMargin.Value = sourceDiagram.HeaderFooter.HeaderMargin.Value;
+            targetDiagram.HeaderFooter.FooterMargin.Value = sourceDiagram.HeaderFooter.FooterMargin.Value;
+
+            // Copy header/footer text color
+            targetDiagram.HeaderFooter.HeaderFooterColor = sourceDiagram.HeaderFooter.HeaderFooterColor;
+
+            // Copy header/footer font settings
+            var srcFont = sourceDiagram.HeaderFooter.HeaderFooterFont;
+            var tgtFont = targetDiagram.HeaderFooter.HeaderFooterFont;
+
+            tgtFont.FaceName = srcFont.FaceName;      // Font family name
+            tgtFont.Height   = srcFont.Height;        // Point size (negative value per library convention)
+            tgtFont.Weight   = srcFont.Weight;        // 700 = Bold, 400 = Regular
+            tgtFont.Italic   = srcFont.Italic;        // BOOL.True / BOOL.False
+            tgtFont.Underline = srcFont.Underline;    // BOOL.True / BOOL.False
+
+            // Save the updated target diagram
+            targetDiagram.Save(outputFile, SaveFileFormat.Vsdx);
         }
     }
-}

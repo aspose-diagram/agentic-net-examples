@@ -7,13 +7,28 @@ class Program
 {
     static void Main()
     {
-        // Create a new diagram instance
-        Diagram diagram = new Diagram();
+        try
+        {
 
-        // Assign a new string to the right portion of the footer
-        diagram.HeaderFooter.FooterRight = "Confidential - Draft";
+            // Path to the source diagram file
+            string inputPath = "input.vsdx"; // modify as needed
 
-        // Save the diagram as a VDX file
-        diagram.Save("output.vdx", SaveFileFormat.Vdx);
+            // Path for the output VDX file
+            string outputPath = "output.vdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Assign a new string to the right footer
+            diagram.HeaderFooter.FooterRight = "Confidential - Page &p of &P";
+
+            // Save the diagram in VDX format
+            diagram.Save(outputPath, SaveFileFormat.Vdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

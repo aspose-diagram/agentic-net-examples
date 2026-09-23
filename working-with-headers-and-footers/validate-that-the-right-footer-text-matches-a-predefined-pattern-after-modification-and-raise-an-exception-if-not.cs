@@ -3,33 +3,36 @@ using System;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
-class FooterValidator
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Define the new footer right text
-            string newFooterRight = "Report generated on 2026-08-21";
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Apply the new text to the right portion of the footer
-            diagram.HeaderFooter.FooterRight = newFooterRight;
+            // Modify the right footer text
+            diagram.HeaderFooter.FooterRight = "Page: 1";
 
-            // Define the expected pattern (example: must contain a date in YYYY-MM-DD format)
-            string pattern = @"\d{4}-\d{2}-\d{2}";
+            // Define the expected pattern for the footer text
+            string pattern = @"^Page: \d+$";
 
-            // Validate the footer right text against the pattern
+            // Validate that the footer text matches the pattern
             if (!Regex.IsMatch(diagram.HeaderFooter.FooterRight, pattern))
             {
-                throw new InvalidOperationException("FooterRight does not match the required pattern.");
+                throw new Exception($"Footer text '{diagram.HeaderFooter.FooterRight}' does not match the required pattern.");
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Diagram saved successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

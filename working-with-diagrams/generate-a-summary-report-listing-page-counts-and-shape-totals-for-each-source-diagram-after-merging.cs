@@ -1,60 +1,105 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramMergeReport
 {
-    static void Main()
+    // Holds summary information for each source diagram
+    class SourceInfo
     {
-        try
+        public string FilePath { get; set; }
+        public int PageCount { get; set; }
+        public int ShapeCount { get; set; }
+    }
+
+    class Program
+    {
+        static void Main()
         {
-
-            // Paths to source diagram files
-            string[] sourceFiles = { "diagram1.vsdx", "diagram2.vsdx", "diagram3.vsdx" };
-
-            // Load diagrams and collect statistics
-            List<Diagram> diagrams = new List<Diagram>();
-            List<string> reportLines = new List<string>();
-
-            foreach (string file in sourceFiles)
+            try
             {
-                Diagram diagram = new Diagram(file); // load diagram
-                diagrams.Add(diagram);
 
-                int pageCount = diagram.Pages.Count;
-                int shapeCount = 0;
-
-                foreach (Page page in diagram.Pages)
+                // Paths to source Visio files – replace with actual file locations
+                string[] sourceFiles = new string[]
                 {
-                    shapeCount += page.Shapes.Count;
+                    "source1.vsdx",
+                    "source2.vsdx",
+                    "source3.vsdx"
+                };
+
+                // Collection to store summary data for each source diagram
+                SourceInfo[] summaries = new SourceInfo[sourceFiles.Length];
+
+                Diagram mergedDiagram = null;
+
+                for (int i = 0; i < sourceFiles.Length; i++)
+                {
+                    string path = sourceFiles[i];
+
+                    // Load the diagram from file
+                    Diagram diagram = new Diagram(path);
+
+                    // Count pages
+                    int pageCount = diagram.Pages.Count;
+
+                    // Count shapes across all pages
+                    int shapeCount = 0;
+                    foreach (Page page in diagram.Pages)
+                    {
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            shapeCount++;
+                        }
+                    }
+
+                    // Store the summary information
+                    summaries[i] = new SourceInfo
+                    {
+                        FilePath = path,
+                        PageCount = pageCount,
+                        ShapeCount = shapeCount
+                    };
+
+                    // Build the merged diagram
+                    if (mergedDiagram == null)
+                    {
+                        // First diagram becomes the base of the merge
+                        mergedDiagram = diagram;
+                    }
+                    else
+                    {
+                        // Merge subsequent diagrams into the base diagram
+                        mergedDiagram.Combine(diagram);
+                    }
                 }
 
-                reportLines.Add($"Source: {file} | Pages: {pageCount} | Shapes: {shapeCount}");
-            }
+                // Save the merged diagram
+                if (mergedDiagram != null)
+                {
+                    string outputPath = "merged_output.vsdx";
+                    mergedDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Merged diagram saved to: {outputPath}");
+                }
+                else
+                {
+                    Console.WriteLine("No diagrams were loaded; merged diagram not created.");
+                }
 
-            // Merge diagrams using Combine
-            Diagram mergedDiagram = diagrams[0];
-            for (int i = 1; i < diagrams.Count; i++)
+                // Output the summary report
+                Console.WriteLine("\nSummary Report:");
+                Console.WriteLine("-------------------------------------------------");
+                foreach (SourceInfo info in summaries)
+                {
+                    Console.WriteLine($"File: {info.FilePath}");
+                    Console.WriteLine($"  Pages: {info.PageCount}");
+                    Console.WriteLine($"  Shapes: {info.ShapeCount}");
+                    Console.WriteLine("-------------------------------------------------");
+                }
+
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                mergedDiagram.Combine(diagrams[i]);
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save merged diagram
-            mergedDiagram.Save("mergedDiagram.vsdx", SaveFileFormat.Vsdx);
-
-            // Output summary report
-            Console.WriteLine("Merge Summary Report:");
-            foreach (string line in reportLines)
-            {
-                Console.WriteLine(line);
-            }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+    }
     }
 }

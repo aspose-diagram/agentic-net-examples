@@ -3,64 +3,89 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class VbaExtractor
-{
-    static void Main(string[] args)
+class Program
     {
-        // Expect the folder path as the first argument
-        if (args.Length == 0)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: VbaExtractor <folderPath>");
-            return;
-        }
+            // Determine input and output folders
+            string inputFolder;
+            string outputFolder;
 
-        string folderPath = args[0];
-        if (!Directory.Exists(folderPath))
-        {
-            Console.WriteLine($"Folder does not exist: {folderPath}");
-            return;
-        }
-
-        // Root folder where extracted modules will be saved
-        string outputRoot = Path.Combine(folderPath, "VbaModules");
-        Directory.CreateDirectory(outputRoot);
-
-        // Visio file extensions to process
-        string[] extensions = new[] { ".vsd", ".vsdx", ".vsdm", ".vss", ".vssx", ".vssm", ".vst", ".vstx", ".vstm" };
-
-        foreach (string filePath in Directory.EnumerateFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly))
-        {
-            if (Array.IndexOf(extensions, Path.GetExtension(filePath).ToLower()) < 0)
-                continue; // Skip non‑Visio files
-
-            // Load the Visio diagram (uses the Diagram(string) constructor)
-            using (Diagram diagram = new Diagram(filePath))
+            if (args.Length >= 2)
             {
-                VbaProject vbaProject = diagram.VbaProject;
-                if (vbaProject == null)
+                inputFolder = args[0];
+                outputFolder = args[1];
+            }
+            else
+            {
+                Console.Write("Enter the path to the folder containing Visio files: ");
+                inputFolder = Console.ReadLine()?.Trim() ?? string.Empty;
+
+                Console.Write("Enter the path to the folder where VBA modules will be saved: ");
+                outputFolder = Console.ReadLine()?.Trim() ?? string.Empty;
+            }
+
+            if (!Directory.Exists(inputFolder))
+            {
+                Console.WriteLine($"Input folder does not exist: {inputFolder}");
+                return;
+            }
+
+            // Ensure the output folder exists
+            if (!Directory.Exists(outputFolder))
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+
+            // Supported Visio file extensions
+            string[] extensions = new[] { ".vsdx", ".vsdm", ".vsd", ".vdx", ".vsx", ".vtx", ".vssx", ".vssm", ".vstx", ".vstm", ".vss", ".vst" };
+
+            // Get all Visio files in the input folder (non-recursive)
+            string[] files = Directory.GetFiles(inputFolder);
+            foreach (string filePath in files)
+            {
+                string ext = Path.GetExtension(filePath);
+                if (Array.IndexOf(extensions, ext, 0, extensions.Length) < 0)
                 {
-                    Console.WriteLine($"No VBA project found in {Path.GetFileName(filePath)}");
+                    // Skip non-Visio files
                     continue;
                 }
 
-                // Create a subfolder for this diagram's modules
-                string diagramFolder = Path.Combine(outputRoot, Path.GetFileNameWithoutExtension(filePath));
-                Directory.CreateDirectory(diagramFolder);
-
-                // Extract each VBA module
-                foreach (VbaModule module in vbaProject.Modules)
+                try
                 {
-                    string moduleName = module.Name;
-                    string moduleCode = module.Codes ?? string.Empty;
+                    // Load the Visio diagram
+                    Diagram diagram = new Diagram(filePath);
 
-                    // Ensure a valid file name
-                    string safeName = string.Concat(moduleName.Split(Path.GetInvalidFileNameChars()));
-                    string outFile = Path.Combine(diagramFolder, safeName + ".bas");
+                    // Check if the diagram contains a VBA project
+                    if (diagram.VbaProject == null)
+                    {
+                        Console.WriteLine($"No VBA project found in file: {Path.GetFileName(filePath)}");
+                        continue;
+                    }
 
-                    File.WriteAllText(outFile, moduleCode);
-                    Console.WriteLine($"Extracted module '{moduleName}' to {outFile}");
+                    // Iterate through each VBA module
+                    foreach (VbaModule module in diagram.VbaProject.Modules)
+                    {
+                        string moduleName = module.Name;
+                        string moduleCode = module.Codes ?? string.Empty;
+
+                        // Build a unique file name for the module
+                        string baseFileName = Path.GetFileNameWithoutExtension(filePath);
+                        string safeModuleName = string.IsNullOrWhiteSpace(moduleName) ? "UnnamedModule" : moduleName;
+                        string outputFileName = $"{baseFileName}_{safeModuleName}.bas";
+                        string outputPath = Path.Combine(outputFolder, outputFileName);
+
+                        // Write the VBA code to a .bas file
+                        File.WriteAllText(outputPath, moduleCode);
+                        Console.WriteLine($"Extracted module '{safeModuleName}' from '{Path.GetFileName(filePath)}' to '{outputFileName}'.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
                 }
             }
+
+            Console.WriteLine("VBA module extraction completed.");
         }
     }
-}

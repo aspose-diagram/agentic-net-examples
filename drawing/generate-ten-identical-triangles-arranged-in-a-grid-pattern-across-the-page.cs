@@ -1,54 +1,53 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using System.Drawing;
 
 class Program
 {
     static void Main()
     {
-        // Create a new diagram (uses the provided create rule)
+        // Create a new empty diagram
         Diagram diagram = new Diagram();
 
-        // Access the first page of the diagram
+        // Access the first page
         Page page = diagram.Pages[0];
 
-        // Triangle dimensions
-        double triangleWidth = 1.0;   // width of each triangle
-        double triangleHeight = 1.0;  // height of each triangle
+        // Optional: set page dimensions (in inches)
+        page.PageSheet.PageProps.PageWidth.Value = 11;
+        page.PageSheet.PageProps.PageHeight.Value = 8.5;
 
-        // Spacing between triangles
-        double spacingX = 0.5;
-        double spacingY = 0.5;
+        // Grid parameters
+        double startX = 1.5;      // X coordinate of first triangle center
+        double startY = 1.5;      // Y coordinate of first triangle center
+        double spacingX = 2.5;    // Horizontal distance between triangle centers
+        double spacingY = 2.5;    // Vertical distance between triangle centers
+        double shapeWidth = 1.0;  // Width of each triangle
+        double shapeHeight = 1.0; // Height of each triangle
 
-        // Starting position (pin point) for the grid
-        double startX = 1.0;
-        double startY = 1.0;
+        // Points defining an equilateral triangle within the shape bounds (closed polygon)
+        double[] trianglePoints = new double[] { 0, 0, 1, 0, 0.5, 0.866, 0, 0 };
 
-        // Create a 2 × 5 grid (total 10 triangles)
+        // Create 2 rows × 5 columns = 10 triangles
         for (int row = 0; row < 2; row++)
         {
             for (int col = 0; col < 5; col++)
             {
-                // Calculate the pin position for the current triangle
-                double pinX = startX + col * (triangleWidth + spacingX);
-                double pinY = startY + row * (triangleHeight + spacingY);
+                double pinX = startX + col * spacingX;
+                double pinY = startY + row * spacingY;
 
-                // Define the three vertices of the triangle and close the shape
-                double[] points = new double[]
-                {
-                    0, 0,                                 // Vertex 1 (bottom‑left)
-                    triangleWidth, 0,                     // Vertex 2 (bottom‑right)
-                    triangleWidth / 2, triangleHeight,   // Vertex 3 (top)
-                    0, 0                                  // Close back to Vertex 1
-                };
+                // Draw the triangle and obtain its shape ID
+                long shapeId = page.DrawPolyline(pinX, pinY, shapeWidth, shapeHeight, trianglePoints);
 
-                // Draw the triangle as a polyline (uses the provided DrawPolyline rule)
-                page.DrawPolyline(pinX, pinY, triangleWidth, triangleHeight, points);
+                // Retrieve the shape to apply formatting
+                Shape shape = page.Shapes.GetShape(shapeId);
+                shape.Fill.FillForegnd.Value = "#FF0000"; // Red fill
+                shape.Fill.FillPattern.Value = 1;        // Solid fill
+                shape.Line.LineColor.Value = "#000000"; // Black border
+                shape.Line.LineWeight.Value = 0.02;     // Thin line
             }
         }
 
-        // Save the diagram to a file (uses the provided save rule)
+        // Save the diagram as VSDX
         diagram.Save("Triangles.vsdx", SaveFileFormat.Vsdx);
     }
 }

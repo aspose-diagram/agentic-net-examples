@@ -1,97 +1,81 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Folder containing Visio files (change as needed)
+        string folderPath = @"C:\VisioFiles";
+
+        // Get all Visio files in the folder (VSDX, VDX, VSD)
+        string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in visioFiles)
         {
-            // Get folder path from command line or ask the user
-            string folderPath;
-            if (args.Length > 0 && Directory.Exists(args[0]))
+            // Process only supported Visio extensions
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            if (extension != ".vsdx" && extension != ".vdx" && extension != ".vsd")
+                continue;
+
+            try
             {
-                folderPath = args[0];
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Remove masters that are not used by any shape
+                RemoveUnusedMasters(diagram);
+
+                // Save the diagram back, preserving original format
+                if (extension == ".vsdx")
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
+                else if (extension == ".vdx")
+                    diagram.Save(filePath, SaveFileFormat.Vdx);
+                else // .vsd
+                    diagram.Save(filePath, SaveFileFormat.Vsd);
             }
-            else
+            catch (Exception ex)
             {
-                Console.Write("Enter the full path of the folder containing Visio files: ");
-                folderPath = Console.ReadLine()?.Trim() ?? string.Empty;
-                if (!Directory.Exists(folderPath))
-                {
-                    Console.WriteLine("Folder does not exist. Exiting.");
-                    return;
-                }
+                Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
-
-            // Supported Visio extensions
-            string[] extensions = new[] { "*.vsdx", "*.vsd", "*.vdx", "*.vssx", "*.vss", "*.vstx", "*.vst" };
-
-            // Collect all files matching the extensions
-            var visioFiles = new System.Collections.Generic.List<string>();
-            foreach (var ext in extensions)
-            {
-                visioFiles.AddRange(Directory.GetFiles(folderPath, ext, SearchOption.AllDirectories));
-            }
-
-            if (visioFiles.Count == 0)
-            {
-                Console.WriteLine("No Visio files found in the specified folder.");
-                return;
-            }
-
-            Console.WriteLine($"Found {visioFiles.Count} Visio file(s). Processing...");
-
-            foreach (var filePath in visioFiles)
-            {
-                try
-                {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Remove hidden information (including unused masters) and macros to reduce size
-                    diagram.RemoveHiddenInformation(0);
-                    diagram.RemoveMacro();
-
-                    // Determine the appropriate SaveFileFormat based on original extension
-                    SaveFileFormat format = GetSaveFileFormat(Path.GetExtension(filePath));
-
-                    // Overwrite the original file with the cleaned diagram
-                    diagram.Save(filePath, format);
-
-                    Console.WriteLine($"Processed: {filePath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing '{filePath}': {ex.Message}");
-                }
-            }
-
-            Console.WriteLine("Batch processing completed.");
         }
 
-        // Maps file extensions to the corresponding SaveFileFormat enum values
-        private static SaveFileFormat GetSaveFileFormat(string extension)
+        Console.WriteLine("Batch processing completed.");
+    }
+
+    // Removes masters that are not referenced by any shape in the diagram
+    private static void RemoveUnusedMasters(Diagram diagram)
+    {
+        // Collect masters that are actually used
+        var usedMasterNames = new System.Collections.Generic.HashSet<string>();
+
+        // Iterate through all pages and shapes to gather used master names
+        foreach (Page page in diagram.Pages)
         {
-            switch (extension.ToLowerInvariant())
+            foreach (Shape shape in page.Shapes)
             {
-                case ".vsdx":
-                    return SaveFileFormat.Vsdx;
-                case ".vsd":
-                    return SaveFileFormat.Vsd;
-                case ".vdx":
-                    return SaveFileFormat.Vdx;
-                case ".vssx":
-                    return SaveFileFormat.Vssx;
-                case ".vss":
-                    return SaveFileFormat.Vss;
-                case ".vstx":
-                    return SaveFileFormat.Vstx;
-                case ".vst":
-                    return SaveFileFormat.Vst;
-                default:
-                    // Default to Vsdx if unknown
-                    return SaveFileFormat.Vsdx;
+                if (shape.Master != null && !string.IsNullOrEmpty(shape.Master.Name))
+                {
+                    usedMasterNames.Add(shape.Master.Name);
+                }
             }
+        }
+
+        // Iterate through masters and remove those not in the used set
+        // Note: Collect masters to remove first to avoid modifying the collection while iterating
+        var mastersToRemove = new System.Collections.Generic.List<Master>();
+        foreach (Master master in diagram.Masters)
+        {
+            if (!usedMasterNames.Contains(master.Name))
+            {
+                mastersToRemove.Add(master);
+            }
+        }
+
+        // Remove the unused masters
+        foreach (Master master in mastersToRemove)
+        {
+            diagram.Masters.Remove(master);
         }
     }
+}

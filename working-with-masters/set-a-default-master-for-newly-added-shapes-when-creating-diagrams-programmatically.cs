@@ -1,63 +1,43 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Path to a Visio stencil (.vss or .vssx) that contains the desired master.
-        // Replace with an actual file path when running the code.
-        string stencilPath = @"C:\Stencils\Basic_U.vssx";
-
-        // Guard: ensure the stencil file exists before proceeding.
-        if (!File.Exists(stencilPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {stencilPath}");
-            return;
-        }
-
-        // Name of the master shape to use as the default for new shapes.
-        string defaultMasterName = "Rectangle";
-
-        // Create a new empty diagram.
-        Diagram diagram = new Diagram();
-
-        try
-        {
-            // Ensure there is at least one page to work with.
-            if (diagram.Pages.Count == 0)
+            try
             {
-                diagram.Pages.Add(new Page());
+
+                // Path to a Visio stencil that contains the master we want to use.
+                // Replace with an actual .vss or .vssx file path on your system.
+                string stencilPath = @"C:\Stencils\Basic Shapes.vssx";
+
+                // Name of the master inside the stencil that will be used as the default.
+                string defaultMasterName = "Rectangle";
+
+                // Create a new empty diagram.
+                Diagram diagram = new Diagram();
+
+                // Import the master from the stencil into the diagram.
+                // This makes the master available for shape creation.
+                diagram.AddMaster(stencilPath, defaultMasterName);
+
+                // Add a shape using the default master.
+                // Parameters: pinX, pinY (position), master name, page index (0 for the first page).
+                long shapeId = diagram.AddShape(2.0, 2.0, defaultMasterName, 0);
+
+                // Retrieve the newly added shape to modify its properties if needed.
+                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+                shape.Text.Value.Add(new Txt("Default Master Shape"));
+                shape.Fill.FillForegnd.Value = "#FFCC00"; // Set fill color.
+
+                // Save the diagram to a VSDX file.
+                diagram.Save("DefaultMasterDiagram.vsdx", SaveFileFormat.Vsdx);
+
             }
-
-            // Import the master from the stencil into the diagram.
-            // AddMaster returns the master ID; we ignore it here.
-            diagram.AddMaster(stencilPath, defaultMasterName);
-
-            // Retrieve the first page (index 0).
-            Page page = diagram.Pages[0];
-
-            // Add a shape using the default master.
-            // The AddShape method returns the shape ID (long).
-            long shapeId = page.AddShape(2.0, 2.0, 1.5, 1.0, defaultMasterName);
-
-            // Retrieve the shape object to modify its properties if needed.
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Example: set some text on the newly added shape.
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt("Default master shape"));
-
-            // Save the diagram to a VSDX file.
-            string outputPath = "DefaultMasterDiagram.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Propagate any errors; in a real application you might log this.
-            throw new Exception("An error occurred while creating the diagram: " + ex.Message, ex);
-        }
+            catch (System.IO.DirectoryNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

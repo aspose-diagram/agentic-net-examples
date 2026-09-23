@@ -1,67 +1,51 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
 
-public static class MasterSynchronizer
+class Program
     {
-        /// <summary>
-        /// Synchronizes master definitions from a template Visio file to a collection of target Visio files.
-        /// Masters that already exist in a target file (matched by universal name) are skipped.
-        /// </summary>
-        /// <param name="masterTemplatePath">Full path to the Visio file that contains the authoritative masters.</param>
-        /// <param name="targetFilePaths">List of full paths to Visio files that need to be updated.</param>
-        public static void SyncMasters(string masterTemplatePath, IEnumerable<string> targetFilePaths)
-        {
-            // Load the source diagram that holds the master definitions (using the constructor that loads from file)
-            using (var sourceDiagram = new Diagram(masterTemplatePath))
-            {
-                // Iterate over each target file
-                foreach (var targetPath in targetFilePaths)
-                {
-                    // Load the target diagram
-                    using (var targetDiagram = new Diagram(targetPath))
-                    {
-                        // For each master in the source diagram, ensure it exists in the target diagram
-                        foreach (var sourceMaster in sourceDiagram.Masters)
-                        {
-                            // Check if a master with the same universal name already exists in the target
-                            bool exists = targetDiagram.Masters.Any(m => string.Equals(m.NameU, sourceMaster.NameU, StringComparison.OrdinalIgnoreCase));
-
-                            if (!exists)
-                            {
-                                // Add the missing master to the target diagram using the AddMaster overload that takes a source diagram and master name
-                                targetDiagram.AddMaster(sourceDiagram, sourceMaster.NameU);
-                            }
-                        }
-
-                        // Save the updated target diagram back to its original file (using the Save method that takes a file path)
-                        targetDiagram.Save(targetPath, SaveFileFormat.Vdx);
-                    }
-                }
-            }
-        }
-
-        // Example usage
-        public static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Path to the master template containing the branding masters
-                string masterTemplate = @"C:\Visio\BrandingTemplate.vssx";
+                // Path to the stencil that contains the branding masters
+                string brandingStencilPath = @"C:\Branding\BrandingMasters.vssx";
 
-                // List of Visio files that need to be synchronized
-                var targets = new List<string>
+                // Verify the stencil exists
+                if (!File.Exists(brandingStencilPath))
+                    throw new FileNotFoundException("Branding stencil not found.", brandingStencilPath);
+
+                // Load the stencil to obtain its master definitions
+                Diagram brandingDiagram = new Diagram(brandingStencilPath);
+
+                // Folder that contains all Visio files to be synchronized
+                string targetFolder = @"C:\VisioFiles";
+
+                // Get all Visio drawing files (VSDX) in the folder (non‑recursive)
+                string[] targetFiles = Directory.GetFiles(targetFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
+
+                foreach (string targetPath in targetFiles)
                 {
-                    @"C:\Visio\DeptA\Diagram1.vsdx",
-                    @"C:\Visio\DeptB\Diagram2.vsdx",
-                    @"C:\Visio\DeptC\Diagram3.vsdx"
-                };
+                    // Load the target Visio document
+                    Diagram targetDiagram = new Diagram(targetPath);
 
-                // Perform synchronization
-                SyncMasters(masterTemplate, targets);
+                    // Ensure each branding master exists in the target diagram
+                    foreach (Master brandingMaster in brandingDiagram.Masters)
+                    {
+                        // Check by master name; if missing, import it from the stencil
+                        if (!targetDiagram.Masters.IsExist(brandingMaster.Name))
+                        {
+                            // Import the master from the branding stencil into the target diagram
+                            targetDiagram.AddMaster(brandingStencilPath, brandingMaster.Name);
+                        }
+                    }
+
+                    // Save the updated diagram, overwriting the original file
+                    targetDiagram.Save(targetPath, SaveFileFormat.Vsdx);
+                }
+
+                Console.WriteLine("Master synchronization completed successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

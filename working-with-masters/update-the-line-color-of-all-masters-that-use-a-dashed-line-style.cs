@@ -1,29 +1,42 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Load the Visio diagram (replace with your actual file path)
+                // Paths to the source and destination Visio files
                 string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Define the new line color (hex format)
+                // Desired line color for masters that use a dashed line style
                 const string newLineColor = "#FF0000"; // Red
 
                 // Iterate through all masters in the diagram
                 foreach (Master master in diagram.Masters)
                 {
-                    // Check each shape within the master
+                    bool usesDashedLine = false;
+
+                    // Check if any shape within the master uses a dashed line pattern
                     foreach (Shape shape in master.Shapes)
                     {
-                        // If the shape uses a dashed line pattern, update its line color
                         if (shape.Line.LinePattern.Value == LinePatternValue.Dash)
+                        {
+                            usesDashedLine = true;
+                            break;
+                        }
+                    }
+
+                    // If the master uses a dashed line, update the line color of all its shapes
+                    if (usesDashedLine)
+                    {
+                        foreach (Shape shape in master.Shapes)
                         {
                             shape.Line.LineColor.Value = newLineColor;
                         }
@@ -31,7 +44,6 @@ class Program
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

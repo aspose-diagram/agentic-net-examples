@@ -9,21 +9,22 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Starting value for custom IDs (choose any range that does not clash with existing IDs)
-            int customId = 1000;
-
-            // Iterate through all masters in the diagram and assign a custom ID
+            // Assign a custom ID to each master (e.g., "CustomMasterID_1", "CustomMasterID_2", ...)
+            int masterIndex = 1;
             foreach (Master master in diagram.Masters)
             {
-                master.ID = customId;
-                customId++;
+                // Use the NameU property to store a custom identifier
+                master.NameU = $"CustomMasterID_{masterIndex}";
+                masterIndex++;
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

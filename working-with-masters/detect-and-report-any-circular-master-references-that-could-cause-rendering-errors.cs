@@ -5,70 +5,123 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Path to the Visio file; can be passed as a command‑line argument
-        string filePath = args.Length > 0 ? args[0] : "input.vsdx";
-
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(filePath);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
 
-        bool anyCircular = false;
+            // Path to the Visio file to analyze
+            string filePath = "input.vsdx";
 
-        // Examine each master in the document
-        foreach (Master master in diagram.Masters)
-        {
-            var visited = new HashSet<string>();
-            if (HasCircularReference(master, diagram, visited))
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
+
+            // Build a graph of master references: master ID -> list of referenced master IDs
+            var masterGraph = new Dictionary<int, List<int>>();
+            var masterIdToName = new Dictionary<int, string>();
+
+            foreach (Master master in diagram.Masters)
             {
-                Console.WriteLine($"Circular master reference detected starting at master '{master.Name}'.");
-                anyCircular = true;
-            }
-        }
+                int masterId = master.ID;
+                masterIdToName[masterId] = master.Name ?? $"Master_{masterId}";
+                var references = new List<int>();
 
-        if (!anyCircular)
+                // Examine each shape within the master
+                foreach (Shape shape in master.Shapes)
+                {
+                    // If the shape itself is based on another master, record the reference
+                    if (shape.Master != null)
+                    {
+                        int referencedId = shape.Master.ID;
+                        references.Add(referencedId);
+                    }
+                }
+
+                masterGraph[masterId] = references;
+            }
+
+            // Detect cycles using DFS
+            var visited = new HashSet<int>();
+            var recursionStack = new HashSet<int>();
+            var cycles = new List<List<int>>();
+
+            foreach (int masterId in masterGraph.Keys)
+            {
+                if (!visited.Contains(masterId))
+                {
+                    DetectCycles(masterId, masterGraph, visited, recursionStack, new List<int>(), cycles);
+                }
+            }
+
+            // Report results
+            if (cycles.Count == 0)
+            {
+                Console.WriteLine("No circular master references detected.");
+            }
+            else
+            {
+                Console.WriteLine("Circular master references found:");
+                int count = 1;
+                foreach (var cycle in cycles)
+                {
+                    Console.Write($"Cycle {count}: ");
+                    for (int i = 0; i < cycle.Count; i++)
+                    {
+                        int id = cycle[i];
+                        Console.Write(masterIdToName[id]);
+                        if (i < cycle.Count - 1) Console.Write(" -> ");
+                    }
+                    Console.WriteLine();
+                    count++;
+                }
+            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.WriteLine("No circular master references found.");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 
-    // Recursive depth‑first search to detect cycles among masters
-    static bool HasCircularReference(Master current, Diagram diagram, HashSet<string> visited)
+    static void DetectCycles(
+        int current,
+        Dictionary<int, List<int>> graph,
+        HashSet<int> visited,
+        HashSet<int> recursionStack,
+        List<int> path,
+        List<List<int>> cycles)
     {
-        if (current == null) return false;
+        visited.Add(current);
+        recursionStack.Add(current);
+        path.Add(current);
 
-        // If we have already visited this master, a cycle exists
-        if (visited.Contains(current.Name))
-            return true;
-
-        visited.Add(current.Name);
-
-        // Inspect each shape contained in the current master
-        foreach (Shape shape in current.Shapes)
+        if (graph.TryGetValue(current, out List<int> neighbors))
         {
-            // Shapes may be instances of other masters
-            Master? referenced = shape.Master;
-            if (referenced != null)
+            foreach (int neighbor in neighbors)
             {
-                // Resolve the referenced master from the diagram collection
-                Master? target = diagram.Masters.GetMasterByName(referenced.Name);
-                if (target != null)
+                if (!visited.Contains(neighbor))
                 {
-                    // Recurse with a copy of the visited set to keep path state
-                    if (HasCircularReference(target, diagram, new HashSet<string>(visited)))
-                        return true;
+                    DetectCycles(neighbor, graph, visited, recursionStack, path, cycles);
+                }
+                else if (recursionStack.Contains(neighbor))
+                {
+                    // Cycle detected - extract the cycle path
+                    int startIndex = path.IndexOf(neighbor);
+                    if (startIndex != -1)
+                    {
+                        var cycle = new List<int>();
+                        for (int i = startIndex; i < path.Count; i++)
+                        {
+                            cycle.Add(path[i]);
+                        }
+                        cycle.Add(neighbor); // close the loop
+                        cycles.Add(cycle);
+                    }
                 }
             }
         }
 
-        return false;
+        recursionStack.Remove(current);
+        path.RemoveAt(path.Count - 1);
     }
 }

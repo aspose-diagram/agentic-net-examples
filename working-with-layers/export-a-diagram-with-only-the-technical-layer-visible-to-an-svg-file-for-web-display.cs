@@ -10,19 +10,19 @@ class Program
         try
         {
 
-            // Path to the source Visio diagram
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages (handles multi‑page documents)
+            // Iterate through all pages and set layer visibility
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through each layer on the page
+                // Access the collection of layers on the page
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Make only the "Technical" layer visible; hide all others
+                    // Show only the layer named "Technical", hide others
                     if (layer.Name.Value.Equals("Technical", StringComparison.OrdinalIgnoreCase))
                     {
                         layer.Visible.Value = BOOL.True;
@@ -35,15 +35,14 @@ class Program
             }
 
             // Configure SVG export options
-            SVGSaveOptions svgOptions = new SVGSaveOptions
-            {
-                ExportHiddenPage = false // exclude hidden pages from the export
-            };
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            // Do not export hidden pages (optional, but ensures only visible content is saved)
+            svgOptions.ExportHiddenPage = false;
 
-            // Path for the exported SVG file
+            // Path to the output SVG file
             string outputPath = "output.svg";
 
-            // Save the diagram as SVG using the configured options
+            // Save the diagram as SVG with the specified options
             diagram.Save(outputPath, svgOptions);
 
         }

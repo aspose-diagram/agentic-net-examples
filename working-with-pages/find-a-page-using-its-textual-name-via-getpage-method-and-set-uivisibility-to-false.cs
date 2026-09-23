@@ -1,14 +1,13 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
         // Define input file path
-        string inputPath = "input.vsdx"; // TODO: replace with actual file path
+        string inputPath = "input.vsdx";
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
@@ -17,7 +16,7 @@ class Program
         }
 
         // Define output file path
-        string outputPath = "output.vsdx"; // TODO: replace with desired output path
+        string outputPath = "output.vsdx";
 
         try
         {
@@ -25,7 +24,7 @@ class Program
             Diagram diagram = new Diagram(inputPath);
 
             // Retrieve the page by its textual name
-            string pageName = "MyPage"; // TODO: replace with the target page name
+            string pageName = "MyPage"; // TODO: replace with the actual page name
             Page page = diagram.Pages.GetPage(pageName);
             if (page == null)
             {
@@ -33,7 +32,7 @@ class Program
                 return;
             }
 
-            // Hide the page from the UI by setting UIVisibility to Hidden
+            // Hide the page in the UI by setting UIVisibility to Hidden
             page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Hidden;
 
             // Save the modified diagram to the output path using VSDX format

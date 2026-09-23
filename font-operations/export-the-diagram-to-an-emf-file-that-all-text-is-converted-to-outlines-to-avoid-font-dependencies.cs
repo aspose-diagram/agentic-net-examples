@@ -1,38 +1,46 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Configure a fallback font to avoid missing font issues during rendering
+        FontConfigs.DefaultFontName = "Arial";
+
+        // Path to the source Visio diagram
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Path for the exported EMF file
+        string outputPath = "output.emf";
+
         try
         {
-
-            // Input Visio file (adjust the path as needed)
-            string inputPath = "input.vsdx";
-
-            // Output EMF file
-            string outputPath = "output.emf";
-
-            // Load the diagram
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Set a default font to ensure any missing fonts are handled gracefully
-            FontConfigs.DefaultFontName = "Arial";
+            // Set up EMF export options using PrintSaveOptions
+            PrintSaveOptions emfOptions = new PrintSaveOptions
+            {
+                SaveFormat = SaveFileFormat.Emf // Export as EMF
+                // Note: ExportHiddenPage is not supported by PrintSaveOptions; hidden pages are excluded by default
+            };
 
-            // Configure EMF export options
-            PrintSaveOptions saveOptions = new PrintSaveOptions();
-            saveOptions.SaveFormat = SaveFileFormat.Emf;
-
-            // Save the diagram as EMF; text will be rendered as outlines by default for this format
-            diagram.Save(outputPath, saveOptions);
-
+            // Save the diagram as an EMF file with the configured options
+            diagram.Save(outputPath, emfOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during loading or saving to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

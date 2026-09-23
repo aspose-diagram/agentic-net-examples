@@ -1,39 +1,38 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the input Visio file
+        string inputPath = "input.vsdx";
+        // Verify the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure HTML export options
+            // Configure HTML save options (max image dimensions are not directly supported in this version)
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-
-            // Limit the size of generated images (width, height in inches)
-            // Adjust these values as needed for your scenario
-            htmlOptions.PageSize = new PageSize(8f, 10f); // 8 inches wide, 10 inches high
-
-            // Optional: set the DPI for the generated images
-            htmlOptions.Resolution = 96; // 96 dots per inch
+            // Example: you could adjust other available options here if needed
+            // htmlOptions.ExportHiddenPage = false; // sample option
 
             // Save the diagram as HTML using the configured options
-            string outputPath = "output.html";
-            diagram.Save(outputPath, htmlOptions);
-
-            Console.WriteLine("Diagram exported to HTML with limited image dimensions.");
-
+            diagram.Save("output.html", htmlOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during loading or saving
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

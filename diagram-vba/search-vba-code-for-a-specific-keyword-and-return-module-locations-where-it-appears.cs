@@ -1,58 +1,57 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
-class VbaKeywordSearcher
+class Program
 {
-    // Searches all VBA modules in a Visio diagram for a given keyword.
-    // Returns the names of modules where the keyword is found.
-    public static List<string> FindModulesWithKeyword(string diagramPath, string keyword)
+    static void Main(string[] args)
     {
-        // Load the Visio diagram (lifecycle rule: use Diagram constructor for loading)
-        Diagram diagram = new Diagram(diagramPath);
-
-        // Access the VBA project contained in the diagram
-        VbaProject vbaProject = diagram.VbaProject;
-
-        List<string> matchingModules = new List<string>();
-
-        // Iterate through each VBA module in the project
-        foreach (VbaModule module in vbaProject.Modules)
+        // Expect two arguments: diagram file path and keyword to search
+        if (args.Length < 2)
         {
-            // Ensure the module has code and check for the keyword (case‑insensitive)
+            Console.WriteLine("Usage: <exe> <diagramPath> <keyword>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string keyword = args[1];
+
+        // Load the Visio diagram
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(diagramPath);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Verify that a VBA project with modules exists
+        if (diagram.VbaProject == null || diagram.VbaProject.Modules == null || diagram.VbaProject.Modules.Count == 0)
+        {
+            Console.WriteLine("No VBA project or modules found in the diagram.");
+            return;
+        }
+
+        bool found = false;
+
+        // Iterate through each VBA module and search for the keyword
+        foreach (VbaModule module in diagram.VbaProject.Modules)
+        {
             if (!string.IsNullOrEmpty(module.Codes) &&
                 module.Codes.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                matchingModules.Add(module.Name);
+                Console.WriteLine($"Keyword \"{keyword}\" found in module: {module.Name}");
+                found = true;
             }
         }
 
-        return matchingModules;
-    }
-
-    static void Main()
-    {
-        try
+        if (!found)
         {
-
-            // Example usage
-            string diagramFile = "sample.vsdx";   // Path to the Visio file
-            string searchKeyword = "MyFunction"; // Keyword to look for in VBA code
-
-            List<string> modules = FindModulesWithKeyword(diagramFile, searchKeyword);
-
-            Console.WriteLine($"Modules containing \"{searchKeyword}\":");
-            foreach (string moduleName in modules)
-            {
-                Console.WriteLine(moduleName);
-            }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Keyword \"{keyword}\" not found in any VBA module.");
         }
     }
 }

@@ -1,35 +1,38 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load the first diagram (VSD) – this diagram's page order will be kept first
-            Diagram firstDiagram = new Diagram("first.vsd", LoadFileFormat.Vsd);
+                // Paths to the source diagrams
+                string firstDiagramPath = "FirstDiagram.vsd";   // VSD file (source order)
+                string secondDiagramPath = "SecondDiagram.vsdx"; // VSDX file to be appended
 
-            // Load the second diagram (VSDX) – its pages will be appended after the first diagram's pages
-            Diagram secondDiagram = new Diagram("second.vsdx", LoadFileFormat.Vsdx);
+                // Load the first diagram (target) – its page order will be preserved
+                Diagram targetDiagram = new Diagram(firstDiagramPath);
 
-            // Combine the second diagram into the first one
-            firstDiagram.Combine(secondDiagram);
+                // Load the second diagram (source) – its pages will be added after the target's pages
+                Diagram sourceDiagram = new Diagram(secondDiagramPath);
 
-            // Save the combined diagram preserving the VSDX format
-            firstDiagram.Save("combined.vsdx", SaveFileFormat.Vsdx);
+                // Combine the source diagram into the target diagram
+                // This merges all pages, masters, and other resources from sourceDiagram into targetDiagram
+                targetDiagram.Combine(sourceDiagram);
 
-            // Clean up resources
-            firstDiagram.Dispose();
-            secondDiagram.Dispose();
+                // Save the combined diagram. The result is saved as VSDX to retain modern format.
+                string outputPath = "CombinedDiagram.vsdx";
+                targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                Console.WriteLine($"Diagrams combined successfully. Output saved to: {outputPath}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

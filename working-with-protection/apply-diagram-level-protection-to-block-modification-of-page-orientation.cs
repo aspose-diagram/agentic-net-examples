@@ -7,43 +7,43 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
+        // Path to the source Visio file
         string inputPath = "input.vsdx";
-        // Verify input file exists
+        // Verify the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Output Visio file path
-        string outputPath = "output_protected.vsdx";
-
         try
         {
             // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Set page orientation to Landscape for every page
+            // Set each page's orientation to Landscape
             foreach (Page page in diagram.Pages)
             {
-                // Access the print properties and assign Landscape orientation
+                // PrintProps.PrintPageOrientation controls the page orientation
                 page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
             }
 
-            // Apply global protection settings to the diagram
-            // These BOOL enum values are assigned directly (no .Value property)
-            diagram.DocumentSettings.ProtectBkgnds = BOOL.True;   // Prevent background changes
-            diagram.DocumentSettings.ProtectMasters = BOOL.True; // Prevent master modifications
-            diagram.DocumentSettings.ProtectShapes = BOOL.True;  // Prevent shape edits
-            diagram.DocumentSettings.ProtectStyles = BOOL.True;  // Prevent style changes
+            // Apply global document protection to prevent modifications
+            // Assign BOOL enum values directly (no .Value property)
+            diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
+            diagram.DocumentSettings.ProtectMasters = BOOL.True;
+            diagram.DocumentSettings.ProtectShapes = BOOL.True;
+            diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
-            // Save the protected diagram using the VSDX format
+            // Path for the protected output file
+            string outputPath = "output_protected.vsdx";
+
+            // Save the protected diagram using the correct SaveFileFormat enum
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
+            // Log any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
